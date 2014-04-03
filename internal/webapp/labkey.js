@@ -81,6 +81,16 @@ if (typeof LABKEY == "undefined")
                 // set the cache to hit
                 cache[key] = true;
 
+                // Tell mothership.js to hook event callbacks
+                if (LABKEY.Mothership)
+                {
+                    if (key.indexOf(configs.extJsRoot + "/ext-all") == 0)
+                        LABKEY.Mothership.hookExt3();
+
+                    if (key.indexOf(configs.extJsRoot_42 + "/ext-all") == 0)
+                        LABKEY.Mothership.hookExt4();
+                }
+
                 // call on the callbacks who have been waiting for this resource
                 if (isArray(cbs))
                 {

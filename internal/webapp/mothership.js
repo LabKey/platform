@@ -13,9 +13,16 @@ LABKEY.Mothership = (function () {
     // can reduce performance.
     var _gatherAllocation = true;
 
-    // When enabled, the errors will be logged to the local LabKey server.
+    // When true, errors will be sent to the LabKey Server then bounced to the configured mothership server for error collection.
+    // When false, errors will be sent to the LabKey Server's log file.
+    var _mothership = true;
+
+    // When enabled, uncaught errors will be sent to the local LabKey server.
     // When not enabled, no logging is done but the uncaught error is still printed to the console.
-    var _enabled = false;
+    var _enabled = true;
+
+    // Print messages during initialization to the console.
+    var _debug = false;
 
     // Rethrow caught exceptions.
     // Chrome 18 has a bug that causes the original stacktrace to be lost when an Error is rethrown.  A fix for this issue will appear in Chrome 19.
@@ -57,6 +64,11 @@ LABKEY.Mothership = (function () {
         }
     }
 
+    function log(msg) {
+        if (_debug)
+            console.log(msg);
+    }
+
     function encodeQuery(data) {
         var ret = '';
         var and = '';
@@ -92,7 +104,7 @@ LABKEY.Mothership = (function () {
 
     // UNDONE: Throttle number of errors so we don't DOS ourselves.
     function ignore(msg, file) {
-        // Ignore deuplicates from the same page.
+        // Ignore duplicates from the same page.
         // Also ignores errors that have already been reported and rethrown.
         for (var i = 0; i < _lastErrors.length; i++) {
             if (msg.indexOf(_lastErrors[i]) > -1)
@@ -149,7 +161,7 @@ LABKEY.Mothership = (function () {
 
                         // strip out mothership.js and stacktrace.js
                         if (_filterStacktrace &&
-                                line.indexOf("/mothership.js") > -1 || line.indexOf("/stacktrace-0.3.js") > -1)
+                                line.indexOf("/mothership.js") > -1 || line.indexOf("/stacktrace-0.6.0.js") > -1)
                             continue;
 
                         // remove defeat cache and server-session number from URLs
@@ -170,7 +182,7 @@ LABKEY.Mothership = (function () {
 
     // err is either the thrown Error object or a string message.
     // @return {Boolean} Returns true if the error is logged to mothership, false otherwise.
-    function report(err, file, line, gatherStack) {
+    function report(err, file, line, gatherStack, errorObj) {
         file = file || window.location.href;
         line = line || "None";
 
@@ -181,7 +193,7 @@ LABKEY.Mothership = (function () {
             msg = err.type;
         }
         else if (err.message) {
-            msg = err.message;
+            msg = err.toString();
         }
 
         // Check for string error type
@@ -197,33 +209,45 @@ LABKEY.Mothership = (function () {
 
         // A stacktrace can't be generated inside of window.onerror handler
         // See: https://github.com/eriwen/javascript-stacktrace/issues/26
-        var stackTrace = gatherStack ? gatherStackTrace(err) : msg;
+        var stackTrace = gatherStack ? (errorObj ? errorObj : gatherStackTrace(err)) : msg;
         if (!stackTrace)
             stackTrace = msg;
         if (err._allocation) {
             stackTrace += '\n\n' + err._allocation;
         }
 
-        console.debug("** uncaught error:", stackTrace);
+        console.debug("** Uncaught error:", msg, '\n\n', stackTrace);
         if (!_enabled)
             return false;
 
-        var o = {
-            username: LABKEY.user ? LABKEY.user.email : "Unknown",
-            //site: window.location.host,
-            //version: LABKEY.versionString || "Unknown",
-            requestURL: file,
-            referrerURL: document.URL,
-            exceptionMessage: msg,
-            stackTrace: stackTrace || msg,
-            file: file,
-            line: line,
-            browser: navigator && navigator.userAgent || "Unknown",
-            platform:  navigator && navigator.platform  || "Unknown"
-        };
+        // CONSIDER: Remove the _mothership flag and use a site-setting to suppress mothership reporting of client-side exceptions.
+        var url;
+        var o;
+        if (_mothership || (LABKEY.user && LABKEY.user.isGuest)) {
+            url = LABKEY.contextPath + '/mothership/logError.api';
+            o = {
+                username: LABKEY.user ? LABKEY.user.email : "Unknown",
+                //site: window.location.host,
+                //version: LABKEY.versionString || "Unknown",
+                requestURL: file,
+                referrerURL: document.URL,
+                exceptionMessage: msg,
+                stackTrace: stackTrace || msg,
+                file: file,
+                line: line,
+                browser: navigator && navigator.userAgent || "Unknown",
+                platform:  navigator && navigator.platform  || "Unknown"
+            };
+        } else {
+            url = LABKEY.contextPath + '/admin/log.api';
+            o = {
+                message: msg + ":\n\n" + stackTrace,
+                level: 'error'
+            };
+        }
 
         try {
-            send(LABKEY.contextPath + '/mothership/logError.api', o);
+            send(url, o);
             return true;
         }
         catch (e) {
@@ -233,7 +257,7 @@ LABKEY.Mothership = (function () {
     }
 
     function reportError(error) {
-        report(error, error.fileName, error.lineNumber || error.line, true);
+        report(error, error.fileName, error.lineNumber || error.line, true, null);
     }
 
     // Wraps a fn with a try/catch block
@@ -241,19 +265,19 @@ LABKEY.Mothership = (function () {
         if (!fn)
             return fn;
         function wrap() {
-            //console.log("wrap called");
+            //log("wrap called");
             try {
                 return fn.apply(this, arguments);
             }
             catch (e) {
-                //console.log("wrap caught error", e);
+                log("wrap caught error", e);
                 if (fn._allocation)
                     e._allocation = fn._allocation;
                 reportError(e);
                 if (_rethrow)
                     throw e;
             }
-        };
+        }
         fn._wrapped = wrap;
         if (_gatherAllocation)
         {
@@ -267,16 +291,16 @@ LABKEY.Mothership = (function () {
     // Ext.lib.Event is used for DOM element events
     function replace_Ext_lib_Event() {
         if (replace_Ext_lib_Event.initialized)
-            return;
+            return 1;
 
         if (window.Ext && window.Ext.lib && window.Ext.lib.Event) {
-            console.log("replacing Ext.lib.Event.addListener");
+            log("replacing Ext.lib.Event.addListener");
             var on = Ext.lib.Event.addListener;
             var un = Ext.lib.Event.removeListener;
 
             // Our replacement for addListener
             function addListener(el, eventName, fn) {
-                //console.log("Ext.lib.Event.addListener called");
+                //log("Ext.lib.Event.addListener called");
                 fn = createWrap(fn);
                 return on.call(this, el, eventName, fn);
             }
@@ -292,22 +316,25 @@ LABKEY.Mothership = (function () {
             Ext.lib.Event.on = Ext.lib.Event.addListener = addListener;
             Ext.lib.Event.un = Ext.lib.Event.removeListener = removeListener;
             replace_Ext_lib_Event.initialized = true;
+            return 1;
         }
+
+        return 0;
     }
 
     // Ext.util.Event is used for document ready event and Ext.Observable events.
     function replace_Ext_util_Event() {
         if (replace_Ext_util_Event.initialized)
-            return;
+            return 1;
 
         if (window.Ext && window.Ext.util && window.Ext.util.Event) {
-            console.log("replacing Ext.util.Event.addListener");
+            log("replacing Ext.util.Event.addListener");
             var on = Ext.util.Event.prototype.addListener;
             var un = Ext.util.Event.prototype.removeListener;
 
             // Our replacement for addListener
             function addListener(fn, scope, options) {
-                //console.log("Ext.util.Event.addListener called");
+                //log("Ext.util.Event.addListener called");
                 fn = createWrap(fn);
                 return on.call(this, fn, scope, options);
             }
@@ -323,21 +350,23 @@ LABKEY.Mothership = (function () {
             Ext.util.Event.prototype.addListener = addListener;
             Ext.util.Event.prototype.removeListener = removeListener;
             replace_Ext_util_Event.initialized = true;
+            return 1;
         }
+        return 0;
     }
 
     function replace_Ext_EventManager() {
         if (replace_Ext_EventManager.initialized)
-            return;
+            return 1;
 
         if (window.Ext && window.Ext.EventManager) {
-            console.log("replacing Ext.EventManager.addListener");
+            log("replacing Ext.EventManager.addListener");
             var on = Ext.EventManager.addListener;
             var un = Ext.EventManager.removeListener;
 
             // Our replacement for addListener
             function addListener(element, eventName, fn, scope, options) {
-                //console.log("Ext.EventManager.addListener called");
+                //log("Ext.EventManager.addListener called");
                 fn = createWrap(fn);
                 return on(element, eventName, fn, scope, options);
             }
@@ -353,19 +382,21 @@ LABKEY.Mothership = (function () {
             Ext.EventManager.on = Ext.EventManager.addListener = addListener;
             Ext.EventManager.un = Ext.EventManager.removeListener = removeListener;
             replace_Ext_EventManager.initialized = true;
+            return 1;
         }
+        return 0;
     }
 
     function replace_Ext_lib_Ajax() {
         if (replace_Ext_lib_Ajax.initialized)
-            return;
+            return 1;
 
         if (window.Ext && window.Ext.lib && window.Ext.lib.Ajax) {
-            console.log("replacing Ext.lib.Ajax.request");
+            log("replacing Ext.lib.Ajax.request");
             var r = Ext.lib.Ajax.request;
 
             function request(method, uri, cb, data, options) {
-                //console.log("Ext.lib.Ajax.request called");
+                log("Ext.lib.Ajax.request called");
                 cb.success = createWrap(cb.success);
                 cb.failure = createWrap(cb.failure);
                 return r(method, uri, cb, data, options);
@@ -373,25 +404,202 @@ LABKEY.Mothership = (function () {
 
             Ext.lib.Ajax.request = request;
             replace_Ext_lib_Ajax.initialized = true;
+            return 1;
+        }
+        return 0;
+    }
+
+    // Ext4.util.Event is used for document ready event and Ext.Observable events.
+    function replace_Ext4_util_Event() {
+        if (replace_Ext4_util_Event.initialized)
+            return 1;
+
+        if (window.Ext4 && window.Ext4.util && window.Ext4.util.Event) {
+            log("replacing Ext4.util.Event.addListener");
+            var on = Ext4.util.Event.prototype.addListener;
+            var un = Ext4.util.Event.prototype.removeListener;
+
+            // Our replacement for addListener
+            function addListener(fn, scope, options) {
+                //log("Ext4.util.Event.addListener called");
+                fn = createWrap(fn);
+                return on.call(this, fn, scope, options);
+            }
+
+            // Our replacement for removeListener
+            function removeListener(fn, scope) {
+                if (fn)
+                    return un.call(this, fn._wrapped || fn, scope);
+                else
+                    return un.call(this, fn, scope);
+            }
+
+            Ext4.util.Event.prototype.addListener = addListener;
+            Ext4.util.Event.prototype.removeListener = removeListener;
+            replace_Ext4_util_Event.initialized = true;
+            return 1;
+        }
+
+        return 0;
+    }
+
+    //Ext4.EventManager.addListener
+    //Ext4.EventManager.removeListener
+    function replace_Ext4_EventManager() {
+        if (replace_Ext4_EventManager.initialized)
+            return 1;
+
+        if (window.Ext4 && window.Ext4.EventManager) {
+            log("replacing Ext4.EventManager.addListener");
+            var on = Ext4.EventManager.addListener;
+            var un = Ext4.EventManager.removeListener;
+
+            // Our replacement for addListener
+            function addListener(element, eventName, fn, scope, options) {
+                //log("Ext4.EventManager.addListener called");
+                fn = createWrap(fn);
+                return on(element, eventName, fn, scope, options);
+            }
+
+            // Our replacement for removeListener
+            function removeListener(el, eventName, fn, scope) {
+                if (fn)
+                    return un(el, eventName, fn._wrapped || fn, scope);
+                else
+                    return un(el, eventName, fn, scope);
+            }
+
+            Ext4.EventManager.on = Ext4.EventManager.addListener = addListener;
+            Ext4.EventManager.un = Ext4.EventManager.removeListener = removeListener;
+            replace_Ext_EventManager.initialized = true;
+            return 1;
+        }
+        return 0;
+    }
+
+    //Ext4.dom.CompositeElementLite
+    function replace_Ext4_dom_CompositeElementLite() {
+        if (replace_Ext4_dom_CompositeElementLite.initialized)
+            return 1;
+
+        if (window.Ext4 && window.Ext4.dom && window.Ext4.dom.CompositeElementLite) {
+            log("replacing Ext4.dom.CompositeElementLite.addListener");
+            var on = Ext4.dom.CompositeElementLite.prototype.addListener;
+            var un = Ext4.dom.CompositeElementLite.prototype.removeListener;
+
+            // Our replacement for addListener
+            function addListener(ename, fn, scope, options) {
+                log("Ext4.dom.CompositeElementLite.addListener called");
+                fn = createWrap(fn);
+                return on(ename, fn, scope, options);
+            }
+
+            // Our replacement for removeListener
+            function removeListener(ename, fn, scope) {
+                if (fn)
+                    return un(ename, fn._wrapped || fn, scope);
+                else
+                    return un(ename, fn, scope);
+            }
+
+            Ext4.dom.CompositeElementLite.prototype.on = Ext4.dom.CompositeElementLite.prototype.addListener = addListener;
+            Ext4.dom.CompositeElementLite.prototype.un = Ext4.dom.CompositeElementLite.prototype.removeListener = removeListener;
+            replace_Ext4_dom_CompositeElementLite.initialized = true;
+            return 1;
+        }
+        return 0;
+    }
+
+    //Ext4.util.Observable
+    function replace_Ext4_util_Observable() {
+        if (replace_Ext4_EventManager.initialized)
+            return 1;
+
+        if (window.Ext4 && window.Ext4.util && window.Ext4.util.Observable) {
+            log("replacing Ext4.util.Observable.addListener");
+            var on = Ext4.util.Observable.prototype.addListener;
+            var un = Ext4.util.Observable.prototype.removeListener;
+
+            // Our replacement for addListener
+            function addListener(fn, scope, options) {
+                //log("Ext4.util.Observable.addListener called");
+                fn = createWrap(fn);
+                return on(fn, scope, options);
+            }
+
+            // Our replacement for removeListener
+            function removeListener(fn, scope) {
+                if (fn)
+                    return un(fn._wrapped || fn, scope);
+                else
+                    return un(fn, scope);
+            }
+
+            Ext4.util.Observable.prototype.on = Ext4.util.Observable.prototype.addListener = addListener;
+            Ext4.util.Observable.prototype.un = Ext4.util.Observable.prototype.removeListener = removeListener;
+            replace_Ext4_util_Observable.initialized = true;
+            return 1;
+        }
+        return 0;
+    }
+
+    function replaceExt3Listeners(attempt) {
+        if (replaceExt3Listeners.initialized) {
+            log('Ext3 listeners already initialized');
+            return;
+        }
+
+        if (!window.Ext) {
+            log('deferring Ext3 replacements... attempt ' + attempt);
+            setTimeout(function () { replaceExt3Listeners(attempt+1); }, 10);
+        } else {
+            log('replacing Ext3 listeners... attempt ' + attempt);
+
+            var expected = 4;
+            var initialized = 0;
+
+            initialized += replace_Ext_lib_Event();
+            initialized += replace_Ext_util_Event();
+            initialized += replace_Ext_EventManager();
+            initialized += replace_Ext_lib_Ajax();
+
+            if (expected && expected == initialized) {
+                log("all Ext3 listeners replaced after " + attempt + " attempts.");
+                replaceExt3Listeners.initialized = true;
+            } else {
+                log("will attempt Ext3 replacements again shortly...");
+                setTimeout(function () { replaceExt3Listeners(attempt+1); }, 10);
+            }
         }
     }
 
-    // intercept calls to Ext.*.addListener and replace the callback fn
-    // with a wrapped fn that adds a try/catch and logs uncaught errors.
-    function replaceListeners() {
-        replace_Ext_lib_Event();
-        replace_Ext_util_Event();
-        replace_Ext_EventManager();
-        replace_Ext_lib_Ajax();
-
-        if (replace_Ext_util_Event.initialized
-            && replace_Ext_lib_Event.initialized
-            && replace_Ext_EventManager.initialized
-            && replace_Ext_lib_Ajax.initialized) {
-            console.log("all listeners replaced");
+    function replaceExt4Listeners(attempt) {
+        if (replaceExt4Listeners.initialized) {
+            log('Ext4 listeners already initialized');
+            return;
         }
-        else {
-            setTimeout(replaceListeners, 10);
+
+        if (!window.Ext4) {
+            log('deferring Ext4 replacements... attempt ' + attempt);
+            setTimeout(function () { replaceExt4Listeners(attempt+1); }, 10);
+        } else {
+            log('replacing Ext4 listeners... attempt ' + attempt);
+
+            var expected = 4;
+            var initialized = 0;
+
+            initialized += replace_Ext4_util_Event();
+            initialized += replace_Ext4_EventManager();
+            initialized += replace_Ext4_dom_CompositeElementLite();
+            initialized += replace_Ext4_util_Observable();
+
+            if (expected && expected == initialized) {
+                log("all Ext4 listeners replaced after " + attempt + " attempts.");
+                replaceExt4Listeners.initialized = true;
+            } else {
+                log("will attempt Ext4 replacements again shortly...");
+                setTimeout(function () { replaceExt4Listeners(attempt+1); }, 10);
+            }
         }
     }
 
@@ -399,9 +607,10 @@ LABKEY.Mothership = (function () {
         var currentErrorFn = window.onerror;
         var q = report;
         if (typeof currentErrorFn == "function") {
-            q = function (msg, file, line, col) {
-                report(msg, file, line, col);
-                currentErrorFn(msg, file, line, col);
+            q = function (msg, file, line, col, errorObj) {
+                log(arguments);
+                report(msg, file, line, col, !!errorObj, errorObj);
+                currentErrorFn(msg, file, line, col, errorObj);
             }
         }
         window.onerror = q;
@@ -409,7 +618,6 @@ LABKEY.Mothership = (function () {
 
     function register() {
         registerOnError();
-        replaceListeners();
     }
 
     register();
@@ -420,11 +628,21 @@ LABKEY.Mothership = (function () {
          */
         logError : reportError,
 
-        /** Turn error reporting on or off. */
+        hookExt3 : function () { replaceExt3Listeners(0); },
+
+        hookExt4 : function () { replaceExt4Listeners(0); },
+
+        /** Turn error reporting on or off (default is on). */
         enable  : function (b) { _enabled = b; },
 
-        /** Turn rethrowing Errors on or off. */
-        rethrow : function (b) { _rethrow = b; }
+        /** Turn rethrowing Errors on or off (default is on). */
+        setRethrow : function (b) { _rethrow = b; },
+
+        /** Turn verbose logging on or off (default is off). */
+        setDebug : function (b) { _debug = b; },
+
+        /** Turn reporting errors to central mothership on or off (default is on). */
+        setReportErrors : function (b) { _mothership = b; }
     };
 })();
 

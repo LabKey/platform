@@ -8707,7 +8707,7 @@ internal/webapp/slider/rangeslider.js -text
 internal/webapp/slider/slidertimer.js -text
 internal/webapp/sqv.lib.xml -text
 internal/webapp/sqv/Selector.js -text
-internal/webapp/stacktrace-0.3.js -text
+internal/webapp/stacktrace-0.6.0.js -text
 internal/webapp/tiny_mce/langs/en.js -text
 internal/webapp/tiny_mce/license.txt -text
 internal/webapp/tiny_mce/plugins/advhr/css/advhr.css -text
