@@ -34,6 +34,16 @@ LABKEY.Mothership = (function () {
     // Remove mothership.js and stacktrace.js from the stacktrace.
     var _filterStacktrace = true;
 
+    // Allow hooking Ext3 and Ext4 callbacks
+    var _hookExt3 = true;
+    var _hookExt4 = true;
+
+    // Wait 10 milliseconds between hook install attempts.
+    var _delayMillis = 100;
+
+    // Maximum number of milliseconds to attempt hook installation before giving up.
+    var _maxDelayMillis = 4*1000;
+
 
     /**
      * Try XHR methods in order and store XHR factory.
@@ -413,7 +423,7 @@ LABKEY.Mothership = (function () {
                 log("Ext.lib.Ajax.request called");
                 cb.success = createWrap(cb.success);
                 cb.failure = createWrap(cb.failure);
-                return r(method, uri, cb, data, options);
+                return r.call(this, method, uri, cb, data, options);
             }
 
             Ext.lib.Ajax.request = request;
@@ -430,26 +440,20 @@ LABKEY.Mothership = (function () {
 
         if (window.Ext4 && window.Ext4.util && window.Ext4.util.Event) {
             log("replacing Ext4.util.Event.addListener");
-            var on = Ext4.util.Event.prototype.addListener;
-            var un = Ext4.util.Event.prototype.removeListener;
+            Ext4.override(Ext4.util.Event, {
+                addListener: function (fn, scope, options) {
+                    fn = createWrap(fn);
+                    return this.callParent([fn, scope, options]);
+                },
 
-            // Our replacement for addListener
-            function addListener(fn, scope, options) {
-                //log("Ext4.util.Event.addListener called");
-                fn = createWrap(fn);
-                return on.call(this, fn, scope, options);
-            }
+                removeListener: function (fn, scope) {
+                    if (fn)
+                        return this.callParent([fn._wrapped || fn, scope]);
+                    else
+                        return this.callParent([fn, scope]);
+                }
+            });
 
-            // Our replacement for removeListener
-            function removeListener(fn, scope) {
-                if (fn)
-                    return un.call(this, fn._wrapped || fn, scope);
-                else
-                    return un.call(this, fn, scope);
-            }
-
-            Ext4.util.Event.prototype.addListener = addListener;
-            Ext4.util.Event.prototype.removeListener = removeListener;
             replace_Ext4_util_Event.initialized = true;
             return 1;
         }
@@ -485,7 +489,7 @@ LABKEY.Mothership = (function () {
 
             Ext4.EventManager.on = Ext4.EventManager.addListener = addListener;
             Ext4.EventManager.un = Ext4.EventManager.removeListener = removeListener;
-            replace_Ext_EventManager.initialized = true;
+            replace_Ext4_EventManager.initialized = true;
             return 1;
         }
         return 0;
@@ -498,26 +502,21 @@ LABKEY.Mothership = (function () {
 
         if (window.Ext4 && window.Ext4.dom && window.Ext4.dom.CompositeElementLite) {
             log("replacing Ext4.dom.CompositeElementLite.addListener");
-            var on = Ext4.dom.CompositeElementLite.prototype.addListener;
-            var un = Ext4.dom.CompositeElementLite.prototype.removeListener;
+            Ext4.override(Ext4.dom.CompositeElementLite, {
+                addListener: function (ename, fn, scope, options) {
+                    log("Ext4.dom.CompositeElementLite.addListener called");
+                    fn = createWrap(fn);
+                    return this.callParent([ename, fn, scope, options]);
+                },
 
-            // Our replacement for addListener
-            function addListener(ename, fn, scope, options) {
-                log("Ext4.dom.CompositeElementLite.addListener called");
-                fn = createWrap(fn);
-                return on(ename, fn, scope, options);
-            }
+                removeListener: function (ename, fn, scope) {
+                    if (fn)
+                        return this.callParent([ename, fn._wrapped || fn, scope]);
+                    else
+                        return this.callParent([ename, fn, scope]);
+                }
+            });
 
-            // Our replacement for removeListener
-            function removeListener(ename, fn, scope) {
-                if (fn)
-                    return un(ename, fn._wrapped || fn, scope);
-                else
-                    return un(ename, fn, scope);
-            }
-
-            Ext4.dom.CompositeElementLite.prototype.on = Ext4.dom.CompositeElementLite.prototype.addListener = addListener;
-            Ext4.dom.CompositeElementLite.prototype.un = Ext4.dom.CompositeElementLite.prototype.removeListener = removeListener;
             replace_Ext4_dom_CompositeElementLite.initialized = true;
             return 1;
         }
@@ -526,31 +525,26 @@ LABKEY.Mothership = (function () {
 
     //Ext4.util.Observable
     function replace_Ext4_util_Observable() {
-        if (replace_Ext4_EventManager.initialized)
+        if (replace_Ext4_util_Observable.initialized)
             return 1;
 
         if (window.Ext4 && window.Ext4.util && window.Ext4.util.Observable) {
             log("replacing Ext4.util.Observable.addListener");
-            var on = Ext4.util.Observable.prototype.addListener;
-            var un = Ext4.util.Observable.prototype.removeListener;
+            Ext4.override(Ext4.util.Observable, {
+                addListener: function (ename, fn, scope, options) {
+                    //log("Ext4.util.Observable.addListener called");
+                    fn = createWrap(fn);
+                    return this.callParent([ename, fn, scope, options]);
+                },
 
-            // Our replacement for addListener
-            function addListener(fn, scope, options) {
-                //log("Ext4.util.Observable.addListener called");
-                fn = createWrap(fn);
-                return on(fn, scope, options);
-            }
+                removeListener: function (ename, fn, scope) {
+                    if (fn)
+                        return this.callParent([ename, fn._wrapped || fn, scope]);
+                    else
+                        return this.callParent([ename, fn, scope]);
+                }
+            });
 
-            // Our replacement for removeListener
-            function removeListener(fn, scope) {
-                if (fn)
-                    return un(fn._wrapped || fn, scope);
-                else
-                    return un(fn, scope);
-            }
-
-            Ext4.util.Observable.prototype.on = Ext4.util.Observable.prototype.addListener = addListener;
-            Ext4.util.Observable.prototype.un = Ext4.util.Observable.prototype.removeListener = removeListener;
             replace_Ext4_util_Observable.initialized = true;
             return 1;
         }
@@ -563,9 +557,15 @@ LABKEY.Mothership = (function () {
             return;
         }
 
+        if (attempt * _delayMillis >= _maxDelayMillis) {
+            log('Ext3 listeners not initialized after ' + (_maxDelayMillis/1000) + ' seconds; giving up.');
+            replaceExt3Listeners.initialized = true;
+            return;
+        }
+
         if (!window.Ext) {
             log('deferring Ext3 replacements... attempt ' + attempt);
-            setTimeout(function () { replaceExt3Listeners(attempt+1); }, 10);
+            setTimeout(function () { replaceExt3Listeners(attempt+1); }, _delayMillis);
         } else {
             log('replacing Ext3 listeners... attempt ' + attempt);
 
@@ -582,7 +582,7 @@ LABKEY.Mothership = (function () {
                 replaceExt3Listeners.initialized = true;
             } else {
                 log("will attempt Ext3 replacements again shortly...");
-                setTimeout(function () { replaceExt3Listeners(attempt+1); }, 10);
+                setTimeout(function () { replaceExt3Listeners(attempt+1); }, _delayMillis);
             }
         }
     }
@@ -593,9 +593,15 @@ LABKEY.Mothership = (function () {
             return;
         }
 
+        if (attempt * _delayMillis >= _maxDelayMillis) {
+            log('Ext4 listeners not initialized after ' + (_maxDelayMillis/1000) + ' seconds; giving up.');
+            replaceExt4Listeners.initialized = true;
+            return;
+        }
+
         if (!window.Ext4) {
             log('deferring Ext4 replacements... attempt ' + attempt);
-            setTimeout(function () { replaceExt4Listeners(attempt+1); }, 10);
+            setTimeout(function () { replaceExt4Listeners(attempt+1); }, _delayMillis);
         } else {
             log('replacing Ext4 listeners... attempt ' + attempt);
 
@@ -612,7 +618,7 @@ LABKEY.Mothership = (function () {
                 replaceExt4Listeners.initialized = true;
             } else {
                 log("will attempt Ext4 replacements again shortly...");
-                setTimeout(function () { replaceExt4Listeners(attempt+1); }, 10);
+                setTimeout(function () { replaceExt4Listeners(attempt+1); }, _delayMillis);
             }
         }
     }
@@ -642,9 +648,9 @@ LABKEY.Mothership = (function () {
          */
         logError : reportError,
 
-        hookExt3 : function () { replaceExt3Listeners(0); },
+        hookExt3 : function () { if (_hookExt3) { replaceExt3Listeners(0); } },
 
-        hookExt4 : function () { replaceExt4Listeners(0); },
+        hookExt4 : function () { if (_hookExt4) { replaceExt4Listeners(0); } },
 
         /** Turn error reporting on or off (default is on). */
         enable  : function (b) { _enabled = b; },
