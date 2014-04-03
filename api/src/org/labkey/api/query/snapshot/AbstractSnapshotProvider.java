@@ -117,46 +117,40 @@ public abstract class AbstractSnapshotProvider implements QuerySnapshotService.I
     public static DomainProperty addAsDomainProperty(Domain domain, ColumnInfo column)
     {
         PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(column.getPropertyURI(), domain.getContainer());
-
-        DomainProperty prop = domain.addProperty();
-        prop.setLabel(column.getLabel());
+        DomainProperty prop;
         String name = column.getName();
         // 14750 replace '/' with '.' so columns can be mapped correctly on import from the exported file
         if (name.indexOf("/") != -1)
             name = name.replace('/', '.');
 
-        prop.setName(name);
-        
-        Class clz = column.getJavaClass();
-        // need to map primitives to object class equivalents
-        if (propertyClassMap.containsKey(clz.getName()))
-            clz = propertyClassMap.get(clz.getName());
-
-        PropertyType type = PropertyType.getFromClass(clz);
-        prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
-        prop.setDescription(column.getDescription());
-        prop.setFormat(column.getFormat());
-        prop.setPropertyURI(getPropertyURI(domain, column));
-
         if (pd != null)
         {
-            prop.setScale(pd.getScale());
-            prop.setRequired(pd.isRequired());
+            PropertyDescriptor newProp = pd.clone();
 
-            if (pd.getLookupQuery() != null)
-            {
-                String container = pd.getLookupContainer();
-                Container c = null;
-                if (container != null)
-                {
-                    if (GUID.isGUID(container))
-                        c = ContainerManager.getForId(container);
-                    if (c == null)
-                        c = ContainerManager.getForPath(container);
-                }
-                Lookup lu = new Lookup(c, pd.getLookupSchema(), pd.getLookupQuery());
-                prop.setLookup(lu);
-            }
+            // initialize so the domain doesn't get upset
+            newProp.setContainer(domain.getContainer());
+            newProp.setPropertyURI(getPropertyURI(domain, column));
+            newProp.setPropertyId(0);
+            newProp.setName(name);
+
+            prop = domain.addPropertyOfPropertyDescriptor(newProp);
+        }
+        else
+        {
+            prop = domain.addProperty();
+            prop.setLabel(column.getLabel());
+            prop.setName(name);
+
+            Class clz = column.getJavaClass();
+            // need to map primitives to object class equivalents
+            if (propertyClassMap.containsKey(clz.getName()))
+                clz = propertyClassMap.get(clz.getName());
+
+            PropertyType type = PropertyType.getFromClass(clz);
+            prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
+            prop.setDescription(column.getDescription());
+            prop.setFormat(column.getFormat());
+            prop.setPropertyURI(getPropertyURI(domain, column));
         }
         return prop;
     }
