@@ -34,6 +34,7 @@ import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
@@ -299,6 +300,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 if (getPkColumns().isEmpty())
                     ret.setKeyField(true);
+                ret.setSortDirection(Sort.SortDirection.DESC);
                 ret.setFk(new RowIdForeignKey(ret));
                 ret.setHidden(true);
                 ret.setURL(DetailsURL.fromString("/experiment/showRunText.view?rowId=${rowid}"));
@@ -366,43 +368,10 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 return createInputLookupColumn();
             case Output:
                 return createOutputLookupColumn();
+            case DataInputs:
+                return createDataInputsColumn(alias);
             case DataOutputs:
-                ColumnInfo dataOutputsCol = wrapColumn(alias, _rootTable.getColumn("RowId"));
-                dataOutputsCol.setReadOnly(true);
-                dataOutputsCol.setShownInInsertView(false);
-                dataOutputsCol.setShownInUpdateView(false);
-                dataOutputsCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("RunId")
-                {
-                    @Override
-                    public TableInfo getLookupTableInfo()
-                    {
-                        VirtualTable t = new VirtualTable(ExperimentServiceImpl.get().getSchema(), null)
-                        {
-                            @NotNull
-                            @Override
-                            public SQLFragment getFromSQL()
-                            {
-                                SQLFragment sql = new SQLFragment("SELECT pa.RunId, di.DataId FROM ");
-                                sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
-                                sql.append(", ");
-                                sql.append(ExperimentServiceImpl.get().getTinfoDataInput(), "di");
-                                sql.append(" WHERE di.TargetApplicationId = pa.RowId AND pa.CpasType = '");
-                                sql.append(ExpProtocol.ApplicationType.ExperimentRunOutput);
-                                sql.append("'");
-                                return sql;
-                            }
-                        };
-                        ColumnInfo runCol = new ColumnInfo("RunId", t);
-                        runCol.setJdbcType(JdbcType.INTEGER);
-                        t.addColumn(runCol);
-                        ColumnInfo dataCol = new ColumnInfo("DataId", t);
-                        dataCol.setJdbcType(JdbcType.INTEGER);
-                        dataCol.setFk(getExpSchema().getDataIdForeignKey());
-                        t.addColumn(dataCol);
-                        return t;
-                    }
-                }, "DataId"));
-                return dataOutputsCol;
+                return createDataOutputsColumn(alias);
             case JobId:
                 ColumnInfo ret = wrapColumn(alias, _rootTable.getColumn("JobId"));
                 ret.setLabel("Job");
@@ -506,6 +475,67 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         return ret;
     }
 
+    public ColumnInfo createDataInputsColumn(String alias)
+    {
+        ColumnInfo col = createMultiValueDatasColumn(alias, ExpProtocol.ApplicationType.ExperimentRun);
+        col.setDescription("Contains multi-value lookup to each data inputs produced by this run");
+        return col;
+    }
+
+    public ColumnInfo createDataOutputsColumn(String alias)
+    {
+        ColumnInfo col = createMultiValueDatasColumn(alias, ExpProtocol.ApplicationType.ExperimentRunOutput);
+        col.setDescription("Contains multi-value lookup to each data outputs produced by this run");
+        return col;
+    }
+
+    protected ColumnInfo createMultiValueDatasColumn(String alias, final ExpProtocol.ApplicationType type)
+    {
+        final String dataIdName = type == ExpProtocol.ApplicationType.ExperimentRun ? "InputDataId" : "OutputDataId";
+
+        ColumnInfo dataOutputsCol = wrapColumn(alias, _rootTable.getColumn("RowId"));
+        dataOutputsCol.setReadOnly(true);
+        dataOutputsCol.setShownInInsertView(false);
+        dataOutputsCol.setShownInUpdateView(false);
+        dataOutputsCol.setFk(new MultiValuedForeignKey(new LookupForeignKey("RunId")
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                VirtualTable t = new VirtualTable(ExperimentServiceImpl.get().getSchema(), null)
+                {
+                    @NotNull
+                    @Override
+                    public SQLFragment getFromSQL()
+                    {
+                        SQLFragment sql = new SQLFragment("SELECT pa.RunId, di.DataId AS ");
+                        sql.append(dataIdName);
+                        sql.append(" FROM ");
+                        sql.append(ExperimentServiceImpl.get().getTinfoProtocolApplication(), "pa");
+                        sql.append(", ");
+                        sql.append(ExperimentServiceImpl.get().getTinfoDataInput(), "di");
+                        sql.append(" WHERE di.TargetApplicationId = pa.RowId AND pa.CpasType = '");
+                        sql.append(type);
+                        sql.append("'");
+                        return sql;
+                    }
+                };
+
+                ColumnInfo runCol = new ColumnInfo("RunId", t);
+                runCol.setJdbcType(JdbcType.INTEGER);
+                t.addColumn(runCol);
+
+                ColumnInfo dataCol = new ColumnInfo(dataIdName, t);
+                dataCol.setJdbcType(JdbcType.INTEGER);
+                dataCol.setFk(getExpSchema().getDataIdForeignKey());
+                t.addColumn(dataCol);
+                return t;
+            }
+        }, dataIdName));
+
+        return dataOutputsCol;
+    }
+
     public void populate()
     {
         ExpSchema schema = getExpSchema();
@@ -531,6 +561,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         addColumn(Column.RunGroupToggle);
         addColumn(Column.Input);
         addColumn(Column.Output);
+        addColumn(Column.DataInputs);
         addColumn(Column.DataOutputs);
 
         ActionURL urlDetails = new ActionURL(ExperimentController.ShowRunTextAction.class, schema.getContainer());
@@ -543,6 +574,7 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.RunGroupToggle));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.ReplacedByRun));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.ReplacesRun));
+        defaultVisibleColumns.remove(FieldKey.fromParts(Column.DataInputs));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.DataOutputs));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.Modified));
         defaultVisibleColumns.remove(FieldKey.fromParts(Column.ModifiedBy));

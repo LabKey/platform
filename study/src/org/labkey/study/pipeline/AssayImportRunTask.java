@@ -17,11 +17,12 @@ package org.labkey.study.pipeline;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.FileXarSource;
+import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpData;
-import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
@@ -61,10 +62,11 @@ import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;
 import java.net.URI;
-import java.sql.SQLException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -265,6 +267,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         super(factory, job);
     }
 
+    // Get the outputs of the last action in the job sequence
     private List<File> getOutputs(PipelineJob job) throws PipelineJobException
     {
         RecordedActionSet actionSet = job.getActionSet();
@@ -301,6 +304,35 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         }
 
         return null;
+    }
+
+    // Get the inputs and roles of the first action in the job sequence
+    private Map<File, String> getInputs(PipelineJob job) throws PipelineJobException
+    {
+        RecordedActionSet actionSet = job.getActionSet();
+        List<RecordedAction> actions = new ArrayList<>(actionSet.getActions());
+        if (actions.size() < 1)
+            throw new PipelineJobException("No recorded actions");
+
+        Map<File, String> inputs = new LinkedHashMap<>();
+
+        RecordedAction firstAction = actions.get(0);
+        for (RecordedAction.DataFile dataFile : firstAction.getInputs())
+        {
+            if (dataFile.isTransient())
+                continue;
+
+            URI uri = dataFile.getURI();
+            if (uri != null && "file".equals(uri.getScheme()))
+            {
+                String role = dataFile.getRole();
+                File file = new File(uri);
+                if (NetworkDrive.exists(file))
+                    inputs.put(file, role);
+            }
+        }
+
+        return inputs;
     }
 
     private String getName()
@@ -359,7 +391,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         AssayProvider provider = _factory.getProvider(getJob());
         ExpProtocol protocol = _factory.getProtocol(getJob(), provider);
 
-        try
+        DbScope scope = ExperimentService.get().getSchema().getScope();
+        try (DbScope.Transaction tx = scope.ensureTransaction())
         {
             AssayDataType assayDataType = provider.getDataType();
             if (assayDataType == null)
@@ -405,26 +438,29 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId);
             ExpRun run = pair.second;
 
-            // Keep track of all of the runs that have been created by this task
-            // Using the XarSource will create ExpData objects for the input files with nice names and URLs -- without, the ExpData's names will be absolute file URLs.
-            XarSource source = new FileXarSource(_factory.getXarFile(getJob()), getJob());
-            ExpRun expRun = ExperimentService.get().importRun(getJob(), source);
-            if (getComments() != null)
-            {
-                expRun.setComments(getComments());
-                expRun.save(user);
-            }
-
             // TODO: Is there a better way to model this?  Can a run be an input to another run?
-            // Copy the job run's inputs to the assay run's inputs
+            // Add the job inputs as assay run's inputs
+            XarSource source = new FileXarSource(_factory.getXarFile(getJob()), getJob());
             ExpProtocolApplication assayInputApplication = run.getInputProtocolApplication();
-            ExpProtocolApplication jobInputApplication = expRun.getInputProtocolApplication();
-            for (ExpDataRunInput dataInput : jobInputApplication.getDataInputs())
+            Map<File, String> inputs = getInputs(getJob());
+            for (Map.Entry<File, String> entry : inputs.entrySet())
             {
-                ExpData inputData = dataInput.getData();
-                String role = dataInput.getRole();
+                File file = entry.getKey();
+                String role = entry.getValue();
+
+                URI uri = file.toURI();
+                try
+                {
+                    uri = new URI(source.getCanonicalDataFileURL(uri.toString()));
+                }
+                catch (XarFormatException | URISyntaxException e)
+                {
+                    throw new PipelineJobException(e);
+                }
+                ExpData inputData = ExperimentService.get().createData(uri, source);
                 assayInputApplication.addDataInput(user, inputData, role);
             }
+
             assayInputApplication.save(user);
 
             // save any job-level custom properties from the run
@@ -440,10 +476,14 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             {
                 getJob().info("Deleting run " + run.getName() + " due to cancellation request");
                 run.delete(getJob().getUser());
-                expRun.delete(getJob().getUser());
             }
+
+            // Consider these actions complete.  Saves the exp run's URL into the job status.
+            getJob().clearActionSet(run);
+
+            tx.commit();
         }
-        catch (SQLException | ExperimentException | ValidationException e)
+        catch (ExperimentException | ValidationException e)
         {
             throw new PipelineJobException("Failed to save experiment run in the database", e);
         }
