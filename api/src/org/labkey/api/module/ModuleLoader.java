@@ -307,13 +307,6 @@ public class ModuleLoader implements Filter
             ClassLoader webappClassLoader = getClass().getClassLoader();
             Method m = webappClassLoader.getClass().getMethod("getExplodedModuleDirectories");
             explodedModuleDirs = (List<File>)m.invoke(webappClassLoader);
-
-            // Tomcat6Hack
-            if (null != tomcatVersion)
-            {
-                m = webappClassLoader.getClass().getMethod("setTomcatVersion", new Class[]{int.class});
-                m.invoke(webappClassLoader, tomcatVersion);
-            }
         }
         catch (NoSuchMethodException e)
         {
@@ -743,8 +736,8 @@ public class ModuleLoader implements Filter
             String[] versionParts = serverInfo.substring(14).split("\\.");
             int majorVersion = Integer.valueOf(versionParts[0]);
 
-            if (majorVersion < 6)
-                throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 6.");
+            if (majorVersion < 7)
+                throw new ConfigurationException("Unsupported Tomcat version: " + serverInfo + ". LabKey Server requires Apache Tomcat 7.");
 
             return majorVersion;
         }
