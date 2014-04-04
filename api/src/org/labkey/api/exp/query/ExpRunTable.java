@@ -18,7 +18,6 @@ package org.labkey.api.exp.query;
 
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.exp.api.*;
-import org.labkey.api.exp.property.Domain;
 
 import java.util.List;
 
@@ -45,6 +44,7 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         RunGroupToggle,
         Input,
         Output,
+        DataInputs,
         DataOutputs,
         Replaced,
         ReplacedByRun,
