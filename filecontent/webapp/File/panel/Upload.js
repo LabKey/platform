@@ -143,6 +143,8 @@ Ext4.define('File.panel.Upload', {
             previewsContainer: false,
 
             maxFiles: 5000,
+            // Allow uploads of 100GB files
+            maxFilesize: 100*(1024*1024),
 
             // LabKey webdav only handles single POST per file
             uploadMultiple: false,
