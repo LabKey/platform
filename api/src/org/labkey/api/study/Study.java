@@ -59,7 +59,7 @@ public interface Study extends StudyEntity
 
     List<? extends TreatmentVisitMap> getStudyTreatmentVisitMap(Container container, @Nullable Integer cohortId);
 
-    List<? extends Visit> getVisitsForImmunizationSchedule();
+    List<? extends Visit> getVisitsForTreatmentSchedule();
 
     ParticipantCategory[] getParticipantCategories(User user);
 
