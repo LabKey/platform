@@ -51,7 +51,6 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
@@ -78,7 +77,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.DataSetDefinition;
@@ -87,7 +85,6 @@ import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.UploadLog;
-import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.ServletException;
 import java.io.File;
@@ -262,13 +259,15 @@ public class AssayPublishManager implements AssayPublishService.Service
 
         StudyImpl targetStudy = StudyManager.getInstance().getStudy(targetContainer);
         assert verifyRequiredColumns(dataMaps, targetStudy.getTimepointType());
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
 
-        try
+        boolean schemaChanged = false;
+        DataSetDefinition dataset = null;
+        List<Map<String, Object>> convertedDataMaps;
+
+        try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            scope.ensureTransaction();
             List<DataSetDefinition> datasets = StudyManager.getInstance().getDataSetDefinitions(targetStudy);
-            DataSetDefinition dataset = null;
+
             for (int i = 0; i < datasets.size() && dataset == null; i++)
             {
                 // If there's a dataset linked to our protocol, use it
@@ -295,7 +294,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 if (datasetProtocolId == null)
                 {
                     dataset.setProtocolId(protocol.getRowId());
-                    StudyManager.getInstance().updateDataSetDefinition(user, dataset);
+                    StudyManager.getInstance().updateDataSetDefinition(user, dataset, errors);
                 }
                 else if (!datasetProtocolId.equals(protocol.getRowId()))
                 {
@@ -308,12 +307,11 @@ public class AssayPublishManager implements AssayPublishService.Service
                 if (!keyPropertyName.equals(dataset.getKeyPropertyName()))
                 {
                     dataset.setKeyPropertyName(keyPropertyName);
-                    StudyManager.getInstance().updateDataSetDefinition(user, dataset);
+                    StudyManager.getInstance().updateDataSetDefinition(user, dataset, errors);
                 }
             }
 
             List<PropertyDescriptor> types = createTargetPropertyDescriptors(dataset, columns, errors);
-            boolean schemaChanged = false;
             for (PropertyDescriptor type : types)
             {
                 if (type.getPropertyId() == 0)
@@ -325,65 +323,53 @@ public class AssayPublishManager implements AssayPublishService.Service
             if (!errors.isEmpty())
                 return null;
             Map<String, String> propertyNamesToUris = ensurePropertyDescriptors(user, dataset, dataMaps, types, keyPropertyName);
-            List<Map<String, Object>> convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
-            // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
-            // in 'ensurePropertyDescriptors'.
-            scope.commitTransaction();
-            // Be sure to call close after this commit to keep the scope happy downstream.  Importing the data
-            // or creating a dataset below will kick off subsequent transactions which expect any commit
-            // to have a prior call to close
-            scope.closeConnection();
-            scope = null;
-
-            if (schemaChanged)
-                StudyManager.getInstance().uncache(dataset);
-            dataset = StudyManager.getInstance().getDataSetDefinition(targetStudy, dataset.getRowId());
-            Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
-            QCState defaultQCState = null;
-            if (defaultQCStateId != null)
-                defaultQCState = StudyManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
-
-            // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
-            // IllegalStateException in ContainerManager.ensureContainer.
-            List<String> lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DataSetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
-            if (lsids.size() > 0 && protocol != null)
-            {
-                for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
-                {
-                    AuditLogEvent event = new AuditLogEvent();
-
-                    event.setCreatedBy(user);
-                    event.setEventType(ASSAY_PUBLISH_AUDIT_EVENT);
-                    event.setIntKey1(protocol.getRowId());
-                    event.setComment(entry.getValue()[0] + " row(s) were copied to a study from the assay: " + protocol.getName());
-                    event.setKey1(targetContainer.getId());
-                    event.setContainerId(sourceContainer.getId());
-
-                    Map<String, Object> dataMap = new HashMap<>();
-                    dataMap.put("datasetId", dataset.getDataSetId());
-
-                    dataMap.put("sourceLsid", entry.getKey());
-                    dataMap.put("recordCount", entry.getValue()[0]);
-
-                    AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(ASSAY_PUBLISH_AUDIT_EVENT));
-                }
-            }
-            //Make sure that the study is updated with the correct timepoints.
-            StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
-
-            return PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
+            convertedDataMaps = convertPropertyNamesToURIs(dataMaps, propertyNamesToUris);
+            transaction.commit();
         }
         catch (ChangePropertyDescriptorException e)
         {
             throw new UnexpectedException(e);
         }
-        finally
+
+        // re-retrieve the datasetdefinition: this is required to pick up any new columns that may have been created
+        // in 'ensurePropertyDescriptors'.
+        if (schemaChanged)
+            StudyManager.getInstance().uncache(dataset);
+        dataset = StudyManager.getInstance().getDataSetDefinition(targetStudy, dataset.getRowId());
+        Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
+        QCState defaultQCState = null;
+        if (defaultQCStateId != null)
+            defaultQCState = StudyManager.getInstance().getQCStateForRowId(targetContainer, defaultQCStateId.intValue());
+
+        // unfortunately, the actual import cannot happen within our transaction: we eventually hit the
+        // IllegalStateException in ContainerManager.ensureContainer.
+        List<String> lsids = StudyManager.getInstance().importDatasetData(user, dataset, convertedDataMaps, errors, DataSetDefinition.CheckForDuplicates.sourceAndDestination, defaultQCState, null, false);
+        if (lsids.size() > 0 && protocol != null)
         {
-            if (null != scope)
+            for (Map.Entry<String, int[]> entry : getSourceLSID(dataMaps).entrySet())
             {
-                scope.closeConnection();
+                AuditLogEvent event = new AuditLogEvent();
+
+                event.setCreatedBy(user);
+                event.setEventType(ASSAY_PUBLISH_AUDIT_EVENT);
+                event.setIntKey1(protocol.getRowId());
+                event.setComment(entry.getValue()[0] + " row(s) were copied to a study from the assay: " + protocol.getName());
+                event.setKey1(targetContainer.getId());
+                event.setContainerId(sourceContainer.getId());
+
+                Map<String, Object> dataMap = new HashMap<>();
+                dataMap.put("datasetId", dataset.getDataSetId());
+
+                dataMap.put("sourceLsid", entry.getKey());
+                dataMap.put("recordCount", entry.getValue()[0]);
+
+                AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(ASSAY_PUBLISH_AUDIT_EVENT));
             }
         }
+        //Make sure that the study is updated with the correct timepoints.
+        StudyManager.getInstance().getVisitManager(targetStudy).updateParticipantVisits(user, Collections.singleton(dataset));
+
+        return PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(targetContainer, dataset.getRowId());
     }
 
     private Map<String, int[]> getSourceLSID(List<Map<String, Object>> dataMaps)
@@ -467,7 +453,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         boolean propertyChanged = false;
         for (DomainProperty existingProperty : domain.getProperties())
         {
-            if (existingProperty.getName().indexOf(" ") != -1)
+            if (existingProperty.getName().contains(" "))
             {
                 existingProperty.setName(existingProperty.getName().replace(" ", ""));
                 existingProperty.setPropertyURI(existingProperty.getPropertyURI().replace(" ", ""));
@@ -482,7 +468,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         // Strip out spaces from any proposed PropertyDescriptor names
         for (PropertyDescriptor newPD : types)
         {
-            if (newPD.getName().indexOf(" ") != -1)
+            if (newPD.getName().contains(" "))
             {
                 String newName = newPD.getName().replace(" ", "");
                 for (Map<String, Object> dataMap : dataMaps)
@@ -720,7 +706,6 @@ public class AssayPublishManager implements AssayPublishService.Service
     {
         DbScope scope = DbSchema.get("study").getScope();
 
-        boolean useQueryUpdateService = false;
         UploadLog ul = null;
         List<String> lsids = Collections.emptyList();
 
@@ -729,30 +714,15 @@ public class AssayPublishManager implements AssayPublishService.Service
             if (null != fileIn)
                 ul = saveUploadData(user, dsd, fileIn, originalFileName);
 
-            if (!useQueryUpdateService)
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                try (DbScope.Transaction transaction = scope.ensureTransaction())
-                {
-                    Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
-                    QCState defaultQCState = null;
-                    if (defaultQCStateId != null)
-                        defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
-                    lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DataSetDefinition.CheckForDuplicates.sourceOnly, defaultQCState, null, null);
-                    if (!errors.hasErrors())
-                        transaction.commit();
-                }
-            }
-            else
-            {
-                StudyQuerySchema querySchema = StudyQuerySchema.createSchema(study, user, true);
-                TableInfo queryTableInfo = querySchema.getTable(dsd.getName());
-                if (null == queryTableInfo)
-                    throw new UnauthorizedException("Can not update dataset: " + dsd.getName());
-                QueryUpdateService qus = queryTableInfo.getUpdateService();
-                if (null == qus)
-                    throw new UnauthorizedException("Can not update dataset: " + dsd.getName());
-
-                qus.importRows(user, study.getContainer(), dl, errors, null);
+                Integer defaultQCStateId = study.getDefaultDirectEntryQCState();
+                QCState defaultQCState = null;
+                if (defaultQCStateId != null)
+                    defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
+                lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DataSetDefinition.CheckForDuplicates.sourceOnly, defaultQCState, null, null);
+                if (!errors.hasErrors())
+                    transaction.commit();
             }
 
             if (!errors.hasErrors())

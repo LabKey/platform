@@ -23,6 +23,8 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
 
+import java.util.List;
+
 /**
  * User: adam
  * Date: Apr 23, 2009
@@ -40,9 +42,9 @@ public class QcStateWriter implements InternalStudyWriter
 
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        QCState[] qcStates = StudyManager.getInstance().getQCStates(ctx.getContainer());
+        List<QCState> qcStates = StudyManager.getInstance().getQCStates(ctx.getContainer());
 
-        if (qcStates != null && qcStates.length > 0)
+        if (!qcStates.isEmpty())
         {
             StudyDocument.Study.QcStates qcStatesXml = ctx.getXml().addNewQcStates();
             StudyqcDocument doc = StudyqcDocument.Factory.newInstance();

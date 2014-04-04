@@ -68,17 +68,17 @@
                 <td>
                     <input type="hidden" name="ids" value="<%= state.getRowId() %>">
                     <input type="text" name="labels" size="30"
-                           value="<%= state.getLabel() != null ? h(state.getLabel()) : "" %>">
+                           value="<%= h(state.getLabel() != null ? state.getLabel() : "") %>">
                 </td>
                 <td>
                     <input type="text" name="descriptions" size="50"
-                           value="<%= state.getDescription() != null ? h(state.getDescription()) : "" %>">
+                           value="<%= h(state.getDescription() != null ? state.getDescription() : "") %>">
                 </td>
                 <td align="center"><input name="publicData" value="<%= state.getRowId() %>" id="<%= h(state.getLabel()) %>_public" type="checkbox"<%=checked(state.isPublicData())%>/></td>
                 <td>
-                    <%=  StudyManager.getInstance().isQCStateInUse(state) ? "[in&nbsp;use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one dataset row.") :
+                    <%= text(StudyManager.getInstance().isQCStateInUse(state) ? "[in&nbsp;use]" + helpPopup("QC state in use", "This QC state cannot be deleted because it is currently a default state (see below) or is referenced by at least one dataset row.") :
                             textLink("Delete", baseDeleteStateURL.clone().addParameter("id", state.getRowId()),
-                                    "return confirm('Delete this QC state?  No additional study data will be deleted.')", null) %>
+                                    "return confirm('Delete this QC state?  No additional study data will be deleted.')", null)) %>
                 </td>
             </tr>
             <%

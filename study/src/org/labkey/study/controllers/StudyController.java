@@ -3008,7 +3008,7 @@ public class StudyController extends BaseStudyController
     public static class ManageQCStatesBean
     {
         private StudyImpl _study;
-        private QCState[] _states;
+        private List<QCState> _states;
         private ReturnURLString _returnUrl;
 
         public ManageQCStatesBean(StudyImpl study, ReturnURLString returnUrl)
@@ -3017,7 +3017,7 @@ public class StudyController extends BaseStudyController
             _returnUrl = returnUrl;
         }
 
-        public QCState[] getQCStates()
+        public List<QCState> getQCStates()
         {
             if (_states == null)
                 _states = StudyManager.getInstance().getQCStates(_study.getContainer());
@@ -3340,8 +3340,7 @@ public class StudyController extends BaseStudyController
         {
             if (form.isAll())
             {
-                QCState[] states = StudyManager.getInstance().getQCStates(getContainer());
-                for (QCState state : states)
+                for (QCState state : StudyManager.getInstance().getQCStates(getContainer()))
                 {
                     if (!StudyManager.getInstance().isQCStateInUse(state))
                         StudyManager.getInstance().deleteQCState(state);

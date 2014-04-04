@@ -25,13 +25,14 @@
 <%@ page import="org.labkey.study.model.QCState" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.UpdateQCStateForm> me = (JspView<StudyController.UpdateQCStateForm>) HttpView.currentView();
     StudyController.UpdateQCStateForm bean = me.getModelBean();
     Container container = getContainer();
-    QCState[] states = StudyManager.getInstance().getQCStates(container);
+    List<QCState> states = StudyManager.getInstance().getQCStates(container);
 %>
 <%
     WebPartView.startTitleFrame(out, "QC State Change", null, null, null);

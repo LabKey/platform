@@ -736,8 +736,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
             if (_qcStateCache == null)
             {
                 _qcStateCache = new HashMap<>();
-                QCState[] states = StudyManager.getInstance().getQCStates(ctx.getContainer());
-                for (QCState state : states)
+                for (QCState state : StudyManager.getInstance().getQCStates(ctx.getContainer()))
                     _qcStateCache.put(state.getRowId(), state);
             }
             return _qcStateCache;

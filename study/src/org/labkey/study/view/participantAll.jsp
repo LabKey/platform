@@ -553,8 +553,8 @@
     {
         if (null == qcstates)
         {
-            QCState[] states = StudyManager.getInstance().getQCStates(study.getContainer());
-            qcstates = new HashMap<>(2 * states.length);
+            List<QCState> states = StudyManager.getInstance().getQCStates(study.getContainer());
+            qcstates = new HashMap<>(2 * states.size());
             for (QCState state : states)
                 qcstates.put(state.getRowId(), state);
         }

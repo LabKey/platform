@@ -25,12 +25,9 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.qcStates.StudyqcDocument;
-import org.labkey.study.xml.studyViews.ViewsDocument;
 import org.springframework.validation.BindException;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**

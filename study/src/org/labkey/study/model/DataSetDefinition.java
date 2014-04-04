@@ -2522,8 +2522,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         b.setKeyList(lsids);
 
         StandardETL etl = StandardETL.forInsert(table, b, getContainer(), user, context);
-        DataIteratorBuilder insert = ((UpdateableTableInfo)table).persistRows(etl, context);
-        return insert;
+        return ((UpdateableTableInfo)table).persistRows(etl, context);
     }
 
 
@@ -2572,8 +2571,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             }
         }
 
-        SQLFragment sql = StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[parts.size()]));
-        return sql;
+        return StudySchema.getInstance().getSchema().getSqlDialect().concatenate(parts.toArray(new SQLFragment[parts.size()]));
     }
 
 

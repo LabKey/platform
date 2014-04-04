@@ -43,9 +43,9 @@ public class QCStateSet
     private static final String ALL_STATES_LABEL = "All data";
     private boolean _includeUnmarked;
 
-    private QCStateSet(Container container, QCState[] stateSet, boolean includeUnmarked, String label)
+    private QCStateSet(Container container, List<QCState> stateSet, boolean includeUnmarked, String label)
     {
-        _states = new HashSet<>(Arrays.asList(stateSet));
+        _states = new HashSet<>(stateSet);
         _includeUnmarked = includeUnmarked;
         _label = label;
         if (_label == null)
@@ -73,7 +73,7 @@ public class QCStateSet
         }
     }
 
-    private QCStateSet(Container container, QCState[] stateSet, boolean includeUnmarked)
+    private QCStateSet(Container container, List<QCState> stateSet, boolean includeUnmarked)
     {
         this(container, stateSet, includeUnmarked, null);
     }
@@ -83,7 +83,7 @@ public class QCStateSet
         this(container, getStatesForIds(container, stateRowIds), includeUnmarked);
     }
 
-    private static QCState[] getStatesForIds(Container container, int[] stateRowIds)
+    private static List<QCState> getStatesForIds(Container container, int[] stateRowIds)
     {
         List<QCState> stateSet = new ArrayList<>();
         for (int stateRowId : stateRowIds)
@@ -92,7 +92,7 @@ public class QCStateSet
             if (state != null)
                 stateSet.add(state);
         }
-        return stateSet.toArray(new QCState[stateSet.size()]);
+        return stateSet;
     }
 
     public Set<QCState> getStates()
@@ -190,38 +190,36 @@ public class QCStateSet
 
     public static QCStateSet getAllStates(Container container)
     {
-        QCState[] states = StudyManager.getInstance().getQCStates(container);
+        List<QCState> states = StudyManager.getInstance().getQCStates(container);
         return new QCStateSet(container, states, true, ALL_STATES_LABEL);
     }
 
     public static QCStateSet getPublicStates(Container container)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        QCState[] states = StudyManager.getInstance().getQCStates(container);
         List<QCState> selectedStates = new ArrayList<>();
-        for (QCState state : states)
+        for (QCState state : StudyManager.getInstance().getQCStates(container))
         {
             if (state.isPublicData())
                 selectedStates.add(state);
         }
         if (study == null)
-            return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), false, PUBLIC_STATES_LABEL);
-        return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), study.isBlankQCStatePublic(), PUBLIC_STATES_LABEL);
+            return new QCStateSet(container, selectedStates, false, PUBLIC_STATES_LABEL);
+        return new QCStateSet(container, selectedStates, study.isBlankQCStatePublic(), PUBLIC_STATES_LABEL);
     }
 
     public static QCStateSet getPrivateStates(Container container)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        QCState[] states = StudyManager.getInstance().getQCStates(container);
         List<QCState> selectedStates = new ArrayList<>();
-        for (QCState state : states)
+        for (QCState state : StudyManager.getInstance().getQCStates(container))
         {
             if (!state.isPublicData())
                 selectedStates.add(state);
         }
         if (study == null)
-            return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), false, PRIVATE_STATES_LABEL);
-        return new QCStateSet(container, selectedStates.toArray(new QCState[selectedStates.size()]), !study.isBlankQCStatePublic(), PRIVATE_STATES_LABEL);
+            return new QCStateSet(container, selectedStates, false, PRIVATE_STATES_LABEL);
+        return new QCStateSet(container, selectedStates, !study.isBlankQCStatePublic(), PRIVATE_STATES_LABEL);
     }
 
     public static QCStateSet getDefaultStates(Container container)
@@ -239,7 +237,7 @@ public class QCStateSet
 
     private static QCStateSet getSingletonSet(Container container, QCState state)
     {
-        return new QCStateSet(container, new QCState[] { state }, false, state.getLabel());
+        return new QCStateSet(container, Collections.singletonList(state), false, state.getLabel());
     }
 
     public static QCStateSet getSelectedStates(Container container, String formValue)
@@ -287,8 +285,7 @@ public class QCStateSet
     
         set.add(QCStateSet.getAllStates(container));
 
-        QCState[] singleStates = StudyManager.getInstance().getQCStates(container);
-        for (QCState state : singleStates)
+        for (QCState state : StudyManager.getInstance().getQCStates(container))
             set.add(QCStateSet.getSingletonSet(container, state));
         return set;
     }
