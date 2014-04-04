@@ -2273,7 +2273,7 @@ public class StudyManager
                 uncache(def);
         _datasetHelper.clearCache(c);
 
-        _qcStateCache.clear();
+        _qcStateCache.remove(c.getId());
         DbCache.clear(StudySchema.getInstance().getTableInfoParticipant());
 
         for (StudyImpl substudy : StudyManager.getInstance().getAncillaryStudies(c))

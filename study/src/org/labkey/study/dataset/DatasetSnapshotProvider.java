@@ -25,6 +25,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
@@ -190,33 +191,31 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
 
-        try
+        if (qsDef != null)
         {
-            if (qsDef != null)
+            QueryDefinition queryDef = qsDef.getQueryDefinition(context.getUser());
+
+            // dataset snapshots must have an underlying dataset definition defined
+            StudyImpl study = StudyManager.getInstance().getStudy(qsDef.getContainer());
+            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinitionByName(study, qsDef.getName());
+            if (def != null)
             {
-                QueryDefinition queryDef = qsDef.getQueryDefinition(context.getUser());
+                QueryView view = createQueryView(context, qsDef, errors);
 
-                // dataset snapshots must have an underlying dataset definition defined
-                StudyImpl study = StudyManager.getInstance().getStudy(qsDef.getContainer());
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinitionByName(study, qsDef.getName());
-                if (def != null)
+                if (view != null && !errors.hasErrors())
                 {
-                    QueryView view = createQueryView(context, qsDef, errors);
+                    Results results = getResults(context, view, qsDef, def);
 
-                    if (view != null && !errors.hasErrors())
+                    // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
+                    StringBuilder sb = new StringBuilder();
+                    TSVGridWriter tsvWriter = new TSVGridWriter(results);
+                    tsvWriter.setApplyFormats(false);
+                    tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
+                    tsvWriter.write(sb);
+
+                    try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
                     {
-                        Results results = getResults(context, view, qsDef, def);
-
-                        // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
-                        StringBuilder sb = new StringBuilder();
-                        TSVGridWriter tsvWriter = new TSVGridWriter(results);
-                        tsvWriter.setApplyFormats(false);
-                        tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
-                        tsvWriter.write(sb);
-
-                        schema.getScope().ensureTransaction();
-
-                        // import the data
+                            // import the data
                         BatchValidationException ve = new BatchValidationException();
                         StudyManager.getInstance().importDatasetData(context.getUser(), def, new TabLoader(sb, true),
                                 new CaseInsensitiveHashMap<String>(), ve, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null, null);
@@ -234,20 +233,16 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                                 StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(context.getUser(),
                                         Collections.singletonList(def));
                             }
-                            schema.getScope().commitTransaction();
+                            transaction.commit();
                         }
                     }
                 }
-                else
-                    errors.reject(SpringActionController.ERROR_MSG, "A dataset definition does not exist for query snapshot: " + qsDef.getName());
             }
             else
-                throw new IllegalArgumentException("QuerySnapshotDefinition cannot be null");
+                errors.reject(SpringActionController.ERROR_MSG, "A dataset definition does not exist for query snapshot: " + qsDef.getName());
         }
-        finally
-        {
-            schema.getScope().closeConnection();
-        }
+        else
+            throw new IllegalArgumentException("QuerySnapshotDefinition cannot be null");
     }
 
     private Results getResults(ViewContext context, QueryView view, QuerySnapshotDefinition qsDef, DataSetDefinition def) throws SQLException
@@ -406,39 +401,40 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                         tsvWriter.setColumnHeaderType(TSVGridWriter.ColumnHeaderType.queryColumnName);
                         tsvWriter.write(sb);
 
-                        schema.getScope().ensureTransaction();
+                        try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+                        {
+                            int numRowsDeleted;
+                            List<String> newRows;
 
-                        int numRowsDeleted;
-                        List<String> newRows;
+                            List<String> importErrors = new ArrayList<>();
+                            numRowsDeleted = StudyManager.getInstance().purgeDataset(dsDef, form.getViewContext().getUser());
 
-                        List<String> importErrors = new ArrayList<>();
-                        numRowsDeleted = StudyManager.getInstance().purgeDataset(dsDef, form.getViewContext().getUser());
+                            // import the new data
+                            newRows = StudyManager.getInstance().importDatasetData(form.getViewContext().getUser(),
+                                    dsDef, new TabLoader(sb, true), new CaseInsensitiveHashMap<String>(),
+                                    importErrors, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null, null);
 
-                        // import the new data
-                        newRows = StudyManager.getInstance().importDatasetData(form.getViewContext().getUser(),
-                                dsDef, new TabLoader(sb, true), new CaseInsensitiveHashMap<String>(),
-                                importErrors, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null, null);
+                            for (String error : importErrors)
+                                errors.reject(SpringActionController.ERROR_MSG, error);
 
-                        for (String error : importErrors)
-                            errors.reject(SpringActionController.ERROR_MSG, error);
+                            if (errors.hasErrors())
+                                return null;
 
-                        if (errors.hasErrors())
-                            return null;
+                            if (!suppressVisitManagerRecalc)
+                                StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(form.getViewContext().getUser(), Collections.singleton(dsDef));
 
-                        if (!suppressVisitManagerRecalc)
-                            StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(form.getViewContext().getUser(), Collections.singleton(dsDef));
+                            ViewContext context = form.getViewContext();
+                            StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,
+                                    "Dataset snapshot was updated. " + numRowsDeleted + " rows were removed and replaced with " + newRows.size() + " rows.", null);
 
-                        schema.getScope().commitTransaction();
+                            def.setLastUpdated(new Date());
+                            def.save(form.getViewContext().getUser());
 
-                        ViewContext context = form.getViewContext();
-                        StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,
-                                "Dataset snapshot was updated. " + numRowsDeleted + " rows were removed and replaced with " + newRows.size() + " rows.", null);
+                            transaction.commit();
 
-                        def.setLastUpdated(new Date());
-                        def.save(form.getViewContext().getUser());
-
-                        return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
-                                addParameter(DataSetDefinition.DATASETKEY, dsDef.getDataSetId());
+                            return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
+                                    addParameter(DataSetDefinition.DATASETKEY, dsDef.getDataSetId());
+                        }
                     }
                 }
                 catch (SQLException e)
@@ -446,10 +442,6 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                     ViewContext context = form.getViewContext();
                     StudyServiceImpl.addDatasetAuditEvent(context.getUser(), context.getContainer(), dsDef,
                             "Dataset snapshot was not updated. Cause of failure: " + e.getMessage(), null);
-                }
-                finally
-                {
-                    schema.getScope().closeConnection();
                 }
             }
         }
