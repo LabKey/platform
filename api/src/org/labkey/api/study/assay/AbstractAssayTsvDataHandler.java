@@ -290,7 +290,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
             {
                 if (allowEmptyData() || dataDomain.getProperties().isEmpty())
                 {
-                    ExperimentService.get().commitTransaction();
+                    transaction.commit();
                     return;
                 }
                 else

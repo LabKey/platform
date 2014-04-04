@@ -18,9 +18,34 @@ package org.labkey.api.exp.api;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.*;
-import org.labkey.api.exp.query.*;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentRunListView;
+import org.labkey.api.exp.ExperimentRunType;
+import org.labkey.api.exp.ExperimentRunTypeSource;
+import org.labkey.api.exp.Identifiable;
+import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.LsidType;
+import org.labkey.api.exp.ProtocolApplicationParameter;
+import org.labkey.api.exp.XarFormatException;
+import org.labkey.api.exp.XarSource;
+import org.labkey.api.exp.query.ExpDataInputTable;
+import org.labkey.api.exp.query.ExpDataTable;
+import org.labkey.api.exp.query.ExpExperimentTable;
+import org.labkey.api.exp.query.ExpMaterialInputTable;
+import org.labkey.api.exp.query.ExpMaterialTable;
+import org.labkey.api.exp.query.ExpProtocolApplicationTable;
+import org.labkey.api.exp.query.ExpProtocolTable;
+import org.labkey.api.exp.query.ExpQCFlagTable;
+import org.labkey.api.exp.query.ExpRunGroupMapTable;
+import org.labkey.api.exp.query.ExpRunTable;
+import org.labkey.api.exp.query.ExpSampleSetTable;
+import org.labkey.api.exp.query.ExpSchema;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
@@ -28,9 +53,9 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.HttpView;
 
 import java.io.File;
 import java.io.IOException;
@@ -170,7 +195,9 @@ public class ExperimentService
         DataType getDataType(String namespacePrefix);
 
         DbScope.Transaction ensureTransaction();
+        @Deprecated /** Call DbScope.Transaction.commit() instead */
         void commitTransaction();
+        @Deprecated /** Call DbScope.Transaction.close() instead */
         void closeTransaction();
 
         ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type);
