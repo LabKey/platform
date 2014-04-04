@@ -231,7 +231,8 @@ public class DatasetWriter implements InternalStudyWriter
                 filter.addInClause(FieldKey.fromParts(StudyService.get().getSubjectColumnName(ctx.getContainer())), ctx.getParticipants());
             }
 
-            DefaultStudyDesignWriter.createExtraForeignKeyColumns(ti, columns);
+            if (ctx.isDataspaceProject())
+                DefaultStudyDesignWriter.createExtraForeignKeyColumns(ti, columns);
             Results rs = QueryService.get().select(ti, columns, filter, sort);
             writeResultsToTSV(rs, vf, def.getFileName());
         }
