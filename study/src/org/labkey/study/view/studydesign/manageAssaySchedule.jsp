@@ -35,7 +35,7 @@
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
-      resources.add(ClientDependency.fromFilePath("study/ImmunizationSchedule.js"));
+      resources.add(ClientDependency.fromFilePath("study/StudyVaccineDesign.js"));
       resources.add(ClientDependency.fromFilePath("dataview/DataViewsPanel.css"));
       return resources;
   }
@@ -50,6 +50,7 @@
 
     Study study = StudyManager.getInstance().getStudy(getContainer());
     boolean canManageStudy = c.hasPermission(user, ManageStudyPermission.class);
+    boolean isDataspace = c.isProject() && c.isDataspace();
 
     String visitDisplayName = "Visit";
     if (study != null && study.getTimepointType() == TimepointType.DATE)
@@ -86,6 +87,7 @@
     var X = Ext4;
     var _gridSC, _storeSC, _panelSV,  _storeSV, _storeV, _panelAP, _addVisitWindow;
     var _configVisitMap = {};
+    var isDataspace = <%=isDataspace%>;
 
     X.onReady(function(){
 
@@ -145,6 +147,7 @@
             xtype: 'toolbar',
             dock: 'top',
             border: false,
+            hidden: isDataspace,
             items: [
             {
                 text: 'Insert New',
@@ -193,9 +196,9 @@
                                     {
                                         _storeSC.sync({success: function(){ window.location.reload(); }});
                                     },
-                                    failure : function(a,b,c)
+                                    failure : function(response)
                                     {
-                                        console.log(arguments);
+                                        Ext4.Msg.alert('Error', response.exception);
                                     }
                                 });
                             }
@@ -226,7 +229,8 @@
 
     // block the default LABKEY.ext4.GridPanel cellediting using beforeedit and add our own double click event
     _gridSC.on('beforeedit', function(){ return false; });
-    _gridSC.on('itemdblclick', showUpdateConfigurationDialog);
+    if (!isDataspace)
+        _gridSC.on('itemdblclick', showUpdateConfigurationDialog);
 
     _panelSV = X.create('Ext.panel.Panel', {
         renderTo : 'AssaySpecimenVisitPanel',
@@ -561,7 +565,12 @@ function _renderVisitGrid()
                     break;
                 }
             }
-            html.push('<td align="center" class=\"x4-grid-cell\" style=\"padding: 6px;\"><input class="scvCheckbox" name="' + name + '" id="' + id + '" configid="' + scRowId + '" visitid="' + vRowId + '" type=checkbox ' + (checked?"checked":"") + '></td>');
+
+            var isDataspace = <%=isDataspace%>;
+            var checkboxInput = '<input class="scvCheckbox" name="' + name + '" id="' + id + '" configid="' + scRowId + '" visitid="' + vRowId + '" type=checkbox ' + (checked?"checked":"") + '>';
+            var checkMark = checked ? '&#x2713' : '&nbsp;';
+
+            html.push('<td align="center" class=\"x4-grid-cell\" style=\"padding: 6px;\">' + (!isDataspace ? checkboxInput : checkMark) + '</td>');
         });
         html.push("</tr>");
     });
@@ -619,9 +628,9 @@ function insertSVC(el, scRowId, vRowId)
                 el.frame();
             }
         },
-        failure : function(a,b,c)
+        failure : function(response)
         {
-            console.log(arguments);
+            Ext4.Msg.alert('Error', response.exception);
         }
     });
 }
@@ -648,9 +657,9 @@ function removeSVC(el, scRowId, vRowId)
         {
             el.frame();
         },
-        failure : function(a,b,c)
+        failure : function(response)
         {
-            console.log(arguments);
+            Ext4.Msg.alert('Error', response.exception);
         }
     });
 }
@@ -671,7 +680,7 @@ Enter assay schedule information in the grids below.
     </ul>
 </div>
 <div id="AssaySpecimenConfigGrid"></div>
-<span style='font-style: italic; font-size: smaller;'>* Double click to edit an assay configuration</span>
+<span style='font-style: italic; font-size: smaller; display: <%=h(isDataspace ? "none" : "inline")%>;'>* Double click to edit an assay configuration</span>
 <br/><br/>
 <%
     if (canManageStudy && form.isUseAlternateLookupFields())

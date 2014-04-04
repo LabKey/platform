@@ -32,9 +32,9 @@ import java.util.Map;
  */
 
 /**
- * Represents a study's cohort/treatment/visit mapping information. Used to serialize JSON to the immunization schedule.
+ * Represents a study's cohort/treatment/visit mapping information. Used to serialize JSON to the treatment schedule.
  */
-public class StudyImmunizationSchedule implements CustomApiForm
+public class StudyTreatmentSchedule implements CustomApiForm
 {
     Container _container;
     Integer _cohortRowId;
@@ -42,15 +42,15 @@ public class StudyImmunizationSchedule implements CustomApiForm
     Integer _cohortSubjectCount;
     Map<Integer, Integer> _treatmentVisitMap = new HashMap<>(); // map visitId -> treatmentId
 
-    // immunization schedule properties
+    // treatment schedule properties
     List<TreatmentImpl> _treatments;
     List<VisitImpl> _visits;
     List<CohortImpl> _cohorts;
 
-    public StudyImmunizationSchedule()
+    public StudyTreatmentSchedule()
     {}
 
-    public StudyImmunizationSchedule(Container container)
+    public StudyTreatmentSchedule(Container container)
     {
         _container = container;
     }
@@ -86,7 +86,7 @@ public class StudyImmunizationSchedule implements CustomApiForm
             visitProperties.put("Label", v.getDisplayString());
             visitProperties.put("SortOrder", v.getDisplayOrder());
 
-            // tag those visits that are used in the immunization schedule
+            // tag those visits that are used in the treatment schedule
             visitProperties.put("Included", includedIds.contains(v.getRowId()));
 
             visitList.add(visitProperties);

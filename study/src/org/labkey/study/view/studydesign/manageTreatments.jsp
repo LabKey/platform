@@ -35,7 +35,7 @@
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
-        resources.add(ClientDependency.fromFilePath("study/ImmunizationSchedule.js"));
+        resources.add(ClientDependency.fromFilePath("study/StudyVaccineDesign.js"));
         resources.add(ClientDependency.fromFilePath("dataview/DataViewsPanel.css"));
         resources.add(ClientDependency.fromFilePath("study/StudyVaccineDesign.css"));
         return resources;
@@ -48,10 +48,15 @@
 
     Study study = StudyManager.getInstance().getStudy(c);
     boolean canManageStudy = c.hasPermission(user, ManageStudyPermission.class);
+    boolean isDataspace = c.isProject() && c.isDataspace();
 
     String visitDisplayName = "Visit";
     if (study != null && study.getTimepointType() == TimepointType.DATE)
         visitDisplayName = "Timepoint";
+
+    String subjectName = "Subject";
+    if (study != null)
+        subjectName = study.getSubjectNounSingular();
 %>
 
 <style>
@@ -77,16 +82,19 @@
     Ext4.onReady(function(){
         var treatmentsGrid = Ext4.create('LABKEY.ext4.TreatmentsGrid', {
             renderTo : "treatments-grid",
+            disableEdit : <%=isDataspace%>,
             listeners: {
                 treatmentsAddedOrRemoved: function() {
-                    immunizationScheduleGrid.getImmunizationScheduleData(false);
+                    treatmentScheduleGrid.getTreatmentScheduleData(false);
                 }
             }
         });
 
-        var immunizationScheduleGrid = Ext4.create('LABKEY.ext4.ImmunizationScheduleGrid', {
-            renderTo : "immunization-schedule-grid",
-            visitNoun : <%=q(visitDisplayName)%>
+        var treatmentScheduleGrid = Ext4.create('LABKEY.ext4.TreatmentScheduleGrid', {
+            renderTo : "treatment-schedule-grid",
+            disableEdit : <%=isDataspace%>,
+            visitNoun : <%=q(visitDisplayName)%>,
+            subjectNoun : <%=q(subjectName)%>
         });
 
         var projectMenu = null;
@@ -124,7 +132,7 @@
     });
 </script>
 
-Enter immunization information in the grids below.
+Enter treatment information in the grids below.
 <div style="width: 700px;">
     <ul>
         <li>
@@ -133,17 +141,17 @@ Enter immunization information in the grids below.
         </li>
         <li>Use the "Insert New" button in the treatments grid to add a new study treatment.</li>
         <li>Each treatment may consist of several study products, i.e. immunogens and/or adjuvants.</li>
-        <li>Use the "Insert New" button in the immunization schedule grid to add a new study cohort.</li>
+        <li>Use the "Insert New" button in the treatment schedule grid to add a new study cohort.</li>
         <li>Enter the number of subjects for the cohort in the count column.</li>
     </ul>
 </div>
 <div id="treatments-grid"></div>
-<div style='font-style: italic; font-size: smaller;'>* Double click to edit a treatment record and its product definition</div>
+<div style='font-style: italic; font-size: smaller; display: <%=h(isDataspace ? "none" : "inline")%>;'>* Double click to edit a treatment record and its product definition</div>
 <br/>
 <%=textLink("Manage Study Products", StudyDesignController.ManageStudyProductsAction.class)%>
 <br/><br/>
-<div id="immunization-schedule-grid"></div>
-<div style='font-style: italic; font-size: smaller;'>* Double click to edit a group/cohort and its treatment/visit map definition</div>
+<div id="treatment-schedule-grid"></div>
+<div style='font-style: italic; font-size: smaller; display: <%=h(isDataspace ? "none" : "inline")%>;'>* Double click to edit a group/cohort and its treatment/visit map definition</div>
 <br/>
 <%
     if (canManageStudy)

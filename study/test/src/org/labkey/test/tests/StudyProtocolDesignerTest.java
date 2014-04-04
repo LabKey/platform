@@ -26,7 +26,7 @@ import org.labkey.test.Locator;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.studydesigncontroller.ManageAssayScheduleTester;
-import org.labkey.test.pages.studydesigncontroller.ManageImmunizationsTester;
+import org.labkey.test.pages.studydesigncontroller.ManageTreatmentsTester;
 import org.labkey.test.pages.studydesigncontroller.ManageStudyProductsTester;
 import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.PortalHelper;
@@ -63,21 +63,21 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
     private static final String[] ADJUVANTS = {"Adjuvant1", "Freund's incomplete"};
     private static final String[] DOSE_AND_UNITS = {"35ug", "1.6e8 Ad vg"};
     private static final String[] TREATMENTS = {"Treatment1", "Treatment2"};
-    private static List<ManageImmunizationsTester.Visit> VISITS = new ArrayList<>();
-    private static List<ManageImmunizationsTester.Visit> NEW_VISITS = new ArrayList<>();
+    private static List<ManageTreatmentsTester.Visit> VISITS = new ArrayList<>();
+    private static List<ManageTreatmentsTester.Visit> NEW_VISITS = new ArrayList<>();
     private static final String[] NEW_ASSAYS = {"Elispot", "Neutralizing Antibodies", "ICS"};
     private static final String[] NEW_COHORTS = {"TestCohort", "OtherTestCohort"};
     
     public StudyProtocolDesignerTest()
     {
         super();
-        VISITS.add(new ManageImmunizationsTester.Visit("Enrollment"));
-        VISITS.add(new ManageImmunizationsTester.Visit("Visit 1"));
-        VISITS.add(new ManageImmunizationsTester.Visit("Visit 2"));
-        VISITS.add(new ManageImmunizationsTester.Visit("Visit 3"));
-        VISITS.add(new ManageImmunizationsTester.Visit("Visit 4"));
-        NEW_VISITS.add(new ManageImmunizationsTester.Visit("NewVisit1", 6, 7));
-        NEW_VISITS.add(new ManageImmunizationsTester.Visit("NewVisit2", 8, 8));
+        VISITS.add(new ManageTreatmentsTester.Visit("Enrollment"));
+        VISITS.add(new ManageTreatmentsTester.Visit("Visit 1"));
+        VISITS.add(new ManageTreatmentsTester.Visit("Visit 2"));
+        VISITS.add(new ManageTreatmentsTester.Visit("Visit 3"));
+        VISITS.add(new ManageTreatmentsTester.Visit("Visit 4"));
+        NEW_VISITS.add(new ManageTreatmentsTester.Visit("NewVisit1", 6, 7));
+        NEW_VISITS.add(new ManageTreatmentsTester.Visit("NewVisit2", 8, 8));
     }
 
     @BeforeClass
@@ -113,7 +113,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
     {
         testVaccineDesign();
         preTest();
-        testImmunizationSchedule();
+        testTreatmentSchedule();
         preTest();
         testAssaySchedule();
         testExportImport();
@@ -124,7 +124,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
     {
         Locator editButton = PortalHelper.Locators.webPart("Vaccine Design").append(Locator.navButton("Edit"));
         clickAndWait(editButton);
-        assertElementPresent(Locator.linkWithText("Manage Immunizations"));
+        assertElementPresent(Locator.linkWithText("Manage Treatments"));
 
         ManageStudyProductsTester vaccineDesign = new ManageStudyProductsTester(this);
 
@@ -142,34 +142,34 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
     }
 
     @LogMethod
-    public void testImmunizationSchedule()
+    public void testTreatmentSchedule()
     {
         Locator editButton = PortalHelper.Locators.webPart("Immunization Schedule").append(Locator.navButton("Edit"));
         clickAndWait(editButton);
 
-        ManageImmunizationsTester immunizations = new ManageImmunizationsTester(this);
+        ManageTreatmentsTester treatments = new ManageTreatmentsTester(this);
 
-        immunizations.insertNewTreatment(TREATMENTS[0], null,
-                new ManageImmunizationsTester.TreatmentComponent(IMMUNOGENS[0], DOSE_AND_UNITS[0], ROUTES[0]),
-                new ManageImmunizationsTester.TreatmentComponent(IMMUNOGENS[1], DOSE_AND_UNITS[1], ROUTES[0]));
+        treatments.insertNewTreatment(TREATMENTS[0], null,
+                new ManageTreatmentsTester.TreatmentComponent(IMMUNOGENS[0], DOSE_AND_UNITS[0], ROUTES[0]),
+                new ManageTreatmentsTester.TreatmentComponent(IMMUNOGENS[1], DOSE_AND_UNITS[1], ROUTES[0]));
 
-        immunizations.insertNewTreatment(TREATMENTS[1], null,
-                new ManageImmunizationsTester.TreatmentComponent(IMMUNOGENS[2], DOSE_AND_UNITS[1], ROUTES[0]));
+        treatments.insertNewTreatment(TREATMENTS[1], null,
+                new ManageTreatmentsTester.TreatmentComponent(IMMUNOGENS[2], DOSE_AND_UNITS[1], ROUTES[0]));
 
 
-        immunizations.insertNewCohort(NEW_COHORTS[0], 2,
-                new ManageImmunizationsTester.TreatmentVisit(TREATMENTS[0], VISITS.get(0), false),
-                new ManageImmunizationsTester.TreatmentVisit(TREATMENTS[1], VISITS.get(2), false));
+        treatments.insertNewCohort(NEW_COHORTS[0], 2,
+                new ManageTreatmentsTester.TreatmentVisit(TREATMENTS[0], VISITS.get(0), false),
+                new ManageTreatmentsTester.TreatmentVisit(TREATMENTS[1], VISITS.get(2), false));
 
-        immunizations.insertNewCohort(NEW_COHORTS[1], 5,
-                new ManageImmunizationsTester.TreatmentVisit(TREATMENTS[0], VISITS.get(0), false),
-//                new ManageImmunizationsTester.TreatmentVisit(TREATMENTS[1], NEW_VISITS.get(0), true), //TODO: Creating a second new visit triggers a page load
-                new ManageImmunizationsTester.TreatmentVisit(TREATMENTS[1], NEW_VISITS.get(1), true));
+        treatments.insertNewCohort(NEW_COHORTS[1], 5,
+                new ManageTreatmentsTester.TreatmentVisit(TREATMENTS[0], VISITS.get(0), false),
+//                new ManageTreatmentsTester.TreatmentVisit(TREATMENTS[1], NEW_VISITS.get(0), true), //TODO: Creating a second new visit triggers a page load
+                new ManageTreatmentsTester.TreatmentVisit(TREATMENTS[1], NEW_VISITS.get(1), true));
 
-        immunizations.addTreatmentVisitMappingsToExistingCohort(COHORTS[0],
-                new ManageImmunizationsTester.TreatmentVisit(TREATMENTS[0], VISITS.get(0), false),
-                new ManageImmunizationsTester.TreatmentVisit(TREATMENTS[1], NEW_VISITS.get(0), true),
-                new ManageImmunizationsTester.TreatmentVisit(TREATMENTS[0], VISITS.get(1), false));
+        treatments.addTreatmentVisitMappingsToExistingCohort(COHORTS[0],
+                new ManageTreatmentsTester.TreatmentVisit(TREATMENTS[0], VISITS.get(0), false),
+                new ManageTreatmentsTester.TreatmentVisit(TREATMENTS[1], NEW_VISITS.get(0), true),
+                new ManageTreatmentsTester.TreatmentVisit(TREATMENTS[0], VISITS.get(1), false));
     }
 
     @LogMethod
@@ -214,7 +214,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
 
         verifyImmunogenTable();
         verifyAdjuvantTable();
-        verifyImmunizationSchedule();
+        verifyTreatmentSchedule();
         verifyAssaySchedule();
     }
 
@@ -253,7 +253,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
     }
 
     @LogMethod(quiet = true)
-    private void verifyImmunizationSchedule()
+    private void verifyTreatmentSchedule()
     {
         Locator.XPathLocator scheduleGrid = Locators.studyProtocolWebpartGrid("Immunization Schedule");
         String gridText = getText(scheduleGrid);
@@ -265,7 +265,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
 
         for (String expectedText : expectedTexts)
         {
-            assertTrue("Vaccine design immunization schedule did not contain: " + expectedText, gridText.contains(expectedText));
+            assertTrue("Vaccine design treatment schedule did not contain: " + expectedText, gridText.contains(expectedText));
         }
     }
 

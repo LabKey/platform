@@ -247,9 +247,9 @@
         <td><%= textLink("Manage Study Products", StudyDesignController.ManageStudyProductsAction.class) %></td>
     </tr>
     <tr>
-        <th align="left">Treatments/Immunizations</th>
+        <th align="left">Treatments</th>
         <td>This study defines <%= getStudyTreatments(user).size() %> treatments</td>
-        <td><%= textLink("Manage Immunizations", StudyDesignController.ManageImmunizationsAction.class) %></td>
+        <td><%= textLink("Manage Treatments", StudyDesignController.ManageTreatmentsAction.class) %></td>
     </tr>
     <tr>
         <th align="left">Assay Schedule</th>

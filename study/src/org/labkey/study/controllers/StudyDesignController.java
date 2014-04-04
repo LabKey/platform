@@ -31,7 +31,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.StudyImmunizationSchedule;
+import org.labkey.study.model.StudyTreatmentSchedule;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.ProductAntigenImpl;
@@ -48,7 +48,6 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -118,11 +117,11 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermissionClass(UpdatePermission.class)
-    public class ManageImmunizationsAction extends SimpleViewAction<Object>
+    public class ManageTreatmentsAction extends SimpleViewAction<Object>
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/study/view/studydesign/manageImmunizations.jsp", o);
+            return new JspView<>("/org/labkey/study/view/studydesign/manageTreatments.jsp", o);
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -130,7 +129,7 @@ public class StudyDesignController extends BaseStudyController
             setHelpTopic("studyDesign#immun");
             if (getContainer().hasPermission(getUser(), ManageStudyPermission.class))
                 root.addChild("Manage Study", new ActionURL(StudyController.ManageStudyAction.class, getContainer()));
-            return root.addChild("Manage Immunizations");
+            return root.addChild("Manage Treatments");
         }
     }
 
@@ -256,7 +255,7 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetStudyImmunizationSchedule extends ApiAction<Object>
+    public class GetStudyTreatmentSchedule extends ApiAction<Object>
     {
         private StudyImpl _study;
 
@@ -272,20 +271,20 @@ public class StudyDesignController extends BaseStudyController
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            StudyImmunizationSchedule immunizationSchedule = new StudyImmunizationSchedule(getContainer());
+            StudyTreatmentSchedule treatmentSchedule = new StudyTreatmentSchedule(getContainer());
 
             // include all cohorts for the study, regardless of it they have associated visits or not
-            immunizationSchedule.setCohorts(StudyManager.getInstance().getCohorts(getContainer(), getUser()));
+            treatmentSchedule.setCohorts(StudyManager.getInstance().getCohorts(getContainer(), getUser()));
 
             // include all visits from the study, ordered by visit display order
-            immunizationSchedule.setVisits(StudyManager.getInstance().getVisits(_study, Visit.Order.DISPLAY));
+            treatmentSchedule.setVisits(StudyManager.getInstance().getVisits(_study, Visit.Order.DISPLAY));
 
             // include all treatments for the study
-            immunizationSchedule.setTreatments(TreatmentManager.getInstance().getStudyTreatments(getContainer(), getUser()));
+            treatmentSchedule.setTreatments(TreatmentManager.getInstance().getStudyTreatments(getContainer(), getUser()));
 
-            resp.put("mapping", immunizationSchedule.serializeCohortMapping());
-            resp.put("visits", immunizationSchedule.serializeVisits());
-            resp.put("treatments", immunizationSchedule.serializeTreatments());
+            resp.put("mapping", treatmentSchedule.serializeCohortMapping());
+            resp.put("visits", treatmentSchedule.serializeVisits());
+            resp.put("treatments", treatmentSchedule.serializeTreatments());
             resp.put("success", true);
 
             return resp;
@@ -323,10 +322,10 @@ public class StudyDesignController extends BaseStudyController
     }
 
     @RequiresPermissionClass(UpdatePermission.class)
-    public class UpdateStudyImmunizationScheduleAction extends ApiAction<StudyImmunizationSchedule>
+    public class UpdateStudyTreatmentScheduleAction extends ApiAction<StudyTreatmentSchedule>
     {
         @Override
-        public void validateForm(StudyImmunizationSchedule form, Errors errors)
+        public void validateForm(StudyTreatmentSchedule form, Errors errors)
         {
             if (form.getCohortLabel() == null)
                 errors.reject(ERROR_MSG, "Cohort label is required.");
@@ -345,7 +344,7 @@ public class StudyDesignController extends BaseStudyController
         }
 
         @Override
-        public ApiResponse execute(StudyImmunizationSchedule form, BindException errors) throws Exception
+        public ApiResponse execute(StudyTreatmentSchedule form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
             Study study = StudyManager.getInstance().getStudy(getContainer());
@@ -364,7 +363,7 @@ public class StudyDesignController extends BaseStudyController
                 throw new IllegalStateException("A study does not exist in this folder");
         }
 
-        private CohortImpl insertOrUpdateCohort(StudyImmunizationSchedule form, Study study) throws Exception
+        private CohortImpl insertOrUpdateCohort(StudyTreatmentSchedule form, Study study) throws Exception
         {
             CohortImpl cohort;
             if (form.getCohortRowId() != null)
@@ -383,7 +382,7 @@ public class StudyDesignController extends BaseStudyController
             return cohort;
         }
 
-        private void updateTreatmentVisitMapping(StudyImmunizationSchedule form, CohortImpl cohort)
+        private void updateTreatmentVisitMapping(StudyTreatmentSchedule form, CohortImpl cohort)
         {
             if (cohort != null)
             {

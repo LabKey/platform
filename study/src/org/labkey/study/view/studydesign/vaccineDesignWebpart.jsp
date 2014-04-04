@@ -36,7 +36,7 @@
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
-        resources.add(ClientDependency.fromFilePath("study/ImmunizationSchedule.js"));
+        resources.add(ClientDependency.fromFilePath("study/StudyVaccineDesign.js"));
         resources.add(ClientDependency.fromFilePath("study/StudyVaccineDesign.css"));
         return resources;
     }

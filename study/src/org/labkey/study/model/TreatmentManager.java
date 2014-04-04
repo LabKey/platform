@@ -150,7 +150,7 @@ public class TreatmentManager
         return new TableSelector(ti, filter, new Sort("CohortId")).getArrayList(TreatmentVisitMapImpl.class);
     }
 
-    public List<VisitImpl> getVisitsForImmunizationSchedule(Container container)
+    public List<VisitImpl> getVisitsForTreatmentSchedule(Container container)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         List<Integer> visitRowIds = new TableSelector(StudySchema.getInstance().getTableInfoTreatmentVisitMap(),
@@ -367,11 +367,11 @@ public class TreatmentManager
                 populateLookupTables();
                 populateStudyProducts();
                 populateTreatments();
-                populateImmunizationSchedule();
+                populateTreatmentSchedule();
 
                 verifyStudyProducts();
                 verifyTreatments();
-                verifyImmunizationSchedule();
+                verifyTreatmentSchedule();
                 verifyCleanUpTreatmentData();
             }
             finally
@@ -424,12 +424,12 @@ public class TreatmentManager
             verifyTreatmentProductMapRecords(_treatments.get(1).getRowId(), 0);
         }
 
-        private void verifyImmunizationSchedule()
+        private void verifyTreatmentSchedule()
         {
             verifyTreatmentVisitMapRecords(8);
 
             _visits.add(StudyManager.getInstance().createVisit(_junitStudy, _user, new VisitImpl(_container, 3.0, "Visit 3", Visit.Type.FINAL_VISIT)));
-            assertEquals("Unexpected number of immunization schedule visits", 2, _manager.getVisitsForImmunizationSchedule(_container).size());
+            assertEquals("Unexpected number of treatment schedule visits", 2, _manager.getVisitsForTreatmentSchedule(_container).size());
         }
 
         private void verifyTreatments()
@@ -469,7 +469,7 @@ public class TreatmentManager
                 assertEquals("Unexpected product lookup value", _lookups.get("ImmunogenType"), immunogen.getType());
         }
 
-        private void populateImmunizationSchedule() throws SQLException, ServletException
+        private void populateTreatmentSchedule() throws SQLException, ServletException
         {
             _cohorts.add(CohortManager.getInstance().createCohort(_junitStudy, _user, "Cohort1", true, 10, null));
             _cohorts.add(CohortManager.getInstance().createCohort(_junitStudy, _user, "Cohort2", true, 20, null));

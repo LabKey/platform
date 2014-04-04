@@ -16,6 +16,7 @@
  */
 %>
 
+<%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
@@ -25,11 +26,15 @@
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
-        resources.add(ClientDependency.fromFilePath("study/ImmunizationSchedule.js"));
+        resources.add(ClientDependency.fromFilePath("study/StudyVaccineDesign.js"));
         resources.add(ClientDependency.fromFilePath("dataview/DataViewsPanel.css"));
         resources.add(ClientDependency.fromFilePath("study/StudyVaccineDesign.css"));
         return resources;
     }
+%>
+<%
+    Container c = getContainer();
+    boolean isDataspaceStudy = c.getProject() != null && c.getProject().isDataspace() && !c.isDataspace();
 %>
 
 <style>
@@ -54,11 +59,13 @@
 <script type="text/javascript">
     Ext4.onReady(function(){
         var immunogensGrid = Ext4.create('LABKEY.ext4.ImmunogensGrid', {
-            renderTo : "immunogens-grid"
+            renderTo : "immunogens-grid",
+            disableEdit : <%=isDataspaceStudy%>
         });
 
         var adjuvantsGrid = Ext4.create('LABKEY.ext4.AdjuvantsGrid', {
-            renderTo : "adjuvants-grid"
+            renderTo : "adjuvants-grid",
+            disableEdit : <%=isDataspaceStudy%>
         });
 
         var projectMenu = null;
@@ -122,14 +129,14 @@ Enter vaccine design information in the grids below.
         <li>Each immunogen and adjuvant in the study should be listed on one row of the grids below.</li>
         <li>Immunogens and adjuvants should have unique names.</li>
         <li>If possible, the immunogen description should include specific sequences of HIV Antigens included in the immunogen.</li>
-        <li>Use the manage immunizations page to describe the schedule of immunizations and combinations of immunogens and adjuvants administered at each timepoint.</li>
+        <li>Use the manage treatments page to describe the schedule of treatments and combinations of immunogens and adjuvants administered at each timepoint.</li>
     </ul>
 </div>
 <div id="immunogens-grid"></div>
-<span style='font-style: italic; font-size: smaller;'>* Double click a row to edit the label and type, double click the HIV Antigens cell to edit them separately</span>
+<span style='font-style: italic; font-size: smaller; display: <%=h(isDataspaceStudy ? "none" : "inline")%>;'>* Double click a row to edit the label and type, double click the HIV Antigens cell to edit them separately</span>
 <br/><br/>
 <div id="adjuvants-grid"></div>
-<span style='font-style: italic; font-size: smaller;'>* Double click a row to edit the label</span>
+<span style='font-style: italic; font-size: smaller; display: <%=h(isDataspaceStudy ? "none" : "inline")%>;'>* Double click a row to edit the label</span>
 <br/><br/>
-<%=textLink("Manage Immunizations", StudyDesignController.ManageImmunizationsAction.class)%>
+<%=textLink("Manage Treatments", StudyDesignController.ManageTreatmentsAction.class)%>
 

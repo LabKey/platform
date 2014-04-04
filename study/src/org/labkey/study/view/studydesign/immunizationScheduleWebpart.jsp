@@ -39,7 +39,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("study/ImmunizationSchedule.js"));
+        resources.add(ClientDependency.fromFilePath("study/StudyVaccineDesign.js"));
         resources.add(ClientDependency.fromFilePath("study/StudyVaccineDesign.css"));
         return resources;
     }
@@ -83,13 +83,13 @@
         {
 %>
             To change the set of groups/cohorts and edit the immunization schedule, click the edit button below.<br/>
-            <%= button("Edit").href(StudyDesignController.ManageImmunizationsAction.class, getContainer()) %>
+            <%= button("Edit").href(StudyDesignController.ManageTreatmentsAction.class, getContainer()) %>
 <%
         }
 
         if (cohorts.size() > 0)
         {
-            List<VisitImpl> visits = study.getVisitsForImmunizationSchedule();
+            List<VisitImpl> visits = study.getVisitsForTreatmentSchedule();
 %>
         <table class='study-vaccine-design'>
             <tr><td>

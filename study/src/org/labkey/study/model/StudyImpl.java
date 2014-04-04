@@ -65,7 +65,6 @@ import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.DataspaceStudyFolderType;
 import org.labkey.study.SampleManager;
-import org.labkey.study.StudyModule;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.samples.settings.RepositorySettings;
@@ -309,9 +308,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Override
-    public List<VisitImpl> getVisitsForImmunizationSchedule()
+    public List<VisitImpl> getVisitsForTreatmentSchedule()
     {
-        return TreatmentManager.getInstance().getVisitsForImmunizationSchedule(getContainer());
+        return TreatmentManager.getInstance().getVisitsForTreatmentSchedule(getContainer());
     }
 
     @Override

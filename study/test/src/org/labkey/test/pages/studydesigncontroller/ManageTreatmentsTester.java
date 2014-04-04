@@ -23,15 +23,15 @@ import org.labkey.test.util.LogMethod;
 import org.labkey.test.util.LoggedParam;
 
 /**
- * org.labkey.study.controllers.StudyDesignController#ManageImmunizationsAction
+ * org.labkey.study.controllers.StudyDesignController#ManageTreatmentsAction
  */
-public class ManageImmunizationsTester
+public class ManageTreatmentsTester
 {
     private BaseWebDriverTest _test;
 
     private static final Locator.XPathLocator editCohortWindow = Ext4Helper.Locators.window("Edit Cohort");
 
-    public ManageImmunizationsTester(BaseWebDriverTest test)
+    public ManageTreatmentsTester(BaseWebDriverTest test)
     {
         _test = test;
         _test.waitForElement(Locator.id("treatments-grid"));
@@ -65,8 +65,8 @@ public class ManageImmunizationsTester
     @LogMethod
     public void insertNewCohort(@LoggedParam String label, @Nullable Integer count, TreatmentVisit... treatmentVisits)
     {
-        Locator.XPathLocator immunizationScheduleGrid = Locator.id("immunization-schedule-grid");
-        Locator.XPathLocator insertNewCohortButton = immunizationScheduleGrid.append(Locator.ext4Button("Insert New"));
+        Locator.XPathLocator treatmentScheduleGrid = Locator.id("treatment-schedule-grid");
+        Locator.XPathLocator insertNewCohortButton = treatmentScheduleGrid.append(Locator.ext4Button("Insert New"));
 
         _test.click(insertNewCohortButton);
         _test._extHelper.waitForExtDialog("Insert Cohort");
@@ -74,12 +74,12 @@ public class ManageImmunizationsTester
         if (count != null) _test.setFormElement(Locator.name("SubjectCount"), count.toString());
         _test.clickButton("Next", 0);
         addTreatmentVisitMappingsToSelectedCohort(treatmentVisits);
-        _test.waitForElement(Locators.immunizationScheduleCohortRow(label));
+        _test.waitForElement(Locators.treatmentScheduleCohortRow(label));
     }
 
     public void editCohort(String label)
     {
-        Locator.XPathLocator groupRow = Locators.immunizationScheduleCohortRow(label);
+        Locator.XPathLocator groupRow = Locators.treatmentScheduleCohortRow(label);
         _test.doubleClick(groupRow);
         _test.waitForElement(editCohortWindow);
     }
@@ -261,9 +261,9 @@ public class ManageImmunizationsTester
                     .withPredicate(Locator.tagWithText("label", label + ":"));
         }
 
-        public static Locator.XPathLocator immunizationScheduleCohortRow(String label)
+        public static Locator.XPathLocator treatmentScheduleCohortRow(String label)
         {
-            return Locator.id("immunization-schedule-grid").append(Locator.tagWithAttribute("tr", "role", "row").append("/td[1]").withText(label));
+            return Locator.id("treatment-schedule-grid").append(Locator.tagWithAttribute("tr", "role", "row").append("/td[1]").withText(label));
         }
     }
 }

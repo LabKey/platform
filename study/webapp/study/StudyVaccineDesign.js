@@ -15,6 +15,8 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
     filterRole : null,
     hiddenColumns : ["RowId"],
     visitNoun : 'Visit',
+    subjectNoun : 'Subject',
+    disableEdit : false, // for a dataspace project, some scenarios don't make sense to allow insert/update
     gridForceFit : true,
     frame  : false,
 
@@ -80,10 +82,12 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
             forceFit: this.gridForceFit,
             editable: true,
             emptyText: this.emptyText,
+            border: false,
             dockedItems: [{
                 xtype: 'toolbar',
                 dock: 'top',
                 border: false,
+                hidden: this.disableEdit,
                 items: [
                     {
                         text : 'Insert New',
@@ -109,7 +113,8 @@ Ext4.define('LABKEY.ext4.BaseVaccineDesignGrid', {
 
         // block the default LABKEY.ext4.GridPanel cellediting using beforeedit and add our own double click event
         this.grid.on('beforeedit', function(){ return false; });
-        this.grid.on('celldblclick', this.showInsertUpdate, this);
+        if (!this.disableEdit)
+            this.grid.on('celldblclick', this.showInsertUpdate, this);
 
         return this.grid;
     },
@@ -330,13 +335,12 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
         });
 
         columns.push({ header: 'HIV Antigens', dataIndex: 'Antigens', editable: false, menuDisabled: true, minWidth: 500, renderer: function(value, metadata) {
-            if (value && value.length > 0)
+            if (!this.disableEdit)
             {
-                metadata.tdAttr = 'data-qtip="Double click this cell to edit the HIV Antigens for this Immunogen."';
-            }
-            else
-            {
-                metadata.tdAttr = 'data-qtip="Double click this cell to add HIV Antigens for this Immunogen."';
+                if (value && value.length > 0)
+                    metadata.tdAttr = 'data-qtip="Double click this cell to edit the HIV Antigens for this Immunogen."';
+                else
+                    metadata.tdAttr = 'data-qtip="Double click this cell to add HIV Antigens for this Immunogen."';
             }
 
             return this.vaccineDesignHelper.getHIVAntigenDisplay(value, this.geneStore, this.subtypeStore);
@@ -406,6 +410,7 @@ Ext4.define('LABKEY.ext4.ImmunogensGrid', {
                 xtype: 'toolbar',
                 dock: 'top',
                 border: false,
+                hidden: this.disableEdit,
                 items: [
                     {
                         text : 'Insert New',
@@ -560,7 +565,7 @@ Ext4.define('LABKEY.ext4.VaccineDesignDisplayHelper', {
         return html;
     },
 
-    // helper function to be used by immunization schedule webpart and manage immunizations page
+    // helper function to be used by immunization schedule webpart and manage treatments page
     getTreatmentProductDisplay : function(productArr, routeStore) {
         var html = "";
         var helper = new LABKEY.ext4.VaccineDesignDisplayHelper();
@@ -951,7 +956,7 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
                     }, this, {single: true});
                 }
 
-                // we also need to tell the Immunization Schedule grid that it needs to reload the treatment info
+                // we also need to tell the Treatment Schedule grid that it needs to reload the treatment info
                 this.fireEvent('treatmentsAddedOrRemoved');
 
                 // reload the grid store
@@ -965,7 +970,7 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
         Ext4.Msg.show({
             cls: 'data-window',
             title: "Confirm Deletion",
-            msg: "Are you sure you want to delete the selected treatment? Note: this will also delete any usages of this treatment record in the Immunization Schedule grid below.",
+            msg: "Are you sure you want to delete the selected treatment? Note: this will also delete any usages of this treatment record in the Treatment Schedule grid below.",
             icon: Ext4.Msg.QUESTION,
             buttons: Ext4.Msg.YESNO,
             scope: this,
@@ -991,7 +996,7 @@ Ext4.define('LABKEY.ext4.TreatmentsGrid', {
                     // reload the grid store
                     this.grid.getStore().reload();
 
-                    // we also need to tell the Immunization Schedule grid that it needs to reload the treatment info
+                    // we also need to tell the Treatment Schedule grid that it needs to reload the treatment info
                     this.fireEvent('treatmentsAddedOrRemoved');
                 }
             });
@@ -1026,14 +1031,14 @@ Ext4.define('LABKEY.ext4.LinkButton', {
     handler: Ext4.emptyFn
 });
 
-Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
+Ext4.define('LABKEY.ext4.TreatmentScheduleGrid', {
 
     extend : 'LABKEY.ext4.BaseVaccineDesignGrid',
 
-    title : 'Immunization Schedule',
+    title : 'Treatment Schedule',
     filterRole : 'Cohort',
     hiddenColumns : ["RowId"],
-    width : 300, // initial grid width for cohort label and count columns
+    width : 340, // initial grid width for cohort label and count columns
     emptyText : 'No groups / cohorts defined',
     mappingData : null,
     treatmentStore : null,
@@ -1048,13 +1053,13 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
     initComponent : function() {
         this.callParent();
 
-        this.getImmunizationScheduleData(true);
+        this.getTreatmentScheduleData(true);
     },
 
-    getImmunizationScheduleData : function(init) {
-        // query for the immunization schedule data (including all cohorts, all treatments, and mapping info for each cohort/visit/treatment)
+    getTreatmentScheduleData : function(init) {
+        // query for the treatment schedule data (including all cohorts, all treatments, and mapping info for each cohort/visit/treatment)
         Ext4.Ajax.request({
-            url : LABKEY.ActionURL.buildURL("study-design", "getStudyImmunizationSchedule"),
+            url : LABKEY.ActionURL.buildURL("study-design", "getStudyTreatmentSchedule"),
             method : 'GET',
             success : function(resp){
                 var o = Ext4.decode(resp.responseText);
@@ -1147,8 +1152,8 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
     getColumnConfig : function(ignoreVisitCols) {
         var columns = [
             { header: 'Row ID', dataIndex: 'RowId', editable: false, menuDisabled: true, width: 100 },
-            { header: 'Group / Cohort', dataIndex: 'Label', editable: true, menuDisabled: true, width: 225 },
-            { header: 'Count', dataIndex: 'SubjectCount', editable: true, menuDisabled: true, width: 75 }
+            { header: 'Group / Cohort', dataIndex: 'Label', editable: true, menuDisabled: true, width: 205 },
+            { header: this.subjectNoun + ' Count', dataIndex: 'SubjectCount', editable: true, menuDisabled: true, width: 135 }
         ];
 
         if (!ignoreVisitCols && this.visitStore)
@@ -1371,7 +1376,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
         });
 
         Ext4.Ajax.request({
-            url     : LABKEY.ActionURL.buildURL('study-design', 'updateStudyImmunizationSchedule.api'),
+            url     : LABKEY.ActionURL.buildURL('study-design', 'updateStudyTreatmentSchedule.api'),
             method  : 'POST',
             jsonData: {
                 cohort: cohortValues,
@@ -1395,7 +1400,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
                 if (this.reloadOnSubmit)
                     window.location.reload();
                 else
-                    this.getImmunizationScheduleData(false);
+                    this.getTreatmentScheduleData(false);
             },
             failure: function(response) {
                 var resp = Ext4.decode(response.responseText);
@@ -1433,7 +1438,7 @@ Ext4.define('LABKEY.ext4.ImmunizationScheduleGrid', {
                 scope: this,
                 success : function(resp){
                     // reload the grid store data
-                    this.getImmunizationScheduleData(false);
+                    this.getTreatmentScheduleData(false);
                 },
                 failure : function(response) {
                     var resp = Ext4.decode(response.responseText);
