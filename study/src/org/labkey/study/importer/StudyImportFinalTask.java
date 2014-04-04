@@ -136,21 +136,6 @@ public class StudyImportFinalTask extends PipelineJob.Task<StudyImportFinalTask.
         }
     }
 
-    public static void doEarlyTableImport(PipelineJob job, StudyImportContext ctx, BindException errors) throws PipelineJobException
-    {
-        // study design importers
-        try
-        {
-            VirtualFile vf = ctx.getRoot();
-            new TreatmentDataImporter().process(ctx, vf, errors);
-            new AssayScheduleImporter().process(ctx, vf, errors);
-        }
-        catch (Exception e)
-        {
-            throw new PipelineJobException(e);
-        }
-    }
-
     public static class Factory extends AbstractTaskFactory<AbstractTaskFactorySettings, Factory>
     {
         public Factory()
