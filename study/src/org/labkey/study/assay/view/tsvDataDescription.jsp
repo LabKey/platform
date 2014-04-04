@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2007-2013 LabKey Corporation
+ * Copyright (c) 2007-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,16 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.exp.property.DomainProperty"%>
+<%@ page import="org.labkey.api.data.ColumnRenderProperties"%>
+<%@ page import="org.labkey.api.exp.property.DomainProperty" %>
 <%@ page import="org.labkey.api.study.actions.AssayRunUploadForm" %>
 <%@ page import="org.labkey.api.study.actions.TemplateAction" %>
+<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page import="org.labkey.api.study.assay.AssayUrls" %>
 <%@ page import="org.labkey.api.study.assay.PipelineDataCollector" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
-<%@ page import="org.labkey.api.data.ColumnRenderProperties" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
-<%@ page import="org.labkey.api.study.assay.AssayProvider" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayRunUploadForm> me = (JspView<AssayRunUploadForm>) HttpView.currentView();

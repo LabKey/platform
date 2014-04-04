@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2010 LabKey Corporation
+ * Copyright (c) 2008-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,6 @@
  */
 package org.labkey.issue;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager.UserListener;
 import org.labkey.issue.model.IssueManager;
@@ -29,8 +28,6 @@ import java.beans.PropertyChangeEvent;
  */
 public class IssueUserListener implements UserListener
 {
-    private static final Logger _log = Logger.getLogger(IssueUserListener.class);
-
     public void userAddedToSite(User user)
     {
     }

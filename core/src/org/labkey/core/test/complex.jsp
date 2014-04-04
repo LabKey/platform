@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2007-2013 LabKey Corporation
+ * Copyright (c) 2007-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.action.SpringActionController" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.core.test.TestController" %>
 <%@ page import="org.springframework.validation.BindingResult" %>
 <%@ page import="org.springframework.validation.Errors" %>

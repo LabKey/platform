@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2005-2010 LabKey Corporation
+ * Copyright (c) 2005-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,6 @@
 <%@ page import="org.labkey.experiment.LSIDRelativizer" %>
 <%@ page import="org.labkey.experiment.XarExportType" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
-<%@ page import="org.labkey.api.data.DataRegionSelection" %>
-<%@ page import="org.labkey.api.data.DataRegion" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 JspView<ExperimentController.ExportBean> me = (JspView<ExperimentController.ExportBean>) HttpView.currentView();
