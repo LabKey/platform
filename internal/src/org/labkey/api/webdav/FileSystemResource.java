@@ -93,6 +93,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -389,7 +390,7 @@ public class FileSystemResource extends AbstractWebdavResource
         if (!isCollection())
             return Collections.emptyList();
         mergeFilesIfNeeded();
-        ArrayList<String> list = new ArrayList<>();
+        Set<String> result = new TreeSet<>();
         if (_files != null)
         {
             for (FileInfo file : _files)
@@ -400,13 +401,12 @@ public class FileSystemResource extends AbstractWebdavResource
                     if (null != children)
                     {
                         for (File child: children)
-                            list.add(child.getName());
+                            result.add(child.getName());
                     }
                 }
             }
         }
-        Collections.sort(list);
-        return list;
+        return result;
     }
 
 
