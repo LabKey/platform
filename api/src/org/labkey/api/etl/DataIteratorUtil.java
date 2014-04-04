@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 LabKey Corporation
+ * Copyright (c) 2011-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.labkey.api.etl;
 
 import org.apache.commons.collections15.multimap.MultiHashMap;
 import org.apache.log4j.Logger;
-import org.junit.Test;
 import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.ScrollableDataIterator;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -34,7 +34,6 @@ import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
-import org.labkey.api.util.FileType;
 import org.labkey.api.util.Pair;
 
 import java.io.File;
