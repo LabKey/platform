@@ -587,7 +587,7 @@ public class ValidationException extends Exception implements Iterable<Validatio
             {
                 return Integer.parseInt(String.valueOf(_rowNumber));
             }
-            catch (NumberFormatException _) { }
+            catch (NumberFormatException e) { }
         }
 
         return -1;
