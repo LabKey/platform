@@ -128,13 +128,13 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-io-2.3.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-io-2.4.jar!/" />
         </CLASSES>
         <JAVADOC>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-io-2.3-javadoc.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-io-2.4-javadoc.jar!/" />
         </JAVADOC>
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-io-2.3-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-io-2.4-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
@@ -167,13 +167,13 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-3.1.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-3.3.jar!/" />
         </CLASSES>
         <JAVADOC>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-3.1.javadoc.zip!/apidocs" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-3.3-javadoc.zip!/" />
         </JAVADOC>
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-3.1-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/commons-net-3.3-sources.jar!/" />
         </SOURCES>
       </library>
     </orderEntry>
