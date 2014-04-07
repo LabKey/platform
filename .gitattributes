@@ -68,6 +68,7 @@ api/src/org/labkey/api/action/SimpleApiJsonForm.java -text
 api/src/org/labkey/api/action/SimpleErrorView.java -text
 api/src/org/labkey/api/action/SimpleForwardAction.java -text
 api/src/org/labkey/api/action/SimpleRedirectAction.java -text
+api/src/org/labkey/api/action/SimpleResponse.java -text
 api/src/org/labkey/api/action/SimpleStreamAction.java -text
 api/src/org/labkey/api/action/SimpleViewAction.java -text
 api/src/org/labkey/api/action/SpringActionController.java -text
