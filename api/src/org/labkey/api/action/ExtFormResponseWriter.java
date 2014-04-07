@@ -88,7 +88,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
 
     public void write(ValidationException e) throws IOException
     {
-        writeJsonObj(toJSON(e));
+        writeObject(toJSON(e));
     }
 
     public JSONObject toJSON(ValidationException e)
@@ -143,7 +143,7 @@ public class ExtFormResponseWriter extends ApiJsonWriter
         JSONObject root = new JSONObject();
         root.put("success", false); //used by Ext forms
         root.put("errors", jsonErrors);
-        writeJsonObj(root);
+        writeObject(root);
     }
 
     public void write(Throwable e) throws IOException

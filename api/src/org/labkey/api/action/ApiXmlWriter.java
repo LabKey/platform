@@ -38,7 +38,7 @@ import java.util.Map;
 public class ApiXmlWriter extends ApiResponseWriter
 {
     private static final String ARRAY_ELEMENT_NAME = "element";
-    private static final String CONTENT_TYPE = "text/xml";
+    public static final String CONTENT_TYPE = "text/xml";
     private XMLStreamWriter _xmlWriter;
 
     public ApiXmlWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
@@ -60,7 +60,7 @@ public class ApiXmlWriter extends ApiResponseWriter
         }
     }
 
-    public void writeObject(Object value) throws XMLStreamException, IOException
+    protected void writeObject(Object value) throws IOException
     {
         if (value == null)
         {
@@ -80,41 +80,49 @@ public class ApiXmlWriter extends ApiResponseWriter
         {
             /* forget about it */
         }
-        if (value instanceof Number)
+
+        try
         {
-            _xmlWriter.writeCharacters(filter(JSONObject.numberToString((Number) value)));
+            if (value instanceof Number)
+            {
+                _xmlWriter.writeCharacters(filter(JSONObject.numberToString((Number) value)));
+            }
+            else if (value instanceof Boolean)
+            {
+                _xmlWriter.writeCharacters(filter(value.toString()));
+            }
+            else if (value instanceof JSONObject)
+            {
+                writeJsonObjInternal((JSONObject) value);
+            }
+            else if (value instanceof JSONArray)
+            {
+                writeJsonArray((JSONArray) value);
+            }
+            else if (value instanceof Map)
+            {
+                writeJsonObjInternal(new JSONObject((Map) value));
+            }
+            else if (value instanceof Collection)
+            {
+                writeJsonArray(new JSONArray((Collection) value));
+            }
+            else if (value.getClass().isArray())
+            {
+                writeJsonArray(new JSONArray(value));
+            }
+            else if (value instanceof Date)
+            {
+                _xmlWriter.writeCharacters(filter(DateUtil.formatJsonDateTime((Date) value)));
+            }
+            else
+            {
+                _xmlWriter.writeCharacters(filter(value.toString()));
+            }
         }
-        else if (value instanceof Boolean)
+        catch (XMLStreamException e)
         {
-            _xmlWriter.writeCharacters(filter(value.toString()));
-        }
-        else if (value instanceof JSONObject)
-        {
-            writeJsonObjInternal((JSONObject) value);
-        }
-        else if (value instanceof JSONArray)
-        {
-            writeJsonArray((JSONArray) value);
-        }
-        else if (value instanceof Map)
-        {
-            writeJsonObjInternal(new JSONObject((Map) value));
-        }
-        else if (value instanceof Collection)
-        {
-            writeJsonArray(new JSONArray((Collection) value));
-        }
-        else if (value.getClass().isArray())
-        {
-            writeJsonArray(new JSONArray(value));
-        }
-        else if (value instanceof Date)
-        {
-            _xmlWriter.writeCharacters(filter(DateUtil.formatJsonDateTime((Date) value)));
-        }
-        else
-        {
-            _xmlWriter.writeCharacters(filter(value.toString()));
+            throw new IOException(e);
         }
     }
 
@@ -138,26 +146,19 @@ public class ApiXmlWriter extends ApiResponseWriter
     }
 
 
-    protected void writeJsonObj(JSONObject obj) throws IOException
+    @Override
+    public void complete() throws IOException
     {
-        writeJsonObjInternal(obj);
         closeDocument();
     }
 
-    protected void writeJsonObjInternal(JSONObject obj) throws IOException
+    protected void writeJsonObjInternal(JSONObject obj) throws IOException, XMLStreamException
     {
-        try
+        for (Map.Entry<String, Object> entry : obj.entrySet())
         {
-            for (Map.Entry<String, Object> entry : obj.entrySet())
-            {
-                _xmlWriter.writeStartElement(escapeElementName(entry.getKey()));
-                writeObject(entry.getValue());
-                _xmlWriter.writeEndElement();
-            }
-        }
-        catch (XMLStreamException e)
-        {
-            throw new IOException(e);
+            _xmlWriter.writeStartElement(escapeElementName(entry.getKey()));
+            writeObject(entry.getValue());
+            _xmlWriter.writeEndElement();
         }
     }
 

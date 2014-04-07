@@ -244,7 +244,7 @@ public class QueryWebPart extends VBox
         response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         ApiJsonWriter jsonOut = new ApiJsonWriter(response);
 
-        jsonOut.write(errorResponse);
+        jsonOut.writeResponse(errorResponse);
     }
 
     protected void addViews()

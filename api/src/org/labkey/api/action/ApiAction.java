@@ -15,6 +15,10 @@
  */
 package org.labkey.api.action;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -24,6 +28,7 @@ import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.beans.MutablePropertyValues;
@@ -37,13 +42,13 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
+import java.util.Map;
 
 /**
  * Base class for API actions.
  *
  * User: Dave
  * Date: Feb 8, 2008
- * Time: 1:14:43 PM
  */
 public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 {
@@ -51,6 +56,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     private ApiResponseWriter.Format _respFormat = ApiResponseWriter.Format.JSON;
     private String _contentTypeOverride = null;
     private double _requestedApiVersion = -1;
+    private Marshaller _marshaller = null;
 
     protected enum CommonParameters
     {
@@ -60,12 +66,30 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     public ApiAction()
     {
         setUseBasicAuthentication(true);
+        _marshaller = findMarshaller();
     }
 
     public ApiAction(Class<? extends FORM> formClass)
     {
         super(formClass);
         setUseBasicAuthentication(true);
+        _marshaller = findMarshaller();
+    }
+
+    protected final Marshaller findMarshaller()
+    {
+        Marshal marshal = getClass().getAnnotation(Marshal.class);
+        if (marshal == null)
+        {
+            Class declaringClass = getClass().getDeclaringClass();
+            if (declaringClass != null)
+                marshal = (Marshal)declaringClass.getAnnotation(Marshal.class);
+        }
+
+        if (marshal != null)
+            return marshal.value();
+
+        return null;
     }
 
     protected String getCommandClassMethodName()
@@ -93,52 +117,18 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     {
         return handlePost();
     }
-    
-    
+
+
     @SuppressWarnings("TryWithIdenticalCatches")
     public ModelAndView handlePost() throws Exception
     {
         getViewContext().getResponse().setHeader("X-Robots-Tag", "noindex");
 
-        FORM form = null;
-        BindException errors = null;
-
         try
         {
-            String contentType = getViewContext().getRequest().getContentType();
-            if (null != contentType && contentType.contains(ApiJsonWriter.CONTENT_TYPE_JSON))
-            {
-                _reqFormat = ApiResponseWriter.Format.JSON;
-                JSONObject jsonObj;
-                try
-                {
-                    jsonObj = getJsonObject();
-                }
-                catch (SocketTimeoutException x)
-                {
-                    ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
-                    throw x;
-                }
-                catch (JSONException x)
-                {
-                    getViewContext().getResponse().sendError(HttpServletResponse.SC_BAD_REQUEST, x.getMessage());
-                    return null;
-                }
-                saveRequestedApiVersion(getViewContext().getRequest(), jsonObj);
-
-                form = getCommand();
-                errors = populateForm(jsonObj, form);
-            }
-            else
-            {
-                saveRequestedApiVersion(getViewContext().getRequest(), null);
-
-                if (null != getCommandClass())
-                {
-                    errors = defaultBindParameters(getCommand(), getPropertyValues());
-                    form = (FORM)errors.getTarget();
-                }
-            }
+            Pair<FORM, BindException> pair = populateForm();
+            FORM form = pair.first;
+            BindException errors = pair.second;
 
             if ("xml".equalsIgnoreCase(getViewContext().getRequest().getParameter("respFormat")))
             {
@@ -154,15 +144,15 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
             //if we had binding or validation errors,
             //return them without calling execute.
-            if(isFailure(errors))
+            if (isFailure(errors))
                 createResponseWriter().write((Errors)errors);
             else
             {
-                ApiResponse response = execute(form, errors);
+                Object response = execute(form, errors);
                 if (isFailure(errors))
                     createResponseWriter().write((Errors)errors);
                 else if (null != response)
-                    createResponseWriter().write(response);
+                    createResponseWriter().writeResponse(response);
             }
         }
         catch (BindException e)
@@ -220,13 +210,129 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         return null == o || (o instanceof String && ((String)o).isEmpty());
     }
 
+    protected Pair<FORM, BindException> populateForm() throws Exception
+    {
+        String contentType = getViewContext().getRequest().getContentType();
+        if (null != contentType)
+        {
+            if (contentType.contains(ApiJsonWriter.CONTENT_TYPE_JSON))
+            {
+                _reqFormat = ApiResponseWriter.Format.JSON;
+                return populateJsonForm();
+            }
+//            else if (contentType.contains(ApiXmlWriter.CONTENT_TYPE))
+//            {
+//                _reqFormat = ApiResponseWriter.Format.XML;
+//                return populateXmlForm();
+//            }
+        }
 
-    private double saveRequestedApiVersion(HttpServletRequest request, JSONObject jsonObj)
+        return defaultPopulateForm();
+    }
+
+    // CONSIDER: Extract ApiRequestReader similar to the ApiResponseWriter
+    // CONSIDER: Something like Jersey's MessageBodyReader? https://jax-rs-spec.java.net/nonav/2.0/apidocs/javax/ws/rs/ext/MessageBodyReader.html
+    protected Pair<FORM, BindException> populateJsonForm() throws Exception
+    {
+        if (_marshaller == Marshaller.Jackson)
+            return populateJacksonForm();
+        else
+            return populateJSONObjectForm();
+    }
+
+
+    protected Pair<FORM, BindException> defaultPopulateForm() throws Exception
+    {
+        BindException errors = null;
+        FORM form = null;
+
+        saveRequestedApiVersion(getViewContext().getRequest(), null);
+
+        if (null != getCommandClass())
+        {
+            errors = defaultBindParameters(getCommand(), getPropertyValues());
+            form = (FORM)errors.getTarget();
+        }
+
+        return Pair.of(form, errors);
+    }
+
+    /**
+     * Use Jackson to parse POST body as JSON and instantiate the FORM class directly.
+     */
+    protected Pair<FORM, BindException> populateJacksonForm() throws Exception
+    {
+        FORM form = null;
+        BindException errors = null;
+
+        try
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            Class c = getCommandClass();
+            if (c != null)
+            {
+                ObjectReader reader = mapper.reader(getCommandClass());
+                form = reader.readValue(getViewContext().getRequest().getInputStream());
+            }
+            errors = new NullSafeBindException(form, "form");
+        }
+        catch (SocketTimeoutException x)
+        {
+            ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+            throw x;
+        }
+        catch (JsonMappingException x)
+        {
+            // JSON mapping
+            if (errors == null)
+                errors = new NullSafeBindException(new Object(), "form");
+            errors.reject(SpringActionController.ERROR_MSG, "Error binding property: " + x.getMessage());
+        }
+        catch (JsonProcessingException x)
+        {
+            // Bad JSON
+            getViewContext().getResponse().sendError(HttpServletResponse.SC_BAD_REQUEST, x.getMessage());
+            return null;
+        }
+
+        saveRequestedApiVersion(getViewContext().getRequest(), form);
+        return Pair.of(form, errors);
+    }
+
+
+    /**
+     * Parse POST body as JSONObject then use either CustomApiForm or spring form binding to populate the FORM instance.
+     */
+    protected Pair<FORM, BindException> populateJSONObjectForm() throws Exception
+    {
+        JSONObject jsonObj;
+        try
+        {
+            jsonObj = getJsonObject();
+        }
+        catch (SocketTimeoutException x)
+        {
+            ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+            throw x;
+        }
+        catch (JSONException x)
+        {
+            getViewContext().getResponse().sendError(HttpServletResponse.SC_BAD_REQUEST, x.getMessage());
+            return null;
+        }
+        saveRequestedApiVersion(getViewContext().getRequest(), jsonObj);
+
+        FORM form = getCommand();
+        BindException errors = populateForm(jsonObj, form);
+        return Pair.of(form, errors);
+    }
+
+    protected double saveRequestedApiVersion(HttpServletRequest request, Object obj)
     {
         Object o = null;
-        
-        if (null != jsonObj && jsonObj.has(CommonParameters.apiVersion.name()))
-            o = jsonObj.get(CommonParameters.apiVersion.name());
+
+        if (null != obj && obj instanceof Map && ((Map)obj).containsKey(CommonParameters.apiVersion.name()))
+            o = ((Map)obj).get(CommonParameters.apiVersion.name());
         if (_empty(o))
             o = getProperty(CommonParameters.apiVersion.name());
         if (_empty(o))
@@ -245,7 +351,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         {
             _requestedApiVersion = 0;
         }
-        
+
         return _requestedApiVersion;
     }
 
@@ -337,7 +443,10 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     public ApiResponseWriter createResponseWriter() throws IOException
     {
         // Let the response format dictate how we write the response. Typically JSON, but not always.
-        return _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride());
+        ApiResponseWriter writer = _respFormat.createWriter(getViewContext().getResponse(), getContentTypeOverride());
+        if (_marshaller == Marshaller.Jackson)
+            writer.setSerializeViaJacksonAnnotations(true);
+        return writer;
     }
 
     public ApiResponseWriter.Format getResponseFormat()
@@ -369,5 +478,6 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         return getViewContext().getRequest() instanceof MockHttpServletRequest;
     }
 
-    public abstract ApiResponse execute(FORM form, BindException errors) throws Exception;
+    public abstract Object execute(FORM form, BindException errors) throws Exception;
+
 }

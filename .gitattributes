@@ -31,6 +31,7 @@ api/src/org/labkey/api/action/ApiStreamResponse.java -text
 api/src/org/labkey/api/action/ApiUsageException.java -text
 api/src/org/labkey/api/action/ApiVersion.java -text
 api/src/org/labkey/api/action/ApiXmlWriter.java -text
+api/src/org/labkey/api/action/BaseApiAction.java -text
 api/src/org/labkey/api/action/BaseViewAction.java -text
 api/src/org/labkey/api/action/ConfirmAction.java -text
 api/src/org/labkey/api/action/CustomApiForm.java -text
@@ -53,6 +54,8 @@ api/src/org/labkey/api/action/HasViewContext.java -text
 api/src/org/labkey/api/action/IgnoresAllocationTracking.java -text
 api/src/org/labkey/api/action/InterfaceAction.java -text
 api/src/org/labkey/api/action/LabkeyError.java -text
+api/src/org/labkey/api/action/Marshal.java -text
+api/src/org/labkey/api/action/Marshaller.java -text
 api/src/org/labkey/api/action/MutatingApiAction.java -text
 api/src/org/labkey/api/action/NavTrailAction.java -text
 api/src/org/labkey/api/action/NullSafeBindException.java -text

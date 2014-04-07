@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 
@@ -76,9 +75,8 @@ public class ApiJsonWriter extends ApiResponseWriter
     }
 
     @Override
-    protected void writeJsonObj(JSONObject json) throws IOException
+    public void complete() throws IOException
     {
-        writeValue(json);
         jg.flush();
     }
 
@@ -115,10 +113,10 @@ public class ApiJsonWriter extends ApiResponseWriter
     public void writeProperty(String name, Object value) throws IOException
     {
         jg.writeFieldName(name);
-        writeValue(value);
+        writeObject(value);
     }
 
-    private void writeValue (Object value) throws IOException
+    protected void writeObject(Object value) throws IOException
     {
         if (value instanceof String || value instanceof Number || value instanceof Boolean || value == null)
         {
@@ -138,7 +136,7 @@ public class ApiJsonWriter extends ApiResponseWriter
             {
                 String key = o.toString();
                 jg.writeFieldName(key);
-                writeValue(((Map) value).get(o));
+                writeObject(((Map) value).get(o));
             }
             jg.writeEndObject();
             if (badContext)
@@ -151,7 +149,7 @@ public class ApiJsonWriter extends ApiResponseWriter
             jg.writeStartArray();
             for (Object element : (Collection<?>)value)
             {
-                writeValue(element);
+                writeObject(element);
             }
             jg.writeEndArray();
         }
@@ -160,7 +158,7 @@ public class ApiJsonWriter extends ApiResponseWriter
             jg.writeStartArray();
             for (int i = 0; i < Array.getLength(value); i++)
             {
-                writeValue(Array.get(value, i));
+                writeObject(Array.get(value, i));
             }
             jg.writeEndArray();
         }
@@ -169,7 +167,7 @@ public class ApiJsonWriter extends ApiResponseWriter
             jg.writeStartArray();
             for (int i = 0; i < ((JSONArray) value).length(); i++)
             {
-                writeValue(((JSONArray)value).get(i));
+                writeObject(((JSONArray) value).get(i));
             }
             jg.writeEndArray();
         }
@@ -206,6 +204,6 @@ public class ApiJsonWriter extends ApiResponseWriter
     @Override
     public void writeListEntry(Object entry) throws IOException
     {
-        writeValue(entry);
+        writeObject(entry);
     }
 }

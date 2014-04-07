@@ -15,12 +15,14 @@
  */
 package org.labkey.api.action;
 
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
@@ -139,7 +141,29 @@ public abstract class ApiResponseWriter
         errorResponseStatus = status;
     }
 
-    public void write(ApiResponse response) throws IOException
+    /**
+     * Entry-point for writing a response back to the client in the desired format.
+     * The object argument may be an response object to be serialized or an {@link ApiResponse} instance.
+     *
+     * @param obj
+     * @throws IOException
+     */
+    public final void writeResponse(Object obj) throws IOException
+    {
+        try
+        {
+            if (obj instanceof ApiResponse)
+                write((ApiResponse)obj);
+            else
+                writeObject(obj);
+        }
+        finally
+        {
+            complete();
+        }
+    }
+
+    protected void write(ApiResponse response) throws IOException
     {
         if (response instanceof ApiStreamResponse)
         {
@@ -149,6 +173,9 @@ public abstract class ApiResponseWriter
             }
             catch (Exception e)
             {
+                ExceptionUtil.logExceptionToMothership(null, e);
+                Logger.getLogger(ApiResponseWriter.class).warn("ApiResponseWriter exception: ", e);
+
                 //at this point, we can't guarantee a legitimate
                 //JSON response, and we need to write the exception
                 //back so the client can tell something went wrong
@@ -162,12 +189,13 @@ public abstract class ApiResponseWriter
         }
         else
         {
-            JSONObject json = new JSONObject(response.getProperties());
-            writeJsonObj(json);
+            writeObject(response.getProperties());
         }
     }
 
-    protected abstract void writeJsonObj(JSONObject json) throws IOException;
+    protected abstract void writeObject(Object object) throws IOException;
+
+    protected abstract void complete() throws IOException;
 
     public void write(Throwable e, int status) throws IOException
     {
@@ -187,7 +215,7 @@ public abstract class ApiResponseWriter
         jsonObj.put("exceptionClass", e.getClass().getName());
         jsonObj.put("stackTrace", e.getStackTrace());
 
-        writeJsonObj(jsonObj);
+        writeObject(jsonObj);
     }
 
 
@@ -219,7 +247,7 @@ public abstract class ApiResponseWriter
         if (null != getResponse())
             getResponse().setStatus(errorResponseStatus);
 
-        writeJsonObj(getJSON(e));
+        writeObject(getJSON(e));
     }
 
     public JSONObject getJSON(BatchValidationException e) throws IOException
@@ -250,7 +278,7 @@ public abstract class ApiResponseWriter
 
         JSONObject obj = toJSON(e);
         obj.put("success", Boolean.FALSE);
-        writeJsonObj(obj);
+        writeObject(obj);
     }
 
     protected JSONObject toJSON(ValidationException e)
@@ -309,7 +337,7 @@ public abstract class ApiResponseWriter
         JSONObject root = new JSONObject();
         root.put("exception", pair.getKey());
         root.put("errors", pair.getValue());
-        writeJsonObj(root);
+        writeObject(root);
     }
 
     /**

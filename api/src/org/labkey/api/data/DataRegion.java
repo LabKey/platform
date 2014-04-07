@@ -1793,7 +1793,7 @@ public class DataRegion extends AbstractDataRegion
         out.write("(function(){\n");
         out.write("var dr = DataRegionForm[" + PageFlowUtil.jsString(getName()) + "] = {config:{}};\n");
         out.write("dr.config.selectRowsReponse = ");
-        jsonOut.write(json);
+        jsonOut.writeResponse(json);
         out.write(";\n");
 
         out.write(")})();\n");
