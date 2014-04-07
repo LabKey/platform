@@ -138,6 +138,7 @@ import org.labkey.core.analytics.AnalyticsServiceImpl;
 import org.labkey.core.attachment.AttachmentServiceImpl;
 import org.labkey.core.dialect.PostgreSqlDialectFactory;
 import org.labkey.core.junit.JunitController;
+import org.labkey.core.admin.logger.LoggerController;
 import org.labkey.core.login.DbLoginAuthenticationProvider;
 import org.labkey.core.login.LoginController;
 import org.labkey.core.portal.PortalJUnitTest;
@@ -238,6 +239,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("analytics", AnalyticsController.class);
         addController("project", ProjectController.class);
         addController("util", UtilController.class);
+        addController("logger", LoggerController.class);
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.register(new AttachmentServiceImpl());
@@ -615,6 +617,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AdminController.registerAdminConsoleLinks();
         AnalyticsController.registerAdminConsoleLinks();
         UserController.registerAdminConsoleLinks();
+        LoggerController.registerAdminConsoleLinks();
 
         WebdavService.get().setResolver(WebdavResolverImpl.get());
         ModuleLoader.getInstance().registerFolderType(this, new WorkbookFolderType());

@@ -707,6 +707,8 @@ core/src/org/labkey/core/admin/importer/PageImporterFactory.java -text
 core/src/org/labkey/core/admin/importer/SearchSettingsImporterFactory.java -text
 core/src/org/labkey/core/admin/importer/SubfolderImporterFactory.java -text
 core/src/org/labkey/core/admin/installComplete.jsp -text
+core/src/org/labkey/core/admin/logger/LoggerController.java -text
+core/src/org/labkey/core/admin/logger/manage.jsp -text
 core/src/org/labkey/core/admin/logging.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelProperties.jsp -text
 core/src/org/labkey/core/admin/lookAndFeelResources.jsp -text
