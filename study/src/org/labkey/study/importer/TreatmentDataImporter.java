@@ -137,7 +137,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
     private class ProductAntigenTableTransform implements TransformHelper
     {
         @Override
-        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows)
         {
             List<Map<String, Object>> newRows = new ArrayList<>();
 
@@ -152,7 +152,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     newRow.put("ProductId", _productIdMap.get(newRow.get("ProductId")));
                 }
                 else
-                    throw new ImportException("Unable to locate productId in the imported rows");
+                    ctx.getLogger().warn("Unable to locate productId in the imported rows, this record will be ignored");
             }
             return newRows;
         }
@@ -164,7 +164,7 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
     private class TreatmentProductTransform implements TransformHelper
     {
         @Override
-        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows)
         {
             List<Map<String, Object>> newRows = new ArrayList<>();
 
@@ -179,14 +179,14 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     newRow.put("ProductId", _productIdMap.get(newRow.get("ProductId")));
                 }
                 else
-                    throw new ImportException("Unable to locate productId in the imported rows");
+                    ctx.getLogger().warn("Unable to locate productId in the imported rows, this record will be ignored");
 
                 if (newRow.containsKey("TreatmentId") && _treatmentIdMap.containsKey(newRow.get("TreatmentId")))
                 {
                     newRow.put("TreatmentId", _treatmentIdMap.get(newRow.get("TreatmentId")));
                 }
                 else
-                    throw new ImportException("Unable to locate treatmentId in the imported rows");
+                    ctx.getLogger().warn("Unable to locate treatmentId in the imported rows, this record will be ignored");
             }
             return newRows;
         }

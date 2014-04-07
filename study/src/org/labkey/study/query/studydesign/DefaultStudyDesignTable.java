@@ -73,19 +73,23 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
             if (null != propertyURI)
             {
                 PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyURI, schema.getContainer());
-                if (null != pd && pd.getLookupQuery() != null)
-                    col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
-
-                if (pd != null && pd.getPropertyType() == PropertyType.MULTI_LINE)
+                if (pd != null)
                 {
-                    col.setDisplayColumnFactory(new DisplayColumnFactory() {
-                        public DisplayColumn createRenderer(ColumnInfo colInfo)
-                        {
-                            DataColumn dc = new DataColumn(colInfo);
-                            dc.setPreserveNewlines(true);
-                            return dc;
-                        }
-                    });
+                    if (pd.getLookupQuery() != null)
+                        col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
+
+                    if (pd.getPropertyType() == PropertyType.MULTI_LINE)
+                    {
+                        col.setDisplayColumnFactory(new DisplayColumnFactory() {
+                            public DisplayColumn createRenderer(ColumnInfo colInfo)
+                            {
+                                DataColumn dc = new DataColumn(colInfo);
+                                dc.setPreserveNewlines(true);
+                                return dc;
+                            }
+                        });
+                    }
+                    col.setName(pd.getName());
                 }
             }
         }

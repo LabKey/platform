@@ -143,7 +143,7 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
                     newRow.put("TreatmentId", _treatmentIdMap.get(newRow.get("TreatmentId")));
                 }
                 else
-                    throw new ImportException("Unable to locate treatmentId in the imported rows");
+                    ctx.getLogger().warn("Unable to locate treatmentId in the imported rows, this record will be ignored");
             }
             return newRows;
         }

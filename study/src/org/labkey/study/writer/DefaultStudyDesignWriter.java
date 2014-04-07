@@ -57,7 +57,7 @@ public abstract class DefaultStudyDesignWriter
         for (String tableName : tableNames)
         {
             StudyQuerySchema.TablePackage tableAndContainer = schema.getTablePackage(ctx, projectSchema, tableName);
-            writeTableData(ctx, vf, tableAndContainer.getTableInfo(), getDefaultColumns(tableAndContainer.getTableInfo()), containerFilter);
+            writeTableData(ctx, vf, tableAndContainer.getTableInfo(), getDefaultColumns(ctx, tableAndContainer.getTableInfo()), containerFilter);
         }
     }
 
@@ -97,7 +97,7 @@ public abstract class DefaultStudyDesignWriter
     /**
      * Returns the default visible columns for a table but ignores the standard columns
      */
-    protected List<ColumnInfo> getDefaultColumns(TableInfo tableInfo)
+    protected List<ColumnInfo> getDefaultColumns(StudyExportContext ctx, TableInfo tableInfo)
     {
         List<ColumnInfo> columns = new ArrayList<>();
 
@@ -113,7 +113,7 @@ public abstract class DefaultStudyDesignWriter
                 continue;
             if (FieldKey.fromParts("ModifiedBy").equals(col.getFieldKey()))
                 continue;
-            if (col.isProtected())
+            if (ctx.isRemoveProtected() && col.isProtected())
                 continue;
 
             columns.add(col);
@@ -145,7 +145,10 @@ public abstract class DefaultStudyDesignWriter
                 for (ColumnInfo col : tinfo.getColumns())
                 {
                     if (!col.isKeyField() && propertyMap.containsKey(col.getName()))
-                        columns.add(col);
+                    {
+                        if (!ctx.isRemoveProtected() || !col.isProtected())
+                            columns.add(col);
+                    }
                 }
                 TableInfoWriter writer = new PropertyTableWriter(tablePackage.getContainer(), tinfo, domain, columns);        // TODO: container correct?
                 writer.writeTable(tableXml);

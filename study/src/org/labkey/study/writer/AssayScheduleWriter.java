@@ -69,7 +69,7 @@ public class AssayScheduleWriter extends DefaultStudyDesignWriter implements Int
         // add the assay schedule specific tables
         TableInfo assaySpecimenTable = schema.getTable(StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
 
-        writeTableData(ctx, vf, assaySpecimenTable, getDefaultColumns(assaySpecimenTable), null);
+        writeTableData(ctx, vf, assaySpecimenTable, getDefaultColumns(ctx, assaySpecimenTable), null);
         writeAssaySpecimenVisitMap(ctx, vf);
 
         // assay schedule lookup values can have data stored at both the project and folder level

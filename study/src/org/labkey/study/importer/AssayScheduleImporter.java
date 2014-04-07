@@ -120,7 +120,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
         }
 
         @Override
-        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows)
         {
             List<Map<String, Object>> newRows = new ArrayList<>();
             initializeDataMaps(ctx);
@@ -147,7 +147,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                     newRow.put("AssaySpecimenId", _assaySpecimenIdMap.get(newRow.get("AssaySpecimenId")));
                 }
                 else
-                    throw new ImportException("Unable to locate assaySpecimenId in the imported rows");
+                    ctx.getLogger().warn("Unable to locate assaySpecimenId in the imported rows, this record will be ignored");
             }
             return newRows;
         }
