@@ -3451,6 +3451,7 @@ study/src/org/labkey/study/importer/StudyPropertiesImporter.java -text
 study/src/org/labkey/study/importer/StudyReload.java -text
 study/src/org/labkey/study/importer/StudyViewsImporter.java -text
 study/src/org/labkey/study/importer/TreatmentDataImporter.java -text
+study/src/org/labkey/study/importer/TreatmentVisitMapImporter.java -text
 study/src/org/labkey/study/importer/ViewCategoryImporter.java -text
 study/src/org/labkey/study/importer/VisitCohortAssigner.java -text
 study/src/org/labkey/study/importer/VisitImporter.java -text

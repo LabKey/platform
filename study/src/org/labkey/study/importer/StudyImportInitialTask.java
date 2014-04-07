@@ -211,8 +211,6 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
             // study.objective, study.personnel, and study.studyproperties tables
             new StudyPropertiesImporter().process(ctx, vf, errors);
-            new TreatmentDataImporter().process(ctx, vf, errors);
-            new AssayScheduleImporter().process(ctx, vf, errors);
 
             new MissingValueImporterFactory().create().process(job, ctx, vf);
             new QcStatesImporter().process(ctx, vf, errors);
@@ -220,6 +218,9 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
             new VisitImporter().process(ctx, vf, errors);
             if (errors.hasErrors())
                 throwFirstErrorAsPiplineJobException(errors);
+
+            new TreatmentDataImporter().process(ctx, vf, errors);
+            new AssayScheduleImporter().process(ctx, vf, errors);
 
             new DatasetDefinitionImporter().process(ctx, vf, errors);
             if (errors.hasErrors())

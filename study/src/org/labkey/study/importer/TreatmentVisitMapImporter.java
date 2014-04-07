@@ -23,6 +23,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.xml.ExportDirType;
@@ -34,27 +35,26 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Created by klum on 1/24/14.
+ * Created by cnathe on 4/4/14.
  */
-public class AssayScheduleImporter extends DefaultStudyDesignImporter implements InternalStudyImporter
+public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implements InternalStudyImporter
 {
-    // shared transform data structures
-    Map<Object, Object> _assaySpecimenIdMap = new HashMap<>();
+    Map<Object, Object> _treatmentIdMap = new HashMap<>();
+    Map<String, CohortImpl> _cohortMap = new HashMap<>();
     Map<Double, Visit> _visitMap = new HashMap<>();
 
-    private NonSharedTableMapBuilder _assaySpecimenTransform = new NonSharedTableMapBuilder(_assaySpecimenIdMap);
-    private AssaySpecimenVisitMapTransform _assaySpecimenVisitMapTransform = new AssaySpecimenVisitMapTransform();
+    private TreatmentVisitMapTransform _treatmentVisitMapTransform = new TreatmentVisitMapTransform();
 
     @Override
     public String getDescription()
     {
-        return "assay schedule data";
+        return "treatment visit map data";
     }
 
     @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
-        ExportDirType dirType = ctx.getXml().getAssaySchedule();
+        ExportDirType dirType = ctx.getXml().getTreatmentData();
 
         if (dirType != null)
         {
@@ -64,35 +64,12 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                 DbScope scope = StudySchema.getInstance().getSchema().getScope();
                 try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
-                    // import project-level tables first, since study-level may reference them
                     StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
-
-                    // study design tables
-                    ctx.getLogger().info("Importing study design data tables");
-                    List<String> studyDesignTableNames = new ArrayList<>();
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_ASSAYS_TABLE_NAME);
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_LABS_TABLE_NAME);
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
-                    studyDesignTableNames.add(StudyQuerySchema.STUDY_DESIGN_UNITS_TABLE_NAME);
-
                     StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
-                    for (String studyDesignTableName : studyDesignTableNames)
-                    {
-                        StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, studyDesignTableName);
-                        importTableData(ctx, vf, tablePackage, null, new PreserveExistingProjectData(ctx.getUser(), tablePackage.getTableInfo(), "Name", null, null));
-                    }
 
-                    // assay specimen table
-                    ctx.getLogger().info("Importing assay schedule tables");
-                    StudyQuerySchema.TablePackage assaySpecimenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.ASSAY_SPECIMEN_TABLE_NAME);
-                    importTableData(ctx, vf, assaySpecimenTablePackage, _assaySpecimenTransform, null);
-
-                    // assay specimen visit table
-                    StudyQuerySchema.TablePackage assaySpecimenVisitTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.ASSAY_SPECIMEN_VISIT_TABLE_NAME);
-                    importTableData(ctx, vf, assaySpecimenVisitTablePackage, null, _assaySpecimenVisitMapTransform);
-
-                    if (ctx.isDataspaceProject())
-                        ctx.addTableIdMap("AssaySpecimen", _assaySpecimenIdMap);
+                    // Note: TreatmentVisitMap info needs to import after cohorts are loaded (issue 19947).
+                    StudyQuerySchema.TablePackage treatmentVisitMapTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
+                    importTableData(ctx, vf, treatmentVisitMapTablePackage, null, _treatmentVisitMapTransform);
 
                     transaction.commit();
                 }
@@ -102,14 +79,22 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
         }
     }
 
-    /**
-     * Transform which manages visit, and assay specimen FKs from the AssaySpecimenVisit table
-     */
-    private class AssaySpecimenVisitMapTransform implements TransformHelper
+    private class TreatmentVisitMapTransform implements TransformHelper
     {
         private void initializeDataMaps(StudyImportContext ctx)
         {
             Study study = StudyService.get().getStudy(ctx.getContainer());
+
+            _treatmentIdMap = ctx.getTableIdMap("Treatment");
+
+            if (_cohortMap.isEmpty())
+            {
+                for (CohortImpl cohort : StudyManager.getInstance().getCohorts(ctx.getContainer(), ctx.getUser()))
+                {
+                    _cohortMap.put(cohort.getLabel(), cohort);
+                }
+            }
+
             if (_visitMap.isEmpty())
             {
                 for (Visit visit : StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM))
@@ -131,6 +116,17 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                 newRows.add(newRow);
                 newRow.putAll(row);
 
+                if (newRow.containsKey("cohortId") && newRow.containsKey("cohortId.label"))
+                {
+                    CohortImpl cohort = _cohortMap.get(newRow.get("cohortId.label"));
+                    if (cohort != null)
+                        newRow.put("cohortId", cohort.getRowId());
+                    else
+                        ctx.getLogger().warn("No cohort found matching the label : " + newRow.get("cohortId.label"));
+
+                    newRow.remove("cohortId.label");
+                }
+
                 if (newRow.containsKey("visitId") && newRow.containsKey("visitId.sequenceNumMin"))
                 {
                     Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(newRow.get("visitId.sequenceNumMin"))));
@@ -142,12 +138,12 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                     newRow.remove("visitId.sequenceNumMin");
                 }
 
-                if (newRow.containsKey("AssaySpecimenId") && _assaySpecimenIdMap.containsKey(newRow.get("AssaySpecimenId")))
+                if (newRow.containsKey("TreatmentId") && _treatmentIdMap.containsKey(newRow.get("TreatmentId")))
                 {
-                    newRow.put("AssaySpecimenId", _assaySpecimenIdMap.get(newRow.get("AssaySpecimenId")));
+                    newRow.put("TreatmentId", _treatmentIdMap.get(newRow.get("TreatmentId")));
                 }
                 else
-                    throw new ImportException("Unable to locate assaySpecimenId in the imported rows");
+                    throw new ImportException("Unable to locate treatmentId in the imported rows");
             }
             return newRows;
         }

@@ -1878,7 +1878,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         if (null != _studyImportContext && null != match.getFk())
                         {
                             String lookupTableName = match.getFk().getLookupTableName();
-                            dataspaceTableIdMap = _studyImportContext.getDataspaceTableIdMap(lookupTableName);
+                            dataspaceTableIdMap = _studyImportContext.getTableIdMap(lookupTableName);
                         }
                         out = it.addSharedTableLookupColumn(in, extraColumnFieldKey, match.getFk(),
                                 dataspaceTableIdMap);

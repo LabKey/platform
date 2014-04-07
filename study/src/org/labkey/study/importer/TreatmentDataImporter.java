@@ -18,8 +18,6 @@ package org.labkey.study.importer;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
@@ -53,7 +51,6 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
     private ProductAntigenTableTransform _productAntigenTableTransform = new ProductAntigenTableTransform();
     private NonSharedTableMapBuilder _treatmentTableMapBuilder = new NonSharedTableMapBuilder(_treatmentIdMap);
     private TreatmentProductTransform _treatmentProductTransform = new TreatmentProductTransform();
-    private TreatmentVisitMapTransform _treatmentVisitMapTransform = new TreatmentVisitMapTransform();
 
     @Override
     public String getDescription()
@@ -119,14 +116,14 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     StudyQuerySchema.TablePackage treatmentProductTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);
                     importTableData(ctx, vf, treatmentProductTablePackage, null, _treatmentProductTransform);
 
-                    StudyQuerySchema.TablePackage treatmentVisitMapTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.TREATMENT_VISIT_MAP_TABLE_NAME);
-                    importTableData(ctx, vf, treatmentVisitMapTablePackage, null, _treatmentVisitMapTransform);
+                    // Note: TreatmentVisitMap info needs to import after cohorts are loaded (issue 19947).
+                    // That part of the TreatmentDataImporter will happen separately and be called accordingly (see TreatmentVisitMapImporter)
+                    ctx.addTableIdMap("Treatment", _treatmentIdMap);
 
                     if (ctx.isDataspaceProject())
                     {
-                        ctx.addDataspaceTableIdMap("Product", _productIdMap);
-                        ctx.addDataspaceTableIdMap("ProductAntigen", _productAntigenIdMap);
-                        ctx.addDataspaceTableIdMap("Treatment", _treatmentIdMap);
+                        ctx.addTableIdMap("Product", _productIdMap);
+                        ctx.addTableIdMap("ProductAntigen", _productAntigenIdMap);
                     }
 
                     transaction.commit();
@@ -183,77 +180,6 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                 }
                 else
                     throw new ImportException("Unable to locate productId in the imported rows");
-
-                if (newRow.containsKey("TreatmentId") && _treatmentIdMap.containsKey(newRow.get("TreatmentId")))
-                {
-                    newRow.put("TreatmentId", _treatmentIdMap.get(newRow.get("TreatmentId")));
-                }
-                else
-                    throw new ImportException("Unable to locate treatmentId in the imported rows");
-            }
-            return newRows;
-        }
-    }
-
-    /**
-     * Transform which manages cohort, visit, and treatment FKs from the TreatmentVisitMap table
-     */
-    private class TreatmentVisitMapTransform implements TransformHelper
-    {
-        private void initializeDataMaps(StudyImportContext ctx)
-        {
-            Study study = StudyService.get().getStudy(ctx.getContainer());
-
-            if (_cohortMap.isEmpty())
-            {
-                for (CohortImpl cohort : StudyManager.getInstance().getCohorts(ctx.getContainer(), ctx.getUser()))
-                {
-                    _cohortMap.put(cohort.getLabel(), cohort);
-                }
-            }
-
-            if (_visitMap.isEmpty())
-            {
-                for (Visit visit : StudyManager.getInstance().getVisits(study, Visit.Order.SEQUENCE_NUM))
-                {
-                    _visitMap.put(visit.getSequenceNumMin(), visit);
-                }
-            }
-        }
-
-        @Override
-        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
-        {
-            List<Map<String, Object>> newRows = new ArrayList<>();
-            initializeDataMaps(ctx);
-
-            for (Map<String, Object> row : origRows)
-            {
-                Map<String, Object> newRow = new CaseInsensitiveHashMap<>();
-                newRows.add(newRow);
-                newRow.putAll(row);
-
-                if (newRow.containsKey("cohortId") && newRow.containsKey("cohortId.label"))
-                {
-                    CohortImpl cohort = _cohortMap.get(newRow.get("cohortId.label"));
-                    if (cohort != null)
-                        newRow.put("cohortId", cohort.getRowId());
-                    else
-                        ctx.getLogger().warn("No cohort found matching the label : " + newRow.get("cohortId.label"));
-
-                    newRow.remove("cohortId.label");
-                }
-
-                if (newRow.containsKey("visitId") && newRow.containsKey("visitId.sequenceNumMin"))
-                {
-                    Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(newRow.get("visitId.sequenceNumMin"))));
-                    if (visit != null)
-                        newRow.put("visitId", visit.getId());
-                    else
-                        ctx.getLogger().warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
-
-                    newRow.remove("visitId.sequenceNumMin");
-                }
 
                 if (newRow.containsKey("TreatmentId") && _treatmentIdMap.containsKey(newRow.get("TreatmentId")))
                 {

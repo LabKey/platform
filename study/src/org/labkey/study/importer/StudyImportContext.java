@@ -43,8 +43,8 @@ public class StudyImportContext extends AbstractContext
 {
     private File _studyXml;
 
-    // Study design table maps (used only in Dataspace case) to help map dataset FKs
-    private Map<String, Map<Object, Object>> _dataspaceTableIdMapMap = new CaseInsensitiveHashMap<>();
+    // Study design table maps (primarily in Dataspace case) to help map dataset FKs
+    private Map<String, Map<Object, Object>> _tableIdMapMap = new CaseInsensitiveHashMap<>();
 
     // Required for xstream serialization on Java 7
     @SuppressWarnings({"UnusedDeclaration"})
@@ -170,16 +170,16 @@ public class StudyImportContext extends AbstractContext
         }
     }
 
-    public Map<Object, Object> getDataspaceTableIdMap(String key)
+    public Map<Object, Object> getTableIdMap(String key)
     {
-        Map<Object, Object> map = _dataspaceTableIdMapMap.get(key);
+        Map<Object, Object> map = _tableIdMapMap.get(key);
         if (null == map)
             map = Collections.emptyMap();
         return map;
     }
 
-    public void addDataspaceTableIdMap(String key, @NotNull Map<Object, Object> map)
+    public void addTableIdMap(String key, @NotNull Map<Object, Object> map)
     {
-        _dataspaceTableIdMapMap.put(key, map);
+        _tableIdMapMap.put(key, map);
     }
 }

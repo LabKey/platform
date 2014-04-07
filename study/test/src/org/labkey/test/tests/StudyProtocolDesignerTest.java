@@ -204,13 +204,13 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
         _containerHelper.createSubfolder(getProjectName(), importedFolder, null);
         importFolderFromZip(downloadedFolder);
 
-        verifyImportedProtocol();
+        verifyImportedProtocol(importedFolder);
     }
 
     @LogMethod
-    private void verifyImportedProtocol()
+    private void verifyImportedProtocol(String folderName)
     {
-        clickFolder(getFolderName());
+        clickFolder(folderName);
 
         verifyImmunogenTable();
         verifyAdjuvantTable();
@@ -262,11 +262,15 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
         expectedTexts.addAll(Arrays.asList(COHORTS));
         expectedTexts.addAll(Arrays.asList(NEW_COHORTS));
         expectedTexts.addAll(Arrays.asList(TREATMENTS));
+        expectedTexts.addAll(Arrays.asList(new String[]{"Visit 1", "Visit 2", "NewVisit1", "NewVisit2"}));
 
         for (String expectedText : expectedTexts)
         {
             assertTrue("Vaccine design treatment schedule did not contain: " + expectedText, gridText.contains(expectedText));
         }
+
+        assertEquals("Wrong number of scheduled treatment/visits", 4, StringUtils.countMatches(gridText, TREATMENTS[0]));
+        assertEquals("Wrong number of scheduled treatment/visits", 3, StringUtils.countMatches(gridText, TREATMENTS[1]));
     }
 
     @LogMethod(quiet = true)
@@ -278,6 +282,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
         List<String> expectedTexts = new ArrayList<>();
         expectedTexts.addAll(Arrays.asList(NEW_ASSAYS));
         expectedTexts.addAll(Arrays.asList(LABS));
+        expectedTexts.addAll(Arrays.asList(new String[]{"Enrollment", "Visit 1", "Visit 2", "NewVisit1", "NewVisit2"}));
 
         for (String expectedText : expectedTexts)
         {
