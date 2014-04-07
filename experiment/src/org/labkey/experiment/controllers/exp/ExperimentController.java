@@ -195,6 +195,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -1526,7 +1527,7 @@ public class ExperimentController extends SpringActionController
                     JSONObject workbookJSON = new JSONObject();
                     workbookJSON.put("fileName", realContent.getName());
                     workbookJSON.put("sheets", sheetsArray);
-                    writer.write(new ApiSimpleResponse(workbookJSON));
+                    writer.writeResponse(new ApiSimpleResponse(workbookJSON));
                     return null;
                 }
 
@@ -3639,9 +3640,9 @@ public class ExperimentController extends SpringActionController
             }
 
             String html = message + "<form action=\"" + getViewContext().cloneActionURL().setAction(ResolveLSIDAction.class) + "\">" +
-                    " Lsid <input type=text name=lsid value=\"" +
+                    " Lsid <input type=text name=lsid size=\"80\" value=\"" +
                     (form.getLsid() == null ? "" : PageFlowUtil.filter(form.getLsid())) + "\">" +
-                    PageFlowUtil.button("Go").submit(true).attributes("size=\"60\"") + "</form>";
+                    PageFlowUtil.button("Go").submit(true) + "</form>";
 
             return new HtmlView("Enter LSID", html);
         }

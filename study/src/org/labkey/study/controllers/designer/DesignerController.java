@@ -371,7 +371,7 @@ public class DesignerController extends SpringActionController
             }
 
             ApiJsonWriter writer = new ApiJsonWriter(getViewContext().getResponse());
-            writer.write(new ApiSimpleResponse("studyDesigns", jsonDesigns));
+            writer.writeResponse(new ApiSimpleResponse("studyDesigns", jsonDesigns));
             return null;
         }
 
