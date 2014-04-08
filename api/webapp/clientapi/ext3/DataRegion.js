@@ -59,6 +59,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                  *  showInitialSelectMessage
                  *  selectionKey - Unique string used to associate the selected items with this DataRegion, schema, query, and view.
                  *  selectorCols
+                 *  selectedCount - Count of currently selected rows. Updated as selection changes. Read-only.
                  *  requestURL
                  */
                 Ext.apply(this, config, {
@@ -105,12 +106,12 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                          * @event
                          * @description Fires when the selection has changed.
                          * @param {LABKEY.DataRegion} dataRegion this DataRegion object.
-                         * @param {Boolean} hasSelection true if the DataRegion has at least one selected item.
+                         * @param {Number} selectedCount The number of selected rows in this DataRegion.
                          * @example Here's an example of subscribing to the DataRegion 'selectchange' event:
                          * Ext.ComponentMgr.onAvailable("dataRegionName", function (dataregion) {
-                 *     dataregion.on('selectchange', function (dr, selected) {
+                 *     dataregion.on('selectchange', function (dr, selectedCount) {
                  *         var btn = Ext.get('my-button-id');
-                 *         if (selected) {
+                 *         if (selectedCount > 0) {
                  *             btn.replaceClass('labkey-disabled-button', 'labkey-button');
                  *         }
                  *         else {
@@ -476,14 +477,12 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 {
                     if (toggle && this.isPageSelected())
                         toggle.checked = true;
-                    this.onSelectChange(this.getSelectionCount());
                 }
                 else
                 {
                     if (toggle)
                         toggle.checked = false;
                     this.removeMessage('selection');
-                    this.onSelectChange(this.getSelectionCount());
                 }
             },
 
@@ -587,7 +586,23 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     this.addMessage("Error sending selection.");
                 }
 
-                config.failure = LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config) || failureCb, this, true);
+                // Update the current selectedCount on this DataRegion and fire the 'selectchange' event
+                var self = this;
+                function updateSelected(data, response, options) {
+                    self.selectedCount = data.count;
+                    self.onSelectChange();
+                }
+
+                // Chain updateSelected with the user-provided success callback
+                var success = LABKEY.Utils.getOnSuccess(config);
+                if (success) {
+                    success = updateSelected.createSequence(success, config.scope);
+                } else {
+                    success = updateSelected;
+                }
+                config.success = success;
+
+                config.failure = LABKEY.Utils.getOnFailure(config) || failureCb;
 
                 this.selectionModified = true;
                 LABKEY.DataRegion.setSelected(config);
@@ -609,22 +624,11 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     var toggle = this.form[".toggle"];
                     if (toggle)
                         toggle.checked = checked;
-                    this.onSelectChange(this.getSelectionCount());
-                    this.setSelected({ids: ids, checked: checked, success: function (response, options)
+                    this.setSelected({ids: ids, checked: checked, success: function (data, response, options)
                     {
-                        var count = 0;
-                        try
+                        if (data && data.count > 0)
                         {
-                            var json = Ext.util.JSON.decode(response.responseText);
-                            if (json)
-                                count = json.count;
-                        }
-                        catch (e)
-                        {
-                            // ignore
-                        }
-                        if (count > 0)
-                        {
+                            var count = data.count;
                             var msg;
                             if (this.totalRows)
                             {
@@ -732,7 +736,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 if (!this.selectionKey)
                     return;
 
-                this.onSelectChange(0);
+                this.selectedCount = 0;
+                this.onSelectChange();
 
                 config = config || { };
                 config.selectionKey = this.selectionKey;
@@ -1354,12 +1359,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                             var toggle = this.form[".toggle"];
                             if (toggle)
                                 toggle.checked = true;
-                            this.onSelectChange(this.getSelectionCount());
                         }
-                        else
-                        {
-                            this.onSelectChange(this.getSelectionCount());
-                        }
+                        this.onSelectChange();
                     }
                     else
                     {
@@ -1578,10 +1579,10 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
             },
 
             // private
-            onSelectChange: function (selectionCount)
+            onSelectChange: function ()
             {
-                this.fireEvent('selectchange', this, selectionCount);
-                this.updateRequiresSelectionButtons(selectionCount);
+                this.fireEvent('selectchange', this, this.selectedCount);
+                this.updateRequiresSelectionButtons(this.selectedCount);
             },
 
             onButtonClick: function (buttonId)
@@ -2502,8 +2503,8 @@ LABKEY.DataRegion.setSelected = function (config)
         method: "POST",
         params: params,
         scope: config.scope,
-        success: LABKEY.Utils.getOnSuccess(config),
-        failure: LABKEY.Utils.getOnFailure(config)
+        success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+        failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
     });
 };
 

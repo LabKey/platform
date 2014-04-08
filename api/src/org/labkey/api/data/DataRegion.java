@@ -1003,8 +1003,9 @@ public class DataRegion extends AbstractDataRegion
         dataRegionJSON.put("showRecordSelectors", showRecordSelectors);
         dataRegionJSON.put("showSelectMessage", _showSelectMessage);
         dataRegionJSON.put("selectionKey", getSelectionKey());
-        dataRegionJSON.put("requestURL", ctx.getViewContext().getActionURL().toString());
         dataRegionJSON.put("selectorCols", _recordSelectorValueColumns == null ? null : _recordSelectorValueColumns);
+        dataRegionJSON.put("selectedCount", ctx.getAllSelected().size());
+        dataRegionJSON.put("requestURL", ctx.getViewContext().getActionURL().toString());
         dataRegionJSON.put("pkCols", getTable() == null ? null : getTable().getPkColumnNames());
         JSONArray columnsJSON = new JSONArray(JsonWriter.getNativeColProps(getColumnsForMetadata(), null, false).values());
         // Write out a pretty-printed version in dev mode
