@@ -82,7 +82,7 @@ public interface UserSchemaCustomizer
             }
             catch (ClassNotFoundException | InstantiationException | IllegalAccessException e)
             {
-                Logger.getLogger(UserSchemaCustomizer.class).warn(e.getMessage());
+                Logger.getLogger(UserSchemaCustomizer.class).warn(e.toString());
             }
 
             return null;
