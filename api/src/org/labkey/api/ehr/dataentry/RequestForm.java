@@ -67,7 +67,10 @@ public class RequestForm extends AbstractDataEntryForm
     @Override
     protected List<String> getMoreActionButtonConfigs()
     {
-        return Collections.emptyList();
+        List<String> ret = new ArrayList<>();
+        ret.add("COPY_REQUEST");
+
+        return ret;
     }
 
     @Override

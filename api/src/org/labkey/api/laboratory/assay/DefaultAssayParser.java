@@ -15,10 +15,13 @@
  */
 package org.labkey.api.laboratory.assay;
 
+import au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -42,6 +45,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.ExcelFactory;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayProvider;
@@ -54,12 +58,16 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -261,40 +269,38 @@ public class DefaultAssayParser implements AssayParser
     }
 
     /**
-     * Reads the raw input file and provides some basic normalization before passing to TabLoader
+     * Reads the raw input file and converts it to a regular TSV file before passing to TabLoader
+     * This allows subclasses to transform the input data
      * @return
      */
     protected String readRawFile(ImportContext context) throws BatchValidationException
     {
-        BufferedReader fileReader = null;
-        File inputFile = context.getFile();
-
-        try
+        try (StringWriter sw = new StringWriter(); CSVWriter out = new CSVWriter(sw, '\t'))
         {
-            StringBuffer sb = new StringBuffer((int)(inputFile.length()));
-
             // replace "n/a" with "0"
-            fileReader = new BufferedReader(new FileReader(inputFile));
-            String line;
-            Pattern p = Pattern.compile("\\bn/a\\b");
-            while (null != (line = fileReader.readLine()))
+            for (List<String> line : getFileLines(context.getFile()))
             {
-                line = p.matcher(line).replaceAll("0");
-                if (!StringUtils.isEmpty(line))
-                    sb.append(line).append("\n");
+                List<String> cells = new ArrayList<>();
+                for (Object cell : line)
+                {
+                    if (cell != null && "n\\a".equalsIgnoreCase(cell.toString()))
+                    {
+                        cell = "0";
+                    }
+
+                    cells.add(cell == null ? null : cell.toString());
+                }
+
+                if (!StringUtils.isEmpty(StringUtils.join(line)))
+                    out.writeNext(line.toArray(new String[line.size()]));
             }
 
-            return sb.toString();
-
+            return sw.toString();
         }
         catch (IOException e)
         {
             context.getErrors().addError(e.getMessage());
             throw context.getErrors().getErrors();
-        }
-        finally
-        {
-            try { if (fileReader != null) fileReader.close(); } catch (IOException e) {}
         }
     }
 
@@ -573,5 +579,78 @@ public class DefaultAssayParser implements AssayParser
             return (Integer)map.get("originalRowIdx");
         else
             return rowIdx;
+    }
+
+    /**
+     * Parses either an excel or text file
+     */
+    public List<List<String>> getFileLines(File file) throws IOException
+    {
+        try
+        {
+            JSONArray arr = ExcelFactory.convertExcelToJSON(file, false);
+            List<List<String>> ret = new ArrayList<>();
+            if (arr.length() == 0)
+                return ret;
+
+            JSONObject sheet = arr.getJSONObject(0);
+            for (Object cells : sheet.getJSONArray("data").toArray())
+            {
+                List<String> line = new ArrayList<>();
+                for (Object o : ((JSONArray) cells).toArray())
+                {
+                    line.add(Objects.toString(o, ""));
+                }
+                ret.add(line);
+            }
+
+            return ret;
+        }
+        catch (InvalidFormatException e)
+        {
+            //non-excel file, ignore
+        }
+
+        return parseTextFile(file);
+    }
+
+    protected List<List<String>> parseTextFile(File file) throws IOException
+    {
+        List<List<String>> ret = new ArrayList<>();
+        try (CSVReader reader = new CSVReader(new FileReader(file), inferDelimiter(file)))
+        {
+            String[] line;
+            while ((line = reader.readNext()) != null)
+            {
+                ret.add(Arrays.<String>asList(line));
+            }
+        }
+
+        return ret;
+    }
+
+    protected char inferDelimiter(File f) throws IOException
+    {
+        int tabCount = 0;
+        int commaCount = 0;
+        try (BufferedReader reader = new BufferedReader(new FileReader(f)))
+        {
+            String line;
+            int lineCount = 0;
+            while (null != (line = reader.readLine()))
+            {
+                if (StringUtils.isEmpty(line))
+                    continue;
+
+                commaCount += line.split(",").length - 1;
+                tabCount += line.split("\t").length - 1;
+
+                lineCount++;
+                if (lineCount > 20)
+                    break;
+            }
+        }
+
+        return commaCount > tabCount ? ',' : '\t';
     }
 }

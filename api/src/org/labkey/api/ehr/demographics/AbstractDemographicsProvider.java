@@ -143,9 +143,9 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
         }
     }
 
-    public Collection<FieldKey> getFieldKeysToTest()
+    public Collection<String> getKeysToTest()
     {
-        return Collections.unmodifiableCollection(getFieldKeys());
+        return Collections.unmodifiableCollection(getKeys());
     }
 
     public Set<String> getIdsToUpdate(Container c, String id, Map<String, Object> originalProps, Map<String, Object> newProps)

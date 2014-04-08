@@ -16,6 +16,7 @@
 package org.labkey.api.laboratory.assay;
 
 import au.com.bytecode.opencsv.CSVReader;
+import au.com.bytecode.opencsv.CSVWriter;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -26,6 +27,8 @@ import org.labkey.api.util.Pair;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,18 +54,14 @@ public class PivotingAssayParser extends DefaultAssayParser
     @Override
     protected String readRawFile(ImportContext context) throws BatchValidationException
     {
-        CSVReader csv = null;
-        try
+        try (StringWriter sw = new StringWriter(); CSVWriter out = new CSVWriter(sw, '\t'))
         {
-            StringBuilder sb = new StringBuilder();
             DomainProperty valueCol = _pivotMethod.getValueColumn(_protocol);
             DomainProperty pivotCol = _pivotMethod.getPivotColumn(_protocol);
-
-            csv = new CSVReader(new FileReader(context.getFile()), '\t');
-            String[] line;
             Map<Integer, String> resultCols = null;
             Integer rowIdx = 0;
-            while ((line = csv.readNext()) != null)
+
+            for (List<String> line : getFileLines(context.getFile()))
             {
                 if (rowIdx == 0)
                 {
@@ -95,7 +94,7 @@ public class PivotingAssayParser extends DefaultAssayParser
                         row.add(pair.first);
                         row.add(pair.second);
                         row.add(rowIdx.toString());
-                        sb.append(StringUtils.join(row, "\t")).append(System.getProperty("line.separator"));
+                        out.writeNext(row.toArray(new String[row.size()]));
                     }
                 }
                 else
@@ -105,23 +104,18 @@ public class PivotingAssayParser extends DefaultAssayParser
                     row.add(pivotCol.getLabel());
                     row.add(valueCol.getLabel());
                     row.add("_rowIdx");
-                    sb.append(StringUtils.join(row, "\t")).append(System.getProperty("line.separator"));
+                    out.writeNext(row.toArray(new String[row.size()]));
                 }
 
                 rowIdx++;
             }
 
-            return sb.toString();
-
+            return sw.toString();
         }
         catch (IOException e)
         {
             context.getErrors().addError(e.getMessage());
             throw context.getErrors().getErrors();
-        }
-        finally
-        {
-            try { if (csv != null) csv.close(); } catch (IOException e) {}
         }
     }
 
@@ -129,7 +123,7 @@ public class PivotingAssayParser extends DefaultAssayParser
      * Inspects the header line and returns a list of all columns inferred to contain results
      * and other columns are assumed to
      */
-    private Map<Integer, String> inspectHeader(String[] header, ImportContext context) throws BatchValidationException
+    private Map<Integer, String> inspectHeader(List<String> header, ImportContext context) throws BatchValidationException
     {
         Map<Integer, String> resultMap = new HashMap<>();
         Map<String, String> allowable = new CaseInsensitiveHashMap<String>();

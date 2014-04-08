@@ -117,11 +117,8 @@ abstract public class AbstractListDemographicsProvider extends AbstractDemograph
     }
 
     @Override
-    public Collection<FieldKey> getFieldKeysToTest()
+    public Collection<String> getKeysToTest()
     {
-        Set<FieldKey> keys = new HashSet<>();
-        keys.add(FieldKey.fromString(_propName));
-
-        return Collections.unmodifiableSet(keys);
+        return getKeys();
     }
 }
