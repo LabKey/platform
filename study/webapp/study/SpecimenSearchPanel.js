@@ -212,7 +212,7 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
     getGroupSearchItems: function(){
         return [
             [this.studyProps.subject.nounSingular, 'study', this.studyProps.subject.tableName, this.studyProps.subject.columnName + "/" + this.studyProps.subject.columnName, this.studyProps.subject.columnName, this.studyProps.subject.columnName, 'Any ' + this.studyProps.subject.nounSingular, null],
-            ['Visit', 'study', 'Visit', 'Visit/SequenceNumMin', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,Label'],
+            ['Visit', 'study', 'Visit', 'Visit/SequenceNumMin', 'Label', 'SequenceNumMin', 'Any Visit', null, 'DisplayOrder,SequenceNumMin'],
             ['Primary Type', 'study', 'SpecimenPrimaryType', 'PrimaryType/Description', 'Description', 'Description', 'Any Primary Type', null],
             ['Derivative Type', 'study', 'SpecimenDerivative', 'DerivativeType/Description', 'Description', 'Description', 'Any Derivative Type', null],
             ['Additive Type', 'study', 'SpecimenAdditive', 'AdditiveType/Description', 'Description', 'Description', 'Any Additive Type', null]
@@ -261,12 +261,34 @@ Ext4.define('LABKEY.ext.SampleSearchPanel', {
                 columns += ','+valueColumn;
             }
 
+            var sql;
+            if (queryName != 'Visit')
+            {
+                sql = 'select distinct(' + displayColumn + ') as ' + displayColumn + (displayColumn == valueColumn ? '' : ', ' +
+                        valueColumn) + ' from ' + schemaName + '.' + queryName + ' WHERE ' + displayColumn +
+                        ' IS NOT NULL AND ' + displayColumn + ' != \'\'';
+            }
+            else
+            {
+                // Visit: make sure sort columns in select and accept Label empty like other UI does
+                sql = 'select ' + displayColumn + ' as ' + displayColumn;
+                if (displayColumn != valueColumn)
+                    sql += ', ' + valueColumn;
+                if (sort)
+                {   // Ensure sort fields are in query
+                    var sortFields = sort.split(',');
+                    for (var i = 0; i < sortFields.length; i += 1)
+                        if (displayColumn != sortFields[i] && valueColumn != sortFields[i])
+                            sql += ', ' + sortFields[i];
+                }
+                sql += ' from ' + schemaName + '.' + queryName;
+            }
             var storeCfg = {
                 type: 'labkey-store',
                 storeId: storeId,
                 schemaName: schemaName,
                 //queryName: queryName,
-                sql: 'select distinct(' + displayColumn + ') as ' + displayColumn + (displayColumn == valueColumn ? '' : ', ' + valueColumn) + ' from ' + schemaName + '.' + queryName + ' WHERE ' + displayColumn + ' IS NOT NULL AND ' + displayColumn + ' != \'\'',
+                sql: sql,
                 columns: columns,
                 sort: sort || displayColumn,
                 autoLoad: true,
