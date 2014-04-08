@@ -127,12 +127,17 @@ public class ParticipantGroupManager
 
     public boolean categoryExists(Container c, User user, String label, boolean shared)
     {
+        assert label != null : "Label cannot be null";
+
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromString("Label"), label);
+        Set<String> exsitingCategories = new HashSet<>();
         filter.addCondition(FieldKey.fromString("OwnerId"), shared ? ParticipantCategory.OWNER_SHARED : user.getUserId());
 
-        TableSelector selector = new TableSelector(getTableInfoParticipantCategory(), filter, null);
-        return selector.exists();
+        TableSelector selector = new TableSelector(getTableInfoParticipantCategory(), Collections.singleton("Label"), filter, null);
+        for (String name : selector.getArrayList(String.class))
+            exsitingCategories.add(name.toLowerCase());
+
+        return exsitingCategories.contains(label.toLowerCase());
     }
 
     public ParticipantCategoryImpl[] getParticipantCategoriesByType(final Container c, final User user, @Nullable String type)
@@ -599,7 +604,7 @@ public class ParticipantGroupManager
             throw new ValidationException(errors);
 
         if (categoryExists(c, user, def.getLabel(), def.isShared()))
-            throw new ValidationException("There is already a category named: " + def.getLabel() + " within this folder. Please choose a unique category name.");
+            throw new ValidationException("There is already a category named: '" + def.getLabel() + "' within this folder. Please choose a unique (case-insensitive) category name.");
 
         if (def.isNew())
             ret = Table.insert(user, StudySchema.getInstance().getTableInfoParticipantCategory(), def);
