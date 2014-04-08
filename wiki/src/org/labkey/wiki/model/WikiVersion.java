@@ -20,6 +20,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.wiki.WikiContentCache;
@@ -28,6 +29,7 @@ import org.labkey.wiki.WikiManager;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 
@@ -126,6 +128,11 @@ public class WikiVersion
     public String getHtmlForConvert(Container c, Wiki wiki)
     {
         return WikiContentCache.getHtml(c, wiki, this, _cache);
+    }
+
+    public Set<ClientDependency> getClientDependencies(Container c, Wiki wiki)
+    {
+        return WikiManager.get().formatWiki(c, wiki, this).getClientDependencies();
     }
 
     public HString getTitle()

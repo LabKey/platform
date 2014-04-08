@@ -120,6 +120,7 @@ public abstract class BaseWikiView extends JspView<Object>
                 try
                 {
                     html = wikiVersion.getHtml(c, wiki);
+                    addClientDependencies(wikiVersion.getClientDependencies(c, wiki));
                 }
                 catch (Exception e)
                 {

@@ -23,6 +23,7 @@ import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.TidyUtil;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.FormattedHtml;
 import org.w3c.dom.Document;
@@ -52,6 +53,7 @@ public class HtmlRenderer implements WikiRenderer
     {
         // Add SubstitutionHandlers for each ${labkey.<type>()}
         _substitutionHandlers.put("webPart", new WebPartSubstitutionHandler());
+        _substitutionHandlers.put("dependency", new ClientDependencySubstitutionHandler());
     }
 
 
@@ -74,8 +76,11 @@ public class HtmlRenderer implements WikiRenderer
         if (text == null)
             return new FormattedHtml("");
 
+        LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>();
         FormattedHtml formattedHtml = handleLabkeySubstitutions(text);
         boolean volatilePage = formattedHtml.isVolatile();
+        cds.addAll(formattedHtml.getClientDependencies());
+
         Document doc = TidyUtil.convertHtmlToDocument("<html><body>" + StringUtils.trimToEmpty(formattedHtml.getHtml()) + "</body></html>", false, errors);
 
         // process A and IMG
@@ -171,7 +176,7 @@ public class HtmlRenderer implements WikiRenderer
             volatilePage = false;
         }
 
-        return new FormattedHtml(innerHtml.toString(), volatilePage);
+        return new FormattedHtml(innerHtml.toString(), volatilePage, null, cds);
     }
 
 
@@ -245,6 +250,7 @@ public class HtmlRenderer implements WikiRenderer
 
         StringBuilder sb = new StringBuilder(text);
         boolean volatilePage = false;
+        LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>();
 
         // Get the corresponding substitution handler for each type and replace template with substitution
         for (Definition definition : definitions)
@@ -269,6 +275,8 @@ public class HtmlRenderer implements WikiRenderer
             if (substitution.isVolatile())
                 volatilePage = true;
 
+            cds.addAll(substitution.getClientDependencies());
+
             List<String> paramErrors = wikiErrors.get(definition);
             if (paramErrors.size() > 0)
             {
@@ -280,7 +288,7 @@ public class HtmlRenderer implements WikiRenderer
             }
         }
 
-        return new FormattedHtml(sb.toString(), volatilePage);
+        return new FormattedHtml(sb.toString(), volatilePage, null, cds);
     }
 
 

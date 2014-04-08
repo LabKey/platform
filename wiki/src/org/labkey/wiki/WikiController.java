@@ -2782,7 +2782,7 @@ public class WikiController extends SpringActionController
                 Wiki wiki = WikiSelectManager.getWiki(c, tree.getRowId());
                 FormattedHtml html = mgr.formatWiki(c, wiki, wiki.getLatestVersion());
 
-                for (String name : html.getDependencies())
+                for (String name : html.getWikiDependencies())
                     mmap.put(name, wiki);
             }
 
