@@ -39,7 +39,7 @@ class VisitMapRecord
 
     private final double _sequenceNumberMin;
     private final double _sequenceNumberMax;
-    private final double _protocolDay;
+    private final Double _protocolDay;
     private final boolean _showByDefault;
     private final Visit.Type _visitType;
     private final String _visitLabel;
@@ -57,7 +57,7 @@ class VisitMapRecord
     private final int _chronologicalOrder;
     private final String _sequenceNumHandling;
 
-    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, double protocolDay,
+    public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, Double protocolDay,
                           String visitType, String visitLabel, String visitDescription,
                           String cohort, int visitDatePlate, int[] requiredPlates, int[] optionalPlates, boolean showByDefault,
                           int displayOrder, int chronologicalOrder, String sequenceNumHandling)
@@ -98,8 +98,7 @@ class VisitMapRecord
         else
             _sequenceNumberMax = _sequenceNumberMin;
 
-        Double protocolDay = (Double)record.get("protocolDay");
-        _protocolDay = null != protocolDay ? protocolDay : 0;
+        _protocolDay = (Double)record.get("protocolDay");
         _visitType = getType((String)record.get("visitType"));
         _visitLabel = (String)record.get("visitLabel");
         _visitDescription = (String)record.get("visitDescription");
@@ -127,7 +126,7 @@ class VisitMapRecord
 
     public double getSequenceNumMin()           { return _sequenceNumberMin; }
     public double getSequenceNumMax()           { return _sequenceNumberMax; }
-    public double getProtocolDay()           { return _protocolDay; }
+    public Double getProtocolDay()           { return _protocolDay; }
     public int getMissedNotificationPlate() { return _missedNotificationPlate; }
     public int[] getOptionalPlates()        { return _optionalPlates; }
     public int[] getRequiredPlates()        { return _requiredPlates; }

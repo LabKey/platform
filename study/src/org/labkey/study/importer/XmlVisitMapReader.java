@@ -91,8 +91,11 @@ public class XmlVisitMapReader implements VisitMapReader
         for (VisitMapDocument.VisitMap.Visit visitXml : visitsXml)
         {
             double maxSequenceNum = visitXml.isSetMaxSequenceNum() ? visitXml.getMaxSequenceNum() : visitXml.getSequenceNum();
-            double protocolDay = visitXml.isSetProtocolDay() ? visitXml.getProtocolDay() :
-                                    VisitImpl.calcDefaultProtocolDay(timepointType, visitXml.getSequenceNum(), maxSequenceNum);
+            Double protocolDay = null;
+            if (visitXml.isSetProtocolDay())
+                protocolDay = visitXml.getProtocolDay();
+            else if (TimepointType.DATE == timepointType)
+                VisitImpl.calcDefaultDateBasedProtocolDay(visitXml.getSequenceNum(), maxSequenceNum);
 
             List<Integer> required = new ArrayList<>();
             List<Integer> optional = new ArrayList<>();

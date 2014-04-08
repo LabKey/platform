@@ -50,7 +50,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     private int _rowId = 0;
     private double _sequenceMin = 0;
     private double _sequenceMax = 0;
-    private double _protocolDay = 0;
+    private Double _protocolDay = null;
     private Character _typeCode;
     private Integer _visitDateDatasetid = 0;
     private Integer _cohortId;
@@ -193,12 +193,12 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         this._sequenceMax = sequenceMax;
     }
 
-    public double getProtocolDay()
+    public Double getProtocolDay()
     {
         return _protocolDay;
     }
 
-    public void setProtocolDay(double protocolDay)
+    public void setProtocolDay(Double protocolDay)
     {
         this._protocolDay = protocolDay;
     }
@@ -311,8 +311,8 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
         }
     }
 
-    public static double calcDefaultProtocolDay(TimepointType timepointType, double sequenceMin, double sequenceMax)
+    public static double calcDefaultDateBasedProtocolDay(double sequenceMin, double sequenceMax)
     {
-        return (timepointType == TimepointType.DATE ? (double)Math.round((sequenceMin + sequenceMax)/2) : 0);
+        return (double)Math.round((sequenceMin + sequenceMax)/2);
     }
 }

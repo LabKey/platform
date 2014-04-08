@@ -81,8 +81,8 @@ public class VisitForm extends ViewForm
             setSequenceNumMax(getSequenceNumMin());
 
         // if target sequence num is null, set to min
-        if (null == getProtocolDay() && study.getTimepointType() == TimepointType.DATE)
-            setProtocolDay(VisitImpl.calcDefaultProtocolDay(study.getTimepointType(), getSequenceNumMin(), getSequenceNumMax()));
+        if (null == getProtocolDay() && TimepointType.DATE == study.getTimepointType())
+            setProtocolDay(VisitImpl.calcDefaultDateBasedProtocolDay(getSequenceNumMin(), getSequenceNumMax()));
 
         VisitImpl visit = getBean();
         if (visit.getSequenceNumMin() > visit.getSequenceNumMax())
@@ -133,7 +133,7 @@ public class VisitForm extends ViewForm
             setSequenceNumMax(bean.getSequenceNumMax());
         if (0 != bean.getSequenceNumMin())
             setSequenceNumMin(bean.getSequenceNumMin());
-        if (0 != bean.getProtocolDay())
+        if (null != bean.getProtocolDay())
             setProtocolDay(bean.getProtocolDay());
         if (null != bean.getType())
             setTypeCode(bean.getTypeCode());
