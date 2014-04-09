@@ -45,6 +45,14 @@ public final class TableExtension
         _extensionFK = extensionFK;
     }
 
+    public static TableExtension create(AbstractTableInfo primaryTable, TableInfo extensionTable)
+    {
+        String pkColumn = extensionTable.getPkColumnNames().get(0); // Note this only works for simple primary keys, not compound.
+        String fkColumn = extensionTable.getColumn(pkColumn).getFk().getLookupColumnName();
+
+        return create(primaryTable, extensionTable, fkColumn, pkColumn);
+    }
+
     public static TableExtension create(AbstractTableInfo primaryTable, TableInfo extensionTable, String foreignKey, String lookupKey)
     {
         ColumnInfo extensionCol = primaryTable.getColumn(foreignKey);
@@ -62,7 +70,7 @@ public final class TableExtension
 
     public Collection<ColumnInfo> addAllColumns()
     {
-        String lookupKey = _extensionFK.getLookupColumnName();
+        String lookupKey = getLookupColumnName();
         List<ColumnInfo> baseColumns = _extensionTable.getColumns();
         Collection<ColumnInfo> columns = new ArrayList<>(baseColumns.size());
         for (ColumnInfo col : baseColumns)
@@ -94,6 +102,11 @@ public final class TableExtension
             aliased.setHidden(true);
 
         return _primaryTable.addColumn(aliased);
+    }
+
+    public String getLookupColumnName()
+    {
+        return _extensionFK.getLookupColumnName();
     }
 
 }
