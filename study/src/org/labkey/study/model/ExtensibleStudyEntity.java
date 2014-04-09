@@ -116,6 +116,10 @@ public abstract class ExtensibleStudyEntity<E> extends AbstractStudyEntity<E>
         String domainURI = getDomainInfo().getDomainURI(container);
         Domain domain = PropertyService.get().getDomain(container, domainURI);
 
+        // No domain means no properties are defined
+        if (null == domain)
+            return;
+
         Map<String, ObjectProperty> resourceProperties = OntologyManager.getPropertyObjects(container, ownerLsid);
         if (resourceProperties != null && !resourceProperties.isEmpty())
         {
