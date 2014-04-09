@@ -562,9 +562,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
              */
             setSelected: function (config)
             {
-                if (!this.selectionKey)
-                    return;
-
                 if (arguments.length > 1)
                 {
                     config = {
@@ -589,6 +586,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 // Update the current selectedCount on this DataRegion and fire the 'selectchange' event
                 var self = this;
                 function updateSelected(data, response, options) {
+                    this.selectionModified = true;
                     self.selectedCount = data.count;
                     self.onSelectChange();
                 }
@@ -604,8 +602,17 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
                 config.failure = LABKEY.Utils.getOnFailure(config) || failureCb;
 
-                this.selectionModified = true;
-                LABKEY.DataRegion.setSelected(config);
+                if (this.selectionKey)
+                {
+                    LABKEY.DataRegion.setSelected(config);
+                }
+                else
+                {
+                    // Don't send the selection change to the server if there is no selectionKey.
+                    // Call the success callback directly.
+                    var count = this.getSelectionCount();
+                    config.success.call(config.scope, {count: count});
+                }
             },
 
             /**
@@ -733,15 +740,16 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
              */
             clearSelected: function (config)
             {
-                if (!this.selectionKey)
-                    return;
+                config = config || {};
+                config.selectionKey = this.selectionKey;
+                config.scope = config.scope || this;
 
                 this.selectedCount = 0;
                 this.onSelectChange();
 
-                config = config || { };
-                config.selectionKey = this.selectionKey;
-                LABKEY.DataRegion.clearSelected(config);
+                if (this.selectionKey) {
+                    LABKEY.DataRegion.clearSelected(config);
+                }
 
                 if (this.showRows == "selected")
                 {
