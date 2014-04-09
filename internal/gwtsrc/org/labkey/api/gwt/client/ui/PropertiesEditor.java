@@ -421,9 +421,30 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         int index = _rows.size();
         _rows.add(newRow);
         refreshRow(index, newRow);
+        index = moveNewFieldToBelowSelectedField(index);
         select(newRow.edit);
         setFocus(index);
         return newRow.edit;
+    }
+
+    private int moveNewFieldToBelowSelectedField(int index)
+    {
+        if (_selectedPD != null)
+        {
+            int targetRow = getRow(_selectedPD);
+            while (index > targetRow + 1)
+            {
+                Row moveUp = _rows.get(index);
+                Row moveDown = _rows.get(index - 1);
+                _rows.set(index, moveDown);
+                _rows.set(index - 1, moveUp);
+                fireChangeEvent();
+                refreshRow(index, moveDown);
+                refreshRow(index-1, moveUp);
+                index--;
+            }
+        }
+        return index;
     }
 
 
