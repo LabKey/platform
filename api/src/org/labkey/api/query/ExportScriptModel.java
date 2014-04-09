@@ -30,6 +30,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -140,10 +141,10 @@ public abstract class ExportScriptModel
             StringBuilder sb = new StringBuilder();
             String sep = "";
 
-            for(Object val : values)
+            for (Object val : values)
             {
                 sb.append(sep);
-                sb.append(val.toString());
+                sb.append(toString(val));
                 sep = ";";
             }
 
@@ -152,8 +153,14 @@ public abstract class ExportScriptModel
         else
         {
             //should have only one value (convert null to empty string)
-            return null == values[0] ? "" : values[0].toString();
+            return null == values[0] ? "" : toString(values[0]);
         }
+    }
+
+    // Export script should use ISO date format for filter data values, #19520
+    private String toString(Object val)
+    {
+        return (val instanceof Date ? DateUtil.formatDateISO8601((Date)val) : val.toString());
     }
 
     @Nullable

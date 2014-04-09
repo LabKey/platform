@@ -1321,6 +1321,9 @@ public class ModuleLoader implements Filter
             }
             catch (RuntimeSQLException e)
             {
+                // This happened a couple times on the HIPC server; decorate exception with the problem module name
+                // TODO: Better enum for "extra debug info"?
+                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, module.getName(), false);
                 ExceptionUtil.logExceptionToMothership(null, e);
             }
         }
