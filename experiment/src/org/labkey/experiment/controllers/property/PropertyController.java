@@ -133,6 +133,7 @@ public class PropertyController extends SpringActionController
             props.put("allowFileLinkProperties", String.valueOf(form.getAllowFileLinkProperties()));
             props.put("allowAttachmentProperties", String.valueOf(form.getAllowAttachmentProperties()));
             props.put("showDefaultValueSettings", String.valueOf(form.isShowDefaultValueSettings()));
+            props.put("instructions", _domain.getDomainKind().getDomainEditorInstructions());
 
             return new GWTView("org.labkey.experiment.property.Designer", props);
         }

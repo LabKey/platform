@@ -46,6 +46,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
     private boolean _allowFileLinkProperties;
     private boolean _allowAttachmentProperties;
     private boolean _showDefaultValueSettings;
+    private String _instructions; // Optional custom editing instructions for this domain
 
     private GWTDomain _domain;
 
@@ -62,9 +63,13 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
     {
         String typeURI = PropertyUtil.getServerProperty("typeURI");
         _returnURL = PropertyUtil.getReturnURL();
+
+        // TODO: Push these into a config object and pass to PropertiesEditor? Why attach them to the domain?
         _allowFileLinkProperties = "true".equals(PropertyUtil.getServerProperty("allowFileLinkProperties"));
         _allowAttachmentProperties = "true".equals(PropertyUtil.getServerProperty("allowAttachmentProperties"));
         _showDefaultValueSettings = "true".equals(PropertyUtil.getServerProperty("showDefaultValueSettings"));
+
+        _instructions = PropertyUtil.getServerProperty("instructions");
 
         _root = RootPanel.get("org.labkey.experiment.property.Designer-Root");
 
@@ -124,6 +129,13 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
             _root.remove(_loading);
             _root.add(_buttons);
             _root.add(new HTML("<br/>"));
+
+            if (null != _instructions)
+            {
+                _root.add(new WebPartPanel("Instructions", new Label(_instructions)));
+                _root.add(new HTML("<br/>"));
+            }
+
             _root.add(new WebPartPanel("Field Properties", _propTable.getWidget()));
         }
     }

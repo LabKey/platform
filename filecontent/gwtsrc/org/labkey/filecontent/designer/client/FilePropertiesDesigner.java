@@ -144,7 +144,7 @@ public class FilePropertiesDesigner implements EntryPoint, Saveable<GWTDomain>
     {
         if (_service == null)
         {
-            _service = (FilePropertiesServiceAsync) GWT.create(FilePropertiesService.class);
+            _service = GWT.create(FilePropertiesService.class);
             ServiceUtil.configureEndpoint(_service, "filePropertiesService");
         }
         return _service;

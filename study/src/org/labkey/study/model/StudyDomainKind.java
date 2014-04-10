@@ -15,6 +15,7 @@
  */
 package org.labkey.study.model;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
@@ -55,5 +56,13 @@ public class StudyDomainKind extends BaseStudyDomainKind
     public SQLFragment sqlObjectIdsInDomain(Domain domain)
     {
         return new SQLFragment("NULL");
+    }
+
+    @Nullable
+    @Override
+    public String getDomainEditorInstructions()
+    {
+        return "This page lets you define custom properties that are accessible in all studies in this project. Adding a field " +
+                "makes it available in all studies; removing a field deletes it and all the data it contains from all studies.";
     }
 }
