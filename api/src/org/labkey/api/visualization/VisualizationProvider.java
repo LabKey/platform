@@ -48,7 +48,9 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
 
     /** @return true if the column is one that is needed to correctly join between separate queries */
     public abstract boolean isJoinColumn(VisualizationSourceColumn column, Container container);
-    
+
+    public abstract void addExtraResponseProperties(Map<String, Object> extraProperties);
+
     protected static enum ColumnMatchType
     {
         DATETIME_COLS()
