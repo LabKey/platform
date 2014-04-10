@@ -314,6 +314,7 @@ public class StudyQuerySchema extends UserSchema
 
             ret.add(OBJECTIVE_TABLE_NAME);
             ret.add(PERSONNEL_TABLE_NAME);
+            ret.add(VISIT_TAG_TABLE_NAME);
         }
         return ret;
     }
@@ -670,6 +671,10 @@ public class StudyQuerySchema extends UserSchema
         if (ASSAY_SPECIMEN_VISIT_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new AssaySpecimenVisitTable(this);
+        }
+        if (VISIT_TAG_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new VisitTagTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
 
         // Might be a dataset
