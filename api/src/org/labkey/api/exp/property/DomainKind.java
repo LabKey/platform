@@ -50,6 +50,12 @@ abstract public class DomainKind implements Handler<String>
     abstract public @Nullable ActionURL urlEditDefinition(Domain domain, ContainerUser containerUser);
     abstract public ActionURL urlCreateDefinition(String schemaName, String queryName, Container container, User user);
 
+    // Override to return a non-null String and the generic domain editor will display it in an "Instructions" webpart above the field properties
+    public @Nullable String getDomainEditorInstructions()
+    {
+        return null;
+    }
+
     abstract public boolean canCreateDefinition(User user, Container container);
 
     abstract public boolean canEditDefinition(User user, Domain domain);

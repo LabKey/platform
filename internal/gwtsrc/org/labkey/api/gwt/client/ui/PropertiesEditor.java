@@ -52,7 +52,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 {
     boolean useConceptPicker = true;
 
-    public static class PD extends PropertiesEditor<GWTDomain<GWTPropertyDescriptor>,GWTPropertyDescriptor>
+    public static class PD extends PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor>
     {
         public PD(RootPanel rootPanel, Saveable<GWTDomain> owner, LookupServiceAsync service)
         {
