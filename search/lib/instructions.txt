@@ -1,4 +1,4 @@
-download lucene-x.x.x.tgz
+download lucene-x.x.x.tgz and open
 - in /lucene-x.x.x/core, copy lucene-core-x.x.x.jar to /labkey/server/modules/search/lib
 - in /lucene-x.x.x/analysis/common, copy lucene-analyzers-common-x.x.x.jar to /labkey/server/modules/search/lib
 - in /lucene-x.x.x/queryparser, copy lucene-queryparser-x.x.x.jar to /labkey/server/modules/search/lib
