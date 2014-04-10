@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-/* audit-0.00-10.20.sql */
-
 CREATE SCHEMA audit;
 
 CREATE TABLE audit.AuditLog
 (
     RowId SERIAL,
-    Key1 VARCHAR(200),
-    Key2 VARCHAR(200),
-    Key3 VARCHAR(200),
-    IntKey1 INT NOT NULL,
-    IntKey2 INT NOT NULL,
-    IntKey3 INT NOT NULL,
+    Key1 VARCHAR(1000) NULL,
+    Key2 VARCHAR(1000) NULL,
+    Key3 VARCHAR(1000) NULL,
+    IntKey1 INT NULL,
+    IntKey2 INT NULL,
+    IntKey3 INT NULL,
     Comment VARCHAR(500),
     EventType VARCHAR(64),
     CreatedBy USERID NOT NULL,
@@ -39,19 +37,5 @@ CREATE TABLE audit.AuditLog
 
     CONSTRAINT PK_AuditLog PRIMARY KEY (RowId)
 );
-
 CREATE INDEX IX_Audit_Container ON audit.AuditLog(ContainerId);
 CREATE INDEX IX_Audit_EventType ON audit.AuditLog(EventType);
-
-/* audit-11.20-11.30.sql */
-
-ALTER TABLE audit.auditlog
-    ALTER COLUMN key1 TYPE VARCHAR(1000),
-    ALTER COLUMN key2 TYPE VARCHAR(1000),
-    ALTER COLUMN key3 TYPE VARCHAR(1000);
-
-/* audit-11.30-12.10.sql */
-
-ALTER TABLE audit.auditlog ALTER intkey1 DROP NOT NULL;
-ALTER TABLE audit.auditlog ALTER intkey2 DROP NOT NULL;
-ALTER TABLE audit.auditlog ALTER intkey3 DROP NOT NULL;

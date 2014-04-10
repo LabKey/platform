@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
-/* audit-0.00-10.20.sql */
-
--- Table used by Audit module
 CREATE SCHEMA audit;
 GO
 
 CREATE TABLE audit.AuditLog
 (
     RowId INT IDENTITY(1,1) NOT NULL,
-    Key1 NVARCHAR(200),
-    Key2 NVARCHAR(200),
-    Key3 NVARCHAR(200),
-    IntKey1 INT NOT NULL,
-    IntKey2 INT NOT NULL,
-    IntKey3 INT NOT NULL,
+    Key1 NVARCHAR(1000) NULL,
+    Key2 NVARCHAR(1000) NULL,
+    Key3 NVARCHAR(1000) NULL,
+    IntKey1 INT NULL,
+    IntKey2 INT NULL,
+    IntKey3 INT NULL,
     Comment NVARCHAR(500),
     EventType NVARCHAR(64),
     CreatedBy USERID NOT NULL,
@@ -41,21 +38,5 @@ CREATE TABLE audit.AuditLog
 
     CONSTRAINT PK_AuditLog PRIMARY KEY (RowId)
 );
-
 CREATE INDEX IX_Audit_Container ON audit.AuditLog(ContainerId);
 CREATE INDEX IX_Audit_EventType ON audit.AuditLog(EventType);
-
-ALTER TABLE audit.AuditLog
-    ALTER COLUMN Key1 NVARCHAR(1000) NULL;
-
- ALTER TABLE audit.AuditLog
-    ALTER COLUMN Key2 NVARCHAR(1000) NULL;
-
- ALTER TABLE audit.AuditLog
-    ALTER COLUMN Key3 NVARCHAR(1000) NULL;
-
-/* audit-11.30-12.10.sql */
-
-ALTER TABLE audit.auditlog ALTER COLUMN intkey1 int NULL;
-ALTER TABLE audit.auditlog ALTER COLUMN intkey2 int NULL;
-ALTER TABLE audit.auditlog ALTER COLUMN intkey3 int NULL;

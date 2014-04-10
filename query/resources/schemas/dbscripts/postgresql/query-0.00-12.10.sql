@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* query-0.00-10.20.sql */
-
 CREATE SCHEMA query;
 
 CREATE TABLE query.QueryDef
@@ -103,17 +101,9 @@ CREATE TABLE query.QuerySnapshotDef
     NextUpdate TIMESTAMP NULL,
     UpdateDelay INT DEFAULT 0,
     QueryTableName VARCHAR(200) NULL,
+    QueryTableContainer ENTITYID,
+    ParticipantGroups TEXT,
 
     CONSTRAINT PK_RowId PRIMARY KEY (RowId),
     CONSTRAINT FK_QuerySnapshotDef_QueryDefId FOREIGN KEY (QueryDefId) REFERENCES query.QueryDef (QueryDefId)
 );
-
-/* query-11.20-11.30.sql */
-
-ALTER TABLE query.QuerySnapshotDef ADD COLUMN QueryTableContainer ENTITYID;
-
-UPDATE query.QuerySnapshotDef SET QueryTableContainer = Container WHERE QueryTableName IS NOT NULL;
-
-ALTER TABLE query.QuerySnapshotDef ADD COLUMN ParticipantGroups TEXT;
-
--- Originally an UPDATE statement to address #13594; removed in 13.1 due to issue #17498;

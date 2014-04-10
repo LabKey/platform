@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* mothership-0.00-9.30.sql */
-
 CREATE SCHEMA mothership;
 GO
 
@@ -44,7 +42,8 @@ CREATE TABLE mothership.ExceptionStackTrace
 
     CONSTRAINT PK_ExceptionStackTrace PRIMARY KEY (ExceptionStackTraceId),
     CONSTRAINT FK_ExceptionStackTrace_Container FOREIGN KEY (Container) REFERENCES core.Containers(EntityId),
-    CONSTRAINT FK_ExceptionStackTrace_AssignedTo FOREIGN KEY (AssignedTo) REFERENCES core.Usersdata(UserId)
+    CONSTRAINT FK_ExceptionStackTrace_AssignedTo FOREIGN KEY (AssignedTo) REFERENCES core.Usersdata(UserId),
+    CONSTRAINT UQ_ExceptionStackTrace_Container_Hash UNIQUE (Container, StackTraceHash)
 );
 CREATE INDEX IX_ExceptionStackTrace_Container ON mothership.ExceptionStackTrace(Container);
 
@@ -88,9 +87,9 @@ CREATE TABLE mothership.ServerSession
     ContainerCount INT,
     AdministratorEmail NVARCHAR(100),
     EnterprisePipelineEnabled BIT,
-    LDAPEnabled BIT,
     SoftwareReleaseId INT NOT NULL,
     HeapSize INT,
+    ServletContainer NVARCHAR(100),
 
     CONSTRAINT PK_ServerSession PRIMARY KEY (ServerSessionId),
     CONSTRAINT UQ_ServerSession_ServerSessionGUID UNIQUE (ServerSessionGUID),
@@ -114,6 +113,7 @@ CREATE TABLE mothership.ExceptionReport
     PageflowName VARCHAR(30),
     PageflowAction VARCHAR(40),
     SQLState VARCHAR(100),
+    ExceptionMessage VARCHAR(1000),  -- Store the exception's message, which would otherwise be lost when we de-dupe stack traces
 
     CONSTRAINT PK_ExceptionReport PRIMARY KEY (ExceptionReportId),
     CONSTRAINT FK_ExceptionReport_ExceptionStackTrace FOREIGN KEY (ExceptionStackTraceId) REFERENCES mothership.ExceptionStackTrace(ExceptionStackTraceId),
@@ -121,19 +121,3 @@ CREATE TABLE mothership.ExceptionReport
 );
 CREATE INDEX IX_ExceptionReport_ExceptionStackTraceId ON mothership.exceptionreport(ExceptionStackTraceId);
 CREATE INDEX IX_ExceptionReport_ServerSessionId ON mothership.exceptionreport(ServerSessionId);
-
-/* mothership-10.10-10.20.sql */
-
--- Store the exception's message, which would otherwise be lost when we de-dupe stack traces
-ALTER TABLE mothership.ExceptionReport ADD ExceptionMessage VARCHAR(1000);
-
-/* mothership-11.20-11.30.sql */
-
--- Add a constraint to prevent us from getting duplicate rows in the future
-ALTER TABLE mothership.ExceptionStackTrace
-  ADD CONSTRAINT uq_exceptionstacktrace_container_hash UNIQUE (Container, StackTraceHash);
-
-/* mothership-11.30-12.10.sql */
-
-ALTER TABLE mothership.ServerSession ADD ServletContainer NVARCHAR(100);
-ALTER TABLE mothership.ServerSession DROP COLUMN LDAPEnabled;
