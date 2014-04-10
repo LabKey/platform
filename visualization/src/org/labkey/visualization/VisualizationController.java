@@ -80,7 +80,6 @@ import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.Visit;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
@@ -97,13 +96,13 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
-import org.labkey.api.visualization.SvgThumbnailGenerator;
-import org.labkey.api.visualization.VisualizationReportDescriptor;
-import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.api.visualization.SQLGenerationException;
+import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.visualization.VisualizationProvider;
-import org.labkey.visualization.sql.VisualizationSQLGenerator;
+import org.labkey.api.visualization.VisualizationReportDescriptor;
 import org.labkey.api.visualization.VisualizationSourceColumn;
+import org.labkey.api.visualization.VisualizationUrls;
+import org.labkey.visualization.sql.VisualizationSQLGenerator;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -830,34 +829,13 @@ public class VisualizationController extends SpringActionController
             Map<String, Object> extraProperties = new HashMap<>();
             extraProperties.put("measureToColumn", sqlGenerator.getColumnMapping());
             extraProperties.put("columnAliases", sqlGenerator.getColumnAliases());
-            extraProperties.put("visitMap", getVisitMetaData());
+            sqlGenerator.getPrimarySchema().createVisualizationProvider().addExtraResponseProperties(extraProperties);
             String filterDescription = sqlGenerator.getFilterDescription();
             if (filterDescription != null && filterDescription.length() > 0)
                 extraProperties.put("filterDescription", filterDescription);
             response.setExtraReturnProperties(extraProperties);
 
             return response;
-        }
-
-        private Map<String, Map<String, Object>> getVisitMetaData()
-        {
-            Map<String, Map<String, Object>> metaData = new HashMap<>();
-            Study study = StudyService.get().getStudy(getContainer());
-
-            int i=1;
-            for (Visit visit : study.getVisits(Visit.Order.DISPLAY))
-            {
-                Map<String, Object> visitInfo = new HashMap<>();
-
-                visitInfo.put("displayOrder", i++);
-                visitInfo.put("displayName", visit.getDisplayString());
-                visitInfo.put("sequenceNumMin", visit.getSequenceNumMin());
-                visitInfo.put("sequenceNumMax", visit.getSequenceNumMax());
-                visitInfo.put("description", visit.getDescription());
-
-                metaData.put(visit.getId().toString(), visitInfo);
-            }
-            return metaData;
         }
 
         private ApiQueryResponse getApiResponse(ViewContext context, UserSchema schema, String sql, boolean metaDataOnly, Sort sort, BindException errors) throws Exception

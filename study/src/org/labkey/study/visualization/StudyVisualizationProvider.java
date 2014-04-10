@@ -24,6 +24,7 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.Pair;
 import org.labkey.api.visualization.IVisualizationSourceQuery;
 import org.labkey.api.visualization.VisualizationIntervalColumn;
@@ -70,6 +71,30 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             return true;
 
         return false;
+    }
+
+    @Override
+    public void addExtraResponseProperties(Map<String, Object> extraProperties)
+    {
+        Map<String, Map<String, Object>> metaData = new HashMap<>();
+        Study study = getSchema().getStudy();
+        if (study != null)
+        {
+            int i=1;
+            for (Visit visit : study.getVisits(Visit.Order.DISPLAY))
+            {
+                Map<String, Object> visitInfo = new HashMap<>();
+
+                visitInfo.put("displayOrder", i++);
+                visitInfo.put("displayName", visit.getDisplayString());
+                visitInfo.put("sequenceNumMin", visit.getSequenceNumMin());
+                visitInfo.put("sequenceNumMax", visit.getSequenceNumMax());
+                visitInfo.put("description", visit.getDescription());
+
+                metaData.put(visit.getId().toString(), visitInfo);
+            }
+            extraProperties.put("visitMap", metaData);
+        }
     }
 
     @Override
