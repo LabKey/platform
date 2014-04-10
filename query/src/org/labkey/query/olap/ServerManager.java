@@ -174,7 +174,7 @@ public class ServerManager
                 RepositoryContentFinder rcf = new StringRepositoryContentFinder(sb.toString());
                 s = MondrianServer.createWithRepository(rcf, new _CatalogLocator());
                 _log.debug("Create new Mondrian server: " + c.getPath() + " " + s.toString());
-                MemTracker.getInstance().put(s);
+//                MemTracker.getInstance().put(s);
                 ref = new ServerReferenceCount(s, c);
                 _servers.put(getServerCacheKey(c), ref);
             }
