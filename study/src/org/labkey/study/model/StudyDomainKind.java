@@ -62,7 +62,7 @@ public class StudyDomainKind extends BaseStudyDomainKind
     @Override
     public String getDomainEditorInstructions()
     {
-        return "This page lets you define custom properties that are accessible in all studies in this project. Adding a field " +
-                "makes it available in all studies; removing a field deletes it and all the data it contains from all studies.";
+        return "This page lets administrators define custom study properties that are accessible throughout this project. Adding a field makes it available " +
+                "in all studies in the project; removing a field deletes it and all the data it contains from all studies in the project.";
     }
 }
