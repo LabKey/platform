@@ -2993,9 +2993,9 @@ public class QueryController extends SpringActionController
             columns = service.getColumns(table, settings.getFieldKeys());
             col = columns.get(settings.getFieldKeys().get(0));
 
-            SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getAlias() + " AS value FROM(");
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT " + col.getAlias() + " AS value FROM (");
             sql.append(selectSql);
-            sql.append(") AS S ORDER BY value");
+            sql.append(") S ORDER BY value");
 
             sql = table.getSqlDialect().limitRows(sql, settings.getMaxRows());
 
