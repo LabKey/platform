@@ -15,7 +15,7 @@
  */
 package org.labkey.api.util;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -27,25 +27,14 @@ import org.junit.Test;
 public class NumberUtilsLabKey
 {
     /*
-        This is like NumberUtils.isNumber(), except it doesn't have a huge bug in it. NumberUtils.isNumber(), as of 3.3.1, returns
-        false for "0.0", "0.4790", and other decimal numbers with leading zeroes. https://issues.apache.org/jira/browse/LANG-992
+        This wrapper method exists because the 3.3.1 version of isNumber() had a huge bug, https://issues.apache.org/jira/browse/LANG-992
+        This has supposedly been fixed, but we're using a chokepoint to test the new code and allow for quick revert if needed.
 
-        We'll remove this method once we've upgraded to a version that fixes the problem.
+        We'll remove this method once we've confirmed the fix, though we might as well leave the junit test in place.
     */
     public static boolean isNumber(String str)
     {
-        if (StringUtils.isEmpty(str))
-            return false;
-
-        try
-        {
-            double d = Double.parseDouble(str);
-            return true;
-        }
-        catch (NumberFormatException e)
-        {
-            return false;
-        }
+        return NumberUtils.isNumber(str);
     }
 
     public static class TestCase extends Assert
@@ -53,7 +42,7 @@ public class NumberUtilsLabKey
         @Test
         public void testNumbers()
         {
-            numbers("1", "-1", "+1", "23", "123456", "-123456", "+123456", "0.4790", "-0.4790", ".4790", "-.4790", "+.4790", "-9.156013e-002", "0x1.6e8p14");
+            numbers("1", "-1", "23", "123456", "-123456", "0.4790", "-0.4790", ".4790", "-.4790", "-9.156013e-002");
             notNumbers(null, "", "   ", "\n", "\n", "-0.4790X", "123ABC", "-123ABC", "0.4790B", "0xABQCD");
         }
 
