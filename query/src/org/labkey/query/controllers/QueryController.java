@@ -4538,7 +4538,7 @@ public class QueryController extends SpringActionController
             // Delete the first shadowed custom view, if available.
             if (form.isComplete())
             {
-                form.setCustomView(null);
+                form.reset();
                 CustomView shadowed = form.getCustomView();
                 if (shadowed != null && shadowed.isEditable())
                 {
@@ -4549,7 +4549,7 @@ public class QueryController extends SpringActionController
 
             // Try to get a custom view of the same name as the view we just deleted.
             // The deleted view may have been a session view or a personal view masking shared view with the same name.
-            form.setCustomView(null);
+            form.reset();
             view = form.getCustomView();
             String nextViewName = null;
             if (view != null)
