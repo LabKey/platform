@@ -32,7 +32,6 @@ import org.labkey.api.util.Button;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
@@ -40,6 +39,8 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.PageConfig;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -687,6 +688,34 @@ public class TestController extends SpringActionController
         {
             return null;
         }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class CoreClientApiAction extends SimpleViewAction<Object>
+    {
+
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new HtmlView("Core Client API Action");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Core Client Test API", actionURL(BeginAction.class));
+            return root;
+        }
+    }
+
+    @Override
+    protected ModelAndView getTemplate(ViewContext context, ModelAndView mv, Controller action, PageConfig page)
+    {
+        ModelAndView template = super.getTemplate(context, mv, action, page);
+
+        // for the clientApiTest action, return a special template that contains only the core client api scripts
+        if (action instanceof CoreClientApiAction)
+            template = new CoreClientApiTemplate(mv, page);
+
+        return template;
     }
 
     public static class ButtonForm
