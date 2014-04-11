@@ -523,8 +523,7 @@ public class QueryView extends WebPartView<Object>
                 {
                     ret = getViewContext().cloneActionURL();
                     ret.addParameter("exportType", action.name());
-                    ret.addParameter("exportRegion", getDataRegionName());
-                    break;
+                    ret.addParameter("dataRegionName", getDataRegionName());
                 }
                 ActionURL expandedURL = getViewContext().cloneActionURL();
                 addParamsByPrefix(ret, expandedURL, getDataRegionName() + ".", DATAREGIONNAME_DEFAULT + ".");
@@ -885,17 +884,24 @@ public class QueryView extends WebPartView<Object>
     public abstract static class ExportOptionsBean
     {
         private final String _dataRegionName;
+        private final String _exportRegionName;
         private final String _selectionKey;
 
-        protected ExportOptionsBean(String dataRegionName, String selectionKey)
+        protected ExportOptionsBean(String dataRegionName, String exportRegionName, String selectionKey)
         {
             _dataRegionName = dataRegionName;
+            _exportRegionName = exportRegionName;
             _selectionKey = selectionKey;
         }
 
         public String getDataRegionName()
         {
             return _dataRegionName;
+        }
+
+        public String getExportRegionName()
+        {
+            return _exportRegionName;
         }
 
         public String getSelectionKey()
@@ -917,9 +923,9 @@ public class QueryView extends WebPartView<Object>
         private final ActionURL _xlsxURL;
         private final ActionURL _iqyURL;
 
-        public ExcelExportOptionsBean(String dataRegionName, String selectionKey, ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL)
+        public ExcelExportOptionsBean(String dataRegionName, String exportRegionName, String selectionKey, ActionURL xlsURL, ActionURL xlsxURL, ActionURL iqyURL)
         {
-            super(dataRegionName, selectionKey);
+            super(dataRegionName, exportRegionName, selectionKey);
             _xlsURL = xlsURL;
             _xlsxURL = xlsxURL;
             _iqyURL = iqyURL;
@@ -946,9 +952,9 @@ public class QueryView extends WebPartView<Object>
     {
         private final ActionURL _tsvURL;
 
-        public TextExportOptionsBean(String dataRegionName, String selectionKey, ActionURL tsvURL)
+        public TextExportOptionsBean(String dataRegionName, String exportRegionName, String selectionKey, ActionURL tsvURL)
         {
-            super(dataRegionName, selectionKey);
+            super(dataRegionName, exportRegionName, selectionKey);
             _tsvURL = tsvURL;
         }
 
@@ -961,9 +967,12 @@ public class QueryView extends WebPartView<Object>
 
     public PanelButton createExportButton(boolean exportAsWebPage)
     {
-        PanelButton exportButton = new PanelButton("Export", getDataRegionName());
+        PanelButton exportButton = new PanelButton("Export", getDataRegionName(), 120);
         ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(
-                getDataRegionName(), getSettings().getSelectionKey(), urlFor(QueryAction.exportRowsExcel),
+                getDataRegionName(),
+                getExportRegionName(),
+                getSettings().getSelectionKey(),
+                urlFor(QueryAction.exportRowsExcel),
                 urlFor(QueryAction.exportRowsXLSX),
                 _allowExportExternalQuery ? urlFor(QueryAction.excelWebQueryDefinition) : null
         );
@@ -974,7 +983,7 @@ public class QueryView extends WebPartView<Object>
         {
             tsvURL.replaceParameter("exportAsWebPage", "true");
         }
-        TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getSettings().getSelectionKey(), tsvURL);
+        TextExportOptionsBean textBean = new TextExportOptionsBean(getDataRegionName(), getExportRegionName(), getSettings().getSelectionKey(), tsvURL);
         exportButton.addSubPanel("Text", new JspView<>("/org/labkey/api/query/textExportOptions.jsp", textBean));
 
         if (_allowExportExternalQuery)
@@ -1626,6 +1635,11 @@ public class QueryView extends WebPartView<Object>
     public String getDataRegionName()
     {
         return getSettings().getDataRegionName();
+    }
+
+    private String getExportRegionName()
+    {
+        return _useQueryViewActionExportURLs ? getDataRegionName() : DATAREGIONNAME_DEFAULT;
     }
 
     private String _baseId = null;

@@ -33,13 +33,24 @@ import java.util.Map;
  */
 public class PanelButton extends ActionButton
 {
+    // Height of the vertical tab strip item label in pixels.
+    private static final int VERTICAL_TAB_HEIGHT = 28;
+    private static final int MIN_HEIGHT = VERTICAL_TAB_HEIGHT * 4;
+
+    private int _height;
     private Map<String, HttpView> _subpanels = new LinkedHashMap<>();
     private final String _dataRegionName;
 
     public PanelButton(String caption, String dataRegionName)
     {
+        this(caption, dataRegionName, MIN_HEIGHT);
+    }
+
+    public PanelButton(String caption, String dataRegionName, int minHeight)
+    {
         super(caption, DataRegion.MODE_GRID, ActionButton.Action.LINK);
         _dataRegionName = dataRegionName;
+        _height = minHeight;
         setId("PanelButtonContent" + String.valueOf(System.identityHashCode(this)));
     }
 
@@ -57,7 +68,9 @@ public class PanelButton extends ActionButton
         // Remember that we've already rendered the content once
         ctx.put(id, true);
 
-        StringBuilder config = new StringBuilder("{ items: [");
+        StringBuilder config = new StringBuilder("{ ");
+        config.append("height: ").append(Math.max(_height, VERTICAL_TAB_HEIGHT*_subpanels.size())).append(", ");
+        config.append("items: [");
         String separator = "";
         for (Map.Entry<String, HttpView> entry : _subpanels.entrySet())
         {
@@ -88,13 +101,13 @@ public class PanelButton extends ActionButton
                 out.write("</div>");
             }
         }
-        config.append("]}");
+        config.append("]}\n");
         out.write("<script language=\"javascript\">Ext.onReady(function() {\n" +
                 "LABKEY.requiresCss(\"groupTabPanel/GroupTab.css\");\n" +
                 "LABKEY.requiresCss(\"groupTabPanel/UngroupedTab.css\");\n" +
                 "LABKEY.requiresScript(\"groupTabPanel/GroupTabPanel.js\", true);\n" +
                 "LABKEY.requiresScript(\"groupTabPanel/GroupTab.js\", true);\n" +
-                "});</script>");
+                "});</script>\n");
         out.append(PageFlowUtil.generateDropDownButton(getCaption(), "javascript:void(0)",
                 "LABKEY.DataRegions[" + PageFlowUtil.jsString(_dataRegionName) + "].showButtonPanel(this, " + config + ");", attributes));
     }

@@ -44,6 +44,7 @@
 
     QueryView.TextExportOptionsBean model = (QueryView.TextExportOptionsBean)HttpView.currentModel();
     boolean hasSelected = model.hasSelected(getViewContext());
+    String exportRegionName = model.getExportRegionName();
 %>
 <table class="labkey-export-tab-contents">
     <tr>
@@ -88,15 +89,16 @@ Ext.onReady(function () {
     {
         var dr = LABKEY.DataRegions[<%=PageFlowUtil.jsString(model.getDataRegionName())%>];
 
-        var selectedParam = '<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.showRows=SELECTED';
+        var exportRegionName = <%=PageFlowUtil.jsString(exportRegionName)%>;
+        var selectedParam = exportRegionName + '.showRows=SELECTED';
         var url = <%=PageFlowUtil.jsString(model.getTsvURL().toString())%>;
         if (exportSelectedEl.checked) {
-          if (url.indexOf('<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.showRows=ALL') == -1) {
+          if (url.indexOf(exportRegionName + '.showRows=ALL') == -1) {
             url = url+'&'+selectedParam;
           } else {
-            url = url.replace('<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.showRows=ALL', selectedParam);
+            url = url.replace(exportRegionName + '.showRows=ALL', selectedParam);
           }
-          url = url+'&<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.selectionKey=' + dr.selectionKey;
+          url = url+'&' + exportRegionName + '.selectionKey=' + dr.selectionKey;
         }
 
         url = url + '&delim=' + delimEl.value + '&quote=' + quoteEl.value;

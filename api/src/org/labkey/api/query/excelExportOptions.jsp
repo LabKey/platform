@@ -31,6 +31,7 @@
     String exportButtonId = "export_" + guid;
 
     boolean hasSelected = model.hasSelected(getViewContext());
+    String exportRegionName = model.getExportRegionName();
 %>
 <table class="labkey-export-tab-contents">
     <tr>
@@ -72,6 +73,7 @@ Ext.onReady(function () {
     function doExcelExport()
     {
         var dr = LABKEY.DataRegions[<%=PageFlowUtil.jsString(model.getDataRegionName())%>];
+        var exportRegionName = <%=PageFlowUtil.jsString(exportRegionName)%>;
         var exportUrl;
         var exportParams;
 
@@ -92,8 +94,8 @@ Ext.onReady(function () {
 
         if (!exportSelectedEl.disabled && exportSelectedEl.checked) {
             // Replace 'showRows=ALL' parameter with 'showRows=SELECTED'
-            exportParams['<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.showRows'] = 'SELECTED';
-            exportParams['<%=text(QueryView.DATAREGIONNAME_DEFAULT)%>.selectionKey'] = dr.selectionKey;
+            exportParams[exportRegionName + '.showRows'] = 'SELECTED';
+            exportParams[exportRegionName + '.selectionKey'] = dr.selectionKey;
         }
 
         dr.addMessage({

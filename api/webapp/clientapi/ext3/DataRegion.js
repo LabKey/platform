@@ -1646,10 +1646,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                             {
                                 var minWidth = 700;
                                 var tabContentWidth = 0;
-                                var VERTICAL_TAB_HEIGHT = 28; // pixels. Way to measure how tall the main panel should be
-                                var height = VERTICAL_TAB_HEIGHT * 4;
-                                if (tabPanelConfig.items.length > 4)
-                                    height = VERTICAL_TAB_HEIGHT * tabPanelConfig.items.length;
 
                                 // New up the TabPanel if we haven't already
                                 // Only create one per button, even if that button is rendered both above and below the grid
@@ -1657,7 +1653,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                                 tabPanelConfig.tabWidth = 80;
                                 tabPanelConfig.renderTo = panelDiv;
                                 tabPanelConfig.activeGroup = 0;
-                                tabPanelConfig.height = height;
                                 var newItems = new Array(tabPanelConfig.items.length);
                                 for (var i = 0; i < tabPanelConfig.items.length; i++)
                                 {

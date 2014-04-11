@@ -20,6 +20,7 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.query.ExportScriptModel;
 import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
@@ -104,11 +105,10 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
 
     protected abstract ViewType createQueryView(Form form, BindException errors, boolean forExport, String dataRegion) throws Exception;
 
-    public static class QueryExportForm
+    public static class QueryExportForm extends QueryForm
     {
         private String _exportType;
         private boolean _exportAsWebPage;
-        private String _exportRegion;
         private TSVWriter.DELIM _delim;
         private TSVWriter.QUOTE _quote;
 
@@ -148,12 +148,12 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
 
         public String getExportRegion()
         {
-            return _exportRegion;
+            return super.getDataRegionName();
         }
 
         public void setExportRegion(String exportRegion)
         {
-            _exportRegion = exportRegion;
+            super.setDataRegionName(exportRegion);
         }
 
         public boolean isExport()
