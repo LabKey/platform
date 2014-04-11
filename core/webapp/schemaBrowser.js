@@ -189,6 +189,17 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel,
 {
     initComponent : function(){
 
+        this.showHidden = false;
+        this.fbar = [{
+            xtype: "checkbox",
+            boxLabel: "Show Hidden Schemas and Queries",
+            checked: this.showHidden,
+            handler: function (checkbox, checked) {
+                this.setShowHiddenSchemasAndQueries(checked);
+            },
+            scope: this
+        }];
+
         this.rootVisible = false;
         Ext.EventManager.on(window, "beforeunload", function(evt){
             this._unloading = true
@@ -231,6 +242,24 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel,
         this.getLoader().on("loadexception", function(loader, node, response){
             if (!this._unloading)
                 LABKEY.Utils.displayAjaxErrorResponse(response);
+        }, this);
+    },
+
+    setShowHiddenSchemasAndQueries : function (showHidden)
+    {
+        this.showHidden = showHidden;
+
+        this.root.cascade(function (node) {
+            if (showHidden)
+            {
+                if (node.hidden)
+                    node.ui.show();
+            }
+            else
+            {
+                if (node.attributes.hidden)
+                    node.ui.hide();
+            }
         }, this);
     }
 });
@@ -1261,6 +1290,10 @@ LABKEY.ext.SchemaBrowserPanel = Ext.extend(Ext.Panel,
         for (var idx = 0; idx < sortedNames.length; ++idx)
         {
             var schema = schemas[sortedNames[idx]];
+            var attributes = [];
+            if (schema.hidden)
+                attributes.push("Hidden");
+
             rows.push({
                 tag:'tr',
                 children:[
@@ -1273,6 +1306,10 @@ LABKEY.ext.SchemaBrowserPanel = Ext.extend(Ext.Panel,
                                 html:Ext.util.Format.htmlEncode(sortedNames[idx])
                             }
                         ]
+                    },
+                    {
+                        tag:'td',
+                        html:attributes.join(", ")
                     },
                     {
                         tag:'td',
@@ -1301,6 +1338,10 @@ LABKEY.ext.SchemaBrowserPanel = Ext.extend(Ext.Panel,
                 {
                     tag:'th',
                     html:'Name'
+                },
+                {
+                    tag:'th',
+                    html:'Attributes'
                 },
                 {
                     tag:'th',
@@ -1509,7 +1550,7 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
                 tag: 'tr',
                 children: [{
                     tag: 'td',
-                    colspan: 2,
+                    colspan: 3,
                     cls: 'lk-qd-collist-title',
                     html: title
                 }]
@@ -1522,6 +1563,10 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
                 },{
                     tag: 'td',
                     cls: 'lk-qd-colheader',
+                    html: 'Attributes'
+                },{
+                    tag: 'td',
+                    cls: 'lk-qd-colheader',
                     html: 'Description'
                 }]
             }];
@@ -1530,6 +1575,14 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
         for (var idx = 0; idx < queries.length; ++idx)
         {
             query = queries[idx];
+            var attributes = [];
+            if (query.hidden)
+                attributes.push("Hidden");
+            if (query.inherit)
+                attributes.push("Inherit");
+            if (query.snapshot)
+                attributes.push("Snapshot");
+
             rows.push({
                 tag: 'tr',
                 children: [
@@ -1546,6 +1599,10 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
                                 html: Ext.util.Format.htmlEncode((query.name.toLowerCase() != query.title.toLowerCase() ? ' (' + query.title + ')' : ''))
                             }
                         ]
+                    },
+                    {
+                        tag: 'td',
+                        html: attributes.join(", ")
                     },
                     {
                         tag: 'td',

@@ -357,11 +357,11 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    public Map<String, ? extends VisualizationProvider> createVisualizationProviders()
+    public Map<String, ? extends VisualizationProvider> createVisualizationProviders(boolean showHidden)
     {
         Map<String, VisualizationProvider> result = new HashMap<>();
         DefaultSchema defaultSchema = DefaultSchema.get(getUser(), getContainer());
-        for (QuerySchema querySchema : defaultSchema.getSchemas())
+        for (QuerySchema querySchema : defaultSchema.getSchemas(showHidden))
         {
             VisualizationProvider provider = querySchema.createVisualizationProvider();
             if (provider != null)
@@ -488,7 +488,7 @@ public class VisualizationController extends SpringActionController
             else
             {
                 // get all tables in this container
-                for (VisualizationProvider provider : createVisualizationProviders().values())
+                for (VisualizationProvider provider : createVisualizationProviders(form.isShowHidden()).values())
                 {
                     if (form.isDateMeasures())
                         measures.putAll(provider.getDateMeasures(VisualizationProvider.QueryType.all));
@@ -899,7 +899,7 @@ public class VisualizationController extends SpringActionController
             else
             {
                 // get all tables in this container
-                for (VisualizationProvider provider : createVisualizationProviders().values())
+                for (VisualizationProvider provider : createVisualizationProviders(form.isShowHidden()).values())
                     measures.putAll(provider.getZeroDateMeasures(VisualizationProvider.QueryType.all));
             }
 

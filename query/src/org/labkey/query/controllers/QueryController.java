@@ -4191,7 +4191,7 @@ public class QueryController extends SpringActionController
                 //Collection<String> schemaNamesIncludingSystem = new LinkedList<String>();
 
                 DefaultSchema defaultSchema = DefaultSchema.get(user, c);
-                Set<SchemaKey> userSchemas = defaultSchema.getUserSchemaPaths();
+                Set<SchemaKey> userSchemas = defaultSchema.getUserSchemaPaths(false);
                 for (SchemaKey key : userSchemas)
                 {
                     schemaNames.add(key.toString());
@@ -5102,6 +5102,7 @@ public class QueryController extends SpringActionController
 
     public static class GetSchemasForm
     {
+        private boolean _includeHidden = true;
         private SchemaKey _schemaName;
 
         public SchemaKey getSchemaName()
@@ -5112,6 +5113,16 @@ public class QueryController extends SpringActionController
         public void setSchemaName(SchemaKey schemaName)
         {
             _schemaName = schemaName;
+        }
+
+        public boolean isIncludeHidden()
+        {
+            return _includeHidden;
+        }
+
+        public void setIncludeHidden(boolean includeHidden)
+        {
+            _includeHidden = includeHidden;
         }
     }
 
@@ -5124,9 +5135,10 @@ public class QueryController extends SpringActionController
             final Container container = getContainer();
             final User user = getUser();
 
+            final boolean includeHidden = form.isIncludeHidden();
             if (getRequestedApiVersion() >= 9.3)
             {
-                SimpleSchemaTreeVisitor visitor = new SimpleSchemaTreeVisitor<Void, JSONObject>()
+                SimpleSchemaTreeVisitor visitor = new SimpleSchemaTreeVisitor<Void, JSONObject>(includeHidden)
                 {
                     @Override
                     public Void visitUserSchema(UserSchema schema, Path path, JSONObject json)
@@ -5136,13 +5148,14 @@ public class QueryController extends SpringActionController
                         schemaProps.put("schemaName", schema.getName());
                         schemaProps.put("fullyQualifiedName", schema.getSchemaName());
                         schemaProps.put("description", schema.getDescription());
+                        schemaProps.put("hidden", schema.isHidden());
                         NavTree tree = schema.getSchemaBrowserLinks(user);
                         if (tree != null && tree.hasChildren())
                             schemaProps.put("menu", tree.toJSON());
 
                         // Collect children schemas
                         JSONObject children = new JSONObject();
-                        visit(schema.getSchemas(), path, children);
+                        visit(schema.getSchemas(_includeHidden), path, children);
                         if (children.size() > 0)
                             schemaProps.put("schemas", children);
 
@@ -5161,7 +5174,7 @@ public class QueryController extends SpringActionController
 
                 // Create the JSON response by visiting the schema children.  The parent schema information isn't included.
                 JSONObject ret = new JSONObject();
-                visitor.visitTop(schema.getSchemas(), ret);
+                visitor.visitTop(schema.getSchemas(includeHidden), ret);
 
                 ApiSimpleResponse resp = new ApiSimpleResponse();
                 resp.putAll(ret);
@@ -5169,7 +5182,7 @@ public class QueryController extends SpringActionController
             }
             else
             {
-                return new ApiSimpleResponse("schemas", DefaultSchema.get(user, container).getUserSchemaPaths());
+                return new ApiSimpleResponse("schemas", DefaultSchema.get(user, container).getUserSchemaPaths(includeHidden));
             }
         }
     }
@@ -5251,7 +5264,7 @@ public class QueryController extends SpringActionController
                     if (!qdef.isTemporary())
                     {
                         ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
-                        qinfos.add(getQueryProps(qdef.getName(), qdef.getDescription(), viewDataUrl, true, uschema, form.isIncludeColumns()));
+                        qinfos.add(getQueryProps(qdef, viewDataUrl, true, uschema, form.isIncludeColumns()));
                     }
                 }
             }
@@ -5267,7 +5280,7 @@ public class QueryController extends SpringActionController
                     if (qdef != null)
                     {
                         ActionURL viewDataUrl = uschema.urlFor(QueryAction.executeQuery, qdef);
-                        qinfos.add(getQueryProps(qname, qdef.getDescription(), viewDataUrl, false, uschema, form.isIncludeColumns()));
+                        qinfos.add(getQueryProps(qdef, viewDataUrl, false, uschema, form.isIncludeColumns()));
                     }
                 }
             }
@@ -5276,21 +5289,24 @@ public class QueryController extends SpringActionController
             return response;
         }
 
-        protected Map<String, Object> getQueryProps(String name, String description, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns)
+        protected Map<String, Object> getQueryProps(QueryDefinition qdef, ActionURL viewDataUrl, boolean isUserDefined, UserSchema schema, boolean includeColumns)
         {
             Map<String, Object> qinfo = new HashMap<>();
-            qinfo.put("name", name);
+            qinfo.put("name", qdef.getName());
+            qinfo.put("hidden", qdef.isHidden());
+            qinfo.put("snapshot", qdef.isSnapshot());
+            qinfo.put("inherit", qdef.canInherit());
             qinfo.put("isUserDefined", isUserDefined);
-            if (null != description)
-                qinfo.put("description", description);
+            if (null != qdef.getDescription())
+                qinfo.put("description", qdef.getDescription());
             if (viewDataUrl != null)
                 qinfo.put("viewDataUrl", viewDataUrl);
 
-            String title = name;
+            String title = qdef.getName();
             try
             {
                 //get the table info if the user requested column info
-                TableInfo table = schema.getTable(name);
+                TableInfo table = schema.getTable(qdef.getName());
 
                 if (null != table)
                 {

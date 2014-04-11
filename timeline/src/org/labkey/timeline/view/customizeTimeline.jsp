@@ -52,7 +52,7 @@ a display value, select the display value from the linked table.
 
     Map<String, Map<String, List<String>>> schemaTableNames = new CaseInsensitiveHashMap<>();
     DefaultSchema defSchema = DefaultSchema.get(getUser(), getContainer());
-    for (String name : defSchema.getUserSchemaNames())
+    for (String name : defSchema.getUserSchemaNames(false))
     {
         schemaOptions.put(name, name);
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), name);

@@ -105,7 +105,7 @@ public class QueryWebdavProvider implements WebdavService.Provider
 			{
 				DefaultSchema folderSchema = DefaultSchema.get(null, _c);
 				ArrayList<String> names = new ArrayList<>();
-				Set<SchemaKey> keys = folderSchema.getUserSchemaPaths();
+				Set<SchemaKey> keys = folderSchema.getUserSchemaPaths(true);
 				if (null != keys)
                     for (SchemaKey key : keys)
                         names.add(key.toString());

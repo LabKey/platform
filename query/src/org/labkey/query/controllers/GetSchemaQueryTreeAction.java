@@ -67,7 +67,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                 map.put(scope, new JSONArray());
 
             // return list of top-level schemas grouped by datasource
-            for (String name : defSchema.getUserSchemaNames())
+            for (String name : defSchema.getUserSchemaNames(true))
             {
                 QuerySchema schema = DefaultSchema.get(user, container).getSchema(name);
                 if (null == schema || null == schema.getDbSchema())
@@ -140,7 +140,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                             label = tinfo.getTitle();           // Display title (label if different from name) for Datasets
 
                         // If there's an error, still include the table in the tree
-                        addQueryToList(schemaPath, qname, label, tinfo == null ? null : tinfo.getDescription(), builtIn);
+                        addQueryToList(schemaPath, qname, label, tinfo == null ? null : tinfo.getDescription(), false, builtIn);
                         addedQueryCount++;
                     }
 
@@ -164,7 +164,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         QueryDefinition qdef = queryDefMap.get(qname);
                         if (!qdef.isTemporary())
                         {
-                            addQueryToList(schemaPath, qname, qname, qdef.getDescription(), userDefined);
+                            addQueryToList(schemaPath, qname, qname, qdef.getDescription(), qdef.isHidden(), userDefined);
                             addedQueryCount++;
                         }
                     }
@@ -196,7 +196,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     }
 
                     // Add any children schemas
-                    for (UserSchema child : uschema.getUserSchemas())
+                    for (UserSchema child : uschema.getUserSchemas(true))
                     {
                         SchemaKey childPath = new SchemaKey(schemaPath, child.getName());
                         JSONObject schemaProps = getSchemaProps(childPath, child);
@@ -221,6 +221,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         schemaProps.put("qtip", PageFlowUtil.filter(schema.getDescription()));
         schemaProps.put("name", schema.getName());
         schemaProps.put("schemaName", schemaName);
+        schemaProps.put("hidden", schema.isHidden());
         return schemaProps;
     }
 
@@ -238,7 +239,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
     }
 
 
-    protected void addQueryToList(SchemaKey schemaName, String qname, String label, String description, JSONArray list)
+    protected void addQueryToList(SchemaKey schemaName, String qname, String label, String description, boolean hidden, JSONArray list)
     {
         JSONObject qprops = new JSONObject();
         qprops.put("schemaName", schemaName);
@@ -254,6 +255,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
             qprops.put("description", description);
             qprops.put("qtip", PageFlowUtil.filter(description));
         }
+        qprops.put("hidden", hidden);
         list.put(qprops);
     }
 

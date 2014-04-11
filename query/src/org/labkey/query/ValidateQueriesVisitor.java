@@ -41,6 +41,7 @@ public class ValidateQueriesVisitor extends SchemaTreeWalker<Boolean, Logger>
 
     public ValidateQueriesVisitor()
     {
+        super(true);
         _mgr = QueryManager.get();
     }
 

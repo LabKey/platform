@@ -64,7 +64,7 @@ public class CustomViewWriter extends BaseFolderWriter
         // TODO: Export views from external schemas as well?
         DefaultSchema folderSchema = DefaultSchema.get(user, c);
 
-        Set<SchemaKey> userSchemaPaths = folderSchema.getUserSchemaPaths();
+        Set<SchemaKey> userSchemaPaths = folderSchema.getUserSchemaPaths(true);
 
         for (SchemaKey schemaKey : userSchemaPaths)
         {
