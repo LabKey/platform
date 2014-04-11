@@ -89,6 +89,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -1344,63 +1345,33 @@ public class QueryView extends WebPartView<Object>
     {
         List<CustomView> views = new ArrayList<>(getQueryDef().getCustomViews(getViewContext().getUser(), getViewContext().getRequest(), false, false).values());
 
-        // default grid view stays at the top level. The default will have a getName == null, but a custom default views
-        // may have an alternate label defined in the .qview.xml file.
-        String defaultLabel = "default";
+        // default grid view stays at the top level. The default will have a getName == null
+        boolean hasDefault = false;
         for (CustomView view : views)
         {
             if (view.getName() == null)
             {
-                if (view.getLabel() != null)
-                {
-                    defaultLabel = view.getLabel();
-                }
+                hasDefault = true;
                 break;
             }
         }
-        NavTree item = new NavTree(defaultLabel, (String) null);
-        item.setScript(getChangeViewScript(""));
 
-        item.setId(getBaseMenuId() + ":Views:default");
-        if ("".equals(currentView))
-            item.setStrong(true);
-        if (_customView != null)
+        // To make generating menu items easier, create a default custom view if it doesn't exist yet.
+        if (!hasDefault)
         {
-            StringBuilder description = new StringBuilder();
-            if (_customView.isSession())
-            {
-                item.setEmphasis(true);
-                description.append("Unsaved ");
-            }
-            if (_customView.isShared())
-                description.append("Shared ");
-
-            if (_customView.getContainer() != null && !_customView.getContainer().equals(getContainer()))
-                description.append("Inherited from '").append(PageFlowUtil.filter(_customView.getContainer().getPath())).append("'");
-
-            if (description.length() > 0)
-                item.setDescription(description.toString());
+            CustomView defaultView = getQueryDef().createCustomView(getUser(), null);
+            views.add(0, defaultView);
         }
-        try
-        {
-            URLHelper iconUrl = new URLHelper("/reports/grid.gif");
-            iconUrl.setContextPath(AppProps.getInstance().getParsedContextPath());
-            item.setImageSrc(iconUrl.getLocalURIString());
-        }
-        catch (URISyntaxException e)
-        {
-        }
-        menu.addMenuItem(item);
 
-        // sort the grid view alphabetically, with private views over public ones
+        // sort the grid view alphabetically, with default first (null name), then private views over public ones
         Collections.sort(views, new Comparator<CustomView>()
         {
             public int compare(CustomView o1, CustomView o2)
             {
-                if (!o1.isShared() && o2.isShared()) return -1;
-                if (o1.isShared() && !o2.isShared()) return 1;
                 if (o1.getName() == null) return -1;
                 if (o2.getName() == null) return 1;
+                if (!o1.isShared() && o2.isShared()) return -1;
+                if (o1.isShared() && !o2.isShared()) return 1;
 
                 return o1.getName().compareToIgnoreCase(o2.getName());
             }
@@ -1410,17 +1381,29 @@ public class QueryView extends WebPartView<Object>
         {
             if (view.isHidden())
                 continue;
-            String name = view.getName();
-            // name == null is the default view, which was already added above.
-            if (name == null)
-                continue;
-            String label = view.getLabel();
 
-            item = new NavTree(label, (String) null);
-            item.setScript(getChangeViewScript(name));
-            item.setId(getBaseMenuId() + ":Views:view-" + PageFlowUtil.filter(name));
-            if (name.equals(currentView))
-                item.setStrong(true);
+            NavTree item;
+            String name = view.getName();
+            if (name == null)
+            {
+                String label = Objects.toString(view.getLabel(), "default");
+
+                item = new NavTree(label, (String) null);
+                item.setScript(getChangeViewScript(""));
+                item.setId(getBaseMenuId() + ":Views:default");
+                if ("".equals(currentView))
+                    item.setStrong(true);
+            }
+            else
+            {
+                String label = view.getLabel();
+
+                item = new NavTree(label, (String) null);
+                item.setScript(getChangeViewScript(name));
+                item.setId(getBaseMenuId() + ":Views:view-" + PageFlowUtil.filter(name));
+                if (name.equals(currentView))
+                    item.setStrong(true);
+            }
 
             StringBuilder description = new StringBuilder();
             if (view.isSession())
