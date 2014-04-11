@@ -1484,57 +1484,6 @@ LABKEY.Security = new function()
          */
         getSharedContainer: function(){
             return LABKEY.sharedContainer;
-        },
-
-        /**
-         * @private
-         */
-        showImpersonateUser: function()
-        {
-            this.ensureAndDisplay('LABKEY.Security.ImpersonateUser', 'Impersonate.js');
-        },
-
-        /**
-         * @private
-         */
-        showImpersonateGroup: function()
-        {
-            this.ensureAndDisplay('LABKEY.Security.ImpersonateGroup', 'Impersonate.js');
-        },
-
-        /**
-         * @private
-         */
-        showImpersonateRole: function()
-        {
-            this.ensureAndDisplay('LABKEY.Security.ImpersonateRoles', 'Impersonate.js');
-        },
-
-        /**
-         * @private
-         */
-        ensureAndDisplay: function(componentName, scriptFile)
-        {
-            var display = function() {
-                Ext4.onReady(function() {
-                    var cmp = Ext4.create(componentName);
-                    cmp.on("afterlayout", function(cmp){
-                        cmp.center();
-                    });
-                    cmp.show();
-                });
-            };
-
-            if (eval(componentName))
-            {
-                display();
-            }
-            else
-            {
-                LABKEY.requiresExt4Sandbox(true, function() {
-                    LABKEY.requiresScript(scriptFile, true, display, this);
-                }, this);
-            }
         }
     };
 };

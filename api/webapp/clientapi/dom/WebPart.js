@@ -143,7 +143,7 @@ LABKEY.WebPart = function(config)
         }
         if(response.status >= 500 && response.status < 600)
         {
-            var json = LABKEY.ExtAdapter.decode(response.responseText);
+            var json = LABKEY.Utils.decode(response.responseText);
             if(json)
                 msg += json.exception;
         }

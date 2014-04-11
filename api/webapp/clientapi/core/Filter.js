@@ -58,7 +58,7 @@ LABKEY.Filter = new function()
         var separator = '';
         for (var i = 0; i < values.length; i++)
         {
-            var value = LABKEY.ext.FormHelper.validate(type, values[i].trim(), colName);
+            var value = validate(type, values[i].trim(), colName);
             if (value == undefined)
                 return undefined;
 
@@ -66,6 +66,103 @@ LABKEY.Filter = new function()
             separator = ";";
         }
         return result;
+    }
+
+    /**
+     * Note: this is an experimental API that may change unexpectedly in future releases.
+     * Validate a form value against the json type.  Error alerts will be displayed.
+     * @param type The json type ("int", "float", "date", or "boolean")
+     * @param value The value to test.
+     * @param colName The column name to use in error messages.
+     * @return undefined if not valid otherwise a normalized string value for the type.
+     */
+    function validate(type, value, colName)
+    {
+        if (type == "int")
+        {
+            var intVal = parseInt(value);
+            if (isNaN(intVal))
+            {
+                alert(value + " is not a valid integer for field '" + colName + "'.");
+                return undefined;
+            }
+            else
+                return "" + intVal;
+        }
+        else if (type == "float")
+        {
+            var decVal = parseFloat(value);
+            if (isNaN(decVal))
+            {
+                alert(value + " is not a valid decimal number for field '" + colName + "'.");
+                return undefined;
+            }
+            else
+                return "" + decVal;
+        }
+        else if (type == "date")
+        {
+            var year, month, day, hour, minute;
+            hour = 0;
+            minute = 0;
+
+            //Javascript does not parse ISO dates, but if date matches we're done
+            if (value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*$/) ||
+                    value.match(/^\s*(\d\d\d\d)-(\d\d)-(\d\d)\s*(\d\d):(\d\d)\s*$/))
+            {
+                return value;
+            }
+            else
+            {
+                var dateVal = new Date(value);
+                if (isNaN(dateVal))
+                {
+                    //filters can use relative dates, in the format +1d, -5H, etc.  we try to identfy those here
+                    //this is fairly permissive and does not attempt to parse this value into a date.  See CompareType.asDate()
+                    //for server-side parsing
+                    if (value.match(/^(-|\+)/i))
+                    {
+                        return value;
+                    }
+
+                    alert(value + " is not a valid date for field '" + colName + "'.");
+                    return undefined;
+                }
+                //Try to do something decent with 2 digit years!
+                //if we have mm/dd/yy (but not mm/dd/yyyy) in the date
+                //fix the broken date parsing
+                if (value.match(/\d+\/\d+\/\d{2}(\D|$)/))
+                {
+                    if (dateVal.getFullYear() < new Date().getFullYear() - 80)
+                        dateVal.setFullYear(dateVal.getFullYear() + 100);
+                }
+                year = dateVal.getFullYear();
+                month = dateVal.getMonth() + 1;
+                day = dateVal.getDate();
+                hour = dateVal.getHours();
+                minute = dateVal.getMinutes();
+            }
+            var str = "" + year + "-" + this.twoDigit(month) + "-" + this.twoDigit(day);
+            if (hour != 0 || minute != 0)
+                str += " " + this.twoDigit(hour) + ":" + this.twoDigit(minute);
+
+            return str;
+        }
+        else if (type == "boolean")
+        {
+            var upperVal = value.toUpperCase();
+            if (upperVal == "TRUE" || value == "1" || upperVal == "Y" || upperVal == "ON" || upperVal == "T")
+                return "1";
+            if (upperVal == "FALSE" || value == "0" || upperVal == "N" || upperVal == "OFF" || upperVal == "F")
+                return "0";
+            else
+            {
+                alert(value + " is not a valid boolean for field '" + colName + "'. Try true,false; yes,no; on,off; or 1,0.");
+                return undefined;
+            }
+        }
+        else
+            return value;
     }
 
     var urlMap = {};
@@ -145,7 +242,7 @@ LABKEY.Filter = new function()
                 if (this.isMultiValued())
                     return validateMultiple(type, value, colName);
                 else
-                    return LABKEY.ext.FormHelper.validate(type, value, colName);
+                    return validate(type, value, colName);
             }
         };
         urlMap[urlSuffix] = result;

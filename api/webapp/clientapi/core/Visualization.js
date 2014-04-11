@@ -55,9 +55,9 @@ LABKEY.Query.Visualization = new function() {
             if (data && data.getResponseHeader && data.getResponseHeader('Content-Type')
                     && data.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = LABKEY.ExtAdapter.decode(data.responseText);
+                json = LABKEY.Utils.decode(data.responseText);
                 if (json.visualizationConfig)
-                    json.visualizationConfig = LABKEY.ExtAdapter.decode(json.visualizationConfig);
+                    json.visualizationConfig = LABKEY.Utils.decode(json.visualizationConfig);
             }
 
             if(successCallback)
@@ -82,7 +82,7 @@ LABKEY.Query.Visualization = new function() {
             if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = LABKEY.ExtAdapter.decode(response.responseText);
+                json = LABKEY.Utils.decode(response.responseText);
                 measures = createMeasureFn(json);
             }
 
@@ -284,7 +284,7 @@ LABKEY.Query.Visualization = new function() {
             var params = {
                 name : config.name,
                 description : config.description,
-                json : LABKEY.ExtAdapter.encode(config.visualizationConfig),
+                json : LABKEY.Utils.encode(config.visualizationConfig),
                 replace: config.replace,
                 shared: config.shared,
                 thumbnailType: config.thumbnailType,
@@ -422,105 +422,96 @@ LABKEY.Visualization = LABKEY.Query.Visualization;
 /**
  * @namespace Visualization Measures are plottable data elements (columns).  They may be of numeric or date types.
  */
-Ext4.define('LABKEY.Query.Visualization.Measure', {
+LABKEY.Query.Visualization.Measure = function(config) {
 
-    constructor : function(config)
+    LABKEY.Utils.apply(this, config);
+};
+
+/**
+ * Returns the name of the query associated with this dimension.
+ */
+LABKEY.Query.Visualization.Measure.prototype.getQueryName = function() {
+    return this.queryName;
+};
+/**
+ * Returns the name of the schema assocated with this dimension.
+ */
+LABKEY.Query.Visualization.Measure.prototype.getSchemaName = function() {
+    return this.schemaName;
+};
+/**
+ * Returns whether this dimension is part of a user-defined query (versus a built-in/system-provided query).
+ */
+LABKEY.Query.Visualization.Measure.prototype.isUserDefined = function() {
+    return this.isUserDefined;
+};
+/**
+ * Returns the column name of this dimension.
+ */
+LABKEY.Query.Visualization.Measure.prototype.getName = function() {
+    return this.name;
+};
+/**
+ * Returns the label of this dimension.
+ */
+LABKEY.Query.Visualization.Measure.prototype.getLabel = function() {
+    return this.label;
+};
+/**
+ * Returns the data types of this dimension.
+ */
+LABKEY.Query.Visualization.Measure.prototype.getType = function() {
+    return this.type;
+};
+/**
+ * Returns a description of this dimension.
+ */
+LABKEY.Query.Visualization.Measure.prototype.getDescription = function() {
+    return this.description;
+};
+/**
+ * Returns the set of available {@link LABKEY.Query.Visualization.Dimension} objects for this measure.
+ * @param config An object which contains the following configuration properties.
+ * @param config.includeDemographics {Boolean} Applies only to measures from study datsets.
+ * Indicates whether dimensions from demographic datasets should be included
+ * in the returned set.  If false, only dimensions from the measure's query will be returned.
+ * @param {Function} config.success Function called when execution succeeds. Will be called with one argument:
+ <ul>
+ <li><b>values</b>: an array of unique dimension values</li>
+ </ul>
+ * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
+ * <ul>
+ * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+ * <li><b>response:</b> The XMLHttpResponse object</li>
+ * </ul>
+ */
+LABKEY.Query.Visualization.Measure.prototype.getDimensions = function(config) {
+
+    var params = {queryName: this.queryName, schemaName: this.schemaName};
+
+    if (config.includeDemographics)
+        params['includeDemographics'] = config.includeDemographics;
+
+    function createDimensions(json)
     {
-        Ext4.apply(this, config);
-    },
-
-    /**
-     * Returns the name of the query associated with this dimension.
-     */
-    getQueryName : function() {
-        return this.queryName;
-    },
-
-    /**
-     * Returns the name of the schema assocated with this dimension.
-     */
-    getSchemaName : function() {
-        return this.schemaName;
-    },
-    /**
-     * Returns whether this dimension is part of a user-defined query (versus a built-in/system-provided query).
-     */
-    isUserDefined : function() {
-        return this.isUserDefined;
-    },
-
-    /**
-     * Returns the column name of this dimension.
-     */
-    getName : function() {
-        return this.name;
-    },
-
-    /**
-     * Returns the label of this dimension.
-     */
-    getLabel : function() {
-        return this.label;
-    },
-
-    /**
-     * Returns the data types of this dimension.
-     */
-    getType : function() {
-        return this.type;
-    },
-
-    /**
-     * Returns a description of this dimension.
-     */
-    getDescription : function() {
-        return this.description;
-    },
-
-    /**
-     * Returns the set of available {@link LABKEY.Query.Visualization.Dimension} objects for this measure.
-     * @param config An object which contains the following configuration properties.
-     * @param config.includeDemographics {Boolean} Applies only to measures from study datsets.
-     * Indicates whether dimensions from demographic datasets should be included
-     * in the returned set.  If false, only dimensions from the measure's query will be returned.
-     * @param {Function} config.success Function called when execution succeeds. Will be called with one argument:
-            <ul>
-                <li><b>values</b>: an array of unique dimension values</li>
-            </ul>
-     * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
-     * <ul>
-     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
-     * <li><b>response:</b> The XMLHttpResponse object</li>
-     * </ul>
-     */
-    getDimensions : function(config) {
-
-        var params = {queryName: this.queryName, schemaName: this.schemaName};
-
-        if (config.includeDemographics)
-            params['includeDemographics'] = config.includeDemographics;
-
-        function createDimensions(json)
+        var dimensions = [];
+        if (json.dimensions && json.dimensions.length)
         {
-            var dimensions = [];
-            if (json.dimensions && json.dimensions.length)
-            {
-                for (var i=0; i < json.dimensions.length; i++)
-                    dimensions.push(new LABKEY.Query.Visualization.Dimension(json.dimensions[i]));
-            }
-            return dimensions;
+            for (var i=0; i < json.dimensions.length; i++)
+                dimensions.push(new LABKEY.Query.Visualization.Dimension(json.dimensions[i]));
         }
-
-        LABKEY.Ajax.request(
-        {
-            url : LABKEY.ActionURL.buildURL("visualization", "getDimensions"),
-            method : 'GET',
-            params : params,
-            success: getSuccessCallbackWrapper(createDimensions, LABKEY.Utils.getOnSuccess(config), config.scope),
-            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
-        });
+        return dimensions;
     }
-});
+
+    LABKEY.Ajax.request(
+            {
+                url : LABKEY.ActionURL.buildURL("visualization", "getDimensions"),
+                method : 'GET',
+                params : params,
+                success: getSuccessCallbackWrapper(createDimensions, LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+            });
+};
 
 /**
  * @deprecated Use {@link LABKEY.Query.Visualization.Measure}
@@ -532,95 +523,89 @@ LABKEY.Visualization.Measure = LABKEY.Query.Visualization.Measure;
  *  can be pivoted or transformed.  For example, the 'Analyte Name' dimension may be used to pivit a single 'Result' measure
  * into one series per Analyte.
  */
-Ext4.define('LABKEY.Query.Visualization.Dimension', {
+LABKEY.Query.Visualization.Dimension = function(config) {
+    LABKEY.Utils.apply(this, config);
+};
+/**
+ * Returns the name of the query associated with this dimension.
+ */
+LABKEY.Query.Visualization.Dimension.getQueryName = function() {
+    return this.queryName;
+};
+/**
+ * Returns the name of the schema assocated with this dimension.
+ */
+LABKEY.Query.Visualization.Dimension.getSchemaName = function() {
+    return this.schemaName;
+};
 
-    constructor : function(config)
+/**
+ * Returns whether this dimension is part of a user-defined query (versus a built-in/system-provided query).
+ */
+LABKEY.Query.Visualization.Dimension.isUserDefined = function() {
+    return this.isUserDefined;
+};
+
+/**
+ * Returns the column name of this dimension.
+ */
+LABKEY.Query.Visualization.Dimension.getName = function() {
+    return this.name;
+};
+
+/**
+ * Returns the label of this dimension.
+ */
+LABKEY.Query.Visualization.Dimension.getLabel = function() {
+    return this.label;
+};
+
+/**
+ * Returns the data types of this dimension.
+ */
+LABKEY.Query.Visualization.Dimension.getType = function() {
+    return this.type;
+};
+
+/**
+ * Returns a description of this dimension.
+ */
+LABKEY.Query.Visualization.Dimension.getDescription = function() {
+    return this.description;
+};
+
+/**
+ * Returns the set of available unique values for this dimension.
+ * @param config An object which contains the following configuration properties.
+ * @param {Function} config.success Function called when execution succeeds. Will be called with one argument:
+ <ul>
+ <li><b>values</b>: an array of unique dimension values</li>
+ </ul>
+ * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
+ * <ul>
+ * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
+ * <li><b>response:</b> The XMLHttpResponse object</li>
+ * </ul>
+ */
+LABKEY.Query.Visualization.Dimension.getValues = function(config) {
+
+    var params = {queryName: this.queryName, schemaName: this.schemaName, name: this.name};
+    function createValues(json)
     {
-        Ext4.apply(this, config);
-    },
-
-    /**
-     * Returns the name of the query associated with this dimension.
-     */
-    getQueryName : function() {
-        return this.queryName;
-    },
-
-    /**
-     * Returns the name of the schema assocated with this dimension.
-     */
-    getSchemaName : function() {
-        return this.schemaName;
-    },
-
-    /**
-     * Returns whether this dimension is part of a user-defined query (versus a built-in/system-provided query).
-     */
-    isUserDefined : function() {
-        return this.isUserDefined;
-    },
-
-    /**
-     * Returns the column name of this dimension.
-     */
-    getName : function() {
-        return this.name;
-    },
-
-    /**
-     * Returns the label of this dimension.
-     */
-    getLabel : function() {
-        return this.label;
-    },
-
-    /**
-     * Returns the data types of this dimension.
-     */
-    getType : function() {
-        return this.type;
-    },
-
-    /**
-     * Returns a description of this dimension.
-     */
-    getDescription : function() {
-        return this.description;
-    },
-
-    /**
-     * Returns the set of available unique values for this dimension.
-     * @param config An object which contains the following configuration properties.
-     * @param {Function} config.success Function called when execution succeeds. Will be called with one argument:
-            <ul>
-                <li><b>values</b>: an array of unique dimension values</li>
-            </ul>
-     * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
-     * <ul>
-     * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
-     * <li><b>response:</b> The XMLHttpResponse object</li>
-     * </ul>
-     */
-    getValues : function(config) {
-
-        var params = {queryName: this.queryName, schemaName: this.schemaName, name: this.name};
-        function createValues(json)
-        {
-            if (json.success && json.values)
-                return json.values;
-            return [];
-        }
-
-        LABKEY.Ajax.request(
-        {
-            url : LABKEY.ActionURL.buildURL("visualization", "getDimensionValues"),
-            method : 'GET',
-            params : params,
-            success: getSuccessCallbackWrapper(createValues, LABKEY.Utils.getOnSuccess(config), config.scope),
-            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
-        });
+        if (json.success && json.values)
+            return json.values;
+        return [];
     }
-});
+
+    LABKEY.Ajax.request(
+            {
+                url : LABKEY.ActionURL.buildURL("visualization", "getDimensionValues"),
+                method : 'GET',
+                params : params,
+                success: getSuccessCallbackWrapper(createValues, LABKEY.Utils.getOnSuccess(config), config.scope),
+                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
+            });
+};
 
 /**
  * @deprecated Use {@link LABKEY.Query.Visualization.Dimension}
@@ -676,7 +661,7 @@ LABKEY.Query.Visualization.Filter = new function()
         create : function(config)
         {
             if (!config.schemaName)
-                Ext4.Msg.alert("Coding Error!", "You must supply a value for schemaName in your configuration object!");
+                throw new Error("Coding Error!", "You must supply a value for schemaName in your configuration object!");
             else
                 return getURLParameterValue(config);
         }

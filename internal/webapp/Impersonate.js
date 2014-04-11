@@ -3,6 +3,43 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+
+/**
+ * Helper class to render the impersonation dialogs to the page
+ */
+LABKEY.Security.Impersonation = new function() {
+
+    function display(componentName)
+    {
+        Ext4.onReady(function() {
+            var cmp = Ext4.create(componentName);
+            /*
+             cmp.on("afterlayout", function(cmp){
+             cmp.center();
+             });
+             */
+            cmp.show();
+        });
+    }
+
+    return {
+        showImpersonateUser: function()
+        {
+            display('LABKEY.Security.ImpersonateUser');
+        },
+
+        showImpersonateGroup: function()
+        {
+            display('LABKEY.Security.ImpersonateGroup');
+        },
+
+        showImpersonateRole: function()
+        {
+            display('LABKEY.Security.ImpersonateRoles');
+        }
+    };
+};
+
 Ext4.define('LABKEY.Security.ImpersonateUser', {
     extend: 'Ext.window.Window',
     modal: true,

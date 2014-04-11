@@ -108,7 +108,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
     static void addMenu(NavTree menu)
     {
         NavTree newRoleMenu = new NavTree("Roles");
-        newRoleMenu.setScript("LABKEY.Security.showImpersonateRole();");
+        newRoleMenu.setScript("LABKEY.Security.Impersonation.showImpersonateRole();");
         menu.addChild(newRoleMenu);
     }
 

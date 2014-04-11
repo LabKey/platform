@@ -33,7 +33,7 @@ LABKEY.Report = new function(){
                 for (var idx = 0; idx < data.outputParams.length; idx++) {
                     var param = data.outputParams[idx];
                     if (param.type == 'json') {
-                        param.value = LABKEY.ExtAdapter.decode(param.value);
+                        param.value = LABKEY.Utils.decode(param.value);
                     }
                 }
             }

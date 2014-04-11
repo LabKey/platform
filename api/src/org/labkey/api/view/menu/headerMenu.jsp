@@ -30,7 +30,20 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.menu.HeaderMenu" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("impersonate_dialog"));
+        return resources;
+    }
+%>
+
 <%
     HeaderMenu me = ((HeaderMenu) HttpView.currentView());
     PageConfig pageConfig = me.getModelBean();
@@ -40,6 +53,8 @@
     PageConfig.Template template = pageConfig.getTemplate();
     boolean templateCls = PageConfig.Template.Home != template && PageConfig.Template.None != template;
 %>
+
+<labkey:scriptDependency/>
 <div class="<%=templateCls ? pageConfig.getTemplate().toString().toLowerCase() + "-" : ""%>headermenu">
     <%
         boolean needSeparator = false;

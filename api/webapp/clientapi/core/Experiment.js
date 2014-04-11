@@ -38,7 +38,7 @@ LABKEY.Experiment = new function()
             if (response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                json = LABKEY.ExtAdapter.decode(response.responseText);
+                json = LABKEY.Utils.decode(response.responseText);
                 experiment = createExpFn(json);
             }
 
@@ -1003,7 +1003,7 @@ LABKEY.Exp.Data.prototype.getContent = function(config)
             if(response && response.getResponseHeader && response.getResponseHeader('Content-Type')
                     && response.getResponseHeader('Content-Type').indexOf('application/json') >= 0)
             {
-                content = LABKEY.ExtAdapter.decode(response.responseText);
+                content = LABKEY.Utils.decode(response.responseText);
             }
             else
             {

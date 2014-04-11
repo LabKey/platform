@@ -629,7 +629,7 @@ LABKEY.Portal = new function()
                     jsonData: {tabName: name},
                     success: function(response)
                     {
-                        var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
+                        var jsonResp = LABKEY.Utils.decode(response.responseText);
                         if (jsonResp && jsonResp.success)
                         {
                             if (jsonResp.url)
@@ -638,7 +638,7 @@ LABKEY.Portal = new function()
                     },
                     failure: function(response)
                     {
-                        var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
+                        var jsonResp = LABKEY.Utils.decode(response.responseText);
                         var errorHTML;
                         if (jsonResp && jsonResp.errors)
                             errorHTML = jsonResp.errors[0].message;
@@ -664,7 +664,7 @@ LABKEY.Portal = new function()
                 jsonData: {tabPageId: pageId},
                 success: function(response)
                 {
-                    var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
+                    var jsonResp = LABKEY.Utils.decode(response.responseText);
                     if (jsonResp && jsonResp.success)
                     {
                         if (jsonResp.url)
@@ -673,7 +673,7 @@ LABKEY.Portal = new function()
                 },
                 failure: function(response)
                 {
-                    var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
+                    var jsonResp = LABKEY.Utils.decode(response.responseText);
                     if (jsonResp && jsonResp.errors)
                     {
                         var errorHTML = '<div class="labkey-error">' + jsonResp.errors[0].message + '</div>';
@@ -707,14 +707,14 @@ LABKEY.Portal = new function()
                         },
                         success: function(response)
                         {
-                            var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
+                            var jsonResp = LABKEY.Utils.decode(response.responseText);
                             if (jsonResp.success)
                                 tabLinkEl.textContent = name;
                             editWindow.close();
                         },
                         failure: function(response)
                         {
-                            var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
+                            var jsonResp = LABKEY.Utils.decode(response.responseText);
                             var errorHTML;
                             if (jsonResp.errors)
                                 errorHTML = jsonResp.errors[0].message;

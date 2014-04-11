@@ -57,7 +57,7 @@ LABKEY.Query = new function()
             }
         };
 
-        if (LABKEY.ExtAdapter.isDefined(config.timeout))
+        if (LABKEY.Utils.isDefined(config.timeout))
             requestConfig.timeout = config.timeout;
 
         return LABKEY.Ajax.request(requestConfig);
@@ -290,45 +290,10 @@ LABKEY.Query = new function()
                 }
             }
 
-            if (LABKEY.ExtAdapter.isDefined(config.timeout))
+            if (LABKEY.Utils.isDefined(config.timeout))
                 requestConfig.timeout = config.timeout;
 
             return LABKEY.Ajax.request(requestConfig);
-        },
-
-        /**
-         * Execute arbitrary LabKey SQL and export the results to Excel or TSV. After this method is
-         * called, the user will be prompted to accept a file from the server, and most browsers will allow
-         * the user to either save it or open it in an apporpriate application.
-         * For more information, see the
-         * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=labkeySql">
-         * LabKey SQL Reference</a>.
-         * @param config An object which contains the following configuration properties.
-         * @param {String} config.schemaName name of the schema to query.
-         * @param {String} config.sql The LabKey SQL to execute.
-         * @param {String} [config.format] The desired export format. May be either 'excel' or 'tsv'. Defaults to 'excel'.
-         * @param {String} [config.containerPath] The path to the container in which the schema and query are defined,
-         *       if different than the current container. If not supplied, the current container's path will be used.
-         * @param {String} [config.containerFilter] One of the values of {@link LABKEY.Query.containerFilter} that sets
-         *       the scope of this query. Defaults to containerFilter.current, and is interpreted relative to
-         *       config.containerPath.
-         */
-        exportSql : function(config)
-        {
-            // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
-            // will make the browser pop up a dialog
-            var html = '<form method="POST" action="' + LABKEY.ActionURL.buildURL("query", "exportSql", config.containerPath) + '">';
-            if (undefined != config.sql)
-                html += '<input type="hidden" name="sql" value="' + LABKEY.ExtAdapter.htmlEncode(config.sql) + '" />';
-            if (undefined != config.schemaName)
-                html += '<input type="hidden" name="schemaName" value="' + LABKEY.ExtAdapter.htmlEncode(config.schemaName) + '" />';
-            if (undefined != config.format)
-                html += '<input type="hidden" name="format" value="' + LABKEY.ExtAdapter.htmlEncode(config.format) + '" />';
-            if (undefined != config.containerFilter)
-                html += '<input type="hidden" name="containerFilter" value="' + LABKEY.ExtAdapter.htmlEncode(config.containerFilter) + '" />';
-            html += "</form>";
-            var newForm = LABKEY.ExtAdapter.DomHelper.append(document.getElementsByTagName('body')[0], html);
-            newForm.submit();
         },
 
         /**
@@ -503,7 +468,7 @@ LABKEY.Query = new function()
                 dataObject[config.dataRegionName + '.viewName'] = config.viewName;
 
             if (config.columns)
-                dataObject[config.dataRegionName + '.columns'] = LABKEY.ExtAdapter.isArray(config.columns) ? config.columns.join(",") : config.columns;
+                dataObject[config.dataRegionName + '.columns'] = LABKEY.Utils.isArray(config.columns) ? config.columns.join(",") : config.columns;
 
             if (config.selectionKey)
                 dataObject[config.dataRegionName + '.selectionKey'] = config.selectionKey;
@@ -546,7 +511,7 @@ LABKEY.Query = new function()
                 params : dataObject
             };
 
-            if (LABKEY.ExtAdapter.isDefined(config.timeout))
+            if (LABKEY.Utils.isDefined(config.timeout))
                 requestConfig.timeout = config.timeout;
 
             return LABKEY.Ajax.request(requestConfig);
@@ -796,7 +761,7 @@ LABKEY.Query = new function()
                 }
             }
 
-            if (LABKEY.ExtAdapter.isDefined(config.timeout))
+            if (LABKEY.Utils.isDefined(config.timeout))
                 requestConfig.timeout = config.timeout;
 
             return LABKEY.Ajax.request(requestConfig);

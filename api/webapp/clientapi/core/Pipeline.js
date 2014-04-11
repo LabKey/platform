@@ -195,7 +195,7 @@ LABKEY.Pipeline = new function(){
             }
             else if (config.jsonParameters)
             {
-                if (LABKEY.ExtAdapter.isString(config.jsonParameters))
+                if (LABKEY.Utils.isString(config.jsonParameters))
                 {
                     // We already have a string
                     params.configureJson = config.jsonParameters;
@@ -203,7 +203,7 @@ LABKEY.Pipeline = new function(){
                 else
                 {
                     // Convert from JavaScript object to a string
-                    params.configureJson = LABKEY.ExtAdapter.encode(config.jsonParameters);
+                    params.configureJson = LABKEY.Utils.encode(config.jsonParameters);
                 }
             }
 

@@ -155,7 +155,7 @@ LABKEY.Chart = function(config)
 
     var renderChartInternal = function(response, config)
     {
-        var data = LABKEY.ExtAdapter.decode(response.responseText);
+        var data = LABKEY.Utils.decode(response.responseText);
 
         // render the image tag inside the chart div
         if (imageDivName && data.imageMap)

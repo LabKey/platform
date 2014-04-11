@@ -345,27 +345,31 @@ if (typeof LABKEY == "undefined")
             if (configs.devMode)
             {
                 var scripts = [
-                    "clientapi/core/ExtAdapter.js",
+                    "clientapi/dom/ExtAdapter.js",
                     "clientapi/core/Utils.js",
+                    "clientapi/dom/Utils.js",
                     "clientapi/core/Ajax.js",
                     "clientapi/core/ActionURL.js",
                     "clientapi/core/Assay.js",
-                    "clientapi/core/Chart.js",
+                    "clientapi/dom/Chart.js",
                     "clientapi/core/Domain.js",
                     "clientapi/core/Experiment.js",
                     "clientapi/core/FieldKey.js",
                     "clientapi/core/Filter.js",
-                    "clientapi/core/NavTrail.js",
+                    "clientapi/core/GetData.js",
+                    "clientapi/dom/GetData.js",
+                    "clientapi/dom/NavTrail.js",
                     "clientapi/core/Query.js",
-                    "clientapi/core/WebPart.js",
+                    "clientapi/dom/Query.js",
+                    "clientapi/dom/WebPart.js",
                     "clientapi/core/Security.js",
                     "clientapi/core/ParticipantGroup.js",
                     "clientapi/core/Specimen.js",
                     "clientapi/core/MultiRequest.js",
-                    "clientapi/core/Form.js",
+                    "clientapi/dom/Form.js",
                     "clientapi/core/Message.js",
                     "clientapi/core/Pipeline.js",
-                    "clientapi/core/Portal.js",
+                    "clientapi/dom/Portal.js",
                     "clientapi/core/Visualization.js"
                 ];
                 requiresScript(scripts, immediate);
