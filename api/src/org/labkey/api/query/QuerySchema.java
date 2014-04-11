@@ -46,7 +46,7 @@ public interface QuerySchema extends SchemaTreeNode
 
     public Set<String> getSchemaNames();
 
-    public Collection<QuerySchema> getSchemas();
+    public Collection<QuerySchema> getSchemas(boolean includeHidden);
 
     /** @return the simple name for this schema, excluding any parent schema names */
     public String getName();

@@ -27,11 +27,21 @@ import java.util.List;
  */
 public class SchemaTreeWalker<R, P> extends SimpleSchemaTreeVisitor<R, P>
 {
+    protected SchemaTreeWalker(boolean includeHidden)
+    {
+        super(includeHidden);
+    }
+
+    protected SchemaTreeWalker(boolean includeHidden, R defaultValue)
+    {
+        super(includeHidden, defaultValue);
+    }
+
     @Override
     public R visitDefaultSchema(DefaultSchema schema, Path path, P param)
     {
         R r = null;
-        r = visitAndReduce(schema.getSchemas(), path, param, r);
+        r = visitAndReduce(schema.getSchemas(_includeHidden), path, param, r);
         return r;
     }
 
@@ -39,7 +49,7 @@ public class SchemaTreeWalker<R, P> extends SimpleSchemaTreeVisitor<R, P>
     public R visitUserSchema(UserSchema schema, Path path, P param)
     {
         R r = null;
-        r = visitAndReduce(schema.getSchemas(), path, param, r);
+        r = visitAndReduce(schema.getSchemas(_includeHidden), path, param, r);
 
         List<String> names = schema.getTableAndQueryNames(false);
         r = visitTablesAndReduce(schema, names, path, param, r);

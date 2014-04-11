@@ -100,7 +100,7 @@ public class QuerySchemaWrapper implements QuerySchema
     }
 
     @Override
-    public Set<QuerySchema> getSchemas()
+    public Set<QuerySchema> getSchemas(boolean includeHidden)
     {
         return Collections.emptySet();
     }

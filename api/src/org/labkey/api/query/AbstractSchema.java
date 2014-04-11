@@ -69,7 +69,7 @@ abstract public class AbstractSchema implements QuerySchema
         return Collections.emptySet();
     }
 
-    public final Collection<QuerySchema> getSchemas()
+    public final Collection<QuerySchema> getSchemas(boolean includeHidden)
     {
         Set<String> schemaNames = getSchemaNames();
         if (schemaNames.isEmpty())
@@ -79,13 +79,13 @@ abstract public class AbstractSchema implements QuerySchema
         for (String schemaName : schemaNames)
         {
             QuerySchema schema = getSchema(schemaName);
-            if (schema != null && !schema.isHidden())
+            if (schema != null && (includeHidden || !schema.isHidden()))
                 schemas.add(schema);
         }
         return Collections.unmodifiableList(schemas);
     }
 
-    public final Collection<UserSchema> getUserSchemas()
+    public final Collection<UserSchema> getUserSchemas(boolean includeHidden)
     {
         Set<String> schemaNames = getSchemaNames();
         if (schemaNames.isEmpty())
@@ -95,7 +95,7 @@ abstract public class AbstractSchema implements QuerySchema
         for (String schemaName : schemaNames)
         {
             UserSchema schema = getUserSchema(schemaName);
-            if (schema != null)
+            if (schema != null && (includeHidden || !schema.isHidden()))
                 schemas.add(schema);
         }
         return Collections.unmodifiableList(schemas);

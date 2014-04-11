@@ -89,15 +89,18 @@ import org.labkey.api.data.TableInfo;
  */
 public class SimpleSchemaTreeVisitor<R, P> implements SchemaTreeVisitor<R, P>
 {
+    protected final boolean _includeHidden;
     protected final R _defaultValue;
 
-    protected SimpleSchemaTreeVisitor()
+    protected SimpleSchemaTreeVisitor(boolean includeHidden)
     {
+        _includeHidden = includeHidden;
         _defaultValue = null;
     }
 
-    protected SimpleSchemaTreeVisitor(R defaultValue)
+    protected SimpleSchemaTreeVisitor(boolean includeHidden, R defaultValue)
     {
+        _includeHidden = includeHidden;
         _defaultValue = defaultValue;
     }
 

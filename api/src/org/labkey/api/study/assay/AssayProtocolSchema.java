@@ -427,11 +427,15 @@ public abstract class AssayProtocolSchema extends AssaySchema
             }
             else if (queryName.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), RUNS_TABLE_NAME)) || queryName.equalsIgnoreCase(RUNS_TABLE_NAME))
             {
-                domainURI = getProvider().getRunDomain(getProtocol()).getTypeURI();
+                Domain runDomain = getProvider().getRunDomain(getProtocol());
+                if (runDomain != null)
+                    domainURI = runDomain.getTypeURI();
             }
             else if (queryName.equalsIgnoreCase(getLegacyProtocolTableName(getProtocol(), BATCHES_TABLE_NAME)) || queryName.equalsIgnoreCase(BATCHES_TABLE_NAME))
             {
-                domainURI = getProvider().getBatchDomain(getProtocol()).getTypeURI();
+                Domain batchDomain = getProvider().getBatchDomain(getProtocol());
+                if (batchDomain != null)
+                    domainURI = batchDomain.getTypeURI();
             }
         }
 

@@ -236,7 +236,7 @@ final public class DefaultSchema extends AbstractSchema
      * Get immediate UserSchema children names.
      * @return
      */
-    public Set<String> getUserSchemaNames()
+    public Set<String> getUserSchemaNames(boolean includeHidden)
     {
         Set<String> ret = new CaseInsensitiveTreeSet();
 
@@ -248,7 +248,9 @@ final public class DefaultSchema extends AbstractSchema
                 continue;
             }
             UserSchema userSchema = (UserSchema) schema;
-            if (userSchema.getName() == null || userSchema.isHidden())
+            if (userSchema.getName() == null)
+                continue;
+            if (!includeHidden && userSchema.isHidden())
                 continue;
             ret.add(schemaName);
         }
@@ -261,9 +263,9 @@ final public class DefaultSchema extends AbstractSchema
      *
      * @return Set of all schema paths.
      */
-    public Set<SchemaKey> getUserSchemaPaths()
+    public Set<SchemaKey> getUserSchemaPaths(boolean includeHidden)
     {
-        SimpleSchemaTreeVisitor<Set<SchemaKey>, Void> visitor = new SimpleSchemaTreeVisitor<Set<SchemaKey>, Void>()
+        SimpleSchemaTreeVisitor<Set<SchemaKey>, Void> visitor = new SimpleSchemaTreeVisitor<Set<SchemaKey>, Void>(includeHidden)
         {
             @Override
             public Set<SchemaKey> reduce(Set<SchemaKey> r1, Set<SchemaKey> r2)
@@ -283,11 +285,11 @@ final public class DefaultSchema extends AbstractSchema
             public Set<SchemaKey> visitUserSchema(UserSchema schema, Path path, Void param)
             {
                 Set<SchemaKey> r = Collections.singleton(path.schemaPath);
-                return visitAndReduce(schema.getSchemas(), path, param, r);
+                return visitAndReduce(schema.getSchemas(_includeHidden), path, param, r);
             }
         };
 
-        return visitor.visitTop(getSchemas(), null);
+        return visitor.visitTop(getSchemas(includeHidden), null);
     }
 
     public String getName()

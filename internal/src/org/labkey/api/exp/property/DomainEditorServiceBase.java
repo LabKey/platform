@@ -89,7 +89,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
         try
         {
             Container c = getContainer(containerId);
-            Set<SchemaKey> schemaPaths = DefaultSchema.get(getUser(), c).getUserSchemaPaths();
+            Set<SchemaKey> schemaPaths = DefaultSchema.get(getUser(), c).getUserSchemaPaths(false);
 
             List<String> names = new ArrayList<>();
             for (SchemaKey schemaPath : schemaPaths)
