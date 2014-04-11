@@ -1970,6 +1970,8 @@
       <ns:column columnName="Destination"/>
       <ns:column columnName="CreatedBy"/>
       <ns:column columnName="Created"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="Modified"/>
       <ns:column columnName="Refresh"/>
       <ns:column columnName="Settings"/>
     </ns:columns>

@@ -7416,4 +7416,21 @@ public class StudyController extends BaseStudyController
             return actionURL;
         }
     }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SnapshotSettingsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new HtmlView("Yo yo yo!");
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            _appendManageStudy(root);
+            root.addChild("View Settings");
+            return root;
+        }
+    }
 }

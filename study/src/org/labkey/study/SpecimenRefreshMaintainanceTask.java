@@ -92,10 +92,10 @@ public class SpecimenRefreshMaintainanceTask implements SystemMaintenance.Mainte
                         ") to \"" + destinationStudy.getContainer().getPath() + "\" (" + destinationStudy.getLabel() + ")");
                     SnapshotSettings settings = snapshot.getSnapshotSettings();
 
-                    User user = UserManager.getUser(snapshot.getCreatedBy());
+                    User user = UserManager.getUser(snapshot.getModifiedBy());
 
                     // User must exist and have admin rights in both folders... but this may not be the case.
-                    // TODO: Support a built-in admin user for this purpose?  Ben Bimber has mentioned a need as well.
+                    // Consider: Support a built-in admin user for this purpose?
 
                     PipeRoot root = PipelineService.get().findPipelineRoot(sourceStudy.getContainer());
                     PipelineJob job = new SpecimenRefreshPipelineJob(sourceStudy.getContainer(), destinationStudy.getContainer(), user, null, root, settings);

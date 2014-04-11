@@ -40,6 +40,8 @@ public class StudySnapshot
     private GUID _destination;
     private int _createdBy;
     private long _created;
+    private int _modifiedBy;
+    private long _modified;
 
     private boolean _refresh;  // Saved in settings as well, but dedicated refresh column allows quick filtering
     private SnapshotSettings _settings;
@@ -108,6 +110,26 @@ public class StudySnapshot
         _created = created.getTime();
     }
 
+    public int getModifiedBy()
+    {
+        return _modifiedBy;
+    }
+
+    public void setModifiedBy(int modifiedBy)
+    {
+        _modifiedBy = modifiedBy;
+    }
+
+    public Date getModified()
+    {
+        return new Date(_modified);
+    }
+
+    public void setModified(Date modified)
+    {
+        _modified = modified.getTime();
+    }
+
     public boolean isRefresh()
     {
         return _refresh;
@@ -166,6 +188,8 @@ public class StudySnapshot
         private Set<Integer> visits;
         private List<String> participants;
 
+        // Called via Jackson reflection
+        @SuppressWarnings("UnusedDeclaration")
         private SnapshotSettings()
         {
         }

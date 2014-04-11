@@ -20,9 +20,11 @@
 <%@ page import="org.labkey.api.admin.FolderWriter" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ page import="org.labkey.api.security.permissions.ReadPermission" %>
 <%@ page import="org.labkey.api.services.ServiceRegistry" %>
 <%@ page import="org.labkey.api.study.SpecimenService" %>
 <%@ page import="org.labkey.api.study.SpecimenTransform" %>
@@ -49,6 +51,7 @@
 <%@ page import="org.labkey.study.model.ParticipantGroupManager" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.study.model.StudySnapshot" %>
 <%@ page import="org.labkey.study.security.permissions.ManageRequestSettingsPermission" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Arrays" %>
@@ -60,7 +63,6 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%!
-
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -134,7 +136,39 @@
             }
         }
     }
+
+    if (study.isAncillaryStudy() || study.isSnapshotStudy())
+    {
 %>
+<table>
+    <tr>
+        <td>
+            <p>This is <%=text(study.isAncillaryStudy() ? "an ancillary" : "a published")%> study.</p>
+        </td>
+    </tr>
+</table>
+<%
+        if (c.hasPermission(user, AdminPermission.class))
+        {
+%>
+<%= button("View Settings").href(StudyController.SnapshotSettingsAction.class, c) %>
+<%
+        }
+
+        StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(study.getStudySnapshot());
+        assert null != snapshot;
+        Container parent = ContainerManager.getForId(snapshot.getSource());
+
+        // Display a button if user has read permissions there.
+        if (parent.hasPermission(user, ReadPermission.class))
+        {
+%>
+<%= button("Visit Source Study").href(urlProvider(ProjectUrls.class).getBeginURL(parent)) %>
+<%
+        }
+    }
+%>
+
 <table>
     <%
         if (c.hasPermission(user, AdminPermission.class))
@@ -154,7 +188,7 @@
         <td>This study has <%=numProperties%> additional <%=h(propString)%></td>
         <td><%
             Container p = c.getProject();
-            if (p.hasPermission(user,AdminPermission.class))
+            if (p.hasPermission(user, AdminPermission.class))
             {
                 ActionURL returnURL = getActionURL();
                 ActionURL editDefinition = new ActionURL(StudyDefinitionController.EditStudyDefinitionAction.class, p);
@@ -294,11 +328,11 @@
                 new ActionURL(SpecimenController.ManageSpecimenWebPartAction.class, c)) %></td>
     </tr>
 <%
-    for (SpecimenTransform transform : SpecimenService.get().getSpecimenTransforms(getContainer()))
-    {
-        ActionURL manageAction = transform.getManageAction(getContainer(), getUser());
-        if (manageAction != null)
-        {
+            for (SpecimenTransform transform : SpecimenService.get().getSpecimenTransforms(getContainer()))
+            {
+                ActionURL manageAction = transform.getManageAction(getContainer(), getUser());
+                if (manageAction != null)
+                {
 %>
         <tr>
             <th align="left">External Specimen Repository</th>
@@ -306,18 +340,16 @@
             <td><%=textLink("Configure " + transform.getName(), manageAction)%></td>
         </tr>
 <%
-        }
-    }
-%>
-
-<%
+                }
+            }
         }
         else
         {
+            String childStudyType = study.isAncillaryStudy() ? "ancillary" : "published";
 %>
     <tr>
         <td colspan="3">
-            <p><em>NOTE: specimen repository and request settings are not available for ancillary or published studies.</em></p>
+            <p><em>Note: specimen repository and request settings are not available for <%=text(childStudyType)%> studies.</em></p>
         </td>
     </tr>
 <%
@@ -384,14 +416,13 @@
 %>
 <%= button("Export Study").href(urlProvider(AdminUrls.class).getExportFolderURL(c).addParameter("exportType", "study")) %>
 <%= button("Reload Study").href(urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload")) %>
-<%= button("Delete Study").href(StudyController.DeleteStudyAction.class, getContainer()) %>
+<%= button("Delete Study").href(StudyController.DeleteStudyAction.class, c) %>
 <%= button("Create Ancillary Study").href("javascript:void(0)").onClick("showNewStudyWizard()") %>
 <%= button("Publish Study").href("javascript:void(0)").onClick("showPublishStudyWizard()") %>
 <%
     }
 %>
 <script type="text/javascript">
-
     function showNewStudyWizard()
     {
         var init = function(){
