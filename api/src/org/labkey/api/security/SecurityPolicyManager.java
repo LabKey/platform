@@ -274,8 +274,8 @@ public class SecurityPolicyManager
         CACHE.remove(cacheKey(policy));
     }
 
-
-    private static void removeAll()
+    /** Clear all cached SecurityPolicy instances */
+    public static void removeAll()
     {
         CACHE.clear();
     }

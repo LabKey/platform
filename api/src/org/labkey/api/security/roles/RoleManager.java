@@ -16,6 +16,7 @@
 package org.labkey.api.security.roles;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.view.ViewContext;
 import org.jetbrains.annotations.NotNull;
@@ -134,6 +135,10 @@ public class RoleManager
             catch(InstantiationException e) {}
             catch (IllegalAccessException e) {}
         }
+
+        // It's possible that a security policy refers to this role but it wasn't available when it was loaded.
+        // Clear the cache so that it resolves correctly going forward.
+        SecurityPolicyManager.removeAll();
     }
 
     /**
