@@ -380,9 +380,15 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
         return _customView;
     }
 
-    public void setCustomView(CustomView customView)
+    /**
+     * Reset instanced cached information.
+     * After deleting a custom view, we want to re-get the custom view to find any shadowed custom views.
+     */
+    public void reset()
     {
-        _customView = customView;
+        _customView = null;
+        _queryDef = null;
+        _schema = null;
     }
 
     public boolean canEditSql()
