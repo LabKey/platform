@@ -1524,6 +1524,25 @@ public class PageFlowUtil
         return sb.toString();
     }
 
+    /**
+     * Temporary method for testing core client api (no ext dependencies)
+     */
+    public static String getCoreClientApiIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
+    {
+        Container c = context.getContainer();
+        User u = context.getUser();
+
+        if (null == c)
+            c = ContainerManager.getRoot();
+        if (null == u)
+            u = User.guest;
+
+        StringBuilder sb = getFaviconIncludes(c);
+        sb.append(getLabkeyJS(context, resources));
+        sb.append(getStylesheetIncludes(c, u, resources));
+        sb.append(getJavaScriptIncludes(c, u, resources, true, true));
+        return sb.toString();
+    }
 
     public static StringBuilder getFaviconIncludes(Container c)
     {
@@ -1709,12 +1728,23 @@ public class PageFlowUtil
      */
     public static LinkedHashSet<ClientDependency> getDefaultJavaScriptPaths()
     {
+        return getDefaultJavaScriptPaths(false);
+    }
+
+    public static LinkedHashSet<ClientDependency> getDefaultJavaScriptPaths(boolean coreClientApiOnly)
+    {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
 
         if (AppProps.getInstance().isExt3Required())
             resources.add(ClientDependency.fromFilePath("Ext3.lib.xml"));
-        resources.add(ClientDependency.fromFilePath("clientapi.lib.xml"));
-        resources.add(ClientDependency.fromFilePath("internal.lib.xml"));
+
+        if (coreClientApiOnly)
+            resources.add(ClientDependency.fromFilePath("clientapi_core.lib.xml"));
+        else
+            resources.add(ClientDependency.fromFilePath("clientapi.lib.xml"));
+
+        if (!coreClientApiOnly)
+            resources.add(ClientDependency.fromFilePath("internal.lib.xml"));
         return resources;
     }
 
@@ -1774,6 +1804,12 @@ public class PageFlowUtil
 
     public static String getJavaScriptIncludes(Container c, User u, LinkedHashSet<ClientDependency> extraResources, boolean includeDefaultResources)
     {
+        return getJavaScriptIncludes(c, u, extraResources, true, false);
+    }
+
+    public static String getJavaScriptIncludes(Container c, User u, LinkedHashSet<ClientDependency> extraResources, boolean includeDefaultResources,
+                                               boolean coreClientApiOnly)
+    {
         String contextPath = AppProps.getInstance().getContextPath();
         String serverHash = getServerSessionHash();
 
@@ -1786,7 +1822,7 @@ public class PageFlowUtil
 
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         if (includeDefaultResources)
-            resources.addAll(getDefaultJavaScriptPaths());
+            resources.addAll(getDefaultJavaScriptPaths(coreClientApiOnly));
 
         if (extraResources != null)
             resources.addAll(extraResources);

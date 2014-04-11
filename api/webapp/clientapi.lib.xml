@@ -9,7 +9,6 @@
         <script path="clientapi/dom/Form.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.get, Ext.EventManager, Ext.isIE, Ext.isGecko, moved to dom -->
         <script path="clientapi/dom/NavTrail.js"/>
 
-        <script path="clientapi/core/Pipeline.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.DomHelper.markup, Ext.isString, and Ext.encode -->
         <script path="clientapi/dom/Portal.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.Msg, Ext4.form.field.Text, and Ext4.window.Window -->
         <script path="clientapi/dom/Query.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.DomHelper -->
         <script path="clientapi/dom/GetData.js"/> <!-- TODO: REQUIRES FIX: Depends on LABKEY.WebPart, moved to dom -->
