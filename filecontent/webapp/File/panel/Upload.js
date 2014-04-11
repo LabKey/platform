@@ -156,9 +156,6 @@ Ext4.define('File.panel.Upload', {
             },
 
             accept: function (file, done) {
-                console.log("accpet event: ", file);
-                console.log(" -> fullPath: " + file.fullPath);
-
                 // UNDONE: If file.fullPath is not empty, check that the Upload panel is configured to allowDirectoryUpload
                 done();
             }
@@ -174,11 +171,9 @@ Ext4.define('File.panel.Upload', {
         });
 
         this.dropzone.on('addedfile', function (file) {
-            //console.log("addedfile event");
         });
 
         this.dropzone.on('processing', function (file) {
-            //console.log("processing event: ", file);
             var cwd = this.uploadPanel.getWorkingDirectory('cwd');
             if (cwd)
             {

@@ -1703,7 +1703,7 @@
               <ns:description>Shorter version of the full description, usable in a table of contents view.</ns:description>
           </ns:column>
           <ns:column columnName="Institution">
-              <ns:description>The institution at which the lab is based and/or affiliated with.  For example, "University of Washington", "Rho".</ns:description>
+              <ns:description>The institution at which the lab is based and/or affiliated with.</ns:description>
           </ns:column>
       </ns:columns>
   </ns:table>
