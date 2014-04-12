@@ -524,7 +524,8 @@ public class QueryView extends WebPartView<Object>
                 {
                     ret = getViewContext().cloneActionURL();
                     ret.addParameter("exportType", action.name());
-                    ret.addParameter("dataRegionName", getDataRegionName());
+                    ret.addParameter("dataRegionName", getExportRegionName());
+                    break;
                 }
                 ActionURL expandedURL = getViewContext().cloneActionURL();
                 addParamsByPrefix(ret, expandedURL, getDataRegionName() + ".", DATAREGIONNAME_DEFAULT + ".");
