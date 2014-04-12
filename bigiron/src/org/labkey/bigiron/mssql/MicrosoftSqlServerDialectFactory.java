@@ -16,7 +16,6 @@
 
 package org.labkey.bigiron.mssql;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -42,8 +41,6 @@ import java.util.Set;
 */
 public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
 {
-    private static final Logger _log = Logger.getLogger(MicrosoftSqlServerDialectFactory.class);
-
     private String getProductName()
     {
         return "Microsoft SQL Server";
@@ -86,9 +83,12 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     {
         // Good resource for past & current SQL Server version numbers: http://www.sqlteam.com/article/sql-server-versions
 
-        // As of 13.1, we support only 2008 R2 and 2012
+        // As of 13.1, we support only 2008 R2 and higher
         if (version >= 105)
         {
+            if (version >= 120)
+                return new MicrosoftSqlServer2014Dialect();
+
             if (version >= 110)
                 return new MicrosoftSqlServer2012Dialect();
 
@@ -108,7 +108,8 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     @Override
     public Collection<? extends SqlDialect> getDialectsToTest()
     {
-        return PageFlowUtil.set(new MicrosoftSqlServer2008R2Dialect(), new MicrosoftSqlServer2012Dialect());
+        // The SQL Server dialects are identical, so just test one
+        return PageFlowUtil.set(new MicrosoftSqlServer2008R2Dialect());
     }
 
     public static class DialectRetrievalTestCase extends AbstractDialectRetrievalTestCase
@@ -116,18 +117,21 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
         public void testDialectRetrieval()
         {
             // These should result in bad database exception
-            badProductName("Gobbledygood", 1.0, 12.0, "");
-            badProductName("SQL Server", 1.0, 12.0, "");
-            badProductName("sqlserver", 1.0, 12.0, "");
+            badProductName("Gobbledygook", 1.0, 14.0, "");
+            badProductName("SQL Server", 1.0, 14.0, "");
+            badProductName("sqlserver", 1.0, 14.0, "");
 
             // < 10.5 should result in bad version error
-            badVersion("Microsoft SQL Server", 0.0, 10.4, null);
+            badVersion("Microsoft SQL Server", 0.0, 10.5, null);
 
             // >= 10.5 and < 11.0 should result in MicrosoftSqlServer2008R2Dialect
-            good("Microsoft SQL Server", 10.5, 10.9, "", MicrosoftSqlServer2008R2Dialect.class);
+            good("Microsoft SQL Server", 10.5, 11.0, "", MicrosoftSqlServer2008R2Dialect.class);
 
-            // >= 11.0 should result in MicrosoftSqlServer2012Dialect
+            // >= 11.0 and < 12.0 should result in MicrosoftSqlServer2012Dialect
             good("Microsoft SQL Server", 11.0, 12.0, "", MicrosoftSqlServer2012Dialect.class);
+
+            // >= 12.0 should result in MicrosoftSqlServer2014Dialect
+            good("Microsoft SQL Server", 12.0, 14.0, "", MicrosoftSqlServer2014Dialect.class);
         }
     }
 
