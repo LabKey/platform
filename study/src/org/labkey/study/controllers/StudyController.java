@@ -182,6 +182,7 @@ import org.labkey.study.model.QCStateSet;
 import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.StudySnapshot;
 import org.labkey.study.model.UploadLog;
 import org.labkey.study.model.VisitDataSet;
 import org.labkey.study.model.VisitDataSetType;
@@ -6875,7 +6876,7 @@ public class StudyController extends BaseStudyController
         public ApiResponse execute(DefineDatasetForm form, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            DataSetDefinition def = null;
+            DataSetDefinition def;
 
             DbScope scope =  StudySchema.getInstance().getSchema().getScope();
 
@@ -7418,19 +7419,61 @@ public class StudyController extends BaseStudyController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class SnapshotSettingsAction extends SimpleViewAction
+    public class SnapshotSettingsAction extends FormViewAction<SnapshotSettingsForm>
     {
+        private StudyImpl _study;
+
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(SnapshotSettingsForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new HtmlView("Yo yo yo!");
+            _study = getStudyRedirectIfNull();
+            StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(_study.getStudySnapshot());
+            return new JspView<>("/org/labkey/study/view/snapshotSettings.jsp", snapshot);
         }
 
+        @Override
         public NavTree appendNavTrail(NavTree root)
         {
             _appendManageStudy(root);
-            root.addChild("View Settings");
+            root.addChild((_study.isAncillaryStudy() ? "Ancillary" : "Published") + " Study Settings");
             return root;
+        }
+
+        @Override
+        public void validateCommand(SnapshotSettingsForm form, Errors errors)
+        {
+        }
+
+        @Override
+        public boolean handlePost(SnapshotSettingsForm form, BindException errors) throws Exception
+        {
+            StudyImpl study = getStudyRedirectIfNull();
+            StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(study.getStudySnapshot());
+            assert null != snapshot;
+            snapshot.setRefresh(form.isRefresh());
+            StudyManager.getInstance().updateStudySnapshot(snapshot, getUser());
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(SnapshotSettingsForm form)
+        {
+            return new ActionURL(getClass(), getContainer());
+        }
+    }
+
+    public static class SnapshotSettingsForm
+    {
+        private boolean _refresh = false;
+
+        public boolean isRefresh()
+        {
+            return _refresh;
+        }
+
+        public void setRefresh(boolean refresh)
+        {
+            _refresh = refresh;
         }
     }
 }

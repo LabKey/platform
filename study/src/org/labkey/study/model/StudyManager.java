@@ -371,6 +371,14 @@ public class StudyManager
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
     }
 
+    public void updateStudySnapshot(StudySnapshot snapshot, User user)
+    {
+        // For now, "refresh" is the only field that can be updated (plus the Modified fields, which get handled automatically)
+        Map<String, Object> map = new HashMap<>();
+        map.put("refresh", snapshot.isRefresh());
+
+        Table.update(user, StudySchema.getInstance().getTableInfoStudySnapshot(), map, snapshot.getRowId());
+    }
 
     private class DatasetHelper extends QueryHelper<DataSetDefinition>
     {

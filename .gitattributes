@@ -3872,6 +3872,7 @@ study/src/org/labkey/study/view/samples/viewRequestsHeader.jsp -text
 study/src/org/labkey/study/view/samples/webPart.jsp -text
 study/src/org/labkey/study/view/saveReportView.jsp -text
 study/src/org/labkey/study/view/securityTabHeader.jsp -text
+study/src/org/labkey/study/view/snapshotSettings.jsp -text
 study/src/org/labkey/study/view/studyList.jsp -text
 study/src/org/labkey/study/view/studyListWide.jsp -text
 study/src/org/labkey/study/view/studySchedule.jsp -text
