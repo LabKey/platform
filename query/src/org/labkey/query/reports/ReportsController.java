@@ -1030,27 +1030,21 @@ public class ReportsController extends SpringActionController
 
             // ApiAction doesn't seem to bind URL parameters on POST... so manually populate them into the bean.
             errors.addAllErrors(defaultBindParameters(bean, getViewContext().getBindPropertyValues()));
-
-            HttpView resultsView = null;
-
+            VBox resultsView = new VBox();
             Report report = bean.getReport(getViewContext());
+            if (report != null)
+            {
+                if (bean.getIsDirty())
+                    report.clearCache();
 
-            // for now, limit pipeline view to saved R reports
-            if (null != bean.getReportId() && bean.isRunInBackground())
-            {
-                if (report instanceof RReport)
+                // for now, limit pipeline view to saved R reports
+                if (null != bean.getReportId() && bean.isRunInBackground())
                 {
-                    resultsView = new JspView<>("/org/labkey/api/reports/report/view/ajaxReportRenderBackground.jsp", (RReport)report);
+                    if (report instanceof RReport)
+                        resultsView.addView(new RenderBackgroundRReportView((RReport)report));
                 }
-            }
-            else
-            {
-                if (report != null)
-                {
-                    if (bean.getIsDirty())
-                        report.clearCache();
-                    resultsView = report.renderReport(getViewContext());
-                }
+                else
+                    resultsView.addView(report.renderReport(getViewContext()));
             }
 
             // TODO: assert?
@@ -1458,6 +1452,7 @@ public class ReportsController extends SpringActionController
 
             if (report instanceof RReport)
             {
+                ((RReport)report).deleteReportDir();
                 ((RReport)report).createInputDataFile(getViewContext());
                 PipelineService.get().queueJob(job);
                 response.put("success", true);
