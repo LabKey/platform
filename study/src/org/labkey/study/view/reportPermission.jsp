@@ -95,9 +95,9 @@
 
 </script>
 
-<h3><%= bean.getDescriptor().getReportName() %></h3>
+<h3><%= h(bean.getDescriptor().getReportName()) %></h3>
 
-    <p>This page enables you to fine-tune permissions for this view%>.</p>
+    <p>This page enables you to fine-tune permissions for this view.</p>
     <p>You can choose the default behavior as described.  Alternately, you can set custom permissions for each group. As always, if you don't have read permission on this folder, you don't get to see anything, regardless of any other settings.</p>
 
     <form id=permissionsForm action="" method=POST>
@@ -126,7 +126,7 @@
             //if (g.isAdministrators()) continue;
             boolean checked = reportPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
             boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class) || g.isAdministrators();
-            %><tr><td><font color=<%=disabled ? "gray" : "black"%>><%=g.getName()%></font></td><td height="22" width=20><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td></tr><%
+            %><tr><td><font color=<%=text(disabled ? "gray" : "black")%>><%=h(g.getName())%></font></td><td height="22" width=20><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td></tr><%
         }
 
         if (projectGroups.length > 0)
@@ -137,7 +137,7 @@
         {
             boolean checked = reportPolicy.hasPermission(g, ReadPermission.class);
             boolean disabled = !containerPolicy.hasPermission(g, ReadPermission.class);
-            %><tr><td><font color=<%=disabled?"gray":"black"%>><%=g.getName()%></font></td><td height=22 width=20><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td></tr><%
+            %><tr><td><font color=<%=text(disabled?"gray":"black")%>><%=h(g.getName())%></font></td><td height=22 width=20><input name=group value="<%=g.getUserId()%>" type=checkbox<%=checked(checked)%><%=disabled(disabled)%>></td></tr><%
         }
         %>
     </table>

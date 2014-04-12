@@ -744,7 +744,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 ModulePropertiesTestCase.class,
                 PortalJUnitTest.class,
                 ContainerDisplayColumn.TestCase.class,
-                SimpleFilter.InClauseTestCase.class,
                 AliasManager.TestCase.class,
                 AtomicDatabaseInteger.TestCase.class,
                 DbSequenceManager.TestCase.class,
@@ -806,7 +805,10 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 HelpTopic.TestCase.class,
                 CaseInsensitiveHashMap.TestCase.class,
                 StatsServiceImpl.TestCase.class,
-                NumberUtilsLabKey.TestCase.class
+                NumberUtilsLabKey.TestCase.class,
+                SimpleFilter.FilterTestCase.class,
+                SimpleFilter.InClauseTestCase.class,
+                SimpleFilter.BetweenClauseTestCase.class
         ));
     }
 
