@@ -23,6 +23,7 @@ import org.labkey.api.reports.report.RReportJob;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
 import org.labkey.api.view.VBox;
 
 import java.io.*;
@@ -46,6 +47,9 @@ public class RenderBackgroundRReportView extends HttpView
         if (_report != null)
         {
             File logFile = new File(_report.getReportDir(), RReportJob.LOG_FILE_NAME);
+            VBox view = new VBox();
+            view.addView(new JspView<>("/org/labkey/api/reports/report/view/ajaxReportRenderBackground.jsp", _report));
+
             if (logFile.exists())
             {
                 PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile);
@@ -54,16 +58,17 @@ public class RenderBackgroundRReportView extends HttpView
                     File filePath = new File(statusFile.getFilePath());
                     File substitutionMap = new File(filePath.getParentFile(), RReport.SUBSTITUTION_MAP);
 
+                    // if the job is complete, show the results of the job
                     if (substitutionMap.exists())
                     {
                         List<ParamReplacement> outputSubst = ParamReplacementSvc.get().fromFile(substitutionMap);
-                        VBox view = new VBox();
+                        VBox innerView = new VBox();
+                        view.addView(innerView);
                         RReport.renderViews(_report, view, outputSubst, false);
-
-                        include(view);
                     }
                 }
             }
+            include(view);
         }
     }
 }

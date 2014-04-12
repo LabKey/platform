@@ -56,7 +56,6 @@
       return resources;
   }
 %>
-
 <%
     JspView<ScriptReportBean> me = (JspView<ScriptReportBean>)HttpView.currentView();
     ViewContext ctx = getViewContext();

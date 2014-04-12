@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2008-2014 LabKey Corporation
+ * Copyright (c) 2008-2013 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +15,19 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.pipeline.PipelineJob" %>
-<%@ page import="org.labkey.api.pipeline.PipelineService" %>
-<%@ page import="org.labkey.api.pipeline.PipelineStatusFile" %>
+<%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
-<%@ page import="org.labkey.api.reports.report.RReportJob" %>
 <%@ page import="org.labkey.api.reports.report.ReportDescriptor" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
-<%@ page import="java.io.File" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RReport> me = (JspView<RReport>) HttpView.currentView();
     RReport bean = me.getModelBean();
     ViewContext context = getViewContext();
-
-    File logFile = new File(bean.getReportDir(), RReportJob.LOG_FILE_NAME);
-    PipelineStatusFile statusFile = PipelineService.get().getStatusFile(logFile);
-    boolean autoRefresh = statusFile != null &&
-            (PipelineJob.TaskStatus.waiting.matches(statusFile.getStatus()) || statusFile.getStatus().equals(RReportJob.PROCESSING_STATUS));
 
     // TODO: uniqueid
     // TODO: wrap javascript in anonymous function
@@ -45,8 +37,6 @@
             setController("reports").
                 setAction("startBackgroundRReport").
                 replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
-
-    ActionURL getResultsURL = startReportURL.clone().setAction("getBackgroundReportResults");
 %>
 <script type="text/javascript">
     var timer;
@@ -56,14 +46,29 @@
         Ext4.Ajax.request({
             url: <%=q(startReportURL.getLocalURIString())%>,
             method: 'GET',
-            success: startJobSuccess,
+            success: function(resp) {
+                var outputs = Ext4.dom.Query.select('table[@class=labkey-output]');
+                if (outputs && outputs.length > 0)
+                {
+                    for (var i=0; i < outputs.length; i++)
+                        outputs[i].style.display = 'none';
+                }
+                var msgbox = Ext4.create('Ext.window.Window', {
+                    html     : '<span class="labkey-message">A pipeline job has been successfully queued.</span>',
+                    modal    : false,
+                    title    : 'Start Pipeline Job',
+                    closable : false,
+                    //width    : 300,
+                    height   : 100
+                });
+                msgbox.show();
+                msgbox.getEl().fadeOut({duration : 3000, callback : function(){
+                    msgbox.hide();
+                }});
+                Ext4.dom.Query.selectNode('div[@class=start-job-success]').style.display = '';
+            },
             failure: startJobFailure
         });
-    }
-
-    function startJobSuccess(o)
-    {
-        init();
     }
 
 	function startJobFailure(o)
@@ -84,79 +89,21 @@
         }
 	}
 
-    function init()
-    {
-        pollForResults();
-    }
-
-<%
-    if (autoRefresh)
-    { %>
-        Ext4.onReady(init());
-<%
-    } %>
-
-    function pollForResults()
-    {
-        Ext4.Ajax.request({
-            url: <%=q(getResultsURL.getLocalURIString())%>,
-            method: 'GET',
-            params : {runInBackground : true},
-            success: resultsSuccess,
-            failure: resultsFailure
-        });
-    }
-
-    function resultsSuccess(response)
-    {
-        var o = Ext4.decode(response.responseText);
-
-        if (o) {
-            var extDiv = Ext4.get('backgroundReportDiv');
-
-            if (extDiv) {
-
-                extDiv.update(o.results);
-            }
-
-            if (o.status == <%=q(PipelineJob.TaskStatus.complete.toString())%>)
-                stopPolling();
-            else if (!timer)
-                timer = window.setInterval("pollForResults()", 4000);
-        }
-    }
-
-    function resultsFailure(o)
-    {
-        alert("Failure retrieving results: " + o);
-        stopPolling();
-    }
-
-    function stopPolling()
-    {
-        if (timer)
-        {
-            window.clearInterval(timer);
-            timer = null;
-        }
-    }
 </script>
+
+<div id="reportPanel"></div>
 
 <div id="container"></div>
 <table>
     <tr class="labkey-wp-header"><th colspan="2" align="left">R Background Job Status</th></tr>
     <tr><td colspan="2"><i>Your R script is configured to run in the background as a pipeline job. You can check status
-        on a running job or start a new background job. If the job has been completed, the results will be shown on this
-        page. When you click on the start button, a new background job will be launched, and the page will automatically
-        refresh until the job is complete.
+        on a running job <a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer())%>">here</a> or start a new background job. If the job has been completed, the results will be shown on this
+        page. You can also view the report results from the pipeline job status page by clicking on the 'data' button. When you click on the start button, a new background job will be launched.
     </i></td>
     </tr>
-    <tr><td colspan="2">&nbsp;</td></tr><%
-
-    if (!autoRefresh)
-    {
-%>
+    <tr><td colspan="2">&nbsp;</td></tr>
     <tr><td><%= button("Start Job").href("javascript:void(0)").onClick("javascript:startJob()") %></td></tr>
-    <tr><td colspan="2">&nbsp;</td></tr><%
-    } %>
+    <tr><td colspan="2">&nbsp;</td></tr>
+    <tr><td colspan="2"><div class="start-job-success" style="display: none">The pipeline job has been successfully queued, to view the status <a href="<%=PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer())%>">click here</a>.
+        </div></td></tr>
 </table>
