@@ -484,7 +484,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
             if (rec) {
                 if (filter.isMultiValued())
-                    return this.validateEqOneOf(input.getValue());
+                    return this.validateMultiValueInput(input.getValue(), filter.getMultiValueSeparator());
                 return this.validateInputField(input.getValue());
             }
         }
@@ -720,9 +720,9 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         return 0;
     },
 
-    validateEqOneOf : function(inputValues) {
-        // Used when "Equals One Of.." is selected. Calls validateInputField on each value entered.
-        var values = inputValues.split(';');
+    validateMultiValueInput : function(inputValues, multiValueSeparator) {
+        // Used when "Equals One Of.." or "Between" is selected. Calls validateInputField on each value entered.
+        var values = inputValues.split(multiValueSeparator);
         var isValid = "";
         for(var i = 0; i < values.length; i++){
             isValid = this.validateInputField(values[i]);

@@ -246,6 +246,66 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) <= 0;
             }
         },
+    BETWEEEN("Between", "between", "BETWEEN", true, " BETWEEN ? AND ?", OperatorType.BETWEEN)
+        {
+            @Override
+            FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            {
+                if (value instanceof Collection)
+                {
+                    Object[] values = ((Collection)value).toArray();
+                    if (values.length != 2)
+                        throw new IllegalArgumentException("Between filter requires exactly two parameter values");
+
+                    return new BetweenClause(fieldKey, values[0], values[1], false);
+                }
+                else
+                {
+                    String s = Objects.toString(value, "");
+                    String[] values = s.trim().split(BetweenClause.SEPARATOR);
+                    if (values.length != 2)
+                        throw new IllegalArgumentException("Between filter requires exactly two parameter values");
+
+                    return new BetweenClause(fieldKey, values[0], values[1], false);
+                }
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                throw new UnsupportedOperationException("Conditional formatting not yet supported for Between filter");
+            }
+        },
+    NOT_BETWEEEN("Not Between", "notbetween", "NOT_BETWEEN", true, " NOT BETWEEN ? AND ?", OperatorType.NOTBETWEEN)
+        {
+            @Override
+            FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            {
+                if (value instanceof Collection)
+                {
+                    Object[] values = ((Collection)value).toArray();
+                    if (values.length != 2)
+                        throw new IllegalArgumentException("Not between filter requires exactly two parameter values");
+
+                    return new BetweenClause(fieldKey, values[0], values[1], true);
+                }
+                else
+                {
+                    String s = Objects.toString(value, "");
+                    String[] values = s.trim().split(BetweenClause.SEPARATOR);
+                    if (values.length != 2)
+                        throw new IllegalArgumentException("Not between filter requires exactly two parameter values");
+
+                    return new BetweenClause(fieldKey, values[0], values[1], true);
+                }
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                throw new UnsupportedOperationException("Conditional formatting not yet supported for Not Between filter");
+            }
+        },
     CONTAINS("Contains", "contains", "CONTAINS", true, null, OperatorType.CONTAINS)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -1138,6 +1198,40 @@ public enum CompareType
         }
     }
 
+    public static class BetweenClause extends CompareClause
+    {
+        public static final String SEPARATOR = ",";
+
+        public BetweenClause(@NotNull FieldKey fieldKey, Object beginValue, Object endValue, boolean negated)
+        {
+            super(fieldKey, negated ? NOT_BETWEEEN : BETWEEEN, null);
+
+            if (beginValue == null || (beginValue instanceof String && ((String)beginValue).trim().length() == 0))
+                throw new IllegalArgumentException("Between filter requires exactly two non-null and non-empty parameter values");
+
+            if (endValue == null || (endValue instanceof String && ((String)endValue).trim().length() == 0))
+                throw new IllegalArgumentException("Between filter requires exactly two non-null and non-empty parameter values");
+
+            _paramVals = new Object[] { beginValue, endValue };
+            _negated = negated;
+        }
+
+        @Override
+        protected String toURLParamValue()
+        {
+            Object[] values = getParamVals();
+            if (values != null && values.length == 2 && values[0] != null && values[1] != null)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.append(values[0].toString());
+                sb.append(SEPARATOR);
+                sb.append(values[1].toString());
+
+                return sb.toString();
+            }
+            return null;
+        }
+    }
 
     abstract private static class LikeClause extends CompareClause
     {

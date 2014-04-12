@@ -34,6 +34,7 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.net.URISyntaxException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -981,7 +982,7 @@ public class SimpleFilter implements Filter
                 catch (ConversionException e)
                 {
                     // rethrow with better error message.  Date CompareTypes convert the parameter when created.
-                    throw new ConversionException("Could not convert \"" + param + "\" for column \"" + fieldKey.toDisplayString() + "\"", e);
+                    throw new ConversionException("Could not convert \"" + param + "\" for column \"" + fieldKey.toDisplayString() + "\": " + e.getMessage(), e);
                 }
             }
         }
@@ -1362,7 +1363,7 @@ public class SimpleFilter implements Filter
         Calendar asCalendar(Object x)
         {
             Calendar c = new GregorianCalendar();
-            c.setTimeInMillis(DateUtil.parseDateTime(x.toString()));
+            c.setTimeInMillis(DateUtil.parseISODateTime(x.toString()));
             return c;
         }
 
@@ -1459,8 +1460,18 @@ public class SimpleFilter implements Filter
         }
     }
 
+    public abstract static class ClauseTestCase extends Assert
+    {
+        protected void test(String expectedSQL, String description, FilterClause clause, SqlDialect dialect)
+        {
+            assertEquals("Generated SQL did not match", expectedSQL, clause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), dialect).toString());
+            StringBuilder sb = new StringBuilder();
+            clause.appendFilterText(sb, new ColumnNameFormatter());
+            assertEquals("Description did not match", description, sb.toString());
+        }
+    }
 
-    public static class InClauseTestCase extends org.junit.Assert
+    public static class InClauseTestCase extends ClauseTestCase
     {
         @Test
         public void testInClause()
@@ -1525,13 +1536,53 @@ public class SimpleFilter implements Filter
             // Convert to sets because we don't care about order for IN clauses
             assertEquals("Parameter values didn't match for IN clause", new HashSet<>(Arrays.asList(expectedValues)), new HashSet<>(Arrays.asList(clause._paramVals)));
         }
+    }
 
-        private void test(String expectedSQL, String description, InClause inClause, SqlDialect dialect)
+    public static class BetweenClauseTestCase extends ClauseTestCase
+    {
+        @Test(expected=IllegalArgumentException.class)
+        public void testBetweenNull()
         {
-            assertEquals("Generated SQL did not match", expectedSQL, inClause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), dialect).toString());
-            StringBuilder sb = new StringBuilder();
-            inClause.appendFilterText(sb, new ColumnNameFormatter());
-            assertEquals("Description did not match", description, sb.toString());
+            FieldKey fieldKey = FieldKey.fromParts("Foo");
+            new CompareType.BetweenClause(fieldKey, null, null, false);
         }
+
+        @Test(expected=IllegalArgumentException.class)
+        public void testBetweenEmpty()
+        {
+            FieldKey fieldKey = FieldKey.fromParts("Foo");
+            new CompareType.BetweenClause(fieldKey, "", " ", false);
+        }
+
+        @Test(expected=IllegalArgumentException.class)
+        public void testBetweenSpace()
+        {
+            FieldKey fieldKey = FieldKey.fromParts("Foo");
+            new CompareType.BetweenClause(fieldKey, " ", " ", false);
+        }
+
+        @Test
+        public void testBetweenGeneratedSql()
+        {
+            FieldKey fieldKey = FieldKey.fromParts("Foo");
+            SqlDialect mockDialect = new MockSqlDialect();
+
+            test("Foo BETWEEN 1 AND 2", "Foo BETWEEN 1 AND 2", new CompareType.BetweenClause(fieldKey, 1, 2, false), mockDialect);
+            test("Foo BETWEEN -1 AND 2.2", "Foo BETWEEN -1 AND 2.2", new CompareType.BetweenClause(fieldKey, -1, 2.2, false), mockDialect);
+            test("Foo NOT BETWEEN '1' AND '2'", "Foo NOT BETWEEN 1 AND 2", new CompareType.BetweenClause(fieldKey, "1", "2", true), mockDialect);
+            test("Foo BETWEEN 'A' AND 'Z'", "Foo BETWEEN A AND Z", new CompareType.BetweenClause(fieldKey, "A", "Z", false), mockDialect);
+        }
+
+        @Test
+        public void testBetweenQueryString()
+        {
+            FieldKey fieldKey = FieldKey.fromParts("Foo");
+
+            assertEquals(Pair.of("query.Foo~between", "1,2"), new CompareType.BetweenClause(fieldKey, 1, 2, false).toURLParam("query."));
+            assertEquals(Pair.of("query.Foo~between", "1,2"), new CompareType.BetweenClause(fieldKey, "1", "2", false).toURLParam("query."));
+            assertEquals(Pair.of("query.Foo~notbetween", "-1,2.2"), new CompareType.BetweenClause(fieldKey, -1, 2.2, true).toURLParam("query."));
+            assertEquals(Pair.of("query.Foo~between", "A,Z"), new CompareType.BetweenClause(fieldKey, "A", "Z", false).toURLParam("query."));
+        }
+
     }
 }

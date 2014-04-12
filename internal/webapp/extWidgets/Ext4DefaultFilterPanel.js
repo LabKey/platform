@@ -400,7 +400,7 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
 
         if(rec){
             if(filter.isMultiValued()){
-                return this.validateEqOneOf(input.getValue(), rec.get('mappedType'));
+                return this.validateEqOneOf(input.getValue(), filter.getMultiValueSeparator(), rec.get('mappedType'));
             }
 
             return this.validateInputField(input.getValue(), rec.get('mappedType'));
@@ -408,12 +408,12 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
         return true;
     },
 
-    validateEqOneOf: function(input, mappedType)
+    validateEqOneOf: function(input, multiValueSeparator, mappedType)
     {
-        // Used when "Equals One Of.." is selected. Calls validateInputField on each value entered.
+        // Used when "Equals One Of.." or "Between" is selected. Calls validateInputField on each value entered.
         if (!input)
             return true;
-        var values = input.split(';');
+        var values = input.split(multiValueSeparator);
         var isValid = "";
         for(var i = 0; i < values.length; i++){
             isValid = this.validateInputField(values[i], mappedType);

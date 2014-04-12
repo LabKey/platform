@@ -740,17 +740,7 @@ public class DataRegion extends AbstractDataRegion
             {
                 showParameterForm = true;
             }
-            catch (SQLException x)
-            {
-                errorCreatingResults = true;
-                headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
-            }
-            catch (RuntimeSQLException x)
-            {
-                errorCreatingResults = true;
-                headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
-            }
-            catch (ConversionException x)
+            catch (SQLException | RuntimeSQLException | IllegalArgumentException | ConversionException x)
             {
                 errorCreatingResults = true;
                 headerMessage.append("<span class=error>").append(PageFlowUtil.filter(x.getMessage())).append("</span><br>");
