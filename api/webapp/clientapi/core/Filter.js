@@ -269,49 +269,80 @@ LABKEY.Filter = new function()
 
     var ret = /** @scope LABKEY.Filter */{
 
-		Types : {
+        // WARNING: Keep in sync and in order with all other client apis and docs
+        // - server: CompareType.java
+        // - java: Filter.java
+        // - js: Filter.js
+        // - R: makeFilter.R, makeFilter.Rd
+        // - SAS: labkeymakefilter.sas, labkey.org SAS docs
+        // - Python & Perl don't have an filter operator enum
+        Types : {
 
             HAS_ANY_VALUE : createFilterType("Has Any Value", "", false, null, null),
-			EQUAL : createFilterType("Equals", "eq", true, null, null),
+
+            //
+            // These operators require a data value
+            //
+
+            EQUAL : createFilterType("Equals", "eq", true, null, null),
             DATE_EQUAL : createFilterType("Equals", "dateeq", true, null, null),
-            DATE_NOT_EQUAL : createFilterType("Does Not Equal", "dateneq", true, null, null),
-            NEQ_OR_NULL : createFilterType("Does Not Equal", "neqornull", true, null, null),
-            NOT_EQUAL_OR_MISSING : createFilterType("Does Not Equal", "neqornull", true, null, null),
+
             NEQ : createFilterType("Does Not Equal", "neq", true, null, null),
             NOT_EQUAL : createFilterType("Does Not Equal", "neq", true, null, null),
-            ISBLANK : createFilterType("Is Blank", "isblank", false, null, null),
-            MISSING : createFilterType("Is Blank", "isblank", false, null, null),
-            NONBLANK : createFilterType("Is Not Blank", "isnonblank", false, null, null),
-            NOT_MISSING : createFilterType("Is Not Blank", "isnonblank", false, null, null),
+            DATE_NOT_EQUAL : createFilterType("Does Not Equal", "dateneq", true, null, null),
+
+            NEQ_OR_NULL : createFilterType("Does Not Equal", "neqornull", true, null, null),
+            NOT_EQUAL_OR_MISSING : createFilterType("Does Not Equal", "neqornull", true, null, null),
+
             GT : createFilterType("Is Greater Than", "gt", true, null, null),
             GREATER_THAN : createFilterType("Is Greater Than", "gt", true, null, null),
             DATE_GREATER_THAN : createFilterType("Is Greater Than", "dategt", true, null, null),
+
             LT : createFilterType("Is Less Than", "lt", true, null, null),
             LESS_THAN : createFilterType("Is Less Than", "lt", true, null, null),
             DATE_LESS_THAN : createFilterType("Is Less Than", "datelt", true, null, null),
+
             GTE : createFilterType("Is Greater Than or Equal To", "gte", true, null, null),
             GREATER_THAN_OR_EQUAL : createFilterType("Is Greater Than or Equal To", "gte", true, null, null),
             DATE_GREATER_THAN_OR_EQUAL : createFilterType("Is Greater Than or Equal To", "dategte", true, null, null),
+
             LTE : createFilterType("Is Less Than or Equal To", "lte", true, null, null),
             LESS_THAN_OR_EQUAL : createFilterType("Is Less Than or Equal To", "lte", true, null, null),
             DATE_LESS_THAN_OR_EQUAL : createFilterType("Is Less Than or Equal To", "datelte", true, null, null),
+
+            STARTS_WITH : createFilterType("Starts With", "startswith", true, null, null),
+            DOES_NOT_START_WITH : createFilterType("Does Not Start With", "doesnotstartwith", true, null, null),
+
             CONTAINS : createFilterType("Contains", "contains", true, null, null),
             DOES_NOT_CONTAIN : createFilterType("Does Not Contain", "doesnotcontain", true, null, null),
-            DOES_NOT_START_WITH : createFilterType("Does Not Start With", "doesnotstartwith", true, null, null),
-            STARTS_WITH : createFilterType("Starts With", "startswith", true, null, null),
+
+            CONTAINS_ONE_OF : createFilterType("Contains One Of", "containsoneof", true, ";", 'Contains One Of (e.g. \"a;b;c\")'),
+            CONTAINS_NONE_OF : createFilterType("Does Not Contain Any Of", "containsnoneof", true, ";", 'Does Not Contain Any Of (e.g. \"a;b;c\")'),
+
             IN : createFilterType("Equals One Of", "in", true, ";", 'Equals One Of (e.g. \"a;b;c\")'),
             //NOTE: for some reason IN is aliased as EQUALS_ONE_OF.  not sure if this is for legacy purposes or it was determined EQUALS_ONE_OF was a better phrase
             //to follow this pattern I did the same for IN_OR_MISSING
             EQUALS_ONE_OF : createFilterType("Equals One Of", "in", true, ";", 'Equals One Of (e.g. \"a;b;c\")'),
-            EQUALS_NONE_OF: createFilterType("Does Not Equal Any Of", "notin", true, ";", 'Does Not Equal Any Of (e.g. \"a;b;c\")'),
+
             NOT_IN: createFilterType("Does Not Equal Any Of", "notin", true, ";", 'Does Not Equal Any Of (e.g. \"a;b;c\")'),
-            CONTAINS_ONE_OF : createFilterType("Contains One Of", "containsoneof", true, ";", 'Contains One Of (e.g. \"a;b;c\")'),
-            MEMBER_OF : createFilterType("Member Of", "memberof", true, false, 'Member Of'),
-            CONTAINS_NONE_OF : createFilterType("Does Not Contain Any Of", "containsnoneof", true, ";", 'Does Not Contain Any Of (e.g. \"a;b;c\")'),
-            HAS_MISSING_VALUE : createFilterType("Has a missing value indicator", "hasmvvalue", false, null, null),
-            DOES_NOT_HAVE_MISSING_VALUE : createFilterType("Does not have a missing value indicator", "nomvvalue", false, null, null),
+            EQUALS_NONE_OF: createFilterType("Does Not Equal Any Of", "notin", true, ";", 'Does Not Equal Any Of (e.g. \"a;b;c\")'),
+
             BETWEEN : createFilterType("Between", "between", true, ",", 'Between, Inclusive (e.g., \"-4,4\")'),
-            NOT_BETWEEN : createFilterType("Not Between", "notbetween", true, ",", 'Not Between, Exclusive (e.g., \"-4,4\")')
+            NOT_BETWEEN : createFilterType("Not Between", "notbetween", true, ",", 'Not Between, Exclusive (e.g., \"-4,4\")'),
+
+            MEMBER_OF : createFilterType("Member Of", "memberof", true, false, 'Member Of'),
+
+            //
+            // These are the "no data value" operators
+            //
+
+            ISBLANK : createFilterType("Is Blank", "isblank", false, null, null),
+            MISSING : createFilterType("Is Blank", "isblank", false, null, null),
+            NONBLANK : createFilterType("Is Not Blank", "isnonblank", false, null, null),
+            NOT_MISSING : createFilterType("Is Not Blank", "isnonblank", false, null, null),
+
+            HAS_MISSING_VALUE : createFilterType("Has a missing value indicator", "hasmvvalue", false, null, null),
+            DOES_NOT_HAVE_MISSING_VALUE : createFilterType("Does not have a missing value indicator", "nomvvalue", false, null, null)
         },
 
         /** @private create a js object suitable for Query.selectRows, etc */

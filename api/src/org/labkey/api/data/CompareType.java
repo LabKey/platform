@@ -56,9 +56,20 @@ import java.util.Set;
  * Time: 4:44:45 PM
  */
 
-// Keep in sync with (remote api) Filter.java and labkeymakefilter.sas
+// WARNING: Keep in sync and in order with all other client apis and docs:
+// - server: CompareType.java
+// - java: Filter.java
+// - js: Filter.js
+// - R: makeFilter.R, makeFilter.Rd
+// - SAS: labkeymakefilter.sas, labkey.org SAS docs
+// - Python & Perl don't have an filter operator enum
+
 public enum CompareType
 {
+    //
+    // These operators require a data value
+    //
+
     EQUAL("Equals", "eq", "EQUAL", true, " = ?", OperatorType.EQ)
         {
             @Override
@@ -90,26 +101,7 @@ public enum CompareType
                 return new DateEqCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
-    DATE_NOT_EQUAL("(Date) Does Not Equal", "dateneq", "DATE_NOT_EQUAL", true, null, OperatorType.DATENEQ)
-        {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new DateNeqCompareClause(fieldKey, toDatePart(asDate(value)));
-            }
-        },
-    NEQ_OR_NULL("Does Not Equal", "neqornull", "NOT_EQUAL_OR_MISSING", true, " <> ?", OperatorType.NEQORNULL)
-        {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new NotEqualOrNullClause(fieldKey, value);
-            }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
-            {
-                return value == null || !CompareType.EQUAL.meetsCriteria(value, filterValues);
-            }
-        },
     NEQ("Does Not Equal", "neq", "NOT_EQUAL", true, " <> ?", OperatorType.NEQ)
         {
             @Override
@@ -124,39 +116,28 @@ public enum CompareType
                 return !CompareType.EQUAL.meetsCriteria(value, filterValues);
             }
         },
-    ISBLANK("Is Blank", "isblank", "MISSING", false, " IS NULL", OperatorType.ISBLANK)
-        {
-            public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return super.createFilterClause(fieldKey, null);
-            }
-
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
-            {
-                return value == null;
-            }
-        },
-    NONBLANK("Is Not Blank", "isnonblank", "NOT_MISSING", false, " IS NOT NULL", OperatorType.ISNONBLANK)
-        {
-            public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return super.createFilterClause(fieldKey, null);
-            }
-
-            @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
-            {
-                return value != null;
-            }
-        },
-    DATE_GT("(Date) Is Greater Than", "dategt", "DATE_GREATER_THAN", true, " >= ?", OperatorType.GTE) // GT --> >= roundup(date)
+    DATE_NOT_EQUAL("(Date) Does Not Equal", "dateneq", "DATE_NOT_EQUAL", true, null, OperatorType.DATENEQ)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
-                return new DateGtCompareClause(fieldKey, toDatePart(asDate(value)));
+                return new DateNeqCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
+
+    NEQ_OR_NULL("Does Not Equal", "neqornull", "NOT_EQUAL_OR_MISSING", true, " <> ?", OperatorType.NEQORNULL)
+        {
+            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            {
+                return new NotEqualOrNullClause(fieldKey, value);
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                return value == null || !CompareType.EQUAL.meetsCriteria(value, filterValues);
+            }
+        },
+
     GT("Is Greater Than", "gt", "GREATER_THAN", true, " > ?", OperatorType.GT)
         {
             @Override
@@ -174,13 +155,14 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) > 0;
             }
         },
-    DATE_LT("(Date) Is Less Than", "datelt", "DATE_LESS_THAN", true, " < ?", OperatorType.LT)
+    DATE_GT("(Date) Is Greater Than", "dategt", "DATE_GREATER_THAN", true, " >= ?", OperatorType.GTE) // GT --> >= roundup(date)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
-                return new DateLtCompareClause(fieldKey, toDatePart(asDate(value)));
+                return new DateGtCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
+
     LT("Is Less Than", "lt", "LESS_THAN", true, " < ?", OperatorType.LT)
         {
             @Override
@@ -198,13 +180,14 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) < 0;
             }
         },
-    DATE_GTE("(Date) Is Greater Than or Equal To", "dategte", "DATE_GREATER_THAN_OR_EQUAL", true, " >= ?", OperatorType.GTE)
+    DATE_LT("(Date) Is Less Than", "datelt", "DATE_LESS_THAN", true, " < ?", OperatorType.LT)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
-                return new DateGteCompareClause(fieldKey, toDatePart(asDate(value)));
+                return new DateLtCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
+
     GTE("Is Greater Than or Equal To", "gte", "GREATER_THAN_OR_EQUAL", true, " >= ?", OperatorType.GTE)
         {
             @Override
@@ -222,13 +205,14 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) >= 0;
             }
         },
-    DATE_LTE("(Date) Is Less Than or Equal To", "datelte", "DATE_LESS_THAN_OR_EQUAL", true, " < ?", OperatorType.LT)  // LTE --> < roundup(date)
+    DATE_GTE("(Date) Is Greater Than or Equal To", "dategte", "DATE_GREATER_THAN_OR_EQUAL", true, " >= ?", OperatorType.GTE)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
-                return new DateLteCompareClause(fieldKey, toDatePart(asDate(value)));
+                return new DateGteCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
+
     LTE("Is Less Than or Equal To", "lte", "LESS_THAN_OR_EQUAL", true, " <= ?", OperatorType.LTE)
         {
             @Override
@@ -246,66 +230,41 @@ public enum CompareType
                 return ((Comparable)value).compareTo(filterValue) <= 0;
             }
         },
-    BETWEEEN("Between", "between", "BETWEEN", true, " BETWEEN ? AND ?", OperatorType.BETWEEN)
+    DATE_LTE("(Date) Is Less Than or Equal To", "datelte", "DATE_LESS_THAN_OR_EQUAL", true, " < ?", OperatorType.LT)  // LTE --> < roundup(date)
         {
-            @Override
-            FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
-                if (value instanceof Collection)
-                {
-                    Object[] values = ((Collection)value).toArray();
-                    if (values.length != 2)
-                        throw new IllegalArgumentException("Between filter requires exactly two parameter values");
-
-                    return new BetweenClause(fieldKey, values[0], values[1], false);
-                }
-                else
-                {
-                    String s = Objects.toString(value, "");
-                    String[] values = s.trim().split(BetweenClause.SEPARATOR);
-                    if (values.length != 2)
-                        throw new IllegalArgumentException("Between filter requires exactly two parameter values");
-
-                    return new BetweenClause(fieldKey, values[0], values[1], false);
-                }
-            }
-
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                throw new UnsupportedOperationException("Conditional formatting not yet supported for Between filter");
+                return new DateLteCompareClause(fieldKey, toDatePart(asDate(value)));
             }
         },
-    NOT_BETWEEEN("Not Between", "notbetween", "NOT_BETWEEN", true, " NOT BETWEEN ? AND ?", OperatorType.NOTBETWEEN)
+
+    STARTS_WITH("Starts With", "startswith", "STARTS_WITH", true, null, OperatorType.STARTSWITH)
         {
-            @Override
-            FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
-                if (value instanceof Collection)
-                {
-                    Object[] values = ((Collection)value).toArray();
-                    if (values.length != 2)
-                        throw new IllegalArgumentException("Not between filter requires exactly two parameter values");
-
-                    return new BetweenClause(fieldKey, values[0], values[1], true);
-                }
-                else
-                {
-                    String s = Objects.toString(value, "");
-                    String[] values = s.trim().split(BetweenClause.SEPARATOR);
-                    if (values.length != 2)
-                        throw new IllegalArgumentException("Not between filter requires exactly two parameter values");
-
-                    return new BetweenClause(fieldKey, values[0], values[1], true);
-                }
+                return new StartsWithClause(fieldKey, value);
             }
 
             @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
+            public boolean meetsCriteria(Object value, Object[] filterValues)
             {
-                throw new UnsupportedOperationException("Conditional formatting not yet supported for Not Between filter");
+                return value != null && value.toString().startsWith((String)filterValues[0]);
             }
         },
+    DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", "DOES_NOT_START_WITH", true, null, OperatorType.DOESNOTSTARTWITH)
+        {
+            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            {
+                return new DoesNotStartWithClause(fieldKey, value);
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                return value == null || !value.toString().startsWith((String)filterValues[0]);
+            }
+        },
+
     CONTAINS("Contains", "contains", "CONTAINS", true, null, OperatorType.CONTAINS)
         {
             public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -332,32 +291,57 @@ public enum CompareType
                 return value == null || value.toString().indexOf((String)filterValues[0]) == -1;
             }
         },
-    DOES_NOT_START_WITH("Does Not Start With", "doesnotstartwith", "DOES_NOT_START_WITH", true, null, OperatorType.DOESNOTSTARTWITH)
+
+    CONTAINS_ONE_OF("Contains One Of (e.g. 'a;b;c')", "containsoneof", "CONTAINS_ONE_OF", true, null, OperatorType.CONTAINSONEOF)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            // Each compare type uses CompareClause by default
+            FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
-                return new DoesNotStartWithClause(fieldKey, value);
+                if (value instanceof Collection)
+                {
+                    return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false);
+                }
+                else
+                {
+                    List<String> values = new ArrayList<>();
+                    if (value != null && !value.toString().trim().equals(""))
+                    {
+                        values.addAll(parseParams(value));
+                    }
+                    return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
+                }
             }
 
             @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
+            public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                return value == null || !value.toString().startsWith((String)filterValues[0]);
+                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
             }
         },
-    STARTS_WITH("Starts With", "startswith", "STARTS_WITH", true, null, OperatorType.STARTSWITH)
+    CONTAINS_NONE_OF("Does Not Contain Any Of (e.g. 'a;b;c')", "containsnoneof", "CONTAINS_NONE_OF", true, null, OperatorType.CONTAINSNONEOF)
         {
-            public CompareClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            // Each compare type uses CompareClause by default
+            FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
-                return new StartsWithClause(fieldKey, value);
+                if (value instanceof Collection)
+                {
+                    return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false, true);
+                }
+                else
+                {
+                    Set<String> values = parseParams(value);
+
+                    return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
+                }
             }
 
             @Override
-            public boolean meetsCriteria(Object value, Object[] filterValues)
+            public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                return value != null && value.toString().startsWith((String)filterValues[0]);
+                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
             }
         },
+
     IN("Equals One Of (e.g. 'a;b;c')", "in", "IN", true, null, OperatorType.IN)
         {
             // Each compare type uses CompareClause by default
@@ -424,55 +408,114 @@ public enum CompareType
                 throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
             }
         },
-    CONTAINS_ONE_OF("Contains One Of (e.g. 'a;b;c')", "containsoneof", "CONTAINS_ONE_OF", true, null, OperatorType.CONTAINSONEOF)
+
+    BETWEEEN("Between", "between", "BETWEEN", true, " BETWEEN ? AND ?", OperatorType.BETWEEN)
         {
-            // Each compare type uses CompareClause by default
+            @Override
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
                 if (value instanceof Collection)
                 {
-                    return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false);
+                    Object[] values = ((Collection)value).toArray();
+                    if (values.length != 2)
+                        throw new IllegalArgumentException("Between filter requires exactly two parameter values");
+
+                    return new BetweenClause(fieldKey, values[0], values[1], false);
                 }
                 else
                 {
-                    List<String> values = new ArrayList<>();
-                    if (value != null && !value.toString().trim().equals(""))
-                    {
-                        values.addAll(parseParams(value));
-                    }
-                    return new SimpleFilter.ContainsOneOfClause(fieldKey, values, true, false);
+                    String s = Objects.toString(value, "");
+                    String[] values = s.trim().split(BetweenClause.SEPARATOR);
+                    if (values.length != 2)
+                        throw new IllegalArgumentException("Between filter requires exactly two parameter values");
+
+                    return new BetweenClause(fieldKey, values[0], values[1], false);
                 }
             }
 
             @Override
             public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
+                throw new UnsupportedOperationException("Conditional formatting not yet supported for Between filter");
             }
         },
-    CONTAINS_NONE_OF("Does Not Contain Any Of (e.g. 'a;b;c')", "containsnoneof", "CONTAINS_NONE_OF", true, null, OperatorType.CONTAINSNONEOF)
+    NOT_BETWEEEN("Not Between", "notbetween", "NOT_BETWEEN", true, " NOT BETWEEN ? AND ?", OperatorType.NOTBETWEEN)
         {
-            // Each compare type uses CompareClause by default
+            @Override
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
             {
                 if (value instanceof Collection)
                 {
-                    return new SimpleFilter.ContainsOneOfClause(fieldKey, (Collection)value, false, true);
+                    Object[] values = ((Collection)value).toArray();
+                    if (values.length != 2)
+                        throw new IllegalArgumentException("Not between filter requires exactly two parameter values");
+
+                    return new BetweenClause(fieldKey, values[0], values[1], true);
                 }
                 else
                 {
-                    Set<String> values = parseParams(value);
+                    String s = Objects.toString(value, "");
+                    String[] values = s.trim().split(BetweenClause.SEPARATOR);
+                    if (values.length != 2)
+                        throw new IllegalArgumentException("Not between filter requires exactly two parameter values");
 
-                    return new SimpleFilter.ContainsOneOfClause(fieldKey, values, false, true);
+                    return new BetweenClause(fieldKey, values[0], values[1], true);
                 }
             }
 
             @Override
             public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
+                throw new UnsupportedOperationException("Conditional formatting not yet supported for Not Between filter");
             }
         },
+
+    MEMBER_OF("Is Member Of", "memberof", "MEMBER_OF", true, " is member of", OperatorType.MEMBEROF)
+        {
+            @Override
+            MemberOfClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            {
+                return new MemberOfClause(fieldKey, value);
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] paramVals)
+            {
+                throw new UnsupportedOperationException("Conditional formatting not yet supported for MEMBER_OF");
+            }
+        },
+
+    //
+    // These are the "no data value" operators
+    //
+
+    ISBLANK("Is Blank", "isblank", "MISSING", false, " IS NULL", OperatorType.ISBLANK)
+        {
+            public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            {
+                return super.createFilterClause(fieldKey, null);
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                return value == null;
+            }
+        },
+    NONBLANK("Is Not Blank", "isnonblank", "NOT_MISSING", false, " IS NOT NULL", OperatorType.ISNONBLANK)
+        {
+            public FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+            {
+                return super.createFilterClause(fieldKey, null);
+            }
+
+            @Override
+            public boolean meetsCriteria(Object value, Object[] filterValues)
+            {
+                return value != null;
+            }
+        },
+
     HAS_MV_INDICATOR("Has An MV Indicator", new String[] { "hasmvvalue", "hasqcvalue" }, false, " has a missing value indicator", "MV_INDICATOR", OperatorType.HASMVVALUE)
         {
             @Override
@@ -501,20 +544,8 @@ public enum CompareType
                 throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
             }
         },
-    MEMBER_OF("Is Member Of", "memberof", "MEMBER_OF", true, " is member of", OperatorType.MEMBEROF)
-        {
-            @Override
-            MemberOfClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
-            {
-                return new MemberOfClause(fieldKey, value);
-            }
 
-            @Override
-            public boolean meetsCriteria(Object value, Object[] paramVals)
-            {
-                throw new UnsupportedOperationException("Conditional formatting not yet supported for MEMBER_OF");
-            }
-        };
+    ;
 
 
     private String _preferredURLKey;
