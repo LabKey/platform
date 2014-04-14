@@ -323,7 +323,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         if (from == null)
             throw new IllegalArgumentException("from");
 
-        if (rowCount == Table.ALL_ROWS || rowCount == Table.NO_ROWS || (rowCount > 0 && offset == 0))
+        if (rowCount == Table.ALL_ROWS || rowCount == Table.NO_ROWS || offset == 0)
         {
             SQLFragment sql = new SQLFragment();
             sql.append(select);
@@ -336,15 +336,16 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         }
         else
         {
+            if (order == null || order.trim().length() == 0)
+                throw new IllegalArgumentException("ERROR: ORDER BY clause required to limit");
+
             return _limitRows(select, from, filter, order, groupBy, rowCount, offset);
         }
     }
 
-    private SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
+    // Called only if rowCount and offset are both > 0
+    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        if (order == null || order.trim().length() == 0)
-            throw new IllegalArgumentException("ERROR: ORDER BY clause required to limit");
-
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT * FROM (\n");
         sql.append(select);
@@ -358,7 +359,8 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         sql.append("WHERE _RowNum BETWEEN ");
         sql.append(offset + 1);
         sql.append(" AND ");
-        sql.append(offset + rowCount);
+        sql.append(offset + maxRows);
+
         return sql;
     }
 

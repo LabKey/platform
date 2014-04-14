@@ -1798,7 +1798,7 @@ public class QueryServiceImpl extends QueryService
 		}
 
 		SQLFragment nestedFrom = new SQLFragment();
-		nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x\n");
+		nestedFrom.append("FROM (\n").append(selectFrag).append("\n").append(fromFrag).append(") x");
 		SQLFragment ret = dialect.limitRows(outerSelect, nestedFrom, filterFrag, orderBy, null, maxRows, offset);
 
         if (AppProps.getInstance().isDevMode())
