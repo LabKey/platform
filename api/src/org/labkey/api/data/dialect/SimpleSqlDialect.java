@@ -194,49 +194,47 @@ public abstract class SimpleSqlDialect extends SqlDialect
     @Override
     protected void addSqlTypeNames(Map<String, Integer> sqlTypeNameMap)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     protected void addSqlTypeInts(Map<Integer, String> sqlTypeIntMap)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public SQLFragment limitRows(SQLFragment sql, int maxRows)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
-    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
+    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
     public boolean supportsOffset()
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     @Override
     public SQLFragment execute(DbSchema schema, String procedureName, SQLFragment parameters)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
     public boolean isSystemSchema(String schemaName)
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
+        return false;
     }
 
     @Override
     protected String getSIDQuery()
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     @Override
