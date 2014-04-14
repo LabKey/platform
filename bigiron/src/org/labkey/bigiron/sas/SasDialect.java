@@ -84,7 +84,7 @@ public abstract class SasDialect extends SimpleSqlDialect
     }
 
     @Override
-    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
+    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
         if (select == null)
             throw new IllegalArgumentException("select");

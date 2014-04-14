@@ -337,7 +337,7 @@ public class PostgreSql84Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
+    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
         if (select == null)
             throw new IllegalArgumentException("select");
@@ -351,7 +351,7 @@ public class PostgreSql84Dialect extends SqlDialect
         if (groupBy != null) sql.append("\n").append(groupBy);
         if (order != null) sql.append("\n").append(order);
 
-        return limitRows(sql, rowCount, offset);
+        return limitRows(sql, maxRows, offset);
     }
 
     @Override

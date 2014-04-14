@@ -152,14 +152,14 @@ public abstract class OracleDialect extends SimpleSqlDialect
     }
 
     @Override
-    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int rowCount, long offset)
+    public SQLFragment limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
     {
         if (select == null)
             throw new IllegalArgumentException("select");
         if (from == null)
             throw new IllegalArgumentException("from");
 
-        if (rowCount == Table.ALL_ROWS || rowCount == Table.NO_ROWS || (rowCount > 0 && offset == 0))
+        if (maxRows == Table.ALL_ROWS || maxRows == Table.NO_ROWS || (maxRows > 0 && offset == 0))
         {
             SQLFragment sql = new SQLFragment();
             sql.append(select);
@@ -172,7 +172,7 @@ public abstract class OracleDialect extends SimpleSqlDialect
         }
         else
         {
-            return _limitRows(select, from, filter, order, groupBy, rowCount, offset);
+            return _limitRows(select, from, filter, order, groupBy, maxRows, offset);
         }
     }
 
