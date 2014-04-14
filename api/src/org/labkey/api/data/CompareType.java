@@ -436,7 +436,11 @@ public enum CompareType
             @Override
             public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                throw new UnsupportedOperationException("Conditional formatting not yet supported for Between filter");
+                FieldKey fieldKey = FieldKey.fromParts("unused");
+                FilterClause clause = new SimpleFilter.AndClause(
+                        GTE.createFilterClause(fieldKey, paramVals[0]),
+                        LTE.createFilterClause(fieldKey, paramVals[1]));
+                return clause.meetsCriteria(value);
             }
         },
     NOT_BETWEEEN("Not Between", "notbetween", "NOT_BETWEEN", true, " NOT BETWEEN ? AND ?", OperatorType.NOTBETWEEN)
@@ -466,7 +470,11 @@ public enum CompareType
             @Override
             public boolean meetsCriteria(Object value, Object[] paramVals)
             {
-                throw new UnsupportedOperationException("Conditional formatting not yet supported for Not Between filter");
+                FieldKey fieldKey = FieldKey.fromParts("unused");
+                FilterClause clause = new SimpleFilter.OrClause(
+                        LT.createFilterClause(fieldKey, paramVals[0]),
+                        GT.createFilterClause(fieldKey, paramVals[1]));
+                return clause.meetsCriteria(value);
             }
         },
 
