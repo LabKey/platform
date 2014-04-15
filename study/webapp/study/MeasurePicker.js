@@ -794,17 +794,21 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 store: this.getSourceStore(),
                 itemSelector: 'div.itemrow',
                 selectedItemCls: 'itemselected',
-                tpl: new Ext.XTemplate(
-                    '<tpl for=".">',
-                        '<div class="itemrow" style="padding: 3px 6px 4px 6px; cursor: pointer;">{queryLabel:htmlEncode}</div>',
-                    '</tpl>'
-                )
+                tpl: this.getSourcesViewTpl()
             });
 
             this.sourcesView.getSelectionModel().on('select', this.onSourceRowSelection, this);
         }
 
         return this.sourcesView;
+    },
+
+    getSourcesViewTpl : function() {
+        return new Ext4.XTemplate(
+            '<tpl for=".">',
+            '<div class="itemrow" style="padding: 3px 6px 4px 6px; cursor: pointer;">{queryLabel:htmlEncode}</div>',
+            '</tpl>'
+        );
     },
 
     createMeasurePanel : function() {
@@ -863,7 +867,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
             if (this.multiSelect)
             {
-                this.measuresGrid = Ext4.create('Ext.grid.Panel', Ext.apply(measuresGridConfig, {
+                this.measuresGrid = Ext4.create('Ext.grid.Panel', Ext4.apply(measuresGridConfig, {
                     store: this.measuresStore,
                     viewConfig : { stripeRows : false },
                     selType: 'checkboxmodel',
@@ -882,19 +886,19 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             }
             else
             {
-                this.measuresGrid = Ext4.create('Ext.view.View', Ext.apply(measuresGridConfig, {
+                this.measuresGrid = Ext4.create('Ext.view.View', Ext4.apply(measuresGridConfig, {
                     height: '100%',
                     autoScroll: true,
                     store: this.measuresStore,
                     itemSelector: 'div.itemrow',
                     selectedItemCls: 'itemselected',
-                    tpl: new Ext.XTemplate(
+                    tpl: new Ext4.XTemplate(
                         '<tpl for=".">',
                             '<tpl if="isKeyVariable && xindex == 1">',
                                 '<div class="groupheader" style="padding: 3px 6px 4px 6px; color: #808080">Key Measures</div>',
                             '</tpl>',
                             '<tpl if="!isKeyVariable && parent[xindex - 2] && parent[xindex - 2].isKeyVariable">',
-                                '<div class="groupheader" style="padding: 18px 6px 4px 6px; color: #808080">Other Measures</div>',
+                                '<div class="groupheader groupheaderline" style="padding: 8px 6px 4px 6px; color: #808080">Other Measures</div>',
                             '</tpl>',
                             '<div class="itemrow" style="padding: 3px 6px 4px 6px; cursor: pointer;">{label:htmlEncode}</div>',
                         '</tpl>'
@@ -933,6 +937,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 this.sourcesStoreKeys = [];
                 this.sourcesStoreData = [];
 
+                Ext4.each(this.getAdditionalMeasuresArray(), function(measure) {
+                    this.measuresStoreData.measures.push(measure);
+                }, this);
+
                 Ext4.each(this.measuresStoreData.measures, function(measure) {
                     var key = measure.schemaName + "|" + measure.queryName;
 
@@ -940,6 +948,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     {
                         this.sourcesStoreKeys.push(key);
                         this.sourcesStoreData.push({
+                            sortOrder: measure.sortOrder,
                             schemaName : measure.schemaName,
                             queryName : measure.queryName,
                             queryLabel : measure.queryLabel,
@@ -962,6 +971,14 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             },
             scope : this
         });
+    },
+
+    /**
+     * An array of measures provided by an overriding class that will be appended to the sources/measures
+     * @returns {Array}
+     */
+    getAdditionalMeasuresArray : function() {
+        return [];
     },
 
     onSourceRowSelection : function(rowModel, sourceRecord, index) {
@@ -1084,7 +1101,9 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                     {name   : 'selected'},
                     {name   : 'alias'},
                     {name   : 'isKeyVariable'},
-                    {name   : 'defaultScale'}
+                    {name   : 'defaultScale'},
+                    {name   : 'sortOrder', defaultValue: 0},
+                    {name   : 'variableType'} // i.e. TIME
                 ]
             });
         }
@@ -1108,10 +1127,13 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
         this.addEvents("measureStoreSorted");
 
         this.on('load', function(store) {
-            var sortArr = [{property: 'schemaName', direction: 'ASC'},{property: 'queryLabel', direction: 'ASC'}];
+            var sortArr = [];
+            sortArr.push({property: 'sortOrder'});
+            sortArr.push({property: 'schemaName'});
+            sortArr.push({property: 'queryLabel'});
             if (this.showKeyVariablesFirst)
                 sortArr.push({property: 'isKeyVariable', direction: 'DESC'});
-            sortArr.push({property: 'label', direction: 'ASC'});
+            sortArr.push({property: 'label'});
 
             store.sort(sortArr);
             store.fireEvent("measureStoreSorted", store);
