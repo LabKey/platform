@@ -489,7 +489,6 @@ Ext4.define('LABKEY.ext4.data.Store', {
                 //since the sent record might contain columns form a related table,
                 //ensure that a value was actually returned for that column before trying to set it
                 if (undefined !== row.values[col]){
-                    var x = record.fields.get(col);
                     record.set(col, record.fields.get(col).convert(row.values[col], row.values));
                 }
 
