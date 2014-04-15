@@ -20,28 +20,78 @@ Ext.define('LABKEY.app.model.Filter', {
     ],
 
     statics : {
-        doGroupSave : function(mdx, onSuccess, onFailure, grpData) {
+
+        getErrorCallback : function () {
+            return function(response)
+            {
+                var json = Ext.decode(response.responseText);
+                if (json.exception) {
+                    if (json.exception.indexOf('There is already a group named') > -1 ||
+                            json.exception.indexOf('duplicate key value violates') > -1) {
+                        // custom error response for invalid name
+                        Ext.Msg.alert("Error", json.exception);
+                    }
+                    else {
+                        Ext.Msg.alert("Error", json.exception);
+                    }
+                }
+                else {
+                    Ext.Msg.alert('Failed to Save', response.responseText);
+                }
+            }
+        },
+
+        /**
+         * Save a participant group/filter either to a study-backed module (dataspace) or
+         * for Argos.
+         *
+         * @param config, an object which takes the following configuation properties.
+         * @param {Object} [config.mdx] mdx object against which participants are queried
+         * @param  {Boolean} [config.isArgos] - Optional.  If true, then save as part of the argos schema,
+         *         otherwise use study participant groups.
+         * @param {Function} [config.failure] Optional.  Function called when the save action fails.  If not specified
+         *        then a default function will be provided
+         * @param {Function} [config.success] Function called when the save action is successful
+         * @param {Object} [config.group] group definition.  The group object should have the following fields
+         *         label - name of the group
+         *         participantIds - array of participant Ids
+         *         description - optional description for the gruop
+         *         filters - array of filters to apply
+         *         isLive - boolean, true if this is a query or false if jsut a group of participant ids.
+         */
+        doGroupSave : function(config) {
+
+            if (!config)
+                throw "You must specify a config object";
+
+            if (!config.mdx || !config.group || !config.success)
+                throw "You must specify mdx, group, and success members in the config";
+
+            var group = config.group;
+            var mdx = config.mdx;
             var m = LABKEY.app.model.Filter;
+
             mdx.queryParticipantList({
                 useNamedFilters : ['statefilter'],
                 success : function(cs) {
-                    var group = {
-                        label : grpData.label,
-                        participantIds : Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions),'name'),
-                        description : grpData.description,
-                        shared : false,
-                        type : 'list',
-                        filters : m.toJSON(grpData.filters, grpData.isLive)
+                    var requestConfig = {
+                        url: config.isArgos ? LABKEY.ActionURL.buildURL('argos', 'createPatientGroup')
+                                       : LABKEY.ActionURL.buildURL('participant-group', 'createParticipantCategory'),
+                        method: 'POST',
+                        success: config.success,
+                        failure: config.failure || m.getErrorCallback(),
+                        jsonData: {
+                            label : group.label,
+                            participantIds : Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions),'name'),
+                            description : group.description,
+                            shared : false,
+                            type : 'list',
+                            filters : m.toJSON(group.filters, group.isLive)
+                        },
+                        headers: {'Content-Type': 'application/json'}
                     };
 
-                    Ext.Ajax.request({
-                        url : LABKEY.ActionURL.buildURL('participant-group', 'createParticipantCategory'),
-                        method: 'POST',
-                        success: onSuccess,
-                        failure : onFailure,
-                        jsonData: group,
-                        headers : {'Content-Type' : 'application/json'}
-                    });
+                    Ext.Ajax.request(requestConfig);
                 }
             });
         },
