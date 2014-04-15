@@ -177,16 +177,11 @@ public class MailHelper
             Transport.send(m);
             addAuditEvent(user, c, m);
         }
-        catch (NumberFormatException e)
-        {
-            logMessagingException(m, e);
-            throw new ConfigurationException("Error sending email: " + e.getMessage(), e);
-        }
         catch (NoSuchProviderException e)
         {
             _log.log(Level.ERROR, "Error getting SMTP transport");
         }
-        catch (MessagingException e)
+        catch (NumberFormatException | MessagingException e)
         {
             logMessagingException(m, e);
             throw new ConfigurationException("Error sending email: " + e.getMessage(), e);
@@ -295,11 +290,7 @@ public class MailHelper
             if (null != body) out.write(body + "<br>\n");
             out.write("</body></html>");
         }
-        catch (IOException e)
-        {
-            _log.error("renderHtml", e);
-        }
-        catch (MessagingException e)
+        catch (IOException | MessagingException e)
         {
             _log.error("renderHtml", e);
         }

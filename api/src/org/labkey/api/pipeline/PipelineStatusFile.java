@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Date;
+import java.util.List;
 
 /**
  * <code>PipelineStatusFile</code>
@@ -36,11 +37,11 @@ public interface PipelineStatusFile
 
         PipelineStatusFile getStatusFile(int rowId);
 
-        PipelineStatusFile[] getQueuedStatusFiles() throws SQLException;
+        List<? extends PipelineStatusFile> getQueuedStatusFiles() throws SQLException;
 
-        PipelineStatusFile[] getQueuedStatusFiles(Container c) throws SQLException;
+        List<? extends PipelineStatusFile> getQueuedStatusFiles(Container c) throws SQLException;
 
-        PipelineStatusFile[] getJobsWaitingForFiles(Container c);
+        List<? extends PipelineStatusFile> getJobsWaitingForFiles(Container c);
     }
 
     public interface StatusWriter

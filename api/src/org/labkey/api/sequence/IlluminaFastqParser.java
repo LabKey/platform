@@ -84,7 +84,7 @@ public class IlluminaFastqParser<SampleIdType>
     // because ilumina sample CSV files do not provide a clear way to identify the FASTQ files/
     // this method accepts the CSV input and an optional FASTQ file prefix.  it will return any
     // FASTQ files or zipped FASTQs in the same folder as the CSV and filter using the prefix, if provided.
-    public static List<File> inferIlluminaInputsFromPath(String path, String fastqPrefix)
+    public static List<File> inferIlluminaInputsFromPath(String path, @Nullable String fastqPrefix)
     {
         File folder = new File(path);
         List<File> _fastqFiles = new ArrayList<>();
@@ -202,7 +202,7 @@ public class IlluminaFastqParser<SampleIdType>
         }
     }
 
-    private FastqWriter getWriter (int sampleIdx, File targetDir, int pairNumber) throws IOException, PipelineJobException
+    private FastqWriter getWriter (int sampleIdx, File targetDir, int pairNumber) throws IOException
     {
         if(!_sampleMap.containsKey(sampleIdx))
         {

@@ -40,6 +40,7 @@ import org.apache.log4j.PatternLayout;
 import org.apache.log4j.spi.HierarchyEventListener;
 import org.apache.log4j.spi.LoggerFactory;
 import org.apache.log4j.spi.LoggerRepository;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpRun;
@@ -114,32 +115,54 @@ abstract public class PipelineJob extends Job implements Serializable
         /** Job is in the queue, waiting for its turn to run */
         waiting
         {
+            @Override
             public boolean isActive() { return true; }
         },
         /** Job is doing its work */
         running
         {
+            @Override
             public boolean isActive() { return true; }
         },
         /** Terminal state, job is finished and completed without errors */
         complete
         {
+            @Override
             public boolean isActive() { return false; }
         },
         /** Terminal state (but often retryable), job is done running and completed with error(s) */
         error
         {
+            @Override
             public boolean isActive() { return false; }
         },
         /** Job is in the process of being cancelled, but may still be running or queued at the moment */
         cancelling
         {
+            @Override
             public boolean isActive() { return true; }
         },
         /** Terminal state, indicating that a user cancelled the job before it completed or errored */
         cancelled
         {
+            @Override
             public boolean isActive() { return false; }
+        },
+        waitingForFiles
+        {
+            @Override
+            public boolean isActive() { return false; }
+
+            @Override
+            public String toString() { return "WAITING FOR FILES"; }
+        },
+        splitWaiting
+        {
+            @Override
+            public boolean isActive() { return false; }
+
+            @Override
+            public String toString() { return "SPLIT WAITING"; }
         };
 
         public abstract boolean isActive();
@@ -177,12 +200,6 @@ abstract public class PipelineJob extends Job implements Serializable
 
         public abstract RecordedActionSet run() throws PipelineJobException;
     }
-
-    /*
-     * Status strings
-     */
-    public static final String WAITING_FOR_FILES = "WAITING FOR FILES";
-    public static final String SPLIT_STATUS = "SPLIT WAITING";
 
     /*
      * JMS message header names
@@ -306,17 +323,18 @@ abstract public class PipelineJob extends Job implements Serializable
         return _parentGUID;
     }
 
+    @Nullable
     public TaskId getActiveTaskId()
     {
         return _activeTaskId;
     }
 
-    public boolean setActiveTaskId(TaskId activeTaskId)
+    public boolean setActiveTaskId(@Nullable TaskId activeTaskId)
     {
         return setActiveTaskId(activeTaskId, true);
     }
     
-    public boolean setActiveTaskId(TaskId activeTaskId, boolean updateStatus)
+    public boolean setActiveTaskId(@Nullable TaskId activeTaskId, boolean updateStatus)
     {
         if (activeTaskId == null || !activeTaskId.equals(_activeTaskId))
         {
@@ -328,9 +346,7 @@ abstract public class PipelineJob extends Job implements Serializable
         else
             _activeTaskStatus = TaskStatus.waiting;
 
-        if (updateStatus)
-            return updateStatusForTask();
-        return true;
+        return !updateStatus || updateStatusForTask();
     }
 
     public TaskStatus getActiveTaskStatus()
@@ -387,7 +403,7 @@ abstract public class PipelineJob extends Job implements Serializable
         }
         finally
         {
-            if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
+            if (fIn != null) { try { fIn.close(); } catch (IOException ignored) {} }
         }
         return PipelineJobService.get().getJobStore().fromXML(xml.toString());
     }
@@ -410,7 +426,7 @@ abstract public class PipelineJob extends Job implements Serializable
         }
         finally
         {
-            if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
+            if (fOut != null) { try { fOut.close(); } catch (IOException ignored) {} }
         }
 
         if (NetworkDrive.exists(file))
@@ -444,7 +460,7 @@ abstract public class PipelineJob extends Job implements Serializable
     }
 
     /** Used for setting status to one of the standard states */
-    public boolean setStatus(TaskStatus status)
+    public boolean setStatus(@NotNull TaskStatus status)
     {
         return setStatus(status.toString());
     }
@@ -453,13 +469,13 @@ abstract public class PipelineJob extends Job implements Serializable
      * Used for setting status to a custom state, which is considered to be equivalent to TaskStatus.running
      * unless it matches one of the standard states
      */
-    public boolean setStatus(String status)
+    public boolean setStatus(@NotNull String status)
     {
         return setStatus(status, null);
     }
 
     /** Used for setting status to one of the standard states */
-    public boolean setStatus(TaskStatus status, String info)
+    public boolean setStatus(@NotNull TaskStatus status, @Nullable String info)
     {
         return setStatus(status.toString(), info);
     }
@@ -468,7 +484,7 @@ abstract public class PipelineJob extends Job implements Serializable
      * Used for setting status to a custom state, which is considered to be equivalent to TaskStatus.running
      * unless it matches one of the standard states
      */
-    public boolean setStatus(String status, String info)
+    public boolean setStatus(@NotNull String status, @Nullable String info)
     {
         if (_settingStatus)
             return true;
@@ -483,6 +499,7 @@ abstract public class PipelineJob extends Job implements Serializable
             }
             return statusSet;
         }
+        // Rethrow so it doesn't get handled like other RuntimeExceptions
         catch (CancelledException e)
         {
             throw e;
@@ -1201,7 +1218,7 @@ abstract public class PipelineJob extends Job implements Serializable
             debug(message, null);
         }
 
-        public void debug(Object message, Throwable t)
+        public void debug(Object message, @Nullable Throwable t)
         {
             _job.getClassLogger().debug(getSystemLogMessage(message), t);
             super.debug(message, t);
@@ -1212,7 +1229,7 @@ abstract public class PipelineJob extends Job implements Serializable
             info(message, null);
         }
 
-        public void info(Object message, Throwable t)
+        public void info(Object message, @Nullable Throwable t)
         {
             _job.getClassLogger().info(getSystemLogMessage(message), t);
             super.info(message, t);
@@ -1223,7 +1240,7 @@ abstract public class PipelineJob extends Job implements Serializable
             warn(message, null);
         }
 
-        public void warn(Object message, Throwable t)
+        public void warn(Object message, @Nullable Throwable t)
         {
             _job.getClassLogger().warn(getSystemLogMessage(message), t);
             super.warn(message, t);
@@ -1234,7 +1251,7 @@ abstract public class PipelineJob extends Job implements Serializable
             error(message, null);
         }
 
-        public void error(Object message, Throwable t)
+        public void error(Object message, @Nullable Throwable t)
         {
             _job.getClassLogger().error(getSystemLogMessage(message), t);
             super.error(message, t);
@@ -1411,7 +1428,7 @@ abstract public class PipelineJob extends Job implements Serializable
         error(message, null);
     }
 
-    public void error(String message, Throwable t)
+    public void error(String message, @Nullable Throwable t)
     {
         setErrors(getErrors() + 1);
         if (getLogger() != null)
@@ -1423,7 +1440,7 @@ abstract public class PipelineJob extends Job implements Serializable
         debug(message, null);
     }
 
-    public void debug(String message, Throwable t)
+    public void debug(String message, @Nullable Throwable t)
     {
         if (getLogger() != null)
             getLogger().debug(message, t);
@@ -1434,7 +1451,7 @@ abstract public class PipelineJob extends Job implements Serializable
         warn(message, null);
     }
 
-    public void warn(String message, Throwable t)
+    public void warn(String message, @Nullable Throwable t)
     {
         if (getLogger() != null)
             getLogger().warn(message, t);
@@ -1445,7 +1462,7 @@ abstract public class PipelineJob extends Job implements Serializable
         info(message, null);
     }
 
-    public void info(String message, Throwable t)
+    public void info(String message, @Nullable Throwable t)
     {
         if (getLogger() != null)
             getLogger().info(message, t);
@@ -1563,9 +1580,7 @@ abstract public class PipelineJob extends Job implements Serializable
             {
                 wait();
             }
-            catch (InterruptedException e)
-            {
-            }
+            catch (InterruptedException ignored) {}
         }
     }
 
@@ -1618,9 +1633,7 @@ abstract public class PipelineJob extends Job implements Serializable
             {
                 error("Uncaught exception in PiplineJob: " + this.toString(), throwable);
             }
-            catch (Exception x)
-            {
-            }
+            catch (Exception ignored) {}
         }
         _queue.done(this);
     }

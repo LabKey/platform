@@ -133,6 +133,7 @@ public class ModuleLoader implements Filter
     private static boolean _newInstall = false;
     /** PropertyManager category name for folder type enabled state properties */
     private static final String FOLDER_TYPE_ENABLED_STATE = "FolderTypeEnabledState";
+    public static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
 
     private boolean _deferUsageReport = false;
     private File _webappDir;
@@ -728,9 +729,9 @@ public class ModuleLoader implements Filter
     {
         String serverInfo = ModuleLoader.getServletContext().getServerInfo();
 
-        if (serverInfo.startsWith("Apache Tomcat/"))
+        if (serverInfo.startsWith(APACHE_TOMCAT_SERVER_NAME_PREFIX))
         {
-            String[] versionParts = serverInfo.substring(14).split("\\.");
+            String[] versionParts = serverInfo.substring(APACHE_TOMCAT_SERVER_NAME_PREFIX.length()).split("\\.");
             int majorVersion = Integer.valueOf(versionParts[0]);
 
             if (majorVersion < 7)

@@ -802,7 +802,7 @@ public class Portal
         }
     }
 
-    public static void saveParts(Container c, String pageId, WebPart[] newParts)
+    public static void saveParts(Container c, String pageId, WebPart... newParts)
     {
         // In some rare cases we can have a difference in casing for pageId, so we want to get the page from the cache
         // first so we get the pageId with proper casing.

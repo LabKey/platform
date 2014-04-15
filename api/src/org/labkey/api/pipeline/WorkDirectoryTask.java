@@ -15,6 +15,8 @@
  */
 package org.labkey.api.pipeline;
 
+import org.jetbrains.annotations.Nullable;
+
 /**
  * User: jeckels
  * Date: Sep 11, 2008
@@ -28,7 +30,7 @@ public abstract class WorkDirectoryTask<FactoryType extends TaskFactory> extends
         super(factory, job);
     }
 
-    public void setWorkDirectory(WorkDirectory wd)
+    public void setWorkDirectory(@Nullable WorkDirectory wd)
     {
         _wd = wd;
     }

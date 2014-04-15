@@ -162,10 +162,16 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
             }
         }
 
-        writer.write(getResponse(savedFiles, form));
-
-        writer.flush();
-        writer.close();
+        try
+        {
+            writer.write(getResponse(savedFiles, form));
+            writer.flush();
+            writer.close();
+        }
+        catch (UploadException e)
+        {
+            error(writer, "Must include the same number of fileName and fileContent parameter values", HttpServletResponse.SC_BAD_REQUEST);
+        }
     }
 
     protected File handleFile(String filename, InputStream input, Writer writer) throws IOException
