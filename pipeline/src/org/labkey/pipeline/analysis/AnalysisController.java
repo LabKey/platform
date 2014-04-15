@@ -534,11 +534,9 @@ public class AnalysisController extends SpringActionController
         @Override
         public ApiResponse execute(Object form, BindException errors) throws Exception
         {
-            PipelineStatusFile[] statusFiles = PipelineService.get().getJobsWaitingForFiles(getContainer());
-
-            for (PipelineStatusFile statusFile : statusFiles)
+            for (PipelineStatusFile statusFile : PipelineService.get().getJobsWaitingForFiles(getContainer()))
             {
-                if (PipelineJob.WAITING_FOR_FILES.equals(statusFile.getStatus()) && statusFile.getJobStore() != null)
+                if (PipelineJob.TaskStatus.waitingForFiles.matches(statusFile.getStatus()) && statusFile.getJobStore() != null)
                 {
                     PipelineJob pipelineJob = PipelineJobService.get().getJobStore().fromXML(statusFile.getJobStore());
                     if (pipelineJob instanceof AbstractFileAnalysisJob)

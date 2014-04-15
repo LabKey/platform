@@ -309,8 +309,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
 
         private void requeueAllPendingJobs()
         {
-            PipelineStatusFileImpl[] incompleteStatusFiles = PipelineStatusManager.getQueuedStatusFiles();
-            for (PipelineStatusFileImpl sf : incompleteStatusFiles)
+            for (PipelineStatusFileImpl sf : PipelineStatusManager.getQueuedStatusFiles())
             {
                 try
                 {

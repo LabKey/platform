@@ -29,20 +29,13 @@ import org.labkey.api.view.ActionURL;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 
 /**
  * @author B. MacLean
  */
 public class PipelineStatusFileImpl extends Entity implements Serializable, PipelineStatusFile
 {
-    private static HashSet<String> _inactiveStatuses = new HashSet<>(Arrays.asList(
-            PipelineJob.TaskStatus.complete.toString(),
-            PipelineJob.TaskStatus.cancelled.toString(),
-            PipelineJob.WAITING_FOR_FILES,
-            PipelineJob.TaskStatus.error.toString(),
-            PipelineJob.SPLIT_STATUS    // Depends on status of split jobs
-    ));
-
     private static HashSet<String> _emailStatuses = new HashSet<>(Arrays.asList(
             PipelineJob.TaskStatus.complete.toString(),
             PipelineJob.TaskStatus.error.toString(),
@@ -130,7 +123,7 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         }
         // Store the job that was split, so we will have a place to merge
         // changes from the split-jobs.
-        else if (PipelineJob.SPLIT_STATUS.equals(status))
+        else if (PipelineJob.TaskStatus.splitWaiting.matches(status))
         {
             // The taskId is not really valid for the joined job at this point,
             // so avoid asking the TaskFactory about it.
@@ -187,8 +180,8 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         // Check if child jobs still reference the job by an older job ID
         if (curSF.getJob() != null && !curSF.getJob().equals(getJob()))
         {
-            PipelineStatusFileImpl[] childrenOfOldId = PipelineStatusManager.getSplitStatusFiles(curSF.getJobId(), ContainerManager.getForId(curSF.getContainerId()));
-            if (childrenOfOldId.length > 0)
+            List<PipelineStatusFileImpl> childrenOfOldId = PipelineStatusManager.getSplitStatusFiles(curSF.getJobId(), ContainerManager.getForId(curSF.getContainerId()));
+            if (!childrenOfOldId.isEmpty())
             {
                 // Children still reference old job ID, so don't reset it (or let it revert to some older value)
                 setJob(curSF.getJob());
@@ -219,14 +212,22 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
 
     public boolean isActive()
     {
-        return !_inactiveStatuses.contains(_status);
+        for (PipelineJob.TaskStatus status : PipelineJob.TaskStatus.values())
+        {
+            if (status.matches(_status))
+            {
+                return status.isActive();
+            }
+        }
+        // Tasks can use arbitrary text to convey their running status
+        return true;
     }
 
     public boolean isCancellable()
     {
         return (isActive() && !PipelineJob.TaskStatus.cancelling.matches(_status)) ||
-                PipelineJob.WAITING_FOR_FILES.equals(_status) ||
-                PipelineJob.SPLIT_STATUS.equals(_status);
+                PipelineJob.TaskStatus.waitingForFiles.matches(_status) ||
+                PipelineJob.TaskStatus.splitWaiting.matches(_status);
     }
 
     public boolean isEmailStatus()
@@ -264,12 +265,13 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
         return getJobParent();
     }
 
+    @Nullable
     public String getJobParent()
     {
         return _jobParent;
     }
 
-    public void setJobParent(String jobParent)
+    public void setJobParent(@Nullable String jobParent)
     {
         _jobParent = jobParent;
     }
@@ -336,12 +338,13 @@ public class PipelineStatusFileImpl extends Entity implements Serializable, Pipe
             _hadError = true;
     }
 
+    @Nullable
     public String getInfo()
     {
         return _info;
     }
 
-    public void setInfo(String info)
+    public void setInfo(@Nullable String info)
     {
         if (info != null && info.length() > MAX_INFO_LEN)
             info = info.substring(0, MAX_INFO_LEN);

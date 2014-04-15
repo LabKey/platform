@@ -15,17 +15,20 @@
  */
 package org.labkey.pipeline.status;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.util.PageFlowUtil;
-import static org.labkey.pipeline.api.PipelineStatusManager.*;
 import org.labkey.pipeline.api.PipelineStatusFileImpl;
-
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
+
+import static org.labkey.pipeline.api.PipelineStatusManager.getJobStatusFile;
+import static org.labkey.pipeline.api.PipelineStatusManager.getSplitStatusFiles;
 
 /**
  * SplitDisplayColumn class
@@ -37,7 +40,7 @@ import java.util.Comparator;
 public class JobDisplayColumn extends SimpleDisplayColumn
 {
     private boolean _split;
-    private PipelineStatusFile[] _jobStatus;
+    private List<? extends PipelineStatusFile> _jobStatus;
 
     public JobDisplayColumn(boolean split)
     {
@@ -51,16 +54,17 @@ public class JobDisplayColumn extends SimpleDisplayColumn
 
     public boolean isVisible(RenderContext ctx)
     {
-        return getJobStatus(ctx).length > 0;
+        return !getJobStatus(ctx).isEmpty();
     }
 
     public void renderDetailsCellContents(RenderContext ctx, Writer out) throws IOException
     {
-        if (_jobStatus == null || _jobStatus.length == 0)
+        if (_jobStatus == null || _jobStatus.isEmpty())
             out.write("&nbsp;");
         else
         {
-            Arrays.sort(_jobStatus, new Comparator<PipelineStatusFile>() {
+            Collections.sort(_jobStatus, new Comparator<PipelineStatusFile>()
+            {
                 public int compare(PipelineStatusFile sf1, PipelineStatusFile sf2)
                 {
                     return sf1.getDescription().compareToIgnoreCase(sf2.getDescription());
@@ -94,7 +98,7 @@ public class JobDisplayColumn extends SimpleDisplayColumn
         }
     }
 
-    public PipelineStatusFile[] getJobStatus(RenderContext ctx)
+    public List<? extends PipelineStatusFile> getJobStatus(RenderContext ctx)
     {
         if (_jobStatus == null)
         {
@@ -113,11 +117,11 @@ public class JobDisplayColumn extends SimpleDisplayColumn
                 PipelineStatusFileImpl parent = getJobStatusFile((String) ctx.get("JobParent"));
                 if (parent != null)
                 {
-                    _jobStatus = new PipelineStatusFile[] {parent};
+                    _jobStatus = Collections.singletonList(parent);
                 }
             }
             if (_jobStatus == null)
-                _jobStatus = new PipelineStatusFile[0];
+                _jobStatus = Collections.emptyList();
         }
 
         return _jobStatus;

@@ -451,17 +451,17 @@ public class PipelineServiceImpl extends PipelineService
         return PipelineStatusManager.getStatusFile(rowId);
     }
 
-    public PipelineStatusFile[] getQueuedStatusFiles()
+    public List<? extends PipelineStatusFile> getQueuedStatusFiles()
     {
         return PipelineStatusManager.getQueuedStatusFiles();
     }
 
-    public PipelineStatusFile[] getJobsWaitingForFiles(Container c)
+    public List<PipelineStatusFileImpl> getJobsWaitingForFiles(Container c)
     {
         return PipelineStatusManager.getJobsWaitingForFiles(c);
     }
 
-    public PipelineStatusFile[] getQueuedStatusFiles(Container c)
+    public List<PipelineStatusFileImpl> getQueuedStatusFiles(Container c)
     {
         return PipelineStatusManager.getQueuedStatusFilesForContainer(c);
     }

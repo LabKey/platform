@@ -137,7 +137,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             // Make sure the join job has an existing status record before creating
             // the rows for the split jobs.  Just to ensure a consistent creation order.
             if (PipelineStatusManager.getJobStatusFile(job.getJobGUID()) == null)
-                job.setStatus(PipelineJob.SPLIT_STATUS);
+                job.setStatus(PipelineJob.TaskStatus.splitWaiting);
 
             List<PipelineJob> jobs = job.createSplitJobs();
 
@@ -160,7 +160,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             // wait for them to complete.
             if (getIncompleteSplitCount(job.getJobGUID(), job.getContainer()) > 0)
             {
-                job.setStatus(PipelineJob.SPLIT_STATUS);
+                job.setStatus(PipelineJob.TaskStatus.splitWaiting);
             }
             transaction.commit();
         }

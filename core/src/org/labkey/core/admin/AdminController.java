@@ -4667,6 +4667,7 @@ public class AdminController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             getPageConfig().setFocusId("name");
+            getPageConfig().setHelpTopic(new HelpTopic("createProject"));
             //can't use getTitle() here, as it assumes the title relates to the current
             //container, but in this case, it relates to the thing we're going to create
             String title = "Users / Permissions";
@@ -5957,7 +5958,7 @@ public class AdminController extends SpringActionController
             if (name.length() > 50)
                 name = name.substring(0, 50).trim();
 
-            Portal.saveParts(container, name, new Portal.WebPart[0]);
+            Portal.saveParts(container, name);
             Portal.addProperty(container, name, Portal.PROP_CUSTOMTAB);
 
             if (!name.equals(caption))

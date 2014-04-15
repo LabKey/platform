@@ -50,9 +50,8 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -204,7 +203,6 @@ public class PipelineStatusManager
      * Update status on a status file read from the database.
      *
      * @param sf the modified status
-     * @throws SQLException database error
      */
     public static void updateStatusFile(PipelineStatusFileImpl sf)
     {
@@ -213,6 +211,20 @@ public class PipelineStatusManager
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             enforceLockOrder(sf.getJob(), active);
+            // Issue 19987 - If the job has been reparented on the web server and we're updating the status based
+            // on a running job, it may not have the new parent job id. Check to make sure we're not trying to
+            // point back at a defunct job, and restore the database record's notion of parent if we are.
+            if (sf.getJobParentId() != null)
+            {
+                if (getJobStatusFile(sf.getJobParentId()) == null)
+                {
+                    PipelineStatusFileImpl databaseStatusFile = PipelineStatusManager.getStatusFile(sf.getRowId());
+                    if (databaseStatusFile != null)
+                    {
+                        sf.setJobParent(databaseStatusFile.getJobParent());
+                    }
+                }
+            }
 
             Table.update(null, _schema.getTableInfoStatusFiles(), sf, sf.getRowId());
 
@@ -235,25 +247,22 @@ public class PipelineStatusManager
             PipelineStatusFileImpl sfExist = getStatusFile(path);
             if (!jobId.equals(sfExist.getJob()))
             {
-                if (sfExist != null)
+                List<PipelineStatusFileImpl> children = getSplitStatusFiles(sfExist.getJobId(), ContainerManager.getForId(sfExist.getContainerId()));
+                for (PipelineStatusFileImpl child : children)
                 {
-                    PipelineStatusFileImpl[] children = getSplitStatusFiles(sfExist.getJobId(), ContainerManager.getForId(sfExist.getContainerId()));
-                    for (PipelineStatusFileImpl child : children)
-                    {
-                        child.setJobParent(null);
-                        child.beforeUpdate(null, child);
-                        enforceLockOrder(child.getJobId(), active);
-                        updateStatusFile(child);
-                    }
-                    sfExist.setJob(jobId);
-                    sfExist.beforeUpdate(null, sfExist);
-                    updateStatusFile(sfExist);
-                    for (PipelineStatusFileImpl child : children)
-                    {
-                        child.setJobParent(jobId);
-                        child.beforeUpdate(null, child);
-                        updateStatusFile(child);
-                    }
+                    child.setJobParent(null);
+                    child.beforeUpdate(null, child);
+                    enforceLockOrder(child.getJobId(), active);
+                    updateStatusFile(child);
+                }
+                sfExist.setJob(jobId);
+                sfExist.beforeUpdate(null, sfExist);
+                updateStatusFile(sfExist);
+                for (PipelineStatusFileImpl child : children)
+                {
+                    child.setJobParent(jobId);
+                    child.beforeUpdate(null, child);
+                    updateStatusFile(child);
                 }
             }
             transaction.commit();
@@ -317,18 +326,18 @@ public class PipelineStatusManager
         return sfExist.getJobStore();
     }
 
-    public static PipelineStatusFileImpl[] getSplitStatusFiles(String parentId, Container container)
+    public static List<PipelineStatusFileImpl> getSplitStatusFiles(String parentId, @Nullable Container container)
     {
         if (parentId == null)
         {
-            return new PipelineStatusFileImpl[0];
+            return Collections.emptyList();
         }
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("JobParent"), parentId, CompareType.EQUAL);
         if (null != container)
             filter.addCondition(FieldKey.fromParts("Container"), container, CompareType.EQUAL);
 
-        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
     }
 
     /**
@@ -364,8 +373,7 @@ public class PipelineStatusManager
             if (taskFactory.getExecutionLocation().equals(location))
             {
                 TaskId id = taskFactory.getId();
-                PipelineStatusFileImpl[] statusFiles = getQueuedStatusFilesForActiveTaskId(id.toString());
-                for (PipelineStatusFileImpl statusFile : statusFiles)
+                for (PipelineStatusFileImpl statusFile : getQueuedStatusFilesForActiveTaskId(id.toString()))
                 {
                     if (!ignorableIds.contains(statusFile.getJobId()))
                     {
@@ -377,45 +385,47 @@ public class PipelineStatusManager
         return result;
     }
 
-    public static PipelineStatusFileImpl[] getQueuedStatusFilesForActiveTaskId(String activeTaskId)
+    public static List<PipelineStatusFileImpl> getQueuedStatusFilesForActiveTaskId(String activeTaskId)
     {
         SimpleFilter filter = createQueueFilter();
         filter.addCondition(FieldKey.fromParts("ActiveTaskId"), activeTaskId, CompareType.EQUAL);
 
-        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
     }
 
-    public static PipelineStatusFile[] getQueuedStatusFilesForContainer(Container c)
+    public static List<PipelineStatusFileImpl> getQueuedStatusFilesForContainer(Container c)
     {
         SimpleFilter filter = createQueueFilter();
         filter.addCondition(FieldKey.fromParts("Container"), c, CompareType.EQUAL);
 
-        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
     }
 
-    public static PipelineStatusFile[] getJobsWaitingForFiles(Container c)
+    public static List<PipelineStatusFileImpl> getJobsWaitingForFiles(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.WAITING_FOR_FILES);
+        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.TaskStatus.waitingForFiles.toString());
 
-        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
     }
 
-    public static PipelineStatusFileImpl[] getQueuedStatusFiles()
+    public static List<PipelineStatusFileImpl> getQueuedStatusFiles()
     {
         SimpleFilter filter = createQueueFilter();
         
-        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArray(PipelineStatusFileImpl.class);
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
     }
 
     private static SimpleFilter createQueueFilter()
     {
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.TaskStatus.complete.toString(), CompareType.NEQ);
-        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.TaskStatus.error.toString(), CompareType.NEQ);
-        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.WAITING_FOR_FILES, CompareType.NEQ);
-        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.SPLIT_STATUS, CompareType.NEQ);
-        filter.addCondition(FieldKey.fromParts("Status"), PipelineJob.TaskStatus.cancelled.toString(), CompareType.NEQ);
+        for (PipelineJob.TaskStatus status : PipelineJob.TaskStatus.values())
+        {
+            if (!status.isActive())
+            {
+                filter.addCondition(FieldKey.fromParts("Status"), status.toString(), CompareType.NEQ);
+            }
+        }
         filter.addCondition(FieldKey.fromParts("Job"), null, CompareType.NONBLANK);
         return filter;
     }
@@ -500,7 +510,7 @@ public class PipelineStatusManager
                     throw new UnauthorizedException();
                 }
                 // Check if the job has any children
-                PipelineStatusFileImpl[] children = PipelineStatusManager.getSplitStatusFiles(sf.getJobId(), sf.lookupContainer());
+                List<PipelineStatusFileImpl> children = PipelineStatusManager.getSplitStatusFiles(sf.getJobId(), sf.lookupContainer());
                 boolean hasActiveChildren = false;
                 for (PipelineStatusFileImpl child : children)
                 {
@@ -509,14 +519,14 @@ public class PipelineStatusManager
 
                 if (!hasActiveChildren)
                 {
-                    if (children.length == 0)
+                    if (children.isEmpty())
                     {
                         deleteable.add(sf);
                     }
                     else
                     {
                         // Delete the children first and let the recursion delete the parent.
-                        deleteable.addAll(Arrays.asList(children));
+                        deleteable.addAll(children);
                     }
                 }
             }
@@ -615,8 +625,7 @@ public class PipelineStatusManager
         }
         if (statusFile.isCancellable())
         {
-            PipelineStatusFileImpl[] children = PipelineStatusManager.getSplitStatusFiles(statusFile.getJobId(), statusFile.lookupContainer());
-            for (PipelineStatusFileImpl child : children)
+            for (PipelineStatusFileImpl child : PipelineStatusManager.getSplitStatusFiles(statusFile.getJobId(), statusFile.lookupContainer()))
             {
                 if (child.isCancellable())
                 {
@@ -625,7 +634,7 @@ public class PipelineStatusManager
             }
 
             PipelineJob.TaskStatus newStatus;
-            if (PipelineJob.SPLIT_STATUS.equals(statusFile.getStatus()) || PipelineJob.WAITING_FOR_FILES.equals(statusFile.getStatus()))
+            if (PipelineJob.TaskStatus.splitWaiting.matches(statusFile.getStatus()) || PipelineJob.TaskStatus.waitingForFiles.matches(statusFile.getStatus()))
             {
                 newStatus = PipelineJob.TaskStatus.cancelled;
             }
