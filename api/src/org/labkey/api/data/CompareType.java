@@ -538,7 +538,7 @@ public enum CompareType
                 throw new UnsupportedOperationException("Conditional formatting not yet supported for MV indicators");
             }
         },
-    NO_MV_INDICATOR("Does Not Have An MV Indicator", new String[] { "nomvvalue", "noqQccvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
+    NO_MV_INDICATOR("Does Not Have An MV Indicator", new String[] { "nomvvalue", "noqcvalue" }, false, " does not have a missing value indicator", "NO_MV_INDICATOR", OperatorType.NOMVVALUE)
         {
             @Override
             MvClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
