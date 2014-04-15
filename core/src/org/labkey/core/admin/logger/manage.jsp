@@ -160,11 +160,16 @@ Ext.onReady(function () {
       });
     }
 
-    function updateDisplay(loggers) {
-      if (loggers.length == 0) {
+    function updateDisplay(loggers)
+    {
+      loggers.sort(function(a,b){return a.name.localeCompare(b.name);});
+      if (loggers.length == 0)
+      {
         loggerTableMessage.innerHTML = 'No loggers in response';
         loggerTableMessage.style.display = '';
-      } else {
+      }
+      else
+      {
         var isVisible = createVisibleFilter();
         var rows = [];
         for (var i = 0, len = loggers.length; i < len; i++) {
