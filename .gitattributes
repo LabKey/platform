@@ -209,6 +209,8 @@ api/src/org/labkey/api/data/AJAXDetailsDisplayColumn.java -text
 api/src/org/labkey/api/data/AbstractDataRegion.java -text
 api/src/org/labkey/api/data/AbstractFileDisplayColumn.java -text
 api/src/org/labkey/api/data/AbstractForeignKey.java -text
+api/src/org/labkey/api/data/AbstractParticipantCategory.java -text
+api/src/org/labkey/api/data/AbstractParticipantGroup.java -text
 api/src/org/labkey/api/data/AbstractPropertyStore.java -text
 api/src/org/labkey/api/data/AbstractSelectorTestCase.java -text
 api/src/org/labkey/api/data/AbstractTableInfo.java -text
