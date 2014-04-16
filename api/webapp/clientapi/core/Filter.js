@@ -582,7 +582,7 @@ LABKEY.Filter = new function()
 
     var defaultFilter = {
         "int": ft.EQUAL,
-        "string": ft.STARTS_WITH,
+        "string": ft.CONTAINS,
         "boolean": ft.EQUAL,
         "float": ft.EQUAL,
         "date": ft.DATE_EQUAL
