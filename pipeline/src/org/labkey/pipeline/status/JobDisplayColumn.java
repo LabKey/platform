@@ -23,6 +23,7 @@ import org.labkey.pipeline.api.PipelineStatusFileImpl;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -63,13 +64,6 @@ public class JobDisplayColumn extends SimpleDisplayColumn
             out.write("&nbsp;");
         else
         {
-            Collections.sort(_jobStatus, new Comparator<PipelineStatusFile>()
-            {
-                public int compare(PipelineStatusFile sf1, PipelineStatusFile sf2)
-                {
-                    return sf1.getDescription().compareToIgnoreCase(sf2.getDescription());
-                }
-            });
             int rowIndex = 0;
             out.write("<table class=\"labkey-data-region labkey-show-borders\">\n" +
                     "<colgroup><col width=\"100\"/><col width=\"400\"/></colgroup>\n" +
@@ -122,6 +116,16 @@ public class JobDisplayColumn extends SimpleDisplayColumn
             }
             if (_jobStatus == null)
                 _jobStatus = Collections.emptyList();
+            // Make a copy of the immutable list so we can sort as needed
+            _jobStatus = new ArrayList<>(_jobStatus);
+
+            Collections.sort(_jobStatus, new Comparator<PipelineStatusFile>()
+            {
+                public int compare(PipelineStatusFile sf1, PipelineStatusFile sf2)
+                {
+                    return sf1.getDescription().compareToIgnoreCase(sf2.getDescription());
+                }
+            });
         }
 
         return _jobStatus;
