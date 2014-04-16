@@ -21,7 +21,8 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.template.ClientDependency;
 
 /**
-
+ * Similar to ShowEditUIButton, except it will send the user to /ehr/updateQuery, instead of /ldk/updateQuery.
+ * This allows tables to use EHR's metadata customization scheme.
  */
 public class EHRShowEditUIButton extends ShowEditUIButton
 {

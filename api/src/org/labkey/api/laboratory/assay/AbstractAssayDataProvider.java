@@ -232,7 +232,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
                 TableInfo query = qd.getTable(errors, true);
                 if (query == null || errors.size() > 0)
                 {
-                    _log.error("Unable to create table for query: " + qd.getSchema().getName() + "/" + qd.getName());
+                    _log.error("Unable to create table for query: " + qd.getSchema().getName() + "/" + qd.getName() + ", in container: " + qd.getContainer().getPath());
                     for (QueryException error : errors)
                     {
                         _log.error(error.getMessage(), error);
@@ -271,7 +271,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
                 TableInfo query = qd.getTable(errors, true);
                 if (query == null || errors.size() > 0)
                 {
-                    _log.error("Unable to create table for query: " + qd.getSchema().getName() + "/" + qd.getName());
+                    _log.error("Unable to create table for query: " + qd.getSchema().getName() + "/" + qd.getName() + ", in container: " + qd.getContainer().getPath());
                     for (QueryException error : errors)
                     {
                         _log.error(error.getMessage(), error);

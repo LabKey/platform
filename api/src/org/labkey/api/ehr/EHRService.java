@@ -29,6 +29,7 @@ import org.labkey.api.ehr.demographics.DemographicsProvider;
 import org.labkey.api.ehr.history.HistoryDataSource;
 import org.labkey.api.ldk.table.ButtonConfigFactory;
 import org.labkey.api.module.Module;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
@@ -210,7 +211,7 @@ abstract public class EHRService
 
     abstract public void appendCalculatedIdCols(AbstractTableInfo ti, String dateFieldName);
 
-    abstract public Collection<String> ensureFlagActive(User u, Container c, String category, String flag, Date date, String remark, Collection<String> animalIds, boolean livingAnimalsOnly);
+    abstract public Collection<String> ensureFlagActive(User u, Container c, String category, String flag, Date date, String remark, Collection<String> animalIds, boolean livingAnimalsOnly) throws BatchValidationException;
 
     abstract public Collection<String> terminateFlagsIfExists(User u, Container c, String category, String flag, Date enddate, Collection<String> animalIds);
 }

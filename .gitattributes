@@ -477,6 +477,7 @@ api/src/org/labkey/api/ehr/dataentry/TaskForm.java -text
 api/src/org/labkey/api/ehr/dataentry/TaskFormSection.java -text
 api/src/org/labkey/api/ehr/demographics/AbstractDemographicsProvider.java -text
 api/src/org/labkey/api/ehr/demographics/AbstractListDemographicsProvider.java -text
+api/src/org/labkey/api/ehr/demographics/AnimalRecord.java -text
 api/src/org/labkey/api/ehr/demographics/DemographicsProvider.java -text
 api/src/org/labkey/api/ehr/history/AbstractDataSource.java -text
 api/src/org/labkey/api/ehr/history/HistoryDataSource.java -text
@@ -487,6 +488,7 @@ api/src/org/labkey/api/ehr/security/EHRAbnormalAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRAbnormalDeletePermission.java -text
 api/src/org/labkey/api/ehr/security/EHRAbnormalInsertPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRAbnormalUpdatePermission.java -text
+api/src/org/labkey/api/ehr/security/EHRAnimalGroupEditPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRBehaviorEntryPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRClinicalEntryPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRCompletedAdminPermission.java -text

@@ -588,7 +588,7 @@ public class DefaultAssayParser implements AssayParser
     {
         try
         {
-            JSONArray arr = ExcelFactory.convertExcelToJSON(file, false);
+            JSONArray arr = ExcelFactory.convertExcelToJSON(file, true);
             List<List<String>> ret = new ArrayList<>();
             if (arr.length() == 0)
                 return ret;
@@ -597,9 +597,10 @@ public class DefaultAssayParser implements AssayParser
             for (Object cells : sheet.getJSONArray("data").toArray())
             {
                 List<String> line = new ArrayList<>();
-                for (Object o : ((JSONArray) cells).toArray())
+                for (JSONObject o : ((JSONArray) cells).toJSONObjectArray())
                 {
-                    line.add(Objects.toString(o, ""));
+                    Object val = o.containsKey("formattedValue") ? o.getString("formattedValue") : o.get("value");
+                    line.add(ConvertHelper.convert(val, String.class));
                 }
                 ret.add(line);
             }

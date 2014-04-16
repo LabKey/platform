@@ -16,8 +16,9 @@
 package org.labkey.api.ehr;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.ehr.demographics.DemographicsProvider;
+import org.labkey.api.ehr.demographics.AnimalRecord;
 
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -40,4 +41,8 @@ abstract public class EHRDemographicsService
     }
 
     abstract public void reportDataChange(final Container c, final String schema, final String query, final List<String> ids);
+
+    abstract public AnimalRecord getAnimal(Container c, String id);
+
+    abstract public List<AnimalRecord> getAnimals(Container c, Collection<String> ids);
 }
