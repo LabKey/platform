@@ -49,7 +49,6 @@ import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
@@ -750,10 +749,10 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
                 }
             }
         }
-        // Exceptions were not being handled by calling functions so we translate them here
+        // Warn if the move fails for some reason (file is open / file deleted during archive)
         catch (IOException e)
         {
-            throw UnexpectedException.wrap(e);
+            LOG.warn("Unable to archive file:  " + e.getMessage());
         }
         // Fail silently if the parent directory does not exist - archiving is a best effort action
         catch (ExperimentException e)
