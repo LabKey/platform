@@ -671,7 +671,8 @@ public class ExceptionUtil
         LabkeySQL,
         QueryName,
         QuerySchema,
-        SkipMothershipLogging
+        SkipMothershipLogging,
+        ExtraMessage
     }
 
 
