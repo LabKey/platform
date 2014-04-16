@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CrosstabTableInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
@@ -582,6 +583,11 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         if (_schemaCustomizers != null)
             for (UserSchemaCustomizer customizer : _schemaCustomizers)
                 customizer.afterConstruct(this, table);
+    }
+
+    public ContainerFilter getOlapContainerFilter(User user)
+    {
+        return null;
     }
 
     @Override
