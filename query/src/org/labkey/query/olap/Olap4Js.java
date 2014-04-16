@@ -505,10 +505,10 @@ public class Olap4Js
         new CellSetWriter().write(cs,out);
     }
 
-    public static void convertCube(Cube cube, Writer out) throws IOException
+    public static void convertCube(Cube cube, boolean includeMembers, Writer out) throws IOException
     {
         CellSetWriter w = new CellSetWriter();
-        w._includeLevelMembers = true;
+        w._includeLevelMembers = includeMembers;
         w.write(cube, true, out);
     }
 }

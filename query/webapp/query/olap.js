@@ -131,10 +131,12 @@ LABKEY.query.olap._private = new function() {
 
     var getCubeDefinition = function(config)
     {
+        if (!('includeMembers' in config))
+            config.includeMembers = true;
         Ext4.Ajax.request({
             url : LABKEY.ActionURL.buildURL("olap", "getCubeDefinition", config.containerPath),
             method : 'POST',
-            jsonData: { cubeName:config.name, configId:config.configId, schemaName:config.schemaName },
+            jsonData: { cubeName:config.name, configId:config.configId, schemaName:config.schemaName, includeMembers:config.includeMembers },
             success: function(r){postProcessGetCubeDefinition(r,config);},
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
         });

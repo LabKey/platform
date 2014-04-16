@@ -151,13 +151,29 @@ public class OlapController extends SpringActionController
         }
     }
 
+    public static class CubeForm extends OlapForm
+    {
+        private boolean includeMembers = true;
+
+        public boolean isIncludeMembers()
+        {
+            return includeMembers;
+        }
+
+        public void setIncludeMembers(boolean includeMembers)
+        {
+            this.includeMembers = includeMembers;
+        }
+    }
+
+
 
     @RequiresPermissionClass(ReadPermission.class)
     @Action(ActionType.SelectMetaData)
-    public class GetCubeDefinitionAction extends ApiAction<OlapForm>
+    public class GetCubeDefinitionAction extends ApiAction<CubeForm>
     {
         @Override
-        public void validateForm(OlapForm form, Errors errors)
+        public void validateForm(CubeForm form, Errors errors)
         {
             if (StringUtils.isEmpty(form.getConfigId()))
                 errors.reject(ERROR_REQUIRED, "ConfigId must be provided to retrieve a cube definition.");
@@ -168,7 +184,7 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        public ApiResponse execute(OlapForm form, BindException errors) throws Exception
+        public ApiResponse execute(CubeForm form, BindException errors) throws Exception
         {
             Cube cube = getCube(form, errors);
 
@@ -182,7 +198,7 @@ public class OlapController extends SpringActionController
 
             HttpServletResponse response = getViewContext().getResponse();
             response.setContentType("application/json");
-            Olap4Js.convertCube(cube, response.getWriter());
+            Olap4Js.convertCube(cube, form.isIncludeMembers(), response.getWriter());
             return null;
         }
     }
