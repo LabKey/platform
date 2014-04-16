@@ -20,8 +20,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.olap4j.CellSet;
@@ -34,6 +36,7 @@ import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
+import org.olap4j.metadata.MetadataElement;
 import org.olap4j.metadata.Property;
 import org.springframework.validation.BindException;
 
@@ -61,6 +64,7 @@ public class BitSetQueryImpl
     static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
 
     final Cube cube;
+    final HashMap<String,MetadataElement> uniqueNameMap = new HashMap<>();
     final HashMap<String,Level> levelMap = new HashMap<>();
     final QubeQuery qq;
     final BindException errors;
@@ -68,6 +72,7 @@ public class BitSetQueryImpl
     OlapConnection connection;
     final String cachePrefix;
 
+    MemberSet containerMembers = null;  // null == all
 
     public BitSetQueryImpl(Container c, OlapSchemaDescriptor sd, OlapConnection connection, QubeQuery qq, BindException errors) throws OlapException
     {
@@ -78,11 +83,40 @@ public class BitSetQueryImpl
         this.cachePrefix = "" + c.getRowId() + "/" + sd.getId() + "/";
 
         initCube();
+        initDistinctMeasure();
+    }
+
+
+    public BitSetQueryImpl setContainerFilter(Collection<String> containerFilter) throws OlapException
+    {
+        // inspect the masure hierarchy to see if it has a container level
+        Hierarchy h = qq.countDistinctLevel.getHierarchy();
+        Level lContainer = null;
+        for (int i=1 ; i<qq.countDistinctLevel.getDepth() ; i++)
+        {
+            Level l = h.getLevels().get(i);
+            if (l.getName().equalsIgnoreCase("container"))
+                lContainer = l;
+        }
+        if (null == lContainer)
+            throw new IllegalStateException("Container level not found in hierarchy: " + h.getUniqueName());
+
+        CaseInsensitiveHashSet ids = new CaseInsensitiveHashSet();
+        ids.addAll(containerFilter);
+        MemberSet s = new MemberSet();
+        for (Member m : lContainer.getMembers())
+            if (ids.contains(m.getName()))
+                s.add(m);
+
+        this.containerMembers = s;
+        return this;
     }
 
 
     void initCube() throws OlapException
     {
+        CPUTimer t = new CPUTimer("initCube");
+        assert t.start();
         // Member ordinals may not be set, which is really annoying
         for (Hierarchy h : cube.getHierarchies())
         {
@@ -99,7 +133,44 @@ public class BitSetQueryImpl
                 }
             }
         }
+        assert t.stop();
     }
+
+
+    void initDistinctMeasure()
+    {
+        // TODO : should specify in JSON, shouldn't need to infer here
+        if (null == qq.countDistinctMember)
+        {
+            for (Measure m : cube.getMeasures())
+            {
+                if (m.getName().endsWith("Count") && m.getName().equals("RowCount"))
+                    qq.countDistinctMember = m;
+            }
+        }
+
+        if (null != qq.countDistinctMember && null == qq.countDistinctLevel)
+        {
+            String name = qq.countDistinctMember.getName();
+            if (name.endsWith("Count"))
+                name = name.substring(0,name.length()-5);
+            Hierarchy h = cube.getHierarchies().get(name);
+            if (null == h)
+                h = cube.getHierarchies().get("Participant");
+            if (null == h)
+                h = cube.getHierarchies().get("Subject");
+            if (null == h)
+                h = cube.getHierarchies().get("Patient");
+            if (h != null)
+                qq.countDistinctLevel = h.getLevels().get(h.getLevels().size()-1);
+        }
+
+        if (null == qq.countDistinctLevel)
+            throw new IllegalArgumentException("No count distinct measure definition found");
+
+        this.measure = new CountDistinctMeasureDef(qq.countDistinctMember, qq.countDistinctLevel);
+    }
+
 
 
     abstract class Result
@@ -561,7 +632,7 @@ public class BitSetQueryImpl
         Level measureLevel = ((CountDistinctMeasureDef)measure).level;
 
         // STEP 1: create filter set (measure members selected by filter)
-        MemberSet filterSet = filter(measureLevel, filterExpr);
+        MemberSet filterSet = filter(measureLevel, filterExpr, containerMembers);
 
         if (_log.isDebugEnabled())
         {
@@ -609,7 +680,7 @@ public class BitSetQueryImpl
                     else
                         count = MemberSet.countIntersect(memberSet, filterSet);
                 }
-                measureValues.add(count);
+                measureValues.add(0==count?null:count);
             }
         }
         // TWO-AXIS
@@ -655,7 +726,7 @@ public class BitSetQueryImpl
     }
 
 
-    MemberSet filter(Level measureLevel, Result filterAxisResult) throws SQLException
+    MemberSet filter(Level measureLevel, Result filterAxisResult, MemberSet containerMembers) throws SQLException
     {
         List<Result> list = new ArrayList<>();
 
@@ -665,11 +736,34 @@ public class BitSetQueryImpl
         }
         else if (filterAxisResult instanceof MemberSetResult)
         {
-            list.add((MemberSetResult)filterAxisResult);
+            list.add(filterAxisResult);
         }
         else if (null != filterAxisResult)
         {
             throw new IllegalArgumentException();
+        }
+
+        if (null != containerMembers)
+        {
+            // this doesn't work because we're in the same hierarchy, we can just iterate over the children
+            //MemberSetResult r = _cubeHelper.membersQuery(new MemberSetResult(measureLevel), new MemberSetResult(containerMembers));
+            if (containerMembers.size() == containerMembers.getLevel().getMembers().size())
+            {
+                // not much of a filter... skip it
+            }
+            else
+            {
+                MemberSet set = new MemberSet();
+                for (Member m : containerMembers)
+                {
+                    for (Member c : m.getChildMembers())
+                    {
+                        set.add(c);
+                        assert c.getLevel().getUniqueName().equalsIgnoreCase(measureLevel.getUniqueName());
+                    }
+                }
+                list.add(new MemberSetResult(set));
+            }
         }
 
         if (list.isEmpty())
@@ -832,36 +926,7 @@ public class BitSetQueryImpl
 
     public CellSet executeQuery() throws BindException,SQLException
     {
-        // TODO : should specify in JSON, shouldn't need to infer here
-        if (null == qq.countDistinctMember)
-        {
-            for (Measure m : cube.getMeasures())
-            {
-                if (m.getName().endsWith("Count") && m.getName().equals("RowCount"))
-                    qq.countDistinctMember = m;
-            }
-        }
 
-        if (null != qq.countDistinctMember && null == qq.countDistinctLevel)
-        {
-            String name = qq.countDistinctMember.getName();
-            if (name.endsWith("Count"))
-                name = name.substring(0,name.length()-5);
-            Hierarchy h = cube.getHierarchies().get(name);
-            if (null == h)
-                h = cube.getHierarchies().get("Participant");
-            if (null == h)
-                h = cube.getHierarchies().get("Subject");
-            if (null == h)
-                h = cube.getHierarchies().get("Patient");
-            if (h != null)
-                qq.countDistinctLevel = h.getLevels().get(h.getLevels().size()-1);
-        }
-
-        if (null == qq.countDistinctLevel)
-            throw new IllegalArgumentException("No count distinct measure definition found");
-
-        this.measure = new CountDistinctMeasureDef(qq.countDistinctMember, qq.countDistinctLevel);
         Result filterExpr=null, rowsExpr=null, columnsExpr=null;
 
         if (null != qq.onColumns)
@@ -1014,10 +1079,14 @@ public class BitSetQueryImpl
                     try (CellSet cs = execute(query))
                     {
                         set = new MemberSet();
-                        for (Position p :  cs.getAxes().get(1).getPositions())
+                        List<Position> rowPositions = cs.getAxes().get(1).getPositions();
+                        for (int row=0 ; row<rowPositions.size() ; row++)
                         {
+                            Position p = rowPositions.get(row);
                             Member m = p.getMembers().get(0);
-                            set.add(m);
+                            double value = cs.getCell(row).getDoubleValue();
+                            if (0 != value)
+                                set.add(getCubeMember(m));
                         }
                     }
                     resultsCachePut(query, set);
@@ -1048,11 +1117,14 @@ public class BitSetQueryImpl
             try (CellSet cs = execute(query))
             {
                 MemberSet set = new MemberSet();
-                for (Position p :  cs.getAxes().get(1).getPositions())
+                List<Position> rowPositions = cs.getAxes().get(1).getPositions();
+                for (int row=0 ; row<rowPositions.size() ; row++)
                 {
+                    Position p = rowPositions.get(row);
                     Member m = p.getMembers().get(0);
-//                  CONSIDER: verify that count is not 0?  if (0 != cs.getCell(p).getValue())
-                    set.add(m);
+                    double value = cs.getCell(row).getDoubleValue();
+                    if (0.0 != value)
+                        set.add(getCubeMember(m));
                 }
                 resultsCachePut(query, set);
                 return set;
@@ -1098,16 +1170,28 @@ public class BitSetQueryImpl
             String queryXjoin = queryCrossjoin(outerLevel, inner);
             try (CellSet cs = execute(queryXjoin))
             {
-                for (Position p :  cs.getAxes().get(1).getPositions())
+                List<Position> rowPositions = cs.getAxes().get(1).getPositions();
+                for (int row=0 ; row<rowPositions.size() ; row++)
                 {
+                    Position p = rowPositions.get(row);
                     Member outerMember = p.getMembers().get(0);
                     Member sub = p.getMembers().get(1);
-                    assert outerMember.getLevel().getUniqueName().equals(outerLevel.getUniqueName());
-                    MemberSet s = sets.get(sub.getUniqueName());
-                    if (null == s)
-                        _log.warn("Unexpected member in cellset result: " + sub.getUniqueName());
-                    else
-                        s.add(outerMember);
+                    double value = cs.getCell(row).getDoubleValue();
+                    if (0.0 != value)
+                    {
+                        assert outerMember.getLevel().getUniqueName().equals(outerLevel.getUniqueName());
+                        MemberSet s = sets.get(sub.getUniqueName());
+                        if (null == s)
+                            _log.warn("Unexpected member in cellset result: " + sub.getUniqueName());
+                        else
+                        {
+                            Member m = getCubeMember(outerMember);
+                            if (null == m)
+                                _log.warn("Unexpected member in cellset result: " + outerMember.getUniqueName());
+                            else
+                                s.add(getCubeMember(outerMember));
+                        }
+                    }
                 }
             }
             for (Member sub : inner.getCollection())
@@ -1117,6 +1201,26 @@ public class BitSetQueryImpl
                 if (null != s)
                     resultsCachePut(query,s);
             }
+        }
+
+        //
+        // Members returned by a CellSet are not necessarily the same as those in the cube, this seems to happen
+        // therefore they may not have initialized ordinal values.  This seems to happen with UNION queries
+        //
+        Member getCubeMember(Member member) throws OlapException
+        {
+            if (member.getOrdinal() >= 0)
+                return member;
+            MetadataElement me = uniqueNameMap.get(member.getUniqueName());
+            if (null == me)
+            {
+                Level l = member.getLevel();
+                for (Member m : l.getMembers())
+                    uniqueNameMap.put(m.getUniqueName(),m);
+            }
+            me = uniqueNameMap.get(member.getUniqueName());
+            assert null == me || (me instanceof Member);
+            return (Member)me;
         }
     }
 

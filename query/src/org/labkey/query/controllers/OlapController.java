@@ -15,6 +15,8 @@
  */
 package org.labkey.query.controllers;
 
+import mondrian.olap.Annotated;
+import mondrian.olap.Annotation;
 import mondrian.olap.MondrianServer;
 import mondrian.xmla.impl.MondrianXmlaServlet;
 import org.apache.commons.lang3.StringUtils;
@@ -30,12 +32,23 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.Compress;
+import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
@@ -55,6 +68,7 @@ import org.labkey.query.olap.ServerManager;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapStatement;
+import org.olap4j.OlapWrapper;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Schema;
 import org.springframework.validation.BindException;
@@ -66,9 +80,12 @@ import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletResponse;
 import java.io.StringWriter;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -195,18 +212,33 @@ public class OlapController extends SpringActionController
         public void validateForm(ExecuteMdxForm form, Errors errors)
         {
             if (StringUtils.isEmpty(form.getConfigId()))
-                errors.reject(ERROR_REQUIRED, "ConfigId must be provided to retrieve a cube definition.");
-//            if (StringUtils.isEmpty(form.getSchemaName()))
-//                errors.reject(ERROR_REQUIRED, "Schema name must be provided to retrieve a cube definition.");
+                errors.reject(ERROR_REQUIRED, "configId");
+
+            if (!"GET".equals(getViewContext().getRequest().getMethod()))
+            {
+                String sql = StringUtils.trimToNull(form.getQuery());
+                if (null == sql)
+                    errors.reject(ERROR_REQUIRED, "query");
+            }
             super.validateForm(form, errors);
         }
+
 
         @Override
         public ApiResponse execute(ExecuteMdxForm form, BindException errors) throws Exception
         {
+//            Cube cube = getCube(form, errors);
+//            if (errors.hasErrors())
+//                return null;
+//            String allowMDXString = getAnnotation(cube, "AllowMDX");
+//            boolean allowMDX = "TRUE".equals(allowMDXString.toUpperCase());
+//            if (allowMDX && (!getUser().isDeveloper() && !getUser().isSiteAdmin()))
+//            {
+//                errors.reject(ERROR_MSG,"MDX not allowed on this cube");
+//                return null;
+//            }
+
             String sql = StringUtils.trimToNull(form.getQuery());
-            if (null == sql)
-                throw new IllegalArgumentException("No value was supplied for the required parameter 'sql'.");
 
             try
             {
@@ -383,6 +415,16 @@ public class OlapController extends SpringActionController
                 return null;
             }
 
+            ContainerFilter cf = null;
+            String schemaName = getAnnotation(cube,"SchemaName");
+            if (null != schemaName)
+            {
+                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
+                if (null == schema)
+                    throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
+                cf = ((UserSchema)schema).getOlapContainerFilter(getUser());
+            }
+
             QubeQuery qquery = new QubeQuery(cube);
             qquery.fromJson(q, errors);
             if (errors.hasErrors())
@@ -391,9 +433,11 @@ public class OlapController extends SpringActionController
             long start = System.currentTimeMillis();
             OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), form.getConfigId());
             BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), sd, getConnection(sd), qquery, errors);
+            if (null != cf)
+                bitsetquery.setContainerFilter(getContainerCollection(cf));
             CellSet cs = bitsetquery.executeQuery();
-            _log.warn("bitsetquery.executeQuery() took " + DateUtil.formatDuration(System.currentTimeMillis()-start));
-
+            long end = System.currentTimeMillis();
+            _log.debug("bitsetquery.executeQuery() took " + DateUtil.formatDuration(end-start));
 
             HttpServletResponse response = getViewContext().getResponse();
             response.setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
@@ -543,8 +587,24 @@ public class OlapController extends SpringActionController
     }
 
 
+
+    private String getAnnotation(Cube cube, String name)  throws SQLException
+    {
+        Annotated annotated = ((OlapWrapper)cube).unwrap(Annotated.class);
+        Map<String,Annotation> annotations = annotated.getAnnotationMap();
+        Annotation a = annotations.get(name);
+        return null==a ? null : null == a.getValue() ? null : String.valueOf(a.getValue());
+    }
+
+
+
+    private Cube _cube = null;
+
     private Cube getCube(OlapForm form, BindException errors) throws SQLException
     {
+        if (null != _cube)
+            return _cube;
+
         OlapSchemaDescriptor d = null;
         if (StringUtils.isNotEmpty(form.getConfigId()))
             d = ServerManager.getDescriptor(getContainer(), form.getConfigId());
@@ -601,6 +661,7 @@ public class OlapController extends SpringActionController
                 errors.reject(ERROR_MSG, "Cube not found: " + form.getCubeName());
                 return null;
             }
+            _cube = cube;
             return cube;
         }
     }
@@ -616,6 +677,7 @@ public class OlapController extends SpringActionController
             try
             {
                 _connection.close();
+                _connection = null;
             }
             catch (SQLException x)
             {
@@ -654,8 +716,15 @@ public class OlapController extends SpringActionController
     }
 
 
-
-
+    private Collection<String> getContainerCollection(ContainerFilter cf)
+    {
+        // TODO optimize, this is round-about since cf probabaly implements getIds() internally
+        DbSchema core = CoreSchema.getInstance().getSchema();
+        SQLFragment sqlf = new SQLFragment("SELECT entityid FROM core.containers WHERE ");
+        sqlf.append(cf.getSQLFragment(core, new FieldKey(null, "entityid"), getContainer(), new HashMap<FieldKey,ColumnInfo>()));
+        ArrayList<String> list = new SqlSelector(core, sqlf).getArrayList(String.class);
+        return list;
+    }
 
 
     /*

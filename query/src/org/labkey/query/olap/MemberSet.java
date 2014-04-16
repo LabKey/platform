@@ -552,6 +552,7 @@ public class MemberSet extends AbstractSet<Member>
         {
             if (!member.getLevel().getUniqueName().equals(_level.getUniqueName()))
                 throw new IllegalArgumentException();
+            assert member.getOrdinal() >= 0;
             boolean ret = !_set.get(member.getOrdinal());
             _set.set(member.getOrdinal());
             return ret;
