@@ -229,6 +229,9 @@
                 if (null != nav)
                 {
                     %><a style='color:green;' href="<%=h(nav.getHref())%>"><%=h(nav.getText())%></a><%
+                    if (!nav.getHref().equals(documentContainer.getStartURL(user).toString())) {
+                        %> in <a style='color:green;' href="<%=h(documentContainer.getStartURL(user))%>"><%=h(documentContainer.getPath())%></a><%
+                    }
                 }
 
                 if (!StringUtils.isEmpty(hit.navtrail))
