@@ -15,8 +15,8 @@
  */
 package org.labkey.bigiron.mssql;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.Table;
 
 /**
  * User: adam
@@ -25,42 +25,15 @@ import org.labkey.api.data.Table;
  */
 public class MicrosoftSqlServer2012Dialect extends MicrosoftSqlServer2008R2Dialect
 {
-//    @Override          // Consider: remove this; just use TOP in this maxRows-only case
-//    public SQLFragment limitRows(SQLFragment frag, int maxRows)
-//    {
-//        if (Table.ALL_ROWS == maxRows)
-//            return frag;
-//
-//        String sql = frag.getSQL();
-//        if (!sql.substring(0, 6).equalsIgnoreCase("SELECT"))
-//            throw new IllegalArgumentException("ERROR: Limit SQL doesn't start with SELECT: " + sql);
-//
-//        // FETCH NEXT doesn't seem to work with 0 rows, so fallback to TOP in this case
-//        if (Table.NO_ROWS == maxRows)
-//        {
-//            int offset = 6;
-//            if (sql.substring(0, 15).equalsIgnoreCase("SELECT DISTINCT"))
-//                offset = 15;
-//            frag.insert(offset, " TOP 0");
-//        }
-//        else
-//        {
-//            frag.append(" OFFSET 0 ROWS FETCH NEXT ").append(maxRows).append(" ROWS ONLY");
-//        }
-//
-//        return frag;
-//    }
-
-    // Called only if rowCount and offset are both > 0
+    // Called only if rowCount and offset are both > 0... and order is non-blank
     @Override
-    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
+    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset)
     {
         SQLFragment sql = new SQLFragment(select);
         sql.append("\n").append(from);
         if (null != filter && !filter.isEmpty()) sql.append("\n").append(filter);
         if (groupBy != null) sql.append("\n").append(groupBy);
-        if (order != null) sql.append("\n").append(order);
-        sql.append("\nOFFSET ").append(offset).append(" ROWS FETCH NEXT ").append(maxRows).append(" ROWS ONLY");
+        sql.append("\n").append(order).append("\nOFFSET ").append(offset).append(" ROWS FETCH NEXT ").append(maxRows).append(" ROWS ONLY");
 
         return sql;
     }

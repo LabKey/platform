@@ -344,7 +344,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     // Called only if rowCount and offset are both > 0
-    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, String order, String groupBy, int maxRows, long offset)
+    protected SQLFragment _limitRows(SQLFragment select, SQLFragment from, SQLFragment filter, @NotNull String order, String groupBy, int maxRows, long offset)
     {
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT * FROM (\n");

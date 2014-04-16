@@ -266,7 +266,7 @@
                     <a href="<%=h(previousURL)%>">&lt; Previous</a><%
 
                     if (pageNo < pageCount)
-                        out.print("&nbsp;|&nbsp;");
+                        out.print(text("&nbsp;|&nbsp;"));
                 }
 
                 if (pageNo < pageCount)
