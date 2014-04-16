@@ -195,11 +195,11 @@ public class BitSetQueryImpl
                 this.members = (MemberSet) members;
                 this.member = null;
             }
-            else if (members.size() == 1)
-            {
-                this.members = null;
-                this.member = members.toArray(new Member[1])[0];
-            }
+//            else if (members.size() == 1)
+//            {
+//                this.members = null;
+//                this.member = members.toArray(new Member[1])[0];
+//            }
             else
             {
                 this.member = null;
@@ -661,11 +661,15 @@ public class BitSetQueryImpl
         if (null != rowsExpr)
             _cubeHelper.populateCache(measureLevel, rowsExpr);
 
+        Collection<Member> rowMembers = null==rowsExpr ? null : rowsExpr.getCollection();
+        Collection<Member> colMembers = null==colsExpr ? null : colsExpr.getCollection();
+
         // ONE-AXIS
         if (null == colsExpr || null == rowsExpr)
         {
-            Result axis = null==colsExpr ? rowsExpr : colsExpr;
-            for (Member m : axis.getCollection())
+            Collection<Member> members = null==rowMembers ? colMembers : rowMembers;
+            Collection<Member> notEmptyMembers = !qq.showEmpty ? new ArrayList<Member>() : null;
+            for (Member m : members)
             {
                 int count;
                 if (0 == countFilterSet)
@@ -680,12 +684,28 @@ public class BitSetQueryImpl
                     else
                         count = MemberSet.countIntersect(memberSet, filterSet);
                 }
-                measureValues.add(0==count?null:count);
+                if (qq.showEmpty)
+                    measureValues.add(0==count?null:count);
+                else
+                {
+                    if (0==count)
+                        continue;
+                    measureValues.add(count);
+                    notEmptyMembers.add(m);
+                }
+            }
+            if (!qq.showEmpty)
+            {
+                if (null != rowMembers)
+                    rowMembers = notEmptyMembers;
+                else
+                    colMembers = notEmptyMembers;
             }
         }
         // TWO-AXIS
         else
         {
+            // TODO handle showEmpty==false for two axis query
             HashMap<String,MemberSet> quickCache = new HashMap<>();
             for (Member rowMember : rowsExpr.getCollection())
             {
@@ -719,10 +739,7 @@ public class BitSetQueryImpl
             }
         }
 
-        return new _CellSet(
-                measureValues,
-                colsExpr==null?null:colsExpr.getCollection(),
-                rowsExpr==null?null:rowsExpr.getCollection());
+        return new _CellSet(measureValues, colMembers, rowMembers);
     }
 
 

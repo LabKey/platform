@@ -20,7 +20,6 @@ import org.apache.commons.collections15.map.CaseInsensitiveMap;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.JSONString;
 import org.junit.Assert;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
@@ -367,7 +366,7 @@ public class QubeQuery
             Object membersObj = json.get("members");
             if (null != membersObj)
             {
-                if (membersObj instanceof JSONString || membersObj instanceof String)
+                if (membersObj instanceof String)
                 {
                     if ("members".equals(membersObj))
                         e.membersMember = true;
@@ -381,6 +380,7 @@ public class QubeQuery
                             errors.reject(SpringActionController.ERROR_MSG, "Member not found: " + String.valueOf(membersObj));
                             throw errors;
                         }
+                        e.membersSet = Collections.singleton(m);
                     }
                 }
                 else if (membersObj instanceof JSONArray)
