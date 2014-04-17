@@ -264,22 +264,19 @@ Ext.define('LABKEY.app.model.Filter', {
         return this.get('members');
     },
 
-    removeMember : function(memberUname) {
+    removeMember : function(memberUniqueName) {
 
-        // Allow for removal of the entire filter if a uname is not provided
-        if (!memberUname) {
-            return [];
-        }
-
+        // Allow for removal of the entire filter if a unique name is not provided
         var newMembers = [];
-        var memberUniqueName = '[' + memberUname.join('].[') + ']';
-        var dataUniqueName;
+        if (memberUniqueName) {
+            var dataUniqueName;
 
-        for (var m=0; m < this.data.members.length; m++) {
-            dataUniqueName = '[' + this.data.members[m].uname.join('].[') + ']';
-            if (memberUniqueName !== dataUniqueName)
-            {
-                newMembers.push(this.data.members[m]);
+            for (var m=0; m < this.data.members.length; m++) {
+                dataUniqueName = this.data.members[m].uniqueName;
+                if (memberUniqueName !== dataUniqueName)
+                {
+                    newMembers.push(this.data.members[m]);
+                }
             }
         }
         return newMembers;
@@ -303,23 +300,15 @@ Ext.define('LABKEY.app.model.Filter', {
 
             if (eq) {
                 // member set equivalency
-                var keys = {}, uname, key, sep, m, u;
+                var keys = {}, m, uniqueName;
                 for (m=0; m < d.members.length; m++) {
-                    uname = d.members[m].uname; key = ''; sep = '';
-                    for (u=0; u < uname.length; u++) {
-                        key += sep + uname[u];
-                        sep = ':::';
-                    }
-                    keys[key] = true;
+                    uniqueName = d.members[m].uniqueName;
+                    keys[uniqueName] = true;
                 }
 
                 for (m=0; m < fd.members.length; m++) {
-                    uname = fd.members[m].uname; key = ''; sep = '';
-                    for (u=0; u < uname.length; u++) {
-                        key += sep + uname[u];
-                        sep = ':::';
-                    }
-                    if (!Ext.isDefined(keys[key])) {
+                    uniqueName = fd.members[m].uniqueName;
+                    if (!Ext.isDefined(keys[uniqueName])) {
                         eq = false;
                         break;
                     }

@@ -159,7 +159,9 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
 
             var hierarchy = this.dim.getHierarchies()[this.hIndex];
             var baseResult = this.baseResult;
-            var targetLevels = baseResult.metadata.cube.dimensions[1].hierarchies[0].levels;
+            var targetLevels = hierarchy.levels;
+            if (baseResult.metadata.cube.dimensions.length > 1)
+                targetLevels = baseResult.metadata.cube.dimensions[1].hierarchies[0].levels;
 
             var recs = [],
                     max = this.totals[hierarchy.getName()],

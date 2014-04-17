@@ -433,7 +433,7 @@ Ext.define('LABKEY.app.controller.State', {
         this.requestFilterUpdate(skipState, false);
     },
 
-    _removeHelper : function(target, filterId, hierarchyName, uname) {
+    _removeHelper : function(target, filterId, hierarchyName, uniqueName) {
 
         var filterset = [];
         for (var t=0; t < target.length; t++) {
@@ -448,7 +448,7 @@ Ext.define('LABKEY.app.controller.State', {
                     continue;
 
                 // Found the targeted filter to be removed
-                var newMembers = target[t].removeMember(uname);
+                var newMembers = target[t].removeMember(uniqueName);
                 if (newMembers.length > 0) {
                     target[t].set('members', newMembers);
                     filterset.push(target[t]);
@@ -459,9 +459,9 @@ Ext.define('LABKEY.app.controller.State', {
         return filterset;
     },
 
-    removeFilter : function(filterId, hierarchyName, uname) {
+    removeFilter : function(filterId, hierarchyName, uniqueName) {
         var filters = this.getFilters();
-        var fs = this._removeHelper(filters, filterId, hierarchyName, uname);
+        var fs = this._removeHelper(filters, filterId, hierarchyName, uniqueName);
 
         if (fs.length > 0) {
             this.setFilters(fs);
@@ -473,9 +473,9 @@ Ext.define('LABKEY.app.controller.State', {
         this.fireEvent('filterremove', this.getFilters());
     },
 
-    removeSelection : function(filterId, hierarchyName, uname) {
+    removeSelection : function(filterId, hierarchyName, uniqueName) {
 
-        var ss = this._removeHelper(this.selections, filterId, hierarchyName, uname);
+        var ss = this._removeHelper(this.selections, filterId, hierarchyName, uniqueName);
 
         if (ss.length > 0) {
             this.addSelection(ss, false, true, true);
@@ -607,7 +607,7 @@ Ext.define('LABKEY.app.controller.State', {
 
                         match = true;
 
-                        if (!this.isExistingMemberByUname(oldFilters[i].data.members, newFilters[n].data.members[j]))
+                        if (!this.isExistingMemberByUniqueName(oldFilters[i].data.members, newFilters[n].data.members[j]))
                             oldFilters[i].data.members.push(newFilters[n].data.members[j]);
                     }
                 }
@@ -639,14 +639,14 @@ Ext.define('LABKEY.app.controller.State', {
         return oldFilters;
     },
 
-    isExistingMemberByUname : function(memberArray, newMember) {
+    isExistingMemberByUniqueName : function(memberArray, newMember) {
         // issue 19999: don't push duplicate member if reselecting
         for (var k = 0; k < memberArray.length; k++)
         {
-            if (!memberArray[k].hasOwnProperty("uname") || !newMember.hasOwnProperty("uname"))
+            if (!memberArray[k].hasOwnProperty("uniqueName") || !newMember.hasOwnProperty("uniqueName"))
                 continue;
 
-            if (memberArray[k].uname.join() == newMember.uname.join())
+            if (memberArray[k].uniqueName == newMember.uniqueName)
                 return true;
         }
 

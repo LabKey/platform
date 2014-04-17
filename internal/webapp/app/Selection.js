@@ -51,6 +51,15 @@ Ext.define('LABKEY.app.view.Selection', {
                     }
                 }
             }
+        },
+
+        uniqueNameAsArray : function(uniqueName) {
+            var init = uniqueName.split('].');
+            for (var i=0; i < init.length; i++) {
+                init[i] = init[i].replace('[', '');
+                init[i] = init[i].replace(']', '');
+            }
+            return init;
         }
     },
 
@@ -64,9 +73,10 @@ Ext.define('LABKEY.app.view.Selection', {
                     if (element.hasCls('measure')) {
                         // We're dealing with a plot selection.
                         this.fireEvent('removeplotselection', rec.id, memberIdx);
-                    } else {
+                    }
+                    else {
                         var members = rec.get('members');
-                        this.fireEvent('removefilter', rec.id, rec.get('hierarchy'), members[memberIdx] ? members[memberIdx].uname : undefined);
+                        this.fireEvent('removefilter', rec.id, rec.get('hierarchy'), members[memberIdx] ? members[memberIdx].uniqueName : undefined);
                     }
                 }
                 else {
