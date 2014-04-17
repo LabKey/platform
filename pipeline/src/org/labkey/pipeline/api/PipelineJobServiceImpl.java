@@ -20,8 +20,11 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.SchemaType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -51,7 +54,9 @@ import org.labkey.pipeline.xml.TaskType;
 import org.labkey.api.pipeline.file.PathMapperImpl;
 
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,12 +70,12 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * <code>PipelineJobServiceImpl</code>
- *
- * @author brendanx
  */
 public class PipelineJobServiceImpl extends PipelineJobService
 {
     public static final String MODULE_PIPELINE_DIR = "pipeline";
+    private static final String pipelineToolsError = "Failed to locate %s. Use the site pipeline tools settings to specify where it can be found. (Currently '%s')";
+    private static final String installedPipelineToolError = "Failed to locate %s. Check tool install location defined in pipelineConfig.xml. (Currently '%s')";
 
     public static PipelineJobServiceImpl get()
     {
@@ -618,50 +623,79 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return path.replace(VERSION_SUBSTITUTION, ver);
     }
 
-    private String getToolsDirPath(String toolsDir, String rel, boolean checkFile)
+    /**
+     * Search various directories to find the exact location of the specified tool.
+     * @param installPath File system location where tool is installed. {@value null} to search pipelineToolsDirectory and PATH
+     * @param rel Path to tool relative to the installPath or pipelinToolsDirectory/PATH
+     * @param expectExecutable Tool canExecute and may have an unspecified file extension
+     * @return Full path to the spicified tool
+     */
+    private String getPathToTool(@Nullable String installPath, String rel, boolean expectExecutable)
             throws FileNotFoundException
     {
-        File dir = new File(toolsDir);
+        String path = installPath == null ? getToolsPath() : installPath;
 
-        // Resolve strips the final part of the path, so add a dummy file name
-        // to avoid losing part of the tools directory.
-        URI uri = URIUtil.resolve(dir.toURI(), rel);
-        if (uri == null)
+        for (String pathFragment : path.split(File.pathSeparator))
         {
-            if (!dir.isDirectory())
-            {
-                throw new FileNotFoundException("Failed to locate " + rel + ".  " +
-                        "Pipeline tools directory " + dir + " does not exist.  " +
-                        "Use the site settings page to specify an existing directory.");
-            }
-            else
-            {
-                throw new FileNotFoundException("Failed to locate " + rel + ".  " +
-                        " Relative path is invalid.");
+            File dir = new File(pathFragment);
 
+            URI uri = URIUtil.resolve(dir.toURI(), rel);
+            if (uri != null)
+            {
+                File file = new File(uri);
+
+                // exact tool found
+                if (NetworkDrive.exists(file) && (!expectExecutable || file.canExecute()))
+                {
+                    return file.toString();
+                }
+
+                // if a partial executable name is specified, check for possible matching executables in dir
+                if (expectExecutable && dir.exists())
+                {
+                    final String relName;
+                    final String relPackage;
+                    int relSplitIndex = rel.lastIndexOf(File.separator);
+                    if (relSplitIndex > 0)
+                    {
+                        relPackage = rel.substring(0, relSplitIndex);
+                        relName = rel.substring(relSplitIndex + 1);
+                    }
+                    else
+                    {
+                        relPackage = "";
+                        relName = rel;
+                    }
+
+                    File[] matchingExecutables = dir.listFiles(new FileFilter()
+                    {
+                        @Override
+                        public boolean accept(File file)
+                        {
+                            return file.getName().startsWith(relName + ".") || file.getName().equals(relName) &&
+                                    file.getParent().endsWith(relPackage) &&
+                                    file.canExecute();
+                        }
+                    });
+
+                    if (matchingExecutables.length > 0)
+                        return file.toString();
+                }
             }
         }
-        File file = new File(uri);
-        if (!file.exists())
-        {
-            if (!dir.exists())
-            {
-                throw new FileNotFoundException("File not found " + file + ".  " +
-                    "Pipeline tools directory does not exist.  " +
-                    "Use the site settings page to specify an existing directory.");
-            }
-            else if (!dir.equals(file.getParentFile()) && !file.getParentFile().exists())
-            {
-                throw new FileNotFoundException("File not found " + file + ".  " +
-                    "Parent directory does not exist.");                
-            }
-            else if (checkFile)
-            {
-                throw new FileNotFoundException("File not found " + file + ".  " +
-                    "Add this file to the pipeline tools directory.");
-            }
-        }
-        return file.toString();
+
+        if (installPath == null)
+            throw new FileNotFoundException(String.format(pipelineToolsError, rel, getAppProperties().getToolsDirectory()));
+        else
+            throw new FileNotFoundException(String.format(installedPipelineToolError, rel, installPath));
+    }
+
+    private String getToolsPath()
+    {
+        String toolsDir = getAppProperties().getToolsDirectory();
+        CaseInsensitiveHashMap<String> ciEnvMap = new CaseInsensitiveHashMap<>((new ProcessBuilder()).environment());
+        String path = ciEnvMap.get("PATH");
+        return toolsDir + File.pathSeparator + path;
     }
 
     public String getExecutablePath(String exeRel, String installPath, String packageName, String ver, Logger jobLogger) throws FileNotFoundException
@@ -678,25 +712,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             return exeRel;
         }
 
-        String toolsDir = installPath == null ? getAppProperties().getToolsDirectory() : installPath;
-        if (toolsDir == null || toolsDir.trim().equals(""))
-        {
-            // If the tools directory is not set, then rely on the path.
-            jobLogger.warn("Pipeline tools directory is not set, relying on system path to find executables");
-            return exeRel;
-        }
-        // CONSIDER(brendanx): CruiseControl fails without this, as may other situations
-        //                     where the tools directory is set automatically to a bogus
-        //                     path, but the required executables are on the path.
-        else if (!NetworkDrive.exists(new File(toolsDir)))
-        {
-            jobLogger.warn("Pipeline tools directory '" + toolsDir + "' does not exist, tool execution may fail");
-            return exeRel;
-        }
-
-        // Don't check for file existence with executable paths, since they may be
-        // lacking an extension (exe, bat, cmd) on Windows platforms.
-        return getToolsDirPath(toolsDir, exeRel, false);
+        return getPathToTool(installPath, exeRel, true);
     }
 
     public String getJarPath(String jarRel, String installPath, String packageName, String ver) throws FileNotFoundException
@@ -708,7 +724,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
                 "Pipeline tools directory is not set.  " +
                 "Use the site settings page to specify a directory.");
         }
-        return getToolsDirPath(toolsDir, getVersionedPath(jarRel, packageName, ver), true);
+        return getPathToTool(installPath, getVersionedPath(jarRel, packageName, ver), false);
     }
 
     public String getJavaPath() throws FileNotFoundException
@@ -762,39 +778,117 @@ public class PipelineJobServiceImpl extends PipelineJobService
 
     public static class TestCase extends Assert
     {
+        private String _tempDir;
+        private File _dummyTool;
+        private PipelineJobServiceImpl _impl;
+        private ConfigPropertiesImpl _props;
+        private ApplicationPropertiesImpl _appProps;
+
+        @Before
+        public void setUp() throws IOException
+        {
+            _tempDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(System.getProperty("java.io.tmpdir"))).toString();
+            if (_tempDir.endsWith("\\") || _tempDir.endsWith("/"))
+            {
+                // Strip off trailing slash
+                _tempDir = _tempDir.substring(0, _tempDir.length() - 1);
+            }
+
+            _dummyTool = new File(_tempDir, "percolator_v.1.04");
+            if (!_dummyTool.exists())
+            {
+                _dummyTool.createNewFile();
+                _dummyTool.setExecutable(true);
+            }
+
+            _impl = new PipelineJobServiceImpl(null, false);
+            _props = new ConfigPropertiesImpl();
+            _appProps = new ApplicationPropertiesImpl();
+
+            _appProps.setToolsDirectory(_tempDir);
+            _impl.setAppProperties(_appProps);
+            _impl.setConfigProperties(_props);
+        }
+
         @Test
         public void testVersionSubstitution() throws FileNotFoundException
         {
-            PipelineJobServiceImpl impl = new PipelineJobServiceImpl(null, false);
-            ConfigPropertiesImpl props = new ConfigPropertiesImpl();
-            ApplicationPropertiesImpl appProps = new ApplicationPropertiesImpl();
-            String homeDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(System.getProperty("java.io.tmpdir"))).toString();
-            if (homeDir.endsWith("\\") || homeDir.endsWith("/"))
-            {
-                // Strip off trailing slash
-                homeDir = homeDir.substring(0, homeDir.length() - 1);
-            }
-            appProps.setToolsDirectory(homeDir);
-            impl.setAppProperties(appProps);
-            impl.setConfigProperties(props);
+            assertEquals(_tempDir + File.separator + "percolator_v.1.04", _impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null));
+        }
 
-            assertEquals(homeDir + File.separator + "percolator_v.1.04", impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null));
-            assertEquals(homeDir + File.separator + "percolator", impl.getExecutablePath("percolator", null, "percolator", "1.04", null));
-
-            props.setSoftwarePackages(Collections.singletonMap("percolator", "percolator_v" + VERSION_SUBSTITUTION));
+        @Test
+        public void testMissingTool()
+        {
             try
             {
-                impl.getExecutablePath("percolator", null, "percolator", "1.04", null);
+                _impl.getExecutablePath("percolator", null, "percolator", "1.04", null);
             }
             catch (FileNotFoundException e)
             {
-                assertTrue("Message contains expected path", e.getMessage().contains(homeDir + File.separator + "percolator_v.1.04" + File.separator + "percolator"));
-                assertTrue("Message contains correct error", e.getMessage().contains("Parent directory does not exist."));
+                assertEquals(String.format(pipelineToolsError, "percolator", _tempDir), e.getMessage());
+            }
+        }
+
+        @Test
+        public void testNonexistentPackage()
+        {
+            _props.setSoftwarePackages(Collections.singletonMap("percolator", "percolator_v" + VERSION_SUBSTITUTION));
+            try
+            {
+                _impl.getExecutablePath("percolator", null, "percolator", "1.04", null);
+            }
+            catch (FileNotFoundException e)
+            {
+                assertEquals(String.format(pipelineToolsError, "percolator_v.1.04/percolator", _tempDir), e.getMessage());
+            }
+        }
+
+        @Test
+        public void testToolInPackage() throws IOException
+        {
+            _dummyTool.delete();
+
+            _dummyTool = new File(_tempDir, "percolator_v.1.04/percolator.exe");
+            if (_dummyTool.exists())
+            {
+                _dummyTool.delete();
+                _dummyTool.getParentFile().delete();
             }
 
-            impl.setPrependVersionWithDot(false);
-            props.setSoftwarePackages(Collections.<String, String>emptyMap());
-            assertEquals(homeDir + File.separator + "percolator_v1.04", impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null));
+            _dummyTool.getParentFile().mkdir();
+            _dummyTool.createNewFile();
+            _dummyTool.setExecutable(true);
+
+            _props.setSoftwarePackages(Collections.singletonMap("percolator", "percolator_v" + VERSION_SUBSTITUTION));
+            try
+            {
+                _impl.getExecutablePath("percolator", null, "percolator", "1.04", null);
+            }
+            catch (FileNotFoundException e)
+            {
+                assertEquals(String.format(pipelineToolsError, "percolator_v.1.04/percolator", _tempDir), e.getMessage());
+            }
+        }
+
+        @Test
+        public void testVersionSubstitutionWithoutDot()
+        {
+            _impl.setPrependVersionWithDot(false);
+            try
+            {
+                assertEquals(_tempDir + File.separator + "percolator_v1.04", _impl.getExecutablePath("percolator_v" + VERSION_SUBSTITUTION, null, "percolator", "1.04", null));
+            }
+            catch (FileNotFoundException e)
+            {
+                assertEquals(String.format(pipelineToolsError, "percolator_v1.04", _tempDir), e.getMessage());
+            }
+        }
+
+        @After
+        public void tearDown()
+        {
+            if (_dummyTool.exists())
+                _dummyTool.delete();
         }
     }
 }
