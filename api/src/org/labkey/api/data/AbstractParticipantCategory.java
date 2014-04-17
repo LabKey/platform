@@ -151,6 +151,7 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
         JSONArray ptids = new JSONArray();
         if (_groups.length == 1)
         {
+            json.put("filters", _groups[0].getFilters());
             for (T ptid : _groups[0].getParticipantIds())
             {
                 ptids.put(ptid);

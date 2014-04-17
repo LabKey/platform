@@ -59,10 +59,9 @@ Ext.define('LABKEY.app.model.Filter', {
          *         participantIds - array of participant Ids
          *         description - optional description for the gruop
          *         filters - array of filters to apply
-         *         isLive - boolean, true if this is a query or false if jsut a group of participant ids.
+         *         isLive - boolean, true if this is a query or false if just a group of participant ids.
          */
         doGroupSave : function(config) {
-
             if (!config)
                 throw "You must specify a config object";
 
@@ -73,32 +72,115 @@ Ext.define('LABKEY.app.model.Filter', {
             var mdx = config.mdx;
             var m = LABKEY.app.model.Filter;
 
-            mdx.queryParticipantList({
-                useNamedFilters : ['statefilter'],
-                success : function(cs) {
-                    var requestConfig = {
-                        url: config.isArgos ? LABKEY.ActionURL.buildURL('argos', 'createPatientGroup')
-                                       : LABKEY.ActionURL.buildURL('participant-group', 'createParticipantCategory'),
-                        method: 'POST',
-                        success: config.success,
-                        failure: config.failure || m.getErrorCallback(),
-                        jsonData: {
-                            label : group.label,
-                            participantIds : Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions),'name'),
-                            description : group.description,
-                            shared : false,
-                            type : 'list',
-                            filters : m.toJSON(group.filters, group.isLive)
-                        },
-                        headers: {'Content-Type': 'application/json'}
-                    };
+            // setup config for save call
+            var requestConfig = {
+                url: config.isArgos ? LABKEY.ActionURL.buildURL('argos', 'createPatientGroup')
+                        : LABKEY.ActionURL.buildURL('participant-group', 'createParticipantCategory'),
+                method: 'POST',
+                success: config.success,
+                failure: config.failure || m.getErrorCallback(),
+                jsonData: {
+                    label : group.label,
+                    participantIds : [],
+                    description : group.description,
+                    shared : false,
+                    type : 'list',
+                    filters : m.toJSON(group.filters, group.isLive)
+                },
+                headers: {'Content-Type': 'application/json'}
+            };
 
-                    Ext.Ajax.request(requestConfig);
-                }
-            });
+            if (config.isArgos && group.isLive) {
+                //
+                // for Argos we don't bother sending participant IDs if the group is live (save as query)
+                //
+                Ext.Ajax.request(requestConfig);
+            }
+            else {
+                //
+                // for study-backed modules we always save participant IDs so fetch them first
+                //
+                mdx.queryParticipantList({
+                    useNamedFilters : ['statefilter'],
+                    success : function(cs) {
+                        // add the fetched participant ids to our json data
+                        requestConfig.jsonData.participantIds = Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions),'name');
+                        Ext.Ajax.request(requestConfig);
+                    }
+                });
+            }
+        },
+        /**
+         * Updates a participant group for non-study backed modules
+         *
+         * @param config, an object which takes the following configuation properties.
+         * @param {Object} [config.mdx] mdx object against which participants are queried
+         * @param {String} [config.subjectName] subject name for the cube
+         * @param {Function} [config.failure] Optional.  Function called when the save action fails.  If not specified
+         *        then a default function will be provided
+         * @param {Function} [config.success] Function called when the save action is successful
+         * @param {Object} [config.group] group definition.  The group object should have the following fields
+         *         rowId - the id of the category.  Assumes a 1:1 mapping between the group and category
+         *         label - name of the group
+         *         participantIds - array of participant Ids
+         *         description - optional description for the gruop
+         *         filters - array of filters to apply
+         *         isLive - boolean, true if this is a query or false if just a group of participant ids.
+         */
+        doGroupUpdate : function(config) {
+            if (!config)
+                throw "You must specify a config object";
+
+            if (!config.mdx || !config.group || !config.success)
+                throw "You must specify mdx, group, and success members in the config";
+
+            var group = config.group;
+            var mdx = config.mdx;
+            var subjectName = config.subjectName;
+            var m = LABKEY.app.model.Filter;
+
+            // setup config for save call
+            var requestConfig = {
+                url: LABKEY.ActionURL.buildURL('argos', 'updatePatientGroup'),
+                method: 'POST',
+                success: config.success,
+                failure: config.failure || m.getErrorCallback(),
+                jsonData: {
+                    rowId : group.rowId,
+                    label : group.label,
+                    participantIds : [],
+                    description : group.description,
+                    shared : false,
+                    type : 'list',
+                    filters : m.toJSON(group.filters, group.isLive)
+                },
+                headers: {'Content-Type': 'application/json'}
+            };
+
+            if (group.isLive) {
+                // don't bother sending participant ids for live filters
+                Ext.Ajax.request(requestConfig);
+            }
+            else {
+                mdx.queryParticipantList({
+                    filter : m.getOlapFilters(group.filters, subjectName),
+                    success : function(cs) {
+                        // add the fetched participant ids to our json data
+                        requestConfig.jsonData.participantIds = Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions),'name');
+                        Ext.Ajax.request(requestConfig);
+                    }
+                });
+            }
         },
 
-        doGroupUpdate : function(mdx, onUpdateSuccess, onUpdateFaiure, grpData) {
+        /**
+         * Modifies the participants in a participant group for a study-backed module.
+         *
+         * @param mdx object against which participants are queried
+         * @param  onUpdateFailure - called if the function fails
+         * @param  grpData
+         */
+        doParticipantUpdate : function(mdx, onUpdateSuccess, onUpdateFaiure, grpData) {
             var m = LABKEY.app.model.Filter;
             mdx.queryParticipantList({
                 filter : m.getOlapFilters(m.fromJSON(grpData.filters)),
@@ -296,7 +378,7 @@ Ext.define('LABKEY.app.model.Filter', {
 
             eq = (d.isGroup == fd.isGroup) && (d.isGrid == fd.isGrid) &&
                     (d.isPlot == fd.isPlot) && (d.hierarchy == fd.hierarchy) &&
-                    (d.members.length == fd.members.length);
+                    (d.members.length == fd.members.length) && (d.operator == fd.operator);
 
             if (eq) {
                 // member set equivalency
