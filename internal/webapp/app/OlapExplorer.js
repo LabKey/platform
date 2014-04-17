@@ -421,7 +421,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                         // Collapsed Group
                         //
                         '<tpl if="isGroup === true && collapsed == true">',
-                            '<div>',
+                            '<div class="saeparent">',
                                 '<div class="saecollapse {#}-collapse" id="{#}-collapse">',
                                     '<p>+</p>',
                                 '</div>',
@@ -438,7 +438,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                         // Expanded Group
                         //
                         '<tpl if="isGroup === true && collapsed == false">',
-                            '<div>',
+                            '<div class="saeparent">',
                                 '<div class="saecollapse {#}-collapse" id="{#}-collapse">',
                                     '<p>-</p>',
                                 '</div>',
@@ -455,7 +455,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                         // Collpased Ungrouped
                         //
                         '<tpl if="isGroup === false && collapsed == true">',
-                            '<div class="', this.barCls, ' small barcollapse">',
+                            '<div class="', this.barCls, ' small barcollapse <tpl if="level.length &gt; 0">saelevel</tpl>">',
                                 '<span class="', this.barLabelCls, '">{label:htmlEncode}</span>',
                                 '<span class="count">{count}</span>',
                                 '<span class="info"></span>',
@@ -468,7 +468,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                         // Expanded Ungrouped
                         //
                         '<tpl if="isGroup === false && collapsed == false">',
-                            '<div class="', this.barCls, ' small">',
+                            '<div class="', this.barCls, ' small <tpl if="level.length &gt; 0">saelevel</tpl>">',
                                 '<span class="', this.barLabelCls, '">{label:htmlEncode}</span>',
                                 '<span class="count">{count}</span>',
                                 '<span class="info"></span>',
