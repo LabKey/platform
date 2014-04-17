@@ -12,9 +12,11 @@ Ext.define('LABKEY.app.model.Filter', {
         {name : 'members'},
         {name : 'operator'},
         {name : 'isGroup', type: 'boolean'},
-        {name : 'isGrid', type: 'boolean'},
+        {name : 'isGrid', type: 'boolean'}, // TODO: rename to isSql
         {name : 'isPlot', type: 'boolean'},
-        {name : 'gridFilter'}, // instance of LABKEY.Filter
+        {name : 'gridFilter', convert: function(o){ // TODO: rename to sqlFilters
+            return Ext.isArray(o) ? o : [o];
+        }, defaultValue: []}, // array of LABKEY.filter instances.
         {name : 'plotMeasures'}, // array of measures
         {name : 'plotScales'} // array of scales
     ],
@@ -129,32 +131,36 @@ Ext.define('LABKEY.app.model.Filter', {
         },
 
         getGridHierarchy : function(data) {
-            if (data['gridFilter']) {
-                if (!Ext.isFunction(data['gridFilter'].getColumnName))
-                {
-                    console.warn('invalid filter object being processed.');
-                    return 'Unknown';
-                }
-                var label = data['gridFilter'].getColumnName().split('/');
+            if (data['gridFilter']) { // TODO: change to look for sqlFilters
+                for (var i = 0; i < data['gridFilter'].length; i++) {
+                    var gf = data['gridFilter'][i];
 
-                // check lookups
-                if (label.length > 1) {
-                    label = label[label.length-2];
-                }
-                else {
-                    // non-lookup column
-                    label = label[0];
-                }
+                    if (!Ext.isFunction(gf.getColumnName))
+                    {
+                        console.warn('invalid filter object being processed.');
+                        return 'Unknown';
+                    }
+                    var label = gf.getColumnName().split('/');
 
-                label = label.split('_');
-                return Ext.String.ellipsis(label[label.length-1], 9, false);
+                    // check lookups
+                    if (label.length > 1) {
+                        label = label[label.length-2];
+                    }
+                    else {
+                        // non-lookup column
+                        label = label[0];
+                    }
+
+                    label = label.split('_');
+                    return Ext.String.ellipsis(label[label.length-1], 9, false);
+                }
             }
             return 'Unknown';
         },
 
         getGridLabel : function(data) {
-            if (data['gridFilter']) {
-                var gf = data.gridFilter;
+            if (data['gridFilter']) { // TODO: change to look for sqlFilters
+                var gf = data.gridFilter[0]; // TODO: Find a better way than hard coding this.
                 if (!Ext.isFunction(gf.getFilterType))
                 {
                     console.warn('invalid label being processed');

@@ -61,8 +61,13 @@ Ext.define('LABKEY.app.view.Selection', {
             if (rec) {
                 var memberIdx = parseInt(element.memberIndex);
                 if (Ext.isNumber(memberIdx)) {
-                    var members = rec.get('members');
-                    this.fireEvent('removefilter', rec.id, rec.get('hierarchy'), members[memberIdx] ? members[memberIdx].uname : undefined);
+                    if (element.hasCls('measure')) {
+                        // We're dealing with a plot selection.
+                        this.fireEvent('removeplotselection', rec.id, memberIdx);
+                    } else {
+                        var members = rec.get('members');
+                        this.fireEvent('removefilter', rec.id, rec.get('hierarchy'), members[memberIdx] ? members[memberIdx].uname : undefined);
+                    }
                 }
                 else {
                     this.fireEvent('removefilter', rec.id);
