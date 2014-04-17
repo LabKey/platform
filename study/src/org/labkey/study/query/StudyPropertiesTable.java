@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -63,8 +64,10 @@ public class StudyPropertiesTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoStudy());
 
+        Container c = schema.getContainer();
+
         ColumnInfo labelColumn = addRootColumn("label", true, true);
-        DetailsURL detailsURL = new DetailsURL(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(schema.getContainer()));
+        DetailsURL detailsURL = new DetailsURL(PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(c));
         labelColumn.setURL(detailsURL);
         addRootColumn("startDate", true, true);
         addRootColumn("endDate", true, true);
@@ -103,7 +106,6 @@ public class StudyPropertiesTable extends BaseStudyTable
             }
         });
 
-
         String bTRUE = getSchema().getSqlDialect().getBooleanTRUE();
         String bFALSE = getSchema().getSqlDialect().getBooleanFALSE();
 
@@ -116,17 +118,19 @@ public class StudyPropertiesTable extends BaseStudyTable
         ColumnInfo lsidColumn = addRootColumn("LSID", false, false);
         lsidColumn.setHidden(true);
 
-        String domainURI = StudyImpl.DOMAIN_INFO.getDomainURI(schema.getContainer());
-
-        _domain = PropertyService.get().getDomain(schema.getContainer(), domainURI);
+        String domainURI = StudyImpl.DOMAIN_INFO.getDomainURI(c);
+        _domain = PropertyService.get().getDomain(c, domainURI);
 
         if (null == _domain)
         {
-            _domain = PropertyService.get().createDomain(getContainer(), domainURI, StudyImpl.DOMAIN_INFO.getDomainName());
+            _domain = PropertyService.get().createDomain(c, domainURI, StudyImpl.DOMAIN_INFO.getDomainName());
 
             try
             {
-                _domain.save(schema.getUser());
+                // Don't save the domain if we're in the root. We want to allow cross-folder queries of this table from the
+                // root, but we won't show any custom properties in this case, since they're defined in each project. #20090
+                if (!c.isRoot())
+                    _domain.save(schema.getUser());
             }
             catch (ChangePropertyDescriptorException e)
             {
@@ -135,7 +139,7 @@ public class StudyPropertiesTable extends BaseStudyTable
         }
         else
         {
-            for (ColumnInfo extraColumn : _domain.getColumns(this, lsidColumn, schema.getContainer(), schema.getUser()))
+            for (ColumnInfo extraColumn : _domain.getColumns(this, lsidColumn, c, schema.getUser()))
             {
                 safeAddColumn(extraColumn);
                 _visibleColumns.add(FieldKey.fromParts(extraColumn.getName()));
