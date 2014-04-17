@@ -987,6 +987,12 @@ boxPlot.render();
             return this.renderer.getBrushExtent();
         };
 
+        this.setBrushExtent = function(extent) {
+            // Takes a 2D array. First array is xMin, yMin, second array is xMax, yMax. If the seleciton is 1D, then the
+            // min/max of the non-selected dimension will be null/null.
+            this.renderer.setBrushExtent(extent);
+        }
+
         return this;
     };
 })();

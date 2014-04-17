@@ -614,7 +614,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             brush.on('brushstart', function(handle){
                 if (plot.brushing.brushstart) {
-                    plot.brushing.brushstart(d3.event, getAllData(), brush.extent(), plot, getAllLayerSelections());
+                    plot.brushing.brushstart(d3.event, getAllData(), getBrushExtent(), plot, getAllLayerSelections());
                 }
             });
 
@@ -627,14 +627,17 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     brushSelectionType = 'both';
                 }
 
-                if (event.mode === 'move') {
-                    handleMove(handle);
-                } else if (event.mode === 'resize') {
-                    handleResize(handle);
+                // event will be null when we call clearBrush.
+                if (event) {
+                    if (event.mode === 'move') {
+                        handleMove(handle);
+                    } else if (event.mode === 'resize') {
+                        handleResize(handle);
+                    }
                 }
 
                 if (plot.brushing.brush !== null) {
-                    plot.brushing.brush(event, getAllData(), brush.extent(), plot, getAllLayerSelections());
+                    plot.brushing.brush(event, getAllData(), getBrushExtent(), plot, getAllLayerSelections());
                 }
             });
 
@@ -654,7 +657,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     }
                 } else {
                     if (plot.brushing.brushend) {
-                        plot.brushing.brushend(event, allData, extent, plot, getAllLayerSelections());
+                        plot.brushing.brushend(event, allData, getBrushExtent(), plot, getAllLayerSelections());
                     }
                 }
             });
@@ -675,6 +678,56 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         } else {
             // assume no selection.
             return null;
+        }
+    };
+
+    var validateExtent = function(extent) {
+        if (extent.length < 2 || extent[0].length < 2 || extent[1].length < 2) {
+            throw Error("The extent must be a 2d array in the form of [[xMin, yMin], [xMax, yMax]]");
+        }
+
+        var xMin = extent[0][0], xMax = extent[1][0], yMin = extent[0][1], yMax = extent[1][1];
+
+        if ((xMin === null && xMax !== null) || (xMin !== null && xMax === null)) {
+            throw Error("The xMin and xMax both have to be valid numbers, or both have to be null.");
+        }
+
+        if ((yMin === null && yMax !== null) || (yMin !== null && yMax === null)) {
+            throw Error("The yMin and yMax both have to be valid numbers, or both have to be null.");
+        }
+    };
+
+    var setBrushExtent = function(extent) {
+        validateExtent(extent);
+        var xIsNull = extent[0][0] === null && extent[1][0] === null,
+            yIsNull = extent[0][1] === null && extent[1][1] === null;
+
+        if (xIsNull && yIsNull) {
+            clearBrush.call(this);
+        } else if (!xIsNull && yIsNull) {
+            brushSelectionType = 'x';
+            xHandleBrush.extent([extent[0][0], extent[1][0]]);
+            xHandleBrush(xHandleSel);
+            yHandleBrush.clear();
+            yHandleBrush(yHandleSel);
+            xHandleBrush.on('brush')();
+            xHandleBrush.on('brushend')();
+        } else if (xIsNull && !yIsNull) {
+            brushSelectionType = 'y';
+            yHandleBrush.extent([extent[0][1], extent[1][1]]);
+            yHandleBrush(yHandleSel);
+            xHandleBrush.clear();
+            xHandleBrush(xHandleSel);
+            yHandleBrush.on('brush')();
+            yHandleBrush.on('brushend')();
+        } else if (!xIsNull && !yIsNull) {
+            brushSelectionType = 'both';
+            xHandleBrush.extent([extent[0][0], extent[1][0]]);
+            xHandleBrush(xHandleSel);
+            yHandleBrush.extent([extent[0][1], extent[1][1]]);
+            yHandleBrush(yHandleSel);
+            brush.on('brush')();
+            brush.on('brushend')();
         }
     };
 
@@ -1405,6 +1458,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderLabels: renderLabels,
         addLabelListener: addLabelListener,
         clearBrush: clearBrush,
+        setBrushExtent: setBrushExtent,
         getBrushExtent: getBrushExtent,
         renderLegend: renderLegend,
         renderPointGeom: renderPointGeom,
