@@ -16,6 +16,7 @@
 package org.labkey.query.olap;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.MemTracker;
 import org.olap4j.AllocationPolicy;
 import org.olap4j.Axis;
 import org.olap4j.Cell;
@@ -76,6 +77,7 @@ public class QubeCellSet implements CellSet
     final int _columnCount;
 //    final CellSetAxis _filterAxis;
     List<Number> _results;
+    boolean _closed = false;
 
 
     QubeCellSet(Cube cube, BitSetQueryImpl.MeasureDef measure, List<Number> results, Collection<Member> columns, Collection<Member> rows)
@@ -93,6 +95,7 @@ public class QubeCellSet implements CellSet
             _axes.add(new _MemberAxis(Axis.COLUMNS, rows));
         _columnCount = _axes.get(0).getPositionCount();
         _results = results;
+        assert MemTracker.getInstance().put(this);
     }
 
     @Override
@@ -104,12 +107,14 @@ public class QubeCellSet implements CellSet
     @Override
     public CellSetMetaData getMetaData() throws OlapException
     {
+        assert !_closed;
         return new _CellSetMetaData();
     }
 
     @Override
     public List<CellSetAxis> getAxes()
     {
+        assert !_closed;
         return _axes;
     }
 
@@ -134,6 +139,7 @@ public class QubeCellSet implements CellSet
     @Override
     public Cell getCell(Position... positions)
     {
+        assert !_closed;
         int ordinal = 0;
         int multiplier = 1;
         for (int i=0 ; i<positions.length ; i++)
@@ -147,6 +153,7 @@ public class QubeCellSet implements CellSet
     @Override
     public List<Integer> ordinalToCoordinates(int ordinal)
     {
+        assert !_closed;
         if (1 == _axes.size())
             return Collections.singletonList(ordinal);
         if (2 == _axes.size())
@@ -170,7 +177,7 @@ public class QubeCellSet implements CellSet
     @Override
     public void close() throws SQLException
     {
-        throw new UnsupportedOperationException();
+        _closed = true;
     }
 
     @Override
