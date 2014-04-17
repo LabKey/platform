@@ -343,11 +343,10 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
 
         var recs = me.queryBy(function(rec, id) {
 
-            var updated = false, cellspan_value = 0, label; // to update rows not returned by the query
+            var updated = false, cellspan_value = 0; // to update rows not returned by the query
             for (var c=0; c < cellset.cells.length; c++)
             {
-                label = (rec.data.label == 'Unknown' ? '#null' : rec.data.label);
-                if (label == cellset.cells[c][0].positions[1][0].name)
+                if (rec.data.uniqueName == cellset.cells[c][0].positions[1][0].uniqueName)
                 {
                     updated = true;
                     rec.set('subcount', cellset.cells[c][0].value);
