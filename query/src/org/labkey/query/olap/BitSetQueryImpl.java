@@ -26,6 +26,7 @@ import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
@@ -64,8 +65,8 @@ public class BitSetQueryImpl
     static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
 
     final Cube cube;
-    final HashMap<String,MetadataElement> uniqueNameMap = new HashMap<>();
-    final HashMap<String,Level> levelMap = new HashMap<>();
+    final CaseInsensitiveHashMap<MetadataElement> uniqueNameMap = new CaseInsensitiveHashMap<>();
+    final CaseInsensitiveHashMap<Level> levelMap = new CaseInsensitiveHashMap<>();
     final QubeQuery qq;
     final BindException errors;
     MeasureDef measure;
@@ -360,7 +361,7 @@ public class BitSetQueryImpl
                     return null;
                 if (null == l)
                     l = resultLevel;
-                else if (!l.getUniqueName().equals(resultLevel.getUniqueName()))
+                else if (!same(l, resultLevel))
                     return null;
             }
             return l;
@@ -378,7 +379,7 @@ public class BitSetQueryImpl
                     return null;
                 if (null == h)
                     h = resultHierarchy;
-                else if (!h.getUniqueName().equals(resultHierarchy.getUniqueName()))
+                else if (!same(h, resultHierarchy))
                     return null;
             }
             return h;
@@ -467,7 +468,7 @@ public class BitSetQueryImpl
 
     void addMemberAndChildrenInLevel(Member m, Level filter, Collection<Member> list) throws OlapException
     {
-        if (m.getLevel().getUniqueName().equals(filter.getUniqueName()))
+        if (same(m.getLevel(), filter))
         {
             list.add(m);
             return;
@@ -776,7 +777,7 @@ public class BitSetQueryImpl
                     for (Member c : m.getChildMembers())
                     {
                         set.add(c);
-                        assert c.getLevel().getUniqueName().equalsIgnoreCase(measureLevel.getUniqueName());
+                        assert same(c.getLevel(), measureLevel);
                     }
                 }
                 list.add(new MemberSetResult(set));
@@ -791,13 +792,12 @@ public class BitSetQueryImpl
         {
             Level resultLevel = result.getLevel();
             Hierarchy resultHierarchy = result.getHierarchy();
-            String levelUniqueName = (null==resultLevel) ? null : resultLevel.getUniqueName();
 
             /* NOTE: some CDS queries filter on the subject hierarchy instead of the subject level
              * for backward compatibility, unwind that here
              */
             if (result instanceof MemberSetResult && null == resultLevel && null != resultHierarchy &&
-                    resultHierarchy.getUniqueName().equals(measureLevel.getHierarchy().getUniqueName()))
+                    same(resultHierarchy, measureLevel.getHierarchy()))
             {
                 // extract only the measure level (e.g. [Subject].[Subject]
                 if (((MemberSetResult)result).hierarchy != null)
@@ -809,11 +809,10 @@ public class BitSetQueryImpl
                     result = new MemberSetResult(((MemberSetResult)result).members.onlyFor(measureLevel));
                 }
                 resultLevel = measureLevel;
-                levelUniqueName = resultLevel.getUniqueName();
             }
 
             Result intersectSet;
-            if (measureLevel.getUniqueName().equals(levelUniqueName))
+            if (null != resultLevel && same(measureLevel,resultLevel))
             {
                 intersectSet = result;
             }
@@ -995,7 +994,6 @@ public class BitSetQueryImpl
             {
                 OlapConnection conn = getOlapConnection();
                 stmt = conn.createStatement();
-                QueryProfiler.getInstance().ensureListenerEnvironment();
                 _log.debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n" + query);
                 long ms = System.currentTimeMillis();
                 cs = stmt.executeOlapQuery(query);
@@ -1119,7 +1117,7 @@ public class BitSetQueryImpl
          */
         MemberSet membersQuery(Level outer, Member sub) throws SQLException
         {
-            if (sub.getHierarchy().getUniqueName().equals(outer.getHierarchy().getUniqueName()))
+            if (same(sub.getHierarchy(), outer.getHierarchy()))
             {
                 MemberSet s = new MemberSet();
                 addMemberAndChildrenInLevel(sub, outer, s);
@@ -1167,7 +1165,7 @@ public class BitSetQueryImpl
             Hierarchy h = null;
             for (Member sub : inner.getCollection())
             {
-                if (sub.getHierarchy().getUniqueName().equals(outerLevel.getHierarchy().getUniqueName()))
+                if (same(sub.getHierarchy(), outerLevel.getHierarchy()))
                     continue;
                 String query = queryIsNotEmpty(outerLevel, sub);
                 MemberSet s = resultsCacheGet(query);
@@ -1180,7 +1178,7 @@ public class BitSetQueryImpl
             if (!cacheMiss)
                 return;
 
-            HashMap<String,MemberSet> sets = new HashMap<>();
+            CaseInsensitiveHashMap<MemberSet> sets = new CaseInsensitiveHashMap<>();
             for (Member sub : inner.getCollection())
                 sets.put(sub.getUniqueName(), new MemberSet());
 
@@ -1196,7 +1194,7 @@ public class BitSetQueryImpl
                     double value = cs.getCell(row).getDoubleValue();
                     if (0.0 != value)
                     {
-                        assert outerMember.getLevel().getUniqueName().equals(outerLevel.getUniqueName());
+                        assert same(outerMember.getLevel(), outerLevel);
                         MemberSet s = sets.get(sub.getUniqueName());
                         if (null == s)
                             _log.warn("Unexpected member in cellset result: " + sub.getUniqueName());
@@ -1241,6 +1239,11 @@ public class BitSetQueryImpl
         }
     }
 
+
+    boolean same(MetadataElement a, MetadataElement b)
+    {
+        return a==b || a.getUniqueName().equalsIgnoreCase(b.getUniqueName());
+    }
 
     CubeDataSourceHelper _cubeHelper = new CubeDataSourceHelper();
 
