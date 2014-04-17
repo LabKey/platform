@@ -104,7 +104,7 @@ import java.util.Map;
  */
 public class OlapController extends SpringActionController
 {
-    private static final Logger _log = Logger.getLogger(QueryController.class);
+    private static final Logger _log = Logger.getLogger(OlapController.class);
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(OlapController.class);
 
@@ -220,7 +220,7 @@ public class OlapController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresSiteAdmin
     @Action(ActionType.SelectData)
     public class ExecuteMdxAction extends ApiAction<ExecuteMdxForm>
     {
@@ -243,17 +243,6 @@ public class OlapController extends SpringActionController
         @Override
         public ApiResponse execute(ExecuteMdxForm form, BindException errors) throws Exception
         {
-//            Cube cube = getCube(form, errors);
-//            if (errors.hasErrors())
-//                return null;
-//            String allowMDXString = getAnnotation(cube, "AllowMDX");
-//            boolean allowMDX = "TRUE".equals(allowMDXString.toUpperCase());
-//            if (allowMDX && (!getUser().isDeveloper() && !getUser().isSiteAdmin()))
-//            {
-//                errors.reject(ERROR_MSG,"MDX not allowed on this cube");
-//                return null;
-//            }
-
             String sql = StringUtils.trimToNull(form.getQuery());
 
             try
@@ -363,7 +352,8 @@ public class OlapController extends SpringActionController
      * NOT PART OF OFFICIAL CLIENT API
      * the particulars of the JSON format may change, and is very tied to the dataspace implementation
      */
-    @RequiresPermissionClass(ReadPermission.class)
+    @Deprecated /* use CountDistinctQuery.api */
+    @RequiresSiteAdmin
     @Action(ActionType.SelectData)
     public class JsonQueryAction extends ApiAction<JsonQueryForm>
     {
@@ -431,6 +421,13 @@ public class OlapController extends SpringActionController
                 return null;
             }
 
+            OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), form.getConfigId());
+            if (null == sd)
+            {
+                errors.reject(ERROR_MSG, "olap cube config not found: " + form.getConfigId());
+                return null;
+            }
+
             ContainerFilter cf = null;
             String schemaName = getAnnotation(cube,"SchemaName");
             if (null != schemaName)
@@ -439,6 +436,7 @@ public class OlapController extends SpringActionController
                 if (null == schema)
                     throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
                 cf = ((UserSchema)schema).getOlapContainerFilter(getUser());
+                // TODO have schema check activity,etc,etc here
             }
 
             QubeQuery qquery = new QubeQuery(cube);
@@ -446,21 +444,36 @@ public class OlapController extends SpringActionController
             if (errors.hasErrors())
                 return null;
 
-            long start = System.currentTimeMillis();
-            OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), form.getConfigId());
-            BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), sd, getConnection(sd), qquery, errors);
-            if (null != cf)
-                bitsetquery.setContainerFilter(getContainerCollection(cf));
-            CellSet cs = bitsetquery.executeQuery();
-            long end = System.currentTimeMillis();
-            _log.debug("bitsetquery.executeQuery() took " + DateUtil.formatDuration(end-start));
+            CellSet cs = null;
+            StringWriter sw = new StringWriter();
+            try
+            {
+                QueryProfiler.getInstance().ensureListenerEnvironment();
+                long start = 0, end = 0;
+                try
+                {
+                    start = System.currentTimeMillis();
+                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), sd, getConnection(sd), qquery, errors);
+                    if (null != cf)
+                        bitsetquery.setContainerFilter(getContainerCollection(cf));
+                    cs = bitsetquery.executeQuery();
+                    end = System.currentTimeMillis();
+                }
+                finally
+                {
+                    QueryProfiler.getInstance().track(null, "-- CountDistinctQuery \n" + q.toString() + "\n" + sd.getQueryTag(), null, (0 == start || 0 == end) ? 0 : (end - start), null, true);
+                    _log.debug("bitsetquery.executeQuery() took " + DateUtil.formatDuration(end - start));
+                }
+
+                Olap4Js.convertCellSet(cs, sw);
+            }
+            finally
+            {
+                ResultSetUtil.close(cs);
+            }
 
             HttpServletResponse response = getViewContext().getResponse();
             response.setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
-
-            StringWriter sw = new StringWriter();
-            Olap4Js.convertCellSet(cs, sw);
-            _log.debug(sw.toString());
             response.getWriter().write(sw.toString());
             return null;
         }
