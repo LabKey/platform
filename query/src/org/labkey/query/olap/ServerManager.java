@@ -27,7 +27,7 @@ import mondrian.spi.CatalogLocator;
 import mondrian.spi.DataSourceChangeListener;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-//import org.labkey.api.concurrent.CountingSemaphore;
+import org.labkey.api.concurrent.CountingSemaphore;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleResourceCache;
@@ -428,7 +428,7 @@ public class ServerManager
     {
         final MondrianServer _inner;
         final ReferenceCount _count;
-//        final CountingSemaphore _semaphore = new CountingSemaphore(8, true);
+        final CountingSemaphore _semaphore = new CountingSemaphore(4, true);
 
         static MondrianServer wrap(MondrianServer conn, ReferenceCount ref)
         {
@@ -453,13 +453,13 @@ public class ServerManager
             {
                 _count.decrement();
                 return null;
-//            }
-//            else if ("executeOlapQuery".equals(method.getName()))
-//            {
-//                try (AutoCloseable permit = _semaphore.acquire())
-//                {
-//                    return method.invoke(_inner,args);
-//                }
+            }
+            else if ("executeOlapQuery".equals(method.getName()))
+            {
+                try (AutoCloseable permit = _semaphore.acquire())
+                {
+                    return method.invoke(_inner,args);
+                }
             }
             else
                 return method.invoke(_inner,args);
