@@ -15,7 +15,7 @@
       <configuration />
     </facet>
   </component>
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_7" inherit-compiler-output="false">
+  <component name="NewModuleRootManager" inherit-compiler-output="false">
     <output url="file://$MODULE_DIR$/../../intellijBuild/webapps/CPAS/WEB-INF/classes" />
     <content url="file://$MODULE_DIR$/../../build/gensrc">
       <sourceFolder url="file://$MODULE_DIR$/../../build/gensrc/server/xb" isTestSource="false" />

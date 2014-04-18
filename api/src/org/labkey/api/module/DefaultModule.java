@@ -186,7 +186,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         preloadReports();
     }
 
-    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<>(new Comparator<Resource>(){
+    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<Resource>(new Comparator<Resource>(){
         @Override
         public int compare(Resource o, Resource o1)
         {
@@ -398,12 +398,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
             if (null == _webPartFactories)
             {
                 Collection<WebPartFactory> wpf = new ArrayList<>();
-                wpf.addAll(createWebPartFactories());
-                wpf.addAll(Portal.WEB_PART_FACTORY_CACHE.getResources(this));
 
-                // Not sure why module isn't set at WebPartFactory construction time...
-                for (WebPartFactory webPartFactory : wpf)
+                // Get all the Java webpart factories
+                for (WebPartFactory webPartFactory : createWebPartFactories())
+                {
+                    // Must setModule(), since they aren't initialized with this information
                     webPartFactory.setModule(this);
+                    wpf.add(webPartFactory);
+                }
+
+                // File-based webpart factories; no need to call setModule() since module is initialized in constructor
+                wpf.addAll(Portal.WEB_PART_FACTORY_CACHE.getResources(this));
 
                 _webPartFactories = wpf;
             }
@@ -552,7 +557,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Collections.emptySet();
     }
 
-    protected static final Set<SupportedDatabase> ALL_DATABASES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SupportedDatabase.mssql, SupportedDatabase.pgsql)));
+    protected static final Set<SupportedDatabase> ALL_DATABASES = Collections.unmodifiableSet(new HashSet<SupportedDatabase>(Arrays.asList(SupportedDatabase.mssql, SupportedDatabase.pgsql)));
 
     private Set<SupportedDatabase> _supportedDatabases = ALL_DATABASES;
 

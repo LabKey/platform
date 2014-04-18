@@ -47,7 +47,6 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     public static final String FILE_EXTENSION = ".webpart.xml";
 
     private final String _resourceName;
-    private final Module _module;
 
     private WebpartType _webPartDef = null;
     private Exception _loadException = null;
@@ -80,7 +79,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     public SimpleWebPartFactory(Module module, String filename)
     {
         super(getNameFromFilename(filename));
-        _module = module;
+        setModule(module);
         Path resourcePath = new Path(SimpleController.VIEWS_DIRECTORY, filename);
         loadDefinition(module.getModuleResource(new Path(SimpleController.VIEWS_DIRECTORY, filename)));
         _resourceName = resourcePath.getName();
@@ -133,12 +132,6 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     {
         return null != _webPartDef && null != _webPartDef.getView() && null != _webPartDef.getView().getName() ?
                 _webPartDef.getView().getName() : null;
-    }
-
-
-    public Module getModule()
-    {
-        return _module;
     }
 
 
