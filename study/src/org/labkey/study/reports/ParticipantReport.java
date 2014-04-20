@@ -146,6 +146,25 @@ public class ParticipantReport extends AbstractReport
     }
 
     @Override
+    public Map<String, Object> serialize(Container container, User user)
+    {
+        Map<String, Object> props = super.serialize(container, user);
+        ReportDescriptor descriptor = getDescriptor();
+
+        String measuresConfig = descriptor.getProperty(ParticipantReport.MEASURES_PROP);
+        if (measuresConfig != null)
+        {
+            props.put("measures", new JSONArray(measuresConfig));
+        }
+        String groupsConfig = descriptor.getProperty(ParticipantReport.GROUPS_PROP);
+        if (groupsConfig != null)
+        {
+            props.put("groups", new JSONArray(groupsConfig));
+        }
+        return props;
+    }
+
+    @Override
     public void afterImport(Container container, User user)
     {
         // lookup the filtered cohort and participant groups (if they have been imported as well)

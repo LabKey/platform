@@ -677,7 +677,7 @@ Ext4.define('LABKEY.ext4.ParticipantReport', {
     loadReport : function(reportId) {
 
         Ext4.Ajax.request({
-            url     : LABKEY.ActionURL.buildURL('study-reports', 'getParticipantReport.api'),
+            url     : LABKEY.ActionURL.buildURL('reports', 'getReport.api'),
             method  : 'GET',
             params  : {reportId : reportId},
             success : function(response) {

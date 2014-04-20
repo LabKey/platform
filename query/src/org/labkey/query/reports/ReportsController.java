@@ -77,6 +77,7 @@ import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.model.DataViewEditForm;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
@@ -3585,6 +3586,29 @@ public class ReportsController extends SpringActionController
                 transaction.commit();
             }
             response.put("success", true);
+            return response;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetReportAction extends ApiAction<ReportForm>
+    {
+        @Override
+        public ApiResponse execute(ReportForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Report report = null;
+            if (form.getReportId() != null)
+                report = form.getReportId().getReport(getViewContext());
+
+            if (report != null)
+            {
+                response.put("reportConfig", report.serialize(getContainer(), getUser()));
+                response.put("success", true);
+            }
+            else
+                throw new IllegalStateException("Unable to find specified report");
+
             return response;
         }
     }

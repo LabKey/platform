@@ -1990,29 +1990,6 @@ public class ReportsController extends BaseStudyController
 
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class GetParticipantReportAction extends ApiAction<ParticipantReportForm>
-    {
-        @Override
-        public ApiResponse execute(ParticipantReportForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse response = new ApiSimpleResponse();
-            Report report = null;
-            if (form.getReportId() != null)
-                report = form.getReportId().getReport(getViewContext());
-
-            if (report instanceof ParticipantReport)
-            {
-                response.put("reportConfig", ParticipantReport.toJSON(getUser(), getContainer(), report));
-                response.put("success", true);
-            }
-            else
-                throw new IllegalStateException("Unable to find specified report");
-
-            return response;
-        }
-    }
-
     public static class ParticipantReportForm extends ReportUtil.JsonReportForm
     {
         private String _measures;
