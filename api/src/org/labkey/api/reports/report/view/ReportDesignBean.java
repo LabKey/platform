@@ -42,7 +42,6 @@ public class ReportDesignBean extends ReportForm
     protected String _viewName;
     protected String _dataRegionName;
     protected String _filterParam;
-    protected ReportIdentifier _reportId;
     protected int _owner = -1;
     protected String _reportType;
     protected String _reportName;
@@ -112,16 +111,6 @@ public class ReportDesignBean extends ReportForm
     public void setFilterParam(String filterParam)
     {
         _filterParam = filterParam;
-    }
-
-    public ReportIdentifier getReportId()
-    {
-        return _reportId;
-    }
-
-    public void setReportId(ReportIdentifier reportId)
-    {
-        _reportId = reportId;
     }
 
     public String getReportType()

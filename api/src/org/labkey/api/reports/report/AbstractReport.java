@@ -16,6 +16,7 @@
 package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
@@ -55,7 +56,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: migra
@@ -166,6 +169,27 @@ public abstract class AbstractReport implements Report
 
     public void clearCache()
     {
+    }
+
+    @Override
+    public Map<String, Object> serialize(Container container, User user)
+    {
+        Map<String, Object> props = new HashMap<>();
+        ReportDescriptor descriptor = getDescriptor();
+
+        props.put("name", descriptor.getReportName());
+        props.put("description", descriptor.getReportDescription());
+        props.put("schemaName", descriptor.getProperty(ReportDescriptor.Prop.schemaName));
+        props.put("queryName", descriptor.getProperty(ReportDescriptor.Prop.queryName));
+        props.put("viewName", descriptor.getProperty(ReportDescriptor.Prop.viewName));
+
+        props.put("editable", canEdit(user, container));
+        props.put("public", descriptor.getOwner() == null);
+
+        // the rest of the properties
+        props.put("properties", descriptor.getProperties());
+
+        return props;
     }
 
     public void serialize(ImportContext context, VirtualFile dir, String filename) throws IOException

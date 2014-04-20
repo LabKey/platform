@@ -152,6 +152,12 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
     void afterDeserializeFromFile(File reportMetaFile) throws IOException;
 
     /**
+     * Reports provide a map of key/value properties which represent the report state, this state can be then
+     * serialized to the database, json, xml etc.
+     */
+    Map<String, Object> serialize(Container container, User user);
+
+    /**
      * Reports which are query or result set oriented, can implement this interface to
      * generate the result set from which results are rendered.
      */

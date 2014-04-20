@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.actions;
 
+import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.view.ViewForm;
 import org.springframework.validation.BindException;
 
@@ -25,8 +26,19 @@ import org.springframework.validation.BindException;
  */
 public class ReportForm extends ViewForm
 {
+    protected ReportIdentifier _reportId;
     private String _tabId;
     protected BindException _errors;
+
+    public ReportIdentifier getReportId()
+    {
+        return _reportId;
+    }
+
+    public void setReportId(ReportIdentifier reportId)
+    {
+        _reportId = reportId;
+    }
 
     public String getTabId()
     {
