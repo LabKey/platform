@@ -16,11 +16,14 @@
 package org.labkey.api.di;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.ContainerUser;
 import org.quartz.ScheduleBuilder;
+
+import java.util.Map;
 
 /**
  * User: matthewb
@@ -35,6 +38,8 @@ public interface ScheduledPipelineJobDescriptor<C extends ContainerUser>
     String getDescription();
     String getModuleName();
     int getVersion();
+    Map<ParameterDescription,Object> getDeclaredVariables();
+
 
     public ScheduleBuilder getScheduleBuilder();
     public String getScheduleDescription();
