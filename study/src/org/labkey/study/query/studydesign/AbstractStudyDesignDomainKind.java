@@ -22,6 +22,7 @@ import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -231,5 +232,11 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     public Set<String> getNonProvisionedTableNames()
     {
         return Collections.emptySet();
+    }
+
+    @Override
+    public DbSchemaType getSchemaType()
+    {
+        return DbSchemaType.Provisioned;
     }
 }
