@@ -425,15 +425,31 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
     onViewReady : function() {
         if (this.filters.length == 0) {
             for (var c=0; c < this.combos.length; c++) {
+                // Update the input enabled/disabled status by using the 'select' event listener on the combobox.
+                // However, ComboBox doesn't fire 'select' event when changed programatically so we fire it manually.
                 this.combos[c].reset();
+                this.combos[c].fireEvent('select', this.combos[c], null);
                 this.inputs[c].reset();
             }
         }
         else {
             for (var f=0; f < this.filters.length; f++) {
                 if (f < this.combos.length) {
-                    this.combos[f].setValue(this.filters[f].getFilterType().getURLSuffix());
-                    this.inputs[f].setValue(this.filters[f].getValue());
+                    var filter = this.filters[f];
+                    var combo = this.combos[f];
+
+                    // Update the input enabled/disabled status by using the 'select' event listener on the combobox.
+                    // However, ComboBox doesn't fire 'select' event when changed programatically so we fire it manually.
+                    var store = combo.getStore();
+                    if (store) {
+                        var rec = store.getAt(store.find('value', filter.getFilterType().getURLSuffix()));
+                        if (rec) {
+                            combo.setValue(filter.getFilterType().getURLSuffix());
+                            combo.fireEvent('select', combo, rec);
+                        }
+                    }
+
+                    this.inputs[f].setValue(filter.getValue());
                 }
             }
         }
@@ -535,64 +551,70 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             value: val,
             originalValue: val,
             listeners : {
-                render : function(cb) {
-                    this.combos.push(cb);
+                render : function(combo) {
+                    this.combos.push(combo);
+                    // Update the associated inputField's enabled/disabled state on initial render
+                    this.enableInputField(combo);
                 },
-                select : function(combo) {
+                select : function (combo) {
                     this.changed = true;
-                    var idx = combo.filterIndex;
-                    var inputField = this.find('itemId', 'inputField'+idx)[0];
-
-                    var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
-                    var selectedValue = filter ? filter.getURLSuffix() : '';
-
-                    var combos = this.combos;
-                    var inputFields = this.inputs;
-
-                    if (filter && !filter.isDataValueRequired()) {
-                        //Disable the field and allow it to be blank for values 'isblank' and 'isnonblank'.
-                        inputField.disable();
-                        inputField.setValue();
-                    }
-                    else {
-                        inputField.enable();
-                        inputFields[idx].validate();
-                        inputField.focus('', 50)
-                    }
-
-                    //if the value is null, this indicates no filter chosen.  if it lacks an operator (ie. isBlank)
-                    //in either case, this means we should disable all other filters
-                    if(selectedValue == '' || !filter.isDataValueRequired()){
-                        //Disable all subsequent combos
-                        Ext.each(combos, function(combo, idx){
-                            //we enable the next combo in the series
-                            if(combo.filterIndex == this.filterIndex + 1){
-                                combo.setValue();
-                                inputFields[idx].setValue();
-                                inputFields[idx].enable();
-                                inputFields[idx].validate();
-                            }
-                            else if (combo.filterIndex > this.filterIndex){
-                                combo.setValue();
-                                inputFields[idx].disable();
-                            }
-
-                        }, this);
-                    }
-                    else{
-                        //enable the other filterComboBoxes.
-                        Ext.each(combos, function(combo, i) { combo.enable(); }, this);
-
-                        if (combos.length) {
-                            combos[0].focus('', 50);
-                        }
-                    }
+                    this.enableInputField(combo);
                 },
                 scope: this
             },
             scope: this
         };
+    },
 
+    enableInputField : function (combo) {
+
+        var idx = combo.filterIndex;
+        var inputField = this.find('itemId', 'inputField'+idx)[0];
+
+        var filter = LABKEY.Filter.getFilterTypeForURLSuffix(combo.getValue());
+        var selectedValue = filter ? filter.getURLSuffix() : '';
+
+        var combos = this.combos;
+        var inputFields = this.inputs;
+
+        if (filter && !filter.isDataValueRequired()) {
+            //Disable the field and allow it to be blank for values 'isblank' and 'isnonblank'.
+            inputField.disable();
+            inputField.setValue();
+        }
+        else {
+            inputField.enable();
+            inputField.validate();
+            inputField.focus('', 50)
+        }
+
+        //if the value is null, this indicates no filter chosen.  if it lacks an operator (ie. isBlank)
+        //in either case, this means we should disable all other filters
+        if(selectedValue == '' || !filter.isDataValueRequired()){
+            //Disable all subsequent combos
+            Ext.each(combos, function(combo, idx){
+                //we enable the next combo in the series
+                if(combo.filterIndex == this.filterIndex + 1){
+                    combo.setValue();
+                    inputFields[idx].setValue();
+                    inputFields[idx].enable();
+                    inputFields[idx].validate();
+                }
+                else if (combo.filterIndex > this.filterIndex){
+                    combo.setValue();
+                    inputFields[idx].disable();
+                }
+
+            }, this);
+        }
+        else{
+            //enable the other filterComboBoxes.
+            Ext.each(combos, function(combo, i) { combo.enable(); }, this);
+
+            if (combos.length) {
+                combos[0].focus('', 50);
+            }
+        }
     },
 
     getFilters : function() {
@@ -627,7 +649,6 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             width         : 250,
             blankText     : 'You must enter a value.',
             validateOnBlur: true,
-            disabled      : idx !== 0,
             value         : null,
             altFormats: (this.jsonType == "date" ? LABKEY.Utils.getDateAltFormats() : undefined),
             validator : function(value) {
@@ -643,7 +664,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                     return;
                 }
 
-                return me.inputFieldValidator(this, combos[0]);
+                return me.inputFieldValidator(this, combos[idx]);
             },
             listeners: {
                 disable : function(field){
