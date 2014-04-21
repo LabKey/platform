@@ -1245,14 +1245,27 @@ public enum CompareType
         {
             super(fieldKey, negated ? NOT_BETWEEEN : BETWEEEN, null);
 
-            if (beginValue == null || (beginValue instanceof String && ((String)beginValue).trim().length() == 0))
-                throw new IllegalArgumentException("Between filter requires exactly two non-null and non-empty parameter values");
-
-            if (endValue == null || (endValue instanceof String && ((String)endValue).trim().length() == 0))
-                throw new IllegalArgumentException("Between filter requires exactly two non-null and non-empty parameter values");
+            beginValue = validateValue(beginValue);
+            endValue = validateValue(endValue);
 
             _paramVals = new Object[] { beginValue, endValue };
             _negated = negated;
+        }
+
+        private Object validateValue(Object value)
+        {
+            if (value == null)
+                throw new IllegalArgumentException("Between filter requires exactly two non-null and non-empty parameter values");
+
+            if (value instanceof String)
+            {
+                String s = ((String)value).trim();
+                if (s.length() == 0)
+                    throw new IllegalArgumentException("Between filter requires exactly two non-null and non-empty parameter values");
+                value = s;
+            }
+
+            return value;
         }
 
         @Override
