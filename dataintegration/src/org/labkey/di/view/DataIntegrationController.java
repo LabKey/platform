@@ -23,6 +23,7 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -38,7 +39,10 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -294,7 +298,16 @@ public class DataIntegrationController extends SpringActionController
             if (null == etl)
                 throw new NotFoundException(form.getTransformId());
 
-            Integer jobId = TransformManager.get().runNowPipeline(etl, getContainer(), getUser());
+            // pull variables off the URL
+            Map<ParameterDescription,Object> params = new LinkedHashMap<>();
+            for (ParameterDescription pd : (Set<ParameterDescription>)etl.getDeclaredVariables().keySet())
+            {
+                String q = getViewContext().getRequest().getParameter(pd.getName());
+                if (null != q)
+                    params.put(pd,q);
+            }
+
+            Integer jobId = TransformManager.get().runNowPipeline(etl, getContainer(), getUser(), params);
             ActionURL pipelineURL = jobId==null ? null : new ActionURL("pipeline-status", "details", getContainer()).addParameter("rowId", jobId);
             String status = null==pipelineURL ? "No work" : "Queued";
 

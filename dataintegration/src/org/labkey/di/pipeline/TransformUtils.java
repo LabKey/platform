@@ -175,7 +175,7 @@ public class TransformUtils
      */
     public static Integer runEtl(String transformId, Container c, User u) throws PipelineJobException
     {
-        return TransformManager.get().runNowPipeline(getDescriptor(transformId), c, u);
+        return TransformManager.get().runNowPipeline(getDescriptor(transformId), c, u, null);
     }
 
     public static ScheduledPipelineJobDescriptor getDescriptor(String transformId)

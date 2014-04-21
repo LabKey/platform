@@ -16,6 +16,7 @@
             <element name="transforms" type="etl:TransformsType" maxOccurs="1"/>
             <element name="schedule" type="etl:ScheduleType" maxOccurs="1" minOccurs="0"/>
             <element name="incrementalFilter" type="etl:FilterType" minOccurs="0" maxOccurs="1"/>
+            <element name="parameters" type="etl:ParametersType" minOccurs="0" maxOccurs="1"/>
         </all>
     </complexType>
 
@@ -67,7 +68,7 @@
 
     <complexType name="TransformType">
         <all>
-            <element name="properties" type="etl:PropertiesType" minOccurs="0" maxOccurs="1"/>
+            <!-- <element name="properties" type="etl:PropertiesType" minOccurs="0" maxOccurs="1"/> -->
             <element name="description" type="string" minOccurs="0" maxOccurs="1"/>
             <element name="source" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="0"/>
             <element name="destination" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="0"/>
@@ -79,7 +80,7 @@
         <attribute name="streaming" type="boolean" default="true"/>
     </complexType>
 
-    <complexType name="PropertiesType">
+<!-- <complexType name="PropertiesType">
         <all>
             <element name="property" type="string" minOccurs="0"/>
         </all>
@@ -89,7 +90,7 @@
         <attribute name="name" type="string" use="required"/>
         <attribute name="value" type="string" use="required"/>
     </complexType>
-
+-->
 
     <complexType name="ScheduleType">
         <all>
@@ -110,9 +111,9 @@
 
 
     <complexType name="FilterType">
-        <all>
+        <!-- <all>
             <element name="properties" type="etl:PropertiesType" minOccurs="0"/>
-        </all>
+        </all> -->
 
         <attribute name="className" type="etl:FilterClassType" use="optional"/>
 
@@ -137,5 +138,17 @@
             <enumeration value="SelectAllFilterStrategy"/>
         </restriction>
     </simpleType>
+
+    <complexType name="ParametersType">
+        <sequence minOccurs="0" maxOccurs="unbounded">
+            <element name="parameter" type="etl:ParameterType"/>
+        </sequence>
+    </complexType>
+
+    <complexType name="ParameterType">
+        <attribute name="name" type="string" use="required" />
+        <attribute name="value" type="string" use="optional" />
+        <attribute name="type" type="string" use="required" />
+    </complexType>
 
 </schema>

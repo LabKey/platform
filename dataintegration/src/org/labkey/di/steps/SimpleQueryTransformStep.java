@@ -33,6 +33,7 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
@@ -51,6 +52,7 @@ import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -207,9 +209,18 @@ public class SimpleQueryTransformStep extends TransformTask
         try
         {
             QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
-            sourceSchema.getTable(meta.getSourceQuery());   // validate source query
+            TableInfo q = sourceSchema.getTable(meta.getSourceQuery());   // validate source query
             FilterStrategy filterStrategy = getFilterStrategy();
             SimpleFilter f = filterStrategy.getFilter(getVariableMap());
+            Map<String,Object> parameters = new HashMap<>();
+
+            // parameters
+            for (QueryService.ParameterDecl pd : q.getNamedParameters())
+            {
+                Object v = getVariableMap().get(pd.getName());
+                if (null != v)
+                    parameters.put(pd.getName(),v);
+            }
 
             try
             {
@@ -221,6 +232,8 @@ public class SimpleQueryTransformStep extends TransformTask
             }
 
             DataIteratorBuilder source = new QueryDataIteratorBuilder(sourceSchema, meta.getSourceQuery(), null, f);
+            ((QueryDataIteratorBuilder)source).setParameters(parameters);
+
             if (_useAsynchrousQuery)
                 source = new AsyncDataIterator.Builder(source);
             return source;

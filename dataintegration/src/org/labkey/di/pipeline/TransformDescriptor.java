@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.StringBuilderWriter;
@@ -83,7 +84,9 @@ import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -101,6 +104,9 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final String _description;
     private final String _moduleName;
 
+    // declared variables
+    private Map<ParameterDescription,Object> _declaredVariables = new LinkedHashMap<>();
+
     // schedule
     private final Long _interval;
     private final CronExpression _cron;
@@ -110,7 +116,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final ArrayList<StepMeta> _stepMetaDatas;
 
 
-    public TransformDescriptor(String id, String name, String description, String moduleName, Long interval, CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas) throws XmlException, IOException
+    public TransformDescriptor(String id, String name, String description, String moduleName, Long interval,
+               CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
+               Map<ParameterDescription,Object> declaredVariables
+    ) throws XmlException, IOException
     {
         _id = id;
         _name = name;
@@ -120,6 +129,8 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         _cron = cron;
         _defaultFactory = defaultFactory;
         _stepMetaDatas = stepMetaDatas;
+        if (null != declaredVariables)
+            _declaredVariables.putAll(declaredVariables);
     }
 
 
@@ -150,6 +161,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         return 1;
     }
 
+    public Map<ParameterDescription,Object> getDeclaredVariables()
+    {
+        return Collections.unmodifiableMap(_declaredVariables);
+    }
 
     public FilterStrategy.Factory getDefaultFilterFactory()
     {
@@ -716,7 +731,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             ObjectProperty prop = mapProps.get(TransformProperty.RecordsInserted.getPropertyDescriptor().getPropertyURI());
             assert TestTask.recordsInsertedJob ==  prop.getFloatValue();
 
-            // verify the variable map generated is correct from the TransformManagager helper function
+            // verify the variable map generated is correct from the TransformManager helper function
             verifyVariableMap(TransformManager.get().getVariableMapForTransformJob(transformRun.getExpRunId()), mapProps);
 
             //

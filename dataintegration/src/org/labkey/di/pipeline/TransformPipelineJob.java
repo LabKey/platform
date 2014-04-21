@@ -74,10 +74,15 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
 
     private void initVariableMap(TransformJobContext info)
     {
-        JSONObject state = TransformManager.get().getTransformConfiguration(info.getContainer(), info.getJobDescriptor()).getJsonState();
-        if (!state.isEmpty())
+        Map<ParameterDescription,Object> declaredVariables = _etlDescriptor.getDeclaredVariables();
+        for (Map.Entry<ParameterDescription,Object> entry : declaredVariables.entrySet())
         {
-            for (Map.Entry<String, Object> e : state.entrySet())
+            _variableMap.put(entry.getKey(),entry.getValue());
+        }
+        JSONObject savedState = TransformManager.get().getTransformConfiguration(info.getContainer(), info.getJobDescriptor()).getJsonState();
+        if (!savedState.isEmpty())
+        {
+            for (Map.Entry<String, Object> e : savedState.entrySet())
             {
                 _variableMap.put(e.getKey(), e.getValue());
             }

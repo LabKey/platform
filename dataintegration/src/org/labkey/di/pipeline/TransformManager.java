@@ -29,6 +29,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.data.ParameterDescriptionImpl;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
@@ -80,6 +83,7 @@ import org.labkey.di.steps.TestTaskProvider;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
 import org.labkey.etl.xml.FilterType;
+import org.labkey.etl.xml.ParameterType;
 import org.labkey.etl.xml.TransformType;
 import org.labkey.etl.xml.TransformsType;
 import org.quartz.CronExpression;
@@ -102,7 +106,9 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -211,10 +217,25 @@ public class TransformManager implements DataIntegrationService
                 }
             }
 
+            Map<ParameterDescription,Object> declaredVariables = new LinkedHashMap<>();
+            if (null != etlXML.getParameters())
+            {
+                for (ParameterType xmlp : etlXML.getParameters().getParameterArray())
+                {
+                    String name = xmlp.getName();
+                    JdbcType type = JdbcType.valueOf(xmlp.getType());
+                    String strValue = xmlp.isSetValue() ? xmlp.getValue() : null;
+                    Object value = type.convert(strValue);
+                    ParameterDescription p = new ParameterDescriptionImpl(name,type,null);
+                    declaredVariables.put(p,value);
+                }
+            }
+
             // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
             XmlBeansUtil.validateXmlDocument(document, "ETL '" + resource.getPath() + "'");
 
-            return new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas);
+            TransformDescriptor ret = new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables);
+            return ret;
         }
     }
 
@@ -313,8 +334,9 @@ public class TransformManager implements DataIntegrationService
     }
 
 
-    public synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
-            throws PipelineJobException
+    public synchronized Integer runNowPipeline(ScheduledPipelineJobDescriptor descriptor, Container container, User user,
+            Map<ParameterDescription,Object> params)
+        throws PipelineJobException
     {
         if (ViewServlet.isShuttingDown())
             throw new PipelineJobException("Could not create job: server is shutting down");
@@ -731,7 +753,7 @@ public class TransformManager implements DataIntegrationService
             {
                 private TestTransformDescriptor(String id, String name, String moduleName) throws XmlException, IOException
                 {
-                    super(id, name, null, moduleName, null, null, null, null);
+                    super(id, name, null, moduleName, null, null, null, null, null);
                 }
 
                 @Override
