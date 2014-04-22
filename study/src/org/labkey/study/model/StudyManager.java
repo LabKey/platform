@@ -3376,6 +3376,7 @@ public class StudyManager
     }
 
 
+    @NotNull
     public VisitManager getVisitManager(StudyImpl study)
     {
         switch (study.getTimepointType())

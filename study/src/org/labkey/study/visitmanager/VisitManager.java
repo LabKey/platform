@@ -244,10 +244,6 @@ public abstract class VisitManager
         {
             POTENTIALLY_DELETED_PARTICIPANTS.remove(c);
         }
-        synchronized (PURGE_PARTICIPANT_LOCK)
-        {
-            // Wait until the current purge is complete before returning
-        }
     }
 
 
@@ -532,8 +528,6 @@ public abstract class VisitManager
     /** Number of milliseconds to wait between batches of participant purges */
     private static final long PURGE_PARTICIPANT_INTERVAL = DateUtils.MILLIS_PER_MINUTE * 5;
 
-    private static final Object PURGE_PARTICIPANT_LOCK = new Object();
-
     private static SQLFragment studyDataPtids(Collection<DataSetDefinition> defs)
     {
         SQLFragment f = new SQLFragment();
@@ -686,49 +680,50 @@ public abstract class VisitManager
         {
             try
             {
-                // There's a purge in process, so grab the lock
-                synchronized (PURGE_PARTICIPANT_LOCK)
+                while (true)
                 {
-                    while (true)
+                    Container container;
+                    Set<String> potentiallyDeletedParticipants;
+
+                    synchronized (POTENTIALLY_DELETED_PARTICIPANTS)
                     {
-                        Container container;
-                        Set<String> potentiallyDeletedParticipants;
-
-                        synchronized (POTENTIALLY_DELETED_PARTICIPANTS)
+                        if (POTENTIALLY_DELETED_PARTICIPANTS.isEmpty())
                         {
-                            if (POTENTIALLY_DELETED_PARTICIPANTS.isEmpty())
-                            {
-                                return;
-                            }
-                            // Grab the first study to be purged, and exit the synchronized block quickly
-                            Iterator<Map.Entry<Container, Set<String>>> i = POTENTIALLY_DELETED_PARTICIPANTS.entrySet().iterator();
-                            Map.Entry<Container, Set<String>> entry = i.next();
-                            i.remove();
-                            container = entry.getKey();
-                            potentiallyDeletedParticipants = entry.getValue();
+                            return;
                         }
+                        // Grab the first study to be purged, and exit the synchronized block quickly
+                        Iterator<Map.Entry<Container, Set<String>>> i = POTENTIALLY_DELETED_PARTICIPANTS.entrySet().iterator();
+                        Map.Entry<Container, Set<String>> entry = i.next();
+                        i.remove();
+                        container = entry.getKey();
+                        potentiallyDeletedParticipants = entry.getValue();
+                    }
 
-                        // Now, outside the synchronization, do the actual purge
-                        StudyImpl study = StudyManager.getInstance().getStudy(container);
-                        if (study != null)
+                    // Now, outside the synchronization, do the actual purge
+                    StudyImpl study = StudyManager.getInstance().getStudy(container);
+                    if (study != null)
+                    {
+                        try
                         {
-                            try
+                            int deleted = performParticipantPurge(study, potentiallyDeletedParticipants);
+                            if (deleted > 0)
                             {
-                                int deleted = performParticipantPurge(study, potentiallyDeletedParticipants);
-                                if (deleted > 0)
-                                {
-                                    StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null);
-                                }
+                                StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null);
                             }
-                            catch (RuntimeSQLException x)
+                        }
+                        catch (RuntimeSQLException x)
+                        {
+                            if (SqlDialect.isTransactionException(x) || SqlDialect.isObjectNotFoundException(x))
                             {
-                                if (SqlDialect.isTransactionException(x))
-                                {
-                                    // throw them back
-                                    VisitManager vm = StudyManager.getInstance().getVisitManager(study);
-                                    if (null != vm)
-                                        vm.scheduleParticipantPurge(potentiallyDeletedParticipants);
-                                }
+                                // Might get an error a dataset has been deleted out from under us, so retry
+                                LOGGER.warn("Unable to complete participant purge, requeuing for another attempt");
+                                // throw them back on the queue
+                                VisitManager vm = StudyManager.getInstance().getVisitManager(study);
+                                vm.scheduleParticipantPurge(potentiallyDeletedParticipants);
+                            }
+                            else
+                            {
+                                LOGGER.error("Failed to purge participants for " + container.getPath(), x);
                             }
                         }
                     }
