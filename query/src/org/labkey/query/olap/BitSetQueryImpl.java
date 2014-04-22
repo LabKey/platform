@@ -182,6 +182,13 @@ public class BitSetQueryImpl
         @Nullable abstract Hierarchy getHierarchy();
         abstract void toMdxSet(StringBuilder sb);
         @NotNull abstract Collection<Member> getCollection() throws OlapException;
+
+        public String toString()
+        {
+            StringBuilder sb = new StringBuilder();
+            toMdxSet(sb);
+            return sb.toString();
+        }
     }
 
 
@@ -454,6 +461,23 @@ public class BitSetQueryImpl
         {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public String toString()
+        {
+            if (results.size() == 1)
+                return results.get(0).toString();
+
+            StringBuilder sb = new StringBuilder();
+            String x = "";
+            for (Result r : results)
+            {
+                sb.append(x);
+                sb.append(r.toString());
+                x = " CROSSJOIN ";
+            }
+            return sb.toString();
+        }
     }
 
 
@@ -639,11 +663,23 @@ public class BitSetQueryImpl
         {
             StringBuilder sb = new StringBuilder();
             sb.append("evaluate()");
-            sb.append("\tmeasure   ").append(measure);
-            sb.append("\tonrows    ").append(rowsExpr);
-            sb.append("\toncolumns ").append(colsExpr);
-            sb.append("\twhere     ").append(filterExpr);
-            sb.append("\teval      ").append(filterSet);
+            sb.append("\n\tmeasure   ").append(measure.toString());
+            if (null != rowsExpr)
+            {
+                sb.append("\n\tonrows    ").append(rowsExpr.toString());
+            }
+            if (null != colsExpr)
+            {
+                sb.append("\n\toncolumns ").append(colsExpr.toString());
+            }
+            if (null != filterExpr)
+            {
+                sb.append("\n\tfilter    ").append(filterExpr.toString());
+            }
+            if (null != filterSet)
+            {
+                sb.append("\n\teval      ").append(filterSet.toString());
+            }
             _log.debug(sb);
         }
 
@@ -765,7 +801,9 @@ public class BitSetQueryImpl
         {
             // this doesn't work because we're in the same hierarchy, we can just iterate over the children
             //MemberSetResult r = _cubeHelper.membersQuery(new MemberSetResult(measureLevel), new MemberSetResult(containerMembers));
-            if (containerMembers.size() == containerMembers.getLevel().getMembers().size())
+            int size = containerMembers.size();
+            Level level = containerMembers.getLevel();
+            if (0 < size && null != level && size == level.getMembers().size())
             {
                 // not much of a filter... skip it
             }
