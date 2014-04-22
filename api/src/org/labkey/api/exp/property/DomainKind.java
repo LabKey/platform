@@ -21,8 +21,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -31,6 +32,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -106,6 +109,26 @@ abstract public class DomainKind implements Handler<String>
     abstract public Set<PropertyStorageSpec> getBaseProperties();
 
     /**
+     * Any additional properties which will get special handling in the Properties Editor.
+     * First use case is Lists get their property-backed primary key field added to protect it from imports and
+     * exclude it from exports
+     * @param domain
+     * @return
+     */
+    public Set<PropertyStorageSpec> getAdditionalProtectedProperties(Domain domain)
+    {
+        return Collections.emptySet();
+    }
+
+    public Set<String> getAdditionalProtectedPropertyNames(Domain domain)
+    {
+        Set<String> properties = new LinkedHashSet<>();
+        for (PropertyStorageSpec pss : getAdditionalProtectedProperties(domain))
+            properties.add(pss.getName());
+        return Collections.unmodifiableSet(properties);
+    }
+
+    /**
      * If domains of this kind should get hard tables automatically provisioned, this returns
      * the db schema where they reside. If it is null, hard tables are not to be provisioned for doamins of this kind.
      */
@@ -159,5 +182,19 @@ abstract public class DomainKind implements Handler<String>
     public boolean hasPropertiesIncludeBaseProperties()
     {
         return false;
+    }
+
+    /**
+     * Default for all domain kinds is to not delete data. Lists and Datasets override this.
+     * @return
+     */
+    public boolean isDeleteAllDataOnFieldImport()
+    {
+        return false;
+    }
+
+    public TableInfo getTableInfo(User user, Container container, String name)
+    {
+        return null;
     }
 }

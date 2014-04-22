@@ -17,11 +17,13 @@
 package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
-
-import java.util.*;
-
-import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.util.PropertyUtil;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -46,6 +48,8 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     private Set<String> mandatoryPropertyDescriptorNames = new HashSet<String>();
 
     private Set<String> reservedFieldNames = new HashSet<String>();
+
+    private Set<String> excludeFromExportFieldNames = new HashSet<String>();
 
     public GWTDomain()
     {
@@ -207,12 +211,30 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         return reservedFieldNames;
     }
 
-    /*
+    /**
      *  @param reservedFieldNames can't create new fields with these names
      */
     public void setReservedFieldNames(Set<String> reservedFieldNames)
     {
         this.reservedFieldNames = reservedFieldNames;
+    }
+
+    /**
+     *
+     * @param excludeFromExportFieldNames These fields will be suppressed from the export field list. Primary use case is to not export List key fields.
+     */
+    public void setExcludeFromExportFieldNames(Set<String> excludeFromExportFieldNames)
+    {
+        this.excludeFromExportFieldNames = excludeFromExportFieldNames;
+    }
+
+    public boolean isExcludeFromExportField(FieldType field)
+    {
+        if (excludeFromExportFieldNames == null || field.getName() == null)
+        {
+            return false;
+        }
+        return excludeFromExportFieldNames.contains(field.getName().toLowerCase());
     }
 
     public DefaultValueType getDefaultDefaultValueType()
@@ -242,4 +264,5 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     {
         this.defaultValuesURL = defaultValuesURL;
     }
+
 }

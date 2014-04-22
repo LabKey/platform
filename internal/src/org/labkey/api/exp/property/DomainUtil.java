@@ -162,7 +162,7 @@ public class DomainUtil
         Set<String> reservedProperties = domainKind.getReservedPropertyNames(domain);
         d.setReservedFieldNames(new HashSet<>(reservedProperties));
         d.setMandatoryFieldNames(new HashSet<>(domainKind.getMandatoryPropertyNames(domain)));
-
+        d.setExcludeFromExportFieldNames(new HashSet<>(domainKind.getAdditionalProtectedPropertyNames(domain)));
         return d;
     }
 
@@ -330,6 +330,8 @@ public class DomainUtil
 
             s.remove(pd.getPropertyId());
         }
+
+        int deletedCount = 0;
         for (int id : s)
         {
             if (id <= 0)
@@ -338,7 +340,11 @@ public class DomainUtil
             if (null == p)
                 continue;
             p.delete();
+            deletedCount++;
         }
+        // If we're deleting all fields, set flag to potentially delete all data first.
+        if (deletedCount > 0 && deletedCount == orig.getFields().size())
+            d.setShouldDeleteAllData(true);
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
 

@@ -58,6 +58,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         {
             super(rootPanel, owner, service, new GWTPropertyDescriptor());
         }
+
+        public PD(RootPanel rootPanel, Saveable<GWTDomain> owner, LookupServiceAsync service, boolean alwaysAllowImportSchema)
+        {
+            super(rootPanel, owner, service, new GWTPropertyDescriptor(), alwaysAllowImportSchema);
+        }
+
     }
 
     public static final String currentFolder = "[current folder]";
@@ -107,6 +113,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
     private FieldType _selectedPD;
     private ImageButton _addFieldButton;
     private ImageButton _importSchemaButton;
+    private boolean _alwaysAllowImportSchema = false;
     private ImageButton _exportSchemaButton;
     private ImageButton _inferSchemaButton;
     private DefaultValueItem<DomainType, FieldType> _defaultValueSelector;
@@ -133,12 +140,19 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
     public PropertiesEditor(RootPanel rootPanel, Saveable<GWTDomain> owner, LookupServiceAsync service, FieldType empty)
     {
+        this(rootPanel, owner, service, empty, false);
+    }
+
+    public PropertiesEditor(RootPanel rootPanel, Saveable<GWTDomain> owner, LookupServiceAsync service, FieldType empty, boolean alwaysAllowImportSchema)
+    {
         _rootPanel = rootPanel;
         _newPropertyDescriptor = empty;
         _rows = new ArrayList<Row>();
 
         _lookupService = new CachingLookupService(service);
         _owner = owner;
+
+        _alwaysAllowImportSchema = alwaysAllowImportSchema;
 
         _panel = new DockPanel();
         _panel.setWidth("900");
@@ -215,6 +229,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         };
 
         _importSchemaButton = new ImageButton("Import Fields", importSchemaListener);
+        // Assume this button will be hidden; conditionally setVisible(true) in init.
+        _importSchemaButton.setVisible(false);
         _exportSchemaButton = new ImageButton("Export Fields", exportSchemaListener);
         _inferSchemaButton = new ImageButton("Infer Fields from File", inferSchemaListener);
 
@@ -403,6 +419,12 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
                 _rows.add(new Row(field));
             }
         }
+
+        // Certain provisioned tables (Lists and Datasets) always get the Import Fields button. All others only get the
+        // button on initial creation.
+        if (_alwaysAllowImportSchema || domain.getDomainId() == 0)
+            _importSchemaButton.setVisible(true);
+
         fireChangeEvent();
 
         refresh();

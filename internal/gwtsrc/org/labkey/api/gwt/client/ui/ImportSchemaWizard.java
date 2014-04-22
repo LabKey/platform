@@ -39,8 +39,8 @@ class ImportSchemaWizard extends DialogBox
         String warning = "<b>NOTE: This will replace any existing fields you have defined.</b>";
         if (propertiesEditor._domain.getFields().size() > 0)
         {
-            warning = "<b><font class=\"labkey-error\">WARNING: This will replace any existing fields you have defined, " +
-                "and delete all data in any redefined fields.</font></b>";
+            warning = "<b><font class=\"labkey-error\">WARNING: This will delete all existing data!<br/>" +
+                    "If you only wish to rename, add or delete columns, use the domain editor.</font></b>";
         }
         HTML html = new HTML(
             warning +

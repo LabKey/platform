@@ -85,4 +85,12 @@ public interface Domain extends IPropertyType
      */
     void setPropertyForeignKeys(Set<PropertyStorageSpec.ForeignKey> foreignKeys);
     Set<PropertyStorageSpec.ForeignKey> getPropertyForeignKeys();
+
+    /**
+     *
+     * @param shouldDeleteAllData Flag that all data should be deleted, initial use case is for Lists and Datasets
+     *                            having all their user-editable fields replaced via Import Fields form
+     */
+    void setShouldDeleteAllData(boolean shouldDeleteAllData);
+    boolean isShouldDeleteAllData();
 }

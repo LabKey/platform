@@ -87,14 +87,17 @@ public class ExportSchemaWizard extends DialogBox
         for (int i=0; i<numProps; i++)
         {
             GWTPropertyDescriptor prop = propertiesEditor.getPropertyDescriptor(i);
-            sb.append(getStringValue(prop.getName())).append("\t");
-            sb.append(getStringValue(prop.getLabel())).append("\t");
-            sb.append(getStringValue(prop.getRangeURI())).append("\t");
-            sb.append(getStringValue(prop.getFormat())).append("\t");
-            sb.append(getStringValue(prop.isRequired())).append("\t");
-            sb.append(getStringValue(prop.isHidden())).append("\t");
-            sb.append(getStringValue(prop.getMvEnabled())).append("\t");
-            sb.append(getStringValue(prop.getDescription())).append("\n");
+            if (!propertiesEditor.getDomain().isExcludeFromExportField(prop))
+            {
+                sb.append(getStringValue(prop.getName())).append("\t");
+                sb.append(getStringValue(prop.getLabel())).append("\t");
+                sb.append(getStringValue(prop.getRangeURI())).append("\t");
+                sb.append(getStringValue(prop.getFormat())).append("\t");
+                sb.append(getStringValue(prop.isRequired())).append("\t");
+                sb.append(getStringValue(prop.isHidden())).append("\t");
+                sb.append(getStringValue(prop.getMvEnabled())).append("\t");
+                sb.append(getStringValue(prop.getDescription())).append("\n");
+            }
         }
 
         return sb.toString();
