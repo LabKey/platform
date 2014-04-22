@@ -343,7 +343,9 @@ public class DomainUtil
             deletedCount++;
         }
         // If we're deleting all fields, set flag to potentially delete all data first.
-        if (deletedCount > 0 && deletedCount == orig.getFields().size())
+        // "All fields" is defined to be the original property-driven field count, minus any that are known to be non-deleteable through the domain editor
+        // Namely, that's the List key field.
+        if (deletedCount > 0 && deletedCount == (orig.getFields().size() - d.getDomainKind().getAdditionalProtectedProperties(d).size()))
             d.setShouldDeleteAllData(true);
 
         Map<DomainProperty, Object> defaultValues = new HashMap<>();
