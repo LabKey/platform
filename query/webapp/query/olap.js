@@ -758,7 +758,7 @@ Ext4.define('LABKEY.query.olap.MDX', {
 
     query : function(config)
     {
-        var copy = Ext4.apply({},config);
+        var copy = Ext4.apply({},config,{filter:[], useNamedFilters:[]});
         copy.filter = copy.filter ? copy.filter.slice() : [];
         var namedFilters = copy.useNamedFilters || [];
         for (var f=0 ; f<namedFilters.length ; f++)
@@ -777,32 +777,19 @@ Ext4.define('LABKEY.query.olap.MDX', {
 
     queryParticipantList : function(config)
     {
-        var c = Ext4.apply({}, config, {filter:[], useNamedFilters:[]});
-        for (var f=0 ; f<c.useNamedFilters.length ; f++)
+        if (config.onCols || config.onColumns)
+            throw "bad config";
+        var c = Ext4.apply({},config);
+        if (!c.onRows)
         {
-            var filter = this._filter[c.useNamedFilters[f]];
-            if (!filter)
-                continue;
-            if (!Ext4.isArray(filter))
-                filter = [filter];
-            c.filter = c.filter.concat(filter);
-        }
-        var mdx = this;
-        var query = this._generateParticipantMdx(c);
-        var queryConfig =
-        {
-            configId : config.configId || mdx._cube.configId,
-            query : query,
-            originalConfig : config,
-            scope : this,
-            success : function(cellset,queryConfig)
+            var map = this._cube.uniqueNameMap;
+            var level = map["[Subject].[Subject]"] || map["[Patient].[Patient]"] ||  map["[Participant].[Participant]"];
+            if (level)
             {
-                var config = queryConfig.originalConfig;
-                if (Ext4.isFunction(config.success))
-                    config.success.apply(config.scope||window, [cellset, mdx, config]);
+                c.onRows = {level:"[Subject].[Subject]", members:"members"};
             }
-        };
-        LABKEY.query.olap._private.executeMdx(queryConfig);
+        }
+        this.query(c);
     },
 
     hasFilter : function (filterName) {
