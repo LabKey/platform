@@ -32,6 +32,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.query.DataSetTableImpl;
+import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -228,5 +230,21 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     public Domain createDomain(GWTDomain domain, Map<String, Object> arguments, Container container, User user)
     {
         return super.createDomain(domain, arguments, container, user);
+    }
+
+    @Override
+    public boolean isDeleteAllDataOnFieldImport()
+    {
+        return true;
+    }
+
+    @Override
+    public TableInfo getTableInfo(User user, Container container, String name)
+    {
+        StudyImpl study = StudyManager.getInstance().getStudy(container);
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, true);
+        DataSetDefinition dsd = schema.getDataSetDefinitionByName(name);
+
+        return new DataSetTableImpl(schema, dsd);
     }
 }

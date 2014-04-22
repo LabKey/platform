@@ -1221,7 +1221,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
     {
         _ListPropertiesEditor(RootPanel rootPanel, Saveable<GWTDomain> owner, LookupServiceAsync lookup)
         {
-            super(rootPanel, owner, lookup, new GWTPropertyDescriptor());
+            super(rootPanel, owner, lookup, new GWTPropertyDescriptor(), true);
         }
 
         private boolean isKeyRow(PropertiesEditor.Row row)
@@ -1252,9 +1252,26 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             return super.getDecorationImage(status, row);
         }
 
+        @Override
         protected boolean canDelete(Row row)
         {
             return !isKeyRow(row) && super.canDelete(row);
+        }
+
+        @Override
+        protected boolean isTypeEditable(Row row)
+        {
+            if (!isKeyRow(row))
+                return super.isTypeEditable(row);
+            else return false;
+        }
+
+        @Override
+        protected boolean isNameEditable(Row row)
+        {
+            if (!isKeyRow(row))
+                return super.isNameEditable(row);
+            else return true;
         }
     }
 

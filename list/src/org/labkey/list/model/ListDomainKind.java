@@ -22,13 +22,16 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListDefinition.KeyType;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -116,6 +119,36 @@ public abstract class ListDomainKind extends AbstractDomainKind
     }
 
     @Override
+    public Set<String> getMandatoryPropertyNames(Domain domain)
+    {
+        Set<String> properties = super.getMandatoryPropertyNames(domain);
+        properties.addAll(getAdditionalProtectedPropertyNames(domain));
+        return properties;
+    }
+
+    /**
+     * Returns the List's primary key as a field to get special treatment elsewhere, despite being property driven.
+     * @param domain
+     * @return
+     */
+    @Override
+    public Set<PropertyStorageSpec> getAdditionalProtectedProperties(Domain domain)
+    {
+        Set<PropertyStorageSpec> specs = new HashSet<>(super.getAdditionalProtectedProperties(domain));
+
+        ListDefinition listDef = ListService.get().getList(domain);
+        if (null != listDef)
+        {
+            String keyName = listDef.getKeyName();
+            JdbcType keyType = listDef.getKeyType() == KeyType.Varchar ? JdbcType.VARCHAR : JdbcType.INTEGER;
+            int keySize = keyType == JdbcType.VARCHAR ? 4000 : 0;
+            specs.add(new PropertyStorageSpec(keyName, keyType, keySize, PropertyStorageSpec.Special.PrimaryKey));
+        }
+
+        return specs;
+    }
+
+    @Override
     public PropertyStorageSpec getPropertySpec(PropertyDescriptor pd, Domain domain)
     {
         ListDefinition list = ListService.get().getList(domain);
@@ -145,6 +178,7 @@ public abstract class ListDomainKind extends AbstractDomainKind
         {
             properties.add(pss.getName());
         }
+
         return Collections.unmodifiableSet(properties);
     }
 
@@ -220,5 +254,17 @@ public abstract class ListDomainKind extends AbstractDomainKind
     public DbSchemaType getSchemaType()
     {
         return DbSchemaType.Provisioned;
+    }
+
+    @Override
+    public TableInfo getTableInfo(User user, Container container, String name)
+    {
+        return new ListQuerySchema(user, container).createTable(name);
+    }
+
+    @Override
+    public boolean isDeleteAllDataOnFieldImport()
+    {
+        return true;
     }
 }

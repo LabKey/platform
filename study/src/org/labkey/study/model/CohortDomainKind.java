@@ -35,7 +35,8 @@ public class CohortDomainKind extends BaseStudyDomainKind
         return CohortImpl.DOMAIN_INFO;
     }
 
-    protected TableInfo getTableInfo()
+    @Override
+    public TableInfo getTableInfo()
     {
         return StudySchema.getInstance().getTableInfoCohort();
     }

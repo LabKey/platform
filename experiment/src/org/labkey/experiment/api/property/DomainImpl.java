@@ -48,7 +48,9 @@ import org.labkey.api.exp.property.DomainAuditViewFactory;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.GUID;
@@ -56,6 +58,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -72,6 +75,7 @@ public class DomainImpl implements Domain
     DomainDescriptor _dd;
     List<DomainPropertyImpl> _properties;
     private Set<PropertyStorageSpec.ForeignKey> _propertyForeignKeys = Collections.emptySet();
+    private boolean _shouldDeleteAllData = false;
 
     public DomainImpl(DomainDescriptor dd)
     {
@@ -295,6 +299,19 @@ public class DomainImpl implements Domain
 
             DomainKind kind = getDomainKind();
             boolean hasProvisioner = null != kind && null != kind.getStorageSchemaName();
+
+            // Certain provisioned table types (Lists and Datasets) get wiped when their fields are replaced via field Import
+            if (hasProvisioner && isShouldDeleteAllData())
+            {
+                try
+                {
+                    kind.getTableInfo(user, getContainer(), getName()).getUpdateService().truncateRows(user, getContainer(), null);
+                }
+                catch (QueryUpdateServiceException | BatchValidationException | SQLException e)
+                {
+                   throw new ChangePropertyDescriptorException(e);
+                }
+            }
 
             // Delete first #8978
             for (DomainPropertyImpl impl : _properties)
@@ -573,5 +590,22 @@ public class DomainImpl implements Domain
     public void setPropertyForeignKeys(Set<PropertyStorageSpec.ForeignKey> propertyForeignKeys)
     {
         _propertyForeignKeys = propertyForeignKeys;
+    }
+
+    @Override
+    public void setShouldDeleteAllData(boolean shouldDeleteAllData)
+    {
+        _shouldDeleteAllData = shouldDeleteAllData;
+    }
+
+    @Override
+    public boolean isShouldDeleteAllData()
+    {
+        // Only certain domain kinds, Lists & Datasets, will return true
+        if (getDomainKind().isDeleteAllDataOnFieldImport() && _shouldDeleteAllData)
+        {
+            return true;
+        }
+        else return false;
     }
 }
