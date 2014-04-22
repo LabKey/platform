@@ -115,6 +115,10 @@ public class VisualizationSourceColumn
     {
         _name = name;
         _queryName = queryName;
+        if (schema == null)
+        {
+            throw new IllegalArgumentException("No schema supplied, queryName is: '" + queryName + "'");
+        }
         _schema = schema;
         _allowNullResults = allowNullResults == null || allowNullResults;
     }
@@ -137,7 +141,12 @@ public class VisualizationSourceColumn
         {
             throw new NullPointerException("No schema specified");
         }
-        return QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
+        UserSchema result = QueryService.get().getUserSchema(context.getUser(), context.getContainer(), schemaName);
+        if (result == null)
+        {
+            throw new NotFoundException("No schema found with name '" + schemaName + "'");
+        }
+        return result;
     }
 
     public String getSchemaName()
