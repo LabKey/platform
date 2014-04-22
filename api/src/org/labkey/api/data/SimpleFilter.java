@@ -117,14 +117,28 @@ public class SimpleFilter implements Filter
 
             for (Object o : paramVals)
             {
-                if (o instanceof Calendar)
-                    o = ((Calendar)o).getTime();
-                String param = StringUtils.defaultString(ConvertUtils.convert(o), "NULL");
+                String param = formattedParamValue(o);
                 int i = sb.indexOf("?", fromIndex);
                 fromIndex += param.length();         // Protects against previous param values in this clause containing '?'
                 sb.replace(i, i + 1, param);
             }
         }
+
+        // Format param value for filter description display.
+        protected String formattedParamValue(Object val)
+        {
+            if (val instanceof Calendar)
+                val = ((Calendar)val).getTime();
+
+            String param = StringUtils.defaultString(ConvertUtils.convert(val), "NULL");
+
+            // Surround value with quotes if it contains whitespace
+            if (param.contains(" "))
+                param = "'" + param + "'";
+
+            return param;
+        }
+
 
         /** @return non-URL encoded name/value pair. Value may be null if there's none to be used (for IS BLANK or similar clauses).
          * The whole return value may be null if this clause can't be represented on the URL */
@@ -604,7 +618,8 @@ public class SimpleFilter implements Filter
             {
                 if (val != null)
                 {
-                    sb.append(sep).append(val.toString());
+                    String s = formattedParamValue(val);
+                    sb.append(sep).append(s);
                     sep = ", ";
                 }
             }
@@ -797,7 +812,8 @@ public class SimpleFilter implements Filter
             {
                 if (val != null)
                 {
-                    sb.append(sep).append(val.toString());
+                    String s = formattedParamValue(val);
+                    sb.append(sep).append(s);
                     sep = ", ";
                 }
             }

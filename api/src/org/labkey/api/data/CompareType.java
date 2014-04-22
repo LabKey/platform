@@ -425,7 +425,7 @@ public enum CompareType
                 else
                 {
                     String s = Objects.toString(value, "");
-                    String[] values = s.trim().split(BetweenClause.SEPARATOR);
+                    String[] values = s.split(BetweenClause.SEPARATOR);
                     if (values.length != 2)
                         throw new IllegalArgumentException("Between filter requires exactly two parameter values");
 
@@ -459,7 +459,7 @@ public enum CompareType
                 else
                 {
                     String s = Objects.toString(value, "");
-                    String[] values = s.trim().split(BetweenClause.SEPARATOR);
+                    String[] values = s.split(BetweenClause.SEPARATOR);
                     if (values.length != 2)
                         throw new IllegalArgumentException("Not between filter requires exactly two parameter values");
 
@@ -1257,13 +1257,8 @@ public enum CompareType
             if (value == null)
                 throw new IllegalArgumentException("Between filter requires exactly two non-null and non-empty parameter values");
 
-            if (value instanceof String)
-            {
-                String s = ((String)value).trim();
-                if (s.length() == 0)
-                    throw new IllegalArgumentException("Between filter requires exactly two non-null and non-empty parameter values");
-                value = s;
-            }
+            if (value instanceof String && ((String)value).length() == 0)
+                throw new IllegalArgumentException("Between filter requires exactly two non-null and non-empty parameter values");
 
             return value;
         }
