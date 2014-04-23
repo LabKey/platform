@@ -1570,9 +1570,10 @@ public class SimpleFilter implements Filter
             new CompareType.BetweenClause(fieldKey, "", " ", false);
         }
 
-        @Test(expected=IllegalArgumentException.class)
+        @Test
         public void testBetweenSpace()
         {
+            // Allow space in filters
             FieldKey fieldKey = FieldKey.fromParts("Foo");
             new CompareType.BetweenClause(fieldKey, " ", " ", false);
         }
@@ -1587,6 +1588,7 @@ public class SimpleFilter implements Filter
             test("Foo BETWEEN -1 AND 2.2", "Foo BETWEEN -1 AND 2.2", new CompareType.BetweenClause(fieldKey, -1, 2.2, false), mockDialect);
             test("Foo NOT BETWEEN '1' AND '2'", "Foo NOT BETWEEN 1 AND 2", new CompareType.BetweenClause(fieldKey, "1", "2", true), mockDialect);
             test("Foo BETWEEN 'A' AND 'Z'", "Foo BETWEEN A AND Z", new CompareType.BetweenClause(fieldKey, "A", "Z", false), mockDialect);
+            test("Foo BETWEEN ' A' AND 'Z '", "Foo BETWEEN ' A' AND 'Z '", new CompareType.BetweenClause(fieldKey, " A", "Z ", false), mockDialect);
         }
 
         @Test
