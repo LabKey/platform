@@ -47,37 +47,38 @@ Ext.define('LABKEY.app.controller.Route', {
 
     route : function(fragments, popState) {
 
-        var _fragments = decodeURIComponent(fragments);
-
-        if (Ext.isString(_fragments)) {
-            _fragments = _fragments.split('/');
+        if (!Ext.isString(fragments))
+        {
+            console.warn('invalid route fragment supplied.');
+            fragments = '';
         }
 
-        if (Ext.isArray(_fragments)) {
-            var urlContext = _fragments;
+        var splitFragments = fragments.split('/');
 
-            if (urlContext.length > 0) {
-                var controller = urlContext[0];
-                var viewContext = null, view;
+        var urlContext = [];
+
+        Ext.each(splitFragments, function(frag) {
+            urlContext.push(decodeURIComponent(frag));
+        });
+
+        if (urlContext.length > 0) {
+            var controller = urlContext[0];
+            var viewContext = null, view;
+            if (urlContext.length > 1) {
+                urlContext.shift(); // drop the controller
+                view = urlContext[0];
                 if (urlContext.length > 1) {
-                    urlContext.shift(); // drop the controller
-                    view = urlContext[0];
-                    if (urlContext.length > 1) {
-                        urlContext.shift(); // drop the view
-                        viewContext = urlContext;
-                    }
+                    urlContext.shift(); // drop the view
+                    viewContext = urlContext;
                 }
-//                console.log('control:', controller);
-//                console.log('view:', view);
-//                console.log('viewcontext:', viewContext);
-                this.application.getController('State').loadState(controller, view, viewContext, null, true, popState);
             }
-            else {
-                alert('Router failed to find resolve view context from route.');
-            }
+//            console.log('control:', controller);
+//            console.log('view:', view);
+//            console.log('viewcontext:', viewContext);
+            this.application.getController('State').loadState(controller, view, viewContext, null, true, popState);
         }
         else {
-            alert('Router failed to route due to invalid route supplied.');
+            alert('Router failed to find resolve view context from route.');
         }
     },
 
