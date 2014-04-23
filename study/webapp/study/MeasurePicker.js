@@ -1073,6 +1073,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     setSelectedRecord : function(measure) {
         this.getMeasuresGrid().getSelectionModel().select(measure);
+    },
+
+    clearSelection : function() {
+        this.getMeasuresGrid().getSelectionModel().deselectAll();
     }
 });
 
