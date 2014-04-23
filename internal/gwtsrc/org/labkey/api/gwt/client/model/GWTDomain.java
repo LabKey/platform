@@ -84,6 +84,11 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         {
             this.getReservedFieldNames().addAll(src.getReservedFieldNames());
         }
+
+        if (src.getExcludeFromExportFieldNames() != null)
+        {
+            this.getExcludeFromExportFieldNames().addAll(src.getExcludeFromExportFieldNames());
+        }
     }
 
 
@@ -225,7 +230,16 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
      */
     public void setExcludeFromExportFieldNames(Set<String> excludeFromExportFieldNames)
     {
-        this.excludeFromExportFieldNames = excludeFromExportFieldNames;
+        this.excludeFromExportFieldNames = new HashSet<String>();
+        for (String excludeFromExportFieldName : excludeFromExportFieldNames)
+        {
+            this.excludeFromExportFieldNames.add(excludeFromExportFieldName.toLowerCase());
+        }
+    }
+
+    public Set<String> getExcludeFromExportFieldNames()
+    {
+        return excludeFromExportFieldNames;
     }
 
     public boolean isExcludeFromExportField(FieldType field)

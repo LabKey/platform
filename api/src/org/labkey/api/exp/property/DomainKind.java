@@ -125,7 +125,7 @@ abstract public class DomainKind implements Handler<String>
         Set<String> properties = new LinkedHashSet<>();
         for (PropertyStorageSpec pss : getAdditionalProtectedProperties(domain))
             properties.add(pss.getName());
-        return Collections.unmodifiableSet(properties);
+        return properties;
     }
 
     /**
