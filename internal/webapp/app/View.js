@@ -304,13 +304,13 @@ Ext.define('LABKEY.app.controller.View', {
 
     updateHistory : function(controller, view, viewContext, title) {
         var url = this.getAppActionName() + '?' + this.getAppURLParams() + '#';
-        url += controller.toLowerCase();
+        url += encodeURIComponent(controller.toLowerCase());
         if (view) {
-            url += '/' + view.toLowerCase();
+            url += '/' + encodeURIComponent(view.toLowerCase());
         }
         if (viewContext) {
             for (var v=0; v < viewContext.length; v++) {
-                url += '/' + viewContext[v].toString().toLowerCase();
+                url += '/' + encodeURIComponent(viewContext[v].toString());
             }
         }
 
@@ -332,15 +332,18 @@ Ext.define('LABKEY.app.controller.View', {
         return this.appName;
     },
 
+    /**
+     * Returns an encoded set of the current URL parameters.
+     * @returns {string}
+     */
     getAppURLParams : function() {
         var params = '';
 
-        if (this.urlParams) {
-            for (var u in this.urlParams) {
-                if (this.urlParams.hasOwnProperty(u)) {
-                    params += u + '=' + this.urlParams[u];
-                }
-            }
+        if (this.urlParams)
+        {
+            Ext.iterate(this.urlParams, function(key, value) {
+                params += encodeURIComponent(key) + '=' + encodeURIComponent(value);
+            });
         }
 
         return params;

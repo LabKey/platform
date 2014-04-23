@@ -180,30 +180,32 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 hasGrpLevel = targetLevels.length > 2;
             }
 
-            var grpLevelID = targetLevels[1].id;
+            var grpLevelID = targetLevels[1].id, subPosition;
 
             // skip (All)
             for (var x=1; x < pos.length; x++)
             {
+                subPosition = pos[x][0];
+
                 // Subjects should not be listed so do not roll up
-                if ((!this.showEmpty && baseResult.cells[x][0].value == 0) || (pos[x][0].level.name == this.subjectName)) {
+                if ((!this.showEmpty && baseResult.cells[x][0].value == 0) || (subPosition.level.name == this.subjectName)) {
                     continue;
                 }
 
                 isGroup = false;
-                if (hasGrpLevel && pos[x][0].level.id == grpLevelID) {
-                    activeGroup = pos[x][0].name;
+                if (hasGrpLevel && subPosition.level.id == grpLevelID) {
+                    activeGroup = subPosition.name;
                     isGroup = true;
                 }
 
                 target = {
-                    label: pos[x][0].name == '#null' ? 'Unknown' : pos[x][0].name,
-                    uniqueName: pos[x][0].uniqueName,
+                    label: subPosition.name == '#null' ? 'Unknown' : subPosition.name,
+                    uniqueName: subPosition.uniqueName,
                     count: baseResult.cells[x][0].value,
-                    value: pos[x][0].name,
+                    value: subPosition.name,
                     hierarchy: hierarchy.getName(),
                     isGroup: isGroup,
-                    level: pos[x][0].name,
+                    level: subPosition.name,
                     collapsed: activeGroup && pos.length > 15 ? true : false,
                     btnShown: false
                 };
@@ -232,7 +234,6 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             }
 
             if (!groupOnly) {
-                // This must be called before any events are fired -- eventSuspended
                 this.loadData(recs);
             }
             else {

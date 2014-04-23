@@ -47,7 +47,8 @@ Ext.define('LABKEY.app.controller.Route', {
 
     route : function(fragments, popState) {
 
-        var _fragments = fragments;
+        var _fragments = decodeURIComponent(fragments);
+
         if (Ext.isString(_fragments)) {
             _fragments = _fragments.split('/');
         }

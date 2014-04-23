@@ -100,6 +100,14 @@ Ext.define('LABKEY.app.controller.AbstractViewController', {
      * @returns {*}
      */
     parseContext : function(urlContext) {
-        return urlContext;
+        var lowerUrlContext = [];
+        if (Ext.isArray(urlContext))
+        {
+            for (var i=0; i < urlContext.length; i++)
+            {
+                lowerUrlContext.push(urlContext[i].toString().toLowerCase());
+            }
+        }
+        return lowerUrlContext;
     }
 });
