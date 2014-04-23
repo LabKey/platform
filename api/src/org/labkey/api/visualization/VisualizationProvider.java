@@ -198,16 +198,6 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
                 // ignore hidden columns
                 if (columnMatchType.match(col))
                 {
-                    if (col.getFk() != null)
-                    {
-                        ColumnInfo lookupCol = col.getFk().createLookupColumn(col, null);
-                        if (lookupCol != null)
-                        {
-                            lookupCol.setLabel(col.getLabel());
-                            col = lookupCol;
-                        }
-                    }
-
                     matches.put(Pair.of(col.getFieldKey(), col), query);
                 }
             }

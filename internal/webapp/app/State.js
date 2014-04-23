@@ -216,10 +216,18 @@ Ext.define('LABKEY.app.controller.State', {
         return -1;
     },
 
-    setState : function(lookup, state) {
+    setCustomState : function(lookup, state) {
         if (!this.views.hasOwnProperty(lookup.view))
             this.views[lookup.view] = {};
         this.views[lookup.view][lookup.key] = state;
+    },
+
+    getCustomState : function(view, key) {
+        var custom = undefined;
+        if (this.views.hasOwnProperty(view)) {
+            custom = this.views[view][key];
+        }
+        return custom;
     },
 
     afterViewChange : function(controller, viewname, viewContext, title, skipState) {
