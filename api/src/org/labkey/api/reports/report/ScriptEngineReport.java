@@ -161,7 +161,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         return true;
     }
 
-    public Results generateResults(ViewContext context) throws Exception
+    public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
     {
         ReportDescriptor descriptor = getDescriptor();
         QueryView view = createQueryView(context, descriptor);
@@ -243,7 +243,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
             Results r = null;
             try
             {
-                r = generateResults(context);
+                r = generateResults(context, true);
                 if (r != null && r.getResultSet() != null)
                 {
                     TSVGridWriter tsv = createGridWriter(r);

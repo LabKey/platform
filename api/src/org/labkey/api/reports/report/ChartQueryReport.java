@@ -104,7 +104,7 @@ public class ChartQueryReport extends ChartReport implements Report.ImageMapGene
         return null;
     }
 
-    public Results generateResults(ViewContext context) throws Exception
+    public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
     {
         ReportDescriptor descriptor = getDescriptor();
         ReportQueryView view = createQueryView(context, descriptor);

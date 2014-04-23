@@ -165,7 +165,7 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
     public interface ResultSetGenerator
     {
        // public ResultSet generateResultSet(ViewContext context) throws Exception;
-        public Results generateResults(ViewContext context) throws Exception;
+        public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception;
     }
 
     /**

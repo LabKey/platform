@@ -100,7 +100,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
         {
             CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor)reportDescriptor;
             try {
-                Crosstab crosstab = createCrosstab(context);
+                Crosstab crosstab = createCrosstab(context, true);
                 if (crosstab != null)
                 {
                     ActionURL exportAction = null;
@@ -128,7 +128,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
         return null;
     }
 
-    public Results generateResults(ViewContext context) throws Exception
+    public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
     {
         ReportQueryView view = createQueryView(context, getDescriptor());
         validateQueryView(view);
@@ -137,6 +137,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
             view.getSettings().setMaxRows(Table.ALL_ROWS);
             DataView dataView = view.createDataView();
             DataRegion rgn = dataView.getDataRegion();
+            rgn.setAllowAsync(allowAsyncQuery);
             RenderContext ctx = dataView.getRenderContext();
 
             if (null == rgn.getResultSet(ctx))
@@ -146,10 +147,10 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
         return null;
     }
 
-    protected Crosstab createCrosstab(ViewContext context) throws Exception
+    protected Crosstab createCrosstab(ViewContext context, boolean allowAsyncQuery) throws Exception
     {
         CrosstabReportDescriptor descriptor = (CrosstabReportDescriptor)getDescriptor();
-        Results results = generateResults(context);
+        Results results = generateResults(context, allowAsyncQuery);
         if (results != null)
         {
             FieldKey rowFieldKey = FieldKey.decode(descriptor.getProperty("rowField"));
@@ -185,7 +186,7 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
 
     public ExcelWriter getExcelWriter(ViewContext context) throws Exception
     {
-        Crosstab crosstab = createCrosstab(context);
+        Crosstab crosstab = createCrosstab(context, false);
         if (crosstab != null)
         {
             return crosstab.getExcelWriter();
