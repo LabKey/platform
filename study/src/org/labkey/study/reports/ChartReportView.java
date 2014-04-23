@@ -326,7 +326,7 @@ public class ChartReportView extends AbstractReportView
             return def.getTableInfo(context.getUser());
         }
 
-        public Results generateResults(ViewContext context) throws Exception
+        public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
         {
             ReportDescriptor descriptor = getDescriptor();
             final TableInfo tableInfo = getTable(context, descriptor);

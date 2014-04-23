@@ -5780,7 +5780,7 @@ public class StudyController extends BaseStudyController
             return def.getTableInfo(context.getUser());
         }
 
-        public Results generateResults(ViewContext context) throws Exception
+        public Results generateResults(ViewContext context, boolean allowAsyncQuery) throws Exception
         {
             ReportDescriptor descriptor = getDescriptor();
             final String participantId = descriptor.getProperty("participantId");
