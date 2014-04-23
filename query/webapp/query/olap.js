@@ -786,7 +786,7 @@ Ext4.define('LABKEY.query.olap.MDX', {
             var level = map["[Subject].[Subject]"] || map["[Patient].[Patient]"] ||  map["[Participant].[Participant]"];
             if (level)
             {
-                c.onRows = {level:"[Subject].[Subject]", members:"members"};
+                c.onRows = {level:level.uniqueName, members:"members"};
             }
         }
         this.query(c);
