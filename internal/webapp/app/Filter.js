@@ -200,6 +200,35 @@ Ext.define('LABKEY.app.model.Filter', {
             });
         },
 
+        /**
+         * Deletes participant categories
+         *
+         * @param config, an object which takes the following configuation properties.
+         * @param {Array} [config.categoryIds] array of rowids for each category to delete
+         * @param {Function} [config.failure] Optional.  Function called when the save action fails.  If not specified
+         *        then a default function will be provided
+         * @param {Function} [config.success] Function called when the delete action is successful
+         */
+        deleteGroups : function(config) {
+            if (!config)
+                throw "You must specify a config object";
+
+            if (!config.categoryIds || !config.success)
+                throw "You must specify categoryIds and success members in the config";
+
+            var m = LABKEY.app.model.Filter;
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('argos', 'deletePatientGroups'),
+                method: 'POST',
+                success: config.success,
+                failure: config.failure || m.getErrorCallback(),
+                jsonData: {
+                    categoryIds : config.categoryIds,
+                },
+                headers: {'Content-Type': 'application/json'}
+            });
+        },
+
         fromJSON : function(jsonFilter) {
             var filterWrapper = Ext.decode(jsonFilter);
             return filterWrapper.filters;
