@@ -232,7 +232,9 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         // Assume this button will be hidden; conditionally setVisible(true) in init.
         _importSchemaButton.setVisible(false);
         _exportSchemaButton = new ImageButton("Export Fields", exportSchemaListener);
+        // Visibility rules for InferSchema button are the same as ImportSchema
         _inferSchemaButton = new ImageButton("Infer Fields from File", inferSchemaListener);
+        _inferSchemaButton.setVisible(false);
 
         _contentPanel = new VerticalPanel();
         _contentPanel.add(_noColumnsPanel);
@@ -420,10 +422,13 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             }
         }
 
-        // Certain provisioned tables (Lists and Datasets) always get the Import Fields button. All others only get the
+        // Certain provisioned tables (Lists and Datasets) always get the Import/Infer Fields buttons. All others only get the
         // button on initial creation.
         if (_alwaysAllowImportSchema || domain.getDomainId() == 0)
+        {
             _importSchemaButton.setVisible(true);
+            _inferSchemaButton.setVisible(true);
+        }
 
         fireChangeEvent();
 
