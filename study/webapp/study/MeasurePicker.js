@@ -870,7 +870,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 this.measuresGrid = Ext4.create('Ext.grid.Panel', Ext4.apply(measuresGridConfig, {
                     store: this.measuresStore,
                     viewConfig : { stripeRows : false },
-                    selType: 'checkboxmodel',
+//                    selType: 'checkboxmodel',
+                    selModel: Ext4.create('Ext.selection.CheckboxModel', {mode: 'SIMPLE', toggleOnClick: false, allowDeselect: true}),
                     enableColumnHide: false,
                     enableColumnResize: false,
                     multiSelect: true,
@@ -1101,6 +1102,7 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                     {name   : 'queryLabel'},
                     {name   : 'queryName'},
                     {name   : 'schemaName'},
+                    {name   : 'lookup', defaultValue: {}},
                     {name   : 'type'},
                     {name   : 'selected'},
                     {name   : 'alias'},

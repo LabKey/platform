@@ -41,6 +41,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
@@ -548,6 +549,12 @@ public class VisualizationController extends SpringActionController
 
             props.put("isKeyVariable", col.isKeyVariable());
             props.put("defaultScale", col.getDefaultScale().name());
+
+            Map<String, Object> lookupJSON = JsonWriter.getLookupInfo(col, false);
+            if (lookupJSON != null)
+            {
+                props.put("lookup", lookupJSON);
+            }
 
             return props;
         }
