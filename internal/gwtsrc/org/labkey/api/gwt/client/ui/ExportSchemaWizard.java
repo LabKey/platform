@@ -87,7 +87,6 @@ public class ExportSchemaWizard extends DialogBox
         for (int i=0; i<numProps; i++)
         {
             GWTPropertyDescriptor prop = propertiesEditor.getPropertyDescriptor(i);
-//            if (!propertiesEditor.getDomain().isMandatoryField(prop))
             if (!propertiesEditor.getDomain().isExcludeFromExportField(prop))
             {
                 sb.append(getStringValue(prop.getName())).append("\t");
