@@ -39,7 +39,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
     private SharedTableMapBuilder _personnelTableMapBuilder = new SharedTableMapBuilder(_personnelIdMap, "Label");
 
     /**
-     * Exports additional study related properties into the properties sub folder
+     * Imports additional study related properties into the properties sub folder
      */
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
@@ -56,7 +56,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                     // import any custom study design table properties
                     importTableinfo(ctx, vf, StudyPropertiesWriter.SCHEMA_FILENAME);
 
-                    // import the objectve and personnel tables
+                    // import the objective and personnel tables
                     StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
                     StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
                     List<String> studyPropertyTableNames = new ArrayList<>();
