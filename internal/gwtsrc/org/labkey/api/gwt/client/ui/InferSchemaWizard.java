@@ -98,7 +98,9 @@ public class InferSchemaWizard extends DialogBox
             }
         });
 
-        panel.add(new Label("Note: This will delete all existing fields and associated data."));
+        Label warning = new Label("WARNING: This will delete all existing fields and data!");
+        warning.setStyleName("labkey-error", true);
+        panel.add(warning);
 
         ImageButton cancelButton = new ImageButton("Cancel", new ClickHandler()
         {
