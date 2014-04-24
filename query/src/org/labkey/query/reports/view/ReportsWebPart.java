@@ -23,7 +23,12 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.DbReportIdentifier;
+import org.labkey.api.reports.report.RReport;
+import org.labkey.api.reports.report.RReportDescriptor;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
+import org.labkey.api.reports.report.ScriptReportDescriptor;
+import org.labkey.api.reports.report.view.RenderBackgroundRReportView;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.view.*;
@@ -88,9 +93,24 @@ public class ReportsWebPart extends WebPartView
 
         if (_report != null)
         {
-            HttpView view = showTabs ?
-                    _report.getRunReportView(getViewContext()) :
-                    _report.renderReport(getViewContext());
+            HttpView view;
+
+            if (showTabs)
+            {
+                view = _report.getRunReportView(getViewContext());
+            }
+            else
+            {
+                ReportDescriptor descriptor = _report.getDescriptor();
+                boolean runInBackground = BooleanUtils.toBoolean(descriptor.getProperty(ScriptReportDescriptor.Prop.runInBackground));
+
+                // for now, limit pipeline view to saved R reports
+                if (runInBackground && _report instanceof RReport)
+                    view = new RenderBackgroundRReportView((RReport)_report);
+                else
+                    view = _report.renderReport(getViewContext());
+            }
+
             if (view != null)
             {
                 include(view);

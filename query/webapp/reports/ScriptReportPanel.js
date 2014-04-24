@@ -302,196 +302,200 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             }]
         });
 
-        if (!this.readOnly)
+        items.push({
+            xtype : 'fieldset',
+            title : 'Options',
+            hidden: this.readOnly,
+            defaults    : {xtype : 'checkbox', labelWidth : 12},
+            items : [
+                {name : 'shareReport',
+                    boxLabel : 'Make this view available to all users',
+                    checked : this.reportConfig.shareReport,
+                    listeners : {
+                        scope: this,
+                        'change': function(cb, value) {
+                            this.down('checkbox[name=sourceTabVisible]').setDisabled(!value);
+                            if (!value)
+                                this.down('checkbox[name=sourceTabVisible]').setValue(null);
+                        }
+                    }
+                },
+                {name : 'sourceTabVisible', boxLabel : 'Show source tab to all users', fieldLabel : ' ', checked : this.reportConfig.sourceTabVisible, disabled : !this.reportConfig.shareReport},
+                {name : 'inheritable',
+                        hidden : !this.reportConfig.allowInherit,
+                        boxLabel : 'Make this view available in child folders&nbsp;' +
+                                '<span data-qtip="If this check box is selected, this view will be available in data grids of child folders where the schema and table are the same as this data grid."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                        checked : this.reportConfig.inheritable},
+                {name : 'runInBackground',
+                    hidden : !this.reportConfig.supportsPipeline,
+                    boxLabel : 'Run this view in the background as a pipeline job',
+                    checked : this.reportConfig.runInBackground,
+                    listeners : {
+                        scope: this,
+                        'change': function(cb, value) {this.runInBackground = value;}
+                    }
+                }
+            ]
+        });
+
+        if (this.reportConfig.knitrOptions)
         {
             items.push({
                 xtype : 'fieldset',
-                title : 'Options',
-                defaults    : {xtype : 'checkbox', labelWidth : 12},
+                title : 'Knitr Options',
+                collapsible : true,
+                collapsed   : true,
+                defaults    : {xtype : 'radio', labelWidth : 12},
+                hidden      : this.readOnly,
                 items : [
-                    {name : 'shareReport',
-                        boxLabel : 'Make this view available to all users',
-                        checked : this.reportConfig.shareReport,
-                        listeners : {
-                            scope: this,
-                            'change': function(cb, value) {
-                                this.down('checkbox[name=sourceTabVisible]').setDisabled(!value);
-                                if (!value)
-                                    this.down('checkbox[name=sourceTabVisible]').setValue(null);
-                            }
-                        }
-                    },
-                    {name : 'sourceTabVisible', boxLabel : 'Show source tab to all users', fieldLabel : ' ', checked : this.reportConfig.sourceTabVisible, disabled : !this.reportConfig.shareReport},
-                    {name : 'inheritable',
-                            hidden : !this.reportConfig.allowInherit,
-                            boxLabel : 'Make this view available in child folders&nbsp;' +
-                                    '<span data-qtip="If this check box is selected, this view will be available in data grids of child folders where the schema and table are the same as this data grid."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
-                            checked : this.reportConfig.inheritable},
-                    {name : 'runInBackground',
-                        hidden : !this.reportConfig.supportsPipeline,
-                        boxLabel : 'Run this view in the background as a pipeline job',
-                        checked : this.reportConfig.runInBackground,
-                        listeners : {
-                            scope: this,
-                            'change': function(cb, value) {this.runInBackground = value;}
-                        }
+                    {name : 'knitrFormat',
+                        inputValue : 'None',
+                        boxLabel : 'None&nbsp;' +
+                                '<span data-qtip="The source is run without going through knitr."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                        checked : this.reportConfig.knitrFormat == 'None'},
+                    {name : 'knitrFormat',
+                        inputValue : 'Html',
+                        boxLabel : 'Html&nbsp;' +
+                                '<span data-qtip="Use knitr to process html source"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                        checked : this.reportConfig.knitrFormat == 'Html'},
+                    {name : 'knitrFormat',
+                        inputValue : 'Markdown',
+                        boxLabel : 'Markdown&nbsp;' +
+                                '<span data-qtip="Use knitr to process markdown source"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                        checked : this.reportConfig.knitrFormat == 'Markdown'},
+                    { xtype : 'label',
+                      html : 'Dependencies&nbsp;' +
+                              '<span data-qtip="Add a semi-colon delimited list of javascript, CSS, or library dependencies here."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>'},
+                    { name : 'scriptDependencies',
+                        xtype : 'textarea',
+                        value : this.reportConfig.scriptDependencies,
+                        margin : '5 0 0 0',
+                        grow : true,
+                        width : 450,
+                        hideLabel : true
                     }
                 ]
             });
+        }
 
-            if (this.reportConfig.knitrOptions)
+        if (this.reportConfig.javascriptOptions)
+        {
+            items.push({
+                xtype : 'fieldset',
+                title : 'JavaScript Options',
+                collapsible : true,
+                collapsed   : true,
+                hidden      : this.readOnly,
+                defaults    : {xtype : 'checkbox', labelWidth : 12},
+                items : [
+                    {name : 'useGetDataApi',
+                        boxLabel : 'Use GetData API&nbsp;' +
+                        '<span data-qtip="Uses the GetData API to retrieve data. Allows you to pass the data through one or more transforms before retrieving it. ' +
+                                    'See the documentation at : www.labkey.org/download/clientapi_docs/javascript-api/symbols/LABKEY.Query.GetData.html"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                        checked : this.reportConfig.useGetDataApi,
+                        uncheckedValue : false}
+                ]
+            });
+        }
+
+        if (this.reportConfig.thumbnailOptions)
+        {
+            // thumbnail options
+            var thumbnails = [];
+
+            thumbnails.push({name : 'thumbnailType',
+                boxLabel : 'Auto-generate&nbsp;' +
+                        '<span data-qtip="Auto-generate a new thumbnail based on the first available output from this report (i.e. image, pdf, etc.)"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                inputValue : 'AUTO', checked : this.reportConfig.thumbnailType == 'AUTO'});
+            thumbnails.push({name : 'thumbnailType',
+                boxLabel : 'None&nbsp;' +
+                        '<span data-qtip="Use the default static image for this report"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                inputValue : 'NONE', checked : this.reportConfig.thumbnailType == 'NONE'});
+
+            if (this.reportConfig.thumbnailType == 'CUSTOM')
+                thumbnails.push({name : 'thumbnailType', boxLabel : 'Keep existing', inputValue : 'CUSTOM', checked : true});
+
+            items.push({
+                xtype : 'fieldset',
+                title : 'Report Thumbnail',
+                defaults    : {xtype : 'radio'},
+                collapsible : true,
+                collapsed   : true,
+                hidden      : this.readOnly,
+                items       : thumbnails
+            });
+        }
+
+        if (this.sharedScripts && this.sharedScripts.length > 0)
+        {
+            var scripts = [];
+
+            for (var i=0; i < this.sharedScripts.length; i++)
             {
-                items.push({
-                    xtype : 'fieldset',
-                    title : 'Knitr Options',
-                    collapsible : true,
-                    collapsed   : true,
-                    defaults    : {xtype : 'radio', labelWidth : 12},
-                    items : [
-                        {name : 'knitrFormat',
-                            inputValue : 'None',
-                            boxLabel : 'None&nbsp;' +
-                                    '<span data-qtip="The source is run without going through knitr."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
-                            checked : this.reportConfig.knitrFormat == 'None'},
-                        {name : 'knitrFormat',
-                            inputValue : 'Html',
-                            boxLabel : 'Html&nbsp;' +
-                                    '<span data-qtip="Use knitr to process html source"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
-                            checked : this.reportConfig.knitrFormat == 'Html'},
-                        {name : 'knitrFormat',
-                            inputValue : 'Markdown',
-                            boxLabel : 'Markdown&nbsp;' +
-                                    '<span data-qtip="Use knitr to process markdown source"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
-                            checked : this.reportConfig.knitrFormat == 'Markdown'},
-                        { xtype : 'label',
-                          html : 'Dependencies&nbsp;' +
-                                  '<span data-qtip="Add a semi-colon delimited list of javascript, CSS, or library dependencies here."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>'},
-                        { name : 'scriptDependencies',
-                            xtype : 'textarea',
-                            value : this.reportConfig.scriptDependencies,
-                            margin : '5 0 0 0',
-                            grow : true,
-                            width : 450,
-                            hideLabel : true
-                        }
-                    ]
-                });
-            }
-
-            if (this.reportConfig.javascriptOptions)
-            {
-                items.push({
-                    xtype : 'fieldset',
-                    title : 'JavaScript Options',
-                    collapsible : true,
-                    collapsed   : true,
-                    defaults    : {xtype : 'checkbox', labelWidth : 12},
-                    items : [
-                        {name : 'useGetDataApi',
-                            boxLabel : 'Use GetData API&nbsp;' +
-                            '<span data-qtip="Uses the GetData API to retrieve data. Allows you to pass the data through one or more transforms before retrieving it. ' +
-                                        'See the documentation at : www.labkey.org/download/clientapi_docs/javascript-api/symbols/LABKEY.Query.GetData.html"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
-                            checked : this.reportConfig.useGetDataApi,
-                            uncheckedValue : false}
-                    ]
-                });
-            }
-
-            if (this.reportConfig.thumbnailOptions)
-            {
-                // thumbnail options
-                var thumbnails = [];
-
-                thumbnails.push({name : 'thumbnailType',
-                    boxLabel : 'Auto-generate&nbsp;' +
-                            '<span data-qtip="Auto-generate a new thumbnail based on the first available output from this report (i.e. image, pdf, etc.)"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
-                    inputValue : 'AUTO', checked : this.reportConfig.thumbnailType == 'AUTO'});
-                thumbnails.push({name : 'thumbnailType',
-                    boxLabel : 'None&nbsp;' +
-                            '<span data-qtip="Use the default static image for this report"><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
-                    inputValue : 'NONE', checked : this.reportConfig.thumbnailType == 'NONE'});
-
-                if (this.reportConfig.thumbnailType == 'CUSTOM')
-                    thumbnails.push({name : 'thumbnailType', boxLabel : 'Keep existing', inputValue : 'CUSTOM', checked : true});
-
-                items.push({
-                    xtype : 'fieldset',
-                    title : 'Report Thumbnail',
-                    defaults    : {xtype : 'radio'},
-                    collapsible : true,
-                    collapsed   : true,
-                    items       : thumbnails
-                });
-            }
-
-            if (this.sharedScripts && this.sharedScripts.length > 0)
-            {
-                var scripts = [];
-
-                for (var i=0; i < this.sharedScripts.length; i++)
-                {
-                    var script = this.sharedScripts[i];
-                    scripts.push({name : 'includedReports', boxLabel : script.name, inputValue : script.reportId, checked : script.included});
-                }
-
-                items.push({
-                    xtype : 'fieldset',
-                    title : 'Shared Scripts',
-                    collapsible : true,
-                    collapsed   : true,
-                    defaults    : {xtype : 'checkbox'},
-                    items : scripts
-                });
-            }
-
-            if (this.reportConfig.studyOptions && LABKEY.moduleContext.study)
-            {
-                var subjectNoun = LABKEY.moduleContext.study.subject.nounSingular;
-                items.push({
-                    xtype : 'fieldset',
-                    title : 'Study Options',
-                    collapsible : true,
-                    collapsed   : true,
-                    defaults    : {xtype : 'checkbox', labelWidth : 12},
-                    items : [
-                        {name : 'filterParam',
-                            inputValue : 'participantId',
-                            boxLabel : subjectNoun + ' chart&nbsp;' +
-                            '<span data-qtip="' + subjectNoun + ' chart views show measures for only one ' + subjectNoun + ' at a time. ' + subjectNoun +
-                                                    ' chart views allow the user to step through charts for each ' + subjectNoun + ' shown in any dataset grid."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
-                            checked : this.reportConfig.filterParam == 'participantId'},
-                        {name : 'cached',
-                            boxLabel : 'Automatically cache this report for faster reloading',
-                            checked : this.reportConfig.cached}
-                    ]
-                });
+                var script = this.sharedScripts[i];
+                scripts.push({name : 'includedReports', boxLabel : script.name, inputValue : script.reportId, checked : script.included});
             }
 
             items.push({
-                xtype   : 'button',
-                text    : 'Save',
-                handler : function() {
-
-                    if (this.reportConfig.reportId)
-                        this.save();
-                    else
-                    {
-                        Ext4.MessageBox.show({
-                            title   : 'Save View',
-                            msg     : 'Please enter a view name:',
-                            buttons : Ext4.MessageBox.OKCANCEL,
-                            fn      : function(btnId, name) {
-                                if (btnId == 'ok')
-                                    this.save(name);
-                            },
-                            prompt  : true,
-                            scope   : this
-                        });
-                    }
-                },
-                scope : this
+                xtype : 'fieldset',
+                title : 'Shared Scripts',
+                collapsible : true,
+                collapsed   : true,
+                defaults    : {xtype : 'checkbox'},
+                hidden      : this.readOnly,
+                items : scripts
             });
         }
+
+        if (this.reportConfig.studyOptions && LABKEY.moduleContext.study)
+        {
+            var subjectNoun = LABKEY.moduleContext.study.subject.nounSingular;
+            items.push({
+                xtype : 'fieldset',
+                title : 'Study Options',
+                collapsible : true,
+                collapsed   : true,
+                hidden      : this.readOnly,
+                defaults    : {xtype : 'checkbox', labelWidth : 12},
+                items : [
+                    {name : 'filterParam',
+                        inputValue : 'participantId',
+                        boxLabel : subjectNoun + ' chart&nbsp;' +
+                        '<span data-qtip="' + subjectNoun + ' chart views show measures for only one ' + subjectNoun + ' at a time. ' + subjectNoun +
+                                                ' chart views allow the user to step through charts for each ' + subjectNoun + ' shown in any dataset grid."><img src="' + LABKEY.contextPath + '/_images/question.png"/></span>',
+                        checked : this.reportConfig.filterParam == 'participantId'},
+                    {name : 'cached',
+                        boxLabel : 'Automatically cache this report for faster reloading',
+                        checked : this.reportConfig.cached}
+                ]
+            });
+        }
+
+        items.push({
+            xtype   : 'button',
+            text    : 'Save',
+            hidden  : this.readOnly,
+            handler : function() {
+
+                if (this.reportConfig.reportId)
+                    this.save();
+                else
+                {
+                    Ext4.MessageBox.show({
+                        title   : 'Save View',
+                        msg     : 'Please enter a view name:',
+                        buttons : Ext4.MessageBox.OKCANCEL,
+                        fn      : function(btnId, name) {
+                            if (btnId == 'ok')
+                                this.save(name);
+                        },
+                        prompt  : true,
+                        scope   : this
+                    });
+                }
+            },
+            scope : this
+        });
 
         // hidden elements
         items.push({xtype : 'hidden', name : 'reportType', value : this.reportConfig.reportType});
