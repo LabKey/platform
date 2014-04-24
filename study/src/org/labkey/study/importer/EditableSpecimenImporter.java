@@ -175,12 +175,12 @@ public class EditableSpecimenImporter extends SpecimenImporter
             _specialColumnNameMap.put("latestqualitycomments", "qualitycomments");
 
             // Add any rollups from optionals whose names are not matching
-            RollupMap matchedRollups = SpecimenImporter.getEventToVialRollups(getContainer(), getUser());
-            for (Map.Entry<String, List<RollupPair>> entry : matchedRollups.entrySet())
+            RollupMap<EventVialRollup> matchedRollups = SpecimenImporter.getEventToVialRollups(getContainer(), getUser());
+            for (Map.Entry<String, List<RollupInstance<EventVialRollup>>> entry : matchedRollups.entrySet())
             {
                 String fromName = entry.getKey();
-                List<RollupPair> rollupItems = entry.getValue();
-                for (RollupPair rollupItem : rollupItems)
+                List<RollupInstance<EventVialRollup>> rollupItems = entry.getValue();
+                for (RollupInstance<EventVialRollup> rollupItem : rollupItems)
                 {
                     String toName = rollupItem.first;
                     if (!fromName.equalsIgnoreCase(toName))

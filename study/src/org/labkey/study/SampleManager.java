@@ -57,7 +57,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.importer.SpecimenImporter;
-import org.labkey.study.importer.SpecimenImporter.Rollup;
+import org.labkey.study.importer.SpecimenImporter.VialSpecimenRollup;
 import org.labkey.study.model.*;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
@@ -72,7 +72,6 @@ import org.labkey.study.samples.settings.StatusSettings;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
-import javax.servlet.ServletException;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.io.InputStream;
@@ -606,12 +605,12 @@ public class SampleManager implements ContainerManager.ContainerListener
 
         String tableInfoSpecimenSelectName = tableInfoSpecimen.getSelectName();
         String tableInfoVialSelectName = tableInfoVial.getSelectName();
-        SpecimenImporter.RollupMap matchedRollups = SpecimenImporter.getVialToSpecimenRollups(container, user);
+        SpecimenImporter.RollupMap<VialSpecimenRollup> matchedRollups = SpecimenImporter.getVialToSpecimenRollups(container, user);
 
         SQLFragment updateSql = new SQLFragment();
         updateSql.append("UPDATE ").append(tableInfoSpecimenSelectName).append(UPDATE_SPECIMEN_SETS);
-        for (List<SpecimenImporter.RollupPair> rollupList : matchedRollups.values())
-            for (Pair<String, Rollup> rollupItem : rollupList)
+        for (List<SpecimenImporter.RollupInstance<VialSpecimenRollup>> rollupList : matchedRollups.values())
+            for (Pair<String, VialSpecimenRollup> rollupItem : rollupList)
                 updateSql.append(",\n    ").append(rollupItem.first).append(" = VialCounts.").append(rollupItem.first);
 
         updateSql.append(UPDATE_SPECIMEN_SELECTS);
@@ -622,13 +621,13 @@ public class SampleManager implements ContainerManager.ContainerListener
         updateSql.add(Boolean.TRUE); // LockedInRequest case of ExpectedAvailableCount
         updateSql.add(Boolean.FALSE); // Requestable case of ExpectedAvailableCount
 
-        for (Map.Entry<String, List<SpecimenImporter.RollupPair>> entry : matchedRollups.entrySet())
+        for (Map.Entry<String, List<SpecimenImporter.RollupInstance<VialSpecimenRollup>>> entry : matchedRollups.entrySet())
         {
             String fromName = entry.getKey();
-            for (SpecimenImporter.RollupPair rollupItem : entry.getValue())
+            for (SpecimenImporter.RollupInstance<VialSpecimenRollup> rollupItem : entry.getValue())
             {
                 String toName = rollupItem.first;
-                Rollup rollup = rollupItem.second;
+                VialSpecimenRollup rollup = rollupItem.second;
                 updateSql.append(",\n\t\t").append(rollup.getRollupSql(fromName, toName));
             }
         }
