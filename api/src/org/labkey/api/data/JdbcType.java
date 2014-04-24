@@ -18,6 +18,7 @@ package org.labkey.api.data;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
@@ -422,6 +423,28 @@ public enum JdbcType
         return converter.convert(cls, s);
     }
 
+    public static Object add(@NotNull Object obj1, @NotNull Object obj2, JdbcType type)
+    {
+        switch (type)
+        {
+            case BIGINT:
+                return (Long)obj1 + (Long)obj2;
+            case DECIMAL:
+                return ((BigDecimal)obj1).add((BigDecimal)obj2);
+            case DOUBLE:
+                return (Double)obj1 + (Double)obj2;
+            case INTEGER:
+                return (Integer)obj1 + (Integer)obj2;
+            case REAL:
+                return (Float)obj1 + (Float)obj2;
+            case SMALLINT:
+                return (Short)obj1 + (Short)obj2;
+            case TINYINT:
+                return (Short)obj1 + (Short)obj2;
+            default:
+                throw new IllegalStateException("Cannot add non-numeric objects.");
+        }
+    }
 
     protected Object _fromNumber(Number n)
     {
