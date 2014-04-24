@@ -21,7 +21,11 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.portal.ProjectUrls;
+import org.labkey.api.study.StudyFolderTabs;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.importer.StudyImportContext;
@@ -63,6 +67,12 @@ public class SpecimenBatch extends StudyBatch implements Serializable, StudyJobS
         if (_definitionFile != null)
             description += ": " + _definitionFile.getName();
         return description;
+    }
+
+    @Override
+    public ActionURL getStatusHref()
+    {
+        return PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(getInfo().getContainer(), StudyFolderTabs.SpecimensPage.PAGE_ID);
     }
 
     public File getSpecimenArchive()
