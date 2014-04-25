@@ -238,7 +238,7 @@ public class Designer implements EntryPoint
         }
 
 
-        if (null != panelName && "assays".equals(panelName.toLowerCase()) && "true".equals(PropertyUtil.getServerProperty("canAdmin")))
+        if (null != panelName && "assays".equals(panelName.toLowerCase()) && "true".equals(PropertyUtil.getServerProperty("canEdit")))
         {
             if (!isReadOnly())
             {
@@ -252,7 +252,10 @@ public class Designer implements EntryPoint
                     }
                 }));
             }
+        }
 
+        if (null != panelName && "assays".equals(panelName.toLowerCase()) && "true".equals(PropertyUtil.getServerProperty("canAdmin")))
+        {
             if (definition.getAssaySchedule().getAssays().size() > 0)
             {
                 Widget createPlaceholderDatasetsButton = new ImageButton("Create Assay Datasets", new ClickHandler()

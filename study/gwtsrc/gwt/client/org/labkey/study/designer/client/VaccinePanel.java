@@ -77,7 +77,7 @@ public class VaccinePanel extends Composite
                     "<li>Use the immunizations tab to describe the schedule of immunizations and combinations of immunogens and adjuvants administered at each timepoint.</ul>";
             vPanel.add(new HTML(html));
 
-            if ("true".equals(PropertyUtil.getServerProperty("canAdmin")))
+            if ("true".equals(PropertyUtil.getServerProperty("canEdit")))
             {
                 final boolean showAllLookups = "true".equals(PropertyUtil.getServerProperty("showAllLookups"));
                 HorizontalPanel hp = new HorizontalPanel();

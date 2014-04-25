@@ -26,6 +26,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.Visit;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
@@ -38,6 +39,8 @@ import org.labkey.study.query.DataspaceContainerFilter;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -137,11 +140,52 @@ public class SequenceVisitManager extends VisitManager
     }
 
 
+    /*
+    // TODO: this is a peformance HACK
+    // TODO: we should be incrementally updating ParticipantVisit, rather than trying to speed up resync!
+    // TDOO: see 19867: Speed issues when inserting into study datasets
+    */
+    protected void updateParticipantVisitTableAfterInsert(@Nullable User user, DataSetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants)
+    {
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        Container container = getStudy().getContainer();
+        TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+        TableInfo tableStudyData = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), Collections.singleton(ds), user);
+
+        //
+        // populate ParticipantVisit
+        //
+        SQLFragment sqlInsertParticipantVisit = new SQLFragment();
+        sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
+        sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
+        sqlInsertParticipantVisit.append("SELECT ?, ParticipantId, SequenceNum,\n");
+        sqlInsertParticipantVisit.add(container);
+        sqlInsertParticipantVisit.append("MIN(").append(getParticipantSequenceNumExpr(schema, "ParticipantId", "SequenceNum")).append(") AS ParticipantSequenceNum\n");
+        sqlInsertParticipantVisit.append("FROM ").append(tableStudyData, "SD").append("\n");
+        sqlInsertParticipantVisit.append("WHERE NOT EXISTS (SELECT ParticipantId, SequenceNum FROM ");
+        sqlInsertParticipantVisit.append(tableParticipantVisit, "PV").append("\n");
+        sqlInsertParticipantVisit.append("WHERE Container = ? AND SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum)\n");
+        sqlInsertParticipantVisit.add(container);
+        if (null != potentiallyAddedParticipants && !potentiallyAddedParticipants.isEmpty())
+        {
+            sqlInsertParticipantVisit.append(" AND SD.ParticipantId ");
+            schema.getSqlDialect().appendInClauseSql(sqlInsertParticipantVisit, potentiallyAddedParticipants.toArray());
+            sqlInsertParticipantVisit.append("\n");
+        }
+        sqlInsertParticipantVisit.append("GROUP BY ParticipantId, SequenceNum");
+        SqlExecutor executor = new SqlExecutor(schema);
+        executor.execute(sqlInsertParticipantVisit);
+
+        _updateVisitRowId(false);
+        _updateVisitDate(user, ds);
+    }
+
+
+
     protected void updateParticipantVisitTable(@Nullable User user)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         Container container = getStudy().getContainer();
-        TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
         TableInfo tableParticipant = StudySchema.getInstance().getTableInfoParticipant();
         TableInfo tableSpecimen = getSpecimenTable(getStudy());
@@ -197,11 +241,23 @@ public class SequenceVisitManager extends VisitManager
         //
         // fill in VisitRowId (need this to do the VisitDate computation)
         //
-        _updateVisitRowId();
+        _updateVisitRowId(true);
 
         //
         // upate VisitDate
         //
+
+        _updateVisitDate(user);
+    }
+
+
+    private void _updateVisitDate(User user)
+    {
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        Container container = getStudy().getContainer();
+        TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+        TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
+        SqlExecutor executor = new SqlExecutor(schema);
 
         // update ParticipantVisit.VisitDate based on declared Visit.visitDateDatasetId
         ArrayList<DataSetDefinition> defsWithVisitDates = new ArrayList<>();
@@ -262,7 +318,57 @@ public class SequenceVisitManager extends VisitManager
     }
 
 
-    private void _updateVisitRowId()
+    private void _updateVisitDate(User user, DataSetDefinition def)
+    {
+        if (null == def.getVisitDateColumnName())
+            return;
+
+        // are there any visits marking this as the visitdataset?
+        boolean isVisitDateDataset = false;
+        for (Visit v : getStudy().getVisits(Visit.Order.SEQUENCE_NUM))
+        {
+            if (v.getVisitDateDatasetId() == def.getDataSetId())
+            {
+                isVisitDateDataset = true;
+                break;
+            }
+        }
+        if (!isVisitDateDataset)
+            return;
+
+        DbSchema schema = StudySchema.getInstance().getSchema();
+        Container container = getStudy().getContainer();
+        TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
+        TableInfo tableVisit = StudySchema.getInstance().getTableInfoVisit();
+        SqlExecutor executor = new SqlExecutor(schema);
+
+        // update ParticipantVisit.VisitDate based on declared Visit.visitDateDatasetId
+        TableInfo tableStudyDataFiltered = StudySchema.getInstance().getTableInfoStudyDataFiltered(getStudy(), Collections.singleton(def), user);
+        SQLFragment sqlUpdateVisitDates = new SQLFragment();
+        sqlUpdateVisitDates.append("UPDATE ").append(tableParticipantVisit.getSelectName());
+        if (!schema.getSqlDialect().isSqlServer())
+            sqlUpdateVisitDates.append(" PV");          // For Postgres put "PV" here
+        sqlUpdateVisitDates.append("\n").append("SET VisitDate = _VisitDate, Day = _VisitDay FROM\n")
+                .append(" (\n")
+                .append(" SELECT DISTINCT _VisitDate, _VisitDay, SequenceNum, ParticipantId, DatasetId\n")
+                .append(" FROM ").append(tableStudyDataFiltered.getFromSQL("SD1")).append(") SD,  ")
+                .append(tableVisit.getFromSQL("V"));
+
+        if (schema.getSqlDialect().isSqlServer())
+            sqlUpdateVisitDates.append(", ").append(tableParticipantVisit.getFromSQL("PV"));     // Have to put the "PV" here for MSSQL
+
+        sqlUpdateVisitDates.append("\n WHERE  PV.VisitRowId = V.RowId AND")    // 'join' V
+                .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
+                .append("   ? = V.VisitDateDatasetId AND V.Container=? AND PV.Container=?\n");
+
+        sqlUpdateVisitDates.add(def.getDataSetId());
+        sqlUpdateVisitDates.add(container);
+        sqlUpdateVisitDates.add(container);
+        executor.execute(sqlUpdateVisitDates);
+    }
+
+
+    private void _updateVisitRowId(boolean updateAll)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         TableInfo tableParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
@@ -279,6 +385,8 @@ public class SequenceVisitManager extends VisitManager
         if (schema.getSqlDialect().isSqlServer()) // for SQL Server 2000
             sqlUpdateVisitRowId += "FROM " + tableParticipantVisit + " ParticipantVisit\n";
         sqlUpdateVisitRowId += "WHERE Container=?";
+        if (!updateAll)
+            sqlUpdateVisitRowId += " AND VisitRowId IS NULL";
         new SqlExecutor(schema).execute(sqlUpdateVisitRowId, getStudy().getContainer(), getStudy().getContainer());
     }
 
@@ -308,7 +416,7 @@ public class SequenceVisitManager extends VisitManager
         if (sequenceNums.size() > 0)
         {
             StudyManager.getInstance().ensureVisits(getStudy(), user, sequenceNums, null);
-            _updateVisitRowId();
+            _updateVisitRowId(true);
         }
     }
 

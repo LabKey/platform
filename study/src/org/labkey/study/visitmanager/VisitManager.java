@@ -117,7 +117,19 @@ public abstract class VisitManager
         updateParticipants(changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants);
         if (participantVisitResyncRequired)
         {
-            updateParticipantVisitTable(user);
+            boolean mightHaveDeletedParticipants = null==potentiallyDeletedParticipants || !potentiallyDeletedParticipants.isEmpty();
+            boolean exactlyOneDataset = null != changedDatasets && 1==changedDatasets.size();
+            if (!mightHaveDeletedParticipants && exactlyOneDataset)
+            {
+                Iterator<DataSetDefinition> it = changedDatasets.iterator();
+                it.hasNext();
+                DataSetDefinition ds = it.next();
+                updateParticipantVisitTableAfterInsert(user, ds, potentiallyAddedParticipants);
+            }
+            else
+            {
+                updateParticipantVisitTable(user);
+            }
         }
         updateVisitTable(user);
 
@@ -165,6 +177,10 @@ public abstract class VisitManager
     }
 
     protected abstract void updateParticipantVisitTable(@Nullable User user);
+    protected void updateParticipantVisitTableAfterInsert(@Nullable User user, @Nullable DataSetDefinition ds, @Nullable Set<String> potentiallyAddedParticipants)
+    {
+        updateParticipantVisitTable(user);
+    }
     protected abstract void updateVisitTable(User user);
 
     // Produce appropriate SQL for getVisitSummary().  The SQL must select dataset ID, sequence number, and then the specified statistics;

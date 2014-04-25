@@ -1382,12 +1382,12 @@ public class DavController extends SpringActionController
 
                             // Displaying the lock-null resources present in that
                             // collection
-                            List currentLockNullResources = (List) lockNullResources.get(currentPath);
+                            List<Path> currentLockNullResources = lockNullResources.get(currentPath);
                             if (currentLockNullResources != null)
                             {
-                                for (Object currentLockNullResource : currentLockNullResources)
+                                for (Path currentLockNullResource : currentLockNullResources)
                                 {
-                                    String lockNullPath = (String) currentLockNullResource;
+                                    Path lockNullPath = currentLockNullResource;
                                     resourceWriter.writeLockNullProperties(lockNullPath, type, properties);
                                 }
                             }
@@ -1632,7 +1632,7 @@ public class DavController extends SpringActionController
          * @param propertiesVector If the propfind type is find properties by
          *                         name, then this Vector contains those properties
          */
-        public void writeLockNullProperties(String path, Find type, List<String> propertiesVector) throws Exception;
+        public void writeLockNullProperties(Path path, Find type, List<String> propertiesVector) throws Exception;
 
         void sendData() throws Exception;
     }
@@ -1683,6 +1683,7 @@ public class DavController extends SpringActionController
             /* NYI */
         }
 
+        @Override
         public void writeProperties(WebdavResource resource, Find type, List<String> propertiesVector)
         {
             boolean exists = resource.exists();
@@ -2158,7 +2159,8 @@ public class DavController extends SpringActionController
         }
 
 
-        public void writeLockNullProperties(String path, Find type, List<String> propertiesVector) throws DavException
+        @Override
+        public void writeLockNullProperties(Path path, Find type, List<String> propertiesVector) throws DavException
         {
             // Retrieving the lock associated with the lock-null resource
             LockInfo lock = (LockInfo) resourceLocks.get(path);
@@ -2464,10 +2466,11 @@ public class DavController extends SpringActionController
             return obj;
         }
 
-        public void writeLockNullProperties(String path, Find type, List<String> propertiesVector) throws Exception
+        @Override
+        public void writeLockNullProperties(Path path, Find type, List<String> propertiesVector) throws Exception
         {
             // Retrieving the lock associated with the lock-null resource
-            LockInfo lock = (LockInfo) resourceLocks.get(path);
+            LockInfo lock = resourceLocks.get(path);
             if (lock == null)
                 return;
 
