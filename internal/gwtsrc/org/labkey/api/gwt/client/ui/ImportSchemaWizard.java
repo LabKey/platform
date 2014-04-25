@@ -40,7 +40,7 @@ class ImportSchemaWizard extends DialogBox
         if (propertiesEditor._domain.getFields().size() > 0)
         {
             warning = "<b><font class=\"labkey-error\">WARNING: This will delete all existing fields and data!<br/>" +
-                    "If you only wish to rename, add or delete columns, use the domain editor.</font></b>";
+                    "If you only wish to rename, add or delete fields, use the domain editor.</font></b>";
         }
         HTML html = new HTML(
             warning +
