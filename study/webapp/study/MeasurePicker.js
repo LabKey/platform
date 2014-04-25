@@ -870,8 +870,11 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 this.measuresGrid = Ext4.create('Ext.grid.Panel', Ext4.apply(measuresGridConfig, {
                     store: this.measuresStore,
                     viewConfig : { stripeRows : false },
-//                    selType: 'checkboxmodel',
-                    selModel: Ext4.create('Ext.selection.CheckboxModel', {mode: 'SIMPLE', toggleOnClick: false, allowDeselect: true}),
+                    selType: 'checkboxmodel',
+                    selModel: {
+                        checkOnly: true,
+                        checkSelector: 'td.x-grid-cell-row-checker'
+                    },
                     enableColumnHide: false,
                     enableColumnResize: false,
                     multiSelect: true,
