@@ -230,6 +230,7 @@ public class JSONSerializer
 
             for (GWTAssayDefinition gwtAssayDefinition : gAssaySchedule.getAssays())
             {
+                boolean wasArrayEmitted = false;
                 for (GWTTimepoint gwtTimepoint : gAssaySchedule.getTimepoints())
                 {
                     GWTAssayNote gwtAssayNote = gAssaySchedule.getAssayPerformed(gwtAssayDefinition, gwtTimepoint);
@@ -239,8 +240,17 @@ public class JSONSerializer
                         jAssay.put("name", gwtAssayDefinition.getAssayName());
                         jAssay.put("timepoint", createTimepoint(gwtTimepoint));
                         jAssay.put("sampleMeasure", createSampleMeasure(gwtAssayNote.getSampleMeasure()));
+                        jAssay.put("lab", gwtAssayDefinition.getLab());
                         jAssaySchedule.append("assays", jAssay);
+                        wasArrayEmitted = true;
                     }
+                }
+                if (!wasArrayEmitted)
+                {
+                    JSONObject jAssay = new JSONObject();
+                    jAssay.put("name", gwtAssayDefinition.getAssayName());
+                    jAssay.put("lab", gwtAssayDefinition.getLab());
+                    jAssaySchedule.append("assays", jAssay);
                 }
             }
             j.put("assaySchedule", jAssaySchedule);
