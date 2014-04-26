@@ -60,6 +60,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
         if (this.visibleFields['author']) {
 
             var authorStore = LABKEY.study.DataViewUtil.getUsersStore();
+            var storeLoaded = false;
 
             // since forceSelection is true  we must set the initial value
             // after the store is loaded
@@ -68,6 +69,8 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 if (af) {
                     af.setValue(af.initialConfig.value);
                 }
+                storeLoaded = true;
+                this.isValid();
             }, this, {single: true});
 
             propertiesItems.push({
@@ -86,7 +89,10 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 valueField : 'UserId',
                 emptyText: 'None',
                 labelWidth : 120,
-                width      : 400
+                width      : 400,
+                validator  : function(){
+                    return storeLoaded;
+                }
             });
         }
 
@@ -139,6 +145,7 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
 
         if (this.visibleFields['category']) {
 
+            var categoryStoreLoaded = false;
             propertiesItems.push({
                 xtype       : 'combo',
                 fieldLabel  : 'Category',
@@ -166,6 +173,8 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                                 }
                             }
                             combo.addClass('category-loaded-marker');
+                            categoryStoreLoaded = true;
+                            this.isValid();
                         }, this, {single: true});
 
                     },
@@ -182,7 +191,10 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                             '</tpl>',
                         '</li>',
                     '</tpl></ul>'
-                )
+                ),
+                validator : function() {
+                    return categoryStoreLoaded;
+                }
             });
         }
 
