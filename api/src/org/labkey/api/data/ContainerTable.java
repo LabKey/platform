@@ -69,6 +69,8 @@ public class ContainerTable extends FilteredTable<UserSchema>
         entityIdColumn.setReadOnly(true);
 
         getColumn("RowId").setHidden(true);
+        getColumn("RowId").setReadOnly(true);
+        getColumn("RowId").setUserEditable(true);
 
         ColumnInfo parentColumn = getColumn("Parent");
         ContainerForeignKey.initColumn(parentColumn, _userSchema);
