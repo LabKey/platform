@@ -39,7 +39,7 @@ public class ManageStudyProductsTester
     public void insertNewImmunogen(@LoggedParam String label, String type)
     {
         Locator.XPathLocator immunogensGrid = Locator.id("immunogens-grid");
-        Locator.XPathLocator insertNewImmunogenButton = immunogensGrid.append(Locator.ext4Button("Insert New"));
+        Locator.XPathLocator insertNewImmunogenButton = immunogensGrid.append(Ext4Helper.Locators.ext4Button("Insert New"));
 
         _test.click(insertNewImmunogenButton);
         _test.waitForElement(Ext4Helper.Locators.window("Insert Immunogen"));
@@ -59,15 +59,15 @@ public class ManageStudyProductsTester
     @LogMethod
     public void insertNewAntigen(@LoggedParam String immunogen, String gene, String subType, String genBankId, String sequence)
     {
-        _test.click(Ext4Helper.Locators.window("Edit HIV Antigens for " + immunogen).append(Locator.ext4Button("Insert New")));
+        _test.click(Ext4Helper.Locators.window("Edit HIV Antigens for " + immunogen).append(Ext4Helper.Locators.ext4Button("Insert New")));
         if (gene != null) _test._ext4Helper.selectComboBoxItem(Locators.antigenComboBox("Gene"), true, gene);
         if (subType != null) _test._ext4Helper.selectComboBoxItem(Locators.antigenComboBox("SubType"), true, subType);
-        _test.click(Locator.ext4Button("Update"));
+        _test.click(Ext4Helper.Locators.ext4Button("Update"));
     }
 
     public void submitAntigens(String immunogen)
     {
-        _test.click(Ext4Helper.Locators.window("Edit HIV Antigens for " + immunogen).append(Locator.ext4Button("Submit")));
+        _test.click(Ext4Helper.Locators.window("Edit HIV Antigens for " + immunogen).append(Ext4Helper.Locators.ext4Button("Submit")));
         _test._ext4Helper.waitForMaskToDisappear();
     }
 
@@ -75,14 +75,14 @@ public class ManageStudyProductsTester
     public void insertNewAdjuvant(@LoggedParam String label)
     {
         Locator.XPathLocator adjuvantGrid = Locator.id("adjuvants-grid");
-        Locator.XPathLocator insertNewAdjuvantButton = adjuvantGrid.append(Locator.ext4Button("Insert New"));
+        Locator.XPathLocator insertNewAdjuvantButton = adjuvantGrid.append(Ext4Helper.Locators.ext4Button("Insert New"));
 
         Locator.XPathLocator insertAdjuvantWindow = Ext4Helper.Locators.window("Insert Adjuvant");
 
         _test.click(insertNewAdjuvantButton);
         _test.waitForElement(insertAdjuvantWindow);
         _test.setFormElement(Locator.name("Label"), label);
-        _test.waitAndClick(insertAdjuvantWindow.append(Locator.ext4ButtonEnabled("Submit")));
+        _test.waitAndClick(insertAdjuvantWindow.append(Ext4Helper.Locators.ext4ButtonEnabled("Submit")));
         _test._ext4Helper.waitForMaskToDisappear();
     }
 

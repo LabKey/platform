@@ -40,7 +40,7 @@ public class ManageAssayScheduleTester
     public void insertNewAssayConfiguration(@LoggedParam @Nullable String name, @Nullable String description, @Nullable String lab, @Nullable String sampleType)
     {
         Locator.XPathLocator assayConfigGrid = Locator.id("AssaySpecimenConfigGrid");
-        Locator.XPathLocator insertNewConfigButton = assayConfigGrid.append(Locator.ext4Button("Insert New"));
+        Locator.XPathLocator insertNewConfigButton = assayConfigGrid.append(Ext4Helper.Locators.ext4Button("Insert New"));
 
         Locator.XPathLocator addAssayConfigWindow = Ext4Helper.Locators.window("Add Assay Configuration");
 
@@ -51,7 +51,7 @@ public class ManageAssayScheduleTester
         if (lab != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("Lab"), true, lab);
         if (sampleType != null) _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("SampleType"), true, sampleType);
 
-        _test.clickAndWait(addAssayConfigWindow.append(Locator.ext4Button("Submit")));
+        _test.clickAndWait(addAssayConfigWindow.append(Ext4Helper.Locators.ext4Button("Submit")));
         _test.waitForElement(Locators.assayGridRow(name));
     }
 

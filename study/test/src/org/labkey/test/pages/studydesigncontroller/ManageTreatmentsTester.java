@@ -42,7 +42,7 @@ public class ManageTreatmentsTester
     public void insertNewTreatment(@LoggedParam String label, String description, TreatmentComponent... components)
     {
         Locator.XPathLocator treatmentsGrid = Locator.id("treatments-grid");
-        Locator.XPathLocator insertNewTreatmentButton = treatmentsGrid.append(Locator.ext4Button("Insert New"));
+        Locator.XPathLocator insertNewTreatmentButton = treatmentsGrid.append(Ext4Helper.Locators.ext4Button("Insert New"));
 
         _test.click(insertNewTreatmentButton);
         _test.waitForElement(Ext4Helper.Locators.window("Insert Treatment"));
@@ -66,7 +66,7 @@ public class ManageTreatmentsTester
     public void insertNewCohort(@LoggedParam String label, @Nullable Integer count, TreatmentVisit... treatmentVisits)
     {
         Locator.XPathLocator treatmentScheduleGrid = Locator.id("treatment-schedule-grid");
-        Locator.XPathLocator insertNewCohortButton = treatmentScheduleGrid.append(Locator.ext4Button("Insert New"));
+        Locator.XPathLocator insertNewCohortButton = treatmentScheduleGrid.append(Ext4Helper.Locators.ext4Button("Insert New"));
 
         _test.click(insertNewCohortButton);
         _test._extHelper.waitForExtDialog("Insert Cohort");
@@ -122,7 +122,7 @@ public class ManageTreatmentsTester
             _test._ext4Helper.selectComboBoxItem(treatmentComboForVisit, true, treatmentVisit.getTreatment());
         }
 
-        _test.click(editCohortWindow.append(Locator.ext4Button("Submit")));
+        _test.click(editCohortWindow.append(Ext4Helper.Locators.ext4Button("Submit")));
         _test.waitForElementToDisappear(editCohortWindow);
     }
 
@@ -145,12 +145,12 @@ public class ManageTreatmentsTester
             _test.setFormElement(newVisitLabel, visit.getLabel());
             _test.setFormElement(newVisitRangeMin, visit.getRangeMin().toString());
             _test.setFormElement(newVisitRangeMax, visit.getRangeMax().toString());
-            _test.click(addVisitWindow.append(Locator.ext4Button("Submit")));
+            _test.click(addVisitWindow.append(Ext4Helper.Locators.ext4Button("Submit")));
         }
         else
         {
             _test._ext4Helper.selectComboBoxItem(Ext4Helper.Locators.formItemWithInputNamed("existingVisit"), true, visit.getLabel());
-            _test.click(addVisitWindow.append(Locator.ext4Button("Select")));
+            _test.click(addVisitWindow.append(Ext4Helper.Locators.ext4Button("Select")));
         }
 
         _test.waitForElementToDisappear(addVisitWindow);
