@@ -2478,6 +2478,7 @@ query/src/org/labkey/query/jdbc/QueryDriver.java -text
 query/src/org/labkey/query/jdbc/QueryStatement.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/olap/BitSetQueryImpl.java -text
+query/src/org/labkey/query/olap/CachedCubeFactory.java -text
 query/src/org/labkey/query/olap/MdxQueryImpl.java -text
 query/src/org/labkey/query/olap/MemberSet.java -text
 query/src/org/labkey/query/olap/Olap4Js.java -text
