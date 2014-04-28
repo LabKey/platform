@@ -463,6 +463,8 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 Row moveUp = _rows.get(index);
                 Row moveDown = _rows.get(index - 1);
+                if (! isShiftable(moveDown))  // abort if a row is not shiftable (i.e. static rows stay at the top)
+                    break;
                 _rows.set(index, moveDown);
                 _rows.set(index - 1, moveUp);
                 fireChangeEvent();
