@@ -107,7 +107,7 @@ Ext.onReady(function () {
         <%-- already be inside a form for the DataRegion itself. --%>
         var newForm = document.createElement('form');
         document.body.appendChild(newForm);
-        LABKEY.Ajax.request({
+        Ext.Ajax.request({
             url: exportUrl,
             method: 'POST',
             form: newForm,
