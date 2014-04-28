@@ -248,6 +248,11 @@ public abstract class BaseSelector extends JdbcCommand implements Selector
 
             return ret;
         }
+        catch(RuntimeSQLException e)
+        {
+            factory.handleSqlException(e.getSQLException(), conn);
+            throw new IllegalStateException(factory.getClass().getSimpleName() + ".handleSqlException() should have thrown an exception");
+        }
         catch(SQLException e)
         {
             factory.handleSqlException(e, conn);

@@ -69,8 +69,7 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
 
         LOG.debug(_name + " registered a listener on " + directory.toString());
 
-        if (null != previous)
-            assert false : "Another listener is already registered with WatchKey " + watchKey.toString() + ", Path " + directory.toAbsolutePath();
+        assert previous == null : "Another listener is already registered with WatchKey " + watchKey.toString() + ", Path " + directory.toAbsolutePath();
     }
 
     public void removeListener(Path directory)
