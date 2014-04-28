@@ -62,7 +62,7 @@ LABKEY.query.olap._private = new function() {
             return;
         }
 
-        return LABKEY.Ajax.request(
+        return Ext4.Ajax.request(
                 {
                     url : LABKEY.ActionURL.buildURL("olap", "executeMdx", config.containerPath),
                     method : 'POST',
@@ -94,7 +94,7 @@ LABKEY.query.olap._private = new function() {
             return;
         }
 
-        return LABKEY.Ajax.request(
+        return Ext4.Ajax.request(
         {
 //            url : LABKEY.ActionURL.buildURL("olap", "jsonQuery.api", config.containerPath),
             url : LABKEY.ActionURL.buildURL("olap", "countDistinctQuery.api", config.containerPath),

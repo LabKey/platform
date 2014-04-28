@@ -152,7 +152,7 @@ Ext.onReady(function () {
     }
 
     function refreshLoggers() {
-      LABKEY.Ajax.request({
+      Ext.Ajax.request({
         url: LABKEY.ActionURL.buildURL("logger", "list.api"),
         success: LABKEY.Utils.getCallbackWrapper(function (response) {
           updateDisplay(response["loggers"]);
@@ -209,7 +209,7 @@ Ext.onReady(function () {
     }
 
     function reset() {
-      LABKEY.Ajax.request({
+        Ext.Ajax.request({
           url: LABKEY.ActionURL.buildURL("logger", "reset.api"),
           success: LABKEY.Utils.getCallbackWrapper(function (response) {
             // Reset inputs back to default state
@@ -333,7 +333,7 @@ Ext.onReady(function () {
     }
 
     function save(row) {
-      LABKEY.Ajax.request({
+        Ext.Ajax.request({
           url: LABKEY.ActionURL.buildURL("logger", "update.api"),
           jsonData: {
             name: row.dataset.name,

@@ -54,7 +54,7 @@
     {
         function checkStartupComplete()
         {
-            LABKEY.Ajax.request({
+            Ext4.Ajax.request({
                 url: <%=q(new ActionURL(AdminController.StartupStatusAction.class, getContainer()).toString())%>,
                 success: function (response) {
                     var json = Ext4.decode(response.responseText);

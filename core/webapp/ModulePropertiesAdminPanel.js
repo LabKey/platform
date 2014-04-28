@@ -37,7 +37,7 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
 
     fetchProperties: function(){
         Ext4.each(this.modules, function(m){
-            LABKEY.Ajax.request({
+            Ext4.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('core', 'getModuleProperties', null),
                 method : 'POST',
                 scope: this,
@@ -177,7 +177,7 @@ Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
             return;
         }
 
-        LABKEY.Ajax.request({
+        Ext4.Ajax.request({
             url : LABKEY.ActionURL.buildURL('core', 'saveModuleProperties', null),
             method : 'POST',
             scope: this,

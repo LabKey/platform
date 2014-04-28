@@ -20,7 +20,7 @@ Ext4.define('Security.util.Policy', {
         {
             var params = {resourceId: config.resourceId};
 
-            return LABKEY.Ajax.request({
+            return Ext4.Ajax.request({
                 url    : LABKEY.ActionURL.buildURL('security', 'getPolicy', config.containerPath),
                 method : 'GET',
                 params : params,
