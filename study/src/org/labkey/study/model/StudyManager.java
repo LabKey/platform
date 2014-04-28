@@ -408,7 +408,7 @@ public class StudyManager
 
 
     @Nullable
-    public synchronized StudyImpl getStudy(Container c)
+    public StudyImpl getStudy(Container c)
     {
         StudyImpl study;
         boolean retry = true;
@@ -3932,15 +3932,15 @@ public class StudyManager
     }
 
 
-    public StudyImpl[] getAncillaryStudies(Container sourceStudyContainer)
+    public List<StudyImpl> getAncillaryStudies(Container sourceStudyContainer)
     {
         // in the upgrade case there  may not be any ancillary studyies
         TableInfo t = StudySchema.getInstance().getTableInfoStudy();
         ColumnInfo ssci = t.getColumn("SourceStudyContainerId");
         if (null == ssci || ssci.isUnselectable())
-            return new StudyImpl[0];
-        return new TableSelector(StudySchema.getInstance().getTableInfoStudy(),
-                new SimpleFilter(FieldKey.fromParts("SourceStudyContainerId"), sourceStudyContainer), null).getArray(StudyImpl.class);
+            return Collections.emptyList();
+        return Collections.unmodifiableList(new TableSelector(StudySchema.getInstance().getTableInfoStudy(),
+                new SimpleFilter(FieldKey.fromParts("SourceStudyContainerId"), sourceStudyContainer), null).getArrayList(StudyImpl.class));
     }
 
     // Return collection of current snapshots that are configured to refresh specimens

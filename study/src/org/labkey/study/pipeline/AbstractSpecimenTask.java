@@ -157,8 +157,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
 
             // Since changing specimens in this study will impact specimens in ancillary studies dependent on this study,
             // we need to force a participant/visit refresh in those study containers (if any):
-            StudyImpl[] dependentStudies = StudyManager.getInstance().getAncillaryStudies(ctx.getContainer());
-            for (StudyImpl dependentStudy : dependentStudies)
+            for (StudyImpl dependentStudy : StudyManager.getInstance().getAncillaryStudies(ctx.getContainer()))
                 StudyManager.getInstance().getVisitManager(dependentStudy).updateParticipantVisits(ctx.getUser(), Collections.<DataSetDefinition>emptySet());
         }
     }
