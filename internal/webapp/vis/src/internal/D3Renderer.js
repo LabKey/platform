@@ -665,16 +665,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var getBrushExtent = function() {
-        var extent;
+        var extent = brush.extent();
 
         if (brushSelectionType == 'both') {
-            return brush.extent();
+            return extent;
         } else if (brushSelectionType == 'x') {
-            extent = xHandleBrush.extent();
-            return [[extent[0], null], [extent[1], null]];
+            return [[extent[0][0], null], [extent[1][0], null]];
         } else if (brushSelectionType == 'y') {
-            extent = yHandleBrush.extent();
-            return [[null, extent[0]], [null, extent[1]]];
+            return [[null, extent[0][1]], [null, extent[1][1]]];
         } else {
             // assume no selection.
             return null;
