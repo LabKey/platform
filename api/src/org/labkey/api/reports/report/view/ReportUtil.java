@@ -19,6 +19,7 @@ package org.labkey.api.reports.report.view;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -538,6 +539,23 @@ public class ReportUtil
         }
 
         return null;
+    }
+
+    /**
+     * Determines whether the specified report name already exists for the specified query/schema/container
+     * combination
+     */
+    public static boolean doesReportNameExist(Container c, User user, @Nullable String schemaName, @Nullable String queryName, @NotNull String name)
+    {
+        String key = getReportKey(schemaName, queryName);
+        String trimmedName = name.trim();
+
+        for (Report report : ReportService.get().getReports(user, c, key))
+        {
+            if (StringUtils.equalsIgnoreCase(trimmedName, report.getDescriptor().getReportName().trim()))
+                return true;
+        }
+        return false;
     }
 
     /**
