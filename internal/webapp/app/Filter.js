@@ -277,7 +277,11 @@ Ext.define('LABKEY.app.model.Filter', {
                     console.warn('invalid label being processed');
                     return 'Unknown';
                 }
-                return LABKEY.app.model.Filter.getShortFilter(gf.getFilterType().getDisplayText()) + ' ' + gf.getValue();
+                var value = gf.getValue();
+                if (!value) {
+                    value = "";
+                }
+                return LABKEY.app.model.Filter.getShortFilter(gf.getFilterType().getDisplayText()) + ' ' + value;
             }
             return 'Unknown';
         },

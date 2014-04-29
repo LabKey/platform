@@ -367,7 +367,7 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
                 return false;
             }
             else {
-                if (c.getValue() == '')
+                if (c.getValue() == '' && c.getRawValue() != "Has Any Value")
                     return;
 
                 var input = inputFields[idx];
