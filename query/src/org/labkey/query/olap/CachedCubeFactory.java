@@ -25,6 +25,7 @@ import org.olap4j.metadata.Schema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -337,13 +338,14 @@ public class CachedCubeFactory
         @Override
         public NamedList<Member> getRootMembers() throws OlapException
         {
-            return null;
+            return (NamedList<Member>)getLevels().get(0).getMembers();
         }
     }
 
 
     static class _Level extends _MetadataElement implements Level
     {
+        final int depth;
         final _Hierarchy hierarchy;
         final Level.Type levelType;
         final _NamedList<_Member,Member> members = new _NamedList<>();
@@ -352,8 +354,11 @@ public class CachedCubeFactory
         {
             super(l);
             hash.add(getUniqueName());
+
+            this.depth = l.getDepth();
             this.hierarchy = h;
-            levelType = l.getLevelType();
+            this.levelType = l.getLevelType();
+
             int ordinal = 0;
             if ("[Measures]".equals(getDimension().getUniqueName()))
             {
@@ -374,7 +379,7 @@ public class CachedCubeFactory
         @Override
         public int getDepth()
         {
-            return 0;
+            return depth;
         }
 
         @Override
@@ -428,7 +433,7 @@ public class CachedCubeFactory
     }
 
 
-    static class _Member extends _MetadataElement implements Member
+    public static class _Member extends _MetadataElement implements Member
     {
         final boolean all;
         final _Level level;
@@ -457,6 +462,13 @@ public class CachedCubeFactory
                 }
             }
             childMembers = arr;
+        }
+
+        public List<? extends Member> getChildMembersArray() // well not array actually, but fast list
+        {
+            List<? extends Member> list = Arrays.asList(childMembers);
+            assert null != (list = Collections.unmodifiableList(list));
+            return list;
         }
 
         @Override
