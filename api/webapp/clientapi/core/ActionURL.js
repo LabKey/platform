@@ -324,23 +324,31 @@ that points back to the current page:
         {
             if (!parameters)
                 return '';
-            var query = '';
-            var and = '';
-            for (var parameter in parameters)
+            var query = '', and = '', pval, parameter, aval;
+
+            for (parameter in parameters)
             {
-                var pval = parameters[parameter];
-                if (LABKEY.Utils.isArray(pval))
+                if (parameters.hasOwnProperty(parameter))
                 {
-                    for (var idx = 0; idx < pval.length; ++idx)
+                    pval = parameters[parameter];
+
+                    if (pval === null || pval === undefined)
+                        pval = '';
+
+                    if (LABKEY.Utils.isArray(pval))
                     {
-                        query += and + encodeURIComponent(parameter) + '=' + encodeURIComponent(pval[idx]);
+                        for (var idx = 0; idx < pval.length; ++idx)
+                        {
+                            aval = pval[idx];
+                            query += and + encodeURIComponent(parameter) + '=' + encodeURIComponent(pval[idx]);
+                            and = '&';
+                        }
+                    }
+                    else
+                    {
+                        query += and + encodeURIComponent(parameter) + '=' + encodeURIComponent(pval);
                         and = '&';
                     }
-                }
-                else
-                {
-                    query += and + encodeURIComponent(parameter) + '=' + encodeURIComponent(pval);
-                    and = '&';
                 }
             }
             return query;
