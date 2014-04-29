@@ -15,12 +15,16 @@
  */
 package org.labkey.api.util;
 
+import com.google.common.collect.Ordering;
 import org.apache.commons.lang3.mutable.MutableLong;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.ValueComparableMap;
 
+import java.text.Format;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * User: adam
@@ -97,6 +101,7 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
     public static class InvocationTimer<K2 extends Enum<K2>>
     {
         private final Map<K2, MutableLong> _map;
+
         private K2 _currentPhase = null;
         private long _beginningNanos = 0;
         private boolean _closed = false;
@@ -124,10 +129,78 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
             assert !_closed;
         }
 
+        public enum Order
+        {
+            EnumOrder
+                    {
+                        @Override
+                        Map<String, Double> createMap()
+                        {
+                            return new LinkedHashMap<>();
+                        }
+                    },
+            Alphabetical
+                    {
+                        @Override
+                        Map<String, Double> createMap()
+                        {
+                            return new TreeMap<>();
+                        }
+                    },
+            LowToHigh
+                    {
+                        @Override
+                        Map<String, Double> createMap()
+                        {
+                            return new ValueComparableMap<>(Ordering.natural());
+                        }
+                    },
+            HighToLow
+                    {
+                        @Override
+                        Map<String, Double> createMap()
+                        {
+                            return new ValueComparableMap<>(Ordering.natural().reverse());
+                        }
+                    };
+
+            abstract Map<String, Double> createMap();
+        }
+
+        // Return phase -> time (milliseconds) map in the specified order
+        public Map<String, Double> getMap(Order order)
+        {
+            Map<String, Double> map = order.createMap();
+
+            for (Map.Entry<K2, MutableLong> entry : _map.entrySet())
+            {
+                MutableLong nanos = entry.getValue();
+                double d = nanos.doubleValue() / 1000000.0;   // convert from nanos to millis
+                map.put(entry.getKey().toString(), d);
+            }
+
+            return map;
+        }
+
+        // Consider: make public, do release, and implement closeable - would allow try-with-resources
         private void close()
         {
             setPhase(null);
             _closed = true;
+        }
+
+        public String getTimings(Order order, String deliminator)
+        {
+            Format df = Formats.f2;
+            StringBuilder sb = new StringBuilder();
+            Map<String, Double> map = getMap(order);
+
+            for (Map.Entry<String, Double> phase : map.entrySet())
+            {
+                sb.append("\n").append(phase.getKey()).append(deliminator).append(df.format(phase.getValue()));
+            }
+
+            return sb.toString();
         }
 
         @Override

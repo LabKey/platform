@@ -17,6 +17,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.Converter;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -213,7 +214,7 @@ public enum JdbcType
     public final Class cls;
     public final String xtype;
     public final String json;
-    private final org.apache.commons.beanutils.Converter converter;
+    private final Converter converter;
 
 
     JdbcType(int type, Class cls)
@@ -267,14 +268,17 @@ public enum JdbcType
     }
 
 
-    private static final HashMap<Class,JdbcType> classMap = new HashMap<>();
-    static {
+    private static final HashMap<Class, JdbcType> classMap = new HashMap<>();
+
+    static
+    {
         for (JdbcType t : JdbcType.values())
             classMap.put(t.cls, t);
 
         // primitives
         classMap.put( boolean.class, BOOLEAN );
         classMap.put( byte.class, TINYINT );
+        classMap.put( byte[].class, BINARY );
         classMap.put( char.class, INTEGER );
         classMap.put( short.class, SMALLINT );
         classMap.put( int.class, INTEGER );

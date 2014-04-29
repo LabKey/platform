@@ -115,9 +115,9 @@ public class Parameter
     };
 
     
-    public static TypedValue nullParameter(JdbcType sqlType)
+    public static TypedValue nullParameter(JdbcType jdbcType)
     {
-        return new TypedValue(null, sqlType);
+        return new TypedValue(null, jdbcType);
     }
 
 

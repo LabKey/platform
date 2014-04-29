@@ -203,6 +203,7 @@ api/src/org/labkey/api/collections/SetFromMap.java -text
 api/src/org/labkey/api/collections/Sets.java -text
 api/src/org/labkey/api/collections/SparseBitSet.java -text
 api/src/org/labkey/api/collections/SwapQueue.java -text
+api/src/org/labkey/api/collections/ValueComparableMap.java -text
 api/src/org/labkey/api/concurrent/CountingSemaphore.java -text
 api/src/org/labkey/api/data/AES.java -text
 api/src/org/labkey/api/data/AJAXDetailsDisplayColumn.java -text
