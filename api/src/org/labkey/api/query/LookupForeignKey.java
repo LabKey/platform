@@ -214,6 +214,11 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
             // from the lookupTable and it's FieldKeyContext has been fixed up.
             //if (!url.hasContainerContext())
             //    _log.warn("Table's DetailURL does not have a container context. Table: " + lookupTable.getPublicSchemaName() + "." + lookupTable.getName() + ", column: " + parent.getName());
+            if (null != parent && cc instanceof ContainerContext.FieldKeyContext)
+            {
+                ContainerContext.FieldKeyContext fkc = (ContainerContext.FieldKeyContext)cc;
+                cc = new ContainerContext.FieldKeyContext(FieldKey.fromParts(parent.getFieldKey(),fkc.getFieldKey()));
+            }
             url.setContainerContext(cc, false);
         }
         return url;
