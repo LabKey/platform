@@ -715,6 +715,14 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     sourcePanelCls: 'sourcepanel',
 
+    // allows for the measure picker to display the number of matching subjects
+    // for the given measure. Currently, depends on the CDS module being available
+    // for server action.
+    displaySourceCounts: false,
+
+    // only used if displaySourceCounts is 'true'
+    sourceCountMemberSet: [],
+
     constructor : function(config) {
 
         Ext4.apply(this, config, {
@@ -759,6 +767,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         if (!this.sourcesStore) {
             // Using a new MeasureStore, but we will only load data for the list of queryNames (i.e. Sources)
             this.sourcesStore = Ext4.create('LABKEY.ext4.MeasuresStore', {});
+
+            if (this.displaySourceCounts === true) {
+                this.sourcesStore.on('load', this.getSourceCounts, this);
+            }
         }
         return this.sourcesStore;
     },
@@ -794,7 +806,27 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 store: this.getSourceStore(),
                 itemSelector: 'div.itemrow',
                 selectedItemCls: 'itemselected',
-                tpl: this.getSourcesViewTpl()
+                tpl: new Ext4.XTemplate(
+                    '<tpl for=".">',
+                        '<div class="itemrow {sourceCount:this.renderDisabled}" style="padding: 3px 6px 4px 6px; cursor: pointer;">{queryLabel:htmlEncode}{sourceCount:this.renderCount}</div>',
+                    '</tpl>',
+                        {
+                            renderCount : function(count) {
+                                var val = "";
+                                if (Ext.isNumber(count)) {
+                                    val = " (" + Ext.htmlEncode(count) + ")";
+                                }
+                                return val;
+                            },
+                            renderDisabled : function(count) {
+                                var val = "";
+                                if (count === 0) {
+                                    val = "itemdisabled";
+                                }
+                                return val;
+                            }
+                        }
+                )
             });
 
             this.sourcesView.getSelectionModel().on('select', this.onSourceRowSelection, this);
@@ -803,12 +835,61 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         return this.sourcesView;
     },
 
-    getSourcesViewTpl : function() {
-        return new Ext4.XTemplate(
-            '<tpl for=".">',
-            '<div class="itemrow" style="padding: 3px 6px 4px 6px; cursor: pointer;">{queryLabel:htmlEncode}</div>',
-            '</tpl>'
-        );
+    getSourceCounts : function() {
+        if (this.displaySourceCounts) {
+            var store = this.getSourceStore();
+            var sources = store.getRange();
+
+            var json = {
+                members: this.sourceCountMemberSet,
+                sources: []
+            }, q;
+
+            Ext4.each(sources, function(source) {
+                q = source.get('queryLabel') || source.get('queryName');
+                json.sources.push(q);
+            }, this);
+
+            Ext4.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('cds', 'getSourceCounts'),
+                method: 'POST',
+                jsonData: json,
+                success: function(response) {
+                    var countResponse = Ext.decode(response.responseText);
+                    if (Ext4.isObject(countResponse) && Ext4.isDefined(countResponse.counts)) {
+                        var counts = countResponse.counts;
+
+                        Ext.each(sources, function(source) {
+
+                            var q = source.get('queryLabel');
+                            var key;
+                            if (Ext4.isDefined(counts[q])) {
+                                key = q;
+                            }
+                            else {
+                                q = source.get('queryName');
+                                if (Ext4.isDefined(counts[q])) {
+                                    key = q;
+                                }
+                            }
+
+                            if (Ext4.isDefined(key)) {
+                                source.set('sourceCount', counts[key]);
+                            }
+
+                        }, this);
+                    }
+                },
+                scope: this
+            });
+        }
+    },
+
+    setCountMemberSet : function(memberSet) {
+        if (Ext.isArray(memberSet)) {
+            this.sourceCountMemberSet = memberSet;
+            this.getSourceCounts();
+        }
     },
 
     createMeasurePanel : function() {
@@ -1112,7 +1193,8 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                     {name   : 'isKeyVariable'},
                     {name   : 'defaultScale'},
                     {name   : 'sortOrder', defaultValue: 0},
-                    {name   : 'variableType'} // i.e. TIME
+                    {name   : 'variableType'}, // i.e. TIME
+                    {name   : 'sourceCount', defaultValue: undefined}
                 ]
             });
         }
