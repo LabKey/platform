@@ -28,6 +28,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
+import org.labkey.api.data.Selector.*;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -277,13 +278,13 @@ public class SampleManager implements ContainerManager.ContainerListener
         return getSpecimenEvents(sample.getContainer(), filter);
     }
 
-    public List<SpecimenEvent> getSpecimenEvents(List<Specimen> samples, boolean includeObsolete)
+    public List<SpecimenEvent> getSpecimenEvents(List<Specimen> vials, boolean includeObsolete)
     {
-        if (samples == null || samples.size() == 0)
+        if (vials == null || vials.size() == 0)
             return Collections.emptyList();
         Collection<Long> vialIds = new HashSet<>();
         Container container = null;
-        for (Specimen sample : samples)
+        for (Specimen sample : vials)
         {
             vialIds.add(sample.getRowId());
             if (container == null)
@@ -298,33 +299,26 @@ public class SampleManager implements ContainerManager.ContainerListener
         return getSpecimenEvents(container, filter);
     }
 
-    private List<SpecimenEvent> getSpecimenEvents(Container container, Filter filter)
+    private List<SpecimenEvent> getSpecimenEvents(final Container container, Filter filter)
     {
 //        return _specimenEventHelper.get(container, filter);
+        final List<SpecimenEvent> specimenEvents = new ArrayList<>();
         TableInfo tableInfo = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
-        List<Map> rowMaps = new TableSelector(tableInfo, filter, null).getArrayList(Map.class);
-        List<SpecimenEvent> specimenEvents = new ArrayList<>();
-        for (Map rowMap : rowMaps)
-            specimenEvents.add(new SpecimenEvent(rowMap));
-        return fillInContainer(specimenEvents, container);
+
+        new TableSelector(tableInfo, filter, null).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+        {
+            @Override
+            public void exec(Map<String, Object> map) throws SQLException
+            {
+                specimenEvents.add(new SpecimenEvent(container, map));
+            }
+        });
+
+        return specimenEvents;
     }
 
     private static class SpecimenEventDateComparator implements Comparator<SpecimenEvent>
     {
-        private Date convertToDate(String dateString)
-        {
-            if (dateString == null)
-                return null;
-            try
-            {
-                return DateUtil.parseDateTime(dateString, "yyyy-MM-dd");
-            }
-            catch (ParseException e)
-            {
-                return null;
-            }
-        }
-
         private Date getAnyDate(SpecimenEvent event)
         {
             if (event.getLabReceiptDate() != null)
@@ -386,10 +380,11 @@ public class SampleManager implements ContainerManager.ContainerListener
         return eventList;
     }
 
-    public Map<Specimen, List<SpecimenEvent>> getDateOrderedEventLists(List<Specimen> specimens, boolean includeObsolete)
+    public Map<Specimen, List<SpecimenEvent>> getDateOrderedEventLists(List<Specimen> vials, boolean includeObsolete)
     {
-        List<SpecimenEvent> allEvents = getSpecimenEvents(specimens, includeObsolete);
+        List<SpecimenEvent> allEvents = getSpecimenEvents(vials, includeObsolete);
         Map<Long, List<SpecimenEvent>> vialIdToEvents = new HashMap<>();
+
         for (SpecimenEvent event : allEvents)
         {
             List<SpecimenEvent> vialEvents = vialIdToEvents.get(event.getVialId());
@@ -402,15 +397,17 @@ public class SampleManager implements ContainerManager.ContainerListener
         }
 
         Map<Specimen, List<SpecimenEvent>> results = new HashMap<>();
-        for (Specimen specimen : specimens)
+
+        for (Specimen vial : vials)
         {
-            List<SpecimenEvent> events = vialIdToEvents.get(specimen.getRowId());
+            List<SpecimenEvent> events = vialIdToEvents.get(vial.getRowId());
             if (events != null && events.size() > 0)
                 Collections.sort(events, new SpecimenEventDateComparator());
             else
-                events = Collections.EMPTY_LIST;
-            results.put(specimen, events);
+                events = Collections.emptyList();
+            results.put(vial, events);
         }
+
         return results;
     }
 
@@ -419,7 +416,7 @@ public class SampleManager implements ContainerManager.ContainerListener
     {
         Integer locationId = getCurrentLocationId(specimen);
         if (locationId != null)
-            return StudyManager.getInstance().getLocation(specimen.getContainer(), locationId.intValue());
+            return StudyManager.getInstance().getLocation(specimen.getContainer(), locationId);
         return null;
     }
 
@@ -941,7 +938,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<Specimen> getRequestSpecimens(SampleRequest request)
     {
-        Container container = request.getContainer();
+        final Container container = request.getContainer();
         StudySchema studySchema = StudySchema.getInstance();
         TableInfo tableInfoSpecimen = studySchema.getTableInfoSpecimen(container);
         TableInfo tableInfoVial = studySchema.getTableInfoVial(container);
@@ -957,10 +954,18 @@ public class SampleManager implements ContainerManager.ContainerListener
         sql.add(container);
         sql.add(request.getRowId());
 
-        List<Map> rows = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(Map.class);
-        List<Specimen> specimens = new ArrayList<>();
-        for (Map row : rows)
-            specimens.add(new Specimen(row));
+        // TODO: LinkedList?
+        final List<Specimen> specimens = new ArrayList<>();
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEachMap(new ForEachBlock<Map<String, Object>>()
+        {
+            @Override
+            public void exec(Map<String, Object> map) throws SQLException
+            {
+                specimens.add(new Specimen(container, map));
+            }
+        });
+
         return specimens;
     }
 
@@ -3259,11 +3264,18 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public List<Specimen> getSpecimens(final Container container, final User user, SimpleFilter filter)
     {
-        TableSelector selector = getSpecimensSelector(container, user, filter);
-        List<Map> specimenMaps = selector.getArrayList(Map.class);
-        List<Specimen> specimens = new ArrayList<>();
-        for (Map map : specimenMaps)
-            specimens.add(new Specimen(map));
+        // TODO: LinkedList?
+        final List<Specimen> specimens = new ArrayList<>();
+
+        getSpecimensSelector(container, user, filter).forEachMap(new ForEachBlock<Map<String, Object>>()
+        {
+            @Override
+            public void exec(Map<String, Object> map) throws SQLException
+            {
+                specimens.add(new Specimen(container, map));
+            }
+        });
+
         return specimens;
     }
 

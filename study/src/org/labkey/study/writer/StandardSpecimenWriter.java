@@ -58,7 +58,7 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
             DisplayColumn dc = new DataColumn(ci);
             dc.setCaption(column.getTsvColumnName());
 
-            if (column.getJavaType() == Boolean.class)
+            if (column.getJavaClass() == Boolean.class)
                 dc.setTsvFormatString("1;0;");
 
             displayColumns.add(dc);

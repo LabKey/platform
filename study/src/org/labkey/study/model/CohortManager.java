@@ -575,7 +575,7 @@ public class CohortManager
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromString("CurrentCohortId"), cohortId);
         TableInfo ti = StudySchema.getInstance().getTableInfoParticipant();
-        Set<String> pks = new HashSet(ti.getPkColumnNames());
+        Set<String> pks = new HashSet<>(ti.getPkColumnNames());
         TableSelector ts = new TableSelector(ti, pks, filter, new Sort("ParticipantId"));
         return ts.getArray(Participant.class);
     }

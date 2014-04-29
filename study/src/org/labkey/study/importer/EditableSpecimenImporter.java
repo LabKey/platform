@@ -139,7 +139,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
         if (null == _dbNameToSpecimenColumnMap)
         {
             _dbNameToSpecimenColumnMap = new HashMap<>();
-            for (SpecimenColumn col : SPECIMEN_COLUMNS)
+            for (SpecimenColumn col : getSpecimenColumns())
                 _dbNameToSpecimenColumnMap.put(col.getDbColumnName().toLowerCase(), col);
         }
 

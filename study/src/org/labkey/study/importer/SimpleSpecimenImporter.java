@@ -48,7 +48,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -196,6 +195,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
             colNames.add(3, VISIT);
 
         ColumnDescriptor[] cols = new ColumnDescriptor[colNames.size()];
+
         for (int i = 0; i < cols.length; i++)
         {
             SpecimenColumn specCol = findSpecimenColumn(colNames.get(i));
@@ -225,6 +225,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
         List<Map<String, Object>> specimenRows = new ArrayList<>();
         int recordId = 1;
+
         for (Map<String, Object> row : rows)
         {
             Map<String, Object> specimenRow = new HashMap<>();
@@ -445,7 +446,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
         if (null == specimenColumnMap)
         {
             specimenColumnMap = new HashMap<>();
-            for (SpecimenColumn col : SPECIMEN_COLUMNS)
+            for (SpecimenColumn col : getSpecimenColumns())
                 specimenColumnMap.put(col.getTsvColumnName(), col);
         }
 

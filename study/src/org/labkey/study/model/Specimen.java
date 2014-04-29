@@ -17,7 +17,6 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.study.StudyService;
 
 import java.util.Date;
@@ -31,15 +30,18 @@ import java.util.Map;
  */
 public class Specimen extends AbstractStudyCachable<Specimen>
 {
-    private Map _rowMap;
+    private final Map<String, Object> _rowMap;
+    private final Container _container;
 
     public Specimen()
     {
-        _rowMap = new HashMap<String, Object>();
+        _container = null;
+        _rowMap = new HashMap<>();
     }
 
-    public Specimen(Map rowMap)
+    public Specimen(Container container, Map<String, Object> rowMap)
     {
+        _container = container;
         _rowMap = rowMap;
     }
 
@@ -68,13 +70,12 @@ public class Specimen extends AbstractStudyCachable<Specimen>
 
     public Container getContainer()
     {
-        return ContainerManager.getForId((String)get("container"));
+        return _container;
     }
 
     public void setContainer(Container container)
     {
-        verifyMutability();
-        _rowMap.put("container", container.getId());
+        throw new IllegalStateException("Container should be set in constructor");
     }
 
     public Integer getDerivativeTypeId()
