@@ -3,6 +3,7 @@ package org.labkey.query.olap;
 import mondrian.olap.Annotated;
 import mondrian.olap.Annotation;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.olap4j.OlapException;
 import org.olap4j.OlapWrapper;
 import org.olap4j.impl.Named;
@@ -23,6 +24,7 @@ import org.olap4j.metadata.Property;
 import org.olap4j.metadata.Schema;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -289,14 +291,20 @@ public class CachedCubeFactory
             super(h);
             hash.add(getUniqueName());
             this.dimension = dimension;
+
             _Level lowerLevel = null;
+            ArrayList<_Level> list = new ArrayList<>();
             for (int i = h.getLevels().size()-1 ; i>= 0 ; i--)
             {
                 Level l = h.getLevels().get(i);
                 _Level thisLevel = new _Level(this, l, lowerLevel, hash);
-                levels.add(thisLevel);
+                list.add(thisLevel);
                 lowerLevel = thisLevel;
             }
+            Collections.reverse(list);
+            for (_Level l : list)
+                this.levels.add(l);
+
             _Level l = levels.get(h.getDefaultMember().getLevel().getName());
             defaultMember = l.getMembers().get(h.getDefaultMember().getName());
         }
@@ -437,13 +445,14 @@ public class CachedCubeFactory
             this.all = m.isAll();
             this.memberType = m.getMemberType();
             Member[] arr = null;
+
             List<? extends Member> list = m.getChildMembers();
             if (null != lowerLevel && 0 < list.size())
             {
-                arr = list.toArray(new Member[list.size()]);
-                for (int i=0 ; i<arr.length ; i++)
+                arr = new Member[list.size()];
+                for (int i=0 ; i<list.size() ; i++)
                 {
-                    arr[i] = lowerLevel.getMembers().get(arr[i].getName());
+                    arr[i] = lowerLevel.getMembers().get(list.get(i).getName());
                     assert null != arr[i];
                 }
             }
@@ -616,13 +625,68 @@ public class CachedCubeFactory
 
     static class _NamedList<T extends org.olap4j.impl.Named,MDE> extends NamedListImpl<T>
     {
+        Map<String,Integer> indexMap = new CaseInsensitiveHashMap<Integer>();
+
         NamedList<MDE> recast()
         {
             return (NamedList<MDE>)(NamedList)this;
         }
+
+        @Override
+        public int indexOfName(String name)
+        {
+            Integer I = indexMap.get(name);
+            return null==I ? -1 : I.intValue();
+        }
+
+        @Override
+        public T get(String name)
+        {
+            int i = indexOfName(name);
+            return i==-1 ? null : get(i);
+        }
+
+        @Override
+        public boolean add(T t)
+        {
+            indexMap.put(t.getName(),size());
+            return super.add(t);
+        }
+
+        @Override
+        public T set(int index, T element)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        protected void removeRange(int fromIndex, int toIndex)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean retainAll(Collection<?> c)
+        {
+            throw new UnsupportedOperationException();
+        }
     }
 
-    static final NamedList<Property> emptyPropertyList = (new _NamedList<Named,Property>()).recast();
-    static final NamedList<NamedSet> emptyNamedSetList = (new _NamedList<Named,NamedSet>()).recast();
-    static final NamedList<Member> emptyMemberList = (new _NamedList<Named,Member>()).recast();
+    private static class _EmptyNamedList<MDE> extends _NamedList<Named,MDE>
+    {
+        public boolean add(Named n)
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    static final NamedList<Property> emptyPropertyList = (new _EmptyNamedList<Property>()).recast();
+    static final NamedList<NamedSet> emptyNamedSetList = (new _EmptyNamedList<NamedSet>()).recast();
+    static final NamedList<Member> emptyMemberList = (new _EmptyNamedList<Member>()).recast();
 }
