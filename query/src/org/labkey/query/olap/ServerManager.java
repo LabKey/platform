@@ -546,7 +546,7 @@ public class ServerManager
         {
             MondrianServer wrapper = (MondrianServer) Proxy.newProxyInstance(
                     conn.getClass().getClassLoader(),
-                    new Class[] {MondrianServer.class, GUID.HasGuid.class},
+                    new Class[] {MondrianServer.class}, // GUID.HasGuid.class},
                     new MondrianServerProxy(conn, ref));
             return wrapper;
         }
