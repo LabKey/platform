@@ -267,14 +267,15 @@ Ext.define('LABKEY.app.controller.State', {
         this.state.sync();
     },
 
-    updateFilterMembers : function(id, members) {
+    updateFilterMembers : function(id, members, skipState) {
         for (var f=0; f < this.filters.length; f++) {
             if (this.filters[f].id == id)
             {
                 this.filters[f].set('members', members);
             }
         }
-        this.requestFilterUpdate(true, false, true);
+
+        this.requestFilterUpdate(skipState, false, true);
 
         // since it is silent we need to update the count seperately
         this.updateFilterCount();
