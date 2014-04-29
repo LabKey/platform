@@ -425,7 +425,6 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
         }
 
         addFolderColumn();
-        addStudyColumn();
     }
 
 
