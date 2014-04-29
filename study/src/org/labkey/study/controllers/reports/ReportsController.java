@@ -1903,12 +1903,8 @@ public class ReportsController extends BaseStudyController
                 // check for duplicates on new reports
                 if (form.getReportId() == null)
                 {
-                    String key = ReportUtil.getReportKey(form.getSchemaName(), form.getQueryName());
-                    for (Report report : ReportService.get().getReports(getUser(), getContainer(), key))
-                    {
-                        if (form.getName().equalsIgnoreCase(report.getDescriptor().getReportName()))
-                            errors.reject(ERROR_MSG, "Another report with the same name already exists.");
-                    }
+                    if (ReportUtil.doesReportNameExist(getContainer(), getUser(), form.getSchemaName(), form.getQueryName(), form.getName()))
+                        errors.reject(ERROR_MSG, "Another report with the same name already exists.");
 
                     if (form.isPublic())
                     {
