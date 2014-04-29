@@ -25,21 +25,33 @@ import mondrian.server.RepositoryContentFinder;
 import mondrian.server.StringRepositoryContentFinder;
 import mondrian.spi.CatalogLocator;
 import mondrian.spi.DataSourceChangeListener;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.concurrent.CountingSemaphore;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ViewServlet;
 import org.olap4j.OlapConnection;
+import org.olap4j.metadata.Cube;
+import org.olap4j.metadata.Schema;
+import org.springframework.validation.BindException;
 
+import javax.servlet.ServletContextEvent;
 import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
@@ -50,10 +62,13 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 /**
  * User: matthew
@@ -76,6 +91,8 @@ public class ServerManager
 
     public static final ModuleResourceCache<OlapSchemaDescriptor> SCHEMA_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube defintions", new OlapSchemaCacheHandler());
 
+    public static final BlockingStringKeyCache<Cube> _cubes = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "cube cache", null);
+
     private static final String DATA_SOURCE_NAME = "dsn_LABKEY";
 
     static
@@ -97,7 +114,7 @@ public class ServerManager
             @Override
             public void containerMoved(Container c, Container oldParent, User user)
             {
-
+                cubeDataChanged(c);
             }
 
             @Override
@@ -106,11 +123,27 @@ public class ServerManager
 
             }
         });
+
+        ContextListener.addShutdownListener(new ShutdownListener()
+        {
+            @Override
+            public void shutdownPre(ServletContextEvent servletContextEvent)
+            {
+                _servers.clear();
+            }
+
+            @Override
+            public void shutdownStarted(ServletContextEvent servletContextEvent)
+            {
+                _servers.clear();
+            }
+        });
     }
 
 
     static String getServerCacheKey(Container c)
-    {        return MondrianServer.class.getName() + "/" + c.getId();
+    {
+        return MondrianServer.class.getName() + "/" + c.getId();
     }
 
 
@@ -123,6 +156,80 @@ public class ServerManager
         return null;
     }
 
+
+    /* Note we pass in OlapConnection here, that's because the connection must stay open in order to use the cube
+     * (Unless we create a cached cube)
+     */
+    public static Cube getCachedCube(OlapSchemaDescriptor d, OlapConnection conn, Container c, User user, String schemaName, String cubeName, BindException errors)  throws SQLException
+    {
+        List<Schema> findSchemaList;
+        if (StringUtils.isNotEmpty(schemaName))
+        {
+            Schema s = d.getSchema(conn, c, user, schemaName);
+            if (null == s)
+            {
+                errors.reject(ERROR_MSG, "Schema not found: " + schemaName);
+                return null;
+            }
+            findSchemaList = Collections.singletonList(s);
+        }
+        else
+        {
+            findSchemaList = d.getSchemas(conn, c, user);
+        }
+
+        Cube cube = null;
+        if (StringUtils.isEmpty(cubeName))
+        {
+            errors.reject(ERROR_MSG, "cubeName parameter is required");
+            return null;
+        }
+
+        for (Schema s : findSchemaList)
+        {
+            Cube findCube = s.getCubes().get(cubeName);
+            if (null != findCube)
+            {
+                if (cube != null)
+                {
+                    errors.reject(ERROR_MSG, "Cube is ambigious, specify schemaName: " + cubeName);
+                    return null;
+                }
+                cube = findCube;
+            }
+        }
+        if (null == cube)
+        {
+            errors.reject(ERROR_MSG, "Cube not found: " + cubeName);
+            return null;
+        }
+
+        String cubeCacheKey = c.getId() + "/" + cube.getSchema().getName() + "/" + cube.getUniqueName();
+        final SQLException ex[] = new SQLException[1];
+        Cube cachedCube = _cubes.get(cubeCacheKey,cube,new CacheLoader<String,Cube>()
+        {
+            @Override
+            public Cube load(String key, @Nullable Object src)
+            {
+                try
+                {
+                    long start = System.currentTimeMillis();
+                    Cube c = CachedCubeFactory.createCachedCube((Cube)src);
+                    long end = System.currentTimeMillis();
+                    return c;
+                } catch (SQLException x)
+                {
+                    ex[0] = x;
+                    return null;
+                }
+            }
+        });
+        if (null != ex[0])
+            throw ex[0];
+        return cachedCube;
+    }
+
+
     /*
      * Start with one MondrianServer per container.  We'd like to get down to one MondrianServer.
      *
@@ -133,6 +240,8 @@ public class ServerManager
 
     private static ServerReferenceCount getServer(Container c, User user) throws SQLException
     {
+        ViewServlet.checkShuttingDown();
+
         synchronized (_serverLock)
         {
             ServerReferenceCount ref = _servers.get(getServerCacheKey(c));
@@ -223,6 +332,7 @@ public class ServerManager
             for (ServerReferenceCount ref : _servers.values())
                 ref.decrement();
             _servers.clear();
+            _cubes.clear();
             BitSetQueryImpl.invalidateCache(d);
         }
     }
@@ -235,6 +345,7 @@ public class ServerManager
             ServerReferenceCount ref = _servers.remove(getServerCacheKey(c));
             if (null != ref)
                 ref.decrement();
+            _cubes.clear();
             BitSetQueryImpl.invalidateCache(c);
         }
     }
@@ -426,6 +537,7 @@ public class ServerManager
 
     public static class MondrianServerProxy implements InvocationHandler
     {
+        final GUID _guid = new GUID();
         final MondrianServer _inner;
         final ReferenceCount _count;
         final CountingSemaphore _semaphore = new CountingSemaphore(4, true);
@@ -434,7 +546,7 @@ public class ServerManager
         {
             MondrianServer wrapper = (MondrianServer) Proxy.newProxyInstance(
                     conn.getClass().getClassLoader(),
-                    new Class[] {MondrianServer.class},
+                    new Class[] {MondrianServer.class, GUID.HasGuid.class},
                     new MondrianServerProxy(conn, ref));
             return wrapper;
         }
@@ -449,7 +561,11 @@ public class ServerManager
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
         {
-            if ("shutdown".equals(method.getName()))
+            if ("getGUID".equals(method.getName()))
+            {
+                return _guid;
+            }
+            else if ("shutdown".equals(method.getName()))
             {
                 _count.decrement();
                 return null;
@@ -462,7 +578,9 @@ public class ServerManager
                 }
             }
             else
-                return method.invoke(_inner,args);
+            {
+                return method.invoke(_inner, args);
+            }
         }
     }
 

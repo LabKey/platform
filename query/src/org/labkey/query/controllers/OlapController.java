@@ -70,7 +70,6 @@ import org.olap4j.OlapConnection;
 import org.olap4j.OlapStatement;
 import org.olap4j.OlapWrapper;
 import org.olap4j.metadata.Cube;
-import org.olap4j.metadata.Schema;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -82,12 +81,10 @@ import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.Map;
 
 
@@ -619,7 +616,11 @@ public class OlapController extends SpringActionController
 
     private String getAnnotation(Cube cube, String name)  throws SQLException
     {
-        Annotated annotated = ((OlapWrapper)cube).unwrap(Annotated.class);
+        Annotated annotated = cube instanceof Annotated ? (Annotated)cube :
+                cube instanceof OlapWrapper ? ((OlapWrapper)cube).unwrap(Annotated.class) :
+                null;
+        if (null == annotated)
+            return null;
         Map<String,Annotation> annotations = annotated.getAnnotationMap();
         Annotation a = annotations.get(name);
         return null==a ? null : null == a.getValue() ? null : String.valueOf(a.getValue());
@@ -647,55 +648,15 @@ public class OlapController extends SpringActionController
             return null;
         }
 
-        List<Schema> findSchemaList;
-        if (StringUtils.isNotEmpty(form.getSchemaName()))
+        OlapConnection conn = getConnection(d);
+        Cube cube = ServerManager.getCachedCube(d, conn, getContainer(), getUser(), form.getSchemaName(), form.getCubeName(), errors);
+        if (errors.hasErrors())
         {
-            Schema s = d.getSchema(getConnection(d), getContainer(), getUser(), form.getSchemaName());
-            if (null == s)
-            {
-                errors.reject(ERROR_MSG, "Schema not found: " + form.getSchemaName());
-                return null;
-            }
-            findSchemaList = Collections.singletonList(s);
-        }
-        else
-        {
-            findSchemaList = d.getSchemas(getConnection(d), getContainer(), getUser());
-        }
-
-
-        Cube cube = null;
-        if (StringUtils.isEmpty(form.getCubeName()))
-        {
-            errors.reject(ERROR_MSG, "cubeName parameter is required");
             return null;
         }
-        else
-        {
-            for (Schema s : findSchemaList)
-            {
-                Cube findCube = s.getCubes().get(form.getCubeName());
-                if (null != findCube)
-                {
-                    if (cube != null)
-                    {
-                        errors.reject(ERROR_MSG, "Cube is ambigious, specify schemaName: " + form.getCubeName());
-                        return null;
-                    }
-                    cube = findCube;
-                }
-            }
-            if (null == cube)
-            {
-                errors.reject(ERROR_MSG, "Cube not found: " + form.getCubeName());
-                return null;
-            }
-            _cube = cube;
-            return cube;
-        }
+        _cube = cube;
+        return _cube;
     }
-
-
 
 
     @Override

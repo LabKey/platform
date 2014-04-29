@@ -23,6 +23,7 @@ import org.json.JSONObject;
 import org.junit.Assert;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
@@ -34,6 +35,7 @@ import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.MetadataElement;
+import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Schema;
 import org.springframework.validation.BindException;
 
@@ -80,6 +82,7 @@ public class QubeQuery
     // CONSIDER using List<QueryParseException>, but BindException is fine for now
     BindException errors = null;
 
+    CaseInsensitiveHashMap<MetadataElement> uniqueNameMap = new CaseInsensitiveHashMap<>();
 
     public QubeQuery(Cube cube)
     {
@@ -208,9 +211,19 @@ public class QubeQuery
     }
 
 
-    Member _getMember(String memberName, Hierarchy h, Level l) throws OlapException
+    Member _getMember(String memberUniqueName, Hierarchy h, Level l) throws OlapException
     {
-        /* TODO caching (maybe on Qube object) */
+        Object mde = uniqueNameMap.get(memberUniqueName);
+        if (mde instanceof Member)
+            return (Member)mde;
+
+        String name = memberUniqueName;
+        if (name.endsWith("]"))
+        {
+            int start = memberUniqueName.lastIndexOf("[");
+            name = memberUniqueName.substring(start+1,name.length()-1);
+        }
+
         List<Level> listOfLevels;
         if (null != l)
             listOfLevels = Collections.singletonList(l);
@@ -219,10 +232,22 @@ public class QubeQuery
         for (Level hl : listOfLevels)
         {
             List<Member> list = hl.getMembers();
-            for (Member m : list)
-                if (m.getUniqueName().equalsIgnoreCase(memberName))
+            if (list instanceof NamedList)
+            {
+                Member m = ((NamedList<Member>)list).get(name);
+                if (null != m && memberUniqueName.equals(m.getUniqueName()))
                     return m;
+            }
+            else
+            {
+                for (Member m : list)
+                    uniqueNameMap.put(m.getUniqueName(), m);
+            }
         }
+
+        mde = uniqueNameMap.get(memberUniqueName);
+        if (mde instanceof Member)
+            return (Member)mde;
         return null;
     }
 
@@ -487,7 +512,7 @@ public class QubeQuery
         }
         else
         {
-            errors.reject(SpringActionController.ERROR_MSG, "member not found: " + String.valueOf(memberSpec));
+            errors.reject(SpringActionController.ERROR_MSG, "Member not found: " + String.valueOf(memberSpec));
             throw errors;
         }
     }

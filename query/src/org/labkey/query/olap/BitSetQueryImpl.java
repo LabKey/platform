@@ -20,13 +20,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
-import org.labkey.remoteapi.collections.CaseInsensitiveHashMap;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
@@ -38,6 +38,7 @@ import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.MetadataElement;
+import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Property;
 import org.springframework.validation.BindException;
 
@@ -65,7 +66,6 @@ public class BitSetQueryImpl
     static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
 
     final Cube cube;
-    final CaseInsensitiveHashMap<MetadataElement> uniqueNameMap = new CaseInsensitiveHashMap<>();
     final CaseInsensitiveHashMap<Level> levelMap = new CaseInsensitiveHashMap<>();
     final QubeQuery qq;
     final BindException errors;
@@ -75,11 +75,11 @@ public class BitSetQueryImpl
 
     MemberSet containerMembers = null;  // null == all
 
-    public BitSetQueryImpl(Container c, OlapSchemaDescriptor sd, OlapConnection connection, QubeQuery qq, BindException errors) throws OlapException
+    public BitSetQueryImpl(Container c, OlapSchemaDescriptor sd, OlapConnection connection, QubeQuery qq, BindException errors) throws SQLException
     {
         this.connection = connection;
-        this.cube = qq.getCube();
         this.qq = qq;
+        this.cube = qq.getCube();
         this.errors = errors;
         this.cachePrefix = "" + c.getRowId() + "/" + sd.getId() + "/";
 
@@ -118,19 +118,22 @@ public class BitSetQueryImpl
     {
         CPUTimer t = new CPUTimer("initCube");
         assert t.start();
-        // Member ordinals may not be set, which is really annoying
         for (Hierarchy h : cube.getHierarchies())
         {
             for (Level l : h.getLevels())
             {
                 levelMap.put(l.getUniqueName(),l);
-                List<Member> members = l.getMembers();
-                int count = members.size();
-                for (int i=0 ; i<count ; i++)
+                if (!(cube instanceof CachedCubeFactory.CachedCube))
                 {
-                    Member m = members.get(i);
-                    m.setProperty(Property.StandardMemberProperty.MEMBER_ORDINAL,String.valueOf(i));
-                    assert m.getOrdinal() == i;
+                    // Member ordinals may not be set, which is really annoying
+                    List<Member> members = l.getMembers();
+                    int count = members.size();
+                    for (int i = 0; i < count; i++)
+                    {
+                        Member m = members.get(i);
+                        m.setProperty(Property.StandardMemberProperty.MEMBER_ORDINAL, String.valueOf(i));
+                        assert m.getOrdinal() == i;
+                    }
                 }
             }
         }
@@ -812,7 +815,8 @@ public class BitSetQueryImpl
                 MemberSet set = new MemberSet();
                 for (Member m : containerMembers)
                 {
-                    for (Member c : m.getChildMembers())
+                    List<? extends Member> children = (m instanceof CachedCubeFactory._Member) ? ((CachedCubeFactory._Member)m).getChildMembersArray() : m.getChildMembers();
+                    for (Member c : children)
                     {
                         set.add(c);
                         assert same(c.getLevel(), measureLevel);
@@ -1257,23 +1261,15 @@ public class BitSetQueryImpl
         }
 
         //
-        // Members returned by a CellSet are not necessarily the same as those in the cube, this seems to happen
-        // therefore they may not have initialized ordinal values.  This seems to happen with UNION queries
+        // Members returned by the CellSet are not necessarily the same as those in _cube.
         //
         Member getCubeMember(Member member) throws OlapException
         {
             if (member.getOrdinal() >= 0)
                 return member;
-            MetadataElement me = uniqueNameMap.get(member.getUniqueName());
-            if (null == me)
-            {
-                Level l = member.getLevel();
-                for (Member m : l.getMembers())
-                    uniqueNameMap.put(m.getUniqueName(),m);
-            }
-            me = uniqueNameMap.get(member.getUniqueName());
-            assert null == me || (me instanceof Member);
-            return (Member)me;
+            Level l = levelMap.get(member.getLevel().getUniqueName());
+            Member m = ((NamedList<Member>)l.getMembers()).get(member.getName());
+            return m;
         }
     }
 

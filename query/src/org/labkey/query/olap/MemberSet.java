@@ -79,6 +79,7 @@ public class MemberSet extends AbstractSet<Member>
     }
 
 
+    // TODO : don't need to do this if the cube is a CachedCube
     // NOTE we can't hang onto cube metadata when sitting in a cache (e.g. Level objects)
     // we need a way to detach and reattch a MemberSet to a cube
 
