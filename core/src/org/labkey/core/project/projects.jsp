@@ -63,7 +63,10 @@
         hasPermission = target != null && target.hasPermission(getUser(), ReadPermission.class);
 
         //normalize entityId vs path.
-        jsonProps.put("containerPath", target.getPath());
+        if (target != null)
+        {
+            jsonProps.put("containerPath", target.getPath());
+        }
     }
 %>
 <div id='<%=text(renderTarget)%>'></div>
@@ -76,7 +79,7 @@ Ext4.onReady(function(){
     config.hideCreateButton = config.hideCreateButton === 'true';
 
     if(<%=target == null%>){
-        Ext4.get('<%=text(renderTarget)%>').update('The target container has been deleted.');
+        Ext4.get('<%=text(renderTarget)%>').update('The target container has been deleted. To reset, remove the webpart and readd it.');
         return;
     }
 
@@ -196,7 +199,7 @@ Ext4.onReady(function(){
 });
 
     /**
-     * Called by Server to handle cusomization actions.
+     * Called by Server to handle customization actions.
      */
     function customizeProjectWebpart(webpartId, pageId, index) {
 
