@@ -97,7 +97,7 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
                 var json = {};
                 try
                 {
-                    var json = response.responseJSON || LABKEY.ExtAdapter.decode(response.responseText);
+                    var json = response.responseJSON || LABKEY.Utils.decode(response.responseText);
                 } catch (x) {}
                 if ("pipelineURL" in json && json.pipelineURL)
                     window.location = json.pipelineURL;

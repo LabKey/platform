@@ -208,7 +208,7 @@ Ext.extend(LABKEY.FileSystem.TreeLoader, Ext.tree.TreeLoader,
     errorHandler: function(error, options){
         console.log(error);
         var msg = error ? error.statusText : null;
-        LABKEY.ExtAdapter.Msg.alert('Error', msg || 'unknown problem');
+        Ext4.Msg.alert('Error', msg || 'unknown problem');
     },
 
     //the callback for fileSystem.listFiles
@@ -614,7 +614,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         console.log(options);
 
         var msg = error ? error.statusText : null;
-        LABKEY.ExtAdapter.Msg.alert('Error', msg || 'unknown problem');
+        Ext4.Msg.alert('Error', msg || 'unknown problem');
     },
 
     getDownloadAction : function()
@@ -965,7 +965,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
                     var newName = field.getValue();
 
                     if(!newName || !field.isValid()){
-                        LABKEY.ExtAdapter.Msg.alert("Warning", 'Must enter a valid filename');
+                        Ext4.Msg.alert("Warning", 'Must enter a valid filename');
                     }
 
                     if(newName == win.origName){
@@ -1119,7 +1119,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
                     var panel = win.find('itemId', 'treepanel')[0];
                     var node = panel.getSelectionModel().getSelectedNode();
                     if(!node){
-                        LABKEY.ExtAdapter.Msg.alert('Warning', 'Must pick a destination folder');
+                        Ext4.Msg.alert('Warning', 'Must pick a destination folder');
                         return;
                     }
 
@@ -2800,7 +2800,7 @@ Ext.extend(LABKEY.ext.FileBrowser, Ext.Panel,
         if (form)
             form.reset();
         var message = message || "File upload failed.";
-        LABKEY.ExtAdapter.Msg.alert("Error", LABKEY.ExtAdapter.htmlEncode(message).replace("\n","<br>"));
+        Ext4.Msg.alert("Error", Ext4.htmlEncode(message).replace("\n","<br>"));
         console.log(message);
         console.log(action);
         this.refreshDirectory();

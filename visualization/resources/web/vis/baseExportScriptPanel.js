@@ -57,6 +57,6 @@ Ext4.define('LABKEY.vis.BaseExportScriptPanel', {
     },
 
     compileTemplate: function(input) {
-        return this.SCRIPT_TEMPLATE.replace('{{chartConfig}}', LABKEY.ExtAdapter.encode(input.chartConfig));
+        return this.SCRIPT_TEMPLATE.replace('{{chartConfig}}', LABKEY.Utils.encode(input.chartConfig));
     }
 });
