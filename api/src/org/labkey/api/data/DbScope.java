@@ -782,18 +782,21 @@ public class DbScope
      * The tasks are put into a LinkedHashSet, so they'll run in order, but we will avoid running identical tasks
      * multiple times. Make sure you have implemented hashCode() and equals() on your task if you want to only run it
      * once per transaction.
+     *
+     * @return  the task that was inserted or the existing class that will be run instead
      */
-    public void addCommitTask(Runnable task, CommitTaskOption taskOption)
+    public <T extends Runnable> T  addCommitTask(T task, CommitTaskOption taskOption)
     {
         Transaction t = getCurrentTransaction();
 
         if (null == t)
         {
             task.run();
+            return task;
         }
         else
         {
-            t.addCommitTask(task, taskOption);
+            return t.addCommitTask(task, taskOption);
         }
     }
 
@@ -1221,7 +1224,10 @@ public class DbScope
 
     public interface Transaction extends AutoCloseable
     {
-        public void addCommitTask(Runnable runnable, DbScope.CommitTaskOption taskOption);
+        /*
+         * @return  the task that was inserted or the existing class that will be run instead
+         */
+        public <T extends Runnable> T  addCommitTask(T runnable, DbScope.CommitTaskOption taskOption);
         public Connection getConnection();
         public void close();
         public void commit();
@@ -1259,16 +1265,38 @@ public class DbScope
             _caches.put(cache, map);
         }
 
-        public void addCommitTask(Runnable task, DbScope.CommitTaskOption taskOption)
+        public <T extends Runnable> T addCommitTask(T task, DbScope.CommitTaskOption taskOption)
         {
-            boolean added = false;
-            if (taskOption == CommitTaskOption.PRECOMMIT)
-                added = _preCommitTasks.add(task);
-            else if (taskOption == CommitTaskOption.POSTCOMMIT)
-                added = _postCommitTasks.add(task);
-
+            boolean added;
+            T addedObj = task;
+            switch (taskOption)
+            {
+                case PRECOMMIT:
+                    added = _preCommitTasks.add(task);
+                    for(Runnable r : _preCommitTasks)
+                        if( r.equals(task))
+                        {
+                            addedObj = (T) r;
+                            break;
+                        }
+                    break;
+                case POSTCOMMIT:
+                    added = _postCommitTasks.add(task);
+                    for(Runnable r : _postCommitTasks)
+                        if( r.equals(task))
+                        {
+                            addedObj = (T) r;
+                            break;
+                        }
+                    break;
+                default:
+                    throw new IllegalArgumentException("Option '" + taskOption + "' handled by addCommitTask");
+            }
             if (!added)
+            {
                 LOG.debug("Skipping duplicate runnable: " + task.toString());
+            }
+            return addedObj;
         }
 
         public Connection getConnection()
