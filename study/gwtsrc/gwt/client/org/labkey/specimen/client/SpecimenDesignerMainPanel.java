@@ -221,27 +221,31 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
             List<String> domainErrors = propeditor.validate();
             if (domainErrors.size() > 0)
                 errors.addAll(domainErrors);
-        }
+            }
 
         // Check for the same name in Specimen and Vial
         Set<String> specimenFields = new HashSet<String>();
         for (GWTPropertyDescriptor prop : domainSpecimen.getFields())
         {
-            specimenFields.add(prop.getName().toLowerCase());
+            if (null != prop.getName())
+                specimenFields.add(prop.getName().toLowerCase());
         }
 
         Set<String> vialFields = new HashSet<String>();
         for (GWTPropertyDescriptor prop : domainVial.getFields())
         {
-            if (!prop.isRequired() && specimenFields.contains(prop.getName().toLowerCase()))
-                errors.add("Vial cannot have a custom field of the same name as a Specimen field: " + prop.getName());
-            else
-                vialFields.add(prop.getName().toLowerCase());       // only add if we aren't already reporting error on that name
+            if (null != prop.getName())
+            {
+                if (!prop.isRequired() && specimenFields.contains(prop.getName().toLowerCase()))
+                    errors.add("Vial cannot have a custom field of the same name as a Specimen field: " + prop.getName());
+                else
+                    vialFields.add(prop.getName().toLowerCase());       // only add if we aren't already reporting error on that name
+            }
         }
 
         for (GWTPropertyDescriptor prop : domainSpecimen.getFields())
         {
-            if (!prop.isRequired() && vialFields.contains(prop.getName().toLowerCase()))
+            if (!prop.isRequired() && null != prop.getName() && vialFields.contains(prop.getName().toLowerCase()))
                 errors.add("Specimen cannot have a custom field of the same name as a Vial field: " + prop.getName());
         }
 
