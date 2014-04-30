@@ -18,6 +18,7 @@ package org.labkey.api.ehr.dataentry;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.view.template.ClientDependency;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,7 +33,8 @@ public class SingleQueryFormSection extends SimpleFormSection
 {
     public SingleQueryFormSection(String schema, String query, String label)
     {
-        super(schema, query, label, "ehr-formpanel");
+        super(schema, query, label, "ehr-simpledataentryformpanel");
+        addClientDependency(ClientDependency.fromFilePath("ehr/form/SimpleDataEntryFormPanel.js"));
     }
 
     @Override

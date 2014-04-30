@@ -91,7 +91,12 @@ abstract public class AbstractNavItem implements NavItem
     @NotNull
     public Container getTargetContainer(Container c)
     {
-        return _targetContainer == null ? c : null;
+        return _targetContainer == null ? c : _targetContainer;
+    }
+
+    public void setTargetContainer(Container targetContainer)
+    {
+        _targetContainer = targetContainer;
     }
 
     public ActionURL appendDefaultView(Container c, ActionURL url, String dataRegionName)

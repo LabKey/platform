@@ -90,9 +90,4 @@ abstract public class AbstractImportingNavItem extends AbstractNavItem implement
     {
         return "importingNavItem";
     }
-
-    protected void setTargetContainer(Container c)
-    {
-        _targetContainer = c;
-    }
 }

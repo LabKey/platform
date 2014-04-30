@@ -67,7 +67,8 @@ public class QueryTabbedReportItem extends TabbedReportItem
     @Override
     public JSONObject toJSON(Container c, User u)
     {
-        UserSchema us = QueryService.get().getUserSchema(u, c, getSchemaName());
+        Container targetContainer = getTargetContainer(c) == null ? c : getTargetContainer(c);
+        UserSchema us = QueryService.get().getUserSchema(u, targetContainer, getSchemaName());
         if (us == null)
             return null;
 

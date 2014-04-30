@@ -78,7 +78,7 @@ public class ShowEditUIButton extends SimpleButtonConfigFactory
     @Override
     protected String getJsHandler(TableInfo ti)
     {
-        String ret = getHandlerName() + "(" + PageFlowUtil.jsString(_schemaName) + "," + PageFlowUtil.jsString(_queryName) + ",{";
+        String ret = getHandlerName() + "(" + PageFlowUtil.jsString(_schemaName) + "," + PageFlowUtil.jsString(_queryName) + ",dataRegionName, {";
 
         String delim = "";
         if (_urlParamMap != null)
@@ -86,6 +86,7 @@ public class ShowEditUIButton extends SimpleButtonConfigFactory
             for (String key : _urlParamMap.keySet())
             {
                 ret += delim + PageFlowUtil.jsString(key) + ":" + PageFlowUtil.jsString(_urlParamMap.get(key));
+                delim = ",";
             }
         }
 

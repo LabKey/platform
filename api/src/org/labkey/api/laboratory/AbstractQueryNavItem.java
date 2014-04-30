@@ -78,11 +78,6 @@ abstract public class AbstractQueryNavItem extends AbstractNavItem
         return "linkWithLabel";
     }
 
-    protected void setTargetContainer(Container c)
-    {
-        _targetContainer = c;
-    }
-
     @Override
     public boolean getDefaultVisibility(Container c, User u)
     {

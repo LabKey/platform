@@ -35,7 +35,6 @@ import org.labkey.api.view.ActionURL;
  */
 public class QueryImportNavItem extends AbstractImportingNavItem
 {
-    private Container _targetContainer = null;
     private String _schema;
     private String _query;
     private boolean _visible = true;
@@ -55,18 +54,6 @@ public class QueryImportNavItem extends AbstractImportingNavItem
         super(provider, query, label, category);
         _schema = schema;
         _query = query;
-        _targetContainer = targetContainer;
-    }
-
-    @Override
-    public Container getTargetContainer(Container c)
-    {
-        return _targetContainer == null ? c : _targetContainer;
-    }
-
-    @Override
-    public void setTargetContainer(Container targetContainer)
-    {
         _targetContainer = targetContainer;
     }
 

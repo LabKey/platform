@@ -223,6 +223,14 @@ public class AbstractDataEntryForm implements DataEntryForm
         return canInsert;
     }
 
+    /**
+     * Typically let normal table-level security handle read.  This can be set false to complete turn off the ability to see details on some forms.
+     */
+    public boolean canRead()
+    {
+        return true;
+    }
+
     protected List<String> getButtonConfigs()
     {
         List<String> defaultButtons = new ArrayList<String>();

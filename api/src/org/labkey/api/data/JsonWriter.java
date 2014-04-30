@@ -326,10 +326,23 @@ public class JsonWriter
             }
             String key = null;
             List<String> pks = lookupTable.getPkColumnNames();
-            if (null != pks && pks.size() > 0)
-                key = pks.get(0);
-            if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
-                key = pks.get(1);
+
+            //Issue 20092: the target column specified by the FK does not necessarily need to be a true PK
+            if (fk.getLookupColumnName() != null)
+            {
+                //NOTE: the XML could specify a column with different casing than the canonical name.  this could be problematic for client side JS.  \
+                ColumnInfo targetCol = lookupTable.getColumn(fk.getLookupColumnName());
+                if (targetCol != null)
+                    key = targetCol.getName();
+            }
+
+            if (key == null)
+            {
+                if (null != pks && pks.size() > 0)
+                    key = pks.get(0);
+                if (null != pks && pks.size() == 2 && ("container".equalsIgnoreCase(key) || "containerid".equalsIgnoreCase(key)))
+                    key = pks.get(1);
+            }
             lookupInfo.put("keyColumn", key);
 
             if (fk instanceof MultiValuedForeignKey)

@@ -61,6 +61,7 @@ abstract public class AbstractDataSource implements HistoryDataSource
     private String _categoryText;
     private String _primaryGroup;
     private String _name;
+    private boolean _showTime = false;
     protected String _subjectIdField = "Id";
     protected static final Logger _log = Logger.getLogger(HistoryDataSource.class);
 
@@ -100,6 +101,11 @@ abstract public class AbstractDataSource implements HistoryDataSource
             return null;
 
         return us.getTable(_query);
+    }
+
+    protected void setShowTime(boolean showTime)
+    {
+        _showTime = showTime;
     }
 
     @NotNull
@@ -207,7 +213,11 @@ abstract public class AbstractDataSource implements HistoryDataSource
             _log.info("DataSource does not contain QCState: " + getName());
         }
 
-        return new HistoryRowImpl(this, categoryText, categoryGroup, categoryColor, subjectId, date, html, qcStateLabel, publicData, taskId, taskRowId, formType, objectId);
+        HistoryRowImpl ret = new HistoryRowImpl(this, categoryText, categoryGroup, categoryColor, subjectId, date, html, qcStateLabel, publicData, taskId, taskRowId, formType, objectId);
+        if (_showTime && ret != null)
+            ret.setShowTime(_showTime);
+
+        return ret;
     }
 
     protected String getCategoryText(Results rs) throws SQLException

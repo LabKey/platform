@@ -59,4 +59,6 @@ public interface DataEntryForm
     abstract public LinkedHashSet<ClientDependency> getClientDependencies();
 
     abstract public Set<TableInfo> getTables();
+
+    abstract public boolean canRead();
 }
