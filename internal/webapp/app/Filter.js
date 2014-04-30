@@ -251,19 +251,24 @@ Ext.define('LABKEY.app.model.Filter', {
                         console.warn('invalid filter object being processed.');
                         return 'Unknown';
                     }
-                    var label = gf.getColumnName().split('/');
+                    var splitLabel = gf.getColumnName().split('/');
+                    var endLabel = "", first, real;
+                    if (splitLabel.length > 1) {
+                        // we're dealing with a presumed lookup filter
+                        first = splitLabel[0].split('_');
+                        real = first[first.length-1];
 
-                    // check lookups
-                    if (label.length > 1) {
-                        label = label[label.length-2];
+                        endLabel = real + '/' + splitLabel[splitLabel.length-1];
                     }
                     else {
-                        // non-lookup column
-                        label = label[0];
+                        // Just a normal column
+                        first = splitLabel[0].split('_');
+                        real = first[first.length-1];
+
+                        endLabel = real;
                     }
 
-                    label = label.split('_');
-                    return Ext.String.ellipsis(label[label.length-1], 9, false);
+                    return endLabel;
                 }
             }
             return 'Unknown';
