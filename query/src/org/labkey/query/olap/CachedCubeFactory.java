@@ -348,7 +348,7 @@ public class CachedCubeFactory
         final int depth;
         final _Hierarchy hierarchy;
         final Level.Type levelType;
-        final _NamedList<_Member,Member> members = new _NamedList<>();
+        final _NamedList<_Member,Member> members = new _UniqueNamedList<>();
 
         _Level(_Hierarchy h, Level l, @Nullable _Level lowerLevel, _Hash hash) throws OlapException
         {
@@ -412,6 +412,15 @@ public class CachedCubeFactory
             return null;
         }
 
+
+        /**
+         * NOTE: Level.getMembers() is defined as returning a List, not a NamedList()
+         * because member names may not be unique.  CachedCube returns a NamedList() that
+         * indexes by getUniqueName()
+         *
+         * @return Member
+         * @throws OlapException
+         */
         @Override
         public NamedList<Member> getMembers() throws OlapException
         {
@@ -457,7 +466,7 @@ public class CachedCubeFactory
                 arr = new Member[list.size()];
                 for (int i=0 ; i<list.size() ; i++)
                 {
-                    arr[i] = lowerLevel.getMembers().get(list.get(i).getName());
+                    arr[i] = lowerLevel.getMembers().get(list.get(i).getUniqueName());
                     assert null != arr[i];
                 }
             }
@@ -658,10 +667,15 @@ public class CachedCubeFactory
             return i==-1 ? null : get(i);
         }
 
+        protected String getName(T t)
+        {
+            return t.getName();
+        }
+
         @Override
         public boolean add(T t)
         {
-            indexMap.put(t.getName(),size());
+            indexMap.put(getName(t),size());
             return super.add(t);
         }
 
@@ -688,7 +702,26 @@ public class CachedCubeFactory
         {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public void add(int index, T element)
+        {
+            throw new UnsupportedOperationException();
+        }
     }
+
+    /* same as named list, but uses getUniqueName() instead of getName(), needed for MemberList
+     * PS: that's why getMember() return List instead of NamedList
+     */
+    static class _UniqueNamedList<T extends org.olap4j.impl.Named,MDE> extends _NamedList<T,MDE>
+    {
+        @Override
+        protected String getName(T t)
+        {
+            return ((MetadataElement)t).getUniqueName();
+        }
+    }
+
 
     private static class _EmptyNamedList<MDE> extends _NamedList<Named,MDE>
     {

@@ -81,7 +81,10 @@ public class BitSetQueryImpl
         this.qq = qq;
         this.cube = qq.getCube();
         this.errors = errors;
-        this.cachePrefix = "" + c.getRowId() + "/" + sd.getId() + "/";
+
+        String cubeId = cube.getUniqueName() +
+                ((cube instanceof CachedCubeFactory.CachedCube)?"@" + ((CachedCubeFactory.CachedCube)cube).getLongHashCode() : "");
+        this.cachePrefix = "" + c.getRowId() + "/" + sd.getId() + "/" + cubeId + "/";
 
         initCube();
         initDistinctMeasure();
@@ -1268,7 +1271,7 @@ public class BitSetQueryImpl
             if (member.getOrdinal() >= 0)
                 return member;
             Level l = levelMap.get(member.getLevel().getUniqueName());
-            Member m = ((NamedList<Member>)l.getMembers()).get(member.getName());
+            Member m = ((NamedList<Member>)l.getMembers()).get(member.getUniqueName());
             return m;
         }
     }

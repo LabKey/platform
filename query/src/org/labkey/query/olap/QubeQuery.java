@@ -217,13 +217,6 @@ public class QubeQuery
         if (mde instanceof Member)
             return (Member)mde;
 
-        String name = memberUniqueName;
-        if (name.endsWith("]"))
-        {
-            int start = memberUniqueName.lastIndexOf("[");
-            name = memberUniqueName.substring(start+1,name.length()-1);
-        }
-
         List<Level> listOfLevels;
         if (null != l)
             listOfLevels = Collections.singletonList(l);
@@ -232,10 +225,10 @@ public class QubeQuery
         for (Level hl : listOfLevels)
         {
             List<Member> list = hl.getMembers();
-            if (list instanceof NamedList)
+            if (cube instanceof CachedCubeFactory.CachedCube)
             {
-                Member m = ((NamedList<Member>)list).get(name);
-                if (null != m && memberUniqueName.equals(m.getUniqueName()))
+                Member m = ((NamedList<Member>)list).get(memberUniqueName);
+                if (null != m)
                     return m;
             }
             else
