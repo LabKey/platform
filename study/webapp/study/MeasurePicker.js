@@ -723,6 +723,11 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     // only used if displaySourceCounts is 'true'
     sourceCountMemberSet: [],
 
+    sourceGroupHeader : 'Queries',
+
+    // the "select all" column header for the measures grid
+    measuresAllHeader : null,
+
     constructor : function(config) {
 
         Ext4.apply(this, config, {
@@ -808,19 +813,22 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 selectedItemCls: 'itemselected',
                 tpl: new Ext4.XTemplate(
                     '<tpl for=".">',
-                        '<div class="itemrow {sourceCount:this.renderDisabled}" style="padding: 3px 6px 4px 6px; cursor: pointer;">{queryLabel:htmlEncode}{sourceCount:this.renderCount}</div>',
+                        '<tpl if="schemaName !=null && parent[xindex - 2] && parent[xindex - 2].schemaName == null">',
+                        '<div class="groupheader groupheaderline" style="padding: 8px 6px 4px 6px; color: #808080">' + this.sourceGroupHeader + '</div>',
+                        '</tpl>',
+                        '<div class="itemrow {[this.renderDisabled(values)]}" style="padding: 3px 6px 4px 6px; cursor: pointer;">{queryLabel:htmlEncode}{[this.renderCount(values)]}</div>',
                     '</tpl>',
                         {
-                            renderCount : function(count) {
+                            renderCount : function(values) {
                                 var val = "";
-                                if (Ext.isNumber(count)) {
-                                    val = " (" + Ext.htmlEncode(count) + ")";
+                                if (values['queryName'] != null && Ext.isNumber(values['sourceCount'])) {
+                                    val = " (" + Ext.htmlEncode(values['sourceCount']) + ")";
                                 }
                                 return val;
                             },
-                            renderDisabled : function(count) {
+                            renderDisabled : function(values) {
                                 var val = "";
-                                if (count === 0) {
+                                if (values['queryName'] != null && values['sourceCount'] === 0) {
                                     val = "itemdisabled";
                                 }
                                 return val;
@@ -895,7 +903,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     createMeasurePanel : function() {
         // Using a new MeasureStore, but we will only display filtered sets of measures
         this.measuresStore = Ext4.create('LABKEY.ext4.MeasuresStore', {
-            showKeyVariablesFirst : !this.multiSelect,
+            groupField: 'keyVariableGrouper',
             listeners : {
                 measureStoreSorted : function(store) {
                     this.loaded = true;
@@ -956,18 +964,36 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                         checkOnly: true,
                         checkSelector: 'td.x-grid-cell-row-checker'
                     },
+                    requires: ['Ext.grid.feature.Grouping'],
+                    features: [{
+                        ftype: 'grouping',
+                        id: 'measuresGridGrouping',
+                        collapsible: false,
+                        groupHeaderTpl: new Ext4.XTemplate(
+                            '<div class="groupheader groupheaderline" style="padding: 3px 6px 4px 6px; color: #808080">',
+                                '{groupValue:this.renderHeader}',
+                            '</div>',
+                            {
+                                renderHeader : function(value) {
+                                    return value == '0' ? 'Recommended' : 'Additional';
+                                }
+                            }
+                        )
+                    }],
                     enableColumnHide: false,
                     enableColumnResize: false,
                     multiSelect: true,
                     bubbleEvents : ['viewready'],
                     columns: [{
-                        header: 'Select All',
+                        header: this.measuresAllHeader || 'Select All',
                         dataIndex: 'label',
                         flex: 1,
                         sortable: false,
                         menuDisabled: true
                     }]
                 }));
+
+                this.groupingFeature = this.measuresGrid.view.getFeature('measuresGridGrouping');
             }
             else
             {
@@ -980,10 +1006,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     tpl: new Ext4.XTemplate(
                         '<tpl for=".">',
                             '<tpl if="isKeyVariable && xindex == 1">',
-                                '<div class="groupheader" style="padding: 3px 6px 4px 6px; color: #808080">Key Measures</div>',
+                                '<div class="groupheader" style="padding: 3px 6px 4px 6px; color: #808080">Recommended</div>',
                             '</tpl>',
                             '<tpl if="!isKeyVariable && parent[xindex - 2] && parent[xindex - 2].isKeyVariable">',
-                                '<div class="groupheader groupheaderline" style="padding: 8px 6px 4px 6px; color: #808080">Other Measures</div>',
+                                '<div class="groupheader groupheaderline" style="padding: 8px 6px 4px 6px; color: #808080">Additional</div>',
                             '</tpl>',
                             '<div class="itemrow" style="padding: 3px 6px 4px 6px; cursor: pointer;">{label:htmlEncode}</div>',
                         '</tpl>'
@@ -1085,6 +1111,13 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         this.getEl().unmask();
 
+        // enable or disable the measure grid grouping feature based on the presence of a key variable
+        if (this.groupingFeature)
+        {
+            var hasKeyVar = this.measuresStore.find('isKeyVariable', true) > -1;
+            hasKeyVar ? this.groupingFeature.enable() : this.groupingFeature.disable();
+        }
+
         // show the grid
         this.getMeasuresGrid().show();
     },
@@ -1169,8 +1202,6 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
 
     extend: 'Ext.data.Store',
 
-    showKeyVariablesFirst: false,
-
     constructor : function(config) {
 
         if (!Ext4.ModelManager.isRegistered('Measure')) {
@@ -1191,6 +1222,7 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                     {name   : 'selected'},
                     {name   : 'alias'},
                     {name   : 'isKeyVariable'},
+                    {name   : 'keyVariableGrouper', convert: function(val, rec){ return rec.data.isKeyVariable ? '0' : '1'; }},
                     {name   : 'defaultScale'},
                     {name   : 'sortOrder', defaultValue: 0},
                     {name   : 'variableType'}, // i.e. TIME
@@ -1222,8 +1254,7 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
             sortArr.push({property: 'sortOrder'});
             sortArr.push({property: 'schemaName'});
             sortArr.push({property: 'queryLabel'});
-            if (this.showKeyVariablesFirst)
-                sortArr.push({property: 'isKeyVariable', direction: 'DESC'});
+            sortArr.push({property: 'isKeyVariable', direction: 'DESC'});
             sortArr.push({property: 'label'});
 
             store.sort(sortArr);
