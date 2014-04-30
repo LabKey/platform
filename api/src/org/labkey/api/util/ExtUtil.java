@@ -30,7 +30,7 @@ public class ExtUtil
         String x = toExtDateFormat(j);
         if (null == x)
             return null;
-        return "(Ext4.Format.dateRenderer(" + PageFlowUtil.jsString(x) + "))";
+        return "(Ext4.util.Format.dateRenderer(" + PageFlowUtil.jsString(x) + "))";
     }
 
 
@@ -157,11 +157,11 @@ public class ExtUtil
         if (isPercentage)
         {
             return "((function(){" +
-                    "var fmt = Ext4.Format.numberRenderer(" + PageFlowUtil.jsString(x) + "); return function(d){return fmt(d*100) + '%';};" +
+                    "var fmt = Ext4.util.Format.numberRenderer(" + PageFlowUtil.jsString(x) + "); return function(d){return fmt(d*100) + '%';};" +
                     "})())";
         }
         else
-            return "(Ext4.Format.numberRenderer(" + PageFlowUtil.jsString(x) + "))";
+            return "(Ext4.util.Format.numberRenderer(" + PageFlowUtil.jsString(x) + "))";
     }
 
 
