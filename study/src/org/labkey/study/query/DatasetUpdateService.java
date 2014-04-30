@@ -18,6 +18,7 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -37,11 +38,13 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.QCState;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.visitmanager.PurgeParticipantsTask;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -241,11 +244,59 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         return participant.toString();
     }
 
+    static class PurgeParticipantCommitTask implements Runnable
+    {
+        public Container _container;
+        public Set<String> _potentiallyDeletedParticipants = new HashSet<>();
+
+        PurgeParticipantCommitTask(Container container, Set<String> potentiallyDeletedParticipants) {
+            _container = container;
+            Set<String> copySet = new HashSet<>(potentiallyDeletedParticipants);
+            _potentiallyDeletedParticipants = copySet;
+        }
+
+        @Override
+        public void run()
+        {
+            HashMap<Container, Set<String>> potentiallyDeletedParticipantsMap = new HashMap<>();
+            potentiallyDeletedParticipantsMap.put(_container, _potentiallyDeletedParticipants);
+            PurgeParticipantsTask purgeParticipantsTask = new PurgeParticipantsTask(potentiallyDeletedParticipantsMap );
+            purgeParticipantsTask.run();
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            PurgeParticipantCommitTask that = (PurgeParticipantCommitTask) o;
+
+            if (_container != null ? !_container.equals(that._container) : that._container != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return _container != null ? _container.hashCode() : 0;
+        }
+    }
+
+
     @Override
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> updateRows(User user, final Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, extraScriptContext);
+        if (null != extraScriptContext && extraScriptContext.get("synchronousParticipantPurge") == true)
+        {
+            PurgeParticipantCommitTask addObj = new PurgeParticipantCommitTask(container, _potentiallyDeletedParticipants);
+            PurgeParticipantCommitTask setObj = getQueryTable().getSchema().getScope().addCommitTask(addObj, DbScope.CommitTaskOption.POSTCOMMIT);
+            setObj._potentiallyDeletedParticipants.addAll(addObj._potentiallyDeletedParticipants);
+        }
+
         resyncStudy(user, container);
         return result;
     }

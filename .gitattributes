@@ -3901,6 +3901,7 @@ study/src/org/labkey/study/view/visitImportMapping.jsp -text
 study/src/org/labkey/study/view/visitOrder.jsp -text
 study/src/org/labkey/study/view/visitVisibility.jsp -text
 study/src/org/labkey/study/visitmanager/AbsoluteDateVisitManager.java -text
+study/src/org/labkey/study/visitmanager/PurgeParticipantsTask.java -text
 study/src/org/labkey/study/visitmanager/RelativeDateVisitManager.java -text
 study/src/org/labkey/study/visitmanager/SequenceVisitManager.java -text
 study/src/org/labkey/study/visitmanager/VisitManager.java -text

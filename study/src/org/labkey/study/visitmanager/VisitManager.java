@@ -44,7 +44,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
@@ -529,7 +528,7 @@ public abstract class VisitManager
             {
                 // This is the first request, so start the timer
                 TIMER = new Timer("Participant purge", true);
-                TimerTask task = new PurgeParticipantsTask();
+                TimerTask task = new PurgeParticipantsTask(POTENTIALLY_DELETED_PARTICIPANTS);
                 TIMER.scheduleAtFixedRate(task, PURGE_PARTICIPANT_INTERVAL, PURGE_PARTICIPANT_INTERVAL);
                 ShutdownListener listener = new ParticipantPurgeContextListener();
                 // Add a shutdown listener to stop the worker thread if the webapp is shut down
@@ -687,70 +686,6 @@ public abstract class VisitManager
     StudyImpl getStudy()
     {
         return _study;
-    }
-
-    private static class PurgeParticipantsTask extends TimerTask
-    {
-        @Override
-        public void run()
-        {
-            try
-            {
-                while (true)
-                {
-                    Container container;
-                    Set<String> potentiallyDeletedParticipants;
-
-                    synchronized (POTENTIALLY_DELETED_PARTICIPANTS)
-                    {
-                        if (POTENTIALLY_DELETED_PARTICIPANTS.isEmpty())
-                        {
-                            return;
-                        }
-                        // Grab the first study to be purged, and exit the synchronized block quickly
-                        Iterator<Map.Entry<Container, Set<String>>> i = POTENTIALLY_DELETED_PARTICIPANTS.entrySet().iterator();
-                        Map.Entry<Container, Set<String>> entry = i.next();
-                        i.remove();
-                        container = entry.getKey();
-                        potentiallyDeletedParticipants = entry.getValue();
-                    }
-
-                    // Now, outside the synchronization, do the actual purge
-                    StudyImpl study = StudyManager.getInstance().getStudy(container);
-                    if (study != null)
-                    {
-                        try
-                        {
-                            int deleted = performParticipantPurge(study, potentiallyDeletedParticipants);
-                            if (deleted > 0)
-                            {
-                                StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null);
-                            }
-                        }
-                        catch (RuntimeSQLException x)
-                        {
-                            if (SqlDialect.isTransactionException(x) || SqlDialect.isObjectNotFoundException(x))
-                            {
-                                // Might get an error a dataset has been deleted out from under us, so retry
-                                LOGGER.warn("Unable to complete participant purge, requeuing for another attempt");
-                                // throw them back on the queue
-                                VisitManager vm = StudyManager.getInstance().getVisitManager(study);
-                                vm.scheduleParticipantPurge(potentiallyDeletedParticipants);
-                            }
-                            else
-                            {
-                                LOGGER.error("Failed to purge participants for " + container.getPath(), x);
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                LOGGER.error("Failed to purge participants", e);
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
-        }
     }
 
     private static class ParticipantPurgeContextListener implements ShutdownListener

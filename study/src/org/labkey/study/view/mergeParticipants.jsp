@@ -542,6 +542,7 @@
             updateMergeResults("Merging " + jsSubjectNounColumnName + " from " + oldId + " to " + newId + " ...", false);
             LABKEY.Query.saveRows({
                 commands : saveRowsCommands,
+                extraContext: {'synchronousParticipantPurge': true},
                 apiVersion : 13.2,
                 success : function(response) {
                     oldIdField.setValue("");
