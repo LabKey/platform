@@ -46,7 +46,7 @@ LABKEY.Portal = new function()
         return function(webparts, responseObj, options)
         {
            updateDOM(webparts, action, webPartId, direction);
-            LABKEY.ExtAdapter.Msg.hide();
+            Ext4.Msg.hide();
             // after update, call the user's success function:
             if (userSuccessCallback)
                 userSuccessCallback(webparts, responseObj, options);
@@ -202,7 +202,7 @@ LABKEY.Portal = new function()
         return function(exceptionObj, responseObj, options)
         {
             // hide the UI message box:
-            LABKEY.ExtAdapter.Msg.hide();
+            Ext4.Msg.hide();
             // after update, call the user's success function:
             return userErrorCallback(exceptionObj, responseObj, options);
         }
@@ -210,7 +210,7 @@ LABKEY.Portal = new function()
 
     function startUIUpdate()
     {
-        LABKEY.ExtAdapter.Msg.wait("Saving...");
+        Ext4.Msg.wait("Saving...");
     }
 
     function defaultErrorHandler(exceptionObj, responseObj, options)
@@ -543,9 +543,9 @@ LABKEY.Portal = new function()
                 method: 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(response, options) {
                     if(config.domId && response.pageIdToSwap && response.pageIdToSwap !== response.pageId) {
-                        var tabAnchor = LABKEY.ExtAdapter.query('#' + config.domId)[0];
+                        var tabAnchor = Ext4.query('#' + config.domId)[0];
                         if (tabAnchor) {
-                            var tabEl = LABKEY.ExtAdapter.get(tabAnchor.parentElement);
+                            var tabEl = Ext4.get(tabAnchor.parentElement);
                             var prev = tabAnchor.parentNode.previousElementSibling;
                             tabEl.insertBefore(prev);
                         }
@@ -573,9 +573,9 @@ LABKEY.Portal = new function()
                 method: 'GET',
                 success: LABKEY.Utils.getCallbackWrapper(function(response, options) {
                     if(config.domId && response.pageIdToSwap && response.pageIdToSwap !== response.pageId) {
-                        var tabAnchor = LABKEY.ExtAdapter.query('#' + config.domId)[0];
+                        var tabAnchor = Ext4.query('#' + config.domId)[0];
                         if (tabAnchor) {
-                            var tabEl = LABKEY.ExtAdapter.get(tabAnchor.parentElement);
+                            var tabEl = Ext4.get(tabAnchor.parentElement);
                             var next = tabAnchor.parentNode.nextElementSibling;
                             tabEl.insertAfter(next);
                         }
@@ -644,7 +644,7 @@ LABKEY.Portal = new function()
                             errorHTML = jsonResp.errors[0].message;
                         else
                             errorHTML = 'An unknown error occured. Please contact your administrator.';
-                        LABKEY.ExtAdapter.Msg.alert('Error', '<div class="labkey-error">' + errorHTML + '</div>');
+                        Ext4.Msg.alert('Error', '<div class="labkey-error">' + errorHTML + '</div>');
                     }
                 });
             };
@@ -677,7 +677,7 @@ LABKEY.Portal = new function()
                     if (jsonResp && jsonResp.errors)
                     {
                         var errorHTML = '<div class="labkey-error">' + jsonResp.errors[0].message + '</div>';
-                        LABKEY.ExtAdapter.Msg.alert('Error', errorHTML);
+                        Ext4.Msg.alert('Error', errorHTML);
                     }
                 }
             });
@@ -720,7 +720,7 @@ LABKEY.Portal = new function()
                                 errorHTML = jsonResp.errors[0].message;
                             else
                                 errorHTML = 'An unknown error occured. Please contact your administrator.';
-                            LABKEY.ExtAdapter.Msg.alert('Error', '<div class="labkey-error">' + errorHTML + '</div>');
+                            Ext4.Msg.alert('Error', '<div class="labkey-error">' + errorHTML + '</div>');
                         }
                     });
                 };

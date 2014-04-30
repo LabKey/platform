@@ -60,15 +60,15 @@ LABKEY.Query = new function(impl) {
         // will make the browser pop up a dialog
         var html = '<form method="POST" action="' + LABKEY.ActionURL.buildURL("query", "exportSql", config.containerPath) + '">';
         if (undefined != config.sql)
-            html += '<input type="hidden" name="sql" value="' + LABKEY.ExtAdapter.htmlEncode(config.sql) + '" />';
+            html += '<input type="hidden" name="sql" value="' + Ext4.htmlEncode(config.sql) + '" />';
         if (undefined != config.schemaName)
-            html += '<input type="hidden" name="schemaName" value="' + LABKEY.ExtAdapter.htmlEncode(config.schemaName) + '" />';
+            html += '<input type="hidden" name="schemaName" value="' + Ext4.htmlEncode(config.schemaName) + '" />';
         if (undefined != config.format)
-            html += '<input type="hidden" name="format" value="' + LABKEY.ExtAdapter.htmlEncode(config.format) + '" />';
+            html += '<input type="hidden" name="format" value="' + Ext4.htmlEncode(config.format) + '" />';
         if (undefined != config.containerFilter)
-            html += '<input type="hidden" name="containerFilter" value="' + LABKEY.ExtAdapter.htmlEncode(config.containerFilter) + '" />';
+            html += '<input type="hidden" name="containerFilter" value="' + Ext4.htmlEncode(config.containerFilter) + '" />';
         html += "</form>";
-        var newForm = LABKEY.ExtAdapter.DomHelper.append(document.getElementsByTagName('body')[0], html);
+        var newForm = Ext4.DomHelper.append(document.getElementsByTagName('body')[0], html);
         newForm.submit();
     };
     return impl;

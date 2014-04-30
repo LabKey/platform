@@ -53,13 +53,13 @@ LABKEY.Form = function(config) {
     //if the config doesn't have a property named formElement
     //try treating it as a form element
     if(!config.formElement)
-        config = {formElement: LABKEY.ExtAdapter.get(config)};
+        config = {formElement: Ext4.get(config)};
 
     if(!config.formElement)
         throw "Invalid config passed to LABKEY.Form constructor! Your config object should have a property named formElement which is the id of your form.";
     
     //save the form element
-    this.formElement = LABKEY.ExtAdapter.get(config.formElement);
+    this.formElement = Ext4.get(config.formElement);
     this.warningMessage = config.warningMessage || "Your changes have not yet been saved. Choose Cancel to stay on the page and save your changes.";
     this._isDirty = false;
 
@@ -67,16 +67,16 @@ LABKEY.Form = function(config) {
     var elems = this.formElement.dom.elements;
     for(var idx = 0; idx < elems.length; ++idx)
     {
-        LABKEY.ExtAdapter.EventManager.on(elems[idx], "change", this.onElemChange, this);
+        Ext4.EventManager.on(elems[idx], "change", this.onElemChange, this);
     }
 
-    LABKEY.ExtAdapter.EventManager.on(this.formElement, "submit", function(){
+    Ext4.EventManager.on(this.formElement, "submit", function(){
         this.setClean();
     }, this);
 
     if(false !== config.showWarningMessage)
     {
-        if (!LABKEY.ExtAdapter.isIE && !LABKEY.ExtAdapter.isGecko)
+        if (!Ext4.isIE && !Ext4.isGecko)
         {
             window.onbeforeunload = function(){
                 if (this.isDirty())
@@ -85,7 +85,7 @@ LABKEY.Form = function(config) {
         }
         else
         {
-            LABKEY.ExtAdapter.EventManager.on(window, "beforeunload", function(evt){
+            Ext4.EventManager.on(window, "beforeunload", function(evt){
                 if(this.isDirty())
                     evt.browserEvent.returnValue = this.warningMessage;
             }, this);

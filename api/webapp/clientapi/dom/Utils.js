@@ -43,7 +43,7 @@ LABKEY.Utils = new function(impl) {
             msgPrefix: msgPrefix,
             showExceptionClass: showExceptionClass
         });
-        LABKEY.ExtAdapter.Msg.alert("Error", LABKEY.ExtAdapter.htmlEncode(error));
+        Ext4.Msg.alert("Error", Ext4.htmlEncode(error));
     };
 
     /**
@@ -96,9 +96,9 @@ LABKEY.Utils = new function(impl) {
     impl.convertToExcel = function(spreadsheet) {
         // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
         // will make the browser pop up a dialog
-        var newForm = LABKEY.ExtAdapter.DomHelper.append(document.getElementsByTagName('body')[0],
+        var newForm = Ext4.DomHelper.append(document.getElementsByTagName('body')[0],
                         '<form method="POST" action="' + LABKEY.ActionURL.buildURL("experiment", "convertArraysToExcel") + '">' +
-                        '<input type="hidden" name="json" value="' + LABKEY.ExtAdapter.htmlEncode(LABKEY.Utils.encode(spreadsheet)) + '" />' +
+                        '<input type="hidden" name="json" value="' + Ext4.htmlEncode(LABKEY.Utils.encode(spreadsheet)) + '" />' +
                         '</form>');
         newForm.submit();
     };
@@ -127,9 +127,9 @@ LABKEY.Utils = new function(impl) {
     impl.convertToTable = function(config) {
         // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
         // will make the browser pop up a dialog
-        var newForm = LABKEY.ExtAdapter.DomHelper.append(document.getElementsByTagName('body')[0],
+        var newForm = Ext4.DomHelper.append(document.getElementsByTagName('body')[0],
                         '<form method="POST" action="' + LABKEY.ActionURL.buildURL("experiment", "convertArraysToTable") + '">' +
-                        '<input type="hidden" name="json" value="' + LABKEY.ExtAdapter.htmlEncode(LABKEY.ExtAdapter.encode(config)) + '" />' +
+                        '<input type="hidden" name="json" value="' + Ext4.htmlEncode(Ext4.encode(config)) + '" />' +
                         '</form>');
         newForm.submit();
     };
@@ -141,7 +141,7 @@ LABKEY.Utils = new function(impl) {
      */
     impl.alert = function(title, msg) {
 
-        LABKEY.ExtAdapter.Msg.alert(title, msg);
+        Ext4.Msg.alert(title, msg);
     };
 
     /**
@@ -178,8 +178,8 @@ LABKEY.Utils = new function(impl) {
      &lt;/script&gt;
      */
     impl.onError = function(error){
-        if (LABKEY.ExtAdapter.Msg.isVisible())
-            LABKEY.ExtAdapter.Msg.hide();
+        if (Ext4.Msg.isVisible())
+            Ext4.Msg.hide();
 
         if(!error)
             return;
@@ -220,7 +220,7 @@ LABKEY.Utils = new function(impl) {
      */
     impl.setWebpartTitle = function(title, webPartId)
     {
-        var titleEl = LABKEY.ExtAdapter.query('table#webpart_'+webPartId+' span[class=labkey-wp-title-text]');//, 'webpart_' + webPartId);
+        var titleEl = Ext4.query('table#webpart_'+webPartId+' span[class=labkey-wp-title-text]');//, 'webpart_' + webPartId);
         if (titleEl && (titleEl.length >= 1))
         {
             titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(title);
@@ -261,7 +261,7 @@ LABKEY.Utils = new function(impl) {
             callback = config;
             scripts = null;
         }
-        else if (LABKEY.ExtAdapter.isObject(config) && LABKEY.Utils.isFunction(config.callback))
+        else if (Ext4.isObject(config) && LABKEY.Utils.isFunction(config.callback))
         {
             scope = config.scope || this;
             callback = config.callback;
@@ -279,7 +279,7 @@ LABKEY.Utils = new function(impl) {
         }
         else
         {
-            LABKEY.ExtAdapter.onReady(callback, scope);
+            Ext4.onReady(callback, scope);
         }
     };
 

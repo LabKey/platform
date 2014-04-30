@@ -150,11 +150,11 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
                 location = location;
             },
             failure: function(response){
-                var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
+                var jsonResp = LABKEY.Utils.decode(response.responseText);
                 if (jsonResp && jsonResp.errors)
                 {
                     var errorHTML = jsonResp.errors[0].message;
-                    LABKEY.ExtAdapter.Msg.alert('Error', errorHTML);
+                    Ext4.Msg.alert('Error', errorHTML);
                 }
             }
         });
@@ -273,11 +273,11 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
                 location = location;
             },
             failure: function(response){
-                var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
+                var jsonResp = LABKEY.Utils.decode(response.responseText);
                 if (jsonResp && jsonResp.errors)
                 {
                     var errorHTML = jsonResp.errors[0].message;
-                    LABKEY.ExtAdapter.Msg.alert('Error', errorHTML);
+                    Ext4.Msg.alert('Error', errorHTML);
                 }
             }
         });
@@ -423,11 +423,11 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
                 location = location;
             },
             failure: function(response){
-                var jsonResp = LABKEY.ExtAdapter.decode(response.responseText);
+                var jsonResp = LABKEY.Utils.decode(response.responseText);
                 if (jsonResp && jsonResp.errors)
                 {
                     var errorHTML = jsonResp.errors[0].message;
-                    LABKEY.ExtAdapter.Msg.alert('Error', errorHTML);
+                    Ext4.Msg.alert('Error', errorHTML);
                 }
             }
         });

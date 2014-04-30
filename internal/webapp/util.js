@@ -45,7 +45,7 @@ function showHelpDiv(elem, titleText, bodyText, width)
     document.getElementById("helpDivTitle").innerHTML = titleText;
     document.getElementById("helpDivBody").innerHTML = bodyText;
 
-    var bd = LABKEY.ExtAdapter.get(document.body);
+    var bd = Ext4.get(document.body);
     var sz = bd.getViewSize();
     var viewportWidth = sz.width;
     var viewportHeight = sz.height;

@@ -124,12 +124,12 @@ LABKEY.WebPart = function(config)
     //validate config
     if(!_partName)
     {
-        LABKEY.ExtAdapter.Msg.alert("Configuration Error", "You must supply the name of the desired web part in the partName config property.");
+        Ext4.Msg.alert("Configuration Error", "You must supply the name of the desired web part in the partName config property.");
         return;
     }
     if(!_renderTo)
     {
-        LABKEY.ExtAdapter.Msg.alert("Configuration Error", "You must supply the name of the target element in the renderTo config property.");
+        Ext4.Msg.alert("Configuration Error", "You must supply the name of the target element in the renderTo config property.");
         return;
     }
 
@@ -150,7 +150,7 @@ LABKEY.WebPart = function(config)
         else
             msg += response.statusText;
 
-        LABKEY.ExtAdapter.Msg.alert("Error", msg);
+        Ext4.Msg.alert("Error", msg);
     };
 
     var renderPart = function(response, partConfig)
@@ -169,7 +169,7 @@ LABKEY.WebPart = function(config)
         // render the part inside the target element
         if(_renderTo)
         {
-            var targetElem = LABKEY.ExtAdapter.get(_renderTo);
+            var targetElem = Ext4.get(_renderTo);
             if(targetElem)
             {
                 LABKEY.Utils.loadAjaxContent(response, targetElem, _success, _scope);
@@ -177,13 +177,13 @@ LABKEY.WebPart = function(config)
             else
             {
                 if(!_suppressRenderErrors)
-                    LABKEY.ExtAdapter.Msg.alert("Rendering Error", "The element '" + _renderTo + "' does not exist in the document!");
+                    Ext4.Msg.alert("Rendering Error", "The element '" + _renderTo + "' does not exist in the document!");
             }
         }
         else
         {
             if(!_suppressRenderErrors)
-                LABKEY.ExtAdapter.Msg.alert("Rendering Error", "The target element name was not set!");
+                Ext4.Msg.alert("Rendering Error", "The target element name was not set!");
         }
     };
 
@@ -216,7 +216,7 @@ LABKEY.WebPart = function(config)
 
             //forward query string parameters
             //(for Query web parts)
-            LABKEY.ExtAdapter.applyIf(_partConfig, LABKEY.ActionURL.getParameters());
+            Ext4.applyIf(_partConfig, LABKEY.ActionURL.getParameters());
 
             //Ext uses a param called _dc to defeat caching, and it may be
             //on the URL if the Query web part has done a sort or filter
@@ -282,20 +282,20 @@ LABKEY.WebPart = function(config)
   &lt;/script&gt;  </pre></code>
  */
 LABKEY.WebPart.createReportWebpart = function(config){
-    var wpConfig = LABKEY.ExtAdapter.apply({}, config.webPartConfig);
+    var wpConfig = Ext4.apply({}, config.webPartConfig);
     wpConfig.partName = 'Report';
 
     //for convenience, support these wp properties in config
     var prop;
-    LABKEY.ExtAdapter.each(['renderTo', 'success', 'failure'], function(prop){
-        if (LABKEY.ExtAdapter.isDefined(config[prop]))
+    Ext4.each(['renderTo', 'success', 'failure'], function(prop){
+        if (Ext4.isDefined(config[prop]))
             wpConfig[prop] = config[prop];
     }, this);
 
     //then merge the partConfig options.  we document specific Report-specific options for clarity to the user
-    wpConfig.partConfig = LABKEY.ExtAdapter.apply({}, config.reportProperties);
-    LABKEY.ExtAdapter.each(['reportId', 'reportName', 'schemaName', 'queryName', 'title'], function(prop){
-        if (LABKEY.ExtAdapter.isDefined(config[prop]))
+    wpConfig.partConfig = Ext4.apply({}, config.reportProperties);
+    Ext4.each(['reportId', 'reportName', 'schemaName', 'queryName', 'title'], function(prop){
+        if (Ext4.isDefined(config[prop]))
             wpConfig.partConfig[prop] = config[prop];
     }, this);
 

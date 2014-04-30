@@ -61,7 +61,7 @@
 <script type="text/javascript">
     function changeFontEl(el, themeFontClass)
     {
-        var _el = LABKEY.ExtAdapter.get(el);
+        var _el = Ext4.get(el);
         if (!_el) return;
         <%for (ThemeFont tf : ThemeFont.getThemeFonts()){%>
             _el.removeClass ? _el.removeClass(<%=PageFlowUtil.jsString(tf.getClassName())%>) : _el.removeCls(<%=PageFlowUtil.jsString(tf.getClassName())%>);
@@ -141,14 +141,14 @@
             show = true;
         }
 
-        LABKEY.ExtAdapter.onReady(function() {
-            var elem = LABKEY.ExtAdapter.get("labkey-warning-messages-area");
+        Ext4.onReady(function() {
+            var elem = Ext4.get("labkey-warning-messages-area");
             if (elem)
                 elem.setDisplayed(show, true);
-            elem = LABKEY.ExtAdapter.get("labkey-warning-message-icon");
+            elem = Ext4.get("labkey-warning-message-icon");
             if (elem)
                 elem.setDisplayed(!show, true);
-            LABKEY.ExtAdapter.Ajax.request({
+            Ext4.Ajax.request({
                 url    : LABKEY.ActionURL.buildURL('user', 'setShowWarningMessages.api'),
                 params : {showMessages: show}
             });
