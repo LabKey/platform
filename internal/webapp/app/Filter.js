@@ -366,6 +366,16 @@ Ext.define('LABKEY.app.model.Filter', {
             }
         },
 
+        emptyLabelText: 'Unknown',
+
+        getMemberLabel : function(member) {
+            var label = member;
+            if (!Ext.isString(label) || label.length === 0 || label === "#null") {
+                label = LABKEY.app.model.Filter.emptyLabelText;
+            }
+            return label;
+        },
+
         Operators: {
             UNION: 'UNION',
             INTERSECT: 'INTERSECT'

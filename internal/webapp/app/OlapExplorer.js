@@ -199,7 +199,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 }
 
                 target = {
-                    label: subPosition.name == '#null' ? 'Unknown' : subPosition.name,
+                    label: LABKEY.app.model.Filter.getMemberLabel(subPosition.name),
                     uniqueName: subPosition.uniqueName,
                     count: baseResult.cells[x][0].value,
                     value: subPosition.name,
