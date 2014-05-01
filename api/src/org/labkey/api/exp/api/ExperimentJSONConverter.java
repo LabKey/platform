@@ -203,7 +203,7 @@ public class ExperimentJSONConverter
         }
         else
         {
-            jsonObject = serializeStandardProperties(material, sampleSet.getPropertiesForType());
+            jsonObject = serializeStandardProperties(material, sampleSet.getType().getProperties());
             if (sampleSet.hasNameAsIdCol())
             {
                 JSONObject properties = jsonObject.optJSONObject(ExperimentJSONConverter.PROPERTIES);

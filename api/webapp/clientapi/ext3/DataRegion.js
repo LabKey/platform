@@ -2858,7 +2858,9 @@ LABKEY.DataRegion.getParamValPairsFromString = function (queryString, skipPrefix
             var paramPair = pairs[i].split("=", 2);
             paramPair[0] = decodeURIComponent(paramPair[0]);
 
-            if (paramPair[0] == ".lastFilter")
+            // LastFilter parameters are prefixed with an optional scope. Look for a filter that ends with
+            // ".lastFilter", and don't propagate it
+            if (paramPair[0].indexOf(".lastFilter") >= 0 && paramPair[0].indexOf(".lastFilter") == paramPair[0].length - ".lastFilter".length)
                 continue;
 
             if (skipPrefixes)

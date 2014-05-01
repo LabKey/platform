@@ -1302,11 +1302,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public List<NavTree> getHeaderLinks(ViewContext viewContext, ExpProtocol protocol, ContainerFilter containerFilter)
     {
         List<NavTree> result = new ArrayList<>();
-        result.add(new NavTree("view results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(viewContext.getContainer(), protocol, containerFilter))));
+        result.add(new NavTree("view results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(viewContext.getContainer(), protocol, containerFilter), AssayProtocolSchema.getLastFilterScope(protocol))));
         if (isBackgroundUpload(protocol))
         {
             ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getShowUploadJobsURL(viewContext.getContainer(), protocol, containerFilter);
-            result.add(new NavTree("view upload jobs", PageFlowUtil.addLastFilterParameter(url)));
+            result.add(new NavTree("view upload jobs", PageFlowUtil.addLastFilterParameter(url, AssayProtocolSchema.getLastFilterScope(protocol))));
         }
         return result;
     }

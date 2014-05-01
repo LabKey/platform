@@ -17,6 +17,7 @@
 package org.labkey.api.exp.property;
 
 import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
@@ -52,6 +53,7 @@ public class PropertyService
         /** Get all the domains in the same project as the specified container. They may not be in use in the container directly */
         List<? extends Domain> getDomains(Container container);
         /** Creates an in-memory Domain. It is not automatically saved to the database */
+        @NotNull
         Domain createDomain(Container container, String typeURI, String name);
 
         /** Same as QueryService.get().getUserSchema(user, container, schemaName).getDomainURI(queryName) */

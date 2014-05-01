@@ -2312,7 +2312,6 @@ public class PageFlowUtil
 
     /**
      * CONSOLIDATE ALL .lastFilter handling
-     * scope is not fully supported
      */
     public static void saveLastFilter(ViewContext context, ActionURL url, String scope)
     {

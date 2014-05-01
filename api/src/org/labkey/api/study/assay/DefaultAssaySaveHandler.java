@@ -565,7 +565,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             // To delete a property, include a property map with that property and set its value to null.
             if (materialProperties.size() > 0)
             {
-                List<? extends DomainProperty> dps = sampleSet != null ? sampleSet.getPropertiesForType() : Collections.<DomainProperty>emptyList();
+                List<? extends DomainProperty> dps = sampleSet != null ? sampleSet.getType().getProperties() : Collections.<DomainProperty>emptyList();
                 handleProperties(context, material, dps, materialProperties);
             }
         }

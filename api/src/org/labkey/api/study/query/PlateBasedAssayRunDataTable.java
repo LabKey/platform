@@ -98,7 +98,7 @@ public abstract class PlateBasedAssayRunDataTable extends FilteredTable<AssaySch
         final ExpSampleSet sampleSet = ExperimentService.get().getSampleSet(sampleDomainURI);
         if (sampleSet != null)
         {
-            for (DomainProperty pd : sampleSet.getPropertiesForType())
+            for (DomainProperty pd : sampleSet.getType().getProperties())
             {
                 visibleColumns.add(FieldKey.fromParts("Properties", getInputMaterialPropertyName(),
                         ExpMaterialTable.Column.Property.toString(), pd.getName()));

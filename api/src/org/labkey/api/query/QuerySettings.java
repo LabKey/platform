@@ -60,6 +60,9 @@ public class QuerySettings
     private long _offset = 0;
     private String _selectionKey = null;
 
+    @NotNull
+    private String _lastFilterScope = "";
+
     private ShowRows _showRows = ShowRows.PAGINATED;
 
     PropertyValues _filterSort = null;
@@ -659,5 +662,18 @@ public class QuerySettings
     public void setFieldKeys(List<FieldKey> keys)
     {
         _fieldKeys = keys;
+    }
+
+    /** Optional scoping, beyond the folder itself, for .lastFilter */
+    @NotNull
+    public String getLastFilterScope()
+    {
+        return _lastFilterScope;
+    }
+
+    /** Optional scoping, beyond the folder itself, for .lastFilter */
+    public void setLastFilterScope(@NotNull String lastFilterScope)
+    {
+        _lastFilterScope = lastFilterScope;
     }
 }

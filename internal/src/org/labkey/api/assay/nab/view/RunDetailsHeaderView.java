@@ -29,6 +29,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.actions.AssayHeaderView;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
@@ -77,8 +78,8 @@ public class RunDetailsHeaderView extends AssayHeaderView
     {
         List<NavTree> links = new ArrayList<>();
 
-        links.add(new NavTree("View Runs", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), _protocol, _containerFilter))));
-        links.add(new NavTree("View Results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), _protocol, _containerFilter, _runId))));
+        links.add(new NavTree("View Runs", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), _protocol, _containerFilter), AssayProtocolSchema.getLastFilterScope(_protocol))));
+        links.add(new NavTree("View Results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(getViewContext().getContainer(), _protocol, _containerFilter, _runId), AssayProtocolSchema.getLastFilterScope(_protocol))));
 
         if (getViewContext().hasPermission(InsertPermission.class))
         {

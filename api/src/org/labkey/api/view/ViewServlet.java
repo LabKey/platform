@@ -351,23 +351,25 @@ public class ViewServlet extends HttpServlet
         }
 
         // lastfilter
-        boolean expandLastFilter = ColumnInfo.booleanFromString(url.getParameter(DataRegion.LAST_FILTER_PARAM));
-
-        if (expandLastFilter)
+        for (Pair<String, String> entry : url.getParameters())
         {
-            ActionURL expand = (ActionURL) request.getSession(true).getAttribute(url.getPath() + "#" + DataRegion.LAST_FILTER_PARAM);
-            if (null != expand)
+            if (entry.getKey().endsWith(DataRegion.LAST_FILTER_PARAM) && ColumnInfo.booleanFromString(entry.getValue()))
             {
-                // any parameters on the URL override those stored in the last filter:
-                for (Pair<String, String> parameter : url.getParameters())
+                String paramName = entry.getKey();
+                ActionURL expand = (ActionURL) request.getSession(true).getAttribute(url.getPath() + "#" + paramName);
+                if (null != expand)
                 {
-                    // don't add the .lastFilter parameter (or we'll have an infinite redirect):
-                    if (!DataRegion.LAST_FILTER_PARAM.equals(parameter.getKey()))
-                        expand.replaceParameter(parameter.getKey(), parameter.getValue());
+                    // any parameters on the URL override those stored in the last filter:
+                    for (Pair<String, String> parameter : url.getParameters())
+                    {
+                        // don't add the .lastFilter parameter (or we'll have an infinite redirect):
+                        if (!paramName.equals(parameter.getKey()))
+                            expand.replaceParameter(parameter.getKey(), parameter.getValue());
+                    }
+                    if ("GET".equals(request.getMethod()))
+                        throw new RedirectException(expand.getLocalURIString());
+                    _log.error(DataRegion.LAST_FILTER_PARAM + " not supported for " + request.getMethod());
                 }
-                if ("GET".equals(request.getMethod()))
-                    throw new RedirectException(expand.getLocalURIString());
-                _log.error(DataRegion.LAST_FILTER_PARAM + " not supported for " + request.getMethod());
             }
         }
 

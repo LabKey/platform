@@ -29,6 +29,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -129,8 +130,10 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
             if (manageMenu.getChildCount() > 0)
                 links.add(manageMenu);
 
-            links.add(new NavTree("view batches", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getViewContext().getContainer(), _protocol, _containerFilter))));
-            links.add(new NavTree("view runs", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), _protocol, _containerFilter))));
+            String lastFilterScope = AssayProtocolSchema.getLastFilterScope(_protocol);
+
+            links.add(new NavTree("view batches", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getViewContext().getContainer(), _protocol, _containerFilter), lastFilterScope)));
+            links.add(new NavTree("view runs", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), _protocol, _containerFilter), lastFilterScope)));
 
             links.addAll(getProvider().getHeaderLinks(getViewContext(), _protocol, _containerFilter));
 

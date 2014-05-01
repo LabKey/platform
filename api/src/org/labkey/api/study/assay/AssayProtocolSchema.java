@@ -495,6 +495,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         {
             result.setBaseSort(new Sort("-RowId"));
         }
+        result.setLastFilterScope(getLastFilterScope());
         return result;
     }
 
@@ -709,6 +710,23 @@ public abstract class AssayProtocolSchema extends AssaySchema
         }
     }
 
+    /**
+     * Scope the .lastFilter parameter to the assay design, so that we don't end up reusing the same filters
+     * when you view a different assay's data in the same container
+     */
+    public String getLastFilterScope()
+    {
+        return getLastFilterScope(getProtocol());
+    }
+
+    /**
+     * Scope the .lastFilter parameter to the assay design, so that we don't end up reusing the same filters
+     * when you view a different assay's data in the same container
+     */
+    public static String getLastFilterScope(ExpProtocol protocol)
+    {
+        return "Assay" + protocol.getRowId();
+    }
 
     private class AssayPropertyForeignKey extends PropertyForeignKey
     {
