@@ -125,6 +125,7 @@ public class RelativeDateVisitManager extends VisitManager
     }
 
 
+    /* call updateParticipants() first */
     protected void updateParticipantVisitTable(@Nullable User user)
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
@@ -170,14 +171,9 @@ public class RelativeDateVisitManager extends VisitManager
 
         //
         // Delete ParticipantVisit where the participant does not exist anymore
+        //   obviously the participants table needs to be udpated first
         //
-        SQLFragment sqlDeleteParticiapantVisit = new SQLFragment("DELETE FROM ");
-        sqlDeleteParticiapantVisit.append(tableParticipantVisit.getSelectName())
-                .append(" WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM ")
-                .append(tableParticipant.getSelectName()).append(" WHERE Container= ?)");
-        sqlDeleteParticiapantVisit.add(container);
-        sqlDeleteParticiapantVisit.add(container);
-        new SqlExecutor(schema).execute(sqlDeleteParticiapantVisit);
+        purgeParticipantsFromParticipantsVisitTable(container);
 
         SQLFragment sqlStartDate = new SQLFragment("(SELECT StartDate FROM ");
         sqlStartDate.append(tableParticipantSelectName)

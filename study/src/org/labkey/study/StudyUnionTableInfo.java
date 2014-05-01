@@ -64,10 +64,11 @@ public class StudyUnionTableInfo extends VirtualTable
     SQLFragment unionSql;
     private User _user;
     boolean _crossContainer = false;
+    Collection<DataSetDefinition> _defs;
 
     public StudyUnionTableInfo(StudyImpl study, Collection<DataSetDefinition> defs, User user)
     {
-        this(study,defs,user,false);
+        this(study, defs, user, false);
     }
 
     public StudyUnionTableInfo(StudyImpl study, Collection<DataSetDefinition> defs, User user, boolean crossContainer)
@@ -76,6 +77,7 @@ public class StudyUnionTableInfo extends VirtualTable
         _study = study;
         _user = user;
         _crossContainer = crossContainer;
+        _defs = defs;
         init(defs);
     }
 
@@ -97,7 +99,7 @@ public class StudyUnionTableInfo extends VirtualTable
             sqlf.append("SELECT CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ") AS dataset, " + def.getDataSetId() + " AS datasetid");
 
             String visitPropertyName = def.getVisitDatePropertyName();
-            ColumnInfo visitColumn = null==visitPropertyName ? null : ti.getColumn(visitPropertyName);
+            ColumnInfo visitColumn = null == visitPropertyName ? null : ti.getColumn(visitPropertyName);
             if (null != visitPropertyName && (null == visitColumn || visitColumn.getJdbcType() != JdbcType.TIMESTAMP))
                 Logger.getLogger(StudySchema.class).info("Could not find visit column of correct type '" + visitPropertyName + "' in dataset '" + def.getName() + "'");
             if (null != visitColumn && visitColumn.getJdbcType() == JdbcType.TIMESTAMP)
@@ -169,7 +171,7 @@ public class StudyUnionTableInfo extends VirtualTable
             unionAll = ") UNION ALL\n(";
         }
 
-        if (0==count)
+        if (0 == count)
         {
             sqlf.append("SELECT CAST(NULL AS " + getSqlDialect().getGuidType() + ") as dataset, 0 as datasetid");
             for (String column : unionColumns)
@@ -177,12 +179,12 @@ public class StudyUnionTableInfo extends VirtualTable
                 sqlf.append(", ");
                 if ("qcstate".equalsIgnoreCase(column) || "sequencenum".equalsIgnoreCase(column) || "createdby".equalsIgnoreCase(column) || "modifiedby".equalsIgnoreCase(column))
                     sqlf.append("0");
-                else if ("participantid".equalsIgnoreCase(column))
+                else if ("participantid".equalsIgnoreCase(column) || "participantsequencenum".equalsIgnoreCase(column))
                     sqlf.append("CAST(NULL as VARCHAR)");
                 else if ("_visitdate".equalsIgnoreCase(column) || "modified".equalsIgnoreCase(column) || "created".equalsIgnoreCase(column))
                     sqlf.append("CAST(NULL AS " + getSchema().getSqlDialect().getDefaultDateTimeDataType() + ")");
                 else if ("container".equalsIgnoreCase(column))
-                    sqlf.append("CAST('" + _study.getContainer().getId()+ "' AS " + getSqlDialect().getGuidType() + ")");
+                    sqlf.append("CAST('" + _study.getContainer().getId() + "' AS " + getSqlDialect().getGuidType() + ")");
                 else
                     sqlf.append(" NULL");
                 sqlf.append(" AS " + column);
@@ -202,6 +204,75 @@ public class StudyUnionTableInfo extends VirtualTable
     }
 
 
+    public SQLFragment getParticipantSequenceNumSQL(String alias)
+    {
+        HashSet<FieldKey> fks = new HashSet<>(Arrays.asList(new FieldKey(null,"participantId"),new FieldKey(null,"SequenceNum"),new FieldKey(null,"ParticipantSequenceNum")));
+        return _getFromSQL(alias, fks, true);
+    }
+
+    @Override
+    public SQLFragment getFromSQL(String alias, Set<FieldKey> cols)
+    {
+        return _getFromSQL(alias, cols, false);
+    }
+
+    private SQLFragment _getFromSQL(String alias, Set<FieldKey> cols, boolean distinct)
+    {
+        if (cols.size() != 2 ||
+                !cols.contains(new FieldKey(null,"participantid")) ||
+                !cols.contains(new FieldKey(null,"sequencenum")))
+            return getFromSQL(alias);
+
+        int count = 0;
+        String unionAll = "";
+        SQLFragment sqlf = new SQLFragment();
+        for (DataSetDefinition def : _defs)
+        {
+            TableInfo ti = def.getStorageTableInfo();
+            if (null == ti || (_user != null && !def.canRead(_user)))
+                continue;
+            count++;
+            sqlf.append(unionAll);
+            sqlf.append("SELECT ParticipantId, SequenceNum FROM " + ti.getSelectName() + " _");
+            if (def.isShared() && !_crossContainer)
+            {
+                sqlf.append(" WHERE container=?");
+                sqlf.add(def.getContainer());
+            }
+            if (distinct)
+                unionAll = ") UNION \n(";
+            else
+                unionAll = ") UNION ALL\n(";
+        }
+        if (count == 0)
+            return getFromSQL(alias);
+
+        unionSql = new SQLFragment();
+        unionSql.appendComment("<StudyUnionTableInfo>", getSchema().getSqlDialect());
+
+        if (count > 1)
+        {
+            unionSql.append("((");
+            unionSql.append(sqlf);
+            unionSql.append(")) ").append(alias);
+        }
+        else if (distinct)
+        {
+            unionSql.append("(SELECT DISTINCT ParticipantId, SequenceNum FROM (");
+            unionSql.append(sqlf);
+            unionSql.append(" _u) ").append(alias);
+        }
+        else
+        {
+            unionSql.append("(");
+            unionSql.append(sqlf);
+            unionSql.append(") ").append(alias);
+        }
+        unionSql.appendComment("</StudyUnionTableInfo>", getSchema().getSqlDialect());
+        return unionSql;
+    }
+
+
     @Override
     public String getSelectName()
     {
@@ -215,6 +286,9 @@ public class StudyUnionTableInfo extends VirtualTable
     {
         return unionSql;
     }
+
+
+
 
     private void makeColumnInfos(Set<PropertyDescriptor> sharedProperties)
     {

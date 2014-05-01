@@ -422,21 +422,30 @@ public abstract class VisitManager
         // Don't bother if we explicitly know that no participants were added, or that no datasets were edited
         if (null != studyPtidsFragment && !changedDatasets.isEmpty() && (potentiallyInsertedParticipants == null || !potentiallyInsertedParticipants.isEmpty()))
         {
-            SQLFragment datasetParticipantsSQL = new SQLFragment("INSERT INTO " + tableParticipant + " (container, participantid)\n" +
-                    "SELECT DISTINCT ?, participantid\n" +
-                    "FROM (").append(studyPtidsFragment).append("\n) x WHERE participantid NOT IN (SELECT participantid FROM ").append(tableParticipant, "p").append(" WHERE container = ?)");
-            datasetParticipantsSQL.add(c);
-            datasetParticipantsSQL.add(c);
+            // Postgres does not optimize NOT IN very well, so do a more complicated query
+            // INSERT INTO participant FROM participantvisit WHERE not in participant...
 
+            SQLFragment datasetParticipantsSQL = new SQLFragment();
+            datasetParticipantsSQL.append("WITH ");
+            datasetParticipantsSQL.append(
+                    "  ptidsDS AS (SELECT participantid FROM (").append(studyPtidsFragment).append(") _\n");
             // Databases limit the size of IN clauses, so check that we won't blow the cap
             if (potentiallyInsertedParticipants != null && potentiallyInsertedParticipants.size() < 450)
             {
                 // We have an explicit list of potentially added participants, so filter to only look at them
-                datasetParticipantsSQL.append(" AND participantid IN (");
+                datasetParticipantsSQL.append("WHERE participantid IN (");
                 datasetParticipantsSQL.append(StringUtils.repeat("?", ", ", potentiallyInsertedParticipants.size()));
                 datasetParticipantsSQL.addAll(potentiallyInsertedParticipants);
                 datasetParticipantsSQL.append(")");
             }
+            datasetParticipantsSQL.append("),\n");
+            datasetParticipantsSQL.append(
+                    "  ptidsP AS (SELECT participantid FROM study.participant p WHERE container=?),\n" +
+                    "  ptidsNew AS (SELECT participantid FROM ptidsDS EXCEPT SELECT participantid FROM ptidsP)\n" +
+                    "INSERT INTO study.participant (container, participantid)\n" +
+                    "SELECT ?, participantid FROM ptidsNew\n");
+            datasetParticipantsSQL.add(c);
+            datasetParticipantsSQL.add(c);
 
             new SqlExecutor(schema).execute(datasetParticipantsSQL);
         }
@@ -647,16 +656,14 @@ public abstract class VisitManager
                     ptids.append(studyDataPtids);
                     ptids.append(" UNION\n");
                 }
-                ptids.append("SELECT DISTINCT ptid FROM ");
+                ptids.append("SELECT DISTINCT ptid AS participantid FROM ");
                 ptids.append(tableSpecimen, "spec");
 
-                SQLFragment del = new SQLFragment();
-                del.append("DELETE FROM ").append(tableParticipant.getSelectName()).append(" WHERE container=? ");
-                del.add(study.getContainer().getId());
-                del.append(" AND participantid NOT IN (\n");
-                del.append(ptids);
-                del.append(")");
 
+                SQLFragment del = new SQLFragment();
+                del.append("WITH ptidsSD AS (").append(ptids).append("),\n");
+                del.append("  ptidsP AS (SELECT participantid FROM ").append(tableParticipant.getSelectName()).append(" WHERE container=?");
+                del.add(study.getContainer().getId());
                 // Databases limit the size of IN clauses, so check that we won't blow the cap
                 if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
                 {
@@ -666,6 +673,11 @@ public abstract class VisitManager
                     del.addAll(potentiallyDeletedParticipants);
                     del.append(")");
                 }
+                del.append("),\n");
+                del.append("  ptidsRM AS (SELECT participantid FROM ptidsP EXCEPT SELECT participantid FROM ptidsSD)");
+                del.append("DELETE FROM ").append(tableParticipant.getSelectName()).append(" WHERE container=? ");
+                del.add(study.getContainer().getId());
+                del.append(" AND participantid IN (select participantid from ptidsRM)");
 
                 return new LegacySqlExecutor(schema).execute(del);
             }
@@ -680,6 +692,30 @@ public abstract class VisitManager
             }
         }
         return 0;
+    }
+
+
+    /** remove rows in participantvisits that are not in the participant table */
+    protected int purgeParticipantsFromParticipantsVisitTable(Container c)
+    {
+        /** Postgres at least seems to have major performance issues with the simple DELETE NOT IN version
+         * DELETE FROM study.participantvisit WHERE Container = ? AND ParticipantId NOT IN (SELECT ParticipantId FROM study.participant WHERE Container= ?)
+         */
+        StudySchema study = StudySchema.getInstance();
+        SQLFragment delete = new SQLFragment();
+        delete.appendComment("<VisitManager.purgeParticipantsFromParticipantsVisitTable>",study.getSqlDialect());
+        delete.append(
+            "WITH \n" +
+            "  ptidsP AS (SELECT DISTINCT ParticipantId FROM study.participant WHERE Container=?),\n" +
+            "  ptidsPV AS (SELECT DISTINCT ParticipantId FROM study.participantvisit WHERE Container=?),\n" +
+            "  ptidsDELETE AS (SELECT ParticipantId FROM ptidsPV EXCEPT SELECT ParticipantId FROM ptidsP)\n" +
+            "DELETE FROM study.participantvisit WHERE Container= ? AND ParticipantId IN (SELECT ParticipantId FROM ptidsDELETE)"
+        );
+        delete.appendComment("</VisitManager.purgeParticipantsFromParticipantsVisitTable>",study.getSqlDialect());
+        delete.add(c);
+        delete.add(c);
+        delete.add(c);
+        return new SqlExecutor(study.getScope()).execute(delete);
     }
 
 
