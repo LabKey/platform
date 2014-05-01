@@ -82,6 +82,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
+import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpInputTable;
 import org.labkey.api.exp.query.ExpMaterialTable;
@@ -195,7 +196,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -454,7 +454,7 @@ public class ExperimentController extends SpringActionController
 
             if (_source == null)
             {
-                throw new NotFoundException();
+                throw new NotFoundException("No matching sample set found");
             }
 
             ensureCorrectContainer(getContainer(), _source, getViewContext());
@@ -520,9 +520,10 @@ public class ExperimentController extends SpringActionController
             detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).setStyle(ButtonBar.Style.separateButtons);
 
             // Not all sample sets can be edited
-            if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source) && _source.getType().getDomainKind().canEditDefinition(getUser(), _source.getType()))
+            DomainKind domainKind = _source.getType().getDomainKind();
+            if (!ExperimentService.get().ensureDefaultSampleSet().equals(_source) && domainKind != null && domainKind.canEditDefinition(getUser(), _source.getType()))
             {
-                ActionURL editURL = _source.getType().getDomainKind().urlEditDefinition(_source.getType(), getViewContext());
+                ActionURL editURL = domainKind.urlEditDefinition(_source.getType(), getViewContext());
                 if (editURL != null)
                 {
                     ActionButton editTypeButton = new ActionButton(editURL, "Edit Fields", DataRegion.MODE_DETAILS);
@@ -530,7 +531,7 @@ public class ExperimentController extends SpringActionController
                     detailsView.getDataRegion().getButtonBar(DataRegion.MODE_DETAILS).add(editTypeButton);
                 }
 
-                if (_source.getType().getDomainKind() instanceof SampleSetDomainType)
+                if (domainKind instanceof SampleSetDomainType)
                 {
                     ActionButton updateButton = new ActionButton(ShowUpdateMaterialSourceAction.class, "Edit Set", DataRegion.MODE_DETAILS, ActionButton.Action.GET);
                     updateButton.setDisplayPermission(UpdatePermission.class);

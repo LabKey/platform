@@ -23,6 +23,7 @@ import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyValidatorPropertyType;
 import org.fhcrc.cpas.exp.xml.PropertyValidatorType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
@@ -96,6 +97,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
         return new DomainImpl(dd);
     }
 
+    @NotNull
     public Domain createDomain(Container container, String typeURI, String name)
     {
         return new DomainImpl(container, typeURI, name);

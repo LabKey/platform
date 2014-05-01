@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -43,7 +44,6 @@ import org.labkey.experiment.controllers.exp.ExperimentController;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> implements ExpSampleSet
@@ -77,16 +77,6 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return _object.getMaterialLSIDPrefix();
     }
 
-    public List<? extends DomainProperty> getPropertiesForType()
-    {
-        Domain d = getType();
-        if (d == null)
-        {
-            return Collections.emptyList();
-        }
-        return d.getProperties();
-    }
-
     public String getDescription()
     {
         return _object.getDescription();
@@ -104,7 +94,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
             return null;
         }
 
-        for (DomainProperty property : getPropertiesForType())
+        for (DomainProperty property : getType().getProperties())
         {
             if (uri.equals(property.getPropertyURI()))
             {
@@ -153,7 +143,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         DomainProperty result = getDomainProperty(_object.getIdCol1());
         if (result == null)
         {
-            List<? extends DomainProperty> props = getPropertiesForType();
+            List<? extends DomainProperty> props = getType().getProperties();
             if (!props.isEmpty())
             {
                 result = props.get(0);
@@ -209,6 +199,7 @@ public class ExpSampleSetImpl extends ExpIdentifiableEntityImpl<MaterialSource> 
         return new ExpMaterialImpl(material);
     }
 
+    @NotNull
     public Domain getType()
     {
         if (_domain == null)

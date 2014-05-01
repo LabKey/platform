@@ -360,7 +360,7 @@ public class ExpMaterialTableImpl extends ExpTableImpl<ExpMaterialTable.Column> 
     {
         ColumnInfo lsidColumn = getColumn(Column.LSID);
         visibleColumns.remove(FieldKey.fromParts("Run"));
-        for (DomainProperty dp : ss.getPropertiesForType())
+        for (DomainProperty dp : ss.getType().getProperties())
         {
             PropertyDescriptor pd = dp.getPropertyDescriptor();
             ColumnInfo propColumn = new PropertyColumn(pd, lsidColumn, _userSchema.getContainer(), _userSchema.getUser(), true);

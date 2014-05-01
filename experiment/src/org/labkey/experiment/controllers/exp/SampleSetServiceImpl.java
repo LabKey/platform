@@ -49,7 +49,7 @@ public class SampleSetServiceImpl extends BaseRemoteService implements SampleSet
             GWTSampleSet gwtSet = new GWTSampleSet(set.getName(), set.getLSID());
             gwtSet.setRowId(set.getRowId());
             List<String> columnNames = new ArrayList<>();
-            for (DomainProperty propertyDescriptor : set.getPropertiesForType())
+            for (DomainProperty propertyDescriptor : set.getType().getProperties())
             {
                 columnNames.add(propertyDescriptor.getName());
             }
