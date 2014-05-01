@@ -46,6 +46,7 @@ public class ParticipantVisitTable extends FilteredTable<StudyQuerySchema>
     public ParticipantVisitTable(StudyQuerySchema schema, boolean hideDataSets)
     {
         super(StudySchema.getInstance().getTableInfoParticipantVisit(), schema);
+        _setContainerFilter(schema.getDefaultContainerFilter());
         setName(StudyService.get().getSubjectVisitTableName(schema.getContainer()));
         _demographicsColumns = new CaseInsensitiveHashMap<>();
         Study study = StudyService.get().getStudy(schema.getContainer());
