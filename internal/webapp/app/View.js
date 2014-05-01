@@ -299,7 +299,7 @@ Ext.define('LABKEY.app.controller.View', {
 
         this.inTransition = false;
 
-        this.fireEvent('afterchangeview', controller, view, viewContext, title, skipState);
+        this.fireEvent('afterchangeview', controller, view, viewContext, title);
     },
 
     updateHistory : function(controller, view, viewContext, title) {
@@ -315,13 +315,58 @@ Ext.define('LABKEY.app.controller.View', {
         }
 
         // 19923: Only update history on supported browsers
-        if (!Ext.isIE9m) {
-            history.pushState({
-                controller: controller,
-                view: view,
-                viewContext: viewContext
-            }, title, url);
+        // TODO: There is the initial case here which is still not supported,
+        // but we push a history update the first time someone loads the app, but
+        // in that case we should wait until the next view change (or window navigate?)
+        // to push the initial history
+        if (Ext.supports.History) {
+
+            var update = true;
+            var currentState = history.state;
+
+            if (currentState) {
+                var vc = (currentState.controller === controller && currentState.view === view);
+                if (vc && this.equalContext(currentState.viewContext, viewContext)) {
+                    update = false;
+                }
+            }
+
+            if (update) {
+                history.pushState({
+                    controller: controller,
+                    view: view,
+                    viewContext: viewContext
+                }, title, url);
+            }
         }
+    },
+
+    equalContext : function(aContext, bContext) {
+        var equal = false;
+        var aArray = Ext.isArray(aContext);
+        var bArray = Ext.isArray(bContext);
+
+        if (aArray && bArray) {
+            if (aContext.length == bContext.length) {
+
+                var _break = false;
+                Ext.each(aContext, function(aValue, index) {
+                    if (aValue !== bContext[index]) {
+                        _break = true;
+                        return false;
+                    }
+                });
+
+                if (!_break) {
+                    equal = true;
+                }
+            }
+        }
+        else if (!aArray && !bArray) {
+            equal = true;
+        }
+
+        return equal;
     },
 
     setAppActionName : function(appName) {

@@ -75,7 +75,7 @@ Ext.define('LABKEY.app.controller.Route', {
 //            console.log('control:', controller);
 //            console.log('view:', view);
 //            console.log('viewcontext:', viewContext);
-            this.application.getController('State').loadState(controller, view, viewContext, null, true, popState);
+            this.application.getController('State').loadState(controller, view, viewContext, null, true);
         }
         else {
             alert('Router failed to find resolve view context from route.');

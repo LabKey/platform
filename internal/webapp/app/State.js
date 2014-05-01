@@ -11,7 +11,7 @@ Ext.define('LABKEY.app.model.State', {
         {name : 'activeView'},
         {name : 'viewState'},
         {name : 'views'},
-        {name : 'filters'}, //,    type : Ext.data.Types.FILTER},
+        {name : 'filters'},
         {name : 'selections'},
         {name : 'detail'}
     ],
@@ -44,46 +44,15 @@ Ext.define('LABKEY.app.controller.State', {
             model : 'LABKEY.app.model.State'
         });
 
-        this.viewController = this._getViewController();
-
-        this.viewController.on('afterchangeview', this.afterViewChange, this);
-
         this.views = {};
-        if (this.preventRedundantHistory) {
-            this.lastAppState = '';
-        }
-
         this.filters = []; this.selections = [];
         this.privatefilters = {};
-
-//        if (Ext.supports.History) {
-//            var me = this;
-//            window.addEventListener('popstate', function(evt) {
-//                me._popState(evt);
-//            }, false);
-//        }
 
         this.state.load();
     },
 
     _getViewController : function() {
         console.error('Failed to register a view controller.');
-    },
-
-    /**
-     * @private
-     * The listener method for when the state is popped by the window object (Browser back button).
-     * See https://developer.mozilla.org/en/DOM/window.onpopstate
-     * @param evt
-     */
-    _popState : function(evt) {
-        if (evt && evt.state && evt.state.activeView) {
-            this.viewController.changeView(evt.state.activeView, [], this.defaultTitle, true);
-        }
-        else {
-            // still in our history -- go back to beginning
-            this.viewController.changeView(this.defaultView, [], this.defaultTitle);
-        }
     },
 
     getCurrentState : function() {
@@ -105,14 +74,10 @@ Ext.define('LABKEY.app.controller.State', {
         this.olap.onReady(callback, s);
     },
 
-    loadState : function(controller, view, viewContext, idx, useLast, popState) {
+    loadState : function(controller, view, viewContext, idx, useLast) {
 
         if (!controller && !view) {
             controller = this.defaultController;
-        }
-
-        if (popState) {
-            this.POP_STATE = true;
         }
 
         if (!idx) {
@@ -142,33 +107,13 @@ Ext.define('LABKEY.app.controller.State', {
                 this.setFilters(nonGridFilters, true);
             }
 
-            // Activate view
-            this._controller = controller;
-            this._view = view;
-            this._viewContext = viewContext;
-
-            // Change view and do not save state since a prior state is being loaded.
-            this.viewController._changeView(controller, view, viewContext, this.defaultTitle, true, false);
-
             // Apply Selections
             if (s.selections && s.selections.length > 0) {
                 this.setSelections(s.selections, true);
             }
-
-            if (s.detail) {
-                console.warn('would have set the details');
-//                this.setDetail(s.detail);
-            }
         }
-        else if (useLast) {
 
-            // Activate view
-            this._controller = controller;
-            this._view = view;
-            this._viewContext = viewContext;
-
-            this.viewController._changeView(controller, view, viewContext, this.defaultTitle, true, false);
-        }
+        this._getViewController()._changeView(controller, view, viewContext, this.defaultTitle, true, false);
 
         this.manageState();
     },
@@ -230,17 +175,6 @@ Ext.define('LABKEY.app.controller.State', {
         return custom;
     },
 
-    afterViewChange : function(controller, viewname, viewContext, title, skipState) {
-
-        this._controller = controller;
-        this._view = viewname;
-        this._viewContext = viewContext;
-
-        if (!skipState) {
-            this.updateState();
-        }
-    },
-
     /**
      * Provided to be overridden to provide a custom title for view states.
      * @param viewname
@@ -250,21 +184,15 @@ Ext.define('LABKEY.app.controller.State', {
         return viewname;
     },
 
-    clearAppState : function() {
-        this.lastAppState = undefined;
-    },
-
     updateState : function() {
         this.state.add({
-            controller: this._controller,
-            view: this._view,
-            viewContext: this._viewContext,
             viewState: {},
             views: this.views,
             filters: this.getFilters(true),
             selections: this.getSelections(true)
         });
         this.state.sync();
+//        console.log(this.state.getAt(this.state.getCount()-1).data);
     },
 
     updateFilterMembers : function(id, members, skipState) {
@@ -794,8 +722,10 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     clearSelections : function(skipState) {
-        this.selections = [];
-        this.requestSelectionUpdate(skipState, false);
+        if (this.selections.length > 0) {
+            this.selections = [];
+            this.requestSelectionUpdate(skipState, false);
+        }
     },
 
     setSelections : function(selections, skipState) {
