@@ -223,7 +223,7 @@ Ext.define('LABKEY.app.model.Filter', {
                 success: config.success,
                 failure: config.failure || m.getErrorCallback(),
                 jsonData: {
-                    categoryIds : config.categoryIds,
+                    categoryIds : config.categoryIds
                 },
                 headers: {'Content-Type': 'application/json'}
             });

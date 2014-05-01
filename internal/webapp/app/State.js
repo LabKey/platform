@@ -10,7 +10,7 @@ Ext.define('LABKEY.app.model.State', {
     fields : [
         {name : 'activeView'},
         {name : 'viewState'},
-        {name : 'views'},
+        {name : 'customState'},
         {name : 'filters'},
         {name : 'selections'},
         {name : 'detail'}
@@ -44,7 +44,7 @@ Ext.define('LABKEY.app.controller.State', {
             model : 'LABKEY.app.model.State'
         });
 
-        this.views = {};
+        this.customState = {};
         this.filters = []; this.selections = [];
         this.privatefilters = {};
 
@@ -90,8 +90,8 @@ Ext.define('LABKEY.app.controller.State', {
             // Apply state
             Ext.apply(this, s.viewState);
 
-            if (s.views) {
-                this.views = s.views;
+            if (s.customState) {
+                this.customState = s.customState;
             }
 
             // Apply Filters
@@ -133,9 +133,9 @@ Ext.define('LABKEY.app.controller.State', {
     getState : function(lookup, defaultState) {
         if (this.state.getCount() > 0) {
             var s = this.state.getAt(this.state.getCount()-1);
-            if (s.views && s.views[lookup.view]) {
-                if (s.views[lookup.view].hasOwnProperty(lookup.key)) {
-                    return s.views[lookup.view][lookup.key];
+            if (s.customState && s.customState[lookup.view]) {
+                if (s.customState[lookup.view].hasOwnProperty(lookup.key)) {
+                    return s.customState[lookup.view][lookup.key];
                 }
             }
         }
@@ -162,15 +162,15 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     setCustomState : function(lookup, state) {
-        if (!this.views.hasOwnProperty(lookup.view))
-            this.views[lookup.view] = {};
-        this.views[lookup.view][lookup.key] = state;
+        if (!this.customState.hasOwnProperty(lookup.view))
+            this.customState[lookup.view] = {};
+        this.customState[lookup.view][lookup.key] = state;
     },
 
     getCustomState : function(view, key) {
         var custom = undefined;
-        if (this.views.hasOwnProperty(view)) {
-            custom = this.views[view][key];
+        if (this.customState.hasOwnProperty(view)) {
+            custom = this.customState[view][key];
         }
         return custom;
     },
@@ -187,7 +187,7 @@ Ext.define('LABKEY.app.controller.State', {
     updateState : function() {
         this.state.add({
             viewState: {},
-            views: this.views,
+            customState: this.customState,
             filters: this.getFilters(true),
             selections: this.getSelections(true)
         });
