@@ -110,6 +110,8 @@ Ext.define('LABKEY.app.controller.State', {
         }
 
         this.manageState();
+
+        this.application.fireEvent('stateready', this);
     },
 
     manageState : function() {

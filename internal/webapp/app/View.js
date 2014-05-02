@@ -281,9 +281,6 @@ Ext.define('LABKEY.app.controller.View', {
      * @param {String} controller The name/target of the destination controller
      * @param {String} view the xtype of the destination view
      * @param {Array} viewContext url-based context (optional)
-     * @param {String} title Title to display for page in browser (optional)
-     * @param {Boolean} skipState Control over whether this view change is a recorded state event. Defaults to False.
-     * @param {Boolean} skipHide Control over whether the 'activeView' should be hidden. Defaults to False.
      */
     changeView : function(controller, view, viewContext) {
 
