@@ -726,26 +726,40 @@ Ext4.define('LABKEY.ext4.data.Store', {
         }
         else
         {
-            var params = {
-                schemaName: this.schemaName,
-                "query.queryName": this.queryName,
-                "query.containerFilterName": this.containerFilter
-            };
-
-            if (this.columns)
-                params['query.columns'] = Ext4.isArray(this.columns) ? this.columns.join(",") : this.columns;
-
-            // These are filters that are custom created (aka not from a defined view).
-            LABKEY.Filter.appendFilterParams(params, this.filterArray);
-
-            if (this.sortInfo)
-                params['query.sort'] = "DESC" == this.sortInfo.direction
-                        ? "-" + this.sortInfo.field
-                        : this.sortInfo.field;
-
-            var action = ("tsv" == format) ? "exportRowsTsv" : "exportRowsExcel";
-            window.location = LABKEY.ActionURL.buildURL("query", action, this.containerPath, params);
+            var config = this.getExportConfig(format);
+            window.location = config.url;
         }
+    },
+
+    getExportConfig : function(format) {
+
+        format = format || "excel";
+
+        var params = {
+            schemaName: this.schemaName,
+            "query.queryName": this.queryName,
+            "query.containerFilterName": this.containerFilter
+        };
+
+        if (this.columns) {
+            params["query.columns"] = Ext4.isArray(this.columns) ? this.columns.join(',') : this.columns;
+        }
+
+        // These are filters that are custom created (aka not from a defined view).
+        LABKEY.Filter.appendFilterParams(params, this.filterArray);
+
+        if (this.sortInfo) {
+            params["query.sort"] = ("DESC" === this.sortInfo.direction ? "-" : "") + this.sortInfo.field;
+        }
+
+        var config = {
+            action: ("tsv" === format) ? "exportRowsTsv" : "exportRowsExcel",
+            params: params
+        };
+
+        config.url = LABKEY.ActionURL.buildURL("query", config.action, this.containerPath, config.params);
+
+        return config;
     },
 
     //Ext3 compatability??
