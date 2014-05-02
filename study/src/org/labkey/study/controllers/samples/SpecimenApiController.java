@@ -16,6 +16,7 @@
 package org.labkey.study.controllers.samples;
 
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONObject;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.action.*;
@@ -709,12 +710,7 @@ public class SpecimenApiController extends BaseStudyController
             if (groupingsJSON.isEmpty())
             {
                 // no groupings; create default grouping
-                groupings = new ArrayList<>(1);
-                String[] dummyGrouping = new String[1];
-                dummyGrouping[0] = "Primary Type";
-                groupings.add(dummyGrouping);
-                groupingMap = sampleManager.getGroupedValuesForColumn(getContainer(), getUser(), groupings);
-                Map<String, Object> groupingJSON = groupingMap.get(dummyGrouping[0]);
+                Map<String, Object> groupingJSON = new JSONObject();
                 groupingJSON.put("dummy", true);
                 groupingsJSON.add(groupingJSON);
             }

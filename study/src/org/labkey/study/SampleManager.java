@@ -3008,17 +3008,18 @@ public class SampleManager implements ContainerManager.ContainerListener
         _groupedValuesCache.remove(cacheKey);
     }
 
+    @NotNull
     public Map<String, Map<String, Object>> getGroupedValuesForColumn(Container container, User user, ArrayList<String[]> groupings)
     {
         // ColumnName and filter names are "QueryView" names; map them to actual table names before building query
+        Map<String, Map<String, Object>> groupedValues = Collections.emptyMap();
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         if (study == null)
-            return null;
+            return groupedValues;
 
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(container), user, true);
         TableInfo tableInfo = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         String cacheKey = getGroupedValuesCacheKey(container);
-        Map<String, Map<String, Object>> groupedValues;
         if (null != _groupedValuesCache)
         {
             groupedValues = _groupedValuesCache.get(cacheKey);

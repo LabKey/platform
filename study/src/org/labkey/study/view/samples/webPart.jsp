@@ -91,7 +91,7 @@
 
     function handleGroupings(resp, names)
     {
-        if (resp.groupings.length == 0 || resp.groupings[0].values.length == 0)
+        if (resp.groupings.length == 0 || (resp.groupings[0].values && resp.groupings[0].values.length == 0))
         {
             var html = '<i>No specimens found.</i>';
             <% if (isAdmin && !c.isDataspace()) {%>
