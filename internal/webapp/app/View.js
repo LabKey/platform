@@ -33,16 +33,12 @@ Ext.define('LABKEY.app.controller.View', {
 
     controllers: {},
 
-    preventRedundantHistory: true,
-
     appName: '',
 
     init : function() {
 
-        VM = this;
-
-        if (this.preventRedundantHistory) {
-            this.lastHistory = '';
+        if (LABKEY.devMode) {
+            VM = this;
         }
 
         if (LABKEY.ActionURL) {
@@ -56,6 +52,8 @@ Ext.define('LABKEY.app.controller.View', {
             //
             this.allowAnimations = false; //!Ext.isDefined(params['transition']);
         }
+
+        this.application.on('route', this.routeView, this);
     },
 
     /**
@@ -190,13 +188,6 @@ Ext.define('LABKEY.app.controller.View', {
      */
     fadeInView : function(xtype) {
         this.viewMap[xtype].show();
-//        if (this.viewMap[xtype].rendered) {
-//            this.viewMap[xtype].getEl().fadeIn();
-//            this.viewMap[xtype].show();
-//        }
-//        else {
-//            this.viewMap[xtype].show();
-//        }
     },
 
     /**
@@ -206,32 +197,20 @@ Ext.define('LABKEY.app.controller.View', {
      */
     fadeOutView : function(xtype, callback) {
         callback.call(this);
-//        this.viewMap[xtype].getEl().fadeOut({
-//            listeners : {
-//                afteranimate : function() {
-//                    callback.call(this);
-//                },
-//                scope : this
-//            },
-//            scope : this
-//        });
     },
 
     showNotFound : function(controller, view, viewContext, title) { },
 
-    /**
-     * Call when a view needs to be shown. This will resolve all transitions and call the set show/hide methods
-     * for that view type.
-     * @param {String} controller The name/target of the destination controller
-     * @param {String} view the xtype of the destination view
-     * @param {Array} viewContext url-based context (optional)
-     * @param {String} title Title to display for page in browser (optional)
-     * @param {Boolean} skipState Control over whether this view change is a recorded state event. Defaults to False.
-     * @param {Boolean} skipHide Control over whether the 'activeView' should be hidden. Defaults to False.
-     */
-    _changeView : function(controller, view, viewContext, title, skipState, skipHide) {
+    routeView : function(controller, view, viewContext) {
 
-        this.inTransition = true;
+        if (!controller || (Ext.isString(controller) && controller.length === 0)) {
+            if (Ext.isDefined(this.application.defaultController)) {
+                controller = this.application.defaultController;
+            }
+            else {
+                console.log("Consider specifying a 'defaultController' on your Application.");
+            }
+        }
 
         var control = this.controllers[controller.toLowerCase()], localContext;
 
@@ -261,8 +240,7 @@ Ext.define('LABKEY.app.controller.View', {
             //
             // Unable to resolve the controller
             //
-            this.showNotFound(controller, view, viewContext, title);
-            this.inTransition = false;
+            this.showNotFound(controller, view, viewContext);
             this._notFound = false;
 
             return;
@@ -270,7 +248,7 @@ Ext.define('LABKEY.app.controller.View', {
 
         var actions = this.resolveViewTransitions(this.activeView, view);
 
-        if (!skipHide && actions.hide) {
+        if (actions.hide) {
             actions.show.fn.call(actions.show.scope, view, localContext);
         }
         else if (actions.show) {
@@ -282,7 +260,6 @@ Ext.define('LABKEY.app.controller.View', {
 
         if (this.notFound()) {
             this.showNotFound(controller, view, viewContext, title);
-            this.inTransition = false;
             this._notFound = false;
 
             return;
@@ -293,80 +270,38 @@ Ext.define('LABKEY.app.controller.View', {
         }
         this.CREATE_VIEW = false;
 
-        this.updateHistory(controller, view, viewContext, title);
-
         this.activeView = view;
 
-        this.inTransition = false;
-
-        this.fireEvent('afterchangeview', controller, view, viewContext, title);
+        this.fireEvent('afterchangeview', controller, view, viewContext);
     },
 
-    updateHistory : function(controller, view, viewContext, title) {
-        var url = this.getAppActionName() + '?' + this.getAppURLParams() + '#';
-        url += encodeURIComponent(controller.toLowerCase());
+    /**
+     * Call when a view needs to be shown. This will resolve all transitions and call the set show/hide methods
+     * for that view type.
+     * @param {String} controller The name/target of the destination controller
+     * @param {String} view the xtype of the destination view
+     * @param {Array} viewContext url-based context (optional)
+     * @param {String} title Title to display for page in browser (optional)
+     * @param {Boolean} skipState Control over whether this view change is a recorded state event. Defaults to False.
+     * @param {Boolean} skipHide Control over whether the 'activeView' should be hidden. Defaults to False.
+     */
+    changeView : function(controller, view, viewContext) {
+
+        var hashDelimiter = '/';
+        var hash = encodeURIComponent(controller);
         if (view) {
-            url += '/' + encodeURIComponent(view.toLowerCase());
-        }
-        if (viewContext) {
-            for (var v=0; v < viewContext.length; v++) {
-                url += '/' + encodeURIComponent(viewContext[v].toString());
-            }
-        }
+            hash += hashDelimiter + encodeURIComponent(view);
 
-        // 19923: Only update history on supported browsers
-        // TODO: There is the initial case here which is still not supported,
-        // but we push a history update the first time someone loads the app, but
-        // in that case we should wait until the next view change (or window navigate?)
-        // to push the initial history
-        if (Ext.supports.History) {
-
-            var update = true;
-            var currentState = history.state;
-
-            if (currentState) {
-                var vc = (currentState.controller === controller && currentState.view === view);
-                if (vc && this.equalContext(currentState.viewContext, viewContext)) {
-                    update = false;
-                }
-            }
-
-            if (update) {
-                history.pushState({
-                    controller: controller,
-                    view: view,
-                    viewContext: viewContext
-                }, title, url);
-            }
-        }
-    },
-
-    equalContext : function(aContext, bContext) {
-        var equal = false;
-        var aArray = Ext.isArray(aContext);
-        var bArray = Ext.isArray(bContext);
-
-        if (aArray && bArray) {
-            if (aContext.length == bContext.length) {
-
-                var _break = false;
-                Ext.each(aContext, function(aValue, index) {
-                    if (aValue !== bContext[index]) {
-                        _break = true;
-                        return false;
-                    }
+            // can only provide context if a view is provided
+            if (viewContext) {
+                Ext.each(viewContext, function(token) {
+                    hash += hashDelimiter + encodeURIComponent(token.toString());
                 });
-
-                if (!_break) {
-                    equal = true;
-                }
             }
         }
-        else if (!aArray && !bArray) {
-            equal = true;
-        }
 
-        return equal;
+        // route
+        window.location.hash = hash;
     },
 
     setAppActionName : function(appName) {

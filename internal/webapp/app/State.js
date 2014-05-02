@@ -35,9 +35,11 @@ Ext.define('LABKEY.app.controller.State', {
     subjectName: '',
 
     init : function() {
+
         if (LABKEY.devMode) {
             STATE = this;
         }
+
         this.olap = this.application.olap;
 
         this.state = Ext.create('Ext.data.Store', {
@@ -49,10 +51,8 @@ Ext.define('LABKEY.app.controller.State', {
         this.privatefilters = {};
 
         this.state.load();
-    },
 
-    _getViewController : function() {
-        console.error('Failed to register a view controller.');
+        this.application.on('route', function() { this.loadState(); }, this, {single: true});
     },
 
     getCurrentState : function() {
@@ -74,11 +74,7 @@ Ext.define('LABKEY.app.controller.State', {
         this.olap.onReady(callback, s);
     },
 
-    loadState : function(controller, view, viewContext, idx, useLast) {
-
-        if (!controller && !view) {
-            controller = this.defaultController;
-        }
+    loadState : function(idx) {
 
         if (!idx) {
             idx = this.state.getCount()-1; // load most recent state
@@ -112,8 +108,6 @@ Ext.define('LABKEY.app.controller.State', {
                 this.setSelections(s.selections, true);
             }
         }
-
-        this._getViewController()._changeView(controller, view, viewContext, this.defaultTitle, true, false);
 
         this.manageState();
     },

@@ -34,15 +34,7 @@ Ext.define('LABKEY.app.controller.Route', {
     },
 
     onAppReady : function() {
-
-        var hash = this.getHashValue(location.hash);
-
-        if (hash.length > 0) {
-            this.route(hash);
-        }
-        else {
-            this.application.getController('State').loadState(null, null, null, null, true);
-        }
+        this.route(this.getHashValue(location.hash), false);
     },
 
     route : function(fragments, popState) {
@@ -75,7 +67,7 @@ Ext.define('LABKEY.app.controller.Route', {
 //            console.log('control:', controller);
 //            console.log('view:', view);
 //            console.log('viewcontext:', viewContext);
-            this.application.getController('State').loadState(controller, view, viewContext, null, true);
+            this.application.fireEvent('route', controller, view, viewContext);
         }
         else {
             alert('Router failed to find resolve view context from route.');
