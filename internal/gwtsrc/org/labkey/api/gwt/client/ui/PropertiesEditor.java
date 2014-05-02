@@ -324,7 +324,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             col += 2;
         }
 
-        select(null, true);
         _readOnly = false;
         refreshButtons(_buttonPanel);
     }
@@ -433,7 +432,6 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         fireChangeEvent();
 
         refresh();
-        select(0);
     }
 
 
