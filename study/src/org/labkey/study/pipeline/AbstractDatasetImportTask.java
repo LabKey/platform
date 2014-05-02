@@ -48,10 +48,12 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
 {
     transient private StudyManager _studyManager = StudyManager.getInstance();
     transient private CohortManager _cohortManager = CohortManager.getInstance();
+    StudyImportContext _ctx;
 
-    public AbstractDatasetImportTask(FactoryType factory, PipelineJob job)
+    public AbstractDatasetImportTask(FactoryType factory, PipelineJob job, StudyImportContext ctx)
     {
         super(factory, job);
+        _ctx = ctx;
     }
 
     public abstract StudyImpl getStudy();
@@ -73,8 +75,7 @@ public abstract class AbstractDatasetImportTask<FactoryType extends AbstractData
         try
         {
             PipelineJob job = getJob();
-            StudyImportContext ctx = new StudyImportContext(job.getUser(), job.getContainer(), new PipelineJobLoggerGetter(job));
-            doImport(getDatasetsDirectory(), getDatasetsFileName(), job, ctx, getStudy());
+            doImport(getDatasetsDirectory(), getDatasetsFileName(), job, _ctx, getStudy());
 
             return new RecordedActionSet();
         }

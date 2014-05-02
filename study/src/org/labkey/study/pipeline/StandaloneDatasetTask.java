@@ -17,8 +17,10 @@
 package org.labkey.study.pipeline;
 
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.importer.StudyImportContext;
 import org.labkey.study.model.StudyImpl;
 
 import java.io.File;
@@ -34,9 +36,9 @@ public class StandaloneDatasetTask extends AbstractDatasetImportTask<StandaloneD
 {
     private transient StudyImpl _study = null;
 
-    private StandaloneDatasetTask(Factory factory, PipelineJob job)
+    private StandaloneDatasetTask(Factory factory, PipelineJob job, StudyImportContext ctx)
     {
-        super(factory, job);
+        super(factory, job, ctx);
     }
 
     @Override
@@ -68,7 +70,8 @@ public class StandaloneDatasetTask extends AbstractDatasetImportTask<StandaloneD
 
         public PipelineJob.Task createTask(PipelineJob job)
         {
-            return new StandaloneDatasetTask(this, job);
+            StudyImportContext ctx = new StudyImportContext(job.getUser(), job.getContainer(), new PipelineJobLoggerGetter(job));
+            return new StandaloneDatasetTask(this, job, ctx);
         }
     }
 }

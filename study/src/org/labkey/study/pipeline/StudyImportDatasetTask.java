@@ -17,10 +17,12 @@
 package org.labkey.study.pipeline;
 
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.importer.DatasetDefinitionImporter;
 import org.labkey.study.importer.StudyImportContext;
+import org.labkey.study.importer.StudyImportJob;
 import org.labkey.study.importer.StudyJobSupport;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.xml.StudyDocument;
@@ -34,9 +36,9 @@ import org.labkey.study.xml.StudyDocument;
 // This task is used to import datasets as part of study import/reload.  StudyImportJob is the associcated pipeline job.
 public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImportDatasetTask.Factory>
 {
-    private StudyImportDatasetTask(Factory factory, PipelineJob job)
+    private StudyImportDatasetTask(Factory factory, PipelineJob job, StudyImportContext ctx)
     {
-        super(factory, job);
+        super(factory, job, ctx);
     }
 
     @Override
@@ -88,7 +90,13 @@ public class StudyImportDatasetTask extends AbstractDatasetImportTask<StudyImpor
 
         public PipelineJob.Task createTask(PipelineJob job)
         {
-            return new StudyImportDatasetTask(this, job);
+            StudyImportContext ctx;
+            if (job instanceof StudyImportJob)
+                ctx = ((StudyImportJob)job).getImportContext();
+            else
+                ctx = new StudyImportContext(job.getUser(), job.getContainer(), new PipelineJobLoggerGetter(job));
+
+            return new StudyImportDatasetTask(this, job, ctx);
         }
     }
 }
