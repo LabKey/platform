@@ -2,6 +2,7 @@
     <library compileInProductionMode="true">
         <script path="clientapi/core/Utils.js"/>
         <script path="clientapi/core/ActionURL.js"/> <!-- still references window object -->
+        <script path="clientapi/core/Ajax.js"/>
         <script path="clientapi/core/Assay.js"/> <!-- still references window and document object -->
         <script path="clientapi/core/Domain.js"/>
         <script path="clientapi/core/Experiment.js"/>

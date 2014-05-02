@@ -1,10 +1,6 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
-        <!-- 10/22 Converted -->
-        <script path="clientapi/dom/ExtAdapter.js"/>
         <script path="clientapi/dom/Utils.js"/>
-        <script path="clientapi/core/Ajax.js"/> <!-- TODO: Figure out how to back ajax requests. Remember used on the server jQuery? -->
-
         <script path="clientapi/dom/Chart.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.DomHelper.append and Ext.decode, moved to dom -->
         <script path="clientapi/dom/Form.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.get, Ext.EventManager, Ext.isIE, Ext.isGecko, moved to dom -->
         <script path="clientapi/dom/NavTrail.js"/>

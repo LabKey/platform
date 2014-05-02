@@ -1752,7 +1752,6 @@ api/webapp/clientapi/core/Specimen.js -text
 api/webapp/clientapi/core/Utils.js -text
 api/webapp/clientapi/core/Visualization.js -text
 api/webapp/clientapi/dom/Chart.js -text
-api/webapp/clientapi/dom/ExtAdapter.js -text
 api/webapp/clientapi/dom/Form.js -text
 api/webapp/clientapi/dom/GetData.js -text
 api/webapp/clientapi/dom/NavTrail.js -text

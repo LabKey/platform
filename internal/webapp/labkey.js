@@ -345,7 +345,6 @@ if (typeof LABKEY == "undefined")
             if (configs.devMode)
             {
                 var scripts = [
-                    "clientapi/dom/ExtAdapter.js",
                     "clientapi/core/Utils.js",
                     "clientapi/dom/Utils.js",
                     "clientapi/core/Ajax.js",
