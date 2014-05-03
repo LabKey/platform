@@ -62,13 +62,12 @@ public class SecurityPolicyManager
             @Override
             public SecurityPolicy load(String key, @Nullable Object argument)
             {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());
-
                 SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies())
                         .getObject(resource.getResourceId(), SecurityPolicyBean.class);
 
                 TableInfo table = core.getTableInfoRoleAssignments();
 
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());
                 Selector selector = new TableSelector(table, filter, new Sort("UserId"));
                 RoleAssignment[] assignments = selector.getArray(RoleAssignment.class);
 
@@ -80,7 +79,7 @@ public class SecurityPolicyManager
         {
             SecurableResource parent = resource.getParentResource();
             if (null != parent)
-                return getPolicy(parent, findNearest);
+                return getPolicy(parent, true);
         }
 
         return policy;

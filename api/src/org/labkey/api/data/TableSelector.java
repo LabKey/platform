@@ -297,6 +297,10 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     // pk can be single value, an array of values, or a filter (??)
     public <K> K getObject(@Nullable Container c, Object pk, Class<K> clazz)
     {
+        // Never allow null pk, see #20057
+        if (null == pk)
+            throw new IllegalStateException("PK on getObject() must not be null");
+
         List<ColumnInfo> pkColumns = _table.getPkColumns();
         Object[] pks;
         SimpleFilter filter = new SimpleFilter(_filter);
@@ -307,7 +311,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         }
         else
         {
-            if (null != pk && pk.getClass().isArray())
+            if (pk.getClass().isArray())
                 pks = (Object[]) pk;
             else
                 pks = new Object[]{pk};
