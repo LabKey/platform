@@ -15,6 +15,7 @@
  */
 package org.labkey.api.ldk.table;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
@@ -46,7 +47,7 @@ public class CustomPermissionsTable<SchemaType extends UserSchema> extends Simpl
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         if (!_userSchema.getContainer().hasPermission(user, perm))
         {

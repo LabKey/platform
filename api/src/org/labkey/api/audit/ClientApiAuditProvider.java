@@ -15,6 +15,7 @@
  */
 package org.labkey.api.audit;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.DbSchema;
@@ -148,7 +149,7 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
             }
 
             @Override
-            public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+            public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
             {
                 // Don't allow deletes or updates for audit events, and don't let guests insert.
                 // AuditQueryView disables the insert and import buttons in the html UI, but

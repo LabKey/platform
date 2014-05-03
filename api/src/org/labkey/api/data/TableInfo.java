@@ -229,7 +229,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     boolean hasDetailsURL();
     public Set<FieldKey> getDetailsURLKeys();
 
-    boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm);
+    boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm);
 
     /**
      * Return the method of a given name.  Methods are accessible via the QueryModule's query

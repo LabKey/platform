@@ -436,7 +436,7 @@ public class SimpleUserSchema extends UserSchema
         }
 
         @Override
-        public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+        public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
         {
             return _userSchema.getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, perm);
         }

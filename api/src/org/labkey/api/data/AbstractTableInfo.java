@@ -31,7 +31,6 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.gwt.client.AuditBehaviorType;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.AggregateRowConfig;
-import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
@@ -86,7 +85,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 abstract public class AbstractTableInfo implements TableInfo, MemTrackable
@@ -592,7 +590,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         return null;
     }
 
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         SecurityLogger.log("AbstractTableInfo.hasPermission " + getName(), user, null, false);
         return false;

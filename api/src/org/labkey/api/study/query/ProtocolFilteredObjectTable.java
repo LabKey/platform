@@ -40,14 +40,10 @@ public class ProtocolFilteredObjectTable extends FilteredTable<AssaySchema>
     public SQLFragment getFromSQL(String alias)
     {
         SQLFragment fromSQL = new SQLFragment("(");
-        fromSQL.append("SELECT o.*, d.RowID as DataID, r.RowID AS RunID FROM " + getFromTable() + " o\n" +
-                "\tJOIN exp.Object parent ON \n" +
-                "\t\to.OwnerObjectId = parent.ObjectId \n" +
-                "\tJOIN exp.Data d ON \n" +
-                "\t\tparent.ObjectURI = d.lsid \n" +
-                "\tJOIN exp.ExperimentRun r ON \n" +
-                "\t\td.RunId = r.RowId AND \n" +
-                "\t\tr.ProtocolLSID = ?");
+        fromSQL.append("SELECT o.*, d.RowID as DataID, r.RowID AS RunID FROM ").append(getFromTable()).append(" o\n")
+                .append("\tJOIN exp.Object parent ON \n").append("\t\to.OwnerObjectId = parent.ObjectId \n")
+                .append("\tJOIN exp.Data d ON \n").append("\t\tparent.ObjectURI = d.lsid \n")
+                .append("\tJOIN exp.ExperimentRun r ON \n").append("\t\td.RunId = r.RowId AND \n").append("\t\tr.ProtocolLSID = ?");
         fromSQL.add(_protocolLsid);
         fromSQL.append(") ").append(alias);
         return fromSQL;

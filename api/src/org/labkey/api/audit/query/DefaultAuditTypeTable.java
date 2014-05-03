@@ -15,6 +15,7 @@
  */
 package org.labkey.api.audit.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.permissions.CanSeeAuditLogPermission;
@@ -225,7 +226,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // Allow read, but not insert, update, or delete.
         return perm.equals(ReadPermission.class) && getContainer().hasPermission(user, perm);
