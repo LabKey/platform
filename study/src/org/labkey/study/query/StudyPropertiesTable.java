@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerForeignKey;
@@ -165,7 +166,7 @@ public class StudyPropertiesTable extends BaseStudyTable
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return hasPermissionOverridable(user, perm);
     }

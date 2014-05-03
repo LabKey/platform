@@ -16,6 +16,7 @@
 package org.labkey.announcements.query;
 
 import org.apache.commons.beanutils.ConvertUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
 import org.labkey.api.announcements.CommSchema;
@@ -121,7 +122,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return _userSchema.getContainer().hasPermission(user, perm);
     }
@@ -132,7 +133,7 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
         {
             _secure = DiscussionService.get().getSettings(_userSchema.getContainer()).isSecure();
         }
-        return _secure.booleanValue();
+        return _secure;
     }
 
     @Override

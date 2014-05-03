@@ -16,6 +16,7 @@
 package org.labkey.di;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
@@ -70,6 +71,7 @@ abstract public class TransformBaseTable extends VirtualTable
     }
 
 
+    @NotNull
     public SQLFragment getFromSQL()
     {
         return _sql;

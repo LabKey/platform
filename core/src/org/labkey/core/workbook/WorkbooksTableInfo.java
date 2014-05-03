@@ -82,7 +82,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
             return (DeletePermission.class.isAssignableFrom(perm) || ReadPermission.class.isAssignableFrom(perm) || InsertPermission.class.isAssignableFrom(perm) || UpdatePermission.class.isAssignableFrom(perm)) && _userSchema.getContainer().hasPermission(user, perm);

@@ -15,6 +15,7 @@
  */
 package org.labkey.announcements.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -53,7 +54,7 @@ public class AbstractSubscriptionTable extends FilteredTable<AnnouncementSchema>
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return hasPermission(user, perm, getContainer());
     }

@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.*;
@@ -185,7 +186,7 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
             return _allowablePermissions.contains(perm) && _userSchema.getContainer().hasPermission(user, perm);

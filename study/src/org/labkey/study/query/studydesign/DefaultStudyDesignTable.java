@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -166,7 +167,7 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
 
     @Override
     // ONLY OVERRIDE THIS IF TABLE SHOULD BE VISIBLE IN DATASPACE PROJECT-LEVEL CONTAINER
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // Most tables should not editable in Dataspace
         if (getContainer().isDataspace())

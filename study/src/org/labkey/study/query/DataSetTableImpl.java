@@ -44,7 +44,6 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryException;
@@ -806,7 +805,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // OK to edit these in Dataspace project and in any folder
         DataSet def = getDatasetDefinition();

@@ -17,6 +17,7 @@
 package org.labkey.audit.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.query.AuditDisplayColumnFactory;
 import org.labkey.api.data.ColumnInfo;
@@ -188,7 +189,7 @@ public class AuditLogTable extends FilteredTable<UserSchema>
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // Don't allow deletes or updates for audit events, and don't let guests insert
         return ((perm.equals(InsertPermission.class) && !isGuest(user)) || perm.equals(ReadPermission.class)) &&

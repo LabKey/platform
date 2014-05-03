@@ -238,7 +238,7 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return !getMustCheckPermissions() || super.hasPermission(user, perm);
     }

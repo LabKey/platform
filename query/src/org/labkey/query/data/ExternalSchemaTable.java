@@ -17,6 +17,7 @@
 package org.labkey.query.data;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
@@ -75,7 +76,7 @@ public class ExternalSchemaTable extends SimpleUserSchema.SimpleTable<ExternalSc
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         List<ColumnInfo> columns = getPkColumns();
         return (perm.isAssignableFrom(ReadPermission.class) || (super.hasPermission(user, perm) && getUserSchema().areTablesEditable() && columns.size() > 0));

@@ -92,7 +92,7 @@ public class ForumSubscriptionTable extends AbstractSubscriptionTable
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return hasPermission(user, perm, getContainer());
     }

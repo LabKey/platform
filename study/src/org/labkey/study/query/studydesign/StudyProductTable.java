@@ -15,6 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
@@ -27,8 +28,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
@@ -79,7 +78,7 @@ public class StudyProductTable extends DefaultStudyDesignTable
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // This is editable in Dataspace, but not in a folder within a Dataspace
         if (getContainer().getProject().isDataspace() && !getContainer().isDataspace())

@@ -16,7 +16,6 @@
 package org.labkey.survey.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.TableInfo;
@@ -26,7 +25,6 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
@@ -72,7 +70,7 @@ public class SurveyDesignTable extends FilteredTable<SurveyQuerySchema>
     }
 
     @Override
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         return getContainer().hasPermission(user, perm);
     }

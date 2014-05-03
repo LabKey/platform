@@ -751,7 +751,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     @Override
     // ONLY OVERRIDE THIS IF TABLE SHOULD BE VISIBLE IN DATASPACE PROJECT-LEVEL CONTAINER
-    public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // Most tables should not be editable in Dataspace
         if (getContainer().isDataspace())
