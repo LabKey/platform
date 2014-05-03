@@ -51,6 +51,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
@@ -720,7 +721,8 @@ public class AssayPublishManager implements AssayPublishService.Service
                 QCState defaultQCState = null;
                 if (defaultQCStateId != null)
                     defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
-                lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DataSetDefinition.CheckForDuplicates.sourceOnly, defaultQCState, null, null);
+                lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DataSetDefinition.CheckForDuplicates.sourceOnly, 
+                        defaultQCState, QueryUpdateService.InsertOption.MERGE, null, null);
                 if (!errors.hasErrors())
                     transaction.commit();
             }

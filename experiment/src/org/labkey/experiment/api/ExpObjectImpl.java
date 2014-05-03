@@ -120,9 +120,9 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
         {
             OntologyManager.deleteProperty(getLSID(), pd.getPropertyURI(), getContainer(), pd.getContainer());
 
+            ObjectProperty oprop = new ObjectProperty(getLSID(), getContainer(), pd, value);
             if (value != null)
             {
-                ObjectProperty oprop = new ObjectProperty(getLSID(), getContainer(), pd.getPropertyURI(), value, pd.getPropertyType());
                 oprop.setPropertyId(pd.getPropertyId());
                 OntologyManager.insertProperties(getContainer(), getOwnerObjectLSID(), oprop);
             }
@@ -130,7 +130,7 @@ abstract public class ExpObjectImpl implements ExpObject, Serializable
             {
                 // We still need to validate blanks
                 List<ValidationError> errors = new ArrayList<>();
-                OntologyManager.validateProperty(PropertyService.get().getPropertyValidators(pd), pd, value, errors, new ValidatorContext(pd.getContainer(), user));
+                OntologyManager.validateProperty(PropertyService.get().getPropertyValidators(pd), pd, oprop, errors, new ValidatorContext(pd.getContainer(), user));
                 if (!errors.isEmpty())
                     throw new ValidationException(errors);
             }

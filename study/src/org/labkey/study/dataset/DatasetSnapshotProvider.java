@@ -40,6 +40,7 @@ import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
@@ -218,7 +219,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             // import the data
                         BatchValidationException ve = new BatchValidationException();
                         StudyManager.getInstance().importDatasetData(context.getUser(), def, new TabLoader(sb, true),
-                                new CaseInsensitiveHashMap<String>(), ve, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, null, null);
+                                new CaseInsensitiveHashMap<String>(), ve, DataSetDefinition.CheckForDuplicates.sourceAndDestination, null, 
+                                QueryUpdateService.InsertOption.INSERT, null, null);
 
                         for (ValidationException e : ve.getRowErrors())
                             errors.reject(SpringActionController.ERROR_MSG, e.getMessage());

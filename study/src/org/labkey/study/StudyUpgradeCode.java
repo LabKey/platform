@@ -38,6 +38,7 @@ import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
@@ -535,6 +536,14 @@ public class StudyUpgradeCode implements UpgradeCode
             if (null != dt)
                 renameColumnWithTheNameOfWhichIDoNotApprove(def, dt);
             new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ADD Date " + t.getSqlDialect().getDefaultDateTimeDataType());
+        }
+        else
+        {
+            // We co-opted a user-defined column, so get rid of its PropertyDescriptor
+            if (def.getDomain() != null && def.getDomain().getPropertyByName("Date") != null)
+            {
+                OntologyManager.deletePropertyDescriptor(def.getDomain().getPropertyByName("Date").getPropertyDescriptor());
+            }
         }
 
         ColumnInfo ct = t.getColumn("container");

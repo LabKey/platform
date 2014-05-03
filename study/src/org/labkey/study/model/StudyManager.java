@@ -3067,14 +3067,14 @@ public class StudyManager
         return lsids;
     }
 
-    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap,
-                                          BatchValidationException errors, DataSetDefinition.CheckForDuplicates checkDuplicates,
-                                          QCState defaultQCState, StudyImportContext studyImportContext, Logger logger)
+    public List<String> importDatasetData(User user, DataSetDefinition def, DataLoader loader, Map<String, String> columnMap, 
+                                          BatchValidationException errors, DataSetDefinition.CheckForDuplicates checkDuplicates, 
+                                          QCState defaultQCState, QueryUpdateService.InsertOption insertOption, StudyImportContext studyImportContext, Logger logger)
             throws IOException, ServletException, SQLException
     {
         parseData(user, def, loader, columnMap);
         DataIteratorContext context = new DataIteratorContext(errors);
-        context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+        context.setInsertOption(insertOption);
         return def.importDatasetData(user, loader, context, checkDuplicates, defaultQCState, studyImportContext, logger, false);
     }
     
