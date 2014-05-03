@@ -55,7 +55,6 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.CPUTimer;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
@@ -380,6 +379,12 @@ public class StorageProvisioner
             {
                 change.addColumn(makeMvColumn(prop));
             }
+        }
+
+        if (change.getColumns().isEmpty())
+        {
+            // Nothing to do, so don't try to run an ALTER TABLE that doesn't actually do anything
+            return;
         }
 
         Connection con = null;
@@ -725,23 +730,18 @@ public class StorageProvisioner
 
     private static void execute(DbScope scope, Connection conn, TableChange change)
     {
-        try
+        for (String sql : scope.getSqlDialect().getChangeStatements(change))
         {
-            for (String sql : scope.getSqlDialect().getChangeStatements(change))
+            try
             {
                 log.debug("Will issue: " + sql);
                 conn.prepareStatement(sql).execute();
             }
-        }
-        catch (SQLException e)
-        {
-            // We're calling Statement.execute() directly, so we need to log the SQL if an exception occurs
-            String sql = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.DialectSQL);
-
-            if (null != sql)
+            catch (SQLException e)
+            {
                 log.error(sql);
-
-            throw new RuntimeSQLException(e);
+                throw new RuntimeSQLException(e);
+            }
         }
     }
 

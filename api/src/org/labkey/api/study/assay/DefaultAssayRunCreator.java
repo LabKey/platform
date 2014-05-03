@@ -27,6 +27,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
@@ -610,7 +611,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 {
                     // We still need to validate blanks
                     List<ValidationError> errors = new ArrayList<>();
-                    OntologyManager.validateProperty(pd.getValidators(), pd.getPropertyDescriptor(), value, errors, new ValidatorContext(pd.getContainer(), user));
+                    OntologyManager.validateProperty(pd.getValidators(), pd.getPropertyDescriptor(), new ObjectProperty(object.getLSID(), object.getContainer(), pd.getPropertyDescriptor(), value), errors, new ValidatorContext(pd.getContainer(), user));
                     if (!errors.isEmpty())
                         throw new ValidationException(errors);
                 }

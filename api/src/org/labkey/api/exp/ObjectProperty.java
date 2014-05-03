@@ -119,6 +119,11 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         this(objectURI, container, propertyURI, value, propertyType, null);
     }
 
+    public ObjectProperty(String objectURI, Container container, PropertyDescriptor pd, Object value)
+    {
+        this(objectURI, container, pd.getPropertyURI(), value, pd.getPropertyType(), pd.getName());
+    }
+
     public ObjectProperty(String objectURI, Container container, String propertyURI, Object value, PropertyType propertyType, String name)
     {
         init(objectURI, container, propertyURI, propertyType, value);
@@ -156,7 +161,7 @@ public class ObjectProperty extends OntologyManager.PropertyRow
         {
             case STRING:
             case MULTI_LINE:
-                this.stringValue = (String) value;
+                this.stringValue = value == null ? null : value.toString();
                 break;
             case ATTACHMENT:
                 if (value instanceof AttachmentFile)
@@ -165,13 +170,13 @@ public class ObjectProperty extends OntologyManager.PropertyRow
                     this.stringValue = attachmentFile.getFilename();
                 }
                 else
-                    this.stringValue = (String) value;
+                    this.stringValue = value == null ? null : value.toString();
                 break;
             case FILE_LINK:
                 if (value instanceof File)
                     this.stringValue = ((File) value).getPath();
                 else
-                    this.stringValue = (String) value;
+                    this.stringValue = value == null ? null : value.toString();
                 break;
             case DATE_TIME:
                 if (value instanceof Date)

@@ -208,7 +208,7 @@ public class OntologyManager
                     else
                     {
                         if (validatorMap.containsKey(pd.getPropertyId()))
-                            validateProperty(validatorMap.get(pd.getPropertyId()), pd, value, errors, validatorCache);
+                            validateProperty(validatorMap.get(pd.getPropertyId()), pd, new ObjectProperty(lsid, c, pd, value), errors, validatorCache);
                     }
                     try
                     {
@@ -412,7 +412,7 @@ public class OntologyManager
                         // TODO does validateProperty handle MvFieldWrapper?
                         if (null != pd)
                         {
-                            if (!validateProperty(validatorMap.get(propertyURI), pd, value, errors, validatorCache))
+                            if (!validateProperty(validatorMap.get(propertyURI), pd, new ObjectProperty(lsid, c, pd, value), errors, validatorCache))
                             {
                                 throw new ValidationException(errors);
                             }
@@ -499,12 +499,14 @@ public class OntologyManager
 	}
     
 
-    public static boolean validateProperty(List<? extends IPropertyValidator> validators, PropertyDescriptor prop, Object value,
+    public static boolean validateProperty(List<? extends IPropertyValidator> validators, PropertyDescriptor prop, ObjectProperty objectProperty,
             List<ValidationError> errors, ValidatorContext validatorCache)
     {
         boolean ret = true;
 
-        if (prop.isRequired() && value == null)
+        Object value = objectProperty.getObjectValue();
+
+        if (prop.isRequired() && value == null && objectProperty.getMvIndicator() == null)
         {
             errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is required", prop.getName()));
             ret = false;
@@ -1696,7 +1698,7 @@ public class OntologyManager
             {
                 pd = getPropertyDescriptor(property.getPropertyId());
             }
-            validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property.value(), errors, validatorCache);
+            validateProperty(PropertyService.get().getPropertyValidators(pd), pd, property, errors, validatorCache);
         }
         if (!errors.isEmpty())
             throw new ValidationException(errors);
