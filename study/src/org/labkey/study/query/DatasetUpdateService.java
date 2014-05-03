@@ -290,7 +290,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, extraScriptContext);
-        if (null != extraScriptContext && extraScriptContext.get("synchronousParticipantPurge") == true)
+        if (null != extraScriptContext && Boolean.TRUE.equals(extraScriptContext.get("synchronousParticipantPurge")))
         {
             PurgeParticipantCommitTask addObj = new PurgeParticipantCommitTask(container, _potentiallyDeletedParticipants);
             PurgeParticipantCommitTask setObj = getQueryTable().getSchema().getScope().addCommitTask(addObj, DbScope.CommitTaskOption.POSTCOMMIT);
