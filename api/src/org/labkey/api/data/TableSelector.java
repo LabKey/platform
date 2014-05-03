@@ -297,7 +297,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     // pk can be single value, an array of values, or a filter (??)
     public <K> K getObject(@Nullable Container c, Object pk, Class<K> clazz)
     {
-        // Never allow null pk, see #20057
+        // Don't allow null pk, see #20057
         if (null == pk)
             throw new IllegalStateException("PK on getObject() must not be null");
 

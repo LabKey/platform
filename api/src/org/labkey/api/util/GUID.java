@@ -274,7 +274,7 @@ public class GUID implements Serializable, Parameter.JdbcParameterValue
     {
         if (!isGUID(str))
             throw new IllegalArgumentException(str);
-        this._str = str;
+        _str = str;
     }
 
     @Override

@@ -61,13 +61,15 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         User selectedUser = userSelector.getObject(user.getUserId(), User.class);
         assertEquals(user, selectedUser);
 
-        // Make sure that getObject() throws if more than one row is selected
+        // TableSelector to test a copule exception scenarios
         TableSelector moduleSelector = new TableSelector(CoreSchema.getInstance().getTableInfoModules());
-        moduleSelector.setLogLevel(Level.OFF);      // Suppress auto-logging since we're intentionally causing a SQLException
+        moduleSelector.setLogLevel(Level.OFF);      // Suppress auto-logging since we're intentionally causing SQLExceptions
 
+        // Make sure that getObject() throws if more than one row is selected
         try
         {
             moduleSelector.getObject(ModuleContext.class);
+            fail("getObject() should have thrown when returning multiple objects");
         }
         catch (UncategorizedSQLException e)
         {
@@ -77,6 +79,17 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
             // ...and that the exception is decorated, so the SQL does end up in mothership
             String decoration = ExceptionUtil.getExceptionDecoration(e, ExceptionUtil.ExceptionInfo.DialectSQL);
             assertNotNull("Exception was not decorated", decoration);
+        }
+
+        // Make sure that getObject() throws if pk == null, #20057
+        try
+        {
+            moduleSelector.getObject(null, ModuleContext.class);
+            fail("getObject() should have thrown with null pk");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("PK on getObject() must not be null", e.getMessage());
         }
     }
 
