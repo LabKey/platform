@@ -344,12 +344,12 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      */
     public List<String> getTableAndQueryNames(boolean visibleOnly)
     {
-        return new ArrayList<>(_getQueries(visibleOnly).keySet());
+        return new ArrayList<>(_getQueries(visibleOnly, true).keySet());
     }
 
-    public Map<String, String> getTableAndQueryNamesAndLabels(boolean visibleOnly)
+    public Map<String, String> getTableAndQueryNamesAndLabels(boolean visibleOnly, boolean includeTemporary)
     {
-        Map<String, QueryDefinition> queries = _getQueries(visibleOnly);
+        Map<String, QueryDefinition> queries = _getQueries(visibleOnly, includeTemporary);
         TreeMap<String, String> namesAndLabels = new TreeMap<>(new Comparator<String>()
         {
             @Override
@@ -378,10 +378,10 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      */
     public List<QueryDefinition> getTablesAndQueries(boolean visibleOnly)
     {
-        return new ArrayList<>(_getQueries(visibleOnly).values());
+        return new ArrayList<>(_getQueries(visibleOnly, true).values());
     }
 
-    protected Map<String, QueryDefinition> _getQueries(boolean visibleOnly)
+    protected Map<String, QueryDefinition> _getQueries(boolean visibleOnly, boolean includeTemporary)
     {
         TreeMap<String, QueryDefinition> set = new TreeMap<>(new Comparator<String>()
         {
@@ -393,12 +393,16 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         });
 
         for (String tableName : visibleOnly ? getVisibleTableNames() : getTableNames())
-            set.put(tableName, QueryService.get().createQueryDefForTable(this, tableName));
+        {
+            QueryDefinition qdef = QueryService.get().createQueryDefForTable(this, tableName);
+            if (includeTemporary || !qdef.isTemporary())
+                set.put(tableName, qdef);
+        }
 
         Map<String, QueryDefinition> queryDefs = getQueryDefs();
         for (QueryDefinition query : queryDefs.values())
         {
-            if (!visibleOnly || !query.isHidden())
+            if ((!visibleOnly || !query.isHidden()) && (includeTemporary || !query.isTemporary()))
                 set.put(query.getName(), query);
         }
 
