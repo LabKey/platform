@@ -47,6 +47,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.JspView;
 import org.labkey.api.webdav.FileSystemAuditProvider;
 import org.labkey.api.webdav.FileSystemAuditViewFactory;
+import org.labkey.api.webdav.FileSystemBatchAuditProvider;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 
@@ -240,7 +241,7 @@ public class FileContentDigestProvider implements MessageDigest.Provider
 
             //event.setCreatedBy(getUser());
             event.setContainerId(c.getId());
-            event.setEventType(FileSystemAuditViewFactory.BATCH_EVENT_TYPE);
+            event.setEventType(FileSystemBatchAuditProvider.EVENT_TYPE);
             event.setComment(events.size() + " Files modified");
 
             AuditLogService.get().addEvent(event);

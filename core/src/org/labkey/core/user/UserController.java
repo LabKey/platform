@@ -230,18 +230,6 @@ public class UserController extends SpringActionController
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Configuration, "change user properties", new ActionURL(ShowUserPreferencesAction.class, ContainerManager.getRoot()));
     }
 
-    // Note: the column list is dynamic, changing based on the current user's permissions.
-    @Deprecated // TODO: Stop using a hard-coded list, #19475
-    public static String getUserColumnNames(User user, Container c)
-    {
-        String columnNames = "Email, DisplayName, FirstName, LastName, Phone, Mobile, Pager, IM, Description";
-
-        if (user != null && (user.isSiteAdmin() || c.hasPermission(user, AdminPermission.class)))
-            columnNames = columnNames + ", UserId, Created, LastLogin, Active";
-
-        return columnNames;
-    }
-
     private void setDataRegionButtons(DataRegion rgn, boolean isOwnRecord)
     {
         final User user = getUser();

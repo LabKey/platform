@@ -27,7 +27,7 @@
     NewQueryForm form = (NewQueryForm) HttpView.currentModel();
     Map<String, String> namesAndLabels = new HashMap<>();
     if (form.getSchema() != null)
-        namesAndLabels = form.getSchema().getTableAndQueryNamesAndLabels(false);
+        namesAndLabels = form.getSchema().getTableAndQueryNamesAndLabels(false, false);
 %>
 <labkey:errors />
 

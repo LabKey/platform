@@ -45,7 +45,9 @@ import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
@@ -84,6 +86,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.GroupAuditProvider;
 import org.labkey.core.query.GroupAuditViewFactory;
 import org.labkey.core.user.UserController;
@@ -978,7 +981,12 @@ public class SecurityController extends SpringActionController
             List<Pair<Integer, String>> members = SecurityManager.getGroupMemberNamesAndIds(group, true);
 
             DataRegion rgn = new DataRegion();
-            List<ColumnInfo> columns = CoreSchema.getInstance().getTableInfoUsers().getColumns(UserController.getUserColumnNames(getUser(), c));
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), c, CoreQuerySchema.NAME);
+            TableInfo tinfo = schema.getTable(CoreQuerySchema.USERS_TABLE_NAME);
+            List<ColumnInfo> columns = new ArrayList<>();
+            for (FieldKey fk : tinfo.getDefaultVisibleColumns())
+                columns.add(tinfo.getColumn(fk));
+
             rgn.setColumns(columns);
             RenderContext ctx = new RenderContext(getViewContext());
             List<Integer> userIds = new ArrayList<>();
