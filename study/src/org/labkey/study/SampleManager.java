@@ -28,7 +28,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.*;
-import org.labkey.api.data.Selector.*;
+import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
@@ -79,7 +79,6 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -186,7 +185,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public boolean isSpecimensEmpty(Container container, User user)
     {
-        TableSelector selector = getSpecimensSelector(container, user, (SimpleFilter) null);
+        TableSelector selector = getSpecimensSelector(container, user, null);
         return !selector.exists();
     }
  
@@ -433,8 +432,8 @@ public class SampleManager implements ContainerManager.ContainerListener
             SpecimenEvent lastEvent = dateOrderedEvents.get(dateOrderedEvents.size() - 1);
 
             if (lastEvent.getShipDate() == null &&
-                    (lastEvent.getShipBatchNumber() == null || lastEvent.getShipBatchNumber().intValue() == 0) &&
-                    (lastEvent.getShipFlag() == null || lastEvent.getShipFlag().intValue() == 0))
+                    (lastEvent.getShipBatchNumber() == null || lastEvent.getShipBatchNumber() == 0) &&
+                    (lastEvent.getShipFlag() == null || lastEvent.getShipFlag() == 0))
             {
                 return lastEvent.getLabId();
             }
@@ -2559,14 +2558,10 @@ public class SampleManager implements ContainerManager.ContainerListener
         }
 
         SQLFragment ptidSpecimenSQL = new SQLFragment();
-        ptidSpecimenSQL.append("SELECT SpecimenQuery.Visit AS Visit, SpecimenQuery." + subjectCol + " AS ParticipantId,\n" +
-                "COUNT(*) AS VialCount, study.Cohort.Label AS Cohort, SUM(SpecimenQuery.Volume) AS TotalVolume\n" +
-                "FROM (");
+        ptidSpecimenSQL.append("SELECT SpecimenQuery.Visit AS Visit, SpecimenQuery.").append(subjectCol).append(" AS ParticipantId,\n")
+                .append("COUNT(*) AS VialCount, study.Cohort.Label AS Cohort, SUM(SpecimenQuery.Volume) AS TotalVolume\n").append("FROM (");
         ptidSpecimenSQL.append(sqlHelper.getViewSql());
-        ptidSpecimenSQL.append(") AS SpecimenQuery\n" +
-                "LEFT OUTER JOIN study.Participant ON\n" +
-                "\tSpecimenQuery." + subjectCol + " = study.Participant.ParticipantId AND\n" +
-                "\tSpecimenQuery.Container = study.Participant.Container\n");
+        ptidSpecimenSQL.append(") AS SpecimenQuery\n" + "LEFT OUTER JOIN study.Participant ON\n" + "\tSpecimenQuery.").append(subjectCol).append(" = study.Participant.ParticipantId AND\n").append("\tSpecimenQuery.Container = study.Participant.Container\n");
         ptidSpecimenSQL.append(cohortJoinClause);
         ptidSpecimenSQL.append("GROUP BY study.Cohort.Label, SpecimenQuery.").append(subjectCol).append(", Visit\n").append("ORDER BY study.Cohort.Label, SpecimenQuery.").append(subjectCol).append(", Visit");
 
@@ -3032,7 +3027,7 @@ public class SampleManager implements ContainerManager.ContainerListener
                     StudySchema.getInstance().getSchema().getScope(), 10, 8 * CacheManager.HOUR, "Grouped Values Cache");
         }
 
-        TableResultSet resultSet = null;
+        TableResultSet resultSet;
         try
         {
             groupedValues = new HashMap<>();

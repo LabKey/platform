@@ -852,6 +852,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         super.setContainerFilter(filter);
     }
 
+    @NotNull
     @Override
     public ContainerFilter getContainerFilter()
     {
