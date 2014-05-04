@@ -211,7 +211,7 @@ abstract public class EHRService
 
     abstract public void appendCalculatedIdCols(AbstractTableInfo ti, String dateFieldName);
 
-    abstract public Collection<String> ensureFlagActive(User u, Container c, String category, String flag, Date date, String remark, Collection<String> animalIds, boolean livingAnimalsOnly) throws BatchValidationException;
+    abstract public Collection<String> ensureFlagActive(User u, Container c, String flag, Date date, String remark, Collection<String> animalIds, boolean livingAnimalsOnly) throws BatchValidationException;
 
-    abstract public Collection<String> terminateFlagsIfExists(User u, Container c, String category, String flag, Date enddate, Collection<String> animalIds);
+    abstract public Collection<String> terminateFlagsIfExists(User u, Container c, String flag, Date enddate, Collection<String> animalIds);
 }
