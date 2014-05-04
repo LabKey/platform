@@ -34,6 +34,8 @@ Ext.define('LABKEY.app.controller.State', {
 
     subjectName: '',
 
+    _ready: false,
+
     init : function() {
 
         if (LABKEY.devMode) {
@@ -111,7 +113,22 @@ Ext.define('LABKEY.app.controller.State', {
 
         this.manageState();
 
+        this._ready = true;
         this.application.fireEvent('stateready', this);
+    },
+
+    onReady : function(callback, scope) {
+        if (Ext.isFunction(callback)) {
+            if (this._ready === true) {
+                callback.call(scope, this);
+            }
+            else {
+                this.application.on('stateready', function() {
+                    callback.call(scope, this);
+                }, this, {single: true});
+            }
+        }
+
     },
 
     manageState : function() {
@@ -188,7 +205,6 @@ Ext.define('LABKEY.app.controller.State', {
             selections: this.getSelections(true)
         });
         this.state.sync();
-//        console.log(this.state.getAt(this.state.getCount()-1).data);
     },
 
     updateFilterMembers : function(id, members, skipState) {
