@@ -227,3 +227,40 @@ Ext4.override(Ext4.data.Store, {
         me.fireEvent('load', me, me.data.getRange(), true);
     }
 });
+
+/**
+ * RowExpander plugin is not properly configured to handle sandboxed ExtJS.
+ */
+Ext4.override(Ext4.grid.plugin.RowExpander, {
+    rowBodyTrSelector: '.' + Ext4.baseCSSPrefix + 'grid-rowbody-tr',
+    rowBodyHiddenCls: Ext4.baseCSSPrefix + 'grid-row-body-hidden',
+    rowCollapsedCls: Ext4.baseCSSPrefix + 'grid-row-collapsed',
+    getHeaderConfig: function() {
+        var me = this;
+
+        return {
+            width: 24,
+            lockable: false,
+            sortable: false,
+            resizable: false,
+            draggable: false,
+            hideable: false,
+            menuDisabled: true,
+            tdCls: Ext4.baseCSSPrefix + 'grid-cell-special',
+            innerCls: Ext4.baseCSSPrefix + 'grid-cell-inner-row-expander',
+            renderer: function(value, metadata) {
+
+                if (!me.grid.ownerLockable) {
+                    metadata.tdAttr += ' rowspan="2"';
+                }
+                return '<div class="' + Ext4.baseCSSPrefix + 'grid-row-expander"></div>';
+            },
+            processEvent: function(type, view, cell, rowIndex, cellIndex, e, record) {
+                if (type == "mousedown" && e.getTarget('.' + Ext4.baseCSSPrefix + 'grid-row-expander')) {
+                    me.toggleRow(rowIndex, record);
+                    return me.selectRowOnExpand;
+                }
+            }
+        };
+    }
+});
