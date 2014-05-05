@@ -67,18 +67,13 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
         // to passing around a TaskId instead.
         String filePath = StringUtils.replace(StringUtils.replace(etlDescriptor.getId(), "{", ""), "}", "");
         File etlLogFile = new File(etlLogDir, FileUtil.makeFileNameWithTimestamp(filePath, "etl.log"));
-        _transformJobContext = new TransformJobContext(etlDescriptor, info.getContainer(), info.getUser());
+        _transformJobContext = new TransformJobContext(etlDescriptor, info.getContainer(), info.getUser(), info._params);
         setLogFile(etlLogFile);
         initVariableMap(info);
     }
 
     private void initVariableMap(TransformJobContext info)
     {
-        Map<ParameterDescription,Object> declaredVariables = _etlDescriptor.getDeclaredVariables();
-        for (Map.Entry<ParameterDescription,Object> entry : declaredVariables.entrySet())
-        {
-            _variableMap.put(entry.getKey(),entry.getValue());
-        }
         JSONObject savedState = TransformManager.get().getTransformConfiguration(info.getContainer(), info.getJobDescriptor()).getJsonState();
         if (!savedState.isEmpty())
         {
@@ -95,6 +90,17 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
                 }
             }
         }
+
+        Map<ParameterDescription,Object> declaredVariables = _etlDescriptor.getDeclaredVariables();
+        for (Map.Entry<ParameterDescription,Object> entry : declaredVariables.entrySet())
+        {
+            ParameterDescription pd = entry.getKey();
+            Object value = entry.getValue();
+            if (info._params.containsKey(pd))
+                value = info._params.get(pd);
+            _variableMap.put(pd,value);
+        }
+
         _variableMap.put(TransformProperty.RanStep1, false, VariableMap.Scope.global);
     }
 

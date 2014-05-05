@@ -18,6 +18,7 @@ package org.labkey.di.pipeline;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.security.User;
 import org.labkey.api.writer.ContainerUser;
@@ -25,6 +26,8 @@ import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
 
 import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -35,6 +38,7 @@ public class TransformJobContext extends ScheduledPipelineJobContext implements 
     String _transformId;
     int _version;
     PipelineJob _pipelineJob;
+    Map<ParameterDescription, Object> _params =  new LinkedHashMap<>();
 
     // No-args constructor to support de-serialization in Java 7
     @SuppressWarnings({"UnusedDeclaration"})
@@ -42,11 +46,13 @@ public class TransformJobContext extends ScheduledPipelineJobContext implements 
     {
     }
 
-    public TransformJobContext(ScheduledPipelineJobDescriptor descriptor, Container container, User user)
+    public TransformJobContext(ScheduledPipelineJobDescriptor descriptor, Container container, User user, Map<ParameterDescription, Object> params)
     {
         super(descriptor, container, user);
         _transformId = descriptor.getId();
         _version = descriptor.getVersion();
+        if (null != params)
+            _params.putAll(params);
     }
 
     public String getTransformId()

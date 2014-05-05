@@ -221,11 +221,10 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
 
     @Override
-    public TransformJobContext getJobContext(Container c, User user)
+    public ScheduledPipelineJobContext getJobContext(Container c, User user, Map<ParameterDescription, Object> params)
     {
-        return new TransformJobContext(this, c, user);
+        return new TransformJobContext(this, c, user, params);
     }
-
 
     @Override
     public boolean checkForWork(ScheduledPipelineJobContext context, boolean background, boolean verbose)
@@ -642,7 +641,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             // executing a multi-step job, and logging the ETL as an experiment run
             //
             TransformDescriptor d =  TransformManager.get().parseETLThrow(new EtlResource(getFile(UNIT_TASKS)), module);
-            TransformJobContext context = new TransformJobContext(d, c, u);
+            TransformJobContext context = new TransformJobContext(d, c, u, null);
             TransformPipelineJob job = (TransformPipelineJob) d.getPipelineJob(context);
 
             VariableMap map = job.getVariableMap();

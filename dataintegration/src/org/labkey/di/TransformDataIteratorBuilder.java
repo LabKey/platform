@@ -25,6 +25,7 @@ import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.BatchValidationException;
 
 import static org.labkey.di.DataIntegrationQuerySchema.Columns.*;
@@ -39,12 +40,14 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
     final int _transformRunId;
     final DataIteratorBuilder _input;
     Logger _statusLogger = null;
+    PipelineJob _job;
 
-    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger)
+    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, PipelineJob job)
     {
         _transformRunId = transformRunId;
         _input = input;
         _statusLogger = statusLogger;
+        _job = job;
     }
 
 
@@ -70,8 +73,18 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
                 if (r)
                 {
                     count[0]++;
-                    if (null != _statusLogger && 0 == count[0] % 10000)
-                        _statusLogger.info("" + count[0] + " rows transferred");
+                    if ( 0 == count[0] % 10000)
+                    {
+                        if (null != _job && _job.isCancelled())
+                        {
+                            getGlobalError().addGlobalError("Job cancelled");
+                            return false;
+                        }
+                        if (null != _statusLogger)
+                        {
+                            _statusLogger.info("" + count[0] + " rows transferred");
+                        }
+                    }
                 }
                 return r;
             }

@@ -343,7 +343,7 @@ public class TransformManager implements DataIntegrationService
 
         try
         {
-            ContainerUser context = descriptor.getJobContext(container, user);
+            ContainerUser context = descriptor.getJobContext(container, user, params);
 
             // see if we have work to do before directly scheduling the pipeline job
             boolean hasWork = descriptor.checkForWork(context, false, true);
@@ -379,7 +379,7 @@ public class TransformManager implements DataIntegrationService
         try
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            ScheduledPipelineJobContext info = (ScheduledPipelineJobContext)descriptor.getJobContext(container, user);
+            ScheduledPipelineJobContext info = (ScheduledPipelineJobContext)descriptor.getJobContext(container, user, null);
             info.setVerbose(true);
 
             // find job
@@ -422,7 +422,7 @@ public class TransformManager implements DataIntegrationService
         try
         {
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-            ScheduledPipelineJobContext info = (ScheduledPipelineJobContext)descriptor.getJobContext(container, user);
+            ScheduledPipelineJobContext info = (ScheduledPipelineJobContext)descriptor.getJobContext(container, user, null);
             info.setVerbose(verbose);
             info.setLocked();
 
@@ -468,7 +468,7 @@ public class TransformManager implements DataIntegrationService
     {
         try
         {
-            TransformJobContext info = new TransformJobContext(etlDescriptor, container, user);
+            TransformJobContext info = new TransformJobContext(etlDescriptor, container, user, null);
             Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
             TriggerKey triggerKey = TriggerKey.triggerKey(info.getKey(), JOB_GROUP_NAME);
             scheduler.unscheduleJob(triggerKey);
