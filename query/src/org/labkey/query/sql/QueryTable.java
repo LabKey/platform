@@ -297,10 +297,12 @@ public class QueryTable extends QueryRelation
 
         sql.append("SELECT ");
         String comma = "";
+        int columnCount = 0;
         for (TableColumn col : _selectedColumns.values())
         {
             if (col.ref.count() == 0)
                 continue;
+            columnCount++;
             if (null != col.getFieldKey().getParent())
                 _generateSelectSQL = true;
             else
@@ -318,6 +320,8 @@ public class QueryTable extends QueryRelation
             sql.append(col.getAlias());
             comma = ", ";
         }
+        if (0 == columnCount)
+            sql.append("1 AS \"_ONE_\"");
         sql.append("\nFROM ");
 
         SQLFragment tableFromSql = _tableInfo.getFromSQL(_innerAlias, tableColumns);
