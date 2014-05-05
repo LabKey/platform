@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -359,21 +360,40 @@ public class CachedCubeFactory
             this.hierarchy = h;
             this.levelType = l.getLevelType();
 
-            int ordinal = 0;
+            ArrayList<_Member> list = new ArrayList<>(l.getMembers().size());
             if ("[Measures]".equals(getDimension().getUniqueName()))
             {
                 for (Member m : l.getMembers())
                 {
-                    members.add(new _Measure(this, lowerLevel, (Measure)m, ordinal++, hash));
+                    list.add(new _Measure(this, lowerLevel, (Measure) m, hash));
                 }
             }
             else
             {
                 for (Member m : l.getMembers())
                 {
-                    members.add(new _Member(this, lowerLevel, m, ordinal++, hash));
+                    System.err.println(m.getUniqueName() + " name="+m.getName() + " value=" + getProperty(m,"VALUE") + " ordinal="+getProperty(m,"MEMBER_ORDINAL"));
+                    System.err.flush();
+                    list.add(new _Member(this, lowerLevel, m, hash));
                 }
             }
+            int ordinal = -1;
+            for (_Member m : list)
+                ordinal = Math.max(ordinal,m.ordinal);
+            for (_Member m : list)
+            {
+                if (m.ordinal == -1)
+                    m.ordinal = ++ordinal;
+            }
+            Collections.sort(list, new Comparator<_Member>(){
+                @Override
+                public int compare(_Member o1, _Member o2)
+                {
+                    return o1.ordinal - o2.ordinal;
+                }
+            });
+            for (_Member m : list)
+                members.add(m);
         }
 
         @Override
@@ -441,23 +461,39 @@ public class CachedCubeFactory
         }
     }
 
+    static private String getProperty(Member m, String s)
+    {
+        try
+        {
+            Property p = m.getProperties().get(s);
+            if (null == p)
+                return "''";
+            Object o = m.getPropertyValue(p);
+            if (null == o)
+                return "''";
+            return String.valueOf(o);
+        }catch(OlapException x)
+        {
+            return "<exception>";
+        }
+    }
 
     public static class _Member extends _MetadataElement implements Member
     {
         final boolean all;
         final _Level level;
-        final int ordinal;
         final Member.Type memberType;
         final Member[] childMembers;
+        int ordinal = -1;
 
-        _Member(_Level level, _Level lowerLevel, Member m, int o, _Hash hash) throws OlapException
+        _Member(_Level level, _Level lowerLevel, Member m, _Hash hash) throws OlapException
         {
             super(m);
             hash.add(getUniqueName());
             this.level = level;
-            this.ordinal = o;
             this.all = m.isAll();
             this.memberType = m.getMemberType();
+            this.ordinal = m.getOrdinal();
             Member[] arr = null;
 
             List<? extends Member> list = m.getChildMembers();
@@ -625,9 +661,9 @@ public class CachedCubeFactory
 
     static class _Measure extends _Member implements Measure
     {
-        _Measure(_Level l, _Level lowerLevel, Measure m, int ordinal, _Hash hash) throws OlapException
+        _Measure(_Level l, _Level lowerLevel, Measure m, _Hash hash) throws OlapException
         {
-            super(l,lowerLevel,m,ordinal,hash);
+            super(l,lowerLevel,m,hash);
         }
 
         @Override
