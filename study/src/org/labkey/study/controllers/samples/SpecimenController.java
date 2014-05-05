@@ -4228,7 +4228,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ManageActorsAction()
         {
-            super("manageActors", "Manage Specimen Request Actors", "specimenRequest");
+            super("manageActors", "Manage Specimen Request Actors", "coordinateSpecimens#actor");
         }
 
         public boolean handlePost(ActorEditForm form, BindException errors) throws Exception
@@ -4358,7 +4358,7 @@ public class SpecimenController extends BaseStudyController
     {
         public ManageStatusesAction()
         {
-            super("manageStatuses", "Manage Specimen Request Statuses", "specimenRequest");
+            super("manageStatuses", "Manage Specimen Request Statuses", "specimenRequest#status");
         }
 
         public boolean handlePost(StatusEditForm form, BindException errors) throws Exception
@@ -5076,6 +5076,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("manageComments");
             _appendManageStudy(root);
             return root.addChild("Manage Comments");
         }

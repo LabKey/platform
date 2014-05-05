@@ -7434,6 +7434,7 @@ public class StudyController extends BaseStudyController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("studyPubRefresh");
             _appendManageStudy(root);
             root.addChild((_study.isAncillaryStudy() ? "Ancillary" : "Published") + " Study Settings");
             return root;

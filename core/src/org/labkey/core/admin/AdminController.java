@@ -4556,6 +4556,7 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("createProject");
             getPageConfig().setFocusId("name");
             //can't use getTitle() here, as it assumes the title relates to the current
             //container, but in this case, it relates to the thing we're going to create
