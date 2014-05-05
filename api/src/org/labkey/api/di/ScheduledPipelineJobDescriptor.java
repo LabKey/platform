@@ -46,8 +46,7 @@ public interface ScheduledPipelineJobDescriptor<C extends ContainerUser>
 
     // these are used to create a job that can be scheduled in Quartz
     Class<? extends org.quartz.Job> getQuartzJobClass();
-    C getJobContext(Container c, User user);
-
+    C getJobContext(Container c, User user, Map<ParameterDescription,Object> params);
     // these methods actually implement the Job
     boolean checkForWork(C context, boolean background, boolean verbose);
     PipelineJob getPipelineJob(C context) throws PipelineJobException;

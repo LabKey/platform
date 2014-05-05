@@ -18,11 +18,13 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.Serializable;
+
 /**
  * User: kevink
  * Date: 5/13/13
  */
-public class ParameterDescriptionImpl implements ParameterDescription
+public class ParameterDescriptionImpl implements ParameterDescription, Serializable
 {
     protected final String _name;
     protected final String _uri;
