@@ -2979,4 +2979,38 @@ public class SparseBitSet implements Cloneable, Serializable
      *  Word and block <b>xor</b> strategy.
      */
     protected transient XorStrategy xorStrategy;
+
+
+    /** estimate of physical memory used to store this bitset
+     * - for instrumentation only
+     * assuming 8 bytes overhead per object and 8 byte pointers
+     */
+    public long getMemorySizeInBytes()
+    {
+        final int OVERHEAD = 8;
+        final int INT = 4;
+        final int LONG = 8;
+        final int REF = 8;
+        long size = OVERHEAD + INT + REF + INT + REF;
+//        protected transient int compactionCount;
+//        protected transient long[][][] bits;
+//        protected transient int bitsLength;
+//        protected transient Cache cache;
+        size += OVERHEAD + REF * bits.length;
+        for (long[][] middle : bits)
+        {
+            if (null != middle)
+            {
+                size += OVERHEAD + REF * middle.length;
+                for (long[] inner : middle)
+                {
+                    if (null != inner)
+                        size += OVERHEAD + LONG *inner.length;
+                }
+            }
+        }
+        if (null != cache)
+            size += OVERHEAD + 7 * INT;
+        return size;
+    }
 }
