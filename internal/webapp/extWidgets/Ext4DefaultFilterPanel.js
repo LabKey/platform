@@ -400,7 +400,8 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
 
         if(rec){
             if(filter.isMultiValued()){
-                return this.validateEqOneOf(input.getValue(), filter.getMultiValueSeparator(), rec.get('mappedType'));
+                console.log("blarg");
+                return this.validateEqOneOf(input.getValue(), filter.getMultiValueSeparator(), filter.getMultiValueMinOccurs(), filter.getMultiValueMaxOccurs(), rec.get('mappedType'));
             }
 
             return this.validateInputField(input.getValue(), rec.get('mappedType'));
@@ -408,7 +409,7 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
         return true;
     },
 
-    validateEqOneOf: function(input, multiValueSeparator, mappedType)
+    validateEqOneOf: function(input, multiValueSeparator, minOccurs, maxOccurs, mappedType)
     {
         // Used when "Equals One Of.." or "Between" is selected. Calls validateInputField on each value entered.
         if (!input)
@@ -421,6 +422,19 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
                 return isValid;
             }
         }
+
+        if (minOccurs !== undefined && minOccurs > 0)
+        {
+            if (values.length < minOccurs)
+                return "At least " + minOccurs + " '" + multiValueSeparator + "' separated values are required";
+        }
+
+        if (maxOccurs !== undefined && maxOccurs > 0)
+        {
+            if (values.length > maxOccurs)
+                return "At most " + maxOccurs + " '" + multiValueSeparator + "' separated values are allowed";
+        }
+
         //If we make it out of the for loop we had no errors.
         return true;
     },
