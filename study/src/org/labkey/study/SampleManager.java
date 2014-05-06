@@ -101,8 +101,6 @@ public class SampleManager implements ContainerManager.ContainerListener
     private final static SampleManager _instance = new SampleManager();
 
     private final QueryHelper<SampleRequestEvent> _requestEventHelper;
-    private final Map<String, QueryHelper<Specimen>> _specimenDetailHelper = new HashMap<>();
-//    private final QueryHelper<SpecimenEvent> _specimenEventHelper;
     private final QueryHelper<AdditiveType> _additiveHelper;
     private final QueryHelper<DerivativeType> _derivativeHelper;
     private final QueryHelper<PrimaryType> _primaryTypeHelper;
@@ -143,20 +141,6 @@ public class SampleManager implements ContainerManager.ContainerListener
                 return StudySchema.getInstance().getTableInfoSampleRequestEvent();
             }
         }, SampleRequestEvent.class);
-/*        _specimenDetailHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoSpecimenDetail();
-            }
-        }, Specimen.class);
-        _specimenEventHelper = new QueryHelper<>(new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoSpecimenEvent();
-            }
-        }, SpecimenEvent.class);  */
         _requestHelper = new QueryHelper<>(new TableInfoGetter()
         {
             public TableInfo getTableInfo()
@@ -230,7 +214,6 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public Specimen getSpecimen(Container container, User user, long rowId)
     {
-//        return _specimenDetailHelper.get(container, rowId);
         SimpleFilter filter = new SimpleFilter("RowId", rowId);
         List<Specimen> specimens = getSpecimens(container, user, filter);
         if (specimens.isEmpty())
@@ -242,7 +225,6 @@ public class SampleManager implements ContainerManager.ContainerListener
     public Specimen getSpecimen(Container container, User user, String globalUniqueId)
     {
         SimpleFilter filter = new SimpleFilter(new SimpleFilter.SQLClause("LOWER(GlobalUniqueId) = LOWER(?)", new Object[] { globalUniqueId }));
-//        List<Specimen> matches = _specimenDetailHelper.get(container, filter);
         List<Specimen> matches = getSpecimens(container, user, filter);
         if (matches == null || matches.isEmpty())
             return null;
@@ -267,7 +249,6 @@ public class SampleManager implements ContainerManager.ContainerListener
         Calendar endCal = DateUtil.newCalendar(date.getTime());
         endCal.add(Calendar.DATE, 1);
         filter.addClause(new SimpleFilter.SQLClause("DrawTimestamp >= ? AND DrawTimestamp < ?", new Object[] {date, endCal.getTime()}));
-//        return _specimenDetailHelper.get(container, filter);
         return getSpecimens(container, user, filter);
     }
 
@@ -300,7 +281,6 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     private List<SpecimenEvent> getSpecimenEvents(final Container container, Filter filter)
     {
-//        return _specimenEventHelper.get(container, filter);
         final List<SpecimenEvent> specimenEvents = new ArrayList<>();
         TableInfo tableInfo = StudySchema.getInstance().getTableInfoSpecimenEvent(container);
 
@@ -1393,7 +1373,6 @@ public class SampleManager implements ContainerManager.ContainerListener
         Collections.addAll(uniqueRowIds, globalUniqueIds);
         List<String> ids = new ArrayList<>(uniqueRowIds);
         filter.addInClause(FieldKey.fromParts("GlobalUniqueId"), ids);
-//        List<Specimen> specimens = _specimenDetailHelper.get(container, filter);
         List<Specimen> specimens = getSpecimens(container, user, filter);
         if (specimens == null || specimens.size() != ids.size())
             throw new SpecimenRequestException();       // an id has no matching specimen, let caller determine what to report
@@ -1949,9 +1928,6 @@ public class SampleManager implements ContainerManager.ContainerListener
         Table.delete(_requestStatusHelper.getTableInfo(), containerFilter);
         assert set.add(_requestStatusHelper.getTableInfo());
 
-        QueryHelper queryHelper = _specimenDetailHelper.get(c.getId());
-        if (null != queryHelper)
-            queryHelper.clearCache(c);
         new SpecimenTablesProvider(c, null, null).deleteTables();
 
         Table.delete(StudySchema.getInstance().getTableInfoSpecimenAdditive(), containerFilter);
@@ -1987,11 +1963,6 @@ public class SampleManager implements ContainerManager.ContainerListener
     public void clearCaches(Container c)
     {
         _requestEventHelper.clearCache(c);
-        QueryHelper queryHelper = _specimenDetailHelper.get(c.getId());
-        if (null != queryHelper)
-            queryHelper.clearCache(c);
-
-//        _specimenEventHelper.clearCache(c);
         _requestHelper.clearCache(c);
         _requestStatusHelper.clearCache(c);
         TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVialIfExists(c);
@@ -3278,34 +3249,9 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     public TableSelector getSpecimensSelector(final Container container, final User user, SimpleFilter filter)
     {
-/*        QueryHelper<Specimen> queryHelper = _specimenDetailHelper.get(container.getId());
-        if (null == queryHelper)
-        {
-            queryHelper = new QueryHelper<>(new TableInfoGetter()
-            {
-                public TableInfo getTableInfo()
-                {
-                    StudyImpl study = StudyManager.getInstance().getStudy(container);
-                    if (null == study)
-                        return null;
-                    StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, true);
-                    return schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
-                }
-            }, Specimen.class);
-            _specimenDetailHelper.put(container.getId(), queryHelper);
-        }
-        return queryHelper.get(container, filter);
-        */
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, true);
         TableInfo specimenTable = schema.getTable(StudyQuerySchema.SPECIMEN_WRAP_TABLE_NAME);
         return new TableSelector(specimenTable, filter, null);
-    }
-
-    public static <T extends AbstractStudyCachable> List<T> fillInContainer(List<T> list, Container container)
-    {
-        for (AbstractStudyCachable obj : list)
-            obj.setContainer(container);
-        return list;
     }
 }
