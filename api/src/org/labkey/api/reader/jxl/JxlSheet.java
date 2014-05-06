@@ -122,6 +122,36 @@ public class JxlSheet implements Sheet
     }
 
     @Override
+    public void setRepeatingColumns(CellRangeAddress cellRangeAddress)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void setRepeatingRows(CellRangeAddress cellRangeAddress)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public CellRangeAddress getRepeatingColumns()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public CellRangeAddress getRepeatingRows()
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
+    public void showInPane(int i, int i2)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
     public int getDefaultColumnWidth()
     {
         throw new UnsupportedOperationException("method not yet supported");

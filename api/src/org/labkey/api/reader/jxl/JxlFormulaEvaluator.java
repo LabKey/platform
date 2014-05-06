@@ -27,6 +27,12 @@ import org.apache.poi.ss.usermodel.FormulaEvaluator;
 public class JxlFormulaEvaluator implements FormulaEvaluator
 {
     @Override
+    public void setDebugEvaluationOutputForNextEval(boolean b)
+    {
+        throw new UnsupportedOperationException("method not yet supported");
+    }
+
+    @Override
     public void clearAllCachedResultValues()
     {
         throw new UnsupportedOperationException("method not yet supported");
