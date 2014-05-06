@@ -243,6 +243,13 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel,
             if (!this._unloading)
                 LABKEY.Utils.displayAjaxErrorResponse(response);
         }, this);
+
+        // Show hidden child nodes when expanding if 'Show Hidden Schemas and Queries' is checked.
+        this.on('beforeappend', function (tree, parent, node) {
+            if (this.showHidden)
+                node.hidden = false;
+        }, this);
+
     },
 
     setShowHiddenSchemasAndQueries : function (showHidden)

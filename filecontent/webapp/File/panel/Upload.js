@@ -192,7 +192,6 @@ Ext4.define('File.panel.Upload', {
         });
 
         this.dropzone.on('totaluploadprogress', function (progress, totalBytes, totalBytesSent) {
-            console.log("totaluploadprogress event: ", progress, totalBytes, totalBytesSent);
             if (progress == 100 && totalBytes == 0 && totalBytesSent == 0) {
                 // Dropzone is telling us all transfers are complete
                 this.uploadPanel.hideProgressBar();
