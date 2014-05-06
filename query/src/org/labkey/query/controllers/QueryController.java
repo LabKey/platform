@@ -32,7 +32,34 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.Action;
+import org.labkey.api.action.ActionType;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiJsonWriter;
+import org.labkey.api.action.ApiQueryResponse;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiResponseWriter;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiUsageException;
+import org.labkey.api.action.ApiVersion;
+import org.labkey.api.action.ConfirmAction;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.ExportException;
+import org.labkey.api.action.ExtendedApiQueryResponse;
+import org.labkey.api.action.FormHandlerAction;
+import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.HasBindParameters;
+import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.NullSafeBindException;
+import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.ReportingApiQueryResponse;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleErrorView;
+import org.labkey.api.action.SimpleRedirectAction;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.audit.AbstractAuditTypeProvider;
 import org.labkey.api.audit.AuditLogEvent;
@@ -40,7 +67,31 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.view.AuditChangesView;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.RowMapFactory;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.CachedResultSets;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerFilterable;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ExcelWriter;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
+import org.labkey.api.data.ShowRows;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TSVWriter;
+import org.labkey.api.data.Table;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -48,7 +99,35 @@ import org.labkey.api.etl.ListofMapsDataIterator;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.query.*;
+import org.labkey.api.query.AbstractQueryImportAction;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.CustomView;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.ExportScriptModel;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryForm;
+import org.labkey.api.query.QueryParam;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryUpdateForm;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.QueryUrls;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SchemaKey;
+import org.labkey.api.query.SimpleSchemaTreeVisitor;
+import org.labkey.api.query.TempQuerySettings;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.query.UserSchemaAction;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -57,6 +136,7 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
+import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
@@ -141,6 +221,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -268,6 +351,35 @@ public class QueryController extends SpringActionController
             if (url == null || user == null || password == null || container == null)
             {
                 errors.addError(new LabkeyError("All fields must be filled in."));
+                return false;
+            }
+
+            // validate the url string and connection
+            try
+            {
+                URL urlObj = new URL(url);
+                URLConnection conn = urlObj.openConnection();
+                conn.connect();
+            }
+            catch (MalformedURLException e)
+            {
+                errors.addError(new LabkeyError("The entered URL is not a valid."));
+                return false;
+            }
+            catch (IOException e)
+            {
+                errors.addError(new LabkeyError("A connection to the entered URL could not be established."));
+                return false;
+            }
+
+            // validate the user
+            try
+            {
+                ValidEmail validEmail = new ValidEmail(user);
+            }
+            catch(ValidEmail.InvalidEmailException e)
+            {
+                errors.addError(new LabkeyError("The entered user is not a valid email address."));
                 return false;
             }
 
