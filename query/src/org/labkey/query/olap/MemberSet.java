@@ -72,6 +72,16 @@ public class MemberSet extends AbstractSet<Member>
         s.addAll(from);
     }
 
+    long getMemorySizeInBytes()
+    {
+        // approximating the smaller fixed overhead
+        long size = 32;
+        for (LevelMemberSet set : levelMap.values())
+            size += 32 + set._set.getMemorySizeInBytes();
+        return size;
+    }
+
+
 
     private MemberSet(LevelMemberSet s)
     {

@@ -1018,6 +1018,11 @@ public class BitSetQueryImpl
     {
         String key = cachePrefix + query;
         _resultsCache.put(key, m.detach());
+        if (_log.isDebugEnabled())
+        {
+            long size = m.getMemorySizeInBytes();
+            _log.debug("cached object size: " + size);
+        }
     }
 
 
