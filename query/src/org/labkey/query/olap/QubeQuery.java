@@ -423,9 +423,15 @@ public class QubeQuery
                     throw errors;
                 }
             }
-            else if (json.get("membersQuery") instanceof JSONObject)
+            else if (null != json.get("membersQuery"))
             {
-                e.membersQuery = parseJsonExpr(json.get("membersQuery"), OP.MEMBERS, OP.XINTERSECT);
+                Object membersQuery = json.get("membersQuery");
+                if (!(membersQuery instanceof JSONObject))
+                {
+                    errors.reject("expected membersQuery to be an object found " + membersQuery.getClass().getSimpleName());
+                    throw errors;
+                }
+                e.membersQuery = parseJsonExpr(membersQuery, OP.MEMBERS, OP.XINTERSECT);
             }
             else
             {
