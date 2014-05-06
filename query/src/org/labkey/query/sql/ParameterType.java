@@ -15,6 +15,7 @@
  */
 package org.labkey.query.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.JdbcType;
 
 /**
@@ -49,11 +50,11 @@ public enum ParameterType
         this.type = type;
     }
 
-    public static ParameterType resolve(String s)
+    public static ParameterType resolve(@NotNull String s)
     {
         try
         {
-            return ParameterType.valueOf(s);
+            return ParameterType.valueOf(s.toUpperCase());
         }
         catch (IllegalArgumentException x)
         {
