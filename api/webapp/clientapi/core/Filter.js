@@ -53,7 +53,7 @@
  */
 LABKEY.Filter = new function()
 {
-    function validateMultiple(type, value, colName, sep)
+    function validateMultiple(type, value, colName, sep, minOccurs, maxOccurs)
     {
         var values = value.split(sep);
         var result = '';
@@ -67,6 +67,25 @@ LABKEY.Filter = new function()
             result = result + separator + value;
             separator = sep;
         }
+
+        if (minOccurs !== undefined && minOccurs > 0)
+        {
+            if (values.length < minOccurs)
+            {
+                alert("At least " + minOccurs + " '" + sep + "' separated values are required");
+                return undefined;
+            }
+        }
+
+        if (maxOccurs !== undefined && maxOccurs > 0)
+        {
+            if (values.length > maxOccurs)
+            {
+                alert("At most " + maxOccurs + " '" + sep + "' separated values are allowed");
+                return undefined;
+            }
+        }
+
         return result;
     }
 
@@ -218,7 +237,22 @@ LABKEY.Filter = new function()
         contains : 'containsoneof'
     };
 
-    function createFilterType(displayText, urlSuffix, dataValueRequired, multiValueSeparator, longDisplayText)
+    function createNoValueFilterType(displayText, urlSuffix, longDisplayText)
+    {
+        return createFilterType(displayText, urlSuffix, false, null, longDisplayText);
+    }
+
+    function createSingleValueFilterType(displayText, urlSuffix, longDisplayText)
+    {
+        return createFilterType(displayText, urlSuffix, true, null, longDisplayText);
+    }
+
+    function createMultiValueFilterType(displayText, urlSuffix, longDisplayText, multiValueSeparator, minOccurs, maxOccurs)
+    {
+        return createFilterType(displayText, urlSuffix, true, multiValueSeparator, longDisplayText, minOccurs, maxOccurs);
+    }
+
+    function createFilterType(displayText, urlSuffix, dataValueRequired, multiValueSeparator, longDisplayText, minOccurs, maxOccurs)
     {
         var result = {
             getDisplayText : function() { return displayText },
@@ -227,6 +261,8 @@ LABKEY.Filter = new function()
             isDataValueRequired : function() { return dataValueRequired },
             isMultiValued : function() { return multiValueSeparator != null; },
             getMultiValueSeparator : function() { return multiValueSeparator },
+            getMultiValueMinOccurs : function() { return minOccurs },
+            getMultiValueMaxOccurs : function() { return maxOccurs; },
             getOpposite : function() {return oppositeMap[urlSuffix] ? urlMap[oppositeMap[urlSuffix]] : null},
             getSingleValueFilter : function() {return this.isMultiValued() ? urlMap[multiValueToSingleMap[urlSuffix]] : this},
             getMultiValueFilter : function() {return this.isMultiValued() ? null : urlMap[singleValueToMultiMap[urlSuffix]]},
@@ -247,7 +283,7 @@ LABKEY.Filter = new function()
                 }
 
                 if (this.isMultiValued())
-                    return validateMultiple(type, value, colName, multiValueSeparator);
+                    return validateMultiple(type, value, colName, multiValueSeparator, minOccurs, maxOccurs);
                 else
                     return validate(type, value, colName);
             }
@@ -278,71 +314,71 @@ LABKEY.Filter = new function()
         // - Python & Perl don't have an filter operator enum
         Types : {
 
-            HAS_ANY_VALUE : createFilterType("Has Any Value", "", false, null, null),
+            HAS_ANY_VALUE : createNoValueFilterType("Has Any Value", "", null),
 
             //
             // These operators require a data value
             //
 
-            EQUAL : createFilterType("Equals", "eq", true, null, null),
-            DATE_EQUAL : createFilterType("Equals", "dateeq", true, null, null),
+            EQUAL : createSingleValueFilterType("Equals", "eq", null),
+            DATE_EQUAL : createSingleValueFilterType("Equals", "dateeq", null),
 
-            NEQ : createFilterType("Does Not Equal", "neq", true, null, null),
-            NOT_EQUAL : createFilterType("Does Not Equal", "neq", true, null, null),
-            DATE_NOT_EQUAL : createFilterType("Does Not Equal", "dateneq", true, null, null),
+            NEQ : createSingleValueFilterType("Does Not Equal", "neq", null),
+            NOT_EQUAL : createSingleValueFilterType("Does Not Equal", "neq", null),
+            DATE_NOT_EQUAL : createSingleValueFilterType("Does Not Equal", "dateneq", null),
 
-            NEQ_OR_NULL : createFilterType("Does Not Equal", "neqornull", true, null, null),
-            NOT_EQUAL_OR_MISSING : createFilterType("Does Not Equal", "neqornull", true, null, null),
+            NEQ_OR_NULL : createSingleValueFilterType("Does Not Equal", "neqornull", null),
+            NOT_EQUAL_OR_MISSING : createSingleValueFilterType("Does Not Equal", "neqornull", null),
 
-            GT : createFilterType("Is Greater Than", "gt", true, null, null),
-            GREATER_THAN : createFilterType("Is Greater Than", "gt", true, null, null),
-            DATE_GREATER_THAN : createFilterType("Is Greater Than", "dategt", true, null, null),
+            GT : createSingleValueFilterType("Is Greater Than", "gt", null),
+            GREATER_THAN : createSingleValueFilterType("Is Greater Than", "gt", null),
+            DATE_GREATER_THAN : createSingleValueFilterType("Is Greater Than", "dategt", null),
 
-            LT : createFilterType("Is Less Than", "lt", true, null, null),
-            LESS_THAN : createFilterType("Is Less Than", "lt", true, null, null),
-            DATE_LESS_THAN : createFilterType("Is Less Than", "datelt", true, null, null),
+            LT : createSingleValueFilterType("Is Less Than", "lt", null),
+            LESS_THAN : createSingleValueFilterType("Is Less Than", "lt", null),
+            DATE_LESS_THAN : createSingleValueFilterType("Is Less Than", "datelt", null),
 
-            GTE : createFilterType("Is Greater Than or Equal To", "gte", true, null, null),
-            GREATER_THAN_OR_EQUAL : createFilterType("Is Greater Than or Equal To", "gte", true, null, null),
-            DATE_GREATER_THAN_OR_EQUAL : createFilterType("Is Greater Than or Equal To", "dategte", true, null, null),
+            GTE : createSingleValueFilterType("Is Greater Than or Equal To", "gte", null),
+            GREATER_THAN_OR_EQUAL : createSingleValueFilterType("Is Greater Than or Equal To", "gte", null),
+            DATE_GREATER_THAN_OR_EQUAL : createSingleValueFilterType("Is Greater Than or Equal To", "dategte", null),
 
-            LTE : createFilterType("Is Less Than or Equal To", "lte", true, null, null),
-            LESS_THAN_OR_EQUAL : createFilterType("Is Less Than or Equal To", "lte", true, null, null),
-            DATE_LESS_THAN_OR_EQUAL : createFilterType("Is Less Than or Equal To", "datelte", true, null, null),
+            LTE : createSingleValueFilterType("Is Less Than or Equal To", "lte", null),
+            LESS_THAN_OR_EQUAL : createSingleValueFilterType("Is Less Than or Equal To", "lte", null),
+            DATE_LESS_THAN_OR_EQUAL : createSingleValueFilterType("Is Less Than or Equal To", "datelte", null),
 
-            STARTS_WITH : createFilterType("Starts With", "startswith", true, null, null),
-            DOES_NOT_START_WITH : createFilterType("Does Not Start With", "doesnotstartwith", true, null, null),
+            STARTS_WITH : createSingleValueFilterType("Starts With", "startswith", null),
+            DOES_NOT_START_WITH : createSingleValueFilterType("Does Not Start With", "doesnotstartwith", null),
 
-            CONTAINS : createFilterType("Contains", "contains", true, null, null),
-            DOES_NOT_CONTAIN : createFilterType("Does Not Contain", "doesnotcontain", true, null, null),
+            CONTAINS : createSingleValueFilterType("Contains", "contains", null),
+            DOES_NOT_CONTAIN : createSingleValueFilterType("Does Not Contain", "doesnotcontain", null),
 
-            CONTAINS_ONE_OF : createFilterType("Contains One Of", "containsoneof", true, ";", 'Contains One Of (e.g. \"a;b;c\")'),
-            CONTAINS_NONE_OF : createFilterType("Does Not Contain Any Of", "containsnoneof", true, ";", 'Does Not Contain Any Of (e.g. \"a;b;c\")'),
+            CONTAINS_ONE_OF : createMultiValueFilterType("Contains One Of", "containsoneof", 'Contains One Of (e.g. \"a;b;c\")', ";"),
+            CONTAINS_NONE_OF : createMultiValueFilterType("Does Not Contain Any Of", "containsnoneof", 'Does Not Contain Any Of (e.g. \"a;b;c\")', ";"),
 
-            IN : createFilterType("Equals One Of", "in", true, ";", 'Equals One Of (e.g. \"a;b;c\")'),
+            IN : createMultiValueFilterType("Equals One Of", "in", 'Equals One Of (e.g. \"a;b;c\")', ";"),
             //NOTE: for some reason IN is aliased as EQUALS_ONE_OF.  not sure if this is for legacy purposes or it was determined EQUALS_ONE_OF was a better phrase
             //to follow this pattern I did the same for IN_OR_MISSING
-            EQUALS_ONE_OF : createFilterType("Equals One Of", "in", true, ";", 'Equals One Of (e.g. \"a;b;c\")'),
+            EQUALS_ONE_OF : createMultiValueFilterType("Equals One Of", "in", 'Equals One Of (e.g. \"a;b;c\")', ";"),
 
-            NOT_IN: createFilterType("Does Not Equal Any Of", "notin", true, ";", 'Does Not Equal Any Of (e.g. \"a;b;c\")'),
-            EQUALS_NONE_OF: createFilterType("Does Not Equal Any Of", "notin", true, ";", 'Does Not Equal Any Of (e.g. \"a;b;c\")'),
+            NOT_IN: createMultiValueFilterType("Does Not Equal Any Of", "notin", 'Does Not Equal Any Of (e.g. \"a;b;c\")', ";"),
+            EQUALS_NONE_OF: createMultiValueFilterType("Does Not Equal Any Of", "notin", 'Does Not Equal Any Of (e.g. \"a;b;c\")', ";"),
 
-            BETWEEN : createFilterType("Between", "between", true, ",", 'Between, Inclusive (e.g., \"-4,4\")'),
-            NOT_BETWEEN : createFilterType("Not Between", "notbetween", true, ",", 'Not Between, Exclusive (e.g., \"-4,4\")'),
+            BETWEEN : createMultiValueFilterType("Between", "between", 'Between, Inclusive (e.g., \"-4,4\")', ",", 2, 2),
+            NOT_BETWEEN : createMultiValueFilterType("Not Between", "notbetween", 'Not Between, Exclusive (e.g., \"-4,4\")', ",", 2, 2),
 
-            MEMBER_OF : createFilterType("Member Of", "memberof", true, false, 'Member Of'),
+            MEMBER_OF : createSingleValueFilterType("Member Of", "memberof", 'Member Of'),
 
             //
             // These are the "no data value" operators
             //
 
-            ISBLANK : createFilterType("Is Blank", "isblank", false, null, null),
-            MISSING : createFilterType("Is Blank", "isblank", false, null, null),
-            NONBLANK : createFilterType("Is Not Blank", "isnonblank", false, null, null),
-            NOT_MISSING : createFilterType("Is Not Blank", "isnonblank", false, null, null),
+            ISBLANK : createNoValueFilterType("Is Blank", "isblank", null),
+            MISSING : createNoValueFilterType("Is Blank", "isblank", null),
+            NONBLANK : createNoValueFilterType("Is Not Blank", "isnonblank", null),
+            NOT_MISSING : createNoValueFilterType("Is Not Blank", "isnonblank", null),
 
-            HAS_MISSING_VALUE : createFilterType("Has a missing value indicator", "hasmvvalue", false, null, null),
-            DOES_NOT_HAVE_MISSING_VALUE : createFilterType("Does not have a missing value indicator", "nomvvalue", false, null, null)
+            HAS_MISSING_VALUE : createNoValueFilterType("Has a missing value indicator", "hasmvvalue", null),
+            DOES_NOT_HAVE_MISSING_VALUE : createNoValueFilterType("Does not have a missing value indicator", "nomvvalue", null)
         },
 
         /** @private create a js object suitable for Query.selectRows, etc */

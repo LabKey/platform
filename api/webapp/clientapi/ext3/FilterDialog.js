@@ -500,7 +500,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
             if (rec) {
                 if (filter.isMultiValued())
-                    return this.validateMultiValueInput(input.getValue(), filter.getMultiValueSeparator());
+                    return this.validateMultiValueInput(input.getValue(), filter.getMultiValueSeparator(), filter.getMultiValueMinOccurs(), filter.getMultiValueMaxOccurs());
                 return this.validateInputField(input.getValue());
             }
         }
@@ -741,7 +741,7 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
         return 0;
     },
 
-    validateMultiValueInput : function(inputValues, multiValueSeparator) {
+    validateMultiValueInput : function(inputValues, multiValueSeparator, minOccurs, maxOccurs) {
         // Used when "Equals One Of.." or "Between" is selected. Calls validateInputField on each value entered.
         var values = inputValues.split(multiValueSeparator);
         var isValid = "";
@@ -751,6 +751,19 @@ LABKEY.FilterDialog.View.Default = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 return isValid;
             }
         }
+
+        if (minOccurs !== undefined && minOccurs > 0)
+        {
+            if (values.length < minOccurs)
+                return "At least " + minOccurs + " '" + multiValueSeparator + "' separated values are required";
+        }
+
+        if (maxOccurs !== undefined && maxOccurs > 0)
+        {
+            if (values.length > maxOccurs)
+                return "At most " + maxOccurs + " '" + multiValueSeparator + "' separated values are allowed";
+        }
+
         //If we make it out of the for loop we had no errors.
         return true;
     },
