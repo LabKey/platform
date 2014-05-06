@@ -143,7 +143,27 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         if (null == getViewName())
             throw new Exception("No view name specified for the module web part defined in " + _resourceName);
 
-        return SimpleAction.getModuleHtmlView(getModule(), getViewName(), webPart);
+        WebPartView ret = SimpleAction.getModuleHtmlView(getModule(), getViewName(), webPart);
+        if (null != _webPartDef && null != _webPartDef.getView())
+        {
+            if (null != _webPartDef.getView().getFrame())
+            {
+                try
+                {
+                    WebPartView.FrameType ft = WebPartView.FrameType.valueOf(_webPartDef.getView().getFrame().toString().toUpperCase());
+                    ret.setFrame(ft);
+                }
+                catch (Exception x)
+                {
+                }
+            }
+// CONSIDER: should webpart title override view title?
+//            if (null != _webPartDef.getTitle())
+//            {
+//                ret.setTitle(_webPartDef.getTitle());
+//            }
+        }
+        return ret;
     }
 
 
