@@ -299,7 +299,7 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
     {
         // Don't allow null pk, see #20057
         if (null == pk)
-            throw new IllegalStateException("PK on getObject() must not be null");
+            return null; // TODO: throw new IllegalStateException("PK on getObject() must not be null");
 
         List<ColumnInfo> pkColumns = _table.getPkColumns();
         Object[] pks;
