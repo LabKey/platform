@@ -901,9 +901,10 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
                 // Do the negation
                 if (unselected.length == 1) {
                     var val = unselected[0].get('value');
+                    var type = (val === "" ? LABKEY.Filter.Types.NONBLANK : LABKEY.Filter.Types.NOT_EQUAL_OR_MISSING);
 
                     // 18716: Check if 'unselected' contains empty value
-                    filter = LABKEY.Filter.create(columnName, val, (val == "" ? LABKEY.Filter.Types.NONBLANK : LABKEY.Filter.Types.NOT_EQUAL_OR_MISSING));
+                    filter = LABKEY.Filter.create(columnName, val, type);
                 }
                 else
                     filter = LABKEY.Filter.create(columnName, this.delimitValues(unselected), LABKEY.Filter.Types.NOT_IN);
