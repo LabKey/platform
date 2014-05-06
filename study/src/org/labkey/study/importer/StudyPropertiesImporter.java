@@ -36,7 +36,9 @@ import java.util.Map;
 public class StudyPropertiesImporter extends DefaultStudyDesignImporter
 {
     Map<Object, Object> _personnelIdMap = new HashMap<>();
+    Map<Object, Object> _objectiveIdMap = new HashMap<>();
     private SharedTableMapBuilder _personnelTableMapBuilder = new SharedTableMapBuilder(_personnelIdMap, "Label");
+    private SharedTableMapBuilder _objectiveTableMapBuilder = new SharedTableMapBuilder(_objectiveIdMap, "Label");
 
     /**
      * Imports additional study related properties into the properties sub folder
@@ -59,26 +61,23 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                     // import the objective and personnel tables
                     StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
                     StudyQuerySchema projectSchema = ctx.isDataspaceProject() ? new StudyQuerySchema(StudyManager.getInstance().getStudy(ctx.getProject()), ctx.getUser(), true) : schema;
-                    List<String> studyPropertyTableNames = new ArrayList<>();
 
-                    studyPropertyTableNames.add(StudyQuerySchema.OBJECTIVE_TABLE_NAME);
-                    studyPropertyTableNames.add(StudyQuerySchema.PROPERTIES_TABLE_NAME);
+                    StudyQuerySchema.TablePackage objectiveTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.OBJECTIVE_TABLE_NAME);
+                    importTableData(ctx, vf, objectiveTablePackage, _objectiveTableMapBuilder,
+                            new PreserveExistingProjectData(ctx.getUser(), objectiveTablePackage.getTableInfo(), "Label", "RowId", _objectiveIdMap));
 
-                    for (String tableName : studyPropertyTableNames)
-                    {
-                        StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, tableName);
-                        importTableData(ctx, vf, tablePackage, null, null);
-                    }
+                    StudyQuerySchema.TablePackage propertiesTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PROPERTIES_TABLE_NAME);
+                    importTableData(ctx, vf, propertiesTablePackage, null, null);
 
                     StudyQuerySchema.TablePackage personnelTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PERSONNEL_TABLE_NAME);
                     importTableData(ctx, vf, personnelTablePackage, _personnelTableMapBuilder,
-                            ctx.isDataspaceProject() ? new PreserveExistingProjectData(ctx.getUser(), personnelTablePackage.getTableInfo(), "Label", "RowId", _personnelIdMap) : null);
+                            new PreserveExistingProjectData(ctx.getUser(), personnelTablePackage.getTableInfo(), "Label", "RowId", _personnelIdMap));
 
                     transaction.commit();
                 }
 
-                if (ctx.isDataspaceProject())
-                    ctx.addTableIdMap("Personnel", _personnelIdMap);
+                ctx.addTableIdMap("Personnel", _personnelIdMap);
+                ctx.addTableIdMap("Objective", _objectiveIdMap);
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());

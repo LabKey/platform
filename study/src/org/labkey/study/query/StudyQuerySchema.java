@@ -991,6 +991,7 @@ public class StudyQuerySchema extends UserSchema
 
         _dataspaceFolderLevelTables.add(TREATMENT_TABLE_NAME);
         _dataspaceFolderLevelTables.add(ASSAY_SPECIMEN_TABLE_NAME);
+        _dataspaceFolderLevelTables.add(OBJECTIVE_TABLE_NAME);
     }
 
     public static boolean isDataspaceProjectTable(String tableName)

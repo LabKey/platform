@@ -97,15 +97,13 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     ctx.getLogger().info("Importing treatment data tables");
                     StudyQuerySchema.TablePackage productTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_TABLE_NAME);
                     importTableData(ctx, vf, productTablePackage, _productTableMapBuilder,
-                           ctx.isDataspaceProject() ? new PreserveExistingProjectData(ctx.getUser(), productTablePackage.getTableInfo(), "Label", "RowId", _productIdMap) : null);
+                           new PreserveExistingProjectData(ctx.getUser(), productTablePackage.getTableInfo(), "Label", "RowId", _productIdMap));
 
                     StudyQuerySchema.TablePackage productAntigenTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
                     List<TransformHelper> transformHelpers = new ArrayList<>();
                     TransformHelper transformHelperComp = null;
-                    if (ctx.isDataspaceProject())
-                    {
-//                        transformHelpers.add(new PreserveExistingProjectData(ctx.getUser(), productAntigenTablePackage.getTableInfo(), "GenBankId", "RowId", _productAntigenIdMap));   // TODO: this table needs a Label field or something
-                    }
+
+//                    transformHelpers.add(new PreserveExistingProjectData(ctx.getUser(), productAntigenTablePackage.getTableInfo(), "GenBankId", "RowId", _productAntigenIdMap));   // TODO: this table needs a Label field or something
                     transformHelpers.add(_productAntigenTableTransform);
                     transformHelperComp = new TransformHelperComposition(transformHelpers);
                     importTableData(ctx, vf, productAntigenTablePackage, _productAntigenTableMapBuilder, transformHelperComp);
@@ -119,12 +117,8 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     // Note: TreatmentVisitMap info needs to import after cohorts are loaded (issue 19947).
                     // That part of the TreatmentDataImporter will happen separately and be called accordingly (see TreatmentVisitMapImporter)
                     ctx.addTableIdMap("Treatment", _treatmentIdMap);
-
-                    if (ctx.isDataspaceProject())
-                    {
-                        ctx.addTableIdMap("Product", _productIdMap);
-                        ctx.addTableIdMap("ProductAntigen", _productAntigenIdMap);
-                    }
+                    ctx.addTableIdMap("Product", _productIdMap);
+//                    ctx.addTableIdMap("ProductAntigen", _productAntigenIdMap);        // TODO: this goes with the transform above that populates the map
 
                     transaction.commit();
                 }
