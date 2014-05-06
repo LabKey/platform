@@ -15,6 +15,7 @@
  */
 package org.labkey.api.gwt.client.ui.domain;
 
+import com.extjs.gxt.ui.client.widget.form.SimpleComboBox;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Timer;
@@ -409,6 +410,8 @@ public class DomainImporter
                 {
                     if (doColumnsHaveDups())
                         Window.alert("Columns for import contain duplicate column names. Please change one of the column names in the import data. (Unselecting a column is not sufficient.)");
+                    else if (areAllServerColumnsSelected() == false )
+                        Window.alert("You must select all required Server Columns before importing.");
                     else
                         handleImport();
 /*
@@ -444,6 +447,15 @@ public class DomainImporter
             lowercaseNames.add(lowercaseName);
         }
         return false;
+    }
+
+    public boolean areAllServerColumnsSelected()
+    {
+        boolean columnsSelected = true;
+        for ( SimpleComboBox<String> column : grid.getColumnMapper()._columnSelectors )
+            if (column.getSelectedIndex() == -1 )
+                columnsSelected = false;
+        return columnsSelected;
     }
 
     public void handleImport()
@@ -520,7 +532,9 @@ public class DomainImporter
     private void handleFailure(String message)
     {
         Window.alert(message);
-        onCancel();
+        // reEnable page for retry of import
+        importButton.setEnabled(true);
+        mainPanel.remove(progressBar);
     }
 
     public void handleCancel()

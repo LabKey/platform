@@ -32,7 +32,6 @@ import com.extjs.gxt.ui.client.widget.form.LabelField;
 import com.extjs.gxt.ui.client.widget.form.SimpleComboBox;
 import com.extjs.gxt.ui.client.widget.form.SimpleComboValue;
 import com.extjs.gxt.ui.client.widget.layout.FitLayout;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.DockPanel;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HTML;
@@ -288,7 +287,10 @@ public class DomainImportGrid<DomainType extends GWTDomain<FieldType>, FieldType
 
     public boolean isImportEnabled(GWTPropertyDescriptor prop)
     {
-        return _importColumnMap.get(prop).booleanValue();
+        if (null != _importColumnMap.get(prop))
+            return _importColumnMap.get(prop).booleanValue();
+        else
+            return false;
     }
 
     private List<PropertyPane<DomainType, FieldType>> createPropertyPanes(DockPanel propertyDock)
