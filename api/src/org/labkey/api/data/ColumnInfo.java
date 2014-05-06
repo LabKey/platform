@@ -1862,15 +1862,18 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         return getFk() != null;
     }
 
+    @NotNull
     public List<ConditionalFormat> getConditionalFormats()
     {
         return conditionalFormats;
     }
 
-    public void setConditionalFormats(List<ConditionalFormat> conditionalFormats)
+    public void setConditionalFormats(List<ConditionalFormat> formats)
     {
         checkLocked();
-        this.conditionalFormats = conditionalFormats;
+        this.conditionalFormats.clear();
+        if (null != formats)
+            this.conditionalFormats.addAll(formats);
     }
 
     @NotNull
