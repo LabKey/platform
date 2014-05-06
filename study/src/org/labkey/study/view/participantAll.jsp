@@ -315,26 +315,28 @@
         continue;
     }
 
+    if (!datasetSet.contains(datasetId))
+        continue;
+
     // get the data for this dataset and group rows by SequenceNum/Key
     TableInfo table = querySchema.createDatasetTableInternal(dataset);
     Map<Double, Map<Object, Map>> seqKeyRowMap = new HashMap<>();
     FieldKey keyColumnName = null == dataset.getKeyPropertyName() ? null : new FieldKey(null, dataset.getKeyPropertyName());
+    ColumnInfo keyColumn = null == keyColumnName ? null : table.getColumn(keyColumnName);
+    ColumnInfo seqnumColumn = table.getColumn("SequenceNum");
 
-    if (!datasetSet.contains(datasetId))
-        continue;
     Map<FieldKey, ColumnInfo> allColumns = getQueryColumns(table);
     ColumnInfo sourceLsidColumn = allColumns.get(new FieldKey(null, "sourceLsid"));
     Results dsResults = new TableSelector(table, allColumns.values(), filter, sort).getResults();
     int rowCount = dsResults.getSize();
     while (dsResults.next())
     {
-        double sequenceNum = dsResults.getDouble("SequenceNum");
-        Object key = null == keyColumnName ? "" : dsResults.getObject(keyColumnName);
+        Object sequenceNum = seqnumColumn.getValue(dsResults);
+        Object key = null == keyColumn ? "" : keyColumn.getValue(dsResults);
 
         Map<Object, Map> keyMap = seqKeyRowMap.get(sequenceNum);
         if (null == keyMap)
-            seqKeyRowMap.put(sequenceNum, keyMap = new HashMap<>());
-
+            seqKeyRowMap.put(((Number)sequenceNum).doubleValue(), keyMap = new HashMap<>());
         keyMap.put(key, dsResults.getRowMap());
     }
     ResultSetUtil.close(dsResults);
