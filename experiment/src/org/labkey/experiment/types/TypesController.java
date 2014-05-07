@@ -26,6 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.exp.DomainDescriptor;
@@ -348,7 +349,7 @@ public class TypesController extends SpringActionController
 
             //noinspection unchecked
             Map<String,Object>[] rows = new HashMap[0];
-            ArrayList<String> params = new ArrayList<>();
+            List<String> params = new ArrayList<>();
 
             if (notEmpty(form.query) || notEmpty(form.concept) || notEmpty(form.semanticType))
             {
@@ -397,17 +398,16 @@ public class TypesController extends SpringActionController
                     and = " AND ";
                 }
 
-                String sql =
+                SQLFragment sql = new SQLFragment(
                         "SELECT P.PropertyURI, P.Name, P.Label, P.SearchTerms, P.SemanticType, P.ConceptURI, P.Description, BASE.ConceptURI AS C2, BASE2.ConceptURI AS C3, 0 AS Score, '' AS Path\n"+
                         "FROM exp.PropertyDescriptor P\n" +
                         "    LEFT OUTER JOIN exp.PropertyDescriptor BASE on P.ConceptURI = BASE.PropertyURI\n" +
                         "    LEFT OUTER JOIN exp.PropertyDescriptor BASE2 on BASE.ConceptURI = BASE2.PropertyURI\n" +
                         "WHERE " + where + "\n" +
-                        "ORDER BY 1\n";
+                        "ORDER BY 1");
+                sql.addAll(params);
 
-                rows = new SqlSelector(ExperimentService.get().getSchema(), sql, params).getMapArray();
-                System.err.println(sql);
-                System.err.println(params.toString());
+                rows = new SqlSelector(ExperimentService.get().getSchema(), sql).getMapArray();
             }
 
             HashMap<String, String> parentMap = new HashMap<>(rows.length * 2);
