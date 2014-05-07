@@ -694,8 +694,12 @@ public class Query
                 else
                     //noinspection ThrowableInstanceNeverThrown
                     qpe = new QueryParseException("Query '" + key.getName() + "' has errors", null, node.getLine(), node.getColumn());
-                ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveURL, def.urlFor(QueryAction.sourceQuery).getLocalURIString(false), true);
-                ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveText, "edit " + def.getName(), true);
+                ActionURL source = def.urlFor(QueryAction.sourceQuery);
+                if (null != source)
+                {
+                    ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveURL, source.getLocalURIString(false), true);
+                    ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveText, "edit " + def.getName(), true);
+                }
                 _parseErrors.add(qpe);
                 return null;
             }
