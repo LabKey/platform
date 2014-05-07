@@ -418,32 +418,18 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             scope: this
         });
 
-        function blurChange(txtField){
-            //Changes the study location when you click away from the field. This is needed if you are typing and click
-            // away from the textfield very fast.
+        function nameChange(txtField){
             var newValue = txtField.getValue();
             var path;
             if(folderTree.getSelectionModel().getSelectedNode()){
-                path = folderTree.getSelectionModel().getSelectedNode().attributes.containerPath;
+                var attributes = folderTree.getSelectionModel().getSelectedNode().attributes;
+                path = (attributes.hasOwnProperty('containerPath')) ? attributes.containerPath : "";
             } else {
                 path = LABKEY.ActionURL.getContainer();
             }
             this.info.name = newValue;
             this.info.dstPath = path + '/' + this.info.name;
             studyLocation.setValue(this.info.dstPath);
-        }
-
-        function nameChange(txtField){
-            var newValue = txtField.getValue();
-            var path;
-            if(folderTree.getSelectionModel().getSelectedNode()){
-                path = folderTree.getSelectionModel().getSelectedNode().attributes.containerPath;
-            } else {
-                path = LABKEY.ActionURL.getContainer();
-            }
-            this.info.name = newValue;
-            this.info.dstPath = path + '/' + this.info.name;
-            studyLocation.setValue(path + '/' + this.info.name);
         }
 
         var folderTree = new Ext.tree.TreePanel({
@@ -462,6 +448,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 cls : 'x-tree-node-current'
             },
             listeners: {
+                click: onClick,
                 dblclick: onDblClick,
                 scope:this
             },
@@ -479,7 +466,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             border: true
         });
 
-        function onDblClick(e){
+        function onClick(e){
             if(e.attributes.containerPath){
                 studyLocation.setValue(e.attributes.containerPath + '/' + this.info.name);
                 this.info.dstPath = e.attributes.containerPath + '/' + this.info.name
@@ -487,6 +474,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 studyLocation.setValue("/" + this.info.name);
                 this.info.dstPath = "/" + this.info.name;
             }
+        }
+
+        function onDblClick(e){
             folderTree.collapse();
         }
 
@@ -521,7 +511,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 name: 'studyName',
                 value: this.info.name,
                 enableKeyEvents: true,
-                listeners: {change: blurChange, keyup:nameChange, scope:this}
+                listeners: {change: nameChange, keyup:nameChange, scope:this}
             },{
                 xtype: 'textarea',
                 fieldLabel: 'Description',
