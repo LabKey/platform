@@ -21,13 +21,13 @@ Ext.namespace('LABKEY', 'LABKEY.ext');
 
 /**
  * Constructs a new LabKey EditorGridPanel using the supplied configuration.
- * @class LabKey extension to the <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.grid.EditorGridPanel">Ext.grid.EditorGridPanel</a>,
- * which can provide editable grid views
- * of data in the LabKey server. If the current user has appropriate permissions, the user may edit
- * data, save changes, insert new rows, or delete rows.
+ * @class <p><font color="red">DEPRECATED</font> - Consider using
+ * <a href="http://docs.sencha.com/extjs/3.4.0/#!/api/Ext.grid.EditorGridPanel">Ext.grid.EditorGridPanel</a> instead.</p>
+ * <p>LabKey extension to the <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.grid.EditorGridPanel">Ext.grid.EditorGridPanel</a>,
+ * which can provide editable grid views of data in the LabKey server. If the current user has appropriate permissions,
+ * the user may edit data, save changes, insert new rows, or delete rows.</p>
  * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
  * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
- *
  *            <p>Additional Documentation:
  *              <ul>
  *                  <li><a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=javascriptTutorial">LabKey JavaScript API Tutorial</a></li>

@@ -21,11 +21,13 @@ Ext.namespace("LABKEY","LABKEY.ext");
 
 /**
  * Constructs a new LabKey FormPanel using the supplied configuration.
- * @class LabKey extension to the <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.form.FormPanel">Ext.form.FormPanel</a>.
+ * @class <p><font color="red">DEPRECATED - </font> Consider using
+ * <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.form.FormPanel">Ext.form.FormPanel</a> instead. </p>
+ * <p>LabKey extension to the
+ * <a href="http://www.extjs.com/deploy/dev/docs/?class=Ext.form.FormPanel">Ext.form.FormPanel</a>.
  * This class understands various LabKey metadata formats and can simplify generating basic forms.
  * When a LABKEY.ext.FormPanel is created with additional metadata, it will try to intelligently construct fields
- * of the appropriate type.
- * 
+ * of the appropriate type.</p>
  * <p>If you use any of the LabKey APIs that extend Ext APIs, you must either make your code open source or
  * <a href="https://www.labkey.org/wiki/home/Documentation/page.view?name=extDevelopment">purchase an Ext license</a>.</p>
  *            <p>Additional Documentation:

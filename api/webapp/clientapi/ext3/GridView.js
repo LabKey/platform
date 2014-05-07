@@ -18,12 +18,12 @@
  */
 
  /**
-  * @deprecated  This class is now deprecated in favor of the LABKEY.ext.EditorGridPanel class.
-  * The LABKEY.ext.EditorGridPanel class is very similar to this class, except that it is a proper
+  * @class <font color="red">DEPRECATED</font> - Consider using
+  * <a href="http://docs.sencha.com/extjs/3.4.0/#!/api/Ext.grid.EditorGridPanel">Ext.grid.EditorGridPanel</a> instead.
+  * <p> The LABKEY.ext.EditorGridPanel class is very similar to this class, except that it is a proper
   * extension of the Ext.grid.EditorGridPanel class, and thus exposes all of its properties, methods,
-  * and events, and can participate in complex Ext layouts.
-  * <p>
-  * To transition from this class to the new LABKEY.ext.EditorGridPanel class, follow these steps:
+  * and events, and can participate in complex Ext layouts.</p>
+  * <p> To transition from this class to the new LABKEY.ext.EditorGridPanel class, follow these steps:
   * <ul>
   * <li>Create a new LABKEY.ext.EditorGridPanel instead of a LABKEY.GridView</li>
   * <li>Ensure that you create the class after the page has fully loaded. Use the Ext.onReady() function to
@@ -36,8 +36,6 @@
   * <li>If you specify a value for the renderTo config property, there is no need to call the
   * render() method as there was when using the old LABKEY.GridView.</li>
   * </ul>
-  * @description <font color="red">NOTE: This class is now DEPRECATED in favor of the {@link LABKEY.ext.EditorGridPanel}  class. </font>
-  * @class <font color="red">NOTE: This class is now DEPRECATED in favor of the {@link LABKEY.ext.EditorGridPanel} class.</font>
   * @constructor
   * @param {Object} config Describes the GridView's properties.
   * @param {Object} config.schemaName Name of a schema defined within the current
