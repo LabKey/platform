@@ -213,7 +213,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.sideBar = new Ext.Panel({
             //This is going to be where the sidebar content goes.
             name: 'sidebar',
-            width: 175,
+            width: 180,
             border: false,
             cls: 'extContainer',
             tpl: this.sideBarTemplate,
@@ -1018,7 +1018,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     getStudyPropsPanel : function(){
         var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Study Objects'})+
             Ext.DomHelper.markup({tag:'div', html: '&nbsp'})+
-            Ext.DomHelper.markup({tag:'div', html: 'Choose additional study objects to export:'})+
+            Ext.DomHelper.markup({tag:'div', html: 'Choose additional study objects to publish:'})+
             Ext.DomHelper.markup({tag:'div', html: '&nbsp'});
 
         var selectionModel = new Ext.grid.CheckboxSelectionModel({
@@ -1377,7 +1377,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var checkboxes = [];
         var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Folder Objects'})+
                 Ext.DomHelper.markup({tag:'div', html: '&nbsp'})+
-                Ext.DomHelper.markup({tag:'div', html: 'Choose additional folder objects to export:'})+
+                Ext.DomHelper.markup({tag:'div', html: 'Choose additional folder objects to publish:'})+
                 Ext.DomHelper.markup({tag:'div', html: '&nbsp'});
 
         var selectionModel = new Ext.grid.CheckboxSelectionModel({
@@ -1435,12 +1435,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         items.push({xtype:'displayfield', html: txt});
 
-        //Export Alternate Participant IDs
+        //Alternate Participant IDs
 
         this.alternateIdsCheckBoxLabel = new Ext.form.Label({
-            fieldLabel: "Export Alternate " + this.subject.nounSingular + " IDs?",
+            fieldLabel: "Use Alternate " + this.subject.nounSingular + " IDs?",
             gtip: '<div>' +
-                    '<div class=\'g-tip-header\'><span>Export Alternate ' + this.subject.nounSingular + ' IDs</span></div>' +
+                    '<div class=\'g-tip-header\'><span>Use Alternate ' + this.subject.nounSingular + ' IDs</span></div>' +
                     '<div class=\'g-tip-subheader\'>' +
                         'Selecting this option will replace each ' + this.subject.nounSingular.toLowerCase() + ' id by an alternate randomly generated id.' +
                     '</div>' +
@@ -1492,7 +1492,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             gtip: '<div>' +
                     '<div class=\'g-tip-header\'><span>Mask Clinic Names</span></div>' +
                     '<div class=\'g-tip-subheader\'>' +
-                        'Selecting this option will change the labels for clinics in the exported list of locations to a generic label (i.e. Clinic).' +
+                        'Selecting this option will change the labels for clinics in the published list of locations to a generic label (i.e. Clinic).' +
                     '</div>' +
                 '</div>'
         });
