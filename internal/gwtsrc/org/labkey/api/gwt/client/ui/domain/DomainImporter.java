@@ -452,9 +452,10 @@ public class DomainImporter
     public boolean areAllServerColumnsSelected()
     {
         boolean columnsSelected = true;
-        for ( SimpleComboBox<String> column : grid.getColumnMapper()._columnSelectors )
-            if (column.getSelectedIndex() == -1 )
-                columnsSelected = false;
+        if (null != grid.getColumnMapper())
+            for ( SimpleComboBox<String> column : grid.getColumnMapper()._columnSelectors )
+                if (column.getSelectedIndex() == -1 )
+                    columnsSelected = false;
         return columnsSelected;
     }
 
