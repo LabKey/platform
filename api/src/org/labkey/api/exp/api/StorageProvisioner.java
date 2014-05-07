@@ -184,7 +184,7 @@ public class StorageProvisioner
         DomainKind kind = domain.getDomainKind();
         if (kind == null)
         {
-            log.warn("domain " + domain.getName() + " has no DomainKind");
+            log.warn("Domain " + domain.getName() + " has no DomainKind, it cannot be dropped. URI: " + domain.getTypeURI(), new IllegalStateException());
             return;
         }
 

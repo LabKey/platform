@@ -646,7 +646,7 @@ abstract public class PipelineJob extends Job implements Serializable
     {
         TaskFactory factory = getActiveTaskFactory();
         return (factory != null &&
-                TaskFactory.WEBSERVER.equals(factory.getExecutionLocation()));
+                TaskFactory.WEBSERVER.equalsIgnoreCase(factory.getExecutionLocation()));
     }
 
     public void runActiveTask() throws IOException, PipelineJobException

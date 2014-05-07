@@ -1437,7 +1437,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         param = newParamValPairs[i][0];
                         value = newParamValPairs[i][1];
 
-                        if (null != param && null != value)
+                        // Allow value to be null/undefined to support no-value filter types (Is Blank, etc)
+                        if (null != param)
                         {
                             if (param.indexOf(this.name) !== 0)
                                 param = this.name + param;
