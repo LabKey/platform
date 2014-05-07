@@ -190,6 +190,7 @@
             renderTo        : <%=q(renderId)%>,
             readOnly        : <%=readOnly%>,
             minHeight       : 500,
+            minWidth        : 500,
             dataRegionName  : <%=q(bean.getDataRegionName())%>,
             initialURL      : <%=q(initialViewURL.getLocalURIString())%>,
             saveURL         : <%=q(saveURL.getLocalURIString())%>,
@@ -203,8 +204,14 @@
             script          : <%=q(StringUtils.trimToEmpty(bean.getScript()))%>
         });
 
+        panel.on('afterlayout', function(p) {
+            var elWidth = Ext4.Element.getViewWidth();
+            if (p.getWidth() > elWidth)
+                p.setWidth(elWidth - 50);
+        });
+
         var _resize = function(w,h) {
-            LABKEY.Utils.ext4.resizeToViewport(panel, w, -1); // don't fit to height
+            LABKEY.ext4.Util.resizeToViewport(panel, w, -1); // don't fit to height
         };
 
         Ext4.EventManager.onWindowResize(_resize);
