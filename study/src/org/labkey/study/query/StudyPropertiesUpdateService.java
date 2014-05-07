@@ -86,8 +86,8 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
                 if (entry.getValue() != null && c.getName().equalsIgnoreCase("StartDate") && study.getTimepointType() == TimepointType.DATE)
                 {
-                    Date newDate = new Date(DateUtil.parseDateTime(entry.getValue().toString()));
-                    recalculateVisits = !study.getStartDate().equals(newDate);
+                    Date newDate = new Date(DateUtil.parseDateTime(container, entry.getValue().toString()));
+                    recalculateVisits = study.getStartDate().compareTo(newDate) != 0;
                 }
             }
         }
