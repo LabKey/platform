@@ -36,6 +36,7 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.Sort;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
@@ -82,6 +83,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValues;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -104,6 +106,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -1439,6 +1442,33 @@ public class DavController extends SpringActionController
         private int _limit = -1;
         private int _start = -1;
         private boolean _paging = false;
+        private Map<String, String> _sort = Collections.emptyMap();
+
+        public static final String SORT_PROP = "property";
+        public static final String SORT_DIR = "direction";
+
+        public JsonForm(PropertyValues props)
+        {
+            BaseViewAction.springBindParameters(this, "form", props);
+
+            if (props.contains("sort"))
+            {
+                Object sort = props.getPropertyValue("sort").getValue();
+                if (sort instanceof String[])
+                {
+                    String[] sortArray = (String[])sort;
+                    assert sortArray.length == 1 : "Unsupported sort array length";
+
+                    JSONArray jsonArray = new JSONArray(sortArray[0]);
+                    JSONObject sortObj = jsonArray.getJSONObject(0);
+
+                    _sort = new HashMap<>();
+
+                    _sort.put(SORT_PROP, sortObj.get(SORT_PROP).toString());
+                    _sort.put(SORT_DIR, sortObj.get(SORT_DIR).toString());
+                }
+            }
+        }
 
         public void setLimit(int limit)
         {
@@ -1469,6 +1499,11 @@ public class DavController extends SpringActionController
         {
             _paging = paging;
         }
+
+        public Map<String, String> getSort()
+        {
+            return _sort;
+        }
     }
 
     @RequiresNoPermission
@@ -1484,9 +1519,11 @@ public class DavController extends SpringActionController
             defaultDepth = 1;
 
             // Map Bind Parameters
-            form = new JsonForm();
-            MutablePropertyValues props = new MutablePropertyValues(getRequest().getParameterMap());
-            BaseViewAction.springBindParameters(form, "form", props);
+            form = new JsonForm(new MutablePropertyValues(getRequest().getParameterMap()));
+            //MutablePropertyValues props = new MutablePropertyValues(getRequest().getParameterMap());
+            //JSONArray o = new JSONArray("[{\"property\":\"description\",\"direction\":\"ASC\"}]");
+//
+  //          BaseViewAction.springBindParameters(form, "form", props);
         }
 
         @Override
@@ -1525,10 +1562,11 @@ public class DavController extends SpringActionController
                     }
 
                     // Establish size
-                     resourceWriter.writeProperty("fileCount", resources.size());
+                    resourceWriter.writeProperty("fileCount", resources.size());
 
                     // Sort
-                    Collections.sort(resources, new Comparator<WebdavResource>(){
+                    Collections.sort(resources, new Comparator<WebdavResource>()
+                    {
 
                         public int compare(WebdavResource o1, WebdavResource o2)
                         {
@@ -1540,7 +1578,15 @@ public class DavController extends SpringActionController
                             boolean o2Collection = o2.isCollection();
 
                             if (o1Collection && o2Collection || (!o1Collection && !o2Collection))
-                                return o1.getName().compareToIgnoreCase(o2.getName());
+                            {
+                                try {
+                                    return doCompare(o1, o2);
+                                }
+                                catch (IOException e)
+                                {
+                                    throw new RuntimeException(e);
+                                }
+                            }
                             if (o1Collection)
                                 return -1;
                             else
@@ -1608,6 +1654,56 @@ public class DavController extends SpringActionController
         protected ResourceWriter getResourceWriter(Writer writer)
         {
             return new JSONResourceWriter(writer);
+        }
+
+        private int doCompare(WebdavResource o1, WebdavResource o2) throws IOException
+        {
+            String sortDir = form.getSort().get(JsonForm.SORT_DIR);
+            Sort.SortDirection direction = Sort.SortDirection.fromString(sortDir != null ? sortDir : Sort.SortDirection.ASC.name());
+
+            return getCompareValue(o1, o2, direction, form.getSort().get(JsonForm.SORT_PROP));
+        }
+
+        private int getCompareValue(WebdavResource resource1, WebdavResource resource2, Sort.SortDirection direction, @Nullable String prop) throws IOException
+        {
+            if ("lastmodified".equalsIgnoreCase(prop))
+            {
+//                if (resource1.isFile() && resource2.isFile())
+//                {
+//                    if (direction == Sort.SortDirection.ASC)
+//                        return (int)(resource1.getContentLength() - resource2.getContentLength());
+//                    else
+//                        return (int)(resource2.getContentLength() - resource1.getContentLength());
+//                }
+//                if (resource.isFile())
+//                {
+//                    Date modified = new Date(resource.getLastModified());
+//                    return modified.toString();
+//                }
+            }
+            else if ("size".equalsIgnoreCase(prop))
+            {
+                if (resource1.isFile() && resource2.isFile())
+                {
+                    if (direction == Sort.SortDirection.ASC)
+                        return (int)(resource1.getContentLength() - resource2.getContentLength());
+                    else
+                        return (int)(resource2.getContentLength() - resource1.getContentLength());
+                }
+            }
+            else if ("createdby".equalsIgnoreCase(prop))
+            {
+
+            }
+            else if ("description".equalsIgnoreCase(prop))
+            {
+
+            }
+
+            if (direction == Sort.SortDirection.ASC)
+                return resource1.getName().compareToIgnoreCase(resource2.getName());
+            else
+                return resource2.getName().compareToIgnoreCase(resource1.getName());
         }
     }
 
