@@ -1052,6 +1052,22 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     this.measuresStoreData.measures.push(measure);
                 }, this);
 
+                // Apply the user filter here. The userFilter is a function used to further filter down the available
+                // measures. Needed in CDS so the color picker only displays categorical measures.
+                if (this.hasOwnProperty('userFilter') && Ext.isFunction(this.userFilter))
+                {
+                    try
+                    {
+                        this.measuresStoreData.measures = this.measuresStoreData.measures.filter(this.userFilter);
+                    }
+                    catch (error)
+                    {
+                        // Fail gracefully and dump error into log.
+                        console.error('Error applying userFilter to measure data.');
+                        console.error(error);
+                    }
+                }
+
                 Ext4.each(this.measuresStoreData.measures, function(measure) {
                     var key = measure.schemaName + "|" + measure.queryName;
 
