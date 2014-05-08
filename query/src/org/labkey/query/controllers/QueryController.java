@@ -363,7 +363,7 @@ public class QueryController extends SpringActionController
             }
             catch (MalformedURLException e)
             {
-                errors.addError(new LabkeyError("The entered URL is not a valid."));
+                errors.addError(new LabkeyError("The entered URL is not valid."));
                 return false;
             }
             catch (IOException e)
