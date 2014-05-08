@@ -458,6 +458,8 @@ Ext4.define('LABKEY.query.olap.metadata.Dimension', {
         for (var h=0 ; h<dim.hierarchies.length ; h++)
             this.hierarchies.push(new LABKEY.query.olap.metadata.Hierarchy(dim.hierarchies[h], this));
         this.cube.uniqueNameMap[this.uniqueName] = this;
+
+        this.cube.dimensionMap[this.uniqueName] = this;
         this.cube.dimensionMap[this.name] = this;
         this.cube.dimensionMap[this.name.toLowerCase()] = this;
     },
@@ -573,9 +575,9 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
         return this.dimensions;
     },
 
-    getDimension : function(name)
+    getDimension : function(uniqueNameOrName)
     {
-        return this.dimensionMap[name];
+        return this.dimensionMap[uniqueNameOrName];
     },
 
     /**
@@ -669,10 +671,15 @@ Ext4.define('LABKEY.query.olap.MDX', {
         return this._cube.getDimension(name);
     },
 
-    // @deprecated don't do this
-    getDimensionsForGroup : function(name)
-    {
-        return this.getDimension(name);
+    getHierarchy : function(uniqueName) {
+        var level = this._cube.getByUniqueName(uniqueName), hierarchy;
+        if (level && level.hierarchy) {
+            hierarchy = level.hierarchy;
+        }
+        else {
+            hierarchy = level;
+        }
+        return hierarchy;
     },
 
     clearNamedFilter : function(name)
