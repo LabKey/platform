@@ -53,7 +53,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -716,7 +716,7 @@ public class UserManager
      */
     public static List<String> parseUserListInput(String[] theList)
     {
-        return parseUserListInput(new HashSet<>(Arrays.asList(theList)));
+        return parseUserListInput(new LinkedHashSet<>(Arrays.asList(theList)));
     }
 
     /**
