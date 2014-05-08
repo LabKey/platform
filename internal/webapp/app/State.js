@@ -44,6 +44,10 @@ Ext.define('LABKEY.app.controller.State', {
 
         this.olap = this.application.olap;
 
+        if (LABKEY.devMode) {
+            this.onMDXReady(function(mdx) { MDX = mdx; });
+        }
+
         this.state = Ext.create('Ext.data.Store', {
             model : 'LABKEY.app.model.State'
         });
