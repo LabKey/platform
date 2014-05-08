@@ -833,7 +833,7 @@ Ext4.define('File.panel.Browser', {
             xtype : 'templatecolumn',
             text  : 'Name',
             dataIndex : 'name',
-            sortable : !this.bufferFiles,
+            sortable : true,
             height : 20,
             minWidth : 188,
             flex : 3,
@@ -845,10 +845,10 @@ Ext4.define('File.panel.Browser', {
                    '</div>',
             scope : this
         },
-        {header: "Last Modified",  flex: 1, dataIndex: 'lastmodified', sortable: !this.bufferFiles,  hidden: false, height : 20, renderer: this.dateRenderer},
-        {header: "Size",           flex: 1, dataIndex: 'size',         sortable: !this.bufferFiles,  hidden: false, height : 20, renderer: this.sizeRenderer, align : 'right'},
-        {header: "Created By",     flex: 1, dataIndex: 'createdby',    sortable: !this.bufferFiles,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
-        {header: "Description",    flex: 1, dataIndex: 'description',  sortable: !this.bufferFiles,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
+        {header: "Last Modified",  flex: 1, dataIndex: 'lastmodified', sortable: true,  hidden: false, height : 20, renderer: this.dateRenderer},
+        {header: "Size",           flex: 1, dataIndex: 'size',         sortable: true,  hidden: false, height : 20, renderer: this.sizeRenderer, align : 'right'},
+        {header: "Created By",     flex: 1, dataIndex: 'createdby',    sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
+        {header: "Description",    flex: 1, dataIndex: 'description',  sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
         {header: "Usages",         flex: 1, dataIndex: 'actions',      sortable: !this.bufferFiles,  hidden: false, height : 20, renderer: this.usageRenderer},
         {header: "Download Link",  flex: 1, dataIndex: 'fileLink',     sortable: !this.bufferFiles,  hidden: true, height : 20},
         {header: "File Extension", flex: 1, dataIndex: 'fileExt',      sortable: !this.bufferFiles,  hidden: true, height : 20, renderer:Ext4.util.Format.htmlEncode}

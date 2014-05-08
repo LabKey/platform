@@ -35,14 +35,14 @@ Ext4.define('File.panel.Toolbar', {
                 columns : [
                     {id : 1},
                     {id : 2},
-                    {id : 3, sortable : true},
-                    {id : 4, sortable : true},
-                    {id : 5, sortable : true},
-                    {id : 6, sortable : true},
-                    {id : 7, sortable : true},
-                    {id : 8, sortable : true},
-                    {id : 9, sortable : true, hidden : true},
-                    {id : 10, sortable : true, hidden : true}
+                    {id : 3, sortable : true},                      // name
+                    {id : 4, sortable : true},                      // last modified
+                    {id : 5, sortable : true},                      // size
+                    {id : 6, sortable : true},                      // created by
+                    {id : 7, sortable : true},                      // description
+                    {id : 8, sortable : false, sortDisabled : true},                     // usages
+                    {id : 9, sortable : false, sortDisabled : true, hidden : true},      // download link
+                    {id : 10, sortable : false, sortDisabled : true, hidden : true}      // file extension
                 ]
             }
         });
@@ -64,6 +64,7 @@ Ext4.define('File.panel.Toolbar', {
                 fields : [
                     {name : 'hidden', type : 'boolean'},
                     {name : 'sortable', type : 'boolean'},
+                    {name : 'sortDisabled', type : 'boolean'},
                     {name : 'text', type : 'string'},
                     {name : 'id', type : 'int'}
                 ]
@@ -154,7 +155,8 @@ Ext4.define('File.panel.Toolbar', {
                 id   : this.gridConfigs.columns[i].id,
                 text : baseColumnNames[i],
                 hidden : this.gridConfigs.columns[i].hidden,
-                sortable : this.gridConfigs.columns[i].sortable
+                sortable : this.gridConfigs.columns[i].sortable,
+                sortDisabled : this.gridConfigs.columns[i].sortDisabled
             });
         }
 
@@ -168,7 +170,8 @@ Ext4.define('File.panel.Toolbar', {
                     id : index + 1,
                     text : this.fileProperties[i].label ? this.fileProperties[i].label : this.fileProperties[i].name,
                     hidden : this.fileProperties[i].hidden,
-                    sortable : true
+                    sortable : false,            // sorting of custom file properties are not supported
+                    sortDisabled : true
                 });
             }
         }
@@ -278,7 +281,9 @@ Ext4.define('File.panel.Toolbar', {
             },
             columns :  [
                 {header : 'Hidden', dataIndex : 'hidden', xtype : 'checkcolumn', flex : 1},
-                {header : 'Sortable', dataIndex : 'sortable', xtype : 'checkcolumn', flex : 1},
+                {header : 'Sortable', dataIndex : 'sortable', xtype : 'checkcolumn', flex : 1, renderer : function(value, meta, rec){
+                    return (new Ext4.grid.column.CheckColumn({disabled : rec.data.sortDisabled})).renderer(value, meta);
+                }, scope : this},
                 {header : 'Text', dataIndex : 'text', flex : 1}
             ]
         };

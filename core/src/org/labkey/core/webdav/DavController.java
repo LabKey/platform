@@ -36,6 +36,7 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.Sort;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
@@ -82,6 +83,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.core.webdav.apache.XMLWriter;
 import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValues;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -137,6 +139,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
 import static org.labkey.api.action.ApiJsonWriter.CONTENT_TYPE_JSON;
 
 
@@ -1439,6 +1442,33 @@ public class DavController extends SpringActionController
         private int _limit = -1;
         private int _start = -1;
         private boolean _paging = false;
+        private Map<String, String> _sort = Collections.emptyMap();
+
+        public static final String SORT_PROP = "property";
+        public static final String SORT_DIR = "direction";
+
+        public JsonForm(PropertyValues props)
+        {
+            BaseViewAction.springBindParameters(this, "form", props);
+
+            if (props.contains("sort"))
+            {
+                Object sort = props.getPropertyValue("sort").getValue();
+                if (sort instanceof String[])
+                {
+                    String[] sortArray = (String[])sort;
+                    assert sortArray.length == 1 : "Unsupported sort array length";
+
+                    JSONArray jsonArray = new JSONArray(sortArray[0]);
+                    JSONObject sortObj = jsonArray.getJSONObject(0);
+
+                    _sort = new HashMap<>();
+
+                    _sort.put(SORT_PROP, sortObj.get(SORT_PROP).toString());
+                    _sort.put(SORT_DIR, sortObj.get(SORT_DIR).toString());
+                }
+            }
+        }
 
         public void setLimit(int limit)
         {
@@ -1469,6 +1499,11 @@ public class DavController extends SpringActionController
         {
             _paging = paging;
         }
+
+        public Map<String, String> getSort()
+        {
+            return _sort;
+        }
     }
 
     @RequiresNoPermission
@@ -1484,9 +1519,7 @@ public class DavController extends SpringActionController
             defaultDepth = 1;
 
             // Map Bind Parameters
-            form = new JsonForm();
-            MutablePropertyValues props = new MutablePropertyValues(getRequest().getParameterMap());
-            BaseViewAction.springBindParameters(form, "form", props);
+            form = new JsonForm(new MutablePropertyValues(getRequest().getParameterMap()));
         }
 
         @Override
@@ -1525,10 +1558,11 @@ public class DavController extends SpringActionController
                     }
 
                     // Establish size
-                     resourceWriter.writeProperty("fileCount", resources.size());
+                    resourceWriter.writeProperty("fileCount", resources.size());
 
                     // Sort
-                    Collections.sort(resources, new Comparator<WebdavResource>(){
+                    Collections.sort(resources, new Comparator<WebdavResource>()
+                    {
 
                         public int compare(WebdavResource o1, WebdavResource o2)
                         {
@@ -1540,7 +1574,15 @@ public class DavController extends SpringActionController
                             boolean o2Collection = o2.isCollection();
 
                             if (o1Collection && o2Collection || (!o1Collection && !o2Collection))
-                                return o1.getName().compareToIgnoreCase(o2.getName());
+                            {
+                                try {
+                                    return doCompare(o1, o2);
+                                }
+                                catch (IOException e)
+                                {
+                                    throw new RuntimeException(e);
+                                }
+                            }
                             if (o1Collection)
                                 return -1;
                             else
@@ -1608,6 +1650,83 @@ public class DavController extends SpringActionController
         protected ResourceWriter getResourceWriter(Writer writer)
         {
             return new JSONResourceWriter(writer);
+        }
+
+        private int doCompare(WebdavResource o1, WebdavResource o2) throws IOException
+        {
+            String sortDir = form.getSort().get(JsonForm.SORT_DIR);
+            Sort.SortDirection direction = Sort.SortDirection.fromString(sortDir != null ? sortDir : Sort.SortDirection.ASC.name());
+
+            return getCompareValue(o1, o2, direction, form.getSort().get(JsonForm.SORT_PROP));
+        }
+
+        private int getCompareValue(WebdavResource resource1, WebdavResource resource2, Sort.SortDirection direction, @Nullable String prop) throws IOException
+        {
+            if ("lastmodified".equalsIgnoreCase(prop))
+            {
+                if (resource1.isFile() && resource2.isFile())
+                    return compareDate(new Date(resource1.getLastModified()), new Date(resource2.getLastModified()), direction);
+                else
+                    return 0;
+            }
+            else if ("size".equalsIgnoreCase(prop))
+            {
+                if (resource1.isFile() && resource2.isFile())
+                    return compareLong(resource1.getContentLength(), resource2.getContentLength(), direction);
+                else
+                    return 0;
+            }
+            else if ("createdby".equalsIgnoreCase(prop))
+            {
+                User createdBy1 = resource1.getCreatedBy();
+                User createdBy2 = resource2.getCreatedBy();
+                if (createdBy1 != null && createdBy2 != null)
+                    return compareString(createdBy1.getDisplayName(getUser()), createdBy2.getDisplayName(getUser()), direction, false);
+                else
+                    return 0;
+            }
+            else if ("description".equalsIgnoreCase(prop))
+            {
+                return compareString(resource1.getDescription(), resource2.getDescription(), direction, false);
+            }
+
+            // default to name
+            return compareString(resource1.getName(), resource2.getName(), direction, true);
+        }
+
+        private int compareString(String str1, String str2, Sort.SortDirection direction, boolean ignoreCase)
+        {
+            String first = direction == Sort.SortDirection.ASC ? str1 : str2;
+            String second = direction == Sort.SortDirection.ASC ? str2 : str1;
+
+            if (first == null && second == null) return 0;
+            if (first == null) return 1;
+            if (second == null) return -1;
+
+            if (ignoreCase)
+                return first.compareToIgnoreCase(second);
+            else
+                return first.compareTo(second);
+        }
+
+        private int compareLong(long num1, long num2, Sort.SortDirection direction)
+        {
+            long first = direction == Sort.SortDirection.ASC ? num1 : num2;
+            long second = direction == Sort.SortDirection.ASC ? num2 : num1;
+
+            return (int)(first - second);
+        }
+
+        private int compareDate(Date date1, Date date2, Sort.SortDirection direction)
+        {
+            Date first = direction == Sort.SortDirection.ASC ? date1 : date2;
+            Date second = direction == Sort.SortDirection.ASC ? date2 : date1;
+
+            if (first == null && second == null) return 0;
+            if (first == null) return 1;
+            if (second == null) return -1;
+
+            return first.compareTo(second);
         }
     }
 
