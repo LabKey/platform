@@ -56,7 +56,6 @@ import java.util.Set;
 public class IssuesModule extends DefaultModule implements SearchService.DocumentProvider
 {
     public static final String NAME = "Issues";
-    public static final String EXPERIMENTAL_ISSUES_ACTIVITY = "issuesactivity";
 
     public String getName()
     {
@@ -92,7 +91,6 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
                 return result;
             }
         });
-        result.add(new IssuesActivityWebPartFactory());
         return result;
     }
 
@@ -117,8 +115,6 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
             ss.addDocumentProvider(this);
             ss.addSearchResultTemplate(new IssuesController.IssueSearchResultTemplate());
         }
-
-        AdminConsole.addExperimentalFeatureFlag(EXPERIMENTAL_ISSUES_ACTIVITY, "Issues Activity", "Adds an Issues Activity webpart to show recent changes to issues in the folder.", false);
     }
 
 

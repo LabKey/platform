@@ -1589,11 +1589,9 @@ issues/src/org/labkey/issue/IssueGroupListener.java -text
 issues/src/org/labkey/issue/IssuePage.java -text
 issues/src/org/labkey/issue/IssueUpdateEmailTemplate.java -text
 issues/src/org/labkey/issue/IssueUserListener.java -text
-issues/src/org/labkey/issue/IssuesActivityWebPartFactory.java -text
 issues/src/org/labkey/issue/IssuesListView.java -text
 issues/src/org/labkey/issue/IssuesModule.java -text
 issues/src/org/labkey/issue/IssuesWebPartFactory.java -text
-issues/src/org/labkey/issue/activityWebpart.jsp -text
 issues/src/org/labkey/issue/detailList.jsp -text
 issues/src/org/labkey/issue/detailView.jsp -text
 issues/src/org/labkey/issue/emailPreferences.jsp -text
