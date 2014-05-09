@@ -258,7 +258,8 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         {
             AssayNavItem nav = new AssayNavItem(this, p);
             AssayProtocolSchema schema = getAssayProvider().createProtocolSchema(u, c, p, null);
-            TabbedReportItem item = new QueryTabbedReportItem(this, schema.getSchemaName(), AssayProtocolSchema.DATA_TABLE_NAME, p.getName() + ": Raw Data", _providerName);
+            TableInfo table = schema.getTable(AssayProtocolSchema.DATA_TABLE_NAME);
+            TabbedReportItem item = new QueryTabbedReportItem(this, p.getName() + ": Raw Data", _providerName, table);
             item.setVisible(nav.isVisible(c, u));
             item.setOwnerKey(nav.getPropertyManagerKey());
             items.add(item);
@@ -280,7 +281,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
                     continue;
                 }
 
-                TabbedReportItem qItem = new QueryTabbedReportItem(this, schema.getSchemaName(), qd.getName(), p.getName() + ": " + query.getTitle(), _providerName);
+                TabbedReportItem qItem = new QueryTabbedReportItem(this, p.getName() + ": " + query.getTitle(), _providerName, query);
                 qItem.setVisible(nav.isVisible(c, u));
                 qItem.setOwnerKey(nav.getPropertyManagerKey());
                 items.add(qItem);

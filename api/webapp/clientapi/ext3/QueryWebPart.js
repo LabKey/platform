@@ -667,6 +667,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         dr.on("beforefilterchange", this.beforeFilterChange, this);
         dr.on("beforeclearfilter", this.beforeClearFilter, this);
         dr.on("beforeclearallfilters", this.beforeClearAllFilters, this);
+        dr.on("beforeclearallparameters", this.beforeClearAllParameters, this);
         dr.on("beforechangeview", this.beforeChangeView, this);
         dr.on("beforeshowrowschange", this.beforeShowRowsChange, this);
         dr.on("beforesetparameters", this.beforeSetParameters, this);
@@ -805,6 +806,14 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
         this.fireEvent('beforeclearallfilters', dataRegion);
         this.offset = 0;
         this.userFilters = null;
+        this.render();
+        return false;
+    },
+
+    beforeClearAllParameters: function(dataRegion) {
+        this.fireEvent('beforeclearallparameters', dataRegion);
+        this.offset = 0;
+        this.parameters = null;
         this.render();
         return false;
     },
