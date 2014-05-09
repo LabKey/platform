@@ -17,6 +17,7 @@ package org.labkey.query.controllers;
 
 import mondrian.olap.Annotated;
 import mondrian.olap.Annotation;
+import mondrian.olap.MondrianException;
 import mondrian.olap.MondrianServer;
 import mondrian.xmla.impl.MondrianXmlaServlet;
 import org.apache.commons.lang3.StringUtils;
@@ -41,6 +42,8 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseExceptionUnresolvedField;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
@@ -67,6 +70,7 @@ import org.labkey.query.olap.QubeQuery;
 import org.labkey.query.olap.ServerManager;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
+import org.olap4j.OlapException;
 import org.olap4j.OlapStatement;
 import org.olap4j.OlapWrapper;
 import org.olap4j.metadata.Cube;
@@ -183,7 +187,15 @@ public class OlapController extends SpringActionController
         @Override
         public ApiResponse execute(CubeForm form, BindException errors) throws Exception
         {
-            Cube cube = getCube(form, errors);
+            Cube cube = null;
+            try
+            {
+                cube = getCube(form, errors);
+            }
+            catch (OlapException|MondrianException x)
+            {
+                rethrowOlapException(x);
+            }
 
             if (errors.hasErrors())
                 return null;
@@ -436,15 +448,15 @@ public class OlapController extends SpringActionController
                 // TODO have schema check activity,etc,etc here
             }
 
-            QubeQuery qquery = new QubeQuery(cube);
-            qquery.fromJson(q, errors);
-            if (errors.hasErrors())
-                return null;
-
             CellSet cs = null;
             StringWriter sw = new StringWriter();
             try
             {
+                QubeQuery qquery = new QubeQuery(cube);
+                qquery.fromJson(q, errors);
+                if (errors.hasErrors())
+                    return null;
+
                 QueryProfiler.getInstance().ensureListenerEnvironment();
                 long start = 0, end = 0;
                 try
@@ -464,6 +476,10 @@ public class OlapController extends SpringActionController
 
                 Olap4Js.convertCellSet(cs, sw);
             }
+            catch (OlapException|MondrianException ex)
+            {
+                rethrowOlapException(ex);
+            }
             finally
             {
                 ResultSetUtil.close(cs);
@@ -475,6 +491,31 @@ public class OlapController extends SpringActionController
             return null;
         }
     }
+
+
+    static void rethrowOlapException(Exception ex) throws Exception
+    {
+        Throwable t = ex;
+        while (null != t.getCause() && t != t.getCause())
+        {
+            Throwable cause = t.getCause();
+            if (cause instanceof QueryParseException)
+            {
+                // probably a configuration problem with mismatch cube/table schemas
+                String advice = null;
+                if (cause instanceof QueryParseExceptionUnresolvedField)
+                    advice = "Check that field [" + ((QueryParseExceptionUnresolvedField)cause).getFieldKey().toDisplayString() + "] is defined.";
+                String message = "Error executing query, check that cube and table schemas match:\n" + cause.getMessage();
+                throw new ConfigurationException(message, advice, cause);
+            }
+            t = cause;
+        }
+        // always unwrap OlapException which is pretty useless
+        if (ex.getCause() instanceof MondrianException)
+            throw (MondrianException) ex.getCause();
+        throw ex;
+    }
+
 
 
     @RequiresPermissionClass(ReadPermission.class)

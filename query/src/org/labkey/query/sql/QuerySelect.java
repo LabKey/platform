@@ -36,6 +36,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseExceptionUnresolvedField;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.settings.AppProps;
@@ -789,7 +790,7 @@ groupByLoop:
                 if (location instanceof QIfDefined)
                     ((QIfDefined)location).isDefined = false;
                 else
-                    parseError("Unknown field " + key.toDisplayString(), location);
+                    parseErrorUnknownField(key, location);
                 return null;
             }
             _declaredFields.put(key, relColumn);
@@ -807,7 +808,7 @@ groupByLoop:
                     if (location instanceof QIfDefined)
                         ((QIfDefined)location).isDefined = false;
                     else
-                        parseError("Unknown field " + key.toDisplayString(), location);
+                        parseErrorUnknownField(key, location);
                     return null;
                 }
 
@@ -1460,6 +1461,19 @@ groupByLoop:
 	{
 		Query.parseError(getParseErrors(), message, node);
 	}
+
+    private void parseErrorUnknownField(FieldKey fk, QNode node)
+    {
+        int line = 0;
+        int column = 0;
+        if (node != null)
+        {
+            line = node.getLine();
+            column = node.getColumn();
+        }
+        //noinspection ThrowableInstanceNeverThrown
+        getParseErrors().add(new QueryParseExceptionUnresolvedField(fk, null, line, column));
+    }
 
 
 
