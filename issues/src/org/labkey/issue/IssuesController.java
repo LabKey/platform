@@ -497,7 +497,7 @@ public class IssuesController extends SpringActionController
             }
 
             IssuePage page = new IssuePage(getContainer(), getUser());
-            JspView v = new JspView<>(IssuesController.class, "updateView.jsp", page);
+            JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -913,7 +913,7 @@ public class IssuesController extends SpringActionController
             }
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<>(IssuesController.class, "updateView.jsp", page);
+            JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -956,7 +956,7 @@ public class IssuesController extends SpringActionController
             _issue.close(user);
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<>(IssuesController.class, "updateView.jsp",page);
+            JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
@@ -1001,7 +1001,7 @@ public class IssuesController extends SpringActionController
             _issue.open(getContainer(), user);
 
             IssuePage page = new IssuePage(getContainer(), user);
-            JspView v = new JspView<>(IssuesController.class, "updateView.jsp",page);
+            JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
 
             CustomColumnConfiguration ccc = getCustomColumnConfiguration();
 
