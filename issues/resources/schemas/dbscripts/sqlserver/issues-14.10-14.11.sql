@@ -1,0 +1,1 @@
+DELETE FROM prop.properties WHERE name = 'experimentalFeature.issuesactivity';

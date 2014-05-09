@@ -1526,6 +1526,7 @@ freezerpro/src/org/labkey/freezerpro/view/configure.jsp -text
 issues/module.properties -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-12.30-13.10.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-14.10-14.11.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-0.60.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-1.00.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-10.10.sql -text
@@ -1554,6 +1555,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-9.30-10.10.sql -te
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-9.30-9.31.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-12.30-13.10.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-14.10-14.11.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.70.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.81.sql -text
