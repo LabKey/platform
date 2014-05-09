@@ -582,7 +582,11 @@ Ext.define('LABKEY.app.controller.State', {
                     if (!oldFilters[i].isGroup() && !opFilters[n].isGroup()) {
 
                         if (oldFilters[i].getHierarchy() == opFilters[n].getHierarchy()) {
-                            oldFilters[i].set('operator', LABKEY.app.model.Filter.lookupOperator(opFilters[n].data));
+                            var op = opFilters[n].data;
+                            if (!LABKEY.app.model.Filter.dynamicOperatorTypes) {
+                                op = LABKEY.app.model.Filter.lookupOperator(op);
+                            }
+                            oldFilters[i].set('operator', op);
                         }
                     }
                 }
@@ -670,12 +674,12 @@ Ext.define('LABKEY.app.controller.State', {
 
         this.onMDXReady(function(mdx){
             mdx.setNamedFilter('stateSelectionFilter', sels);
+
+            if (!skipState)
+                this.updateState();
+
+            this.fireEvent('selectionchange', this.selections, opChange);
         }, this);
-
-        if (!skipState)
-            this.updateState();
-
-        this.fireEvent('selectionchange', this.selections, opChange);
     },
 
     moveSelectionToFilter : function() {

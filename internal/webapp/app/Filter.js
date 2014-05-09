@@ -7,13 +7,12 @@ Ext.define('LABKEY.app.model.Filter', {
     extend: 'Ext.data.Model',
 
     fields : [
-        {name : 'id'},
         {name : 'hierarchy'},
-        {name : 'members'},
+        {name : 'members', defaultValue: []},
         {name : 'operator'},
-        {name : 'isGroup', type: 'boolean'},
-        {name : 'isGrid', type: 'boolean'}, // TODO: rename to isSql
-        {name : 'isPlot', type: 'boolean'},
+        {name : 'isGroup', type: 'boolean', defaultValue: false},
+        {name : 'isGrid', type: 'boolean', defaultValue: false}, // TODO: rename to isSql
+        {name : 'isPlot', type: 'boolean', defaultValue: false},
         {name : 'gridFilter', convert: function(o){ // TODO: rename to sqlFilters
             return Ext.isArray(o) ? o : [o];
         }, defaultValue: []}, // array of LABKEY.filter instances.
@@ -346,23 +345,34 @@ Ext.define('LABKEY.app.model.Filter', {
             }
         },
 
+        dynamicOperatorTypes: false,
+
         lookupOperator : function(data) {
-            if (data.operator)
-                return data.operator;
 
-            var ops = LABKEY.app.model.Filter.Operators;
+            if (LABKEY.app.model.Filter.dynamicOperatorTypes) {
+                return LABKEY.app.model.Filter.convertOperatorType(data.operator);
+            }
+            else {
+                // Backwards compatible
+                if (data.operator) {
+                    return data.operator;
+                }
 
-            switch (data.hierarchy) {
-                case 'Study':
-                    return ops.UNION;
-                case 'Subject.Race':
-                    return ops.UNION;
-                case 'Subject.Country':
-                    return ops.UNION;
-                case 'Subject.Sex':
-                    return ops.UNION;
-                default:
-                    return ops.INTERSECT;
+                var ops = LABKEY.app.model.Filter.Operators;
+
+                // TODO: Remove this switch once fb_infopane is merged as this is Dataspace specific
+                switch (data.hierarchy) {
+                    case '[Study]':
+                        return ops.UNION;
+                    case '[Subject.Race]':
+                        return ops.UNION;
+                    case '[Subject.Country]':
+                        return ops.UNION;
+                    case '[Subject.Sex]':
+                        return ops.UNION;
+                    default:
+                        return ops.INTERSECT;
+                }
             }
         },
 
@@ -374,6 +384,45 @@ Ext.define('LABKEY.app.model.Filter', {
                 label = LABKEY.app.model.Filter.emptyLabelText;
             }
             return label;
+        },
+
+        convertOperatorType : function(type) {
+            var TYPES = LABKEY.app.model.Filter.OperatorTypes;
+            var OPS = LABKEY.app.model.Filter.Operators;
+
+            switch (type) {
+                case TYPES.AND:
+                    return OPS.INTERSECT;
+                case TYPES.REQ_AND:
+                    return OPS.INTERSECT;
+                case TYPES.OR:
+                    return OPS.UNION;
+                case TYPES.REQ_OR:
+                    return OPS.UNION;
+            }
+
+            console.error('invalid operator type:', type);
+        },
+
+        convertOperator : function(operator) {
+            var TYPES = LABKEY.app.model.Filter.OperatorTypes;
+            var OPS = LABKEY.app.model.Filter.Operators;
+
+            switch (operator) {
+                case OPS.UNION:
+                    return TYPES.OR;
+                case OPS.INTERSECT:
+                    return TYPES.AND;
+            }
+
+            console.error('invalid operator:', operator);
+        },
+
+        OperatorTypes: {
+            AND: 'AND',
+            REQ_AND: 'REQ_AND',
+            OR: 'OR',
+            REQ_OR: 'REQ_OR'
         },
 
         Operators: {

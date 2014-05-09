@@ -90,18 +90,19 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         var hierarchies = this.dim.getHierarchies();
         if (hierarchies.length > 0) {
             var hierarchy = hierarchies[this.hIndex];
+            var uniqueName = hierarchy.getUniqueName();
             var me = this;
 //            this.D1 = new Date();
 //            console.log('LOAD STORE');
-            if (!this.totals[hierarchy.getName()]) {
+            if (!this.totals[uniqueName]) {
                 // Asks for Total Count
                 this.olapProvider.onMDXReady(function(mdx) {
                     me.mdx = mdx;
                     mdx.query({
-                        onRows: [{hierarchy: hierarchy.getName(), members:'members'}],
+                        onRows: [{hierarchy: uniqueName, members:'members'}],
                         showEmpty: me.showEmpty,
                         success: function(qr) {
-                            me.totals[hierarchy.getName()] = me.processMaxCount.call(me, qr);
+                            me.totals[uniqueName] = me.processMaxCount.call(me, qr);
                             me.requestDimension(hierarchy, useSelection);
                         }
                     });
@@ -120,7 +121,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         this.olapProvider.onMDXReady(function(mdx){
             var me = this;
             mdx.query({
-                onRows : [{hierarchy: hierarchy.getName(), members:'members'}],
+                onRows : [{hierarchy: hierarchy.getUniqueName(), members:'members'}],
                 useNamedFilters : ['statefilter'],
                 showEmpty : me.showEmpty,
                 success: function(qr) {
@@ -164,7 +165,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 targetLevels = baseResult.metadata.cube.dimensions[1].hierarchies[0].levels;
 
             var recs = [],
-                    max = this.totals[hierarchy.getName()],
+                    max = this.totals[hierarchy.getUniqueName()],
                     target,
                     pos = baseResult.axes[1].positions,
                     activeGroup = '',
@@ -203,7 +204,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                     uniqueName: subPosition.uniqueName,
                     count: baseResult.cells[x][0].value,
                     value: subPosition.name,
-                    hierarchy: hierarchy.getName(),
+                    hierarchy: hierarchy.getUniqueName(),
                     isGroup: isGroup,
                     level: subPosition.name,
                     collapsed: activeGroup && pos.length > 15 ? true : false,
@@ -316,7 +317,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             me.mflight++;
             me.mdx.query({
                 onRows : [{
-                    hierarchy: me.dim.getHierarchies()[this.hIndex].getName(),
+                    hierarchy: me.dim.getHierarchies()[this.hIndex].getUniqueName(),
                     members: 'members'
                 }],
                 useNamedFilters: ['stateSelectionFilter', 'hoverSelectionFilter', 'statefilter'],
@@ -693,7 +694,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
         if (this.dimension) {
             Ext.defer(function() {
                 if (sel.length > 0) {
-                    this.selection(false, isPrivate);
+                    this.selection(false);
                 }
                 else {
                     if (!isPrivate) {

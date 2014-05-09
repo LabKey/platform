@@ -47,7 +47,8 @@ Ext.define('LABKEY.app.view.Selection', {
                             el.memberIndex = memberIdx;
                         }
 
-                        el.on('click', function(xevt, xel) { this.onRemoveClick(Ext.get(xel)); }, v);
+                        el.un('click', v._wrapClick, v);
+                        el.on('click', v._wrapClick, v);
                     }
                 }
             }
@@ -63,28 +64,37 @@ Ext.define('LABKEY.app.view.Selection', {
         }
     },
 
+    _wrapClick : function(xevt, xel) {
+        this.onRemoveClick(Ext.get(xel));
+    },
+
     onRemoveClick : function(element) {
         if (element) {
             var store = this.getStore();
-            var rec = store.getById(element.recid);
-            if (rec) {
-                var memberIdx = parseInt(element.memberIndex);
-                if (Ext.isNumber(memberIdx)) {
-                    if (element.hasCls('measure')) {
-                        // We're dealing with a plot selection.
-                        this.fireEvent('removeplotselection', rec.id, memberIdx);
+            if (store) {
+                var rec = store.getById(element.recid);
+                if (rec) {
+                    var memberIdx = parseInt(element.memberIndex);
+                    if (Ext.isNumber(memberIdx)) {
+                        if (element.hasCls('measure')) {
+                            // We're dealing with a plot selection.
+                            this.fireEvent('removeplotselection', rec.id, memberIdx);
+                        }
+                        else {
+                            var members = rec.get('members');
+                            this.fireEvent('removefilter', rec.id, rec.get('hierarchy'), members[memberIdx] ? members[memberIdx].uniqueName : undefined);
+                        }
                     }
                     else {
-                        var members = rec.get('members');
-                        this.fireEvent('removefilter', rec.id, rec.get('hierarchy'), members[memberIdx] ? members[memberIdx].uniqueName : undefined);
+                        this.fireEvent('removefilter', rec.id);
                     }
                 }
                 else {
-                    this.fireEvent('removefilter', rec.id);
+                    console.warn('Unable to find record for removal:', element.recid);
                 }
             }
             else {
-                console.warn('Unable to find record for removal:', element.recid);
+                console.warn('Unable to find selection store:', element.recid);
             }
         }
         else {
@@ -92,21 +102,33 @@ Ext.define('LABKEY.app.view.Selection', {
         }
     },
 
-    listeners: {
-        viewready : function(v) {
-            LABKEY.app.view.Selection.hookButtons(v);
-        }
-    },
-
     constructor : function(config) {
         this.callParent([config]);
-        this.addEvents('clearhierarchy', 'operatorchange', 'removefilter');
+        this.addEvents('clearhierarchy', 'operatorchange', 'itemselect', 'removefilter');
+    },
+
+    initComponent : function() {
+
+        this.callParent();
+
+        this.on('viewready', LABKEY.app.view.Selection.hookButtons, this);
+        this.on('itemupdate', function(item) { LABKEY.app.view.Selection.hookButtons(this); }, this);
+
+        /* NOTE: This will render any itemclick listeners useless */
+        this.on('itemclick', function(v, f, is, idx, evt) {
+            if (!Ext.isDefined(evt.target.type) || evt.target.type.indexOf('select') === -1) {
+                this.fireEvent('itemselect', v, f, is, idx);
+            }
+            return false;
+        }, this);
     },
 
     onOperatorChange : function(value, evt, el) {
+        var ns = LABKEY.app.model.Filter;
+        var valType = ns.dynamicOperatorTypes ? ns.convertOperator(value) : value;
         this.fireEvent('operatorchange', {
             filterId: this.getStore().getAt(0).id,
-            value: value
+            value: valType
         });
     }
 });
