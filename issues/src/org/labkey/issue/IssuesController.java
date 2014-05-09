@@ -652,10 +652,15 @@ public class IssuesController extends SpringActionController
                     errors.rejectValue("Duplicate", ERROR_MSG, "An issue may not be a duplicate of itself");
                     return false;
                 }
-                duplicateOf = IssueManager.getIssue(c, issue.getDuplicate().intValue());
+                duplicateOf = IssueManager.getIssue(null, issue.getDuplicate().intValue());
                 if (duplicateOf == null)
                 {
                     errors.rejectValue("Duplicate", ERROR_MSG, "Duplicate issue '" + issue.getDuplicate().intValue() + "' not found");
+                    return false;
+                }
+                if (!duplicateOf.lookupContainer().hasPermission(user, ReadPermission.class))
+                {
+                    errors.rejectValue("Duplicate", ERROR_MSG, "User does not have Read permission for duplicate issue '" + issue.getDuplicate().intValue() + "'.");
                     return false;
                 }
             }
