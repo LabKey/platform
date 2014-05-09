@@ -387,6 +387,11 @@ Ext.define('LABKEY.app.model.Filter', {
         },
 
         convertOperatorType : function(type) {
+
+            if (!type || (Ext.isString(type) && type.length == 0)) {
+                return LABKEY.app.model.Filter.Operators.INTERSECT;
+            }
+
             var TYPES = LABKEY.app.model.Filter.OperatorTypes;
             var OPS = LABKEY.app.model.Filter.Operators;
 

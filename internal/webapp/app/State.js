@@ -586,6 +586,9 @@ Ext.define('LABKEY.app.controller.State', {
                             if (!LABKEY.app.model.Filter.dynamicOperatorTypes) {
                                 op = LABKEY.app.model.Filter.lookupOperator(op);
                             }
+                            else {
+                                op = op.operator;
+                            }
                             oldFilters[i].set('operator', op);
                         }
                     }
