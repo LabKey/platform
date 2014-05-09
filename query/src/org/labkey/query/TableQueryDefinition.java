@@ -17,6 +17,7 @@
 package org.labkey.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -162,7 +163,7 @@ public class TableQueryDefinition extends QueryDefinitionImpl
 
 
     @Override
-    protected TableInfo createTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
+    public TableInfo createTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata, @Nullable Query query)
     {
         return schema.getTable(getName(), includeMetadata);
     }

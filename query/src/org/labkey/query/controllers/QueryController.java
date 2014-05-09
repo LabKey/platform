@@ -5418,7 +5418,7 @@ public class QueryController extends SpringActionController
             try
             {
                 //get the table info if the user requested column info
-                TableInfo table = schema.getTable(qdef.getName());
+                TableInfo table = qdef.getTable(schema, null, true);
 
                 if (null != table)
                 {

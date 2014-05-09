@@ -713,7 +713,16 @@ public class Query
             boolean hasMetadata = query.getTablesDocument() != null && query.getTablesDocument().getTables().getTableArray().length > 0;
             if (!simpleSelect || hasMetadata)
             {
-                TableInfo ti = def.getTable(getParseErrors(), true);
+                TableInfo ti;
+                if (resolvedSchema instanceof UserSchema)
+                {
+                    ti = def.createTable((UserSchema)resolvedSchema, getParseErrors(), true, query);
+                }
+                else
+                {
+                    ti = def.getTable(getParseErrors(), true);
+                }
+
                 if (null == ti)
                 {
                     if (getParseErrors().isEmpty())

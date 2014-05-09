@@ -470,7 +470,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 TableInfo table = _cache.get(key);
                 if (table == null)
                 {
-                    table = createTable(schema, errors, includeMetadata);
+                    table = createTable(schema, errors, includeMetadata, null);
 
                     if (null == table)
                         return null;
@@ -491,17 +491,23 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
         }
 
-        return createTable(schema, errors, includeMetadata);
+        return createTable(schema, errors, includeMetadata, null);
     }
 
+    /**
+     * @param query a Query object to reuse, if available. Otherwise, a new one will be created behind the scenes
+     */
     @Nullable
-    protected TableInfo createTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata)
+    public TableInfo createTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata, @Nullable Query query)
     {
         if (errors == null)
         {
             errors = new ArrayList<>();
         }
-        Query query = getQuery(schema, errors, null, includeMetadata);
+        if (query == null)
+        {
+            query = getQuery(schema, errors, null, includeMetadata);
+        }
         TableInfo ret = query.getTableInfo();
         if (null != ret)
         {
