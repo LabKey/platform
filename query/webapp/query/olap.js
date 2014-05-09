@@ -673,12 +673,14 @@ Ext4.define('LABKEY.query.olap.MDX', {
 
     getHierarchy : function(uniqueName) {
         var level = this._cube.getByUniqueName(uniqueName), hierarchy;
+
         if (level && level.hierarchy) {
             hierarchy = level.hierarchy;
         }
-        else {
+        else if (level && level.dimension) {
             hierarchy = level;
         }
+
         return hierarchy;
     },
 
