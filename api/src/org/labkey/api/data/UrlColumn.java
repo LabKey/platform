@@ -16,7 +16,6 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 
@@ -24,7 +23,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Set;
 
 public class UrlColumn extends SimpleDisplayColumn
 {
@@ -56,7 +54,7 @@ public class UrlColumn extends SimpleDisplayColumn
             {
                 props = Collections.emptyMap();
             }
-            out.write(PageFlowUtil.textLink(value.toString(), url, null ,null, props));
+            out.write(PageFlowUtil.textLink(value.toString(), url, null, null, props));
         }
     }
 }

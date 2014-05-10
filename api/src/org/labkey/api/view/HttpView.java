@@ -747,7 +747,7 @@ public abstract class HttpView<ModelBean> extends DefaultModelAndView<ModelBean>
 
                 for (ModelAndView v : views)
                 {
-                    if(v instanceof HttpView)
+                    if (v instanceof HttpView)
                         resources.addAll(((HttpView) v).getClientDependencies());
                 }
             }

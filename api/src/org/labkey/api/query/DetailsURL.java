@@ -40,8 +40,8 @@ import java.util.regex.Pattern;
 
 public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpression implements HasViewContext
 {
-    public static Pattern actionPattern = Pattern.compile("/?[\\w\\-]+/[\\w\\-]+.view?.*");
-    public static Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class(\\?.*)?");
+    public static final Pattern actionPattern = Pattern.compile("/?[\\w\\-]+/[\\w\\-]+.view?.*");
+    public static final Pattern classPattern = Pattern.compile("[\\w\\.\\$]+\\.class(\\?.*)?");
 
     protected ContainerContext _containerContext;
 
