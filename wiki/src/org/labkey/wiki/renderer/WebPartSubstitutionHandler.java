@@ -22,6 +22,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -81,7 +82,13 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
             WebPartView view = null;
             try
             {
-                view = Portal.getWebPartViewSafe(desc, HttpView.currentContext(), part);
+                ViewContext ctx = HttpView.currentContext();
+
+                // Try to ensure that each webpart gets a unique default DataRegionName
+                if (null != ctx)
+                    part.setIndex(UniqueID.getRequestScopedUID(ctx.getRequest()));
+
+                view = Portal.getWebPartViewSafe(desc, ctx, part);
                 view.setEmbedded(true);  // Let the webpart know it's being embedded in another page
 
                 String showFrame = params.get("showFrame");
@@ -105,8 +112,8 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                 //Issue 15609: we need to include client dependencies for embedded webparts
                 if (view.getClientDependencies().size() > 0)
                 {
-                    Container c = null;
-                    User u = null;
+                    Container c;
+                    User u;
                     ViewContext ctx = HttpView.currentContext();
                     assert ctx != null;
 

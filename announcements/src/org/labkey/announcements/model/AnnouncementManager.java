@@ -18,7 +18,6 @@ package org.labkey.announcements.model;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -113,8 +112,6 @@ public class AnnouncementManager
     public static final int EMAIL_NOTIFICATION_TYPE_DIGEST = 256; // If this bit is set, send daily digest instead of individual email for each post
 
     public static final int EMAIL_DEFAULT_OPTION = EMAIL_PREFERENCE_MINE;
-
-    private static Logger _log = Logger.getLogger(AnnouncementManager.class);
 
     private AnnouncementManager()
     {

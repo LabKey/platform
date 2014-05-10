@@ -21,8 +21,8 @@
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     int rowId = 0;
@@ -137,10 +137,10 @@
                             <td><img src="<%=getContextPath()%>/_images/partdelete.gif"
                                      alt="delete" onclick="removeRow(<%=rowId%>);"></td>
                             <td><input name="mvIndicators" type="TEXT" size=3
-                                       id="mvIndicators<%=rowId%>" value="<%=indicator%>">
+                                       id="mvIndicators<%=rowId%>" value="<%=h(indicator)%>">
                             </td>
                             <td><input name="mvLabels" type="TEXT" size=60
-                                       value="<%=label%>">
+                                       value="<%=h(label)%>">
                             </td>
                         </tr>
 
@@ -231,7 +231,7 @@
         var indicators = document.getElementsByName("mvIndicators");
         var blankValue = indicators.length == 0;
         var repeatedValue = null;
-        var valuesFound = new Object();
+        var valuesFound = {};
         for (var i = 0; i < indicators.length; i++)
         {
             var indicator = indicators[i].value;
