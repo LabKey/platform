@@ -13,6 +13,9 @@ Ext.define('LABKEY.app.view.Selection', {
     itemSelector: 'div.selitem',
 
     statics : {
+
+        supportMemberClose: true,
+
         hookButtons : function(v) {
             //
             // hook events for and/or selection
@@ -40,11 +43,13 @@ Ext.define('LABKEY.app.view.Selection', {
                         var rec = v.getStore().getById(recordId);
                         el.recid = recordId;
 
-                        var members = rec.get('members');
-                        if (members) {
-                            // listen for each member
-                            var memberIdx = el.getAttribute('member-index');
-                            el.memberIndex = memberIdx;
+                        if (LABKEY.app.view.Selection.supportMemberClose) {
+                            var members = rec.get('members');
+                            if (members) {
+                                // listen for each member
+                                var memberIdx = el.getAttribute('member-index');
+                                el.memberIndex = memberIdx;
+                            }
                         }
 
                         el.un('click', v._wrapClick, v);
