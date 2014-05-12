@@ -16,8 +16,23 @@ Ext.define('LABKEY.app.model.Filter', {
         {name : 'gridFilter', convert: function(o){ // TODO: rename to sqlFilters
             return Ext.isArray(o) ? o : [o];
         }, defaultValue: []}, // array of LABKEY.filter instances.
-        {name : 'plotMeasures'}, // array of measures
-        {name : 'plotScales'} // array of scales
+        {name : 'plotMeasures', defaultValue: [null, null, null], convert: function(o){
+            var arr = [null, null, null];
+
+            if (Ext.isArray(o)) {
+                if (o.length == 1) {
+                    arr[1] = o[0]; // If there's only 1 element then it's the y measure.
+                } else if (o.length == 2) {
+                    arr[0] = o[0];
+                    arr[1] = o[1];
+                } else if (o.length == 3) {
+                    arr = o;
+                }
+            }
+
+            return arr;
+        }}, // array of measures
+        {name : 'plotScales', defaultValue: []} // array of scales
     ],
 
     statics : {
