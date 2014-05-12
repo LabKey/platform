@@ -705,6 +705,10 @@ public class ConvertHelper implements PropertyEditorRegistrar
                     return Double.POSITIVE_INFINITY;
                 else if (s.equals("-\u221E"))
                     return Double.NEGATIVE_INFINITY;
+                else if (s.equalsIgnoreCase("Inf"))
+                    return Double.POSITIVE_INFINITY;
+                else if (s.equalsIgnoreCase("-Inf"))
+                    return Double.NEGATIVE_INFINITY;
                 else if (s.equals("\uFFFD"))
                     return Double.NaN;
                 throw new ConversionException(x);
