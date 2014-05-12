@@ -157,24 +157,27 @@ public class SequenceVisitManager extends VisitManager
         //
         // populate ParticipantVisit
         //
-        SQLFragment sqlInsertParticipantVisit = new SQLFragment();
-        sqlInsertParticipantVisit.appendComment("<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
-        sqlInsertParticipantVisit.append("WITH pseqSD AS (SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ");
-        sqlInsertParticipantVisit.append(tableStudyData.getParticipantSequenceNumSQL("SD"));
+        SQLFragment sqlSelect = new SQLFragment();
+        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ");
+        sqlSelect.append(tableStudyData.getParticipantSequenceNumSQL("SD"));
         if (null != potentiallyAddedParticipants && !potentiallyAddedParticipants.isEmpty() && potentiallyAddedParticipants.size() < 450)
         {
-            sqlInsertParticipantVisit.append(" WHERE SD.ParticipantId ");
-            schema.getSqlDialect().appendInClauseSql(sqlInsertParticipantVisit, potentiallyAddedParticipants.toArray());
-            sqlInsertParticipantVisit.append("\n");
+            sqlSelect.append(" WHERE SD.ParticipantId ");
+            schema.getSqlDialect().appendInClauseSql(sqlSelect, potentiallyAddedParticipants.toArray());
         }
-        sqlInsertParticipantVisit.append("),\n");
-        sqlInsertParticipantVisit.append("pseqPV AS (SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container=?),\n");
-        sqlInsertParticipantVisit.add(container);
-        sqlInsertParticipantVisit.append("pseqNEW AS (SELECT * From pseqSD EXCEPT SELECT * FROM pseqPV)\n");
+        sqlSelect.append("\nEXCEPT\n");
+        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container=?");
+        sqlSelect.add(container);
+
+
+        SQLFragment sqlInsertParticipantVisit = new SQLFragment();
+        sqlSelect.appendComment("<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
         sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
         sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
-        sqlInsertParticipantVisit.append("SELECT ?, ParticipantId, SequenceNum, ParticipantSequenceNum FROM pseqNEW");
+        sqlInsertParticipantVisit.append("SELECT ? AS Container, ParticipantId, SequenceNum, ParticipantSequenceNum FROM (");
         sqlInsertParticipantVisit.add(container);
+        sqlInsertParticipantVisit.append(sqlSelect);
+        sqlInsertParticipantVisit.append(") _");
         sqlInsertParticipantVisit.appendComment("/<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
         SqlExecutor executor = new SqlExecutor(schema);
         executor.execute(sqlInsertParticipantVisit);
@@ -196,18 +199,22 @@ public class SequenceVisitManager extends VisitManager
         //
         // populate ParticipantVisit
         //
+        SQLFragment sqlSelect = new SQLFragment();
+        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ");
+        sqlSelect.append(tableStudyData.getParticipantSequenceNumSQL("SD"));
+        sqlSelect.append("\nEXCEPT\n");
+        sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container=CAST(? AS " + d.getGuidType() + ")\n");
+        sqlSelect.add(container);
+
         SQLFragment sqlInsertParticipantVisit = new SQLFragment();
         sqlInsertParticipantVisit.appendComment("<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
-        sqlInsertParticipantVisit.append("WITH pseqSD AS (SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ");
-        sqlInsertParticipantVisit.append(tableStudyData.getParticipantSequenceNumSQL("SD"));
-        sqlInsertParticipantVisit.append("),\n");
-        sqlInsertParticipantVisit.append("pseqPV AS (SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container=CAST(? AS " + d.getGuidType() + ")),\n");
-        sqlInsertParticipantVisit.add(container);
-        sqlInsertParticipantVisit.append("pseqNEW AS (SELECT * From pseqSD EXCEPT SELECT * FROM pseqPV)\n");
         sqlInsertParticipantVisit.append("INSERT INTO ").append(tableParticipantVisit.getSelectName());
         sqlInsertParticipantVisit.append(" (Container, ParticipantId, SequenceNum, ParticipantSequenceNum)\n");
-        sqlInsertParticipantVisit.append("SELECT CAST(? AS " + d.getGuidType() +"), ParticipantId, SequenceNum, ParticipantSequenceNum FROM pseqNEW");
+        sqlInsertParticipantVisit.append("SELECT CAST(? AS " + d.getGuidType() +"), ParticipantId, SequenceNum, ParticipantSequenceNum\n");
         sqlInsertParticipantVisit.add(container);
+        sqlInsertParticipantVisit.append("FROM (");
+        sqlInsertParticipantVisit.append(sqlSelect);
+        sqlInsertParticipantVisit.append(") _");
         sqlInsertParticipantVisit.appendComment("/<SequenceVisitManager.updateParticipantVisitTableAfterInsert>", schema.getSqlDialect());
         SqlExecutor executor = new SqlExecutor(schema);
         executor.execute(sqlInsertParticipantVisit);
@@ -372,34 +379,41 @@ public class SequenceVisitManager extends VisitManager
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
 
-        SQLFragment sqlUpdateVisitRowId = new SQLFragment();
-        sqlUpdateVisitRowId.append(
-                "WITH\n" +
-                "  seqnumPV AS (SELECT DISTINCT SequenceNum from study.participantvisit where Container=?),\n" +
-                "  seqnum2visit AS (SELECT sequencenum, V.RowId\n" +
-                "        FROM seqnumPV, study.visit V\n" +
-                "        WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container=?)\n");
+        SQLFragment seqnum2visit = new SQLFragment();
+        seqnum2visit.append(
+                "  SELECT sequencenum, V.RowId\n" +
+                "  FROM (SELECT DISTINCT SequenceNum from study.participantvisit where Container=?) seqnumPV, study.visit V\n" +
+                "  WHERE SequenceNum BETWEEN V.SequenceNumMin AND V.SequenceNumMax AND V.Container=?\n");
+        seqnum2visit.add(getStudy().getContainer());
+        seqnum2visit.add(getStudy().getContainer());
+
         // NOTE (seqnum2visit.RowId != VisitRowId OR VisitRowId IS NULL) is because postgres doesn't seem to optimize
         // updating a column to the existing value
+        SQLFragment sqlUpdateVisitRowId = new SQLFragment();
         if (schema.getSqlDialect().isPostgreSQL())
         {
             sqlUpdateVisitRowId.append(
                 "UPDATE study.participantvisit PV\n" +
                 "        SET VisitRowId = RowId\n" +
-                "        FROM seqnum2visit\n" +
+                "        FROM (\n");
+            sqlUpdateVisitRowId.append(seqnum2visit);
+            sqlUpdateVisitRowId.append(
+                ") seqnum2visit\n" +
                 "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND (VisitRowId IS NULL OR seqnum2visit.RowId IS NULL OR seqnum2visit.RowId <> VisitRowId) AND PV.Container=?");
+            sqlUpdateVisitRowId.add(getStudy().getContainer());
         }
         else
         {
             sqlUpdateVisitRowId.append(
                 "UPDATE PV\n" +
                 "        SET VisitRowId = RowId\n" +
-                "        FROM study.participantvisit PV, seqnum2visit\n" +
+                "        FROM study.participantvisit PV, (\n");
+            sqlUpdateVisitRowId.append(seqnum2visit);
+            sqlUpdateVisitRowId.append(
+                ") seqnum2visit\n" +
                 "        WHERE seqnum2visit.SequenceNum = PV.SequenceNum AND (VisitRowId IS NULL OR seqnum2visit.RowId IS NULL OR seqnum2visit.RowId <> VisitRowId) AND PV.Container=?");
+            sqlUpdateVisitRowId.add(getStudy().getContainer());
         }
-        sqlUpdateVisitRowId.add(getStudy().getContainer());
-        sqlUpdateVisitRowId.add(getStudy().getContainer());
-        sqlUpdateVisitRowId.add(getStudy().getContainer());
         if (!updateAll)
             sqlUpdateVisitRowId.append(" AND VisitRowId IS NULL");
         new SqlExecutor(schema).execute(sqlUpdateVisitRowId);
