@@ -111,6 +111,7 @@ public class QueryTableInfo extends AbstractTableInfo implements ContainerFilter
     @Override
     public void afterConstruct()
     {
+        checkLocked();
         super.afterConstruct();
         remapFieldKeys();
     }

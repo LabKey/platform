@@ -48,6 +48,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ViewOptions;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
@@ -772,7 +773,15 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                         {
                             params.put(columnName, columnName);
                         }
-                        expr = new DetailsURL(url, params);
+                        DetailsURL detailsURL = new DetailsURL(url, params);
+
+                        // Details and update url expressions on tables usually have their ContainerContext set in AbstractTableInfo.afterConstruct(),
+                        // but since we're creating a generic query URL expression we need to set the ContainerContext now before rendering.
+                        ContainerContext cc = table.getContainerContext();
+                        if (cc != null)
+                            detailsURL.setContainerContext(cc, false);
+
+                        expr = detailsURL;
                     }
                 }
                 else
