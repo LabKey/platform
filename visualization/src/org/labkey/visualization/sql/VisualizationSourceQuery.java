@@ -62,6 +62,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     private IVisualizationSourceQuery _joinTarget;  // query this query must join to when building SQL
     private List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> _joinConditions;
     private SimpleFilter _filter;
+    private boolean _skipVisitJoin;
 
     public VisualizationSourceQuery(Container container, UserSchema schema, String queryName, VisualizationSourceQuery joinTarget, int uniq)
     {
@@ -578,5 +579,15 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     public SimpleFilter getFilter()
     {
         return _filter;
+    }
+
+    public boolean isSkipVisitJoin()
+    {
+        return _skipVisitJoin;
+    }
+
+    public void setSkipVisitJoin(boolean skipVisitJoin)
+    {
+        _skipVisitJoin = skipVisitJoin;
     }
 }

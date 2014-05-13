@@ -48,7 +48,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     @Override
     public void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query)
     {
-        if (getType() == ChartType.TIME_VISITBASED)
+        if (getType() == ChartType.TIME_VISITBASED && !query.isSkipVisitJoin())
         {
             // add the visit, label, and display order to the select list
             String subjectNounSingular = StudyService.get().getSubjectNounSingular(query.getContainer());
@@ -149,8 +149,10 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         DataSet firstDataSet = StudyService.get().resolveDataset(first.getContainer(), first.getQueryName());
         DataSet secondDataSet = StudyService.get().resolveDataset(second.getContainer(), second.getQueryName());
 
+        boolean subjectJoinOnly = isGroupByQuery || first.isSkipVisitJoin() || second.isSkipVisitJoin();
+
         // if either query is a demographic dataset, it's sufficient to join on subject only:
-        if (!isGroupByQuery && (firstDataSet == null || firstDataSet.getKeyType() != DataSet.KeyType.SUBJECT) &&
+        if (!subjectJoinOnly && (firstDataSet == null || firstDataSet.getKeyType() != DataSet.KeyType.SUBJECT) &&
             (secondDataSet == null || secondDataSet.getKeyType() != DataSet.KeyType.SUBJECT))
         {
             VisualizationSourceColumn firstSequenceCol = getVisitJoinColumn(factory, first, firstSubjectNounSingular);

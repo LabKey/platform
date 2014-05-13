@@ -218,4 +218,10 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     {
         return _queries.iterator().next().getQueryName();
     }
+
+    @Override
+    public boolean isSkipVisitJoin()
+    {
+        return false;
+    }
 }

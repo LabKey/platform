@@ -1229,7 +1229,7 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                     {name   : 'label'},
                     {name   : 'description'},
                     {name   : 'isUserDefined'},
-                    {name   : 'isDemographic'},
+                    {name   : 'isDemographic', defaultValue: false},
                     {name   : 'queryLabel'},
                     {name   : 'queryName'},
                     {name   : 'schemaName'},

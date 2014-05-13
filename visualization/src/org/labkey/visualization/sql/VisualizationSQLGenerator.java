@@ -155,6 +155,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     measureCol = _columnFactory.create(getViewContext(), measureProperties);
                     query = ensureSourceQuery(_viewContext.getContainer(), measureCol, previous);
                     query.addSelect(measureCol, true);
+
+                    if (measureProperties.containsKey("isDemographic"))
+                        query.setSkipVisitJoin((Boolean) measureProperties.get("isDemographic"));
                 }
 
                 Object timeAxis = measureInfo.get("time");
