@@ -94,6 +94,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     @Override
     public void afterConstruct()
     {
+        checkLocked();
         super.afterConstruct();
         if (getRealTable() instanceof AbstractTableInfo)
             ((AbstractTableInfo)getRealTable()).afterConstruct();
@@ -204,17 +205,6 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     public boolean hasDetailsURL()
     {
         return super.hasDetailsURL() || getRealTable().hasDetailsURL();
-    }
-
-    @Override
-    public Set<FieldKey> getDetailsURLKeys()
-    {
-        HashSet<FieldKey> ret = new HashSet<>();
-        Set<FieldKey> superKeys = super.getDetailsURLKeys();
-        Set<FieldKey> realKeys = getRealTable().getDetailsURLKeys();
-        ret.addAll(superKeys);
-        ret.addAll(realKeys);
-        return ret;
     }
 
 

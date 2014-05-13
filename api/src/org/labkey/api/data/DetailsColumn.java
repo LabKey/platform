@@ -37,15 +37,6 @@ public class DetailsColumn extends UrlColumn
     }
 
     @Override
-    public void addQueryFieldKeys(Set<FieldKey> keys)
-    {
-        if (tinfo != null)
-        {
-            keys.addAll(tinfo.getDetailsURLKeys());
-        }
-    }
-
-    @Override
     public boolean isVisible(RenderContext ctx)
     {
         if (!super.isVisible(ctx) || null == getURLExpression())

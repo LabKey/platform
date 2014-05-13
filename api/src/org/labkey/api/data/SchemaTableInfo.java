@@ -138,6 +138,33 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         this(parentSchema, tableType, tableMetaDataName, tableMetaDataName, parentSchema.getSqlDialect().getSelectNameFromMetaDataName(parentSchema.getName()) + "." + parentSchema.getSqlDialect().getSelectNameFromMetaDataName(tableMetaDataName));
     }
 
+    /**
+     * Fixup the container context on table and column URLs.
+     * This is the same as {@link AbstractTableInfo#afterConstruct()} except it is performed once before being cached in DbSchema.
+     */
+    /* package */ void afterConstruct()
+    {
+        checkLocked();
+
+        ContainerContext cc = getContainerContext();
+        if (null != cc)
+        {
+            for (ColumnInfo c : getColumns())
+            {
+                StringExpression url = c.getURL();
+                if (url instanceof DetailsURL && url != AbstractTableInfo.LINK_DISABLER)
+                    ((DetailsURL)url).setContainerContext(cc, false);
+            }
+            if (_detailsURL != null && _detailsURL != AbstractTableInfo.LINK_DISABLER)
+            {
+                _detailsURL.setContainerContext(cc, false);
+            }
+            if (_updateURL != null && _updateURL != AbstractTableInfo.LINK_DISABLER)
+            {
+                _updateURL.setContainerContext(cc, false);
+            }
+        }
+    }
 
     TableType getXmlTable()
     {
@@ -630,8 +657,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
             return null;
         if (AbstractTableInfo.LINK_DISABLER == _updateURL)
             return AbstractTableInfo.LINK_DISABLER;
+
+        ContainerContext containerContext = getContainerContext();
+        if (containerContext == null)
+            containerContext = container;
+
         if (columns == null || _updateURL.validateFieldKeys(columns))
-            return _updateURL.copy(container);
+            return _updateURL.copy(containerContext);
+
         return null;
     }
 
@@ -642,14 +675,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         {
             return null;
         }
+
         ContainerContext containerContext = getContainerContext();
         if (containerContext == null)
             containerContext = container;
 
         if (columns == null || _detailsURL.validateFieldKeys(columns))
-        {
             return _detailsURL.copy(containerContext);
-        }
+
         return null;
     }
 
@@ -658,15 +691,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     {
         return _detailsURL != null;
     }
-
-    public Set<FieldKey> getDetailsURLKeys()
-    {
-        HashSet<FieldKey> set = new HashSet<>();
-        if (null != _detailsURL)
-            set.addAll(_detailsURL.getFieldKeys());
-        return set;
-    }
-
 
     public boolean hasPermission(UserPrincipal user, Class<? extends Permission> perm)
     {

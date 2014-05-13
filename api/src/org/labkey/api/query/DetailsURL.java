@@ -346,6 +346,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     {
         if (null != _containerContext)
             return _containerContext.getContainer(context);
+        // CONSIDER: get from DataRegion's table: ((RenderContext)context).getCurrentRegion().getTable().getContainerContext()
         if (null != _context)
             return _context.getContainer();
         Object c = null==context ? null

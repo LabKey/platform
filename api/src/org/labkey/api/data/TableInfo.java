@@ -227,7 +227,6 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      */
     StringExpression getDetailsURL(@Nullable Set<FieldKey> columns, Container container);
     boolean hasDetailsURL();
-    public Set<FieldKey> getDetailsURLKeys();
 
     boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm);
 

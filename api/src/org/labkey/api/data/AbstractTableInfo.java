@@ -154,6 +154,8 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
 
     public void afterConstruct()
     {
+        checkLocked();
+
         ContainerContext cc = getContainerContext();
         if (null != cc)
         {
@@ -166,6 +168,10 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
             if (_detailsURL != null && _detailsURL != LINK_DISABLER)
             {
                 _detailsURL.setContainerContext(cc, false);
+            }
+            if (_updateURL != null && _updateURL != LINK_DISABLER)
+            {
+                _updateURL.setContainerContext(cc, false);
             }
         }
     }
@@ -543,13 +549,27 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     public StringExpression getUpdateURL(@Nullable Set<FieldKey> columns, Container container)
     {
         if (_updateURL == LINK_DISABLER)
-        {
             return LINK_DISABLER;
-        }
-        if (_updateURL != null && (columns == null || _updateURL.validateFieldKeys(columns)))
+
+        if (_updateURL == null)
+            return null;
+
+        ContainerContext containerContext = getContainerContext();
+        if (containerContext == null)
+            containerContext = container;
+
+        // Include the ContainerContext FieldKey if it hasn't already been included.
+        if (columns != null && containerContext instanceof ContainerContext.FieldKeyContext)
         {
-            return _updateURL.copy(container);
+            ContainerContext.FieldKeyContext fieldKeyContext = (ContainerContext.FieldKeyContext) containerContext;
+            Set<FieldKey> s = new HashSet<>(columns);
+            s.add(fieldKeyContext.getFieldKey());
+            columns = s;
         }
+
+        if (columns == null || _updateURL.validateFieldKeys(columns))
+            return _updateURL.copy(containerContext);
+
         return null;
     }
 
@@ -574,19 +594,9 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
             columns = s;
         }
 
-        //if the _detailsURL is null, it was never actually set so we return null
-        //if it is LINK_DISABLER, then it was explicitly turned off, so we respect that.
-        if (_detailsURL == null)
-        {
-            return null;
-        }
-        else if (_detailsURL == AbstractTableInfo.LINK_DISABLER)
-        {
-            return _detailsURL;
-        }
-
         if (columns == null || _detailsURL.validateFieldKeys(columns))
             return _detailsURL.copy(containerContext);
+
         return null;
     }
 
@@ -605,13 +615,6 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     public boolean hasDetailsURL()
     {
         return _detailsURL != null && _detailsURL != AbstractTableInfo.LINK_DISABLER;
-    }
-
-    public Set<FieldKey> getDetailsURLKeys()
-    {
-        if (_detailsURL != null)
-            return _detailsURL.getFieldKeys();
-        return Collections.emptySet();
     }
 
     public void setGridURL(DetailsURL gridURL)

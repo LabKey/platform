@@ -19,8 +19,9 @@ package org.labkey.api.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.util.ContainerContext;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class AliasedColumn extends ColumnInfo
@@ -31,7 +32,21 @@ public class AliasedColumn extends ColumnInfo
     {
         super(key, parent);
         copyAttributesFrom(column);
-        copyURLFrom(column, null, Collections.singletonMap(column.getFieldKey(), key));
+
+        Map<FieldKey, FieldKey> remap = new HashMap<>();
+        remap.put(column.getFieldKey(), key);
+        if (parent != null && parent != column.getParentTable())
+        {
+            // SchemaTableInfo and the wrapping AbstractTableInfo may have different container context (e.g, "Container" versus "Folder" in Pipeline's Job table)
+            ContainerContext originalCC = column.getParentTable().getContainerContext();
+            ContainerContext parentCC = parent.getContainerContext();
+            if (originalCC instanceof ContainerContext.FieldKeyContext && parentCC instanceof ContainerContext.FieldKeyContext)
+            {
+                remap.put(((ContainerContext.FieldKeyContext)originalCC).getFieldKey(), ((ContainerContext.FieldKeyContext)parentCC).getFieldKey());
+            }
+        }
+        copyURLFrom(column, null, remap);
+
         if (!forceKeepLabel && !key.getName().equalsIgnoreCase(column.getFieldKey().getName()))
             setLabel(null);
         _column = column;

@@ -37,6 +37,7 @@ public class ProvisionedDbSchema extends DbSchema
     @Override
     protected <OptionType extends DbScope.SchemaTableOptions> void afterLoadTable(SchemaTableInfo ti, OptionType params)
     {
+        super.afterLoadTable(ti, params);
         if (params instanceof StorageProvisioner.ProvisionedSchemaOptions)
         {
             StorageProvisioner.ProvisionedSchemaOptions options = (StorageProvisioner.ProvisionedSchemaOptions)params;

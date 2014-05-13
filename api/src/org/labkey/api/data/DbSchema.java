@@ -373,6 +373,7 @@ public class DbSchema
      */
     protected <OptionType extends DbScope.SchemaTableOptions> void afterLoadTable(SchemaTableInfo ti, OptionType options)
     {
+        ti.afterConstruct();
     }
 
     SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException

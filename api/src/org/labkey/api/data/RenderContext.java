@@ -218,8 +218,6 @@ public class RenderContext implements Map<String, Object>, Serializable
 
         Table.checkAllColumns(tinfo, ret, "RenderContext.getSelectColumns() ret, after adding display columns");
 
-        Set<FieldKey> detailsUrlKeys = tinfo.getDetailsURLKeys();
-        keys.addAll(detailsUrlKeys);
         Collection<ColumnInfo> infoCollection = QueryService.get().getColumns(tinfo, keys, ret).values();
         ret.addAll(infoCollection);
 
