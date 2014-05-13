@@ -1059,6 +1059,131 @@ public class StudyManager
         }
     }
 
+    public Map<String, VisitTag> importVisitTags(Study study, User user, List<VisitTag> visitTags) throws ValidationException
+    {
+        // Import, don't overwrite existing
+        final Map<String, VisitTag> allVisitTagMap = new HashMap<>();
+        final Map<String, VisitTag> newVisitTagMap = new HashMap<>();
+        for (VisitTag visitTag : visitTags)
+        {
+            newVisitTagMap.put(visitTag.getName(), visitTag);
+        }
+
+        Container container = study.getContainer();
+        if (null == container.getProject())
+            throw new IllegalStateException("Study Import/Export must happen within a project.");
+        if (container.getProject().isDataspace())
+            container = container.getProject();
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(container);
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTag();
+        if (null == tinfo)
+            throw new IllegalStateException("Study Import/Export expected TableInfo.");
+
+        TableSelector selector = new TableSelector(tinfo, containerFilter, null);
+        selector.forEach(new Selector.ForEachBlock<VisitTag>()
+        {
+            @Override
+            public void exec(VisitTag visitTag) throws SQLException
+            {
+                allVisitTagMap.put(visitTag.getName(), visitTag);
+                if (newVisitTagMap.containsKey(visitTag.getName()))
+                    newVisitTagMap.remove(visitTag.getName());
+            }
+        }, VisitTag.class);
+
+        List<VisitTag> newVisitTags = new ArrayList<>();
+        newVisitTags.addAll(newVisitTagMap.values());
+        DataIteratorBuilder loader = new BeanDataIterator.Builder(VisitTag.class, newVisitTags);
+        DbScope scope = tinfo.getSchema().getScope();
+
+        try (Transaction transaction = scope.ensureTransaction())
+        {
+            DataIteratorContext context = new DataIteratorContext();
+            context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+            StandardETL etl = StandardETL.forInsert(tinfo, loader, container, user, context);
+            DataIteratorBuilder insert = ((UpdateableTableInfo)tinfo).persistRows(etl, context);
+            Pump p = new Pump(insert, context);
+            p.run();
+
+            BatchValidationException errors = context.getErrors();
+            if (errors.hasErrors())
+                throw errors.getRowErrors().get(0);
+
+            transaction.commit();
+        }
+        allVisitTagMap.putAll(newVisitTagMap);
+        return allVisitTagMap;
+    }
+
+    public void createVisitTagMapEntry(User user, Container container, String visitTagName, @NotNull Integer visitId, @Nullable Integer cohortId) throws SQLException
+    {
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
+        Map<String, Object> map = new HashMap<>();
+        map.put("visitTag", visitTagName);
+        map.put("visitId", visitId);
+        map.put("cohortId", cohortId);
+        map.put("containerId", container.getId());
+        Table.insert(user, tinfo, map);
+    }
+
+    public Map<String, VisitTag> getVisitTags(Study study)
+    {
+        // TODO: Use QueryHelper?
+        final Map<String, VisitTag> visitTags = new HashMap<>();
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTag();
+        new TableSelector(tinfo, containerFilter, null).forEach(new Selector.ForEachBlock<VisitTag>()
+        {
+            @Override
+            public void exec(VisitTag visitTag) throws SQLException
+            {
+                visitTags.put(visitTag.getName(), visitTag);
+            }
+        }, VisitTag.class);
+        return visitTags;
+    }
+
+    public Map<Integer, List<VisitTagMapEntry>> getVisitTagMapMap(Study study)
+    {
+        final Map<Integer, List<VisitTagMapEntry>> visitTagMapMap = new HashMap<>();
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
+        new TableSelector(tinfo, containerFilter, null).forEach(new Selector.ForEachBlock<VisitTagMapEntry>()
+        {
+            @Override
+            public void exec(VisitTagMapEntry visitTagMapEntry) throws SQLException
+            {
+                if (!visitTagMapMap.containsKey(visitTagMapEntry.getVisitId()))
+                    visitTagMapMap.put(visitTagMapEntry.getVisitId(), new ArrayList<VisitTagMapEntry>());
+                visitTagMapMap.get(visitTagMapEntry.getVisitId()).add(visitTagMapEntry);
+            }
+        }, VisitTagMapEntry.class);
+
+        return visitTagMapMap;
+    }
+
+    public Set<String> getVisitTagMapKeys(Study study)
+    {
+        final Set<String> visitTagMapKeys = new HashSet<>();
+        SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
+        new TableSelector(tinfo, containerFilter, null).forEach(new Selector.ForEachBlock<VisitTagMapEntry>()
+        {
+            @Override
+            public void exec(VisitTagMapEntry visitTagMapEntry) throws SQLException
+            {
+                visitTagMapKeys.add(makeVisitTagMapKey(visitTagMapEntry.getVisitTag(), visitTagMapEntry.getVisitId(), visitTagMapEntry.getCohortId()));
+            }
+        }, VisitTagMapEntry.class);
+
+        return visitTagMapKeys;
+    }
+
+    public static String makeVisitTagMapKey(String visitTagName, int visitId, @Nullable Integer cohortId)
+    {
+        return visitTagName + "/" + visitId + "/" + cohortId;
+    }
+
 
     public void createCohort(Study study, User user, CohortImpl cohort) throws SQLException
     {
@@ -2416,6 +2541,8 @@ public class StudyManager
             assert deletedTables.add(StudySchema.getInstance().getTableInfoObjective());
             Table.delete(StudySchema.getInstance().getTableInfoVisitTag(), containerFilter);
             assert deletedTables.add(StudySchema.getInstance().getTableInfoVisitTag());
+            Table.delete(StudySchema.getInstance().getTableInfoVisitTagMap(), containerFilter);
+            assert deletedTables.add(StudySchema.getInstance().getTableInfoVisitTagMap());
 
             // dataset tables
             for (DataSetDefinition dsd : dsds)

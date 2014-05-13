@@ -24,6 +24,8 @@ import org.labkey.study.model.VisitImpl;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
@@ -56,11 +58,12 @@ class VisitMapRecord
     private final int _displayOrder;
     private final int _chronologicalOrder;
     private final String _sequenceNumHandling;
+    private final List<VisitTagRecord> _visitTagRecords;
 
     public VisitMapRecord(double sequenceNumberMin, double sequenceNumberMax, Double protocolDay,
                           String visitType, String visitLabel, String visitDescription,
                           String cohort, int visitDatePlate, int[] requiredPlates, int[] optionalPlates, boolean showByDefault,
-                          int displayOrder, int chronologicalOrder, String sequenceNumHandling)
+                          int displayOrder, int chronologicalOrder, String sequenceNumHandling, List<VisitTagRecord> visitTagRecords)
     {
         _sequenceNumberMin = sequenceNumberMin;
         _sequenceNumberMax = sequenceNumberMax;
@@ -83,6 +86,7 @@ class VisitMapRecord
         _visitOverdueAllowance = -1;
         _missedNotificationPlate = -1;
         _terminationWindow = null;
+        _visitTagRecords = visitTagRecords;
     }
 
     private VisitMapRecord(Map record)
@@ -116,6 +120,7 @@ class VisitMapRecord
         _displayOrder = defaultInt((Integer)record.get("displayOrder"), 0);
         _chronologicalOrder = defaultInt((Integer)record.get("chronologicalOrder"), 0);
         _sequenceNumHandling = (String)record.get("sequenceNumHandling");
+        _visitTagRecords = Collections.emptyList();
     }
 
     private static int defaultInt(Integer i, int defaultInt)
@@ -124,9 +129,9 @@ class VisitMapRecord
     }
 
 
-    public double getSequenceNumMin()           { return _sequenceNumberMin; }
-    public double getSequenceNumMax()           { return _sequenceNumberMax; }
-    public Double getProtocolDay()           { return _protocolDay; }
+    public double getSequenceNumMin()       { return _sequenceNumberMin; }
+    public double getSequenceNumMax()       { return _sequenceNumberMax; }
+    public Double getProtocolDay()          { return _protocolDay; }
     public int getMissedNotificationPlate() { return _missedNotificationPlate; }
     public int[] getOptionalPlates()        { return _optionalPlates; }
     public int[] getRequiredPlates()        { return _requiredPlates; }
@@ -142,7 +147,8 @@ class VisitMapRecord
     public boolean isShowByDefault()        { return _showByDefault; }
     public int getDisplayOrder()            { return _displayOrder; }
     public int getChronologicalOrder()      { return _chronologicalOrder; }
-    public String getSequenceNumHandling()    { return _sequenceNumHandling; }
+    public String getSequenceNumHandling()  { return _sequenceNumHandling; }
+    public List<VisitTagRecord> getVisitTagRecords() { return _visitTagRecords;}
 
 /*    private int toInt(String str, int defaultValue)
     {
@@ -217,6 +223,26 @@ class VisitMapRecord
         return _visitRowId;
     }
 
+    public static class VisitTagRecord
+    {
+        private final String _visitTagName;
+        private final String _cohortLabel;
+
+        public VisitTagRecord(String visitTagName, String cohortLabel)
+        {
+            _visitTagName = visitTagName;
+            _cohortLabel = cohortLabel;
+        }
+
+        public String getVisitTagName()
+        {
+            return _visitTagName;
+        }
+        public String getCohortLabel()
+        {
+            return _cohortLabel;
+        }
+    }
 
     static
     {

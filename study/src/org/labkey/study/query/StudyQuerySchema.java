@@ -103,6 +103,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String OBJECTIVE_TABLE_NAME = "Objective";
     public static final String PERSONNEL_TABLE_NAME = "Personnel";
     public static final String VISIT_TAG_TABLE_NAME = "VisitTag";
+    public static final String VISIT_TAG_MAP_TABLE_NAME = "VisitTagMap";
     public static final String ASSAY_SPECIMEN_TABLE_NAME = "AssaySpecimen";
     public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
 
@@ -315,6 +316,7 @@ public class StudyQuerySchema extends UserSchema
             ret.add(OBJECTIVE_TABLE_NAME);
             ret.add(PERSONNEL_TABLE_NAME);
             ret.add(VISIT_TAG_TABLE_NAME);
+            ret.add(VISIT_TAG_MAP_TABLE_NAME);
         }
         return ret;
     }
@@ -675,6 +677,11 @@ public class StudyQuerySchema extends UserSchema
         if (VISIT_TAG_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new VisitTagTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
+        }
+
+        if (VISIT_TAG_MAP_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new VisitTagMapTable(this, null);
         }
 
         // Might be a dataset

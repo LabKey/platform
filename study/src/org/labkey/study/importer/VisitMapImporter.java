@@ -34,6 +34,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitDataSetType;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitMapKey;
+import org.labkey.study.model.VisitTag;
 import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.IOException;
@@ -175,11 +176,13 @@ public class VisitMapImporter
 
         List<VisitMapRecord> records;
         List<StudyManager.VisitAlias> aliases;
+        List<VisitTag> visitTags;
 
         try
         {
             records = reader.getVisitMapRecords(study.getTimepointType());
             aliases = reader.getVisitImportAliases();
+            visitTags = reader.getVisitTags();
         }
         catch (VisitMapParseException x)
         {
@@ -200,6 +203,7 @@ public class VisitMapImporter
             saveVisits(user, study, records);
             saveVisitMap(user, study, records);
             saveImportAliases(user, study, aliases);
+            saveVisitTags(user, study, visitTags);
             transaction.commit();
             return true;
         }
@@ -361,5 +365,10 @@ public class VisitMapImporter
             if (dataSetId > 0 && _ensureDataSets && !existingSet.contains(dataSetId))
                 StudyManager.getInstance().createDataSetDefinition(user, study.getContainer(), dataSetId);
         }
+    }
+
+    private Map<String, VisitTag> saveVisitTags(User user, Study study, List<VisitTag> visitTags) throws ValidationException
+    {
+        return StudyManager.getInstance().importVisitTags(study, user, visitTags);
     }
 }

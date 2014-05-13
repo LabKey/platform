@@ -116,6 +116,11 @@ public class StudySchema
         return getSchema().getTable("VisitMap");
     }
 
+    public TableInfo getTableInfoVisitTagMap()
+    {
+        return getSchema().getTable("VisitTagMap");
+    }
+
     public TableInfo getTableInfoStudyData(StudyImpl study, @Nullable User user)
     {
         return new StudyUnionTableInfo(study, StudyManager.getInstance().getDataSetDefinitions(study), user, study.isDataspaceStudy());

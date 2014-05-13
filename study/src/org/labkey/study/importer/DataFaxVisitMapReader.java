@@ -24,6 +24,7 @@ import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.Filter;
 import org.labkey.api.iterator.IteratorUtil;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.VisitTag;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -44,6 +45,8 @@ public class DataFaxVisitMapReader implements VisitMapReader
         _content = content;
     }
 
+    @Override
+    @NotNull
     public List<VisitMapRecord> getVisitMapRecords(TimepointType timepointType) throws IOException, VisitMapParseException
     {
         String tsv = _content.replace('|','\t');
@@ -92,6 +95,14 @@ public class DataFaxVisitMapReader implements VisitMapReader
     public List<StudyManager.VisitAlias> getVisitImportAliases()
     {
         // This format does not support import aliases
+        return Collections.emptyList();
+    }
+
+    @Override
+    @NotNull
+    public List<VisitTag> getVisitTags() throws VisitMapParseException
+    {
+        // This format does not support visitTags
         return Collections.emptyList();
     }
 }

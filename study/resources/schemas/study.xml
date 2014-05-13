@@ -287,6 +287,21 @@
       <ns:column columnName="visitrowid"/>
     </ns:columns>
   </ns:table>
+  <ns:table tableName="VisitTagMap" tableDbType="TABLE">
+    <ns:columns>
+      <ns:column columnName="RowId"/>
+      <ns:column columnName="Container"/>
+      <ns:column columnName="VisitId">
+        <ns:description>The rowId of the visit.</ns:description>
+      </ns:column>
+      <ns:column columnName="VisitTag">
+        <ns:description>The name of the visit tag.</ns:description>
+      </ns:column>
+      <ns:column columnName="CohortId">
+        <ns:description>The ID of the cohort, if the visit/tag combination is cohort specific.</ns:description>
+      </ns:column>
+    </ns:columns>
+  </ns:table>
   <ns:table tableName="DataSet" tableDbType="TABLE">
     <ns:description>Contains one row of metadata per study dataset.</ns:description>
     <ns:columns>

@@ -26,6 +26,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.VisitTag;
 import org.labkey.study.xml.DatasetType;
 import org.labkey.study.xml.VisitMapDocument;
 import org.labkey.study.xml.VisitMapDocument.VisitMap.ImportAliases;
@@ -83,6 +84,8 @@ public class XmlVisitMapReader implements VisitMapReader
         }
     }
 
+    @Override
+    @NotNull
     public List<VisitMapRecord> getVisitMapRecords(TimepointType timepointType) throws VisitMapParseException
     {
         VisitMapDocument.VisitMap.Visit[] visitsXml = _visitMapXml.getVisitArray();
@@ -115,7 +118,8 @@ public class XmlVisitMapReader implements VisitMapReader
                     visitXml.getLabel(), visitXml.getDescription(), visitXml.getCohort(), visitXml.getVisitDateDatasetId(),
                     ArrayUtils.toPrimitive(required.toArray(new Integer[required.size()])),
                     ArrayUtils.toPrimitive(optional.toArray(new Integer[optional.size()])), visitXml.getShowByDefault(),
-                    visitXml.getDisplayOrder(), visitXml.getChronologicalOrder(), visitXml.getSequenceNumHandling());
+                    visitXml.getDisplayOrder(), visitXml.getChronologicalOrder(), visitXml.getSequenceNumHandling(),
+                    getVisitTagRecords(visitXml));
 
             visits.add(record);
         }
@@ -140,5 +144,32 @@ public class XmlVisitMapReader implements VisitMapReader
         }
 
         return ret;
+    }
+
+    @Override
+    @NotNull
+    public List<VisitTag> getVisitTags() throws VisitMapParseException
+    {
+        VisitMapDocument.VisitMap.VisitTag[] visitTagsXml = _visitMapXml.getVisitTagArray();
+        List<VisitTag> visitTags = new ArrayList<>(visitTagsXml.length);
+
+        for (VisitMapDocument.VisitMap.VisitTag visitTagXml : visitTagsXml)
+        {
+            VisitTag visitTag = new VisitTag(visitTagXml.getName(), visitTagXml.getCaption(),
+                                             visitTagXml.getDescription(), visitTagXml.getSingleUse());
+            visitTags.add(visitTag);
+        }
+
+        return visitTags;
+    }
+
+    private List<VisitMapRecord.VisitTagRecord> getVisitTagRecords(VisitMapDocument.VisitMap.Visit visitXml)
+    {
+        List<VisitMapRecord.VisitTagRecord> visitTagRecords = new ArrayList<>();
+        if (null != visitXml.getVisitTags())
+            for (VisitMapDocument.VisitMap.Visit.VisitTags.VisitTag visitTag : visitXml.getVisitTags().getVisitTagArray())
+                visitTagRecords.add(new VisitMapRecord.VisitTagRecord(visitTag.getName(), visitTag.getCohort()));
+
+        return visitTagRecords;
     }
 }

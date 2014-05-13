@@ -18,19 +18,25 @@ package org.labkey.study.importer;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Cohort;
+import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.VisitTag;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * User: adam
@@ -77,6 +83,19 @@ public class VisitCohortAssigner implements InternalStudyImporter
                 throw new ImportException("Unable to parse visit map", e);
             }
 
+            Map<String, Integer> cohortIdMap = getCohortIdMap(user, study);
+
+            // In Dataspace, VisitTags live at the project level
+            Study studyForVisitTags = study;
+            if (ctx.isDataspaceProject())
+            {
+                studyForVisitTags = StudyManager.getInstance().getStudy(ctx.getProject());
+                if (null == studyForVisitTags)
+                    throw new IllegalStateException("Expected project level study in Dataspace project.");
+            }
+            Map<String, VisitTag> visitTags = studyManager.getVisitTags(studyForVisitTags);
+            Set<String> visitTagMapKeys = studyManager.getVisitTagMapKeys(study);
+
             for (VisitMapRecord record : records)
             {
                 VisitImpl visit = visitManager.findVisitBySequence(record.getSequenceNumMin());
@@ -85,12 +104,34 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
                 if (!Objects.equals(oldCohortLabel, record.getCohort()))
                 {
-                    CohortImpl cohort = studyManager.getCohortByLabel(c, user, record.getCohort());
                     VisitImpl mutable = visit.createMutable();
-                    mutable.setCohortId(cohort.getRowId());
+                    mutable.setCohortId(cohortIdMap.get(record.getCohort()));
                     StudyManager.getInstance().updateVisit(ctx.getUser(), mutable);
+                }
+
+                for (VisitMapRecord.VisitTagRecord visitTagRecord : record.getVisitTagRecords())
+                {
+                    if (!visitTags.containsKey(visitTagRecord.getVisitTagName()))
+                        throw new IllegalStateException("Visit references non-existent visit tag: " + visitTagRecord.getVisitTagName());
+
+                    Integer cohortId = cohortIdMap.get(visitTagRecord.getCohortLabel());
+                    String visitTagMapKey = StudyManager.makeVisitTagMapKey(visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId);
+                    if (!visitTagMapKeys.contains(visitTagMapKey))
+                    {
+                        studyManager.createVisitTagMapEntry(user, c, visitTagRecord.getVisitTagName(),
+                                visit.getRowId(), cohortId);
+                    }
                 }
             }
         }
+    }
+
+    private Map<String, Integer> getCohortIdMap(User user, Study study)
+    {
+        List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), user);
+        Map<String, Integer> cohortIdMap = new HashMap<>();
+        for (Cohort cohort : cohorts)
+            cohortIdMap.put(cohort.getLabel(), cohort.getRowId());
+        return cohortIdMap;
     }
 }

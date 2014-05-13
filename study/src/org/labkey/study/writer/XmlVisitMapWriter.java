@@ -23,6 +23,8 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitDataSet;
 import org.labkey.study.model.VisitImpl;
+import org.labkey.study.model.VisitTag;
+import org.labkey.study.model.VisitTagMapEntry;
 import org.labkey.study.xml.DatasetType;
 import org.labkey.study.xml.StudyDocument;
 import org.labkey.study.xml.VisitMapDocument;
@@ -34,6 +36,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -53,6 +56,8 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile vf) throws IOException, ImportException, SQLException
     {
         List<VisitImpl> visits = study.getVisits(Visit.Order.DISPLAY);
+        Map<Integer, List<VisitTagMapEntry>> visitTagMapMap = StudyManager.getInstance().getVisitTagMapMap(study);
+
         StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();
         visitsXml.setFile(FILENAME);
@@ -120,6 +125,22 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
                         }
                     }
                 }
+
+                if (visitTagMapMap.containsKey(visit.getRowId()))
+                {
+                    VisitMap.Visit.VisitTags visitTagsXml = visitXml.addNewVisitTags();
+
+                    for (VisitTagMapEntry visitTagMapEntry : visitTagMapMap.get(visit.getRowId()))
+                    {
+                        VisitMap.Visit.VisitTags.VisitTag visitTagXml = visitTagsXml.addNewVisitTag();
+                        visitTagXml.setName(visitTagMapEntry.getVisitTag());
+                        if (null != visitTagMapEntry.getCohortId())
+                        {
+                            visitTagXml.setCohort(StudyManager.getInstance().getCohortForRowId(study.getContainer(),
+                                                    ctx.getUser(), visitTagMapEntry.getCohortId()).getLabel());
+                        }
+                    }
+                }
             }
         }
 
@@ -135,6 +156,18 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
                 aliasXml.setName(alias.getName());
                 aliasXml.setSequenceNum(alias.getSequenceNum());
             }
+        }
+
+        Collection<VisitTag> visitTags = StudyManager.getInstance().getVisitTags(study).values();
+
+        for (VisitTag visitTag : visitTags)
+        {
+            VisitMap.VisitTag visitTagXml = visitMapXml.addNewVisitTag();
+            visitTagXml.setName(visitTag.getName());
+            visitTagXml.setCaption(visitTag.getCaption());
+            if (null != visitTag.getDescription())
+                visitTagXml.setDescription(visitTag.getDescription());
+            visitTagXml.setSingleUse(visitTag.isSingleUse());
         }
 
         vf.saveXmlBean(FILENAME, visitMapDoc);
