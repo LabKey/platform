@@ -60,4 +60,6 @@ public interface IVisualizationSourceQuery
     String getQueryName();
 
     void addSelect(VisualizationSourceColumn select, boolean measure);
+
+    public boolean isSkipVisitJoin();
 }
