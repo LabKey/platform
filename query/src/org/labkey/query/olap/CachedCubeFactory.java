@@ -400,13 +400,7 @@ public class CachedCubeFactory
                 if (m.ordinal == -1)
                     m.ordinal = ++ordinal;
             }
-            Collections.sort(list, new Comparator<_Member>(){
-                @Override
-                public int compare(_Member o1, _Member o2)
-                {
-                    return o1.ordinal - o2.ordinal;
-                }
-            });
+            Collections.sort(list, ORDINAL_COMPARATOR);
             for (_Member m : list)
                 members.add(m);
         }
@@ -520,6 +514,7 @@ public class CachedCubeFactory
                     arr[i] = lowerLevel.getMembers().get(list.get(i).getUniqueName());
                     assert null != arr[i];
                 }
+                Arrays.sort(arr, ORDINAL_COMPARATOR);
             }
             childMembers = arr;
         }
@@ -785,4 +780,11 @@ public class CachedCubeFactory
     static final NamedList<Property> emptyPropertyList = (new _EmptyNamedList<Property>()).recast();
     static final NamedList<NamedSet> emptyNamedSetList = (new _EmptyNamedList<NamedSet>()).recast();
     static final NamedList<Member> emptyMemberList = (new _EmptyNamedList<Member>()).recast();
+    static final Comparator<Member> ORDINAL_COMPARATOR = new Comparator<Member>(){
+        @Override
+        public int compare(Member o1, Member o2)
+        {
+            return o1.getOrdinal() - o2.getOrdinal();
+        }
+    };
 }
