@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.FileUtil;
@@ -131,9 +132,7 @@ public class TSVWriter extends TextWriter
         _rowSeparator = rowSeparator;
     }
 
-    protected Pattern _escapedChars;
-    protected Pattern _leadingWhitespace = Pattern.compile("^\\p{Space}.*");
-    protected Pattern _trailingWhitespace = Pattern.compile(".*\\p{Space}$");
+    protected String _escapedCharsString = null;
 
     /**
      * Quote the value if necessary.  The quoting rules are:
@@ -186,16 +185,22 @@ public class TSVWriter extends TextWriter
 
     private boolean shouldQuote(String value)
     {
-        if (_escapedChars == null)
+        if (_escapedCharsString == null)
         {
             // NOTE: Excel always includes comma in the list of characters that will be quoted,
-            // but we will only quote comma if it is the delimeter character.
-            _escapedChars = Pattern.compile("[\r\n" + _rowSeparator + "\\" + _chDelimiter + "\\" + _chQuote + "]");
+            // but we will only quote comma if it is the delimiter character.
+            _escapedCharsString = "\r\n" + _rowSeparator + _chDelimiter + _chQuote;
         }
 
-        return (_escapedChars.matcher(value).find() ||
-                _leadingWhitespace.matcher(value).matches() ||
-                _trailingWhitespace.matcher(value).matches());
+
+        int len = value.length();
+        if (len == 0)
+            return false;
+        char firstCh = value.charAt(0);
+        char lastCh = value.charAt(len-1);
+        if (Character.isSpaceChar(firstCh) || Character.isSpaceChar(lastCh))
+            return true;
+        return StringUtils.containsAny(value,_escapedCharsString);
     }
 
     /**
