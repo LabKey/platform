@@ -233,7 +233,7 @@ public class DatasetWriter implements InternalStudyWriter
 
             if (ctx.isDataspaceProject())
                 DefaultStudyDesignWriter.createExtraForeignKeyColumns(ti, columns);
-            Results rs = QueryService.get().select(ti, columns, filter, sort);
+            Results rs = QueryService.get().select(ti, columns, filter, sort, null, false);
             writeResultsToTSV(rs, vf, def.getFileName());
         }
     }

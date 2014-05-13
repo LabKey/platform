@@ -75,7 +75,7 @@ public abstract class DefaultStudyDesignWriter
                 }
             }
 //            createExtraForeignKeyColumns(table, columns);                             // TODO: QueryService gets unhappy and seems unnecessary
-            Results rs = QueryService.get().select(table, columns, null, null);
+            Results rs = QueryService.get().select(table, columns, null, null, null, false);
             writeResultsToTSV(rs, vf, getFileName(table));
         }
     }
