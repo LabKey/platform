@@ -111,6 +111,20 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         return getContainer().hasPermission(getName() + ".canReadSchema()", user, ReadPermission.class);
     }
 
+
+    public void checkCanReadSchema() throws UnauthorizedException
+    {
+        if (!canReadSchema())
+            throw new UnauthorizedException("User cannot read schema: " + getName());
+    }
+
+
+    public void checkCanReadSchemaOlap() throws UnauthorizedException
+    {
+        checkCanReadSchema();
+    }
+
+
     @Nullable
     public TableInfo getTable(String name, boolean includeExtraMetadata)
     {
