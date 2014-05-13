@@ -197,6 +197,15 @@ public class OlapController extends SpringActionController
                 rethrowOlapException(x);
             }
 
+            String schemaName = getAnnotation(cube,"SchemaName");
+            if (null != schemaName)
+            {
+                UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
+                if (null == schema)
+                    throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
+                schema.checkCanReadSchemaOlap();
+            }
+
             if (errors.hasErrors())
                 return null;
             if (null == cube)
@@ -441,11 +450,11 @@ public class OlapController extends SpringActionController
             String schemaName = getAnnotation(cube,"SchemaName");
             if (null != schemaName)
             {
-                QuerySchema schema = DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
+                UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
                 if (null == schema)
                     throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
-                cf = ((UserSchema)schema).getOlapContainerFilter(getUser());
-                // TODO have schema check activity,etc,etc here
+                schema.checkCanReadSchemaOlap();
+                cf = schema.getOlapContainerFilter(getUser());
             }
 
             CellSet cs = null;

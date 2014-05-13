@@ -102,8 +102,6 @@ public class BitSetQueryImpl
             if (l.getName().equalsIgnoreCase("container"))
                 lContainer = l;
         }
-        if (null == lContainer)
-            throw new IllegalStateException("Container level not found in hierarchy: " + h.getUniqueName());
 
         CaseInsensitiveHashSet ids = new CaseInsensitiveHashSet();
         ids.addAll(containerFilter);
