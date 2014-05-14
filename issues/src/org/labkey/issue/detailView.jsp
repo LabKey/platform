@@ -113,7 +113,7 @@
                 <% if (bean.isEditable("duplicate")) { %>
                     <%=text(bean.writeInput("duplicate", String.valueOf(issue.getDuplicate()), 10))%>
                 <% } else { %>
-                    <a href="<%=IssuesController.getDetailsURL(c, issue.getDuplicate(), false)%>"><%=issue.getDuplicate()%></a>
+                    <%=bean.renderDuplicate(issue.getDuplicate())%>
                 <% } %>
                 </td></tr><%
             }

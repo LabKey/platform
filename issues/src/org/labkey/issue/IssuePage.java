@@ -26,6 +26,7 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
@@ -441,9 +442,24 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     {
         StringBuilder sb = new StringBuilder();
         for (Integer dup : dups)
-            sb.append("<a href='").append(IssuesController.getDetailsURL(_c, dup, false)).append("'>").append(dup).append("</a>, ");
+        {
+            Issue dupIssue = IssueManager.getIssue(null, dup);
+            if (dupIssue.lookupContainer().hasPermission(_user, ReadPermission.class))
+                sb.append("<a href='").append(IssuesController.getDetailsURL(_c, dup, false)).append("'>").append(dup).append("</a>");
+            else
+                sb.append(dup);
+            sb.append(", ");
+        }
         if (dups.size() > 0)
             sb.setLength(sb.length() - 2);
         return sb.toString();
     }
+
+    // simple wrapper for renderDuplicates if issue.getDuplicates().isempty() is true. (if duplicates mechanism designed better this could disappear)
+    public String renderDuplicate(int dup)
+    {
+        Collection<Integer> dups = Collections.singletonList(dup);
+        return renderDuplicates(dups);
+    }
+
 }
