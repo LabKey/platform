@@ -684,6 +684,16 @@ Ext4.define('LABKEY.query.olap.MDX', {
         return hierarchy;
     },
 
+    getLevel : function(uniqueName) {
+        var level = this._cube.getByUniqueName(uniqueName);
+
+        if (level && level.dimension) {
+            level = undefined;
+        }
+
+        return level;
+    },
+
     clearNamedFilter : function(name)
     {
         if (this._filter[name])
