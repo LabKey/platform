@@ -39,7 +39,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.ExcelColumn;
 import org.labkey.api.data.ExcelWriter;
@@ -1616,13 +1615,7 @@ public class SecurityController extends SpringActionController
                         sbReset.append("Click ").append(href).append(" to see the email.");
                         UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password.");
                     }
-                    catch (ConfigurationException e)
-                    {
-                        sbReset.append("Failed to send email due to: <pre>").append(e.getMessage()).append("</pre>");
-                        appendMailHelpText(sbReset, url);
-                        UserManager.addToUserHistory(UserManager.getUser(email), user.getEmail() + " " + pastVerb + " the password, but sending the email failed.");
-                    }
-                    catch (MessagingException e)
+                    catch (ConfigurationException | MessagingException e)
                     {
                         sbReset.append("Failed to send email due to: <pre>").append(e.getMessage()).append("</pre>");
                         appendMailHelpText(sbReset, url);
