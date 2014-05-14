@@ -136,6 +136,8 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     allowCustomize: true,
 
+    allowEdit: true,
+
     pageId: -1,
 
     index: -1,
@@ -166,7 +168,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         if (this.isCustomizable()) {
             this.addEvents(
                 'enableCustomMode',
-                'disableCustomMode',
+                'disableCustomMode'
+            );
+        }
+
+        if (this.isEditable()) {
+            this.addEvents(
                 'enableEditMode',
                 'disableEditMode'
             );
@@ -851,18 +858,23 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 answer = t.test(s);
             }
 
+            var createdByMe = (rec.data.createdByUserId == LABKEY.user.id);
+
             // match 'mine' if current user is either the author or creator
             if (this.searchMine && rec.data && answer) {
-                if ((rec.data.authorUserId != LABKEY.user.id) && (rec.data.createdByUserId != LABKEY.user.id)) {
+                if ((rec.data.authorUserId != LABKEY.user.id) && !createdByMe) {
                     return false;
                 }
             }
 
-            // custom/edit modes will show hidden, if in manageViews, show hidden if the user is an administrator
-            if ((this.customMode || this.editMode) && this.allowCustomize) { return answer; }
-
-            // otherwise never show hidden records
-            if (!rec.data.visible) { return false; }
+            // Show hidden only in edit mode. Admins see all; authors & editors see only their own.
+            if (!rec.data.visible)
+            {
+                if (this.editMode && (createdByMe || LABKEY.user.isAdmin))
+                    return answer;
+                else
+                    return false;
+            }
 
             return answer;
         };
@@ -873,6 +885,10 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
 
     isCustomizable : function() {
         return this.allowCustomize;
+    },
+
+    isEditable : function() {
+        return this.allowEdit;
     },
 
     /**
@@ -913,7 +929,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     },
 
     edit : function() {
-        if (this.isCustomizable()) {
+        if (this.isEditable()) {
             this.fireEvent((this.editMode ? 'disableEditMode' : 'enableEditMode'), this);
         }
     },
@@ -921,6 +937,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
     onEnableEditMode : function() {
         this.editMode = true;
         this._getEditColumn().show();
+        this.hiddenFilter();
     },
 
     onDisableEditMode : function() {

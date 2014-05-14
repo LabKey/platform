@@ -16,8 +16,6 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.reports.ReportService;
@@ -101,37 +99,47 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
             menu.addChild(reportMenu);
         }
 
-        if (portalCtx.hasPermission(AdminPermission.class))
+
+        // We display the edit button for everyone with insert (Author, Editor, Admin). Other components are admin-only.
+        if (portalCtx.hasPermission(InsertPermission.class))
         {
+            boolean isAdmin = portalCtx.hasPermission(AdminPermission.class);
+
             if (!manageView)
             {
-                NavTree customize = new NavTree("");
-                String customizeScript = "customizeDataViews(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");";
-
-                customize.setScript(customizeScript);
-                view.setCustomize(customize);
+                if (isAdmin)
+                {
+                    NavTree customize = new NavTree("");
+                    String customizeScript = "customizeDataViews(" + webPart.getRowId() + ", \'" + webPart.getPageId() + "\', " + webPart.getIndex() + ");";
+                    customize.setScript(customizeScript);
+                    view.setCustomize(customize);
+                }
 
                 String editScript = "editDataViews(" + webPart.getRowId() + ");";
                 NavTree edit = new NavTree("Edit", "javascript:" + editScript, portalCtx.getContextPath() + "/_images/partedit.png");
                 view.addCustomMenu(edit);
             }
-            if (StudyService.get().getStudy(c) != null)
-                menu.addChild("Manage Datasets", PageFlowUtil.urlProvider(StudyUrls.class).getManageDatasetsURL(c));
-            menu.addChild("Manage Queries", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c));
 
-            if (manageView)
+            if (isAdmin)
             {
-                NavTree manageViews = new NavTree("Manage Categories");
-                manageViews.setScript("manageCategories(" + webPart.getRowId() + ");");
-                menu.addChild(manageViews);
+                if (StudyService.get().getStudy(c) != null)
+                    menu.addChild("Manage Datasets", PageFlowUtil.urlProvider(StudyUrls.class).getManageDatasetsURL(c));
+                menu.addChild("Manage Queries", PageFlowUtil.urlProvider(QueryUrls.class).urlSchemaBrowser(c));
 
-/*
-                String deleteScript = "deleteDataViews(" + webPart.getRowId() + ");";
-                NavTree deleteViews = new NavTree("Delete Selected");
-                deleteViews.setScript(deleteScript);
-                deleteViews.setDescription("Hold cntl to select more than one record");
-                menu.addChild(deleteViews);
-*/
+                if (manageView)
+                {
+                    NavTree manageViews = new NavTree("Manage Categories");
+                    manageViews.setScript("manageCategories(" + webPart.getRowId() + ");");
+                    menu.addChild(manageViews);
+
+    /*
+                    String deleteScript = "deleteDataViews(" + webPart.getRowId() + ");";
+                    NavTree deleteViews = new NavTree("Delete Selected");
+                    deleteViews.setScript(deleteScript);
+                    deleteViews.setDescription("Hold cntl to select more than one record");
+                    menu.addChild(deleteViews);
+    */
+                }
             }
         }
 
@@ -144,7 +152,7 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
             menu.addChild(deleteViews);
         }
 
-        if(!manageView && portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
+        if (!manageView && portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
         {
             ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(c);
             menu.addChild("Manage Views", url);

@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.apache.commons.lang3.BooleanUtils" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
@@ -25,7 +26,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.apache.commons.lang3.BooleanUtils" %>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -62,6 +63,7 @@
             fullPage    : <%= manageView%>,
             returnUrl   : '<%= getActionURL().getLocalURIString()%>',
             allowCustomize : <%= getContainer().hasPermission(u, AdminPermission.class) %>,
+            allowEdit   : <%= getContainer().hasPermission(u, InsertPermission.class) %>,
             listeners   : {
                 render: function(panel) {
                     if (panel.fullPage) {
