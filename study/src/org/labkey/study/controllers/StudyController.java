@@ -629,6 +629,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("studyNavigator");
             return root.addChild("Overview:" + _study.getLabel());
         }
     }
@@ -1022,6 +1023,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("gridBasics");
             try
             {
                 return _appendNavTrail(root, getDataSetDefinition().getDataSetId(), _visitId, _cohortFilter, _encodedQcState);
@@ -1202,6 +1204,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("participantViews");
             return _appendNavTrail(root, _bean.getDatasetId(), 0, _cohortFilter, _bean.getQCState()).
                     addChild(StudyService.get().getSubjectNounSingular(getContainer()) + " - " + id(_bean.getParticipantId()));
         }
@@ -5009,6 +5012,7 @@ public class StudyController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("querySnapshot");
             return root.addChild("Create Query Snapshot");
         }
     }

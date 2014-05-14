@@ -4290,6 +4290,7 @@ public class AdminController extends SpringActionController
 
             Container c = getViewContext().getContainerNoTab();         // Cannot create subfolder of tab folder
 
+            setHelpTopic("createProject");
             getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(null, c));
             getPageConfig().setTemplate(Template.Wizard);
 
@@ -4434,7 +4435,6 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("createProject");
             return null;
         }
     }
@@ -4461,6 +4461,7 @@ public class AdminController extends SpringActionController
             getPageConfig().setTitle("Users / Permissions");
             getPageConfig().setNavTrail(ContainerManager.getCreateContainerWizardSteps(c, c.getParent()));
             getPageConfig().setTemplate(Template.Wizard);
+            setHelpTopic("createProject");
 
             return vbox;
 
@@ -4556,7 +4557,6 @@ public class AdminController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("createProject");
             getPageConfig().setFocusId("name");
             //can't use getTitle() here, as it assumes the title relates to the current
             //container, but in this case, it relates to the thing we're going to create
@@ -5689,6 +5689,7 @@ public class AdminController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("experimental");
             return root.addChild("Experimental Features");
         }
     }
@@ -6487,6 +6488,7 @@ public class AdminController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("shortURL");
             return root.addChild("Short URL Admin");
         }
     }

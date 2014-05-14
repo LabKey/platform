@@ -1427,6 +1427,7 @@ public class VisualizationController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("timeChart");
             return root.addChild(_navTitle);
         }
     }
@@ -1477,6 +1478,7 @@ public class VisualizationController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("quickchart");
             if (null != _renderType)
                 root.addChild(_renderType.getName() + " Report");
             return root;

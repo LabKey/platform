@@ -560,6 +560,7 @@ public class WikiController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("wikiUserGuide#manage");
             if (null == _wikiVersion)
                 _wikiVersion = _wiki.getLatestVersion();
             return (new PageAction(getViewContext(), _wiki, _wikiVersion).appendNavTrail(root))
@@ -1058,6 +1059,7 @@ public class WikiController extends SpringActionController
             Container sourceContainer = getSourceContainer(form.getSourceContainer());
             bean.cancelURL = null == sourceContainer ? getBeginURL(c) : getBeginURL(sourceContainer);
 
+            setHelpTopic("wikiUserGuide#copy");
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setShowHeader(true);
 
@@ -1066,6 +1068,7 @@ public class WikiController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            //setHelpTopic("wikiUserGuide#copy");
             return null;
         }
     }
@@ -1528,6 +1531,7 @@ public class WikiController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("wikiUserGuide#history");
             return new PageAction(getViewContext(), _wiki,_wikiversion).appendNavTrail(root).
                     addChild("History for Page \"" + _wiki.getName() + "\"", getUrl());
         }
@@ -2034,6 +2038,7 @@ public class WikiController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("wikiUserGuide#edit");
             if (null != _wiki && null != _wikiVer)
             {
                 ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, getContainer());

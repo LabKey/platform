@@ -1012,6 +1012,7 @@ public class ReportsController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("jsViews");
             if (_report != null)
                 return root.addChild(_report.getTypeDescription() + " Builder");
 

@@ -3890,7 +3890,7 @@ public class QueryController extends SpringActionController
 
         public ModelAndView getView(LinkedSchemaForm form, boolean reshow, BindException errors) throws Exception
         {
-            setHelpTopic(new HelpTopic("linkedSchema"));
+            setHelpTopic(new HelpTopic("filterSchema"));
             return new JspView<>("/org/labkey/query/view/linkedSchema.jsp", new LinkedSchemaBean(getContainer(), form.getBean(), true), errors);
         }
     }

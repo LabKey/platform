@@ -1921,6 +1921,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("specimenShopping");
             return appendSpecimenRequestsNavTrail(root).addChild("New Specimen Request");
         }
     }
@@ -3427,6 +3428,7 @@ public class SpecimenController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("exploreSpecimens");
             root = appendBaseSpecimenNavTrail(root);
             return root.addChild("Specimen Reports");
         }

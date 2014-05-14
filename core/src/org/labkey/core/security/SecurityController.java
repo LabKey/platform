@@ -293,6 +293,7 @@ public class SecurityController extends SpringActionController
 
             FolderPermissionsView permsView = new FolderPermissionsView(resource, doneURL);
 
+            setHelpTopic("configuringPerms");
             getPageConfig().setTemplate(PageConfig.Template.Dialog);
             getPageConfig().setTitle("Permissions for " + getContainer().getPath());
 
@@ -301,7 +302,6 @@ public class SecurityController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("configuringPerms");
             return root;
         }
     }

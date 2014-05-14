@@ -343,6 +343,7 @@ public class ReportsController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("advancedView");
             return _appendNavTrail(root, "External View Builder");
         }
     }
@@ -727,6 +728,7 @@ public class ReportsController extends BaseStudyController
 
             return _appendNavTrail(root, "Crosstab View Builder", datasetId, visitRowId);
 */
+            setHelpTopic("crosstabReports");
             return root.addChild("Crosstab View Builder");
         }
     }
@@ -1868,6 +1870,7 @@ public class ReportsController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("participantReport");
             return _appendNavTrail(root, StudyService.get().getSubjectNounSingular(getContainer()) + " Report");
         }
     }

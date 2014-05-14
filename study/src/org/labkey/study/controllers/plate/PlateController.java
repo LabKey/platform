@@ -235,6 +235,7 @@ public class PlateController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("editPlateTemplate");
             return root.addChild("Plate Template Editor");
         }
     }

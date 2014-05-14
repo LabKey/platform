@@ -81,6 +81,7 @@ public class ShowSearchAction extends FormViewAction<ShowSearchAction.SearchForm
 
     public NavTree appendNavTrail(NavTree root)
     {
+        setHelpTopic("specimenShopping");
         root.addChild(_study.getLabel(), BaseStudyController.getStudyOverviewURL(getContainer()));
         root.addChild("Specimen Overview", new ActionURL(SpecimenController.OverviewAction.class, getContainer()));
         root.addChild(_title);
