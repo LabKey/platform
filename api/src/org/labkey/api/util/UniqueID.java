@@ -32,13 +32,13 @@ public class UniqueID
     private static final AtomicLong SERVER_SESSION_COUNTER = new AtomicLong();
 
     /*
-        Provides a unique integer within the context of a single request.  This is handy for generating identifiers that
+        Provides a unique integer within the context of a single request. This is handy for generating identifiers that
         must be unique in the scope of a single request, including HTML class names and element ids, javascript function
-        and variable names, etc.  Uniqueness is guaranteed ONLY when the same request is provided; as a result:
+        and variable names, etc. Uniqueness is guaranteed ONLY when the same request is provided; as a result:
 
-        - Do not cache these UIDs or the content that uses them.  Avoid putting them into formal caches, static variables,
+        - Do not cache these UIDs or the content that uses them. Avoid putting them into formal caches, static variables,
           static collections, etc.
-        - Do not serialize these UIDs or the content that uses them.  Avoid putting them into the database, writing them
+        - Do not serialize these UIDs or the content that uses them. Avoid putting them into the database, writing them
           to the file system, etc.
 
         If you need cacheable UIDs, consider using the getServerSessionScopedUID() method below.
@@ -54,12 +54,12 @@ public class UniqueID
     }
 
     /*
-        Provides a unique long within the context of an entire server session.  This is handy for generating identifiers
-        (like the above) that need to be cached between requests in a server-tied cache.  Uniqueness is guaranteed ONLY
+        Provides a unique long within the context of an entire server session. This is handy for generating identifiers
+        (like the above) that need to be cached between requests in a server-tied cache. Uniqueness is guaranteed ONLY
         when used in the context of a single server session; as a result:
 
-        - Do not serialize these UIDs or the content that uses them.  Avoid putting them into the database, writing them
-          to the file system, and caching them between servers or persistiong them between server sessions.
+        - Do not serialize these UIDs or the content that uses them. Avoid putting them into the database, writing them
+          to the file system, and caching them between servers or persisting them in user sessions.
      */
     public static long getServerSessionScopedUID()
     {

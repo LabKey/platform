@@ -55,7 +55,7 @@ public class ResourceRef
     }
 
     /**
-     * Check to see if the underlying Resource or one of it's dependencies has been modified.
+     * Check to see if the underlying Resource or one of its dependencies has been modified.
      * Calling <code>isStale()</code> will reset an internal staleness counter.
      * @return
      */

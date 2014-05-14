@@ -327,7 +327,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
         return clone;
     }
 
-    ViewContext _context;
+    private ViewContext _context;
 
     public void setViewContext(ViewContext context)
     {
