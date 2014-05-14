@@ -23,6 +23,7 @@ import org.labkey.api.action.ApiVersion;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.AssayJSONConverter;
@@ -73,7 +74,14 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             String name = json.optString(ExperimentJSONConverter.NAME);
             String comments = json.optString(ExperimentJSONConverter.COMMENT);
             Map<String, String> runProperties = (Map)json.optJSONObject(ExperimentJSONConverter.PROPERTIES);
+            if (runProperties != null)
+                runProperties = new CaseInsensitiveHashMap<>(runProperties);
+
             Map<String, String> batchProperties = (Map)json.optJSONObject("batchProperties");
+            if (batchProperties != null)
+                batchProperties = new CaseInsensitiveHashMap<>(batchProperties);
+
+            // CONSIDER: Should we also look at the batch and run properties for the targetStudy?
             String targetStudy = json.optString("targetStudy");
             Integer reRunId = json.containsKey("reRunId") ? json.optInt("reRunId") : null;
 
