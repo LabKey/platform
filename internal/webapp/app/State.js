@@ -211,6 +211,30 @@ Ext.define('LABKEY.app.controller.State', {
         this.state.sync();
     },
 
+    /**
+     * This method allows for updating a filter that is already being tracked.
+     * Given a filter id, the datas parameter will replace that filter's value for
+     * the given key in datas. Note: This will only replace those values specified
+     * leaving all other values on the filter as they were.
+     * @param id
+     * @param datas
+     */
+    updateFilter : function(id, datas) {
+
+        Ext.each(this.filters, function(filter) {
+            if (filter.id === id) {
+
+                Ext.iterate(datas, function(key, val) {
+                    filter.set(key, val);
+                });
+
+                filter.commit();
+
+                this.requestFilterUpdate(false);
+            }
+        }, this);
+    },
+
     updateFilterMembers : function(id, members, skipState) {
         for (var f=0; f < this.filters.length; f++) {
             if (this.filters[f].id == id)

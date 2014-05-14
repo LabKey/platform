@@ -14,6 +14,7 @@ Ext.define('LABKEY.app.model.OlapExplorer', {
         {name : 'hierarchy'},
         {name : 'value'},
         {name : 'level'},
+        {name : 'levelUniqueName'},
         {name : 'uniqueName'},
         {name : 'isGroup', type : 'boolean'},
         {name : 'collapsed', type : 'boolean'},
@@ -207,6 +208,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                     hierarchy: hierarchy.getUniqueName(),
                     isGroup: isGroup,
                     level: subPosition.name,
+                    levelUniqueName: subPosition.level.uniqueName,
                     collapsed: activeGroup && pos.length > 15 ? true : false,
                     btnShown: false
                 };

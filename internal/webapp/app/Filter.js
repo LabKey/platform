@@ -8,6 +8,7 @@ Ext.define('LABKEY.app.model.Filter', {
 
     fields : [
         {name : 'hierarchy'},
+        {name : 'level'},
         {name : 'members', defaultValue: []},
         {name : 'operator'},
         {name : 'isGroup', type: 'boolean', defaultValue: false},
