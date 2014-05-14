@@ -792,6 +792,7 @@ public class ReportsController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
     public class ExecuteAction extends MutatingApiAction<ExecuteScriptForm>
     {
         //
