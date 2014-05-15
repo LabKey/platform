@@ -302,4 +302,10 @@
             <ns:column columnName="Permission"/>
         </ns:columns>
     </ns:table>
+    <ns:table tableName="RelatedIssues" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="IssueId"/>
+            <ns:column columnName="RelatedIssueId"/>
+        </ns:columns>
+    </ns:table>
 </ns:tables>
