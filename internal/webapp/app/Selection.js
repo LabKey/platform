@@ -17,6 +17,11 @@ Ext.define('LABKEY.app.view.Selection', {
         supportMemberClose: true,
 
         hookButtons : function(v) {
+
+            if (!v || !v.getEl()) {
+                return;
+            }
+
             //
             // hook events for and/or selection
             //
@@ -116,8 +121,13 @@ Ext.define('LABKEY.app.view.Selection', {
 
         this.callParent();
 
-        this.on('viewready', LABKEY.app.view.Selection.hookButtons, this);
-        this.on('itemupdate', function(item) { LABKEY.app.view.Selection.hookButtons(this); }, this);
+        this.hookTask = new Ext.util.DelayedTask(function() {
+            LABKEY.app.view.Selection.hookButtons(this);
+        }, this);
+
+        this.on('viewready', this.doHook, this);
+        this.on('itemupdate', this.doHook, this);
+        this.on('refresh', this.doHook, this);
 
         /* NOTE: This will render any itemclick listeners useless */
         this.on('itemclick', function(v, f, is, idx, evt) {
@@ -135,5 +145,9 @@ Ext.define('LABKEY.app.view.Selection', {
             filterId: this.getStore().getAt(0).id,
             value: valType
         });
+    },
+
+    doHook : function() {
+        this.hookTask.delay(50);
     }
 });
