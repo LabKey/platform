@@ -15,26 +15,31 @@
  */
 package org.labkey.api.cache;
 
+import java.lang.ref.WeakReference;
+
 /**
-* User: adam
-* Date: 1/15/12
-* Time: 10:23 PM
-*/
+ * User: adam
+ * Date: 1/15/12
+ * Time: 10:23 PM
+ *
+ * Thread safety need to be ensured by the caller
+ */
 public class Wrapper<V>
 {
     @SuppressWarnings({"unchecked"})
     protected V value = (V) BlockingCache.UNINITIALIZED;
-    protected boolean loading = false;
+    // weak reference, because I'm paranoid of accidently holding onto threads
+    protected WeakReference<Thread> loadingThread;
 
     void setLoading()
     {
-        loading = true;
+        loadingThread = new WeakReference<>(Thread.currentThread());
     }
 
     // call in finally
     void doneLoading()
     {
-        loading = false;
+        loadingThread = null;
     }
 
     void loadFailed()
@@ -45,7 +50,12 @@ public class Wrapper<V>
 
     boolean isLoading()
     {
-        return loading;
+        Thread t = null==loadingThread ? null : loadingThread.get();
+        if (null == t)
+            return false;
+        if (t == Thread.currentThread())
+            throw new IllegalStateException("Caller is already loading this object!");
+        return true;
     }
 
     void setValue(V v)

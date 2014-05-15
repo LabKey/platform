@@ -117,6 +117,9 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 try {w.wait(TimeUnit.MINUTES.toMillis(1));}catch (InterruptedException x) {/* */}
                 if (isValid(w, key, argument, loader))
                     return w.getValue();
+
+                // if we fall through here it means there _could_ be two threads trying to load the same object
+                // the cache loader needs to support that
             }
 
             w.setLoading();
