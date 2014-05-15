@@ -205,6 +205,13 @@
                         %>
                         </td></tr>
         <% } %>
+                        <tr><td class="labkey-form-label">Related</td><td>
+                        <%=text(bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), "id=related tabindex=\"2\""))%>
+
+                        <script type="text/javascript">
+                            Ext.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterNumber);
+                        </script>
+
                         <%=text(bean.writeCustomColumn(ColumnType.INT1, 2, true))%>
                         <%=text(bean.writeCustomColumn(ColumnType.INT2, 2, true))%>
                         <%=text(bean.writeCustomColumn(ColumnType.STRING1, 2, true))%>

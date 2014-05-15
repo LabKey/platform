@@ -540,6 +540,11 @@ public class IssuesController extends SpringActionController
             if(_issue.getNotifyList() != null)
                 _issue.parseNotifyList(_issue.getNotifyList().toString());
 
+
+            // return errors from handler
+            boolean ret = relatedIssueHandler(_issue, user, errors);
+            if (!ret) return false;
+
             ChangeSummary changeSummary;
 
             try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -551,6 +556,18 @@ public class IssuesController extends SpringActionController
                 changeSummary = createChangeSummary(_issue, orig, null, user, form.getAction(), form.getComment(), getCustomColumnConfiguration(), getUser());
                 IssueManager.saveIssue(user, c, _issue);
                 AttachmentService.get().addAttachments(changeSummary.getComment(), getAttachmentFileList(), user);
+
+                Collection<Integer> rels = _issue.getRelatedIssues();
+                // handle comment changes to related issues
+                if (rels != null)
+                {
+                    for (int curIssueId : rels)
+                    {
+                        Issue relatedIssue = relatedIssueCommentHandler(_issue.getIssueId(), curIssueId, user, false);
+                        IssueManager.saveIssue(user, getContainer(), relatedIssue);
+                    }
+                }
+
                 transaction.commit();
             }
             catch (Exception x)
@@ -622,9 +639,82 @@ public class IssuesController extends SpringActionController
         return issue;
     }
 
+    protected boolean relatedIssueHandler(Issue issue, User user, BindException errors)
+    {
+        String textInput = issue.getRelated();
+        ArrayList<Integer> rels = new ArrayList<>();
+        if (textInput != null)
+        {
+            String[] textValues = issue.getRelated().split("\\s*,\\s*");
+            int relatedId;
+            Issue related;
+            // for each issue id we need to validate
+            for (String relatedText : textValues)
+            {
+                relatedId = NumberUtils.toInt(relatedText.trim(), 0);
+                if (relatedId == 0)
+                {
+                    errors.rejectValue("Related", ERROR_MSG, "Invalid issue id in related string.");
+                    return false;
+                }
+                if (issue.getIssueId() == relatedId)
+                {
+                    errors.rejectValue("Related", ERROR_MSG, "As issue may not be related to itself");
+                    return false;
+                }
+
+                related = IssueManager.getIssue(null, relatedId);
+                if (related == null)
+                {
+                    errors.rejectValue("Related", ERROR_MSG, "Related issue '" + relatedId + "' not found");
+                    return false;
+                }
+                if (!related.lookupContainer().hasPermission(user, ReadPermission.class))
+                {
+                    errors.rejectValue("Related", ERROR_MSG, "User does not have Read Permission for related issue'" + relatedId + "'");
+                    return false;
+                }
+                if (rels.contains(relatedId))
+                {
+                    errors.rejectValue("Related", ERROR_MSG, "Related issues cannot contain duplicates");
+                    return false;
+                }
+                rels.add(relatedId);
+            }
+        }
+        // this sets the collection of interger ids for all related issues
+        issue.setRelatedIssues(rels);
+        return true;
+    }
+    
+    protected Issue relatedIssueCommentHandler(int issueId, int relatedIssueId, User user, boolean drop)
+    {
+        StringBuilder sb = new StringBuilder();
+        Issue relatedIssue = IssueManager.getIssue(null, relatedIssueId);
+        ArrayList<Integer> prevRelated = relatedIssue.getRelatedIssues();
+        ArrayList<Integer> newRelated = new ArrayList<>();
+        newRelated.addAll(prevRelated);
+
+        if (drop)
+            newRelated.remove(new Integer(issueId));
+        else
+            newRelated.add(issueId);
+
+        // make sure sorted order
+        Collections.sort(newRelated);
+
+        sb.append("<div class=\"wiki\"><table class=issues-Changes>");
+        sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
+        sb.append("<table></div>");
+
+        relatedIssue.addComment(user, sb.toString());
+        relatedIssue.setRelatedIssues(newRelated);
+        return relatedIssue;
+    }
 
     protected abstract class IssueUpdateAction extends FormViewAction<IssuesForm>
     {
+        // NOTE: aaron this is used in the InsertAction but not the update (consider refactor)
         Issue _issue = null;
 
         public boolean handlePost(IssuesForm form, BindException errors) throws Exception
@@ -660,10 +750,16 @@ public class IssuesController extends SpringActionController
                 }
                 if (!duplicateOf.lookupContainer().hasPermission(user, ReadPermission.class))
                 {
-                    errors.rejectValue("Duplicate", ERROR_MSG, "User does not have Read permission for duplicate issue '" + issue.getDuplicate().intValue() + "'.");
+                    errors.rejectValue("Duplicate", ERROR_MSG, "User does not have Read permission for duplicate issue '" + issue.getDuplicate().intValue() + "'");
                     return false;
                 }
             }
+
+            // get previous related issue ids before updateing
+            ArrayList<Integer> prevRelatedIds = issue.getRelatedIssues();
+
+            boolean ret = relatedIssueHandler(issue, user, errors);
+            if (!ret) return false;
 
             ChangeSummary changeSummary;
             try (DbScope.Transaction transaction = IssuesSchema.getInstance().getSchema().getScope().ensureTransaction())
@@ -689,9 +785,29 @@ public class IssuesController extends SpringActionController
                 if (duplicateOf != null)
                 {
                     StringBuilder sb = new StringBuilder();
-                    sb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this bug.</em>");
+                    sb.append("<em>Issue ").append(issue.getIssueId()).append(" marked as duplicate of this issue.</em>");
                     Issue.Comment dupComment = duplicateOf.addComment(user, sb.toString());
                     IssueManager.saveIssue(user, c, duplicateOf);
+                }
+
+                ArrayList<Integer> newRelatedIds = issue.getRelatedIssues();
+
+                // this list represents all the ids which will need related handling for a creating a relatedIssue entry
+                Collection<Integer> newIssues = new ArrayList<>();
+                newIssues.addAll(newRelatedIds);
+                newIssues.removeAll(prevRelatedIds);
+                for (int curIssueId : newIssues)
+                {
+                    Issue relatedIssue = relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, false);
+                    IssueManager.saveIssue(user, getContainer(), relatedIssue);
+                }
+
+                // this list represents all the ids which will need related handling for a droping a relatedIssue entry
+                prevRelatedIds.removeAll(newRelatedIds);
+                for (int curIssueId : prevRelatedIds)
+                {
+                    Issue relatedIssue = relatedIssueCommentHandler(issue.getIssueId(), curIssueId, user, true);
+                    IssueManager.saveIssue(user, getContainer(), relatedIssue);
                 }
 
                 transaction.commit();
@@ -873,6 +989,8 @@ public class IssuesController extends SpringActionController
             editable.add("resolution");
             editable.add("duplicate");
         }
+
+        editable.add("related");
 
         return editable;
     }
@@ -2175,6 +2293,7 @@ public class IssuesController extends SpringActionController
             _appendChange(sbHTMLChanges, sbTextChanges, "Area", previous.getArea(), issue.getArea(), ccc, newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Priority", pevPriStringVal, priStringVal, ccc, newIssue);
             _appendChange(sbHTMLChanges, sbTextChanges, "Milestone", previous.getMilestone(), issue.getMilestone(), ccc, newIssue);
+            _appendChange(sbHTMLChanges, sbTextChanges, "Related", StringUtils.join(previous.getRelatedIssues(), ", "), StringUtils.join(issue.getRelatedIssues(), ", "), ccc, newIssue);
 
             _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int1", prevInt1StringVal, int1StringVal, ccc, newIssue);
             _appendCustomColumnChange(sbHTMLChanges, sbTextChanges, "int2", prevInt2StringVal, int2StringVal, ccc, newIssue);

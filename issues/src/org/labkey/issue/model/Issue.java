@@ -16,6 +16,7 @@
 package org.labkey.issue.model;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.AttachmentParentEntity;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -61,6 +62,9 @@ public class Issue extends Entity implements Serializable, Cloneable
     protected String resolution;
     protected Integer duplicate;
     protected Collection<Integer> duplicates;
+
+    protected String related;
+    protected ArrayList<Integer> relatedIssues;
 
     protected Integer closedBy;
     protected Date closed;
@@ -366,8 +370,35 @@ public class Issue extends Entity implements Serializable, Cloneable
 
     public void setDuplicates(Collection<Integer> dups)
     {
-        if (dups != null)
-            duplicates = dups;
+        if (dups != null) duplicates = dups;
+    }
+
+
+    public String getRelated()
+    {
+        return related;
+    }
+
+    // this is used for form-binding
+    public void setRelated(String relatedText)
+    {
+        if (null != relatedText && relatedText.equals("")) relatedText = null;
+        this.related = relatedText;
+    }
+
+    @NotNull
+    public ArrayList<Integer> getRelatedIssues()
+    {
+        return relatedIssues != null ? relatedIssues : new ArrayList<Integer>();
+    }
+
+    public void setRelatedIssues(ArrayList<Integer> rels)
+    {
+        if (rels != null)
+        {
+            Collections.sort(rels);
+            relatedIssues = rels;
+        }
     }
 
 

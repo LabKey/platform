@@ -121,6 +121,10 @@
             {
                 %><tr><td class="labkey-form-label">Duplicates</td><td><%=bean.renderDuplicates(issue.getDuplicates())%></td></tr><%
             }
+            if (!issue.getRelatedIssues().isEmpty())
+            {
+                %><tr><td class="labkey-form-label">Related</td><td><%=bean.renderRelatedIssues(issue.getRelatedIssues())%></td></tr><%
+            }
 %>
             <%=bean.writeCustomColumn(ColumnType.INT1, 10, false)%>
             <%=bean.writeCustomColumn(ColumnType.INT2, 10, false)%>

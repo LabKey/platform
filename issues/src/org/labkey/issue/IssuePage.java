@@ -438,6 +438,14 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return sb.toString();
     }
 
+
+    public String renderRelatedIssues(ArrayList<Integer> rels)
+    {
+        Collection<Integer> col = new ArrayList<>();
+        col.addAll(rels);
+        return renderDuplicates(rels);
+    }
+
     public String renderDuplicates(Collection<Integer> dups)
     {
         StringBuilder sb = new StringBuilder();

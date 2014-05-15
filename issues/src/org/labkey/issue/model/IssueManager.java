@@ -159,6 +159,16 @@ public class IssueManager
                 new SimpleFilter(FieldKey.fromParts("Duplicate"), issueId),
                 new Sort("IssueId")).getCollection(Integer.class);
         issue.setDuplicates(dups);
+
+        Collection<Integer> rels = new TableSelector(_issuesSchema.getTableInfoRelatedIssues().getColumn("RelatedIssueId"),
+                new SimpleFilter(FieldKey.fromParts("IssueId"), issueId),
+                new Sort("IssueId")).getCollection(Integer.class);
+
+        ArrayList<Integer> related = new ArrayList<>();
+        related.addAll(rels);
+        issue.setRelatedIssues(related);
+        // the related string is only used when rendering the update form
+        issue.setRelated(StringUtils.join(related, ", "));
         return issue;
     }
 
@@ -179,6 +189,7 @@ public class IssueManager
             Table.update(user, _issuesSchema.getTableInfoIssues(), issue, issue.getIssueId());
         }
         saveComments(user, issue);
+        saveRelatedIssues(user, issue);
 
         indexIssue(null, issue);
     }
@@ -202,6 +213,25 @@ public class IssueManager
             Table.insert(user, _issuesSchema.getTableInfoComments(), m);
         }
         issue._added = null;
+    }
+
+    protected static void saveRelatedIssues(User user, Issue issue) throws SQLException
+    {
+        Collection<Integer> rels = issue.getRelatedIssues();
+        // This shouldn't ever be null but I am a paranoid android
+        if (null == rels) return;
+
+        int issueId = issue.getIssueId();
+
+        Table.delete(_issuesSchema.getTableInfoRelatedIssues(), new SimpleFilter(FieldKey.fromParts("IssueId"), issueId));
+
+        for (Integer rel : rels)
+        {
+            Map<String, Object> m = new HashMap<>();
+            m.put("issueId", issueId);
+            m.put("relatedIssueId", rel);
+            Table.insert(user, _issuesSchema.getTableInfoRelatedIssues(), m);
+        }
     }
 
 
