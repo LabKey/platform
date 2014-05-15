@@ -37,6 +37,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.core.CoreController;
@@ -73,6 +74,12 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         this.addCondition(new SQLFragment("Type='workbook'"));
 
         setInsertURL(new DetailsURL(new ActionURL(CoreController.CreateWorkbookAction.class, coreSchema.getContainer())));
+
+        // Use the generic query update url, but use the parent Container as the ContainerContext.
+        // The details url still uses the workbook's container as the ContainerContext.
+        DetailsURL updateURL = QueryService.get().urlDefault(coreSchema.getContainer(), QueryAction.updateQueryRow, this);
+        updateURL.setContainerContext(new ContainerContext.FieldKeyContext(FieldKey.fromParts("Parent")));
+        setUpdateURL(updateURL);
     }
 
     @Override
