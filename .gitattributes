@@ -8982,6 +8982,7 @@ internal/webapp/ux/BoxSelect/BoxSelect.js -text
 internal/webapp/ux/CheckCombo/CheckCombo.css -text
 internal/webapp/ux/CheckCombo/CheckCombo.js -text
 internal/webapp/viewPicker.js -text
+internal/webapp/vis/SVGConverter.js -text
 internal/webapp/vis/demo/demo_data.js -text
 internal/webapp/vis/demo/demo_script.js -text
 internal/webapp/vis/demo/index.html -text

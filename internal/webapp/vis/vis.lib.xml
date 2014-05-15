@@ -1,5 +1,6 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
+        <script path="/vis/SVGConverter.js"/>
         <script path="/vis/src/utils.js"/>
         <script path="/vis/src/geom.js"/>
         <script path="/vis/src/stat.js"/>
