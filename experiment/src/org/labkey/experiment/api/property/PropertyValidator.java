@@ -36,6 +36,8 @@ public class PropertyValidator implements Serializable, Cloneable
     private String _container;
     private String _properties;
     private String _errorMessage;
+    // NOTE: _propertyId is stored in the junction table, so it's not needed for persisting a PropertyValidator
+    private Integer _propertyId;
 
     public void copy(IPropertyValidator v)
     {
@@ -128,6 +130,16 @@ public class PropertyValidator implements Serializable, Cloneable
     public void setErrorMessage(String errorMessage)
     {
         _errorMessage = errorMessage;
+    }
+
+    public Integer getPropertyId()
+    {
+        return _propertyId;
+    }
+
+    public void setPropertyId(Integer propertyId)
+    {
+        _propertyId = propertyId;
     }
 
     public final PropertyValidator clone()

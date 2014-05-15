@@ -15,13 +15,16 @@
  */
 package org.labkey.experiment.api.property;
 
+import org.apache.commons.collections15.multimap.MultiHashMap;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.DbCache;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
@@ -39,6 +42,7 @@ import org.labkey.api.util.GUID;
 import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,6 +90,11 @@ public class DomainPropertyManager
         return getExpSchema().getTable("PropertyValidator");
     }
 
+    public TableInfo getTinfoPropertyDescriptor()
+    {
+        return getExpSchema().getTable("PropertyDescriptor");
+    }
+
     public TableInfo getTinfoValidatorReference()
     {
         return getExpSchema().getTable("ValidatorReference");
@@ -98,12 +107,12 @@ public class DomainPropertyManager
 
     public PropertyValidator[] getValidators(DomainProperty property)
     {
-        return getValidators(property.getPropertyId());
+        return getValidators(property.getContainer(), property.getPropertyId());
     }
 
     public PropertyValidator[] getValidators(PropertyDescriptor property)
     {
-        return getValidators(property.getPropertyId());
+        return getValidators(property.getContainer(), property.getPropertyId());
     }
 
     public List<ConditionalFormat> getConditionalFormats(DomainPropertyImpl property)
@@ -153,28 +162,56 @@ public class DomainPropertyManager
         return String.valueOf(propertyId);
     }
 
-    private PropertyValidator[] getValidators(int propertyId)
+
+
+    // Container.getId() -> PropertyId -> Collection<PropertyValidator>
+    static Cache<String,MultiHashMap<Integer, PropertyValidator>> validatorCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, CacheManager.HOUR, "Property Validators");
+    private static final PropertyValidator[] _emptyArray = new PropertyValidator[0];
+    private static final MultiHashMap<Integer, PropertyValidator> _emptyMap = new MultiHashMap<>();;
+
+
+    private PropertyValidator[] getValidators(@NotNull Container c, int propertyId)
     {
-        if (propertyId != 0)
+        if (propertyId == 0)
+            return _emptyArray;
+
+        MultiHashMap<Integer, PropertyValidator> validators = validatorCache.get(c.getId());
+        if (null != validators)
         {
-            String cacheKey = getCacheKey(propertyId);
-            PropertyValidator[] validators = (PropertyValidator[])DbCache.get(getTinfoValidator(), cacheKey);
-
-            if (validators != null)
-                return validators;
-
-            String sql = "SELECT PV.* " +
-                    "FROM " + getTinfoValidator() + " PV " +
-                    "INNER JOIN " + getTinfoValidatorReference() + " VR ON (PV.RowId = VR.ValidatorId) " +
-                    "WHERE VR.PropertyId = ?\n";
-
-            validators = new SqlSelector(getExpSchema(), sql, propertyId).getArray(PropertyValidator.class);
-
-            DbCache.put(getTinfoValidator(), cacheKey, validators);
-            return validators;
+            Collection<PropertyValidator> coll = validators.get(propertyId);
+            if (null == coll)
+                return _emptyArray;
+            else
+                return coll.toArray(new PropertyValidator[coll.size()]);
         }
-        return new PropertyValidator[0];
+
+        /*
+         * There are a LOT more property descriptors than property validators, let's just sweep them all up, if we have a container
+         * CONSIDER: Should PropertyValidators just be cached as part of the PropertyDescriptor?
+         */
+        String sql = "SELECT VR.PropertyId, PV.* " +
+                "FROM " + getTinfoValidatorReference() + " VR " +
+                "LEFT OUTER JOIN " +  getTinfoValidator() + " PV ON (VR.ValidatorId = PV.RowId) " +
+                "WHERE PV.Container=?\n";
+
+        ArrayList<PropertyValidator> list = new SqlSelector(getExpSchema(), sql, c.getId()).getArrayList(PropertyValidator.class);
+        validators = new MultiHashMap<>();
+        for (PropertyValidator pv : list)
+            validators.put(pv.getPropertyId(),pv);
+
+        if (validators.isEmpty())
+            validators = _emptyMap;
+        validatorCache.put(c.getId(),validators);
+        Collection<PropertyValidator> coll = validators.get(propertyId);
+        if (null == coll)
+            return _emptyArray;
+        else
+            return coll.toArray(new PropertyValidator[coll.size()]);
     }
+
+
+
+    /* TODO: this is for precaching validators, it's
 
     /**
      * Remove a domain property reference to a validator and delete the validator if there are
@@ -191,9 +228,10 @@ public class DomainPropertyManager
                         " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
                             " WHERE  VR.ValidatorId = ?)";
             new SqlExecutor(getExpSchema()).execute(sql, validator.getRowId(), validator.getRowId());
-            DbCache.remove(getTinfoValidator(), getCacheKey(property.getPropertyId()));
+            validatorCache.remove(property.getContainer().getId());
         }
     }
+
 
     private void _removePropertyValidator(int propertyId, int validatorId)
     {
@@ -206,17 +244,18 @@ public class DomainPropertyManager
                         " AND NOT EXISTS (SELECT * FROM " + getTinfoValidatorReference() + " VR " +
                             " WHERE  VR.ValidatorId = ?)";
             new SqlExecutor(getExpSchema()).execute(sql, validatorId, validatorId);
-            DbCache.remove(getTinfoValidator(), getCacheKey(propertyId));
         }
     }
+
 
     public void savePropertyValidator(User user, DomainProperty property, IPropertyValidator validator) throws ChangePropertyDescriptorException
     {
         if (property.getPropertyId() != 0)
         {
-            try {
+            try
+            {
                 addValidatorReference(property, validator.save(user, property.getContainer()));
-                DbCache.remove(getTinfoValidator(), getCacheKey(property.getPropertyId()));
+                validatorCache.remove(validator.getContainer().getId());
             }
             catch (ValidationException e)
             {
@@ -224,6 +263,7 @@ public class DomainPropertyManager
             }
         }
     }
+
 
     public void addValidatorReference(DomainProperty property, IPropertyValidator validator)
     {
@@ -247,6 +287,7 @@ public class DomainPropertyManager
             throw new IllegalArgumentException("DomainProperty or IPropertyValidator row ID's cannot be null");
     }
 
+
     private void _removeValidatorReference(int propertyId, int validatorId)
     {
         if (propertyId != 0 && validatorId != 0)
@@ -258,13 +299,16 @@ public class DomainPropertyManager
             throw new IllegalArgumentException("DomainProperty or IPropertyValidator row ID's cannot be null");
     }
 
-    public void removeValidatorsForPropertyDescriptor(int descriptorId)
+
+    public void removeValidatorsForPropertyDescriptor(@NotNull Container c, int descriptorId)
     {
-        for (PropertyValidator pv : getValidators(descriptorId))
+        for (PropertyValidator pv : getValidators(c, descriptorId))
         {
             _removePropertyValidator(descriptorId, pv.getRowId());
         }
+        validatorCache.remove(c.getId());
     }
+
 
     public void deleteAllValidatorsAndFormats(Container c)
     {
@@ -280,9 +324,10 @@ public class DomainPropertyManager
                 "(SELECT PropertyId FROM " + OntologyManager.getTinfoPropertyDescriptor() + " WHERE Container = ?)", c.getId());
         executor.execute(deleteConditionalFormatsSQL);
 
-        DbCache.clear(getTinfoValidator());
+        validatorCache.remove(c.getId());
         _conditionalFormatCache.remove(c.getEntityId());
     }
+
 
     public void deleteConditionalFormats(int propertyId)
     {
@@ -291,6 +336,7 @@ public class DomainPropertyManager
         // Blow the cache
         _conditionalFormatCache.clear();
     }
+
 
     public void saveConditionalFormats(User user, PropertyDescriptor prop, List<ConditionalFormat> formats)
     {
