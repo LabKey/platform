@@ -516,13 +516,13 @@ public class StudyUpgradeCode implements UpgradeCode
             }
         }
 
-        DbScope.getLabkeyScope().invalidateSchema("studydataset", DbSchemaType.Module);
+        DbScope.getLabkeyScope().invalidateSchema(StudySchema.getInstance().getDatasetSchema());
     }
 
     void uncacheDef(DataSetDefinition def)
     {
         TableInfo t = def.getStorageTableInfo();
-        t.getSchema().getScope().invalidateTable(DbSchema.get("studydataset"),t.getName());
+        t.getSchema().getScope().invalidateTable(StudySchema.getInstance().getDatasetSchema(), t.getName());
         StudyManager.getInstance().uncache(def);
     }
 

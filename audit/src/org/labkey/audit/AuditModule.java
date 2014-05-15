@@ -79,6 +79,13 @@ public class AuditModule extends DefaultModule
     @NotNull
     public Set<String> getSchemaNames()
     {
+        return getProvisionedSchemaNames();
+    }
+
+    @Override
+    @NotNull
+    public Set<String> getProvisionedSchemaNames()
+    {
         return Collections.singleton(AuditSchema.SCHEMA_NAME);
     }
 

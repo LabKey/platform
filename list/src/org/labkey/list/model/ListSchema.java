@@ -17,6 +17,7 @@
 package org.labkey.list.model;
 
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 
 public class ListSchema
 {
@@ -39,6 +40,6 @@ public class ListSchema
 
     public DbSchema getSchema()
     {
-        return DbSchema.get(SCHEMA_NAME);
+        return DbSchema.get(SCHEMA_NAME, DbSchemaType.Provisioned);
     }
 }

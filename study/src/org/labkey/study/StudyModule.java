@@ -486,14 +486,25 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set(StudySchema.getInstance().getSchemaName(), "studydataset", "assayresult", "studydesign");
+        HashSet<String> set = new HashSet<>();
+        set.add(StudySchema.getInstance().getSchemaName());
+        set.addAll(getProvisionedSchemaNames());
+
+        return set;
+    }
+
+    @Override
+    @NotNull
+    public Set<String> getProvisionedSchemaNames()
+    {
+        return PageFlowUtil.set("studydataset", "assayresult", "studydesign", "specimentables");
     }
 
     @Override
     @NotNull
     public Set<DbSchema> getSchemasToTest()
     {
-        // Don't test studydataset, assayresult and studydesign since they're dynamically generated
+        // Don't test studydataset, assayresult, studydesign, and specimentables since they're dynamically generated
         return PageFlowUtil.set(StudySchema.getInstance().getSchema());
     }
 

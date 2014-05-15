@@ -55,10 +55,10 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
     public static final String COLUMN_NAME_LIST_ITEM_ENTITY_ID = "ListItemEntityId";
     public static final String COLUMN_NAME_LIST_NAME = "ListName";
 
-    static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
+    private static final List<FieldKey> defaultVisibleColumns = new ArrayList<>();
 
-    static {
-
+    static
+    {
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_CREATED_BY));
         defaultVisibleColumns.add(FieldKey.fromParts(COLUMN_NAME_IMPERSONATED_BY));
@@ -95,9 +95,8 @@ public class ListAuditProvider extends AbstractAuditTypeProvider implements Audi
     public TableInfo createTableInfo(UserSchema userSchema)
     {
         Domain domain = getDomain();
-        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
 
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, getSchema(), userSchema)
         {
             @Override
             protected void initColumn(ColumnInfo col)

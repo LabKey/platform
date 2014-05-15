@@ -111,9 +111,8 @@ public class SearchAuditProvider extends AbstractAuditTypeProvider implements Au
     public TableInfo createTableInfo(UserSchema userSchema)
     {
         Domain domain = getDomain();
-        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
 
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, getSchema(), userSchema)
         {
             @Override
             public List<FieldKey> getDefaultVisibleColumns()

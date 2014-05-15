@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -74,6 +75,11 @@ public class StudySchema
     public String getDatasetSchemaName()
     {
         return "studydataset";
+    }
+
+    public DbSchema getDatasetSchema()
+    {
+        return DbSchema.get(getDatasetSchemaName(), DbSchemaType.Provisioned);
     }
 
     public String getStudyDesignSchemaName()

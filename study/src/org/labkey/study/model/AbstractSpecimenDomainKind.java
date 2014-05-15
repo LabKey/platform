@@ -16,6 +16,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
@@ -25,7 +26,6 @@ import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.view.ActionURL;
@@ -71,7 +71,7 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
 
     public ActionURL urlShowData(Domain domain, ContainerUser containerUser)
     {
-        return new ActionURL(StudyController.ManageStudyAction.class, containerUser.getContainer());   // TODO: view specimn grid
+        return new ActionURL(StudyController.ManageStudyAction.class, containerUser.getContainer());   // TODO: view specimen grid
     }
 
     @Override
@@ -96,6 +96,12 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
     public String getStorageSchemaName()
     {
         return SpecimenTablesProvider.SCHEMA_NAME;
+    }
+
+    @Override
+    public DbSchemaType getSchemaType()
+    {
+        return DbSchemaType.Provisioned;
     }
 
     @Override

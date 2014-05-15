@@ -155,6 +155,13 @@ public class ListModule extends DefaultModule
         return PageFlowUtil.set(ListSchema.getInstance().getSchemaName());
     }
 
+    @NotNull
+    @Override
+    public Collection<String> getProvisionedSchemaNames()
+    {
+        return PageFlowUtil.set(ListSchema.getInstance().getSchemaName());
+    }
+
     @Override
     public UpgradeCode getUpgradeCode()
     {

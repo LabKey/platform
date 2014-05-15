@@ -69,7 +69,7 @@ public class AuditUpgradeCode implements UpgradeCode
                     provider.initializeProvider(context.getUpgradeUser());
 
                     Domain domain = provider.getDomain();
-                    DbSchema dbSchema = DbSchema.get(AuditSchema.SCHEMA_NAME);
+                    DbSchema dbSchema = AuditSchema.getInstance().getSchema();
                     SchemaTableInfo table = StorageProvisioner.createTableInfo(domain, dbSchema);
 
                     SQLFragment sql = new SQLFragment();

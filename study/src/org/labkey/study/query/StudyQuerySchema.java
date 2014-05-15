@@ -21,6 +21,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.property.Domain;
@@ -168,6 +169,11 @@ public class StudyQuerySchema extends UserSchema
     }
 
 
+    private DbSchema getStudyDesignSchema()
+    {
+        return DbSchema.get(STUDY_DESIGN_SCHEMA_NAME, DbSchemaType.Provisioned);
+    }
+
     public String getSubjectColumnName()
     {
         if (null != _study)
@@ -184,7 +190,7 @@ public class StudyQuerySchema extends UserSchema
     @Override
     public Object _getTableOrQuery(String name, boolean includeExtraMetadata, boolean forWrite, Collection<QueryException> errors)
     {
-        Pair<String,Boolean> key = new Pair(name.toLowerCase(),includeExtraMetadata);
+        Pair<String, Boolean> key = new Pair<>(name.toLowerCase(),includeExtraMetadata);
         Object torq = forWrite ? pivotCache.get(key) : null;
         if (null != torq)
             return torq;
@@ -608,7 +614,7 @@ public class StudyQuerySchema extends UserSchema
             StudyProductDomainKind domainKind = new StudyProductDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_TABLE_NAME);
 
-            return new StudyProductTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this,
+            return new StudyProductTable(domain, getStudyDesignSchema(), this,
                     isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (PRODUCT_ANTIGEN_TABLE_NAME.equalsIgnoreCase(name))
@@ -616,7 +622,7 @@ public class StudyQuerySchema extends UserSchema
             StudyProductAntigenDomainKind domainKind = new StudyProductAntigenDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PRODUCT_ANTIGEN_TABLE_NAME);
 
-            return new StudyProductAntigenTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this,
+            return new StudyProductAntigenTable(domain, getStudyDesignSchema(), this,
                     isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (TREATMENT_PRODUCT_MAP_TABLE_NAME.equalsIgnoreCase(name))
@@ -624,14 +630,14 @@ public class StudyQuerySchema extends UserSchema
             StudyTreatmentProductDomainKind domainKind = new StudyTreatmentProductDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_PRODUCT_MAP_TABLE_NAME);
 
-            return new StudyTreatmentProductTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
+            return new StudyTreatmentProductTable(domain, getStudyDesignSchema(), this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
         }
         if (TREATMENT_TABLE_NAME.equalsIgnoreCase(name))
         {
             StudyTreatmentDomainKind domainKind = new StudyTreatmentDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), TREATMENT_TABLE_NAME);
 
-            return new StudyTreatmentTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
+            return new StudyTreatmentTable(domain, getStudyDesignSchema(), this, isDataspace() ? new ContainerFilter.AllInProject(getUser()) : null);
         }
         if (TREATMENT_VISIT_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
@@ -659,7 +665,7 @@ public class StudyQuerySchema extends UserSchema
             StudyPersonnelDomainKind domainKind = new StudyPersonnelDomainKind();
             Domain domain = domainKind.ensureDomain(getContainer(), getUser(), PERSONNEL_TABLE_NAME);
 
-            return new StudyPersonnelTable(domain, DbSchema.get(STUDY_DESIGN_SCHEMA_NAME), this,
+            return new StudyPersonnelTable(domain, getStudyDesignSchema(), this,
                     isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
         if (OBJECTIVE_TABLE_NAME.equalsIgnoreCase(name))

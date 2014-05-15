@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -217,6 +218,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     public String getStorageSchemaName()
     {
         return StudySchema.getInstance().getDatasetSchemaName();
+    }
+
+    @Override
+    public DbSchemaType getSchemaType()
+    {
+        return DbSchemaType.Provisioned;
     }
 
     @Override

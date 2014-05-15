@@ -31,35 +31,7 @@ import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.SwapQueue;
-import org.labkey.api.data.Aggregate;
-import org.labkey.api.data.AtomicDatabaseInteger;
-import org.labkey.api.data.BooleanFormat;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerDisplayColumn;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.ContainerService;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DatabaseCache;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.DbSequenceManager;
-import org.labkey.api.data.JsonTest;
-import org.labkey.api.data.MultiValuedRenderContext;
-import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.PropertyManager;
-import org.labkey.api.data.PropertySchema;
-import org.labkey.api.data.ResultSetSelectorTestCase;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlSelectorTestCase;
-import org.labkey.api.data.StatementUtils;
-import org.labkey.api.data.TSVWriter;
-import org.labkey.api.data.Table;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelectorTestCase;
-import org.labkey.api.data.TableViewFormTestCase;
-import org.labkey.api.data.TempTableTracker;
-import org.labkey.api.data.TestSchema;
+import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.etl.CachingDataIterator;
@@ -883,7 +855,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         for (String dataSourceName : ModuleLoader.getInstance().getAllModuleDataSources())
         {
             DbScope scope = DbScope.getDbScope(dataSourceName);
-            result.add(scope.getSchema("labkey"));
+            result.add(scope.getLabKeySchema());
         }
 
         return result;

@@ -110,9 +110,8 @@ public class AttachmentAuditProvider extends AbstractAuditTypeProvider implement
     public TableInfo createTableInfo(UserSchema userSchema)
     {
         Domain domain = getDomain();
-        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
 
-        return new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        return new DefaultAuditTypeTable(this, domain, getSchema(), userSchema)
         {
             @Override
             public List<FieldKey> getDefaultVisibleColumns()

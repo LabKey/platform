@@ -3529,7 +3529,7 @@ public class SpecimenImporter
                     "(Container VARCHAR(255) NOT NULL, id VARCHAR(10), s VARCHAR(32), i INTEGER)");
             DbScope scope = _schema.getScope();
             scope.invalidateSchema(_schema.getName(), DbSchemaType.All);
-            _schema = scope.getSchema(_schema.getName());
+            _schema = TestSchema.getInstance().getSchema();
         }
 
         @After
@@ -3538,7 +3538,7 @@ public class SpecimenImporter
             _schema.dropTableIfExists(TABLE);
             DbScope scope = _schema.getScope();
             scope.invalidateSchema(_schema.getName(), DbSchemaType.All);
-            _schema = scope.getSchema(_schema.getName());
+            _schema = TestSchema.getInstance().getSchema();
         }
 
         private TableResultSet selectValues() throws SQLException

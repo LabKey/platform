@@ -17,6 +17,7 @@
 package org.labkey.audit;
 
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.dialect.SqlDialect;
 
 public class AuditSchema
@@ -38,7 +39,7 @@ public class AuditSchema
 
     public DbSchema getSchema()
     {
-        return DbSchema.get(SCHEMA_NAME);
+        return DbSchema.get(SCHEMA_NAME, DbSchemaType.Provisioned);
     }
 
     public SqlDialect getSqlDialect()

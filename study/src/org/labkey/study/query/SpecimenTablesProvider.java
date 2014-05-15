@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -34,9 +35,6 @@ import org.labkey.study.model.AbstractSpecimenDomainKind;
 import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.SpecimenEventDomainKind;
 import org.labkey.study.model.VialDomainKind;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class SpecimenTablesProvider
 {
@@ -59,7 +57,7 @@ public class SpecimenTablesProvider
 
     public static DbSchema getDbSchema()
     {
-        return DbSchema.get(SCHEMA_NAME);
+        return DbSchema.get(SCHEMA_NAME, DbSchemaType.Provisioned);
     }
 
     @Nullable

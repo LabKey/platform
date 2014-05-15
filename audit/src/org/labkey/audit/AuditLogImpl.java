@@ -709,7 +709,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
 
         // Get the new audit provisioned table
-        DbSchema dbSchema = DbSchema.get(AuditSchema.SCHEMA_NAME);
+        DbSchema dbSchema = AuditSchema.getInstance().getSchema();
         SchemaTableInfo targetTable = StorageProvisioner.createTableInfo(domain, dbSchema);
 
 

@@ -155,7 +155,6 @@ announcements/src/org/labkey/announcements/rss.jsp -text
 announcements/src/org/labkey/announcements/update.jsp -text
 announcements/src/org/labkey/announcements/view/announcementNotifySettings.jsp -text
 audit/module.properties -text
-audit/resources/schemas/audit.xml -text
 audit/resources/schemas/dbscripts/postgresql/audit-0.00-12.10.sql -text
 audit/resources/schemas/dbscripts/postgresql/audit-12.20-12.30.sql -text
 audit/resources/schemas/dbscripts/postgresql/audit-13.30-14.10.sql -text
