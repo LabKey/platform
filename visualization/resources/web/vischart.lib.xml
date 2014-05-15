@@ -1,6 +1,5 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
-        <script path="vis/SVGConverter.js"/>
         <script path="vis/genericOptionsPanel.js"/>
         <script path="vis/mainTitleOptionsPanel.js"/>
         <script path="vis/developerOptionsPanel.js"/>

@@ -4258,7 +4258,6 @@ visualization/Visualization.iml -text
 visualization/module.properties -text
 visualization/resources/config/module.xml -text
 visualization/resources/web/timechart.lib.xml -text
-visualization/resources/web/vis/SVGConverter.js -text
 visualization/resources/web/vis/baseExportScriptPanel.js -text
 visualization/resources/web/vis/developerOptionsPanel.js -text
 visualization/resources/web/vis/genericChart/genericChartAxisPanel.js -text
