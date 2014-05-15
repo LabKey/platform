@@ -70,7 +70,8 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     public static final String OLD_RECORD_PROP_NAME = "oldRecordMap";
     public static final String NEW_RECORD_PROP_NAME = "newRecordMap";
 
-    static {
+    static
+    {
         Set<PropertyStorageSpec> baseFields = new LinkedHashSet<>();
         baseFields.add(createFieldSpec("RowId", JdbcType.INTEGER, true, true));       // pk
         baseFields.add(createFieldSpec("Container", JdbcType.VARCHAR).setEntityId(true));
@@ -226,7 +227,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     @Override
     public DbScope getScope()
     {
-        DbSchema schema =  DbSchema.get(getStorageSchemaName());
+        DbSchema schema = DbSchema.get(getStorageSchemaName(), DbSchemaType.Provisioned);
         return schema.getScope();
     }
 

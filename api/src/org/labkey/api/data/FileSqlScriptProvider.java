@@ -69,7 +69,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
         List<DbSchema> schemas = new LinkedList<>();
 
         for (String schemaName : _module.getSchemaNames())
-            schemas.add(DbSchema.get(schemaName));
+            schemas.add(DbSchema.get(schemaName, DbSchemaType.Unknown));
 
         return schemas;
     }
@@ -273,7 +273,7 @@ public class FileSqlScriptProvider implements SqlScriptProvider
             }
 
             _schemaName = parts[SCHEMA_INDEX];
-            _schema = null != schema ? schema : DbSchema.get(_schemaName);
+            _schema = null != schema ? schema : DbSchema.get(_schemaName, DbSchemaType.Unknown);
 
             try
             {

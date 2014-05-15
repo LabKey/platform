@@ -204,12 +204,20 @@ public interface Module extends Comparable<Module>
     public Set<DbSchema> getSchemasToTest();
 
     /**
-     * Returns a set of schema names that the module owns.  Used to determine which module
-     * should load the related resources.
+     * Returns the names of all schemas that this module owns, both module and provisioned. Used to determine which module
+     * should load the related resources and to help administrators manage schemas & modules.
      * @return the schema names owned by this module
      */
     @NotNull
     public Collection<String> getSchemaNames();
+
+    /**
+     * Returns the names of the provisioned schemas that this module owns. Used to distinguish module vs. provisioned
+     * schemas in general code paths that can't determine schema type (e.g., sql script runner).
+     * @return the provisioned schema names owned by this module
+     */
+    @NotNull
+    public Collection<String> getProvisionedSchemaNames();
 
     public @NotNull Set<SupportedDatabase> getSupportedDatabasesSet();
 

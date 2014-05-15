@@ -348,6 +348,7 @@ api/src/org/labkey/api/data/SQLFragment.java -text
 api/src/org/labkey/api/data/SQLGenerationException.java -text
 api/src/org/labkey/api/data/SchemaColumnMetaData.java -text
 api/src/org/labkey/api/data/SchemaTableInfoCache.java -text
+api/src/org/labkey/api/data/SchemaXmlCacheHandler.java -text
 api/src/org/labkey/api/data/Selector.java -text
 api/src/org/labkey/api/data/ShowRows.java -text
 api/src/org/labkey/api/data/ShowRowsConverter.java -text

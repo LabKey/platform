@@ -26,6 +26,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -209,13 +210,17 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         return PropertyService.get().getDomain(getDomainContainer(), domainURI);
     }
 
+    protected DbSchema getSchema()
+    {
+        return DbSchema.get(SCHEMA_NAME, DbSchemaType.Provisioned);
+    }
+
     @Override
     public TableInfo createTableInfo(UserSchema userSchema)
     {
         Domain domain = getDomain();
-        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
 
-        return new DefaultAuditTypeTable(this, domain, dbSchema, userSchema);
+        return new DefaultAuditTypeTable(this, domain, getSchema(), userSchema);
     }
 
     @Override

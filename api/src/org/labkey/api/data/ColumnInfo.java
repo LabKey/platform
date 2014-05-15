@@ -828,7 +828,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 org.labkey.data.xml.ColumnType.Fk xmlFk = xmlCol.addNewFk();
                 xmlFk.setFkColumnName(sfk.getLookupColumnName());
                 xmlFk.setFkTable(sfk._tableName);
-                DbSchema fkDbOwnerSchema = sfk.getLookupTableInfo().getSchema().getScope().getSchema(sfk._dbSchemaName);
+                DbSchema fkDbOwnerSchema = sfk.getLookupTableInfo().getSchema().getScope().getSchema(sfk._dbSchemaName, DbSchemaType.Unknown);
 
                 if (null == fkDbOwnerSchema)
                 {
@@ -1320,7 +1320,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         public TableInfo getLookupTableInfo()
         {
-            DbSchema schema = _scope.getSchema(_dbSchemaName);
+            DbSchema schema = _scope.getSchema(_dbSchemaName, DbSchemaType.Unknown);
             return schema.getTable(_tableName);
         }
 

@@ -22,7 +22,7 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.cache.CacheTimeChooser;
 import org.labkey.api.cache.Wrapper;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.module.ModuleLoader;
 
 /*
 * User: adam
@@ -56,6 +56,15 @@ public class DbSchemaCache
 
     @NotNull DbSchema get(String schemaName, DbSchemaType type)
     {
+        // Infer type if it's unknown... should be rare
+        if (DbSchemaType.Unknown == type)
+        {
+            type = ModuleLoader.getInstance().getSchemaTypeForSchemaName(schemaName);
+
+            if (null == type)
+                type = DbSchemaType.Module;  // Asking for a schema that doesn't exist falls back on Module type
+        }
+
         return _cache.get(getKey(schemaName, type), new SchemaDetails(schemaName, type));
     }
 
@@ -117,24 +126,6 @@ public class DbSchemaCache
         {
             super(CacheManager.<String, Wrapper<DbSchema>>getCache(1000, CacheManager.UNLIMITED, "DbSchemas for " + dsName), new DbSchemaLoader());
             setCacheTimeChooser(SCHEMA_CACHE_TIME_CHOOSER);
-        }
-
-        @Override
-        protected boolean isValid(Wrapper<DbSchema> w, String key, Object argument, CacheLoader loader)
-        {
-            boolean isValid = super.isValid(w, key, argument, loader);
-
-            if (isValid)
-            {
-                DbSchema schema = w.getValue();
-
-                if (AppProps.getInstance().isDevMode() && schema.isStale())
-                {
-                    isValid = false;
-                }
-            }
-
-            return isValid;
         }
     }
 }

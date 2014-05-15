@@ -211,6 +211,13 @@ public class MockModule implements Module
         return Collections.emptySet();
     }
 
+    @NotNull
+    @Override
+    public Collection<String> getProvisionedSchemaNames()
+    {
+        return Collections.emptySet();
+    }
+
     @Override
     public Resolver getModuleResolver()
     {

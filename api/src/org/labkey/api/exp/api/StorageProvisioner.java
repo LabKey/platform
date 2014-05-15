@@ -778,9 +778,8 @@ public class StorageProvisioner
             }
             for (Path schemaName : schemaNames)
             {
-                DbSchema schema = DbSchema.get(schemaName.getName());
-                if (null == schema)
-                    continue;
+                DbSchema schema = DbSchema.get(schemaName.getName(), DbSchemaType.Unknown);
+
                 for (String name : schema.getTableNames())
                 {
                     if (!nonProvisionedTableMap.get(schemaName).contains(name.toLowerCase()))
@@ -1138,7 +1137,8 @@ public class StorageProvisioner
             Lsid lsid = new Lsid("TestDatasetDomainKind", "Folder-" + container.getRowId(), domainName);
             domain = PropertyService.get().createDomain(container, lsid.toString(), domainName);
             domain.save(new User());
-            StorageProvisioner.createTableInfo(domain, DbSchema.get(domain.getDomainKind().getStorageSchemaName()));
+            DomainKind kind = domain.getDomainKind();
+            StorageProvisioner.createTableInfo(domain, DbSchema.get(kind.getStorageSchemaName(), kind.getSchemaType()));
             domain = PropertyService.get().getDomain(domain.getTypeId());
         }
 

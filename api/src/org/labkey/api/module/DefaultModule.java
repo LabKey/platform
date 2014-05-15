@@ -30,6 +30,7 @@ import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.SqlScriptManager;
@@ -544,7 +545,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         Set<DbSchema> result = new LinkedHashSet<>();
         for (String schemaName : getSchemaNames())
         {
-            DbSchema schema = DbSchema.get(schemaName);
+            DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Unknown);
             result.add(schema);
         }
         return result;
@@ -553,6 +554,13 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     @NotNull
     public Collection<String> getSchemaNames()
+    {
+        return Collections.emptySet();
+    }
+
+    @NotNull
+    @Override
+    public Collection<String> getProvisionedSchemaNames()
     {
         return Collections.emptySet();
     }

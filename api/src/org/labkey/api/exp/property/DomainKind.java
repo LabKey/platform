@@ -137,7 +137,7 @@ abstract public class DomainKind implements Handler<String>
     abstract public Set<PropertyStorageSpec.Index> getPropertyIndices();
 
     /**
-     * If domain needs metadata, give the metadat schema and table names
+     * If domain needs metadata, give the metadata schema and table names
      */
     abstract public String getMetaDataSchemaName();
     abstract public String getMetaDataTableName();

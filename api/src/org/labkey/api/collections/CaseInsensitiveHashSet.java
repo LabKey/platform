@@ -21,7 +21,6 @@ import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Set;
 
 /**
@@ -79,8 +78,8 @@ public class CaseInsensitiveHashSet extends HashSet<String>
     {
         boolean modified = false;
 
-        for (Iterator<?> i = c.iterator(); i.hasNext(); )
-            modified |= remove(i.next());
+        for (Object aC : c)
+            modified |= remove(aC);
 
         return modified;
     }

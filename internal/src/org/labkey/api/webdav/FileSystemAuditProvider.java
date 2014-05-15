@@ -22,6 +22,7 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -117,9 +118,8 @@ public class FileSystemAuditProvider extends AbstractAuditTypeProvider implement
     public TableInfo createTableInfo(UserSchema userSchema)
     {
         Domain domain = getDomain();
-        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
 
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, getSchema(), userSchema)
         {
             @Override
             public List<FieldKey> getDefaultVisibleColumns()

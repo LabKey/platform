@@ -17,6 +17,10 @@ package org.labkey.api.data;
 
 import org.labkey.api.cache.CacheManager;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
+
 /**
 * User: adam
 * Date: 8/14/13
@@ -35,9 +39,12 @@ public enum DbSchemaType
         {
             throw new IllegalStateException("Should not be caching a schema of this type");
         }
-
+    },
+    // This is a marker type that tells DbScope to infer the actual DbSchemaType, for the (very rare) case when the caller doesn't know
+    Unknown("", 0, false)
+    {
         @Override
-        boolean applyXmlMetaData()
+        protected long getCacheTimeToLive()
         {
             throw new IllegalStateException("Should not be caching a schema of this type");
         }
@@ -46,6 +53,22 @@ public enum DbSchemaType
     private final String _cacheKeyPostFix;  // Postfix makes it easy for All type to remove all versions of a schema from the cache
     private final long _cacheTimeToLive;
     private final boolean _applyXmlMetaData;
+
+    private static final Collection<DbSchemaType> XML_META_DATA_TYPES;
+
+    static
+    {
+        // DbSchema caching needs to know which schema types to invalidate when a schema.xml file changes... determine
+        // that once, based on applyXmlMetaData setting of each type, and stash it. (At the moment, only module schemas
+        // use XML metadata, but this generalization accomodates future types.)
+        Collection<DbSchemaType> metaDataTypes = new LinkedList<>();
+
+        for (DbSchemaType type : values())
+            if (type.applyXmlMetaData())
+                metaDataTypes.add(type);
+
+        XML_META_DATA_TYPES = Collections.unmodifiableCollection(metaDataTypes);
+    }
 
     DbSchemaType(String cacheKeyPostFix, long cacheTimeToLive, boolean applyXmlMetaData)
     {
@@ -67,5 +90,10 @@ public enum DbSchemaType
     boolean applyXmlMetaData()
     {
         return _applyXmlMetaData;
+    }
+
+    static Collection<DbSchemaType> getXmlMetaDataTypes()
+    {
+        return XML_META_DATA_TYPES;
     }
 }

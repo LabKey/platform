@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -34,6 +35,7 @@ import org.labkey.api.data.ConvertHelper;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.FileSqlScriptProvider;
 import org.labkey.api.data.PropertyManager;
@@ -120,7 +122,7 @@ public class ModuleLoader implements Filter
     private static final Logger _log = Logger.getLogger(ModuleLoader.class);
     private static final Map<String, Throwable> _moduleFailures = new HashMap<>();
     private static final Map<String, Module> _controllerNameToModule = new HashMap<>();
-    private static final Map<String, Module> _schemaNameToModule = new CaseInsensitiveHashMap<>();
+    private static final Map<String, SchemaDetails> _schemaNameToSchemaDetails = new CaseInsensitiveHashMap<>();
     private static final Map<String, Collection<ResourceFinder>> _resourceFinders = new HashMap<>();
     private static final Map<Class, Class<? extends UrlProvider>> _urlProviderToImpl = new HashMap<>();
     private static final CoreSchema _core = CoreSchema.getInstance();
@@ -343,7 +345,7 @@ public class ModuleLoader implements Filter
         initializeAndPruneModules();
 
         // Clear the map to remove schemas associated with modules that failed to load
-        _schemaNameToModule.clear();
+        _schemaNameToSchemaDetails.clear();
 
         // Now that the core module is upgraded, upgrade the "labkey" schema in all module-required external data sources
         // to match the core module version. Each external data source records their upgrade scripts and versions their
@@ -939,7 +941,7 @@ public class ModuleLoader implements Filter
 
                 // This should return a special DbSchema subclass (LabKeyDbSchema) that eliminates the data source prefix
                 // from display name, causing labkey-*-*.sql scripts to be found.
-                DbSchema labkeySchema = scope.getSchema("labkey");
+                DbSchema labkeySchema = scope.getLabKeySchema();
                 SqlScriptManager manager = SqlScriptManager.get(provider, labkeySchema);
                 List<SqlScriptRunner.SqlScript> scripts = manager.getRecommendedScripts(to);
 
@@ -1524,22 +1526,43 @@ public class ModuleLoader implements Filter
     }
 
 
-    // Use data source qualified name (e.g., core or external.myschema)
+    /*  Use data source qualified name (e.g., core or external.myschema)  */
     public @Nullable Module getModuleForSchemaName(String schemaName)
     {
-        synchronized(_schemaNameToModule)
+        SchemaDetails details = getSchemaDetails(schemaName);
+
+        return null != details ? details.getModule() : null;
+    }
+
+    /*  Use data source qualified name (e.g., core or external.myschema)  */
+    public @Nullable DbSchemaType getSchemaTypeForSchemaName(String schemaName)
+    {
+        SchemaDetails details = getSchemaDetails(schemaName);
+
+        return null != details ? details.getType() : null;
+    }
+
+    /*  Use data source qualified name (e.g., core or external.myschema)  */
+    private @Nullable SchemaDetails getSchemaDetails(String schemaName)
+    {
+        synchronized(_schemaNameToSchemaDetails)
         {
-            if (_schemaNameToModule.isEmpty())
+            if (_schemaNameToSchemaDetails.isEmpty())
             {
                 for (Module module : getModules())
                 {
+                    Set<String> provisioned = Sets.newCaseInsensitiveHashSet(module.getProvisionedSchemaNames());
+
                     for (String name : module.getSchemaNames())
-                        _schemaNameToModule.put(name, module);
+                    {
+                        DbSchemaType type = provisioned.contains(name) ? DbSchemaType.Provisioned : DbSchemaType.Module;
+                        _schemaNameToSchemaDetails.put(name, new SchemaDetails(module, type));
+                    }
                 }
             }
         }
 
-        return _schemaNameToModule.get(schemaName);
+        return _schemaNameToSchemaDetails.get(schemaName);
     }
 
     public <P extends UrlProvider> P getUrlProvider(Class<P> inter)
@@ -1796,5 +1819,27 @@ public class ModuleLoader implements Filter
         }
 
         return unknownContexts;
+    }
+
+    private class SchemaDetails
+    {
+        private final Module _module;
+        private final DbSchemaType _type;
+
+        private SchemaDetails(Module module, DbSchemaType type)
+        {
+            _module = module;
+            _type = type;
+        }
+
+        public Module getModule()
+        {
+            return _module;
+        }
+
+        public DbSchemaType getType()
+        {
+            return _type;
+        }
     }
 }

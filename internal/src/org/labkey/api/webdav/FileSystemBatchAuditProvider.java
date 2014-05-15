@@ -87,9 +87,8 @@ public class FileSystemBatchAuditProvider extends AbstractAuditTypeProvider impl
     public TableInfo createTableInfo(UserSchema userSchema)
     {
         Domain domain = getDomain();
-        DbSchema dbSchema =  DbSchema.get(SCHEMA_NAME);
 
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, dbSchema, userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, getSchema(), userSchema)
         {
             @Override
             public List<FieldKey> getDefaultVisibleColumns()

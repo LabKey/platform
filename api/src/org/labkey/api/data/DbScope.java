@@ -26,8 +26,12 @@ import org.junit.Test;
 import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialectManager;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
-import org.labkey.api.resource.AbstractResource;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.ModuleResourceResolver;
+import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MemTracker;
@@ -38,7 +42,6 @@ import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import javax.sql.PooledConnection;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -97,6 +100,9 @@ public class DbScope
     private static final Map<String, DbScope> _scopes = new LinkedHashMap<>();
     private static final Map<Thread, Thread> _sharedConnections = new WeakHashMap<>();
     private static final Map<String, Throwable> _dataSourceFailures = new HashMap<>();
+    // Cache for schema metadata XML files, shared across the whole server
+    private static final ModuleResourceCache<TablesDocument> SCHEMA_XML_CACHE = ModuleResourceCaches.create(
+            new Path(SchemaXmlCacheHandler.DIR_NAME), "Parsed schema XML metadata", new SchemaXmlCacheHandler());
 
     private static DbScope _labkeyScope = null;
 
@@ -636,55 +642,30 @@ public class DbScope
 
             if (!lowerName.equals(schema.getName()))
                 resource = schema.getSchemaResource(lowerName);
-
-            if (null == resource)
-            {
-                LOG.info("no schema metadata xml found for schema '" + schemaName + "'");
-                resource = new DbSchemaResource(schema);
-            }
         }
 
-        schema.setResource(resource);
-
-        try (InputStream xmlStream = resource.getInputStream())
+        if (null == resource)
         {
-            if (null != xmlStream)
-            {
-                TablesDocument tablesDoc = TablesDocument.Factory.parse(xmlStream);
+            LOG.info("no schema metadata xml file found for schema '" + schemaName + "'");
+
+            DbSchemaType type = ModuleLoader.getInstance().getSchemaTypeForSchemaName(schemaName);
+
+            if (null != type && !type.applyXmlMetaData())
+                LOG.info("Shouldn't be loading metadata for " + type.name() + " schema '" + schemaName + "'");
+        }
+        else
+        {
+            String filename = resource.getName();
+
+            // I don't like this... should either improve Resolver (add getModule()?) or revise getResource() to take a Resource
+            Resolver resolver = resource.getResolver();
+            assert resolver instanceof ModuleResourceResolver;
+            Module module = ((ModuleResourceResolver) resolver).getModule();
+
+            TablesDocument tablesDoc = SCHEMA_XML_CACHE.getResource(ModuleResourceCache.createCacheKey(module, filename));
+
+            if (null != tablesDoc)
                 schema.setTablesDocument(tablesDoc);
-            }
-        }
-    }
-
-
-    private static class DbSchemaResource extends AbstractResource
-    {
-        private DbSchemaResource(DbSchema schema)
-        {
-            // CONSIDER: create a ResourceResolver based on DbScope
-            super(new Path(schema.getName()), null);
-        }
-
-        @Override
-        public Resource parent()
-        {
-            return null;
-        }
-
-        @Override
-        public boolean exists()
-        {
-            // UNDONE: The DbSchemaResource could check if the schema exists
-            // in the source database.  For now the DbSchemaResource always exists.
-            return true;
-        }
-
-        @Override
-        public long getVersionStamp()
-        {
-            // UNDONE: The DbSchemaResource could check if the schema is modified
-            // in the source database.  For now the DbSchemaResource is always up to date.
-            return 0L;
         }
     }
 
@@ -695,9 +676,10 @@ public class DbScope
     }
 
 
-    public @NotNull DbSchema getSchema(String schemaName)
+    // Get the special "labkey" schema created in each module data source
+    public @NotNull DbSchema getLabKeySchema()
     {
-        return getSchema(schemaName, DbSchemaType.Module);
+        return getSchema("labkey", DbSchemaType.Module);
     }
 
 
@@ -749,7 +731,14 @@ public class DbScope
     }
 
 
-    // Invalidates schema of this name/type and all its associated tables
+    /** Invalidates this schema and all its associated tables */
+    public void invalidateSchema(DbSchema schema)
+    {
+        invalidateSchema(schema.getName(), schema.getType());
+    }
+
+
+    /** Invalidates this schema and all its associated tables */
     public void invalidateSchema(String schemaName, DbSchemaType type)
     {
         _schemaCache.remove(schemaName, type);
@@ -1517,7 +1506,7 @@ public class DbScope
                 if (schemaNames.isEmpty())
                     continue;
 
-                DbSchema schema = scope.getSchema(pickRandomElement(schemaNames));
+                DbSchema schema = scope.getSchema(pickRandomElement(schemaNames), DbSchemaType.Unknown);
                 Collection<String> tableNames = schema.getTableNames();
                 List<TableInfo> tables = new ArrayList<>(tableNames.size());
 

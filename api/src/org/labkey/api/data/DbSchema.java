@@ -30,7 +30,6 @@ import org.labkey.api.ms2.MS2Service;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.TableSorter;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -70,8 +69,6 @@ public class DbSchema
     private final Map<String, String> _metaDataTableNames;  // Union of all table names from database and schema.xml
     private final Map<String, TableType> _tableXmlMap = new CaseInsensitiveHashMap<>();
 
-    private ResourceRef _resourceRef = null;
-
     protected DbSchema(String name, DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames)
     {
         _name = name;
@@ -81,20 +78,27 @@ public class DbSchema
     }
 
 
+    /** Use only for module schemas (not provisioned or external) */
     public static @NotNull DbSchema get(String fullyQualifiedSchemaName)
+    {
+        return get(fullyQualifiedSchemaName, DbSchemaType.Module);
+    }
+
+
+    public static @NotNull DbSchema get(String fullyQualifiedSchemaName, DbSchemaType type)
     {
         // Quick check to avoid creating Pair object in most common case
         int dot = fullyQualifiedSchemaName.indexOf('.');
 
         if (-1 == dot)
         {
-            return DbScope.getLabkeyScope().getSchema(fullyQualifiedSchemaName);
+            return DbScope.getLabkeyScope().getSchema(fullyQualifiedSchemaName, type);
         }
         else
         {
             Pair<DbScope, String> scopeAndSchemaName = getDbScopeAndSchemaName(fullyQualifiedSchemaName);
 
-            return scopeAndSchemaName.first.getSchema(scopeAndSchemaName.second);
+            return scopeAndSchemaName.first.getSchema(scopeAndSchemaName.second, type);
         }
     }
 
@@ -241,9 +245,9 @@ public class DbSchema
     }
 
 
-    // Base class that pulls table meta data from the database, based on a supplied table pattern.  This lets us share
+    // Base class that pulls table meta data from the database, based on a supplied table pattern. This lets us share
     // code between schema load (when we capture just the table names for all tables) and table load (when we capture
-    // all properties of just a single table).  We want consistent transaction, exception, and filtering behavior in
+    // all properties of just a single table). We want consistent transaction, exception, and filtering behavior in
     // both cases.
     private static abstract class TableMetaDataLoader
     {
@@ -468,11 +472,6 @@ public class DbSchema
         return _scope.getSqlDialect();
     }
 
-    boolean isStale()
-    {
-        return isModuleSchema() && _resourceRef.isStale() && _resourceRef.getResource().exists();
-    }
-
     public DbSchemaType getType()
     {
         return _type;
@@ -481,19 +480,6 @@ public class DbSchema
     public boolean isModuleSchema()
     {
         return getType() == DbSchemaType.Module;
-    }
-
-    Resource getResource()
-    {
-        return _resourceRef != null ? _resourceRef.getResource() : null;
-    }
-
-    void setResource(Resource r)
-    {
-        if (_resourceRef == null || _resourceRef.getResource() != r)
-            _resourceRef = new ResourceRef(r);
-        else
-            _resourceRef.updateVersionStamp();
     }
 
     void setTablesDocument(TablesDocument tablesDoc)

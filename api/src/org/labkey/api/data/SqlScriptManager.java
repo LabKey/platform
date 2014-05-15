@@ -353,7 +353,7 @@ public abstract class SqlScriptManager
     {
         private DbSchema getLabKeySchema()
         {
-            return _schema.getScope().getSchema("labkey");
+            return _schema.getScope().getLabKeySchema();
         }
 
         private ExternalDataSourceSqlScriptManager(SqlScriptProvider provider, DbSchema schema)
