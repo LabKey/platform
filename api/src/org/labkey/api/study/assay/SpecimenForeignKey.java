@@ -413,6 +413,12 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sql.append(" AND " + vialSubqueryAlias + ".Container = ?");
                 sql.add(targetStudy.getId());
             }
+            else if (_containerList != null && _containerList.size() == 1)
+            {
+                // We've determined that there is only one target study container (see .getTargetStudyContainers())
+                sql.append(" AND " + vialSubqueryAlias + ".Container = ?");
+                sql.add(_containerList.get(0).getId());
+            }
             else
             {
                 // Match based on the target study associated with the assay data
