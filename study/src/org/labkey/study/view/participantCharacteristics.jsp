@@ -175,7 +175,9 @@
         Map<String, Object>[] results = new TableSelector(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataSet.getContainer()) + ",Date,SequenceNum"), filter, sort).getMapArray();
         if (results.length > 1)
         {
-            ExceptionUtil.logExceptionToMothership(context.getRequest(), new IllegalStateException("Unexpected number of demographic dataset records. Expected 0 or 1 but found " + results.length));
+            String msg = "Unexpected number of demographic dataset records. Expected 0 or 1 but found " + results.length + "\n" +
+                    dataSet.getName() + " in container " + dataSet.getContainer().getPath();
+            ExceptionUtil.logExceptionToMothership(context.getRequest(), new IllegalStateException(msg));
         }
         String lsid = results.length > 0 ? (String) results[0].get("lsid") : null;
         Map<String, Object> datasetRow = null;
