@@ -175,6 +175,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
         return null;
     }
 
+    @Override
     public List<IPropertyValidator> getPropertyValidators(PropertyDescriptor desc)
     {
         List<IPropertyValidator> validators = new ArrayList<>();
@@ -186,9 +187,10 @@ public class PropertyServiceImpl implements PropertyService.Interface
         return validators;
     }
 
-    public void deleteValidatorsAndFormats(int descriptorId)
+    @Override
+    public void deleteValidatorsAndFormats(Container c, int descriptorId)
     {
-        DomainPropertyManager.get().removeValidatorsForPropertyDescriptor(descriptorId);
+        DomainPropertyManager.get().removeValidatorsForPropertyDescriptor(c, descriptorId);
         DomainPropertyManager.get().deleteConditionalFormats(descriptorId);
     }
 
