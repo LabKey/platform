@@ -144,16 +144,16 @@
                         <tr><td colspan="2">Populate the assigned to list from:</td></tr>
                         <tr>
                             <td>
-                                <input onchange="assignedToGroup.disabled=true;" type="radio" name="assignedToMethod" value="ProjectUsers"<%=checked(null == bean.assignedToGroup)%> />
+                                <input onchange="assignedToGroup.disabled=true;updateAssignedToUser();" type="radio" name="assignedToMethod" value="ProjectUsers"<%=checked(null == bean.assignedToGroup)%> />
                             </td>
                             <td>All Project Users</td>
                         </tr>
                         <tr>
                             <td>
-                                <input onchange="assignedToGroup.disabled=false;" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%> />
+                                <input onchange="assignedToGroup.disabled=false;updateAssignedToUser();" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%> />
                             </td>
                             <td>Specific Group
-                                <select<%=disabled(null == bean.assignedToGroup)%> name="assignedToGroup"><%
+                                <select name="assignedToGroup" onchange="updateAssignedToUser();"<%=disabled(null == bean.assignedToGroup)%> ><%
                                     for (Group group : SecurityManager.getGroups(c.getProject(), true))
                                     {
                                         // 19532 partial. Only show Site: Users option to site admins
@@ -165,6 +165,54 @@
                                     }
                                 %>
                                 </select>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <table>
+                        <tr><td colspan="2">Set default assigned to user:</td></tr>
+                        <tr>
+                            <td>
+                                <input onchange="defaultUser.disabled=true;" type="radio" name="assignedToUser" value="NoDefaultUser"<%=checked(null == bean.defaultUser)%> />
+                            </td>
+                            <td>No default</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input onchange="defaultUser.disabled=false;" type="radio" name="assignedToUser" value="SpecificUser"<%=checked(null != bean.defaultUser)%> />
+                            </td>
+                            <td>Specific User
+                                <select name="defaultUser"<%=disabled(null == bean.defaultUser)%> ></select>
+                                <script>
+                                    function updateAssignedToUser() {
+                                        //NOTE: need to handle special user groups
+                                        var e = document.getElementsByName("assignedToGroup")[0];
+                                        var groupId = e.options[e.selectedIndex].value;
+                                        var config = {allMembers: true};
+                                        // if "All project Users" is selected than groupId is not used to obtain all project users
+                                        if (!document.getElementsByName("assignedToMethod")[0].checked)
+                                        {
+                                            config["groupId"] = parseInt(groupId)
+                                        }
+                                        config["success"] = function(data) {
+                                            var e = document.getElementsByName("defaultUser")[0];
+                                            e.options.length = 0;
+
+                                            Ext4.each(data.users, function(user){
+                                                var option = document.createElement("option");
+                                                option.text = user.displayName;
+                                                option.value = user.userId;
+                                                e.add(option);
+                                            }, this);
+                                        }
+
+                                        LABKEY.Security.getUsers(config);
+                                    }
+                                    Ext4.onReady(updateAssignedToUser);
+                                </script>
                             </td>
                         </tr>
                     </table>

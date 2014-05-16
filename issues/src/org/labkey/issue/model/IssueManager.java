@@ -130,6 +130,9 @@ public class IssueManager
     private static final String CAT_ASSIGNED_TO_LIST = "issueAssignedToList";
     private static final String PROP_ASSIGNED_TO_GROUP = "issueAssignedToGroup";
 
+    private static final String CAT_DEFAULT_ASSIGNED_TO_LIST = "issueDefaultAsignedToList";
+    private static final String PROP_DEFAULT_ASSIGNED_TO_USER = "issueDefaultAssignedToUser";
+
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
     public static final String PICK_LIST_NAME = "pickListColumns";
 
@@ -686,6 +689,22 @@ public class IssueManager
         props.put(PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
         PropertyManager.saveProperties(props);
         uncache(c);  // uncache the assigned to list
+    }
+
+    public static @Nullable User getDefaultAssignedToUser(Container c)
+    {
+        Map<String, String> props = PropertyManager.getProperties(c, CAT_DEFAULT_ASSIGNED_TO_LIST);
+        String userId = props.get(PROP_DEFAULT_ASSIGNED_TO_USER);
+        if (null == userId)
+            return null;
+        return UserManager.getUser(Integer.parseInt(userId));
+    }
+
+    public static void saveDefaultAssignedToUser(Container c, @Nullable User user)
+    {
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_ASSIGNED_TO_LIST, true);
+        props.put(PROP_DEFAULT_ASSIGNED_TO_USER, null != user ? String.valueOf(user.getUserId()) : null);
+        PropertyManager.saveProperties(props);
     }
 
     public static Sort.SortDirection getCommentSortDirection(Container c)

@@ -1627,6 +1627,8 @@ public class IssuesController extends SpringActionController
         private String _direction;
         private String _assignedToMethod = null;
         private int _assignedToGroup = 0;
+        private String _assignedToUser = null;
+        private int _defaultUser = 0;
 
         private HString[] _requiredFields = new HString[0];
 
@@ -1663,6 +1665,26 @@ public class IssuesController extends SpringActionController
             _assignedToGroup = assignedToGroup;
         }
 
+        public String getAssignedToUser()
+        {
+            return _assignedToUser;
+        }
+
+        public void setAssignedToUser(String assignedToUser)
+        {
+            _assignedToUser = assignedToUser;
+        }
+
+        public int getDefaultUser()
+        {
+            return _defaultUser;
+        }
+
+        public void setDefaultUser(int defaultUser)
+        {
+            _defaultUser = defaultUser;
+        }
+
         public HString getEntrySingularName()
         {
             return _entrySingularName;
@@ -1691,6 +1713,7 @@ public class IssuesController extends SpringActionController
     public class ConfigureIssuesAction extends FormHandlerAction<ConfigureIssuesForm>
     {
         private Group _group = null;
+        private User _user = null;
         private Sort.SortDirection _direction = Sort.SortDirection.ASC;
 
         public void validateCommand(ConfigureIssuesForm form, Errors errors)
@@ -1732,6 +1755,24 @@ public class IssuesController extends SpringActionController
             else
             {
                 errors.reject("assignedToGroup", "Invalid assigned to setting!");
+            }
+
+            if (form.getAssignedToUser().equals("NoDefaultUser"))
+            {
+                if (form.getDefaultUser() != 0)
+                    errors.reject("assignedToUser", "No default user setting shouldn't include a default user!");
+            }
+            else if (form.getAssignedToUser().equals("SpecificUser"))
+            {
+                int userId = form.getDefaultUser();
+                _user = UserManager.getUser(userId);
+
+                if (null == _user)
+                    errors.reject("assignedToUser", "User does not exist!");
+            }
+            else
+            {
+                errors.reject("assignedToUser", "Invalid assigned to setting!");
             }
 
             if (form.getEntrySingularName() == null || form.getEntrySingularName().trimToEmpty().length() == 0)
@@ -1800,6 +1841,7 @@ public class IssuesController extends SpringActionController
             IssueManager.saveEntryTypeNames(getContainer(), names);
             IssueManager.saveAssignedToGroup(getContainer(), _group);
             IssueManager.saveCommentSortDirection(getContainer(), _direction);
+            IssueManager.saveDefaultAssignedToUser(getContainer(), _user);
 
             CustomColumnConfiguration nccc = new CustomColumnConfiguration(getViewContext());
             IssueManager.saveCustomColumnConfiguration(getContainer(), nccc);
@@ -2370,6 +2412,7 @@ public class IssuesController extends SpringActionController
             bean.keywordView = keywordView;
             bean.entryTypeNames = IssueManager.getEntryTypeNames(c);
             bean.assignedToGroup = IssueManager.getAssignedToGroup(c);
+            bean.defaultUser = IssueManager.getDefaultAssignedToUser(c);
             bean.commentSort = IssueManager.getCommentSortDirection(c);
             setModelBean(bean);
         }
@@ -2386,6 +2429,7 @@ public class IssuesController extends SpringActionController
         public KeywordAdminView keywordView;
         public EntryTypeNames entryTypeNames;
         public Group assignedToGroup;
+        public User defaultUser;
         public Sort.SortDirection commentSort;
 
         public AdminBean(List<ColumnInfo> columns, String requiredFields, EntryTypeNames typeNames)
