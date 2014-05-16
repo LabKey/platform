@@ -125,11 +125,14 @@ import java.util.Objects;
 
     final QueryKey<T> _parent;
     final String _name;
+    final int _hash;
+
 
     protected QueryKey(QueryKey<T> parent, String name)
     {
         _parent = parent;
         _name = name;
+        _hash =  _name.toLowerCase().hashCode() ^ Objects.hashCode(_parent);
     }
 
     protected QueryKey(QueryKey<T> parent, Enum name)
@@ -169,7 +172,7 @@ import java.util.Objects;
 
     public int hashCode()
     {
-        return _name.toLowerCase().hashCode() ^ Objects.hashCode(_parent);
+        return _hash;
     }
 
     @JsonValue
