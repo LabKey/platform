@@ -132,7 +132,8 @@ import java.util.Objects;
     {
         _parent = parent;
         _name = name;
-        _hash =  _name.toLowerCase().hashCode() ^ Objects.hashCode(_parent);
+        // NOTE: FolderSchema creates a SchmeaKey with name==null?!
+        _hash =  (null==_name ? 0 :_name.toLowerCase().hashCode()) ^ Objects.hashCode(_parent);
     }
 
     protected QueryKey(QueryKey<T> parent, Enum name)
