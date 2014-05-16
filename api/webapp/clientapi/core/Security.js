@@ -349,6 +349,7 @@ LABKEY.Security = new function()
          * @param {string} [config.group] The name of a project group for which you want the members (specify groupId or group, not both).
          * @param {string} [config.name] The first part of the user name, useful for user name completion. If specified,
          * only users whose email address or display name starts with the value supplied will be returned.
+         * @param {boolean} [config.allMembers] This value is used to fetch all members in subgroups.
          * @param {function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -390,6 +391,9 @@ LABKEY.Security = new function()
 
             if(undefined != config.name)
                 params.name = config.name;
+
+            if(undefined != config.allMembers)
+                params.allMembers = config.allMembers;
 
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("user", "getUsers", config.containerPath),
