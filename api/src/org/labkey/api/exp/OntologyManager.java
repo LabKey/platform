@@ -924,7 +924,7 @@ public class OntologyManager
                 StringBuilder sqlIN = new StringBuilder();
                 for (Integer id : pdIdsToDelete)
                 {
-                    PropertyService.get().deleteValidatorsAndFormats(id);
+                    PropertyService.get().deleteValidatorsAndFormats(container, id);
 
                     sqlIN.append(sep);
                     sqlIN.append(id);
@@ -1934,8 +1934,8 @@ public class OntologyManager
 
         String sql = " SELECT * FROM " + getTinfoDomainDescriptor() + " WHERE DomainURI = ? AND Project IN (?,?) ";
         DomainDescriptor[] ddArray = new SqlSelector(getExpSchema(),  sql, domainURI,
-                                                                proj,
-                                                                _sharedContainer.getId()).getArray(DomainDescriptor.class);
+                proj,
+                _sharedContainer.getId()).getArray(DomainDescriptor.class);
         if (ddArray.length > 0)
         {
             dd = ddArray[0];
