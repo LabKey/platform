@@ -75,7 +75,7 @@ public class PropertyService
         ValidatorKind getValidatorKind(String typeURI);
         IPropertyValidator createValidator(String typeURI);
         List<? extends IPropertyValidator> getPropertyValidators(PropertyDescriptor desc);
-        void deleteValidatorsAndFormats(int propertyDescriptorId);
+        void deleteValidatorsAndFormats(Container c, int propertyDescriptorId);
         void deleteValidatorsAndFormats(Container c);
         List<ConditionalFormat> getConditionalFormats(PropertyDescriptor desc);
         void saveConditionalFormats(User user, PropertyDescriptor pd, List<ConditionalFormat> formats);
