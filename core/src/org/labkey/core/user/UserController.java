@@ -1811,6 +1811,7 @@ public class UserController extends SpringActionController
         private String _group;
         private Integer _groupId;
         private String _name;
+        private boolean _allMembers;
 
         public String getGroup()
         {
@@ -1840,6 +1841,16 @@ public class UserController extends SpringActionController
         public void setName(String name)
         {
             _name = name;
+        }
+
+        public boolean isAllMembers()
+        {
+            return _allMembers;
+        }
+
+        public void setAllMembers(boolean allMembers)
+        {
+            _allMembers = allMembers;
         }
     }
 
@@ -1888,8 +1899,11 @@ public class UserController extends SpringActionController
                 response.put("groupName", group.getName());
                 response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
 
-                // Direct members only... does not recurse into subgroups. TODO: Provide that ability?
-                users = SecurityManager.getGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS);
+                // if the allMembers flag is set, then recurse and if group is users then return all site users
+                if (form.isAllMembers())
+                    users = SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS, group.isUsers());
+                else
+                    users = SecurityManager.getGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS);
             }
             else
             {
