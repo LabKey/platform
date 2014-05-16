@@ -33,11 +33,13 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.AliasedColumn;
@@ -110,6 +112,15 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
         setDescription("Contains up to one row of " + nameLabel + " data for each " + dsd.getKeyTypeDescription() + " combination.");
         _dsd = dsd;
         _title = dsd.getLabel();
+
+
+        HashMap<String,DomainProperty> properties = new HashMap<>();
+        Domain dd = _dsd.getDomain();
+        if (dd != null)
+        {
+            for (DomainProperty dp : dd.getProperties())
+                properties.put(dp.getPropertyURI(), dp);
+        }
 
         List<FieldKey> defaultVisibleCols = new ArrayList<>();
 
@@ -269,8 +280,12 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
                 String propertyURI = col.getPropertyURI();
                 if (null != propertyURI && !standardURIs.contains(propertyURI))
                 {
-                    PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyURI, schema.getContainer());
-                    if (null != pd && pd.getLookupQuery() != null)
+                    // this is expensive
+                    //PropertyDescriptor pd = OntologyManager.getPropertyDescriptor(propertyURI, schema.getContainer());
+                    DomainProperty dp = properties.get(propertyURI);
+                    PropertyDescriptor pd = (null==dp) ? null : dp.getPropertyDescriptor();
+
+                    if (null != dp && pd.getLookupQuery() != null)
                         col.setFk(new PdLookupForeignKey(schema.getUser(), pd, schema.getContainer()));
                     
                     if (pd != null && pd.getPropertyType() == PropertyType.MULTI_LINE)
