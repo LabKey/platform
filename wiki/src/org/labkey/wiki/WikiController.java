@@ -1526,12 +1526,13 @@ public class WikiController extends SpringActionController
                 view.addView(AttachmentService.get().getHistoryView(getViewContext(), wiki));
             getPageConfig().setNoIndex();
             getPageConfig().setNoFollow();
+            setHelpTopic("wikiUserGuide#history");
             return view;
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
-            setHelpTopic("wikiUserGuide#history");
+            //setHelpTopic("wikiUserGuide#history");
             return new PageAction(getViewContext(), _wiki,_wikiversion).appendNavTrail(root).
                     addChild("History for Page \"" + _wiki.getName() + "\"", getUrl());
         }
