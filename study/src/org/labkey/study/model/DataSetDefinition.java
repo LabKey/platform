@@ -353,6 +353,31 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
     }
 
+    /* consider
+        public String getFileName()
+    {
+        if (null != _fileName)
+            return _fileName;
+
+        String filename = "dataset" + new DecimalFormat("000").format(getDataSetId());
+        String name = getName();
+        if (!StringUtils.isEmpty(name))
+        {
+            name = StringUtils.capitalize(name.substring(0, 1)) + name.substring(1);
+            try
+            {
+                name = URLEncoder.encode(name, "UTF-8").replace('+', '_');
+            }
+            catch (UnsupportedEncodingException x)
+            {
+                / * * /
+            }
+            filename += "_" + name;
+        }
+        return filename + ".tsv";
+    }
+     */
+
     public void setFileName(String fileName)
     {
         _fileName = fileName;
@@ -437,6 +462,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _typeURI = typeURI;
     }
 
+
     public void setTypeURI(String typeURI)
     {
         setTypeURI(typeURI, false);
@@ -501,9 +527,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     /**
      * Get table info representing dataset.  This relies on the DataSetDefinition being removed from
-     * the cache if the dataset type changes.  The temptable version also relies on the dataset being
-     * uncached when data is updated.
-     *
+     * the cache if the dataset type changes.
      * see StudyManager.importDatasetTSV()
      */
     public DatasetSchemaTableInfo getTableInfo(User user) throws UnauthorizedException
@@ -516,6 +540,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         return getTableInfo(user, checkPermission, false);
     }
+
 
     public DatasetSchemaTableInfo getTableInfo(User user, boolean checkPermission, boolean multiContainer) throws UnauthorizedException
     {
@@ -1468,11 +1493,26 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     @Transient
     public Domain getDomain()
     {
+        synchronized (this)
+        {
+            if (null == getTypeURI())
+                return null;
+            if (null != _domain)
+                return _domain;
+        }
+
+        Domain d=null;
         try (DbScope.Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
             if (null != getTypeURI() && null == _domain)
-                _domain = PropertyService.get().getDomain(getContainer(), getTypeURI());
+                d = PropertyService.get().getDomain(getContainer(), getTypeURI());
             t.commit();
+        }
+
+        synchronized (this)
+        {
+            if (null != d)
+                _domain = d;
             return _domain;
         }
     }
