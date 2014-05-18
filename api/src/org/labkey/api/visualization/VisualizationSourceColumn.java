@@ -105,6 +105,14 @@ public class VisualizationSourceColumn
             return findOrAdd(col);
         }
 
+        public VisualizationSourceColumn create(UserSchema schema, String queryName, String name, Boolean allowNullResults,
+                                                String visitTagName, boolean useProtocolDay, String interval)
+        {
+            String encodedQueryName = queryName + "-" + (useProtocolDay ? "true" : "false") + "-" + interval + "-" + visitTagName;
+            VisualizationSourceColumn col = new VisualizationSourceColumn(schema, encodedQueryName, name, allowNullResults);
+            return findOrAdd(col);
+        }
+
         public VisualizationSourceColumn getByAlias(String alias)
         {
             return _aliasMap.get(alias);
@@ -125,7 +133,8 @@ public class VisualizationSourceColumn
 
     protected VisualizationSourceColumn(ViewContext context, Map<String, Object> properties)
     {
-        this(getUserSchema(context, (String) properties.get("schemaName")), (String) properties.get("queryName"), (String) properties.get("name"), (Boolean) properties.get("allowNullResults"));
+        this(getUserSchema(context, (String) properties.get("schemaName")), (String) properties.get("queryName"),
+             (String) properties.get("name"), (Boolean) properties.get("allowNullResults"));
         JSONArray values = (JSONArray) properties.get("values");
         _clientAlias = (String)properties.get("alias");
         if (values != null)

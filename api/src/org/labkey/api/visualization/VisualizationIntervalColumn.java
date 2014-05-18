@@ -73,8 +73,6 @@ public class VisualizationIntervalColumn
         _startDate = startDate;
         _endDate = endDate;
         // be fault-tolerant in case the user asked for 'days' instead of 'day'
-        if (interval.endsWith("s"))
-            interval = interval.substring(0, interval.length() - 1);
         _interval = Interval.valueOf(interval.toUpperCase());
     }
 

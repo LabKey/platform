@@ -62,4 +62,6 @@ public interface IVisualizationSourceQuery
     void addSelect(VisualizationSourceColumn select, boolean measure);
 
     public boolean isSkipVisitJoin();
+
+    public boolean isVisitTagQuery();
 }

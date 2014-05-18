@@ -164,10 +164,12 @@ LABKEY.Query.Visualization = new function() {
          *      <li><b>measure</b>: Generally an augmented {@link LABKEY.Query.Visualization.Measure}, but can be any object
          *          with the following properties:
          *          <ul>
-         *              <li><b>name</b>: The name of this measure.</li>
          *              <li><b>schemaName</b>: The name of the schema containing the query that contains this measure.</li>
          *              <li><b>queryName</b>: The name of the query containing this measure.</li>
+         *              <li><b>name</b>: The  name of the column containing this measure.</li>
          *              <li><b>type</b>: The data type of this measure.</li>
+         *              <li><b>isDemographic</b>: Boolean (default false). Indicates whether the measure is Demographic data.</li>
+         *              <li><b>alias</b>: String. </li>
          *              <li><b>values</b>: Optional.  If provided, results will be filtered to include only the provided values.</li>
          *              <li><b>allowNullResults</b>: Optional, defaults to true.  If true, this measure will be joined to other measures via an outer join, which will allow results
          *                  from other measures at timepoints not present for this measure (possibly resulting in null/blank values for this measure).  If false, other measures will be inner joined
@@ -176,15 +178,23 @@ LABKEY.Query.Visualization = new function() {
          *                                    what data should be returned if pivoting by dimension results in multiple underlying values
          *                                    per series data point.</li>
          *          </ul>
-         *      <li><b>dateOptions</b>: Optional if this measure's axis.timeAxis property is true, ignored otherwise.  Has two valid child properties:
+         *      <li><b>dateOptions</b>: Optional if this measure's axis.timeAxis property is true, ignored otherwise.  Has the following child properties.
+         *                      Either zeroDateCol or ZeroDayVisitTag may be specified, but not both.
          *          <ul>
+         *              <li><b>dateCol</b>: A measure object (with properties for name, queryName, and
+         *                                              schemaName) of type date specifying the measure date.</li>
          *              <li><b>zeroDateCol</b>: A measure object (with properties for name, queryName, and
-         *                                              schemaName) of type date that will be used to align data points in terms of days, weeks, or months.</li>
-         *              <li><b>interval</b>: See {@link LABKEY.Query.Visualization.Interval}.  The type of interval that should be calculated between the measure date and the zero date.
+         *                                              schemaName) of type date specifiying the zero date, used to align data points in terms of days, weeks, or months.</li>
+         *              <li><b>zeroDayVisitTag</b>: String. A VisitTag that will be used to find the ParticipantVisit used to align data points.  </li>
+         *              <li><b>interval</b>: See {@link LABKEY.Query.Visualization.Interval}.  The type of interval that should be
+         *                                              calculated between the measure date and the zero date (if zeroDateCol is specified)
+         *                                              or zero day (if zeroDayVisitTag is specified).</li>
+         *              <li><b>useProtocolDay</b>: Boolean (default true). If true, zeroDayVisitTag uses ParticipantVisit.ProtocolDay to calculate offsets;
+         *                                              if false ParticipantVisit.Day is used.</li>
          *          </ul>
          *      </li>
-         *      <li><b>axis</b>:
-         *          <ul><li><b>timeAxis</b>: Boolean.  Indicates whether this measure corresponds to a time axis.</li></ul>
+         *      <li><b>time</b>:
+         *          String: "date" indicates this measure is date-based. "time" indicates it is time-based.
          *      </li>
          *      <li><b>dimension</b>:  Used to pivot a resultset into multiple series.  Generally an augmented
          *          {@link LABKEY.Query.Visualization.Dimension}, but can be any object with the following properties:
