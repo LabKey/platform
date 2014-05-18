@@ -174,21 +174,40 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 else
                     throw new IllegalArgumentException("Only time charts are currently supported: expected 'time' property on each measure.");
 
+                VisualizationProvider provider = ensureVisualizationProvider(query.getSchemaName(), type);
                 switch (type)
                 {
                     case TIME_DATEBASED:
                         Map<String, Object> dateOptions = (Map<String, Object>) measureInfo.get("dateOptions");
                         Map<String, Object> dateProperties = (Map<String, Object>) dateOptions.get("dateCol");
                         Map<String, Object> zeroDateProperties = (Map<String, Object>) dateOptions.get("zeroDateCol");
-                        if (dateProperties != null && !dateProperties.isEmpty() && zeroDateProperties != null && !zeroDateProperties.isEmpty())
+
+                        if (dateProperties != null && !dateProperties.isEmpty() &&
+                                (zeroDateProperties != null && !zeroDateProperties.isEmpty()) || null != dateOptions.get("zeroDayVisitTag"))
                         {
+                            String interval = (String) dateOptions.get("interval");
+                            interval = normalizeInterval(interval);
                             VisualizationSourceColumn dateCol = _columnFactory.create(getViewContext(), dateProperties);
                             dateCol.setAllowNullResults(measureCol.isAllowNullResults());
                             ensureSourceQuery(_viewContext.getContainer(), dateCol, query).addSelect(dateCol, false);
-                            VisualizationSourceColumn zeroDateCol = _columnFactory.create(getViewContext(), zeroDateProperties);
-                            zeroDateCol.setAllowNullResults(false);
-                            ensureSourceQuery(_viewContext.getContainer(), zeroDateCol, query).addSelect(zeroDateCol, false);
-                            String interval = (String) dateOptions.get("interval");
+
+                            VisualizationSourceColumn zeroDateCol;
+                            if (zeroDateProperties != null && !zeroDateProperties.isEmpty())
+                            {
+                                zeroDateCol = _columnFactory.create(getViewContext(), zeroDateProperties);
+                                zeroDateCol.setAllowNullResults(false);
+                                ensureSourceQuery(_viewContext.getContainer(), zeroDateCol, query).addSelect(zeroDateCol, false);
+                            }
+                            else
+                            {
+
+                                String zeroDayVisitTag = (String)dateOptions.get("zeroDayVisitTag");
+                                boolean useProtocolDay = (null == dateOptions.get("useProtocolDay") || (boolean)dateOptions.get("useProtocolDay"));
+                                zeroDateCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "StartDate", true,
+                                                                    zeroDayVisitTag, useProtocolDay, interval);
+                                ensureSourceQuery(_viewContext.getContainer(), zeroDateCol, query).addSelect(zeroDateCol, false);
+                            }
+
                             if (interval != null)
                             {
                                 VisualizationIntervalColumn newInterval = new VisualizationIntervalColumn(zeroDateCol, dateCol, interval);
@@ -215,7 +234,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         }
                         else
                         {
-                            throw new IllegalArgumentException("The 'dateCol' and 'zeroDateCol' properties are requried for each measure.");
+                            throw new IllegalArgumentException("The 'dateCol' and 'zeroDateCol' or 'zeroDayVisitTag' properties are requried for each measure.");
                         }
                         break;
                     case TIME_VISITBASED:
@@ -223,7 +242,6 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         break;
                 }
 
-                VisualizationProvider provider = ensureVisualizationProvider(query.getSchemaName(), type);
                 provider.addExtraSelectColumns(_columnFactory, query);
                 previous = query;
             }
@@ -827,5 +845,12 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     public void setMetaDataOnly(boolean metaDataOnly)
     {
         _metaDataOnly = metaDataOnly;
+    }
+
+    private static String normalizeInterval(String interval)
+    {
+        if (interval.endsWith("s"))
+            interval = interval.substring(0, interval.length() - 1);
+        return interval;
     }
 }

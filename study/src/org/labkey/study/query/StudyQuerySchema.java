@@ -107,6 +107,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String VISIT_TAG_MAP_TABLE_NAME = "VisitTagMap";
     public static final String ASSAY_SPECIMEN_TABLE_NAME = "AssaySpecimen";
     public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
+    public static final String VISUALIZTION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
 
     // extensible study data tables
     public static final String STUDY_DESIGN_SCHEMA_NAME = "studydesign";
@@ -684,10 +685,30 @@ public class StudyQuerySchema extends UserSchema
         {
             return new VisitTagTable(this, isDataspaceProject() ? new ContainerFilter.Project(getUser()) : null);
         }
-
         if (VISIT_TAG_MAP_TABLE_NAME.equalsIgnoreCase(name))
         {
             return new VisitTagMapTable(this, null);
+        }
+        if (name.startsWith(VISUALIZTION_VISIT_TAG_TABLE_NAME))
+        {
+            // Name is encoded with useProtocolDay boolean, interval, tag name
+            String params = name.replace(VISUALIZTION_VISIT_TAG_TABLE_NAME, "");
+            boolean useProtocolDay;
+            if (params.startsWith("-true"))
+            {
+                params = params.substring(params.indexOf("-true") + 6);
+                useProtocolDay = true;
+            }
+            else
+            {
+                params = params.substring(params.indexOf("-false") + 7);
+                useProtocolDay = false;
+            }
+            int hyphenIndex = params.indexOf("-");
+            String interval = params.substring(0, hyphenIndex);
+            String tagName = params.substring(hyphenIndex + 1);
+
+            return new VisualizationVisitTagTable(getStudy(), getUser(), tagName, useProtocolDay, interval);
         }
 
         // Might be a dataset

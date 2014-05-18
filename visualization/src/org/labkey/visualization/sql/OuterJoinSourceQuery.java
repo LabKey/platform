@@ -224,4 +224,10 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     {
         return false;
     }
+
+    public boolean isVisitTagQuery()
+    {
+        return false;
+    }
+
 }

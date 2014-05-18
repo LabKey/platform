@@ -24,7 +24,12 @@ import org.apache.fop.svg.PDFTranscoder;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
@@ -39,6 +44,7 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
@@ -85,6 +91,7 @@ import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -1865,6 +1872,113 @@ public class VisualizationController extends SpringActionController
                 svc.queueThumbnailRendering(generator, ImageType.Large);
                 ReportPropsManager.get().setPropertyValue(generator.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
             }
+        }
+    }
+    private static Logger logDebug = Logger.getLogger(VisualizationController.class);
+    public static class TestCase extends Assert
+    {
+        ViewContext _viewContext;
+
+        @Before
+        public void setUp() throws Exception
+        {       // TODO: temp for local testing
+//            Container container = ContainerManager.getChild(ContainerManager.getRoot(), "Study 1");
+//            _viewContext = ViewContext.getMockViewContext(TestContext.get().getUser(), container, null, false);
+        }
+
+
+        @After
+        public void tearDown() throws Exception
+        {
+        }
+
+
+        @Test
+        public void testGetData() throws Exception
+        {
+/*            JSONObject json = createJSON(false, false);
+
+            VisualizationSQLGenerator generator = new VisualizationSQLGenerator();
+            generator.setViewContext(_viewContext);
+            generator.bindProperties(json);
+            String sql = generator.getSQL();
+            logDebug.info(sql);        */
+        }
+
+        private JSONObject createJSON(boolean traditional, boolean useProtocolDay)
+        {
+            JSONObject json = new JSONObject();
+            json.put("limit", 10000);
+
+            JSONArray measures = new JSONArray();
+
+            JSONObject measureMeta = new JSONObject();
+            measureMeta.put("time", "date");
+            measureMeta.put("dimension", new JSONObject());
+
+            JSONObject measure = new JSONObject();
+            measure.put("variableType","");
+            measure.put("schemaName","study");
+            measure.put("alias","study_Lab Results_CD4");
+            measure.put("queryName","Lab Results");
+            measure.put("sortOrder",0);
+            measure.put("label","CD4");
+            measure.put("isDemographic",false);
+            measure.put("type","INTEGER");
+            measure.put("lookup",new JSONObject());
+            measure.put("keyVariableGrouper","1");
+            measure.put("id",7);
+            measure.put("defaultScale","LINEAR");
+            measure.put("yAxis","left");
+            measure.put("selected","");
+            measure.put("isKeyVariable",false);
+            measure.put("description","");
+            measure.put("isUserDefined",false);
+            measure.put("name","CD4");
+            measure.put("queryLabel","Lab Results");
+            measureMeta.put("measure", measure);
+
+            JSONObject dateOptions = new JSONObject();
+            dateOptions.put("interval","Days");
+            
+            if (traditional)
+            {
+                JSONObject zeroDateCol = new JSONObject();
+                zeroDateCol.put("id", 3);
+                zeroDateCol.put("schemaName", "study");
+                zeroDateCol.put("queryName", "Demographics");
+                zeroDateCol.put("isUserDefined", false);
+                zeroDateCol.put("description", "");
+                zeroDateCol.put("name", "StartDate");
+                zeroDateCol.put("label", "Start Date");
+                zeroDateCol.put("type", "TIMESTAMP");
+                zeroDateCol.put("longlabel", "Start Date (Demographics)");
+                dateOptions.put("zeroDateCol", zeroDateCol);
+            }
+            else
+            {
+                dateOptions.put("zeroDayVisitTag", "FirstVac");
+                dateOptions.put("useProtocolDay", useProtocolDay);
+            }
+
+            JSONObject dateCol = new JSONObject();
+            dateCol.put("schemaName","study");
+            dateCol.put("queryName","Lab Results");
+            dateCol.put("isUserDefined","");
+            dateCol.put("description","");
+            dateCol.put("name","DogVisit/VisitDate");
+            dateCol.put("label","Visit Date");
+            dateCol.put("type","TIMESTAMP");
+            dateCol.put("queryLabel","");
+            dateCol.put("longlabel","");
+            dateOptions.put("dateCol", dateCol);
+
+            measureMeta.put("dateOptions", dateOptions);
+
+            measures.put(measureMeta);
+
+            json.put("measures", measures);
+            return json;
         }
     }
 }

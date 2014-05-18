@@ -3657,6 +3657,7 @@ study/src/org/labkey/study/query/VialTable.java -text
 study/src/org/labkey/study/query/VisitTable.java -text
 study/src/org/labkey/study/query/VisitTagMapTable.java -text
 study/src/org/labkey/study/query/VisitTagTable.java -text
+study/src/org/labkey/study/query/VisualizationVisitTagTable.java -text
 study/src/org/labkey/study/query/studydesign/AbstractStudyDesignDomainKind.java -text
 study/src/org/labkey/study/query/studydesign/DefaultStudyDesignTable.java -text
 study/src/org/labkey/study/query/studydesign/StudyDesignAssaysTable.java -text

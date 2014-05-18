@@ -32,6 +32,8 @@ import org.labkey.visualization.report.VisualizationUIProvider;
 import javax.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class VisualizationModule extends DefaultModule
 {
@@ -89,4 +91,14 @@ public class VisualizationModule extends DefaultModule
             });
         }
     }
+
+    @Override
+    @NotNull
+    public Set<Class> getIntegrationTests()
+    {
+        Set<Class> set = new HashSet<>();
+        set.add(VisualizationController.TestCase.class);
+        return set;
+    }
+
 }

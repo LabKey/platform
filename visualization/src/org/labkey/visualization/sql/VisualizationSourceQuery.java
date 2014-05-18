@@ -123,6 +123,11 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         return false;
     }
 
+    public boolean isVisitTagQuery()
+    {
+        return _queryName.startsWith("VisualizationVisitTag");
+    }
+
     public void addSelect(VisualizationSourceColumn select, boolean measure)
     {
         ensureSameQuery(select);
@@ -355,6 +360,11 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
 
     public String getSelectClause(VisualizationSourceColumn.Factory factory)
     {
+        return getSelectClauseHelper(factory).toString();
+    }
+
+    protected StringBuilder getSelectClauseHelper(VisualizationSourceColumn.Factory factory)
+    {
         StringBuilder selectList = new StringBuilder("SELECT ");
         Set<VisualizationSourceColumn> selects = new LinkedHashSet<>();
         if (_pivot != null)
@@ -364,7 +374,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         selects.addAll(_aggregates);
         appendColumnNames(selectList, selects, true, false, true);
         selectList.append("\n");
-        return selectList.toString();
+        return selectList;
     }
 
     public String getFromClause()
