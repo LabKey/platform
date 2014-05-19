@@ -16,6 +16,7 @@
 
 package org.labkey.wiki.renderer;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -43,7 +44,8 @@ import java.util.Stack;
  */
 public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHandler
 {
-    private static ThreadLocal<Stack<Map>> _paramsStack = new ThreadLocal<Stack<Map>>()
+    private static final Logger LOG = Logger.getLogger(WebPartSubstitutionHandler.class);
+    private static final ThreadLocal<Stack<Map>> _paramsStack = new ThreadLocal<Stack<Map>>()
     {
         @Override
         protected Stack<Map> initialValue()
@@ -98,7 +100,9 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
             }
             catch (Exception e)
             {
-                //
+                // Let's at least log these exceptions in dev mode
+                if (AppProps.getInstance().isDevMode())
+                    LOG.error("Error substituting " + partName, e);
             }
 
             if (null == view)
