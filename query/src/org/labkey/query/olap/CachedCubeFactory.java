@@ -387,8 +387,6 @@ public class CachedCubeFactory
             {
                 for (Member m : l.getMembers())
                 {
-                    System.err.println(m.getUniqueName() + " name="+m.getName() + " value=" + getProperty(m,"VALUE") + " ordinal="+getProperty(m,"MEMBER_ORDINAL"));
-                    System.err.flush();
                     list.add(new _Member(this, lowerLevel, m, hash));
                 }
             }
