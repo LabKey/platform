@@ -186,8 +186,6 @@ public class DbSchema
             }
         }
 
-        scope.invalidateAllTables(metaDataName, type); // Need to invalidate the table cache
-
         if ("labkey".equals(metaDataName))
             return new LabKeyDbSchema(type, scope, metaDataTableNames);
         else if (type == DbSchemaType.Provisioned)
