@@ -17,6 +17,7 @@
 package org.labkey.api.exp.property;
 
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -74,9 +75,15 @@ public class AssayResultDomainKind extends AssayDomainKind
         return AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME;
     }
 
-    public static DbSchema getSchema()
+    private DbSchema getSchema()
     {
-        return DbSchema.get(AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME);
+        return DbSchema.get(getStorageSchemaName(), getSchemaType());
+    }
+
+    @Override
+    public DbSchemaType getSchemaType()
+    {
+        return DbSchemaType.Provisioned;
     }
 
     @Override
