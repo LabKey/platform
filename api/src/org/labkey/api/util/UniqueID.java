@@ -31,6 +31,12 @@ public class UniqueID
 {
     private static final AtomicLong SERVER_SESSION_COUNTER = new AtomicLong();
 
+    // Initialize a unique counter to use within this request
+    public static void initializeRequestScopedUID(HttpServletRequest request)
+    {
+        request.setAttribute(ViewServlet.REQUEST_UID_COUNTER, new AtomicInteger());
+    }
+
     /*
         Provides a unique integer within the context of a single request. This is handy for generating identifiers that
         must be unique in the scope of a single request, including HTML class names and element ids, javascript function
@@ -42,7 +48,7 @@ public class UniqueID
           to the file system, etc.
 
         If you need cacheable UIDs, consider using the getServerSessionScopedUID() method below.
-     */
+    */
     public static int getRequestScopedUID(HttpServletRequest request)
     {
         AtomicInteger counter = (AtomicInteger)request.getAttribute(ViewServlet.REQUEST_UID_COUNTER);

@@ -27,6 +27,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewServlet;
@@ -245,6 +246,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
 
     // Mock up a request using cached port, server name, etc.  Use when sending email from background threads (when
     // a request is not available).
+   // TODO: Reconcile this and ViewServlet.mockRequest()... shouldn't these be the same?
     public HttpServletRequest createMockRequest()
     {
         MockHttpServletRequest request = new MockHttpServletRequest(ViewServlet.getViewServletContext());
@@ -253,6 +255,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         request.setServerPort(getServerPort());
         request.setServerName(getServerName());
         request.setScheme(getScheme());
+        UniqueID.initializeRequestScopedUID(request);
 
         return request;
     }

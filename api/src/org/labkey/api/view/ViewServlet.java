@@ -38,6 +38,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.SessionAppender;
 import org.labkey.api.util.ShuttingDownException;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.util.UniqueID;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.web.servlet.mvc.Controller;
@@ -134,7 +135,7 @@ public class ViewServlet extends HttpServlet
         long startTime = System.currentTimeMillis();
 
         request.setAttribute(REQUEST_STARTTIME, startTime);
-        request.setAttribute(REQUEST_UID_COUNTER, new AtomicInteger());  // Used to generate unique ids in the context of this request
+        UniqueID.initializeRequestScopedUID(request);
         response.setHeader("Server", _serverHeader);
         HttpSession session = request.getSession(true);
 
@@ -440,9 +441,11 @@ public class ViewServlet extends HttpServlet
     }
 
 
+    // TODO: Reconcile this and AppProps.createMockRequest()... shouldn't these be the same?
     public static HttpServletRequest mockRequest(String method, ActionURL url, @Nullable User user, @Nullable Map<String, Object> headers, @Nullable String postData)
     {
         MockRequest request = new MockRequest(getViewServletContext(), method, url);
+        UniqueID.initializeRequestScopedUID(request);
 
         AppProps.Interface props = AppProps.getInstance();
         request.setContextPath(props.getContextPath());
@@ -476,27 +479,11 @@ public class ViewServlet extends HttpServlet
 
     }
 
-    public static class MockRequest extends MockHttpServletRequest
+    private static class MockRequest extends MockHttpServletRequest
     {
         private ActionURL _actionURL;
 
-        public MockRequest()
-        {
-            super();
-        }
-
-        public MockRequest(ServletContext servletContext)
-        {
-            super(servletContext);
-        }
-
-        public MockRequest(String method, ActionURL actionURL)
-        {
-            super(method, actionURL.getURIString());
-            _actionURL = actionURL;
-        }
-
-        public MockRequest(ServletContext servletContext, String method, ActionURL actionURL)
+        private MockRequest(ServletContext servletContext, String method, ActionURL actionURL)
         {
             super(servletContext, method, actionURL.getURIString());
             _actionURL = actionURL;
