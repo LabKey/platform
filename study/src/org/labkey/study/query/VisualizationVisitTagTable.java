@@ -39,11 +39,29 @@ public class VisualizationVisitTagTable extends VirtualTable
         SQLFragment dateCalc;
         if (getSqlDialect().isSqlServer())
         {
-            dateCalc = new SQLFragment("DATEADD(dd, " + _dayString + ", StartDate)" );
+            String ssInterval;
+            if ("day".equalsIgnoreCase(interval))
+                ssInterval = "dd";
+            else if ("week".equalsIgnoreCase(interval))
+                ssInterval = "ww";
+            else if ("month".equalsIgnoreCase(interval))
+                ssInterval = "mm";
+            else if ("year".equalsIgnoreCase(interval))
+                ssInterval = "yy";
+            else
+                throw new IllegalStateException("Invalid interval.");
+
+            dateCalc = new SQLFragment("DATEADD(" + ssInterval + ", " + _dayString + ", StartDate)" );
         }
         else
         {
-            dateCalc = new SQLFragment("(StartDate + interval '1' day * " + _dayString + ")");
+            if (!"day".equalsIgnoreCase(interval) && !"week".equalsIgnoreCase(interval) &&
+                !"month".equalsIgnoreCase(interval) && !"year".equalsIgnoreCase(interval))
+            {
+                throw new IllegalStateException("Invalid interval.");
+            }
+
+            dateCalc = new SQLFragment("(StartDate + interval '1 " + interval + "' * " + _dayString + ")");
         }
 
         addColumn(new ExprColumn(this, "StartDate", dateCalc, JdbcType.DATE));
@@ -74,7 +92,7 @@ public class VisualizationVisitTagTable extends VirtualTable
             .append("AND CohortVisitTag.Container = ?");
         from.add(container);
         from.append("\nLEFT OUTER JOIN study.VisitTagMap NoCohortTag ON NoCohortTag.VisitTag =")
-            .append("'" + _visitTagName + "'\n")
+            .append("'" + _visitTagName + "' AND NoCohortTag.CohortID IS NULL\n")
             .append("AND NoCohortTag.Container = ?");
         from.add(container);
         from.append("\nWHERE study.Participant.Container = ?) ").append(innerAlias);
