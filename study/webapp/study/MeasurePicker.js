@@ -813,22 +813,22 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 selectedItemCls: 'itemselected',
                 tpl: new Ext4.XTemplate(
                     '<tpl for=".">',
-                        '<tpl if="schemaName !=null && parent[xindex - 2] && parent[xindex - 2].schemaName == null">',
-                        '<div class="groupheader groupheaderline" style="padding: 8px 6px 4px 6px; color: #808080">' + this.sourceGroupHeader + '</div>',
+                        '<tpl if="variableType ==null && parent[xindex - 2] && parent[xindex - 2].variableType != null">',
+                            '<div class="groupheader groupheaderline" style="padding: 8px 6px 4px 6px; color: #808080">' + this.sourceGroupHeader + '</div>',
                         '</tpl>',
                         '<div class="itemrow {[this.renderDisabled(values)]}" style="padding: 3px 6px 4px 6px; cursor: pointer;">{queryLabel:htmlEncode}{[this.renderCount(values)]}</div>',
                     '</tpl>',
                         {
                             renderCount : function(values) {
                                 var val = "";
-                                if (values['queryName'] != null && Ext.isNumber(values['sourceCount'])) {
+                                if (values['variableType'] == null && Ext.isNumber(values['sourceCount'])) {
                                     val = " (" + Ext.htmlEncode(values['sourceCount']) + ")";
                                 }
                                 return val;
                             },
                             renderDisabled : function(values) {
                                 var val = "";
-                                if (values['queryName'] != null && values['sourceCount'] === 0) {
+                                if (values['variableType'] == null && values['sourceCount'] === 0) {
                                     val = "itemdisabled";
                                 }
                                 return val;
@@ -1079,7 +1079,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                             schemaName : measure.schemaName,
                             queryName : measure.queryName,
                             queryLabel : measure.queryLabel,
-                            description : measure.queryDescription
+                            description : measure.queryDescription,
+                            variableType : measure.variableType
                         });
                     }
                 }, this);
@@ -1145,8 +1146,15 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             if (!this.multiSelect && this.selectedMeasures.length > 0) {
                 this.selectedMeasures = [];
             }
-            record.set("selected", true);
-            record.commit(); // to remove the dirty state
+
+            // TODO: issue with switching between a source w/ 2 groups (Recommended and Additional) to 1 group (just Additional)
+            // JS error message : Uncaught TypeError: Cannot read property 'setDirty' of undefined
+            if (record.store.groups && record.store.groups.keys.length > 1)
+            {
+                record.set("selected", true);
+                record.commit(); // to remove the dirty state
+            }
+
             this.selectedMeasures.push(record);
 
             this.updateSourcesSelectionEntry(record, 1);
@@ -1155,10 +1163,16 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     onMeasureDeselect : function(selModel, record, ix) {
         var index = this.getSelectedRecordIndex(record);
-        if (index > -1&& ix != -1)
+        if (index > -1 && ix != -1)
         {
-            record.set("selected", false);
-            record.commit(); // to remove the dirty state
+            // TODO: issue with switching between a source w/ 2 groups (Recommended and Additional) to 1 group (just Additional)
+            // JS error message : Uncaught TypeError: Cannot read property 'setDirty' of undefined
+            if (record.store.groups && record.store.groups.keys.length > 1)
+            {
+                record.set("selected", false);
+                record.commit(); // to remove the dirty state
+            }
+
             this.selectedMeasures.splice(index, 1);
 
             this.updateSourcesSelectionEntry(record, -1);
@@ -1241,7 +1255,7 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                     {name   : 'keyVariableGrouper', convert: function(val, rec){ return rec.data.isKeyVariable ? '0' : '1'; }},
                     {name   : 'defaultScale'},
                     {name   : 'sortOrder', defaultValue: 0},
-                    {name   : 'variableType'}, // i.e. TIME
+                    {name   : 'variableType', defaultValue: null}, // i.e. TIME, USER_GROUPS (default to null for query based variables)
                     {name   : 'sourceCount', defaultValue: undefined}
                 ]
             });
