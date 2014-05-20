@@ -97,5 +97,10 @@ public class CommSchema
     {
         return getSchema().getTable("UserList");
     }
+
+    public TableInfo getTableInfoRSSFeeds()
+    {
+        return getSchema().getTable("RSSFeeds");
+    }
 }
 
