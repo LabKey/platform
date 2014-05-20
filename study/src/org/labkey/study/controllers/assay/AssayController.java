@@ -473,7 +473,7 @@ public class AssayController extends SpringActionController
             AssayProvider provider = form.getProvider();
             ModelAndView view = provider.createBeginView(getViewContext(), form.getProtocol());
             _hasCustomView = (null != view);
-            setHelpTopic("createDatasetViaAssay");
+            setHelpTopic("workWithAssayData#runs");
             return (null == view ? new AssayRunsView(_protocol, false, errors) : view);
         }
 
