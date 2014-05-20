@@ -77,7 +77,7 @@ public class AssayRunsAction extends BaseAssayAction<AssayRunsAction.AssayRunsFo
         AssayProvider provider = summaryForm.getProvider();
 
         ModelAndView resultsView = provider.createRunsView(context, _protocol);
-        setHelpTopic(new HelpTopic("workWithAssayData"));
+        setHelpTopic(new HelpTopic("workWithAssayData#runs"));
         if (resultsView != null)
             return resultsView;
         return new AssayRunsView(_protocol, false, errors);

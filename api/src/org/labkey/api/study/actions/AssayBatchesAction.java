@@ -46,7 +46,7 @@ public class AssayBatchesAction extends BaseAssayAction<AssayRunsAction.AssayRun
         _protocol = summaryForm.getProtocol();
         AssayProvider provider = AssayService.get().getProvider(_protocol);
         ModelAndView resultsView = provider.createBatchesView(context, _protocol);
-        setHelpTopic(new HelpTopic("workWithAssayData"));
+        setHelpTopic(new HelpTopic("workWithAssayData#batch"));
         if (resultsView != null)
             return resultsView;
         return new AssayBatchesView(_protocol, false);

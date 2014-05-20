@@ -44,7 +44,7 @@ public class AssayResultsAction extends BaseAssayAction<ProtocolIdForm>
         _protocol = form.getProtocol();
 
         ModelAndView resultsView = form.getProvider().createResultsView(context, _protocol, errors);
-        setHelpTopic(new HelpTopic("workWithAssayData"));
+        setHelpTopic(new HelpTopic("workWithAssayData#results"));
         if (resultsView != null)
             return resultsView;
         return new AssayResultsView(_protocol, false, errors);
