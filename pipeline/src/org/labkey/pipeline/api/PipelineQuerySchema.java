@@ -147,8 +147,8 @@ public class PipelineQuerySchema extends UserSchema
                     };
                 }
             });
-            table.getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer()));
-            table.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer()));
+            table.getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer(), true));
+            table.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer(), true));
             table.getColumn("JobParent").setFk(new LookupForeignKey("Job", "Description")
             {
                 public TableInfo getLookupTableInfo()

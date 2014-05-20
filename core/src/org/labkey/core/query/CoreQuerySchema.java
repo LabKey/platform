@@ -197,7 +197,7 @@ public class CoreQuerySchema extends UserSchema
             else
                 addNullSetFilter(users);
         }
-        users.setName("SiteUsers");
+        users.setName(SITE_USERS_TABLE_NAME);
         users.setDescription("Contains all users who have accounts on the server regardless of whether they are members of the current project or not." +
         " The data in this table are available only to site administrators. All other users will see no rows.");
 
@@ -486,7 +486,7 @@ public class CoreQuerySchema extends UserSchema
 
     protected void addNullSetFilter(FilteredTable table)
     {
-        table.addCondition(new SQLFragment("1=2"));
+        table.addCondition(new SQLFragment("1=2"), FieldKey.fromParts("UserId"));
     }
 
     public boolean getMustCheckPermissions()

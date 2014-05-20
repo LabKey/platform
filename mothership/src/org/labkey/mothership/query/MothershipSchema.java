@@ -373,7 +373,7 @@ public class MothershipSchema extends UserSchema
         result.setTitleColumn("ExceptionStackTraceId");
         result.setDetailsURL(new DetailsURL(new ActionURL(MothershipController.ShowStackTraceDetailAction.class, getContainer()), Collections.singletonMap("exceptionStackTraceId", "ExceptionStackTraceId")));
 
-        result.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer()));
+        result.getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(getUser(), getContainer(), true));
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts("ExceptionStackTraceId"));

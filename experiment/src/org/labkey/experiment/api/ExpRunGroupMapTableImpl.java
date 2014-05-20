@@ -71,7 +71,7 @@ public class ExpRunGroupMapTableImpl extends ExpTableImpl<ExpRunGroupMapTable.Co
 
             case CreatedBy:
                 ColumnInfo createdBy = wrapColumn(alias, _rootTable.getColumn("CreatedBy"));
-                createdBy.setFk(new UserIdQueryForeignKey(_userSchema.getUser(),_userSchema.getContainer()));
+                createdBy.setFk(new UserIdQueryForeignKey(_userSchema.getUser(),_userSchema.getContainer(), true));
                 return createdBy;
 
             default:

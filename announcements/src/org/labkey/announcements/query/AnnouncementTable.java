@@ -111,8 +111,8 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
         formattedBodyColumn.setShownInInsertView(false);
         formattedBodyColumn.setShownInDetailsView(true);
 
-        getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer()));
-        getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer()));
+        getColumn("CreatedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer(), true));
+        getColumn("ModifiedBy").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer(), true));
         getColumn("AssignedTo").setFk(new UserIdQueryForeignKey(_userSchema.getUser(), getContainer()));
 
         setName(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME);
