@@ -22,8 +22,7 @@ import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
-import org.labkey.api.query.LookupForeignKey;
-import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserIdQueryForeignKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -162,14 +161,7 @@ public class ContainerTable extends FilteredTable<UserSchema>
 
         col = getColumn("CreatedBy");
         col.setReadOnly(true);
-        col.setFk(new LookupForeignKey("UserId", "DisplayName")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                String tableName = _userSchema.getUser().isSiteAdmin() ? "SiteUsers" : "Users";
-                return QueryService.get().getUserSchema(_userSchema.getUser(), _userSchema.getContainer(), "core").getTable(tableName);
-            }
-        });
+        col.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer(), true));
 
         ColumnInfo title = getColumn("Title");
         title.setURL(detailsURL);

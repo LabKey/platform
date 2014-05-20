@@ -37,7 +37,6 @@ import org.labkey.data.xml.TableType;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -346,7 +345,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         assertCorrectParentTable(col);
         SimpleFilter.InClause clause = new SimpleFilter.InClause(col.getFieldKey(), params);
         SQLFragment frag = clause.toSQLFragment(Collections.<FieldKey, ColumnInfo>emptyMap(), _schema.getSqlDialect());
-        addCondition(frag);
+        addCondition(frag, col.getFieldKey());
     }
 
 

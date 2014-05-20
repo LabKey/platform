@@ -30,15 +30,40 @@ import org.labkey.api.security.User;
  */
 public class UserIdQueryForeignKey extends QueryForeignKey
 {
+    private final boolean _includeAllUsers;
+
     public UserIdQueryForeignKey(User user, Container container)
     {
-        super("core", container, null, user, "Users", "UserId", "DisplayName");
+        this(user, container, false);
+    }
+
+    /** @param includeAllUsers if true, don't filter to users who are members of the current project, etc. Useful for
+     * automatically-populated columns like CreatedBy and ModifiedBy, where you want to see if the user even if they
+     * no longer have permission to access the container */
+    public UserIdQueryForeignKey(User user, Container container, boolean includeAllUsers)
+    {
+        super("core", container, null, user, includeAllUsers ? "SiteUsers" : "Users", "UserId", "DisplayName");
+        _includeAllUsers = includeAllUsers;
+    }
+
+    @Override
+    public TableInfo getLookupTableInfo()
+    {
+        TableInfo result = super.getLookupTableInfo();
+        if (_includeAllUsers)
+        {
+            // Clear out the filter that might be preventing us from resolving the lookup if the user list is being filtered
+            FilteredTable table = (FilteredTable)result;
+            table.clearConditions(FieldKey.fromParts("UserId"));
+        }
+        return result;
     }
 
     /* set foreign key and display column */
     static public ColumnInfo initColumn(User user, Container container, ColumnInfo column, boolean guestAsBlank)
     {
-        column.setFk(new UserIdQueryForeignKey(user, container));
+        boolean showAllUsers = column.getName().equalsIgnoreCase("createdby") || column.getName().equalsIgnoreCase("modifiedby");
+        column.setFk(new UserIdQueryForeignKey(user, container, showAllUsers));
         column.setDisplayColumnFactory(guestAsBlank ? _factoryBlank : _factoryGuest);
         return column;
     }

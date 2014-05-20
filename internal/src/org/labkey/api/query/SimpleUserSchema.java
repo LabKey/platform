@@ -276,7 +276,7 @@ public class SimpleUserSchema extends UserSchema
                (colName.equalsIgnoreCase("owner") || colName.equalsIgnoreCase("createdby") || colName.equalsIgnoreCase("modifiedby")) &&
                (_userSchema.getDbSchema().getScope().isLabKeyScope()))
             {
-                wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer()));
+                wrap.setFk(new UserIdQueryForeignKey(_userSchema.getUser(), _userSchema.getContainer(), true));
                 wrap.setUserEditable(false);
                 wrap.setShownInInsertView(false);
                 wrap.setShownInUpdateView(false);
