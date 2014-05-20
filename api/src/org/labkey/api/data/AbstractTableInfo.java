@@ -839,7 +839,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
             }
             else
             {
-                LOG.warn("Query name in XML metadata in schema '" + schema.getSchemaName() + "' did not match expected. Was: [" + xmlTable.getTableName() + "], expected: [" + getName() + "] in container " + schema.getContainer().getPath());
+                LOG.debug("Query name in XML metadata in schema '" + schema.getSchemaName() + "' did not match expected. Was: [" + xmlTable.getTableName() + "], expected: [" + getName() + "] in container " + schema.getContainer().getPath());
             }
         }
         if (xmlTable.getTitleColumn() != null)
