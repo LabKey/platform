@@ -458,4 +458,84 @@
     </ns:columns>
     <ns:pkColumnName>RowId</ns:pkColumnName>
   </ns:table>
+    <ns:table tableName="RSSFeeds" tableDbType="TABLE">
+        <ns:columns>
+            <ns:column columnName="RowId">
+                <ns:columnTitle>Row Id</ns:columnTitle>
+                <ns:inputType>text</ns:inputType>
+                <ns:inputLength>10</ns:inputLength>
+                <ns:nullable>false</ns:nullable>
+                <ns:isReadOnly>true</ns:isReadOnly>
+                <ns:isKeyField>true</ns:isKeyField>
+                <ns:isHidden>true</ns:isHidden>
+            </ns:column>
+            <ns:column columnName="EntityId">
+                <ns:isHidden>true</ns:isHidden>
+                <ns:description>GUID that uniquely identifies this row</ns:description>
+            </ns:column>
+            <ns:column columnName="CreatedBy">
+                <ns:datatype>int</ns:datatype>
+                <ns:columnTitle>Created By</ns:columnTitle>
+                <ns:inputType>text</ns:inputType>
+                <ns:inputLength>10</ns:inputLength>
+                <ns:isReadOnly>true</ns:isReadOnly>
+                <ns:fk>
+                    <ns:fkColumnName>UserId</ns:fkColumnName>
+                    <ns:fkTable>Users</ns:fkTable>
+                    <ns:fkDbSchema>core</ns:fkDbSchema>
+                </ns:fk>
+            </ns:column>
+            <ns:column columnName="Created">
+                <ns:columnTitle>Created</ns:columnTitle>
+                <ns:inputType>text</ns:inputType>
+                <ns:formatString>DateTime</ns:formatString>
+                <ns:inputLength>23</ns:inputLength>
+                <ns:isReadOnly>true</ns:isReadOnly>
+            </ns:column>
+            <ns:column columnName="ModifiedBy">
+                <ns:datatype>int</ns:datatype>
+                <ns:columnTitle>Modified By</ns:columnTitle>
+                <ns:inputType>text</ns:inputType>
+                <ns:inputLength>10</ns:inputLength>
+                <ns:isReadOnly>true</ns:isReadOnly>
+                <ns:fk>
+                    <ns:fkColumnName>UserId</ns:fkColumnName>
+                    <ns:fkTable>Users</ns:fkTable>
+                    <ns:fkDbSchema>core</ns:fkDbSchema>
+                </ns:fk>
+            </ns:column>
+            <ns:column columnName="Container"/>
+            <ns:column columnName="Modified">
+                <ns:columnTitle>Modified</ns:columnTitle>
+                <ns:inputType>text</ns:inputType>
+                <ns:formatString>DateTime</ns:formatString>
+                <ns:inputLength>23</ns:inputLength>
+                <ns:isReadOnly>true</ns:isReadOnly>
+            </ns:column>
+            <ns:column columnName="FeedName">
+                <ns:columnTitle>Feed Name</ns:columnTitle>
+                <ns:description>Friendly name for this feed</ns:description>
+                <ns:inputType>text</ns:inputType>
+            </ns:column>
+            <ns:column columnName="FeedURL">
+                <ns:columnTitle>Feed URL</ns:columnTitle>
+                <ns:description>The feed's source URL</ns:description>
+                <ns:inputType>text</ns:inputType>
+            </ns:column>
+            <ns:column columnName="LastRead">
+                <ns:columnTitle>Last Read</ns:columnTitle>
+                <ns:description>The last date the Feed URL was read</ns:description>
+                <ns:isHidden>true</ns:isHidden>
+                <ns:inputType>text</ns:inputType>
+                <ns:formatString>DateTime</ns:formatString>
+                <ns:isReadOnly>true</ns:isReadOnly>
+            </ns:column>
+            <ns:column columnName="Content">
+                <ns:columnTitle>Content</ns:columnTitle>
+                <ns:isHidden>true</ns:isHidden>
+                <ns:inputType>text</ns:inputType>
+                <ns:isReadOnly>true</ns:isReadOnly>
+            </ns:column>
+        </ns:columns>
+    </ns:table>
 </ns:tables>

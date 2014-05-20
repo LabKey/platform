@@ -4,6 +4,7 @@ announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-0.00-12.10.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-12.10-12.20.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-13.30-14.10.sql -text
+announcements/resources/schemas/dbscripts/postgresql/comm-14.11-14.12.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/postgresql/obsolete/comm-0.00-1.00.sql -text
@@ -51,6 +52,7 @@ announcements/resources/schemas/dbscripts/postgresql/obsolete/cpas-0.00-0.59.sql
 announcements/resources/schemas/dbscripts/sqlserver/comm-0.00-12.10.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-12.10-12.20.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-13.30-14.10.sql -text
+announcements/resources/schemas/dbscripts/sqlserver/comm-14.11-14.12.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-create.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-drop.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/obsolete/comm-0.00-1.00.sql -text
@@ -150,6 +152,7 @@ announcements/src/org/labkey/announcements/query/AnnouncementSchema.java -text
 announcements/src/org/labkey/announcements/query/AnnouncementSubscriptionTable.java -text
 announcements/src/org/labkey/announcements/query/AnnouncementTable.java -text
 announcements/src/org/labkey/announcements/query/ForumSubscriptionTable.java -text
+announcements/src/org/labkey/announcements/query/RSSFeedsTable.java -text
 announcements/src/org/labkey/announcements/respond.jsp -text
 announcements/src/org/labkey/announcements/rss.jsp -text
 announcements/src/org/labkey/announcements/update.jsp -text

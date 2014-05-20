@@ -41,6 +41,7 @@ public class AnnouncementSchema extends UserSchema
     public static final String ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME = "AnnouncementSubscription";
     public static final String EMAIL_OPTION_TABLE_NAME = "EmailOption";
     public static final String EMAIL_FORMAT_TABLE_NAME = "EmailFormat";
+    public static final String RSS_FEEDS_TABLE_NAME = "RSSFeeds";
 
     public static final int PAGE_TYPE_ID = 0;
 
@@ -54,6 +55,7 @@ public class AnnouncementSchema extends UserSchema
         names.add(ANNOUNCEMENT_SUBSCRIPTION_TABLE_NAME);
         names.add(EMAIL_OPTION_TABLE_NAME);
         names.add(EMAIL_FORMAT_TABLE_NAME);
+        names.add(RSS_FEEDS_TABLE_NAME);
         TABLE_NAMES = Collections.unmodifiableSet(names);
     }
 
@@ -104,6 +106,10 @@ public class AnnouncementSchema extends UserSchema
         {
             return createAnnouncementSubscriptionTable();
         }
+        if (RSS_FEEDS_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return createRSSFeedsTable();
+        }
         return null;
     }
 
@@ -125,6 +131,11 @@ public class AnnouncementSchema extends UserSchema
         result.setPublicSchemaName(getName());
         result.addCondition(result.getRealTable().getColumn("Type"), "messages");
         return result;
+    }
+
+    public TableInfo createRSSFeedsTable()
+    {
+        return new RSSFeedsTable(this);
     }
 
     public TableInfo createAnnouncementSubscriptionTable()

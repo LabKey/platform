@@ -41,6 +41,8 @@ import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.notification.EmailService;
+import org.labkey.api.rss.RSSService;
+import org.labkey.api.rss.RSSServiceImpl;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.UserManager;
@@ -81,6 +83,9 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     public AnnouncementModule()
     {
         setDescription("Message Board and Discussion Service");
+
+        RSSServiceImpl i = new RSSServiceImpl();
+        RSSService.set(i);
     }
 
     @Override
@@ -92,7 +97,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public double getVersion()
     {
-        return 14.11;
+        return 14.12;
     }
 
     protected void init()
