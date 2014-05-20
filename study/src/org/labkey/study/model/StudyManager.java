@@ -209,12 +209,15 @@ public class StudyManager
                 }
             }, StudyImpl.class)
         {
-            public List<StudyImpl> get(final Container c, final SimpleFilter filterArg, final String sortString)
+            public List<StudyImpl> get(final Container c, SimpleFilter filterArg, final String sortString)
             {
                 assert filterArg == null && sortString == null;
                 String cacheId = getCacheId(filterArg);
                 if (sortString != null)
                     cacheId += "; sort = " + sortString;
+
+                final Set<Container> siblingsWithNoStudies = new HashSet<>();
+                final Set<Study> siblingsStudies = new HashSet<>();
 
                 CacheLoader<String,Object> loader = new CacheLoader<String,Object>()
                 {
@@ -238,7 +241,6 @@ public class StudyManager
                         // The match, if any, for the container that's being queried directly
                         StudyImpl result = null;
                         // Keep track of all of the containers that DON'T have a study so we can cache them as a miss
-                        Set<Container> siblingsWithNoStudies = new HashSet<>();
                         if (c.getParent() != null)
                         {
                             siblingsWithNoStudies.addAll(ContainerManager.getChildren(c.getParent()));
@@ -246,7 +248,7 @@ public class StudyManager
                             siblingsWithNoStudies.remove(c);
                         }
 
-                        for (final StudyImpl obj : objs)
+                        for (StudyImpl obj : objs)
                         {
                             obj.lock();
 
@@ -259,37 +261,48 @@ public class StudyManager
                                 // Found a study for this container
                                 siblingsWithNoStudies.remove(obj.getContainer());
 
-                                // Cache the hit
-                                StudyCache.get(getTableInfo(), obj.getContainer(), getCacheId(filterArg), new CacheLoader<String, Object>()
-                                {
-                                    @Override
-                                    public Object load(String key, @Nullable Object argument)
-                                    {
-                                        return Collections.singletonList(obj);
-                                    }
-                                });
+                                // Remember the hit
+                                siblingsStudies.add(obj);
                             }
-                        }
-
-                        for (Container studylessChild : siblingsWithNoStudies)
-                        {
-                            // Cache the miss
-                            StudyCache.get(getTableInfo(), studylessChild, getCacheId(filterArg), new CacheLoader<String, Object>()
-                            {
-                                @Override
-                                public Object load(String key, @Nullable Object argument)
-                                {
-                                    return Collections.emptyList();
-                                }
-                            });
                         }
 
                         // Return the specific hit/miss for the originally queried container
                         return result == null ? Collections.emptyList() : Collections.singletonList(result);
                     }
                 };
-                return (List<StudyImpl>) StudyCache.get(getTableInfo(), c, cacheId, loader);
+
+                List<StudyImpl> result = (List<StudyImpl>) StudyCache.get(getTableInfo(), c, cacheId, loader);
+
+                // Make sure the misses are cached
+                for (Container studylessChild : siblingsWithNoStudies)
+                {
+                    StudyCache.get(getTableInfo(), studylessChild, getCacheId(filterArg), new CacheLoader<String, Object>()
+                    {
+                        @Override
+                        public Object load(String key, @Nullable Object argument)
+                        {
+                            return Collections.emptyList();
+                        }
+                    });
+                }
+
+                // Make sure the sibling hits are cached
+                for (final Study study : siblingsStudies)
+                {
+                    StudyCache.get(getTableInfo(), study.getContainer(), getCacheId(filterArg), new CacheLoader<String, Object>()
+                    {
+                        @Override
+                        public Object load(String key, @Nullable Object argument)
+                        {
+                            return Collections.singletonList(study);
+                        }
+                    });
+                }
+
+                return result;
             }
+
+
         };
 
         _visitHelper = new QueryHelper<>(new TableInfoGetter()
