@@ -16,7 +16,6 @@
 package org.labkey.api.reports.report;
 
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentFile;
