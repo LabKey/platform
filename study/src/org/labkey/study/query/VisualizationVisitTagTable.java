@@ -1,7 +1,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.VirtualTable;
@@ -36,35 +36,7 @@ public class VisualizationVisitTagTable extends VirtualTable
         else
             _dayString = "Day";
 
-        SQLFragment dateCalc;
-        if (getSqlDialect().isSqlServer())
-        {
-            String ssInterval;
-            if ("day".equalsIgnoreCase(interval))
-                ssInterval = "dd";
-            else if ("week".equalsIgnoreCase(interval))
-                ssInterval = "ww";
-            else if ("month".equalsIgnoreCase(interval))
-                ssInterval = "mm";
-            else if ("year".equalsIgnoreCase(interval))
-                ssInterval = "yy";
-            else
-                throw new IllegalStateException("Invalid interval.");
-
-            dateCalc = new SQLFragment("DATEADD(" + ssInterval + ", " + _dayString + ", StartDate)" );
-        }
-        else
-        {
-            if (!"day".equalsIgnoreCase(interval) && !"week".equalsIgnoreCase(interval) &&
-                !"month".equalsIgnoreCase(interval) && !"year".equalsIgnoreCase(interval))
-            {
-                throw new IllegalStateException("Invalid interval.");
-            }
-
-            dateCalc = new SQLFragment("(StartDate + interval '1 " + interval + "' * " + _dayString + ")");
-        }
-
-        addColumn(new ExprColumn(this, "StartDate", dateCalc, JdbcType.DATE));
+        addColumn(new ExprColumn(this, "ZeroDay", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + _dayString), JdbcType.INTEGER));
     }
 
     @NotNull
@@ -84,23 +56,22 @@ public class VisualizationVisitTagTable extends VirtualTable
                          innerAlias + ".ParticipantId = study.ParticipantVisit.ParticipantId";
         }
 
-        Container container = _study.getContainer();
-        SQLFragment from = new SQLFragment("(SELECT StartDate, VisitId, " + _dayString + ", " + innerAlias + ".ParticipantId " + " FROM (SELECT ParticipantId, ");
+        SQLFragment from = new SQLFragment("(SELECT VisitId, " + _dayString + ", " + innerAlias + ".ParticipantId " + " FROM (SELECT ParticipantId, ");
         from.append("COALESCE(CohortVisitTag.VisitId, NoCohortTag.VisitId) As VisitId, CurrentCohortId FROM study.Participant\n")
             .append("LEFT OUTER JOIN study.VisitTagMap CohortVisitTag ON study.Participant.CurrentCohortId = CohortVisitTag.CohortID AND CohortVisitTag.VisitTag=")
             .append("'" + _visitTagName + "'\n")
-            .append("AND CohortVisitTag.Container = ?");
-        from.add(container);
+            .append("AND CohortVisitTag.Container = Participant.Container");
         from.append("\nLEFT OUTER JOIN study.VisitTagMap NoCohortTag ON NoCohortTag.VisitTag =")
             .append("'" + _visitTagName + "' AND NoCohortTag.CohortID IS NULL\n")
-            .append("AND NoCohortTag.Container = ?");
-        from.add(container);
-        from.append("\nWHERE study.Participant.Container = ?) ").append(innerAlias);
-        from.add(container);
-        from.append(joinString)
-            .append("\nJOIN study.study ON study.study.Container = ?");
-        from.add(container);
-        from.append(") ").append(alias);
+            .append("AND NoCohortTag.Container = Participant.Container");
+        from.append("\nWHERE ");
+
+        // TODO: this is a temp fix for the Dataspace usecase
+        from.append(new ContainerFilter.AllInProject(_user).getSQLFragment(getSchema(), new SQLFragment("study.Participant.Container"), _study.getContainer()));
+
+        from.append(") ").append(innerAlias);
+        from.append(joinString);
+        from.append("\n) ").append(alias);
         return from;
     }
 }

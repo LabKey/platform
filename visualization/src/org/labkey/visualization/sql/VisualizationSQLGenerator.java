@@ -179,44 +179,52 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 {
                     case TIME_DATEBASED:
                         Map<String, Object> dateOptions = (Map<String, Object>) measureInfo.get("dateOptions");
-                        Map<String, Object> dateProperties = (Map<String, Object>) dateOptions.get("dateCol");
-                        Map<String, Object> zeroDateProperties = (Map<String, Object>) dateOptions.get("zeroDateCol");
 
-                        if (dateProperties != null && !dateProperties.isEmpty() &&
-                                (zeroDateProperties != null && !zeroDateProperties.isEmpty()) || null != dateOptions.get("zeroDayVisitTag"))
+                        if (dateOptions != null && !dateOptions.isEmpty())
                         {
                             String interval = (String) dateOptions.get("interval");
                             interval = normalizeInterval(interval);
-                            VisualizationSourceColumn dateCol = _columnFactory.create(getViewContext(), dateProperties);
-                            dateCol.setAllowNullResults(measureCol.isAllowNullResults());
-                            ensureSourceQuery(_viewContext.getContainer(), dateCol, query).addSelect(dateCol, false);
+                            VisualizationIntervalColumn newInterval;
 
-                            VisualizationSourceColumn zeroDateCol;
-                            if (zeroDateProperties != null && !zeroDateProperties.isEmpty())
+                            Map<String, Object> dateProperties = (Map<String, Object>) dateOptions.get("dateCol");
+                            Map<String, Object> zeroDateProperties = (Map<String, Object>) dateOptions.get("zeroDateCol");
+
+                            if (dateProperties != null && !dateProperties.isEmpty() && zeroDateProperties != null && !zeroDateProperties.isEmpty())
                             {
-                                zeroDateCol = _columnFactory.create(getViewContext(), zeroDateProperties);
+                                VisualizationSourceColumn dateCol = _columnFactory.create(getViewContext(), dateProperties);
+                                dateCol.setAllowNullResults(measureCol.isAllowNullResults());
+                                ensureSourceQuery(_viewContext.getContainer(), dateCol, query).addSelect(dateCol, false);
+
+                                VisualizationSourceColumn zeroDateCol = _columnFactory.create(getViewContext(), zeroDateProperties);
                                 zeroDateCol.setAllowNullResults(false);
                                 ensureSourceQuery(_viewContext.getContainer(), zeroDateCol, query).addSelect(zeroDateCol, false);
+
+                                newInterval = new VisualizationIntervalColumn(zeroDateCol, dateCol, interval, false);
+                            }
+                            else if (null != dateOptions.get("zeroDayVisitTag"))
+                            {
+                                String zeroDayVisitTag = (String)dateOptions.get("zeroDayVisitTag");
+                                boolean useProtocolDay = (null == dateOptions.get("useProtocolDay") || (boolean)dateOptions.get("useProtocolDay"));
+                                VisualizationSourceColumn zeroDayCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "ZeroDay", true,
+                                                                    zeroDayVisitTag, useProtocolDay, interval);
+                                zeroDayCol.setAllowNullResults(false);
+                                ensureSourceQuery(_viewContext.getContainer(), zeroDayCol, query).addSelect(zeroDayCol, false);
+
+                                newInterval = new VisualizationIntervalColumn(zeroDayCol, measureCol, interval, true);
                             }
                             else
                             {
-
-                                String zeroDayVisitTag = (String)dateOptions.get("zeroDayVisitTag");
-                                boolean useProtocolDay = (null == dateOptions.get("useProtocolDay") || (boolean)dateOptions.get("useProtocolDay"));
-                                zeroDateCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "StartDate", true,
-                                                                    zeroDayVisitTag, useProtocolDay, interval);
-                                ensureSourceQuery(_viewContext.getContainer(), zeroDateCol, query).addSelect(zeroDateCol, false);
+                                throw new IllegalArgumentException("The 'zeroDayVisitTag' property or the 'dateCol' and 'zeroDateCol' properties are requried.");
                             }
 
                             if (interval != null)
                             {
-                                VisualizationIntervalColumn newInterval = new VisualizationIntervalColumn(zeroDateCol, dateCol, interval);
                                 boolean foundMatch = false;
                                 if (!_intervals.isEmpty())
                                 {
                                     for (VisualizationIntervalColumn existingInterval : _intervals.values())
                                     {
-                                        if (existingInterval.getStartDate() == newInterval.getStartDate() && existingInterval.getInterval() == newInterval.getInterval())
+                                        if (existingInterval.getStartCol() == newInterval.getStartCol() && existingInterval.getInterval() == newInterval.getInterval())
                                         {
                                             foundMatch = true;
                                         }
@@ -232,10 +240,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                                 }
                             }
                         }
-                        else
-                        {
-                            throw new IllegalArgumentException("The 'dateCol' and 'zeroDateCol' or 'zeroDayVisitTag' properties are requried for each measure.");
-                        }
+
                         break;
                     case TIME_VISITBASED:
                         // No special handling needed for visit-based charts
@@ -584,10 +589,10 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         {
             VisualizationIntervalColumn interval = intervals.get(i);
             // if the end date has multiple aliases, set it to be the first
-            Set<VisualizationSourceColumn> intervalAliases = allAliases.get(interval.getEndDate().getOriginalName());
+            Set<VisualizationSourceColumn> intervalAliases = allAliases.get(interval.getEndCol().getOriginalName());
             if (intervalAliases != null && intervalAliases.size() > 1)
             {
-                interval.getEndDate().setOtherAlias(factory.getByAlias(intervalAliases.iterator().next().getAlias()).getAlias());
+                interval.getEndCol().setOtherAlias(factory.getByAlias(intervalAliases.iterator().next().getAlias()).getAlias());
             }
             masterSelectList.append(sep).append(interval.getSQL()).append(" AS ").append(interval.getSQLAlias(intervalsSize)).append(" @preservetitle");
         }
