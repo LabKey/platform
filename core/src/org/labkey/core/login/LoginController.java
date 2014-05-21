@@ -431,9 +431,8 @@ public class LoginController extends SpringActionController
                 if (success)
                 {
                     response = new ApiSimpleResponse();
-                    response.put("id", user.getUserId());
-                    response.put("displayName", user.getDisplayName(user));
-                    response.put("email", user.getEmail());
+                    response.put("success", success);
+                    response.put("user", User.getUserProps(user, getContainer()));
                 }
             }
 

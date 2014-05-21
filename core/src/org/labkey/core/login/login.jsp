@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
 <%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -38,7 +39,12 @@
     LookAndFeelProperties props = LookAndFeelProperties.getInstance(getContainer());
     boolean agreeOnly = bean.agreeOnly;
     String formURL = agreeOnly ? buildURL(LoginController.AgreeToTermsAction.class) : buildURL(LoginController.LoginAction.class);
+    String email = bean.form.getEmail();
+    boolean focusEmail = StringUtils.isBlank(email);
 %>
+<script type="text/javascript">
+    console.log('email:', '\'' + <%=PageFlowUtil.jsString(email)%> + '\'');
+</script>
 <style type="text/css">
 
     .auth-header {
@@ -94,12 +100,12 @@
             <div class="auth-form-body">
                 <% if (!agreeOnly) { %>
                 <label for="email">Email</label>
-                <input id="email" name="email" value="<%=h(bean.form.getEmail())%>" type="text" class="input-block" tabindex="1">
+                <input id="email" name="email" value="<%=h(email)%>" type="text" class="input-block" tabindex="1" <%=h(focusEmail ? "autofocus" : "")%>>
                 <label for="password">
                     Password
                     <a href="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>">(forgot password)</a>
                 </label>
-                <input id="password" name="password" type="password" class="input-block" tabindex="2">
+                <input id="password" name="password" type="password" class="input-block" tabindex="2" <%=h(!focusEmail ? "autofocus" : "")%>>
                 <input type=checkbox name="remember" id="remember" <%=checked(bean.remember)%>>
                 <label for="remember">Remember my email address</label>
                 <% } // !agreeOnly %>

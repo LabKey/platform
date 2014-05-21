@@ -326,7 +326,7 @@ if (LABKEY.Applet)
                     events : "window._evalContext.",
                     webdavPrefix: LABKEY.contextPath+'/_webdav/',
                     user: LABKEY.user.email,
-                    password: LABKEY.user.sessionid,
+                    password: LABKEY.Utils.getSessionID(),
                     text : params.text,
                     allowDirectoryUpload : params.allowDirectoryUpload !== false,
                     overwrite : "true",
