@@ -796,8 +796,14 @@ public class IssueManager
     {
         try (DbScope.Transaction transaction = _issuesSchema.getSchema().getScope().ensureTransaction())
         {
-            String deleteComments = "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container = ?)";
+            String deleteStmt = "DELETE FROM %s WHERE IssueId IN (SELECT IssueId FROM %s WHERE Container = ?";
+
+            String deleteComments = String.format(deleteStmt, _issuesSchema.getTableInfoComments(), _issuesSchema.getTableInfoIssues());
             new SqlExecutor(_issuesSchema.getSchema()).execute(deleteComments, c.getId());
+
+            String deleteRelatedIssues = String.format(deleteStmt, _issuesSchema.getTableInfoRelatedIssues(), _issuesSchema.getTableInfoIssues());
+            new SqlExecutor(_issuesSchema.getSchema()).execute(deleteRelatedIssues, c.getId());
+
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), c, null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoEmailPrefs(), c, null);
@@ -814,17 +820,24 @@ public class IssueManager
 
         try (DbScope.Transaction transaction = _issuesSchema.getSchema().getScope().ensureTransaction())
         {
-            String deleteComments =
-                    "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + " WHERE Container NOT IN (SELECT EntityId FROM core.Containers))";
+            String subQuery = String.format("SELECT IssueId FROM %s WHERE Container NOT IN (SELECT EntityId FROM core.Containers)", _issuesSchema.getTableInfoIssues());
+
+            String deleteComments = String.format("DELETE FROM %s WHERE IssueId IN (%s)", _issuesSchema.getTableInfoComments(), subQuery);
             int commentsDeleted = new SqlExecutor(_issuesSchema.getSchema()).execute(deleteComments);
+
             String deleteOrphanedComments =
                     "DELETE FROM " + _issuesSchema.getTableInfoComments() + " WHERE IssueId NOT IN (SELECT IssueId FROM " + _issuesSchema.getTableInfoIssues() + ")";
             commentsDeleted += new SqlExecutor(_issuesSchema.getSchema()).execute(deleteOrphanedComments);
+
+            // NOTE: this is ugly...
+            String deleteRelatedIssues = String.format("DELETE FROM %s WHERE IssueId IN (%s) OR RelatedIssueId IN (%s)", _issuesSchema.getTableInfoRelatedIssues(), subQuery, subQuery);
+            int relatedIssuesDeleted = new SqlExecutor(_issuesSchema.getSchema()).execute(deleteRelatedIssues);
+
             int issuesDeleted = ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssues(), null);
             ContainerUtil.purgeTable(_issuesSchema.getTableInfoIssueKeywords(), null);
             transaction.commit();
 
-            message = "deleted " + issuesDeleted + " issues<br>\ndeleted " + commentsDeleted + " comments<br>\n";
+            message = String.format("deleted %d issues<br>\ndeleted %d comments<br>\ndeleted %d relatedIssues", issuesDeleted, commentsDeleted, relatedIssuesDeleted);
         }
 
         return message;
