@@ -913,6 +913,7 @@ span.labkey-help-pop-up
 
 .auth-form-body label {
     font-weight: bold;
+    font-family: Arial, sans-serif;
 }
 
 .auth-form-body input[type="text"],

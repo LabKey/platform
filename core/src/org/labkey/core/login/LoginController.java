@@ -417,7 +417,18 @@ public class LoginController extends SpringActionController
             {
                 if (!isTermsOfUseApproved(form))
                 {
-                    errors.reject(ERROR_MSG, "To use the " + termsProject.getName() + " project, you must log in and approve the terms of use.");
+                    if (!form.isApprovedTermsOfUse())
+                    {
+                        // Determine if the user is already logged in
+                        if (!getUser().isGuest())
+                        {
+                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must approve the terms of use.");
+                        }
+                        else
+                        {
+                            errors.rejectValue("approvedTermsOfUse", ERROR_MSG, "To use the " + termsProject.getName() + " project, you must log in and approve the terms of use.");
+                        }
+                    }
                 }
             }
 
@@ -426,6 +437,7 @@ public class LoginController extends SpringActionController
             if (!errors.hasErrors())
             {
                 User user = authenticate(form, errors, getViewContext(), true);
+
                 boolean success = (null != user);
 
                 if (success)
@@ -433,6 +445,12 @@ public class LoginController extends SpringActionController
                     response = new ApiSimpleResponse();
                     response.put("success", success);
                     response.put("user", User.getUserProps(user, getContainer()));
+
+                    if (form.isApprovedTermsOfUse())
+                    {
+                        SecurityManager.setTermsOfUseApproved(getViewContext(), termsProject, true);
+                        response.put("approvedTermsOfUse", true);
+                    }
                 }
             }
 
