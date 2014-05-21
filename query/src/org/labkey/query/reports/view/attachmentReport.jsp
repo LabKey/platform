@@ -15,12 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.DateUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
+<%@ page import="org.labkey.api.view.template.ClientDependency"%>
 <%@ page import="org.labkey.query.reports.ReportsController" %>
 <%@ page import="org.labkey.query.reports.ReportsController.AttachmentReportForm" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
@@ -224,7 +223,7 @@
                 description : true,
                 shared      : true
             },
-            disableShared   : <%=(form.getCanChangeSharing()==false)%>,
+            disableShared   : <%=(!form.getCanChangeSharing())%>,
         <% if (form.isUpdate()) { %>
             record : {
                 data : {

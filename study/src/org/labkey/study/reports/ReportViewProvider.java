@@ -220,6 +220,7 @@ public class ReportViewProvider implements DataViewProvider
                         access = "public";
                         info.setShared(true);
                     }
+
                     // studies support dataset level report permissions
                     if (studyFolder)
                     {

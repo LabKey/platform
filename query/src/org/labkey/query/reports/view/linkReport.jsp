@@ -18,9 +18,9 @@
 <%@ page import="org.labkey.api.util.DateUtil"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.query.reports.ReportsController.LinkReportForm" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -117,7 +117,7 @@
                 labelWidth : 120,
                 msgTarget : 'side'
             },
-            disableShared   : <%=(form.getCanChangeSharing()==false)%>,
+            disableShared   : <%=(!form.getCanChangeSharing())%>,
             visibleFields   : {
                 viewName: true,
                 author  : true,
