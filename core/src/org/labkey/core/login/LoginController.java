@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.FormattedError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
@@ -39,6 +40,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.AuthenticationManager;
+import org.labkey.api.security.AuthenticationManager.AuthenticationResult;
 import org.labkey.api.security.AuthenticationProvider;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
@@ -76,6 +78,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
@@ -231,6 +234,67 @@ public class LoginController extends SpringActionController
         return new LoginUrlsImpl();
     }
 
+    @Nullable
+    private static User authenticate(LoginForm form, BindException errors, ViewContext viewContext, boolean logFailures)
+    {
+        User user = null;
+
+        HttpServletRequest request = viewContext.getRequest();
+        HttpServletResponse response = viewContext.getResponse();
+
+        try
+        {
+            // Attempt authentication with all registered providers
+            AuthenticationResult result = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
+
+            switch (result.getStatus())
+            {
+                case Success:
+                    user = result.getUser();
+                    SecurityManager.setAuthenticatedUser(request, user);
+                    break;
+                case InactiveUser:
+                    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
+                    errors.addError(new FormattedError("Your account has been deactivated. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> if you need to reactivate this account."));
+                    break;
+                case BadCredentials:
+                    if (null != form.getEmail() || null != form.getPassword())
+                    {
+                        // Email & password were specified, but authentication failed...
+                        // display either invalid email address error or generic "couldn't authenticate" message
+                        new ValidEmail(form.getEmail());
+                        errors.reject(ERROR_MSG, "The e-mail address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off.");
+                    }
+                    break;
+                case LoginPaused:
+                    if (null != form.getEmail() || null != form.getPassword())
+                    {
+                        new ValidEmail(form.getEmail());
+                        errors.reject(ERROR_MSG, "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute.");
+                    }
+                    break;
+                default:
+                    throw new IllegalStateException("Unknown authentication status: " + result.getStatus());
+            }
+        }
+        catch (ValidEmail.InvalidEmailException e)
+        {
+            String defaultDomain = ValidEmail.getDefaultDomain();
+            StringBuilder sb = new StringBuilder();
+            sb.append("Please sign in using your full email address, for example: ");
+            if (defaultDomain != null && defaultDomain.length() > 0)
+            {
+                sb.append("employee@");
+                sb.append(defaultDomain);
+                sb.append(" or ");
+            }
+            sb.append("employee@domain.com");
+            errors.reject(ERROR_MSG, sb.toString());
+        }
+
+        return user;
+    }
+
 
     @RequiresNoPermission
     @ActionNames("login, showLogin")
@@ -260,29 +324,27 @@ public class LoginController extends SpringActionController
             // If user is already logged in, then redirect immediately.  This is necessary because of Excel's link
             // behavior (see #9246).  Next, check to see if any authentication credentials already exist (passed as URL
             // param, in a cookie, etc.)
-            if (!reshow && (isLoggedIn() || authenticate(form, request, response, false)))
+            if (!reshow && (isLoggedIn() || authenticate(form, errors, getViewContext(), false) != null))
                 return HttpView.redirect(getSuccessURL(form));
             else
-                return showLogin(form, request, getPageConfig());
+                return showLogin(form, errors, request, getPageConfig());
         }
 
         public boolean handlePost(LoginForm form, BindException errors) throws Exception
         {
-            HttpServletRequest request = getViewContext().getRequest();
-            HttpServletResponse response = getViewContext().getResponse();
-
             Project termsProject = getTermsOfUseProject(form);
 
             if (null != termsProject)
             {
                 if (!isTermsOfUseApproved(form))
                 {
-                    form.errorHtml = "To use the " + termsProject.getName() +  " project, you must log in and approve the terms of use.";
+                    errors.reject(ERROR_MSG, "To use the " + termsProject.getName() + " project, you must log in and approve the terms of use.");
                     return false;
                 }
             }
 
-            boolean success = authenticate(form, request, response, true);
+            _user = authenticate(form, errors, getViewContext(), true);
+            boolean success = (null != _user);
 
             if (success)
             {
@@ -293,6 +355,8 @@ public class LoginController extends SpringActionController
 
                 // Login page is container qualified, but we need to store the cookie at /labkey/login/ or /cpas/login/ or /login/
                 String path = StringUtils.defaultIfEmpty(getViewContext().getContextPath(), "/");
+
+                HttpServletResponse response = getViewContext().getResponse();
 
                 if (form.isRemember())
                 {
@@ -327,62 +391,6 @@ public class LoginController extends SpringActionController
             return true;
         }
 
-        private boolean authenticate(LoginForm form, HttpServletRequest request, HttpServletResponse response, boolean logFailures)
-        {
-            try
-            {
-                // Attempt authentication with all registered providers
-                AuthenticationManager.AuthenticationResult result = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
-
-                switch (result.getStatus())
-                {
-                    case Success:
-                        _user = result.getUser();
-                        SecurityManager.setAuthenticatedUser(request, _user);
-                        return true;
-                    case InactiveUser:
-                        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(getContainer());
-                        form.errorHtml = "Your account has been deactivated. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> if you need to reactivate this account.";
-                        break;
-                    case BadCredentials:
-                        if (null != form.getEmail() || null != form.getPassword())
-                        {
-                            // Email & password were specified, but authentication failed... display either invalid email address error or generic "couldn't authenticate" message
-                            new ValidEmail(form.getEmail());
-                            form.errorHtml = "The e-mail address and password you entered did not match any accounts on file.<br><br>\n" +
-                                    "Note: Passwords are case sensitive; make sure your Caps Lock is off.";
-                        }
-                        break;
-                    case LoginPaused:
-                        if (null != form.getEmail() || null != form.getPassword())
-                        {
-                            new ValidEmail(form.getEmail());
-                            form.errorHtml = "Due to the number of recent failed login attempts, authentication has been temporarily paused.<br><br>\n" +
-                                    "Try again in one minute.";
-                        }
-                        break;
-                    default:
-                        throw new IllegalStateException("Unknown authentication status: " + result.getStatus());
-                }
-            }
-            catch (ValidEmail.InvalidEmailException e)
-            {
-                String defaultDomain = ValidEmail.getDefaultDomain();
-                StringBuilder sb = new StringBuilder();
-                sb.append("Please sign in using your full email address, for example: ");
-                if (defaultDomain != null && defaultDomain.length() > 0)
-                {
-                    sb.append("employee@");
-                    sb.append(defaultDomain);
-                    sb.append(" or ");
-                }
-                sb.append("employee@domain.com");
-                form.errorHtml = sb.toString();
-            }
-
-            return false;
-        }
-
         public URLHelper getSuccessURL(LoginForm form)
         {
             return getAfterLoginURL(form, _user, form.getSkipProfile());
@@ -394,8 +402,47 @@ public class LoginController extends SpringActionController
         }
     }
 
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    // @AllowedDuringUpgrade
+    public class LoginApiAction extends MutatingApiAction<LoginForm>
+    {
+        @Override
+        public Object execute(LoginForm form, BindException errors) throws Exception
+        {
+            // TODO: check during upgrade?
+            Project termsProject = getTermsOfUseProject(form);
 
-    protected HttpView showLogin(LoginForm form, HttpServletRequest request, PageConfig page) throws Exception
+            if (null != termsProject)
+            {
+                if (!isTermsOfUseApproved(form))
+                {
+                    errors.reject(ERROR_MSG, "To use the " + termsProject.getName() + " project, you must log in and approve the terms of use.");
+                }
+            }
+
+            ApiSimpleResponse response = null;
+
+            if (!errors.hasErrors())
+            {
+                User user = authenticate(form, errors, getViewContext(), true);
+                boolean success = (null != user);
+
+                if (success)
+                {
+                    response = new ApiSimpleResponse();
+                    response.put("id", user.getUserId());
+                    response.put("displayName", user.getDisplayName(user));
+                    response.put("email", user.getEmail());
+                }
+            }
+
+            return response;
+        }
+    }
+
+
+    protected HttpView showLogin(LoginForm form, BindException errors, HttpServletRequest request, PageConfig page) throws Exception
     {
         String email = form.getEmail();
         boolean remember = false;
@@ -442,10 +489,9 @@ public class LoginController extends SpringActionController
 
         page.setTemplate(PageConfig.Template.Dialog);
         page.setIncludeLoginLink(false);
-        page.setFocusId(null != form.getEmail() ? "password" : "email");
         page.setTitle("Sign In");
 
-        LoginView view = new LoginView(form, remember, form.isApprovedTermsOfUse());
+        LoginView view = new LoginView(form, errors, remember, form.isApprovedTermsOfUse());
         vBox.addView(view);
 
         return vBox;
@@ -517,7 +563,7 @@ public class LoginController extends SpringActionController
 
         public ModelAndView getView(LoginForm form, boolean reshow, BindException errors) throws Exception
         {
-            AgreeToTermsView view = new AgreeToTermsView(form);
+            AgreeToTermsView view = new AgreeToTermsView(form, errors);
 
             PageConfig page = getPageConfig();
 
@@ -536,7 +582,7 @@ public class LoginController extends SpringActionController
             {
                 if (!form.isApprovedTermsOfUse())
                 {
-                    form.errorHtml = "To use the " + project.getName() +  " project, you must check the box to approve the terms of use.";
+                    errors.reject(ERROR_MSG, "To use the " + project.getName() +  " project, you must check the box to approve the terms of use.");
                     return false;
                 }
 
@@ -560,9 +606,9 @@ public class LoginController extends SpringActionController
 
     private abstract class BaseLoginView extends JspView<LoginBean>
     {
-        private BaseLoginView(LoginForm form, boolean agreeOnly, boolean remember, boolean termsOfUseChecked)
+        private BaseLoginView(LoginForm form, BindException errors, boolean agreeOnly, boolean remember, boolean termsOfUseChecked)
         {
-            super("/org/labkey/core/login/login.jsp", new LoginBean(form, agreeOnly, remember, termsOfUseChecked));
+            super("/org/labkey/core/login/login.jsp", new LoginBean(form, agreeOnly, remember, termsOfUseChecked), errors);
             setFrame(FrameType.NONE);
         }
     }
@@ -601,18 +647,18 @@ public class LoginController extends SpringActionController
 
     private class LoginView extends BaseLoginView
     {
-        private LoginView(LoginForm form, boolean remember, boolean termsOfUseChecked)
+        private LoginView(LoginForm form, BindException errors, boolean remember, boolean termsOfUseChecked)
         {
-            super(form, false, remember, termsOfUseChecked);
+            super(form, errors, false, remember, termsOfUseChecked);
         }
     }
 
 
     private class AgreeToTermsView extends BaseLoginView
     {
-        private AgreeToTermsView(LoginForm form)
+        private AgreeToTermsView(LoginForm form, BindException errors)
         {
-            super(form, true, false, false);
+            super(form, errors, true, false, false);
         }
     }
 
@@ -678,7 +724,6 @@ public class LoginController extends SpringActionController
 
     public static class LoginForm extends AbstractLoginForm
     {
-        private String errorHtml = "";
         private boolean remember;
         private String email;
         private String password;
@@ -714,16 +759,6 @@ public class LoginController extends SpringActionController
         public void setRemember(boolean remember)
         {
             this.remember = remember;
-        }
-
-        public String getErrorHtml()
-        {
-            return this.errorHtml;
-        }
-
-        public void setErrorHtml(String errorHtml)
-        {
-            this.errorHtml = errorHtml;
         }
 
         public boolean isApprovedTermsOfUse()
@@ -896,7 +931,7 @@ public class LoginController extends SpringActionController
             // where a user is already logged in (normal change password, admins initializing another user's password, etc.)
             if (getUser().isGuest())
             {
-                AuthenticationManager.AuthenticationResult result = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
+                AuthenticationResult result = AuthenticationManager.authenticate(request, getViewContext().getResponse(), _email.getEmailAddress(), password, form.getReturnURLHelper(), true);
 
                 if (result.getStatus() == AuthenticationManager.AuthenticationStatus.Success)
                 {
