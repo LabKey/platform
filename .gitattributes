@@ -8027,6 +8027,7 @@ internal/src/org/labkey/api/webdav/view/fileEmailNotifyPlain.jsp -text
 internal/src/org/labkey/remoteapi/RemoteConnections.java -text
 internal/src/org/labkey/remoteapi/SelectRowsStreamHack.java -text
 internal/webapp/ComponentDataView.js -text
+internal/webapp/Dropzone.lib.xml -text
 internal/webapp/Ext.ux.MultiSelectTreePanel.js -text
 internal/webapp/Ext.ux.dd.GridDragDropRowOrder.js -text
 internal/webapp/Ext.ux.form.LovCombo.css -text
@@ -8330,6 +8331,9 @@ internal/webapp/completion.js -text
 internal/webapp/dataregion/panel/Facet.js -text
 internal/webapp/designer/designer2.js -text
 internal/webapp/designer/wand.gif -text
+internal/webapp/dropzone-3.8.4/README.txt -text
+internal/webapp/dropzone-3.8.4/css/basic.css -text
+internal/webapp/dropzone-3.8.4/dropzone.js -text
 internal/webapp/extWidgets/DetailsPanel.js -text
 internal/webapp/extWidgets/ExcelUploadPanel.js -text
 internal/webapp/extWidgets/Ext4DefaultFilterPanel.js -text
@@ -8707,7 +8711,9 @@ internal/webapp/gxt/images/gxt/tree/vnode.gif -text
 internal/webapp/gxt/images/gxt/tree/vnode_transparent.gif -text
 internal/webapp/impersonate_dialog.lib.xml -text
 internal/webapp/index.html -text
+internal/webapp/internal-FileDrop.lib.xml -text
 internal/webapp/internal.lib.xml -text
+internal/webapp/internal/FileDrop/FileDrop.js -text
 internal/webapp/js_color_picker_v2.css -text
 internal/webapp/js_color_picker_v2.js -text
 internal/webapp/labkey.js -text
