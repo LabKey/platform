@@ -18,12 +18,12 @@ package org.labkey.api.gwt.client.model;
 
 import com.google.gwt.user.client.rpc.IsSerializable;
 import org.labkey.api.gwt.client.DefaultScaleType;
+import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.ui.PropertyType;
 import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.IPropertyWrapper;
 import org.labkey.api.gwt.client.util.IntegerProperty;
 import org.labkey.api.gwt.client.util.StringProperty;
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
@@ -440,7 +440,20 @@ public class GWTPropertyDescriptor implements IsSerializable
 
     public String getDefaultDisplayValue()
     {
-        return defaultDisplayValue.toString();
+        String dispVal = defaultDisplayValue.toString();
+
+        if (getName().equals("ParticipantVisitResolver"))
+        {
+            // The default value for ParticipantVisitResolver may be a JSON-encoded string with additional fields for ThawList info,
+            // or it may be a simple string. If JSON, we only display the value corresponding to the resolver type.
+            String headerStr = "{\"stringValue\":\"";
+            if (dispVal.indexOf(headerStr) > -1)
+            {
+                dispVal = dispVal.substring(headerStr.length()).split("\",\"")[0];
+            }
+
+        }
+        return dispVal;
     }
 
     public void setDefaultDisplayValue(String  defaultDisplayValue)

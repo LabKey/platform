@@ -36,7 +36,7 @@
     JspView<ThawListBean> thisView = (JspView<ThawListBean>)HttpView.currentView();
     ThawListBean bean = thisView.getModelBean();
     RenderContext ctx = bean.getRenderContext();
-    boolean listType = ThawListResolverType.LIST_NAMESPACE_SUFFIX.equals(ctx.get(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME));
+    boolean listType = ThawListResolverType.LIST_NAMESPACE_SUFFIX.equalsIgnoreCase((String)ctx.getForm().get(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME));
     boolean textType = !listType;
 %>
 <table>
@@ -55,9 +55,9 @@
     <tr>
         <td></td>
         <td>
-            <input type="hidden" id="<%= ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME %>" name="<%= ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME %>" value="<%= h(ctx.get(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME)) %>"/>
-            <input type="hidden" id="<%= ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME %>" name="<%= ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME %>" value="<%= h(ctx.get(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME)) %>"/>
-            <input type="hidden" id="<%= ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME %>" name="<%= ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME%>" value="<%= h(ctx.get(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME)) %>"/>
+            <input type="hidden" id="<%= ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME %>" name="<%= ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME %>" value="<%= h(ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME)) %>"/>
+            <input type="hidden" id="<%= ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME %>" name="<%= ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME %>" value="<%= h(ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME)) %>"/>
+            <input type="hidden" id="<%= ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME %>" name="<%= ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME%>" value="<%= h(ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME)) %>"/>
             <div id="ThawListDiv-List" style="display:<%= listType ? "block" : "none" %>;">
                 <% include(bean.getListChooser(), out); %>
             </div>

@@ -16,8 +16,17 @@
 
 package org.labkey.api.study.actions;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableViewForm;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -33,12 +42,28 @@ import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.study.assay.*;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AssayDataCollector;
+import org.labkey.api.study.assay.AssayDataCollectorDisplayColumn;
+import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
+import org.labkey.api.study.assay.AssayWarningsDisplayColumn;
+import org.labkey.api.study.assay.DefaultAssayRunCreator;
+import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.InsertView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -51,7 +76,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -198,7 +229,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         {
             Map<String, Object> inputNameToValue = new HashMap<>();
             for (Map.Entry<DomainProperty, Object> entry : defaultValues.entrySet())
-                inputNameToValue.put(getInputName(entry.getKey()), entry.getValue());
+                decodePropertyValues(inputNameToValue, getInputName(entry.getKey()), entry.getValue());
             view.setInitialValues(inputNameToValue);
         }
 
@@ -242,6 +273,27 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
 
         return view;
+    }
+
+    private void decodePropertyValues(Map<String, Object> inputNameToValue, String propName, Object propValue)
+    {
+        if (propName.equalsIgnoreCase(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
+        {
+            // ParticipantVisitResolver default value may be stored as a simple string, or it may be JSON encoded. If JSON encoded, it may have
+            // addition nested properties containing ThawList list settings.
+            try
+            {
+                Map<String, String> decodedVals = new ObjectMapper().readValue(propValue.toString(), Map.class);
+                inputNameToValue.put(propName, decodedVals.remove("stringValue"));
+                inputNameToValue.putAll(decodedVals);
+            }
+            catch (IOException e)
+            {
+                inputNameToValue.put(propName, propValue);
+            }
+        }
+        else
+            inputNameToValue.put(propName, propValue);
     }
 
     private ModelAndView getBatchPropertiesView(FormType runForm, boolean errorReshow, BindException errors) throws ServletException

@@ -94,13 +94,14 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
             {
                 out.write("<tr><td>");
                 out.write("<input");
-                if (renderResolverSubSelectors())
-                {
-                    out.write(" onClick=\"typeElements = document.getElementsByName('" + _typeInputName+ "'); " +
+                out.write(" onClick=\"typeElements = document.getElementsByName('" + _typeInputName+ "'); " +
                         "for (i = 0; i < typeElements.length; i++) " +
-                        "{ document.getElementById('ResolverDiv-' + typeElements[i].value).style.display='none'; } " +
-                        "document.getElementById('ResolverDiv-' + this.value).style.display='block';\" ");
-                }
+                        "{ var resolverSubSectionDiv = document.getElementById('ResolverDiv-' + typeElements[i].value); " +
+                        " if (resolverSubSectionDiv != null) resolverSubSectionDiv.style.display='none'; } ");
+                if (renderResolverSubSelectors(resolver))
+                    out.write("document.getElementById('ResolverDiv-' + this.value).style.display='block';\" ");
+                else
+                    out.write("\"");
                 out.write(" type=\"radio\" " +
                         "name=\"" + _typeInputName + "\"" +
                         ( resolver == selected ? " checked=\"true\"" : "") + " " +
@@ -112,7 +113,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
                 out.write(PageFlowUtil.filter(resolver.getDescription()));
                 out.write("</td></tr>");
 
-                if (renderResolverSubSelectors())
+                if (renderResolverSubSelectors(resolver))
                 {
                     out.write("<tr><td></td><td>");
                     out.write("<div id=\"ResolverDiv-" + resolver.getName() + "\"" + (selected == resolver ? "" : "style=\"display:none\"") +  ">");
@@ -134,7 +135,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         }
     }
 
-    protected boolean renderResolverSubSelectors()
+    protected boolean renderResolverSubSelectors(ParticipantVisitResolverType resolver)
     {
         return true;
     }
