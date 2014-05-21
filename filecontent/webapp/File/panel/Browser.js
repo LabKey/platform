@@ -1885,6 +1885,7 @@ Ext4.define('File.panel.Browser', {
                 },
                 render : {
                     fn : function(up) {
+                        // TODO: we need a model for the root node so we can check fileSystem.canWrite(model) in the upload panel
                         up.changeWorkingDirectory(this.getFolderOffset(), null, this.getCurrentDirectory());
                     },
                     single: true
