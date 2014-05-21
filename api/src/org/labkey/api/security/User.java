@@ -19,9 +19,14 @@ package org.labkey.api.security;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.NotImpersonatingContext;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.DeveloperRole;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.Role;
@@ -332,5 +337,27 @@ public class User extends UserPrincipal implements Serializable, Cloneable
     public void setEntityId(GUID entityId)
     {
         this.entityId = entityId;
+    }
+
+    public static JSONObject getUserProps(User user, @Nullable Container container)
+    {
+        JSONObject props = new JSONObject();
+
+        props.put("id", user.getUserId());
+        props.put("displayName", user.getDisplayName(user));
+        props.put("email", user.getEmail());
+        props.put("phone", user.getPhone());
+
+        boolean nonNullContainer = null != container;
+        props.put("canInsert", nonNullContainer && container.hasPermission(user, InsertPermission.class));
+        props.put("canUpdate", nonNullContainer && container.hasPermission(user, UpdatePermission.class));
+        props.put("canUpdateOwn", nonNullContainer && container.hasPermission(user, ACL.PERM_UPDATEOWN));
+        props.put("canDelete", nonNullContainer && container.hasPermission(user, DeletePermission.class));
+        props.put("canDeleteOwn", nonNullContainer && container.hasPermission(user, ACL.PERM_DELETEOWN));
+        props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
+        props.put("isSystemAdmin", user.isSiteAdmin());
+        props.put("isGuest", user.isGuest());
+
+        return props;
     }
 }

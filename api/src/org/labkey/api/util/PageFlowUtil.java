@@ -1979,24 +1979,8 @@ public class PageFlowUtil
         // property instead of hard-coding formats on the client.
         json.put("extDateInputFormat", ExtUtil.toExtDateFormat(DateUtil.getStandardDateFormatString()));
 
-        JSONObject userProps = new JSONObject();
-
-        userProps.put("id", user.getUserId());
-        userProps.put("displayName", user.getDisplayName(user));
-        userProps.put("email", user.getEmail());
-        userProps.put("phone", user.getPhone());
-        userProps.put("sessionid", request == null ? null : getSessionId(request));
-
         SecurityLogger.indent("jsInitObject");
-        userProps.put("canInsert", null != container && container.hasPermission(user, InsertPermission.class));
-        userProps.put("canUpdate", null != container && container.hasPermission(user, UpdatePermission.class));
-        userProps.put("canUpdateOwn", null != container && container.hasPermission(user, ACL.PERM_UPDATEOWN));
-        userProps.put("canDelete", null != container && container.hasPermission(user, DeletePermission.class));
-        userProps.put("canDeleteOwn", null != container && container.hasPermission(user, ACL.PERM_DELETEOWN));
-        userProps.put("isAdmin", null != container && container.hasPermission(user, AdminPermission.class));
-        userProps.put("isSystemAdmin", user.isSiteAdmin());
-        userProps.put("isGuest", user.isGuest());
-        json.put("user", userProps);
+        json.put("user", User.getUserProps(user, container));
         SecurityLogger.outdent();
 
         if (null != container)

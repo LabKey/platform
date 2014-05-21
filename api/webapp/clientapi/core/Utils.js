@@ -419,6 +419,15 @@ LABKEY.Utils = new function()
         },
 
         /**
+         * Retrieves the current LabKey Server session ID.
+         * @returns {String} sessionid The current session id.
+         */
+        getSessionID : function()
+        {
+            return LABKEY.Utils.getCookie('JSESSIONID', '');
+        },
+
+        /**
          * Deletes a client-side cookie.  Note that 'name' and 'pageonly' should be exactly the same as when the cookie
          * was set.
          * @param {String} name The name of the cookie to be deleted.
