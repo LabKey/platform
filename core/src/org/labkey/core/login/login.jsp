@@ -16,19 +16,18 @@
  */
 %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.security.AuthenticationProvider" %>
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.LoginBean" %>
-<%@ page import="org.labkey.api.settings.LookAndFeelProperties" %>
-<%@ page import="org.apache.commons.lang3.StringUtils" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<LoginBean> me = (HttpView<LoginBean>) HttpView.currentView();
@@ -42,115 +41,74 @@
     String email = bean.form.getEmail();
     boolean focusEmail = StringUtils.isBlank(email);
 %>
-<script type="text/javascript">
-    console.log('email:', '\'' + <%=PageFlowUtil.jsString(email)%> + '\'');
-</script>
 <style type="text/css">
-
-    .auth-header {
-        font-family: Arial, Helvetica, sans serif;
-        font-size: 14pt;
-    }
-
-    .auth-form {
-        padding: 10px 20px;
-    }
-
-    .auth-form-body {
-        width: 350px;
-        margin-top: 15px;
-        font-family: Arial, sans-serif;
-    }
-
-    .auth-item {
-        margin-top: 15px;
-    }
-
-    .auth-form-body label {
-        font-weight: bold;
-    }
-
-    .auth-form-body input[type="text"],
-    .auth-form-body input[type="password"] {
-        border: 1px solid #A0A0A0;
-        vertical-align: middle;
-        padding: 7px 8px;
-    }
-
-    .input-block {
-        display: block;
-        width: 100%;
-        margin-top: 5px;
-        margin-bottom: 15px;
-    }
-
     .labkey-error {
         margin-top: 15px;
     }
 </style>
-    <div class="auth-form">
-        <% if (!user.isGuest()) { %>
-        <p>You are currently logging in as <%=h(user.getName())%>.</p>
-        <% } %>
-        <% if (!agreeOnly) { %>
-        <div class="auth-header">Sign In</div>
-        <% } %>
-        <labkey:errors />
-        <form name="login" method="POST" action="<%=h(formURL)%>" accept-charset="UTF-8">
-            <div class="auth-form-body">
-                <% if (!agreeOnly) { %>
-                <label for="email">Email</label>
-                <input id="email" name="email" value="<%=h(email)%>" type="text" class="input-block" tabindex="1" <%=h(focusEmail ? "autofocus" : "")%>>
-                <label for="password">
-                    Password
-                    <a href="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>">(forgot password)</a>
-                </label>
-                <input id="password" name="password" type="password" class="input-block" tabindex="2" <%=h(!focusEmail ? "autofocus" : "")%>>
-                <input type=checkbox name="remember" id="remember" <%=checked(bean.remember)%>>
-                <label for="remember">Remember my email address</label>
-                <% } // !agreeOnly %>
+<div class="auth-form">
+    <% if (!user.isGuest()) { %>
+    <div class="auth-item">You are currently logging in as <%=h(user.getName())%>.</div>
+    <% } %>
+    <% if (!agreeOnly) { %>
+    <div class="auth-header">Sign In</div>
+    <% } %>
+    <labkey:errors />
+    <form name="login" method="POST" action="<%=h(formURL)%>" accept-charset="UTF-8">
+        <div class="auth-form-body">
+            <% if (!agreeOnly) { %>
+            <label for="email">Email</label>
+            <input id="email" name="email" value="<%=h(email)%>" type="text" class="input-block" tabindex="1" <%=h(focusEmail ? "autofocus" : "")%>>
+            <label for="password">
+                Password
+                <a href="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>">(forgot password)</a>
+            </label>
+            <input id="password" name="password" type="password" class="input-block" tabindex="2" <%=h(!focusEmail ? "autofocus" : "")%>>
+            <input type=checkbox name="remember" id="remember" <%=checked(bean.remember)%>>
+            <label for="remember">Remember my email address</label>
+            <% } // !agreeOnly %>
 
-                <% if (null != bean.termsOfUseHTML) { %>
-                <div class="auth-header auth-item">Terms of Use</div>
-                <div class="toucontent auth-item" ><%=text(bean.termsOfUseHTML)%></div>
-                <div class="auth-item">
-                    <input type="checkbox" name="approvedTermsOfUse" id="approvedTermsOfUse" class="auth-item" <%=checked(bean.termsOfUseChecked)%>>
-                    <label for="approvedTermsOfUse">I agree to these terms</label>
-                </div>
-                <% } %>
-
-                <div class="auth-item">
-                    <%= button((agreeOnly ? "Agree" : "Sign In")).submit(true) %>
-                    <% if (!StringUtils.isBlank(props.getSupportEmail())) { %>
-                    or <a href="mailto:<%= h(props.getSupportEmail()) %>?subject=Account request<%=h(StringUtils.isBlank(props.getShortName()) ? "" : " for " + props.getShortName())%>">Request an account</a>
-                    <% } %>
-                </div>
+            <% if (null != bean.termsOfUseHTML) { %>
+            <div class="auth-header auth-item">Terms of Use</div>
+            <div class="toucontent auth-item" ><%=text(bean.termsOfUseHTML)%></div>
+            <div class="auth-item">
+                <input type="checkbox" name="approvedTermsOfUse" id="approvedTermsOfUse" class="auth-item" <%=checked(bean.termsOfUseChecked)%>>
+                <label for="approvedTermsOfUse">I agree to these terms</label>
             </div>
-
-            <labkey:csrf/>
-            <%=generateReturnUrlFormField(returnURL)%>
-
-            <% if (bean.form.getSkipProfile()) { %>
-            <input type="hidden" name="skipProfile" value="1">
             <% } %>
-            <input type="hidden" id="urlhash" name="urlhash">
-        </form>
-        <%-- this should be controlled by the authentication provider --%>
-        <%
-            if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-openid-google"))
+
+            <div class="auth-item">
+                <%= button((agreeOnly ? "Agree" : "Sign In")).submit(true) %>
+                <% if (!StringUtils.isBlank(props.getSupportEmail())) { %>
+                or <a href="mailto:<%= h(props.getSupportEmail()) %>?subject=Account request<%=h(StringUtils.isBlank(props.getShortName()) ? "" : " for " + props.getShortName())%>">Request an account</a>
+                <% } %>
+            </div>
+        </div>
+
+        <labkey:csrf/>
+        <%=generateReturnUrlFormField(returnURL)%>
+
+        <% if (bean.form.getSkipProfile()) { %>
+        <input type="hidden" name="skipProfile" value="1">
+        <% } %>
+        <input type="hidden" id="urlhash" name="urlhash">
+    </form>
+    <%-- this should be controlled by the authentication provider --%>
+    <%
+        if (AppProps.getInstance().isExperimentalFeatureEnabled("experimental-openid-google"))
+        {
+            boolean hasGoogle = false;
+            for (AuthenticationProvider ap : AuthenticationManager.getActiveProviders())
+                if (ap.getName().equals("Google"))
+                    hasGoogle = true;
+            if (hasGoogle)
             {
-                boolean hasGoogle = false;
-                for (AuthenticationProvider ap : AuthenticationManager.getActiveProviders())
-                    if (ap.getName().equals("Google"))
-                        hasGoogle = true;
-                if (hasGoogle)
-                {
-                    ActionURL toGoogle = new ActionURL("openid","redirect",ContainerManager.getRoot()).addParameter("provider","Google").addParameter("returnUrl",returnURL.getLocalURIString());
-        %><a href="<%=h(toGoogle)%>"><img class="auth-item" src="<%=getContextPath()%>/authentication/openid_google.png"></a><%
-            }
+                ActionURL toGoogle = new ActionURL("openid","redirect",ContainerManager.getRoot()).addParameter("provider","Google").addParameter("returnUrl",returnURL.getLocalURIString());
+    %><a href="<%=h(toGoogle)%>"><img class="auth-item" src="<%=getContextPath()%>/authentication/openid_google.png"></a><%
         }
-    %>
-    </div>
+    }
+%>
+</div>
 <script type="text/javascript">
     <% // Provide support for persisting the url hash through a login redirect %>
     (function() { if (window && window.location && window.location.hash) { var h = document.getElementById('urlhash'); if (h) { h.value = window.location.hash; } } })();
