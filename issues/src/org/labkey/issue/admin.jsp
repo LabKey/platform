@@ -185,8 +185,13 @@
                                 <input onchange="defaultUser.disabled=false;" type="radio" name="assignedToUser" value="SpecificUser"<%=checked(null != bean.defaultUser)%> />
                             </td>
                             <td>Specific User
-                                <select name="defaultUser"<%=disabled(null == bean.defaultUser)%> ></select>
+                                <select onchange="updateCurDefaultUser();" name="defaultUser"<%=disabled(null == bean.defaultUser)%> ></select>
                                 <script>
+                                    var curDefaultUser = <%=bean.defaultUser == null ? null : bean.defaultUser.getUserId()%>;
+                                    function updateCurDefaultUser() {
+                                        var e = document.getElementsByName("defaultUser")[0];
+                                        curDefaultUser = e.options[e.selectedIndex].value;
+                                    }
                                     function updateAssignedToUser() {
                                         //NOTE: need to handle special user groups
                                         var e = document.getElementsByName("assignedToGroup")[0];
@@ -203,8 +208,12 @@
 
                                             Ext4.each(data.users, function(user){
                                                 var option = document.createElement("option");
+                                                var uid = user.userId;
                                                 option.text = user.displayName;
-                                                option.value = user.userId;
+                                                option.value = uid;
+                                                if (uid == curDefaultUser)
+                                                    option.selected = true;
+
                                                 e.add(option);
                                             }, this);
                                         }

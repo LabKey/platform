@@ -488,6 +488,10 @@ public class IssuesController extends SpringActionController
                 }
             }
 
+            User defaultUser = IssueManager.getDefaultAssignedToUser(getContainer());
+            if (defaultUser != null)
+                _issue.setAssignedTo(defaultUser.getUserId());
+
             _issue.open(getContainer(), getUser());
             if (!reshow || form.getSkipPost())
             {
