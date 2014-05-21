@@ -64,17 +64,19 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        Set<LocationImpl> locations;
+        final Set<LocationImpl> locations;
+
         if (getEnrollmentSiteId() != null)
+        {
             locations = Collections.singleton(StudyManager.getInstance().getLocation(getContainer(), getEnrollmentSiteId()));
+        }
         else
         {
             locations = SampleManager.getInstance().getEnrollmentSitesWithRequests(getContainer(), getUser());
             // add null to the set so we can search for ptid without an enrollment site:
             locations.add(null);
         }
-        if (locations == null)
-            return Collections.emptyList();
+
         List<SpecimenVisitReport> reports = new ArrayList<>();
         List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
 

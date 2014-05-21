@@ -3850,6 +3850,7 @@ study/src/org/labkey/study/view/samples/addSamplesToRequest.jsp -text
 study/src/org/labkey/study/view/samples/autoReportList.jsp -text
 study/src/org/labkey/study/view/samples/configRequestabilityRules.jsp -text
 study/src/org/labkey/study/view/samples/configurationRequired.jsp -text
+study/src/org/labkey/study/view/samples/customizeSpecimenReportWebPart.jsp -text
 study/src/org/labkey/study/view/samples/groupMembers.jsp -text
 study/src/org/labkey/study/view/samples/importSpecimens.jsp -text
 study/src/org/labkey/study/view/samples/labSpecimenLists.jsp -text

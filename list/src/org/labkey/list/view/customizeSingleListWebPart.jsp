@@ -27,7 +27,6 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -58,7 +57,6 @@
         }
         catch (NumberFormatException ex) { }
     }
-
 %>
 
 This webpart displays data from a single list.<br><br>

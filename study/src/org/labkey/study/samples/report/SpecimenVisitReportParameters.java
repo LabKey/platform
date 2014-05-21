@@ -331,14 +331,14 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
             if (location == null)
             {
                 builder.append("<option value=\"-1\"");
-                if (selectedSiteId != null && selectedSiteId.intValue() == -1)
+                if (selectedSiteId != null && selectedSiteId == -1)
                     builder.append(" SELECTED");
                 builder.append(">Unassigned enrollment location</option>");
             }
             else
             {
                 builder.append("<option value=\"").append(location.getRowId()).append("\"");
-                if (selectedSiteId != null && selectedSiteId.intValue() == location.getRowId())
+                if (selectedSiteId != null && selectedSiteId == location.getRowId())
                     builder.append(" SELECTED");
                 builder.append(">").append(PageFlowUtil.filter(location.getLabel())).append("</option");
             }

@@ -16,6 +16,7 @@
 package org.labkey.study.samples.report.participant;
 
 import org.labkey.api.data.CompareType;
+import org.labkey.api.study.StudyService;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.model.SpecimenTypeSummary;
@@ -171,7 +172,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 
     public String getLabel()
     {
-        return "By Specimen Type";
+        return StudyService.get().getSubjectNounSingular(getContainer()) + " By Specimen Type";
     }
 
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()

@@ -20,7 +20,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
@@ -101,7 +100,7 @@ This folder does not contain a study.
             String formName = "form" + showHideSuffix;
 %>
     <tr><td>
-    <form action="<%=  h(new ActionURL(factory.getAction(), container).getLocalURIString()) %>" name="<%= h(formName) %>" method="GET">
+    <form action="<%=h(new ActionURL(factory.getAction(), container))%>" name="<%=h(formName)%>" method="GET">
         <%
             if (bean.isListView())
             {

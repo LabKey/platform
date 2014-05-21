@@ -33,7 +33,7 @@ public class TypeSummaryReportFactory extends TypeReportFactory
 {
     public String getLabel()
     {
-        return "Summary Report";
+        return "Type Summary Report";
     }
 
     protected List<? extends SpecimenVisitReport> createReports()

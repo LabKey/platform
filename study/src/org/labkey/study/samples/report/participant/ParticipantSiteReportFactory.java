@@ -107,7 +107,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
 
     public String getLabel()
     {
-        return "By Enrollment Location";
+        return StudyService.get().getSubjectNounSingular(getContainer()) + " By Enrollment Location";
     }
 
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()

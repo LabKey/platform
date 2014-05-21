@@ -94,6 +94,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.*;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
@@ -3335,12 +3336,13 @@ public class SpecimenController extends BaseStudyController
     {
         private static final String COUNTS_BY_DERIVATIVE_TYPE_TITLE = "Collected Vials by Type and Timepoint";
         private static final String REQUESTS_BY_DERIVATIVE_TYPE_TITLE = "Requested Vials by Type and Timepoint";
+
         private Map<String, List<SpecimenVisitReportParameters>> _reportFactories = new LinkedHashMap<>();
         private boolean _listView = true;
         private ViewContext _viewContext;
         private boolean _hasReports = true;
 
-        public ReportConfigurationBean(ViewContext viewContext) throws ServletException
+        public ReportConfigurationBean(ViewContext viewContext)
         {
             Study study = getStudy(viewContext.getContainer());
             _viewContext = viewContext;
@@ -3421,7 +3423,7 @@ public class SpecimenController extends BaseStudyController
     @RequiresPermissionClass(ReadPermission.class)
     public class AutoReportListAction extends SimpleViewAction
     {
-        public ModelAndView getView(Object form, BindException errors) throws Exception
+        public ModelAndView getView(Object form, BindException errors)
         {
             return new JspView<>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(getViewContext()));
         }
@@ -5353,31 +5355,48 @@ public class SpecimenController extends BaseStudyController
     {
         public SpecimenReportWebPartFactory()
         {
-            super("Specimen Report", LOCATION_BODY, false, false);
+            super("Specimen Report", LOCATION_BODY, true, true);
         }
 
         @Override
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        public WebPartView getWebPartView(ViewContext portalCtx, WebPart webPart) throws Exception
         {
-            TypeSummaryReportFactory specimenVisitReportForm = new TypeSummaryReportFactory();
+            String factoryName = webPart.getPropertyMap().get("reportFactoryClass");
+            Class<? extends SpecimenVisitReportParameters> factoryClass;
 
-            JspView<TypeSummaryReportFactory> reportView = new JspView<>("/org/labkey/study/view/samples/specimenVisitReport.jsp", specimenVisitReportForm);
-            WebPartView configView = new JspView<>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(specimenVisitReportForm, false));
-            HtmlView emptySpace = new HtmlView("<div id=\"specimenReportEmptySpace\">&nbsp;</div>");
+            if (null == factoryName)
+            {
+                factoryClass = TypeSummaryReportFactory.class;
+            }
+            else
+            {
+                //noinspection unchecked
+                factoryClass = (Class<? extends SpecimenVisitReportParameters>)Class.forName(factoryName);
+            }
+
+            SpecimenVisitReportParameters factory = factoryClass.newInstance();
+            JspView<SpecimenVisitReportParameters> reportView = new JspView<>("/org/labkey/study/view/samples/specimenVisitReport.jsp", factory);
+            WebPartView configView = new JspView<>("/org/labkey/study/view/samples/autoReportList.jsp", new ReportConfigurationBean(factory, false));
+            ActionURL url = new ActionURL(factory.getAction(), portalCtx.getContainer());
 
             VBox outer = new VBox(configView, reportView);
-
+            outer.setTitleHref(url);
             outer.setFrame(WebPartView.FrameType.PORTAL);
             outer.setTitle("Specimen Report");
-            outer.setTitleHref(new ActionURL(TypeSummaryReportAction.class, portalCtx.getContainer()));
+
             return outer;
+        }
+
+        @Override
+        public HttpView getEditView(WebPart webPart, ViewContext context)
+        {
+            return new JspView<>("/org/labkey/study/view/samples/customizeSpecimenReportWebPart.jsp", webPart);
         }
     }
 
     @RequiresPermissionClass(RequestSpecimensPermission.class)
     public class ImportVialIdsAction extends AbstractQueryImportAction<IdForm>
     {
-        private Study _study;
         private int _requestId = -1;
 
         public ImportVialIdsAction()
@@ -5409,7 +5428,6 @@ public class SpecimenController extends BaseStudyController
                 return new HtmlView("<div class=\"labkey-error\">You do not have permissions to modify this request.</div>");
             }
 
-            _study = getStudyRedirectIfNull();
             return getDefaultImportView(form, errors);
         }
 
