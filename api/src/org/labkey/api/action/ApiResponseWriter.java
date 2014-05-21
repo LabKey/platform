@@ -335,6 +335,7 @@ public abstract class ApiResponseWriter
         Pair<String, JSONArray> pair = convertToJSON(errors, 0);
 
         JSONObject root = new JSONObject();
+        root.put("success", false);
         root.put("exception", pair.getKey());
         root.put("errors", pair.getValue());
         writeObject(root);
