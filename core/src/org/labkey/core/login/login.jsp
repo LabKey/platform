@@ -94,7 +94,7 @@
             <div class="auth-form-body">
                 <% if (!agreeOnly) { %>
                 <label for="email">Email</label>
-                <input id="email" name="email" type="text" class="input-block" tabindex="1">
+                <input id="email" name="email" value="<%=h(bean.form.getEmail())%>" type="text" class="input-block" tabindex="1">
                 <label for="password">
                     Password
                     <a href="<%=h(buildURL(LoginController.ResetPasswordAction.class))%>">(forgot password)</a>
