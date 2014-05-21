@@ -15,12 +15,11 @@
  */
 package org.labkey.study.importer;
 
-import org.labkey.api.query.ValidationException;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
@@ -56,7 +55,7 @@ public class VisitImporter implements InternalStudyImporter
 
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, ImportException, ValidationException
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+        StudyImpl study = ctx.getStudy();
         // Visit map
         StudyDocument.Study.Visits visitsXml = ctx.getXml().getVisits();
 

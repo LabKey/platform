@@ -77,7 +77,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         {
             ctx.getLogger().info("Loading specimen settings");
 
-            StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer()).createMutable();
+            StudyImpl study = ctx.getStudy().createMutable();
 
             if (xmlSettings.getSettings() != null)
             {

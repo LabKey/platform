@@ -111,7 +111,7 @@ public class DefaultStudyDesignImporter
             final String tableName = tableXml.getTableName();
 
             // get the domain of the table we are updating
-            StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+            StudyQuerySchema schema = StudyQuerySchema.createSchema(ctx.getStudy(), ctx.getUser(), true);
             TableInfo table = schema.getTable(tableName);
 
             if (table != null)

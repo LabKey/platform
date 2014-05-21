@@ -49,7 +49,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
     // somewhere in the StudyImportContext
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws SQLException, XmlException, IOException, ImportException
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+        StudyImpl study = ctx.getStudy();
         DatasetsDocument.Datasets datasets = DatasetDefinitionImporter.getDatasetsManifest(ctx, root, false);
 
         if (null != datasets)

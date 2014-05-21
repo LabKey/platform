@@ -26,6 +26,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
+import org.labkey.study.model.StudyImpl;
+import org.labkey.study.model.StudyManager;
 import org.labkey.study.writer.AbstractContext;
 import org.labkey.study.xml.StudyDocument;
 
@@ -93,27 +95,31 @@ public class StudyImportContext extends AbstractContext
         return studyDoc;
     }
 
+    // Convenience method that either returns a StudyImpl (if it exists) or throws. Gets a fresh study on every call to ensure it's completely up-to-date
+    public @NotNull StudyImpl getStudy()
+    {
+        StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
+
+        if (null == study)
+            throw new IllegalStateException("Study does not exist");
+
+        return study;
+    }
+
     // TODO: this should go away once study import fully supports using VirtualFile
+    @Deprecated
     public File getStudyFile(VirtualFile root, VirtualFile dir, String name) throws ImportException
     {
-        return getStudyFile(new File(root.getLocation()), new File(dir.getLocation()), name, "study.xml");
-    }
-
-    // Assume file was referenced in study.xml file   // TODO: Context should hold onto the root -- shouldn't have to pass it in
-    public File getStudyFile(File root, File dir, String name) throws ImportException
-    {
-        return getStudyFile(root, dir, name, _studyXml.getName());
-    }
-
-    public File getStudyFile(File root, File dir, String name, String source) throws ImportException
-    {
-        File file = new File(dir, name);
+        File rootFile = new File(root.getLocation());
+        File dirFile = new File(dir.getLocation());
+        File file = new File(dirFile, name);
+        String source = "study.xml";
 
         if (!file.exists())
-            throw new ImportException(source + " refers to a file that does not exist: " + ImportException.getRelativePath(root, file));
+            throw new ImportException(source + " refers to a file that does not exist: " + ImportException.getRelativePath(rootFile, file));
 
         if (!file.isFile())
-            throw new ImportException(source + " refers to " + ImportException.getRelativePath(root, file) + ": expected a file but found a directory");
+            throw new ImportException(source + " refers to " + ImportException.getRelativePath(rootFile, file) + ": expected a file but found a directory");
 
         return file;
     }
@@ -130,11 +136,7 @@ public class StudyImportContext extends AbstractContext
             studyDoc = StudyDocument.Factory.parse(studyXml, XmlBeansUtil.getDefaultParseOptions());
             XmlBeansUtil.validateXmlDocument(studyDoc, studyXml.getName());
         }
-        catch (XmlException e)
-        {
-            throw new InvalidFileException(studyXml.getParentFile(), studyXml, e);
-        }
-        catch (XmlValidationException e)
+        catch (XmlException | XmlValidationException e)
         {
             throw new InvalidFileException(studyXml.getParentFile(), studyXml, e);
         }
@@ -160,7 +162,8 @@ public class StudyImportContext extends AbstractContext
     @Override
     public Double getArchiveVersion()
     {
-        try {
+        try
+        {
             StudyDocument studyDoc = getDocument();
             return studyDoc.getStudy() != null ? studyDoc.getStudy().getArchiveVersion() : null;
         }

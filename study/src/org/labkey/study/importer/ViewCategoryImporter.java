@@ -47,7 +47,7 @@ public class ViewCategoryImporter implements InternalStudyImporter
     @Override
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+        StudyImpl study = ctx.getStudy();
         try
         {
             XmlObject xml = root.getXmlBean(ViewCategoryWriter.FILE_NAME);

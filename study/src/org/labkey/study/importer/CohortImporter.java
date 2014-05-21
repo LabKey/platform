@@ -17,15 +17,16 @@ package org.labkey.study.importer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.study.Study;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.CohortManager;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.CohortMode;
 import org.labkey.study.xml.CohortType;
 import org.labkey.study.xml.CohortsDocument;
@@ -52,7 +53,7 @@ public class CohortImporter implements InternalStudyImporter
 
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws IOException, SQLException, ServletException, ImportException
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+        StudyImpl study = ctx.getStudy();
         StudyDocument.Study.Cohorts cohortsXml = ctx.getXml().getCohorts();
 
         if (null != cohortsXml)
@@ -76,8 +77,8 @@ public class CohortImporter implements InternalStudyImporter
 
             if (cohortType == CohortType.AUTOMATIC)
             {
-                Integer dataSetId = cohortsXml.getDatasetId() != 0 ? cohortsXml.getDatasetId() : null;
-                String dataSetProperty = cohortsXml.getDatasetProperty();
+                Integer datasetId = getValidCohortDatasetId(cohortsXml, study);
+                String datasetProperty = null != datasetId ? cohortsXml.getDatasetProperty() : null;
 
                 if (p2c == null)
                 {
@@ -85,7 +86,7 @@ public class CohortImporter implements InternalStudyImporter
                     // older folder format, no cohorts.xml file
                     //
                     ctx.getLogger().info("Loading automatic cohort settings");
-                    CohortManager.getInstance().setAutomaticCohortAssignment(study, ctx.getUser(), dataSetId, dataSetProperty,
+                    CohortManager.getInstance().setAutomaticCohortAssignment(study, ctx.getUser(), datasetId, datasetProperty,
                             cohortMode == CohortMode.ADVANCED, true);
                 }
                 else
@@ -94,7 +95,7 @@ public class CohortImporter implements InternalStudyImporter
                     // newer format - still automatic but we want to ensure we pick up enrolled state for each
                     // cohort
                     //
-                    CohortManager.getInstance().setAutomaticCohortAssignment(study, ctx.getUser(), dataSetId, dataSetProperty,
+                    CohortManager.getInstance().setAutomaticCohortAssignment(study, ctx.getUser(), datasetId, datasetProperty,
                             cohortMode == CohortMode.ADVANCED, p2c);
                 }
             }
@@ -110,7 +111,23 @@ public class CohortImporter implements InternalStudyImporter
         }
     }
 
-    private  Map<String, Integer> buildParticipantCohortMap(StudyImportContext ctx, VirtualFile root, StudyImpl study, String cohortFileName) throws IOException, SQLException, ImportException, ServletException
+    // Return the cohort dataset ID iff the <cohorts> element includes it and the corresponding dataset exists.
+    // LabKey export, publish, and ancillary study creation always include the cohort dataset, but a manually
+    // created archive might not. See #19944 and #20397.
+    private @Nullable Integer getValidCohortDatasetId(StudyDocument.Study.Cohorts cohortsXml, Study study)
+    {
+        if (cohortsXml.isSetDatasetId())
+        {
+            int id = cohortsXml.getDatasetId();
+
+            if (null != study.getDataSet(id))
+                return id;
+        }
+
+        return null;
+    }
+
+    private Map<String, Integer> buildParticipantCohortMap(StudyImportContext ctx, VirtualFile root, StudyImpl study, String cohortFileName) throws IOException, SQLException, ImportException, ServletException
     {
         //
         // ITN12.2 branch and newer releases will always export a separate cohorts.xml table to
@@ -152,5 +169,4 @@ public class CohortImporter implements InternalStudyImporter
 
         return p2c;
     }
-
 }

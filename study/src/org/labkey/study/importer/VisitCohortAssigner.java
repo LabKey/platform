@@ -54,7 +54,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
     // somewhere in the StudyImportContext
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws SQLException, ImportException
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+        StudyImpl study = ctx.getStudy();
         StudyDocument.Study.Visits visitsXml = ctx.getXml().getVisits();
 
         if (null != visitsXml)

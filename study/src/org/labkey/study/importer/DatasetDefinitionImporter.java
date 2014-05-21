@@ -22,7 +22,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
-import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -57,7 +56,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
 
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+        StudyImpl study = ctx.getStudy();
         StudyDocument.Study.Datasets datasetsXml = ctx.getXml().getDatasets();
 
         if (null != datasetsXml)

@@ -94,13 +94,15 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 }
             }
             
-            StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
             boolean hasSpecimenSchemasToImport = SpecimenSchemaImporter.containsSchemasToImport(ctx);
+
             if (hasSpecimenSchemasToImport)
             {
                 // if specimen schemas will be imported, don't create optional specimen table fields
                 previousTablesTemplate = StudySchema.getInstance().setSpecimenTablesTemplats(new SpecimenSchemaImporter.ImportTemplate());
             }
+
+            StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
 
             // Create the study if it doesn't exist... otherwise, modify the existing properties
             if (null == study)

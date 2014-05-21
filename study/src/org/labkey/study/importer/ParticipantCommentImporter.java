@@ -35,7 +35,7 @@ public class ParticipantCommentImporter implements InternalStudyImporter
 
     public void process(StudyImportContext ctx, VirtualFile root, BindException errors) throws Exception
     {
-        StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
+        StudyImpl study = ctx.getStudy();
         StudyDocument.Study.Comments commentsXml = ctx.getXml().getComments();
 
         if (commentsXml != null)
