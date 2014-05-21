@@ -27,27 +27,36 @@ public class VisualizationIntervalColumn
     {
         DAY("Days") {
             @Override
-            public String getSQL(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate)
+            public String getSQL(VisualizationSourceColumn startCol, VisualizationSourceColumn endCol, boolean isVisitTagQuery)
             {
-                return "TIMESTAMPDIFF(SQL_TSI_DAY, " + startDate.getSQLAlias() + ", " + endDate.getSQLOther() + ")";
+                if (isVisitTagQuery)
+                    return "(" + endCol.getSQLOther() + " - " + startCol.getSQLAlias() + ")";
+                else
+                    return "TIMESTAMPDIFF(SQL_TSI_DAY, " + startCol.getSQLAlias() + ", " + endCol.getSQLOther() + ")";
             }},
         WEEK("Weeks") {
             @Override
-            public String getSQL(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate)
+            public String getSQL(VisualizationSourceColumn startCol, VisualizationSourceColumn endCol, boolean isVisitTagQuery)
             {
-                return "CAST(FLOOR((" + Interval.DAY.getSQL(startDate, endDate) + ")/7) AS Integer)";
+                return "CAST(FLOOR((" + Interval.DAY.getSQL(startCol, endCol, isVisitTagQuery) + ")/7) AS Integer)";
             }},
         MONTH("Months") {
             @Override
-            public String getSQL(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate)
+            public String getSQL(VisualizationSourceColumn startCol, VisualizationSourceColumn endCol, boolean isVisitTagQuery)
             {
-                return "AGE(" + startDate.getSQLAlias() + ", " + endDate.getSQLOther() + ", SQL_TSI_MONTH)";
+                if (isVisitTagQuery)
+                    return "CAST(FLOOR((" + Interval.DAY.getSQL(startCol, endCol, isVisitTagQuery) + ")/(365.25/12)) AS Integer)";
+                else
+                    return "AGE(" + startCol.getSQLAlias() + ", " + endCol.getSQLOther() + ", SQL_TSI_MONTH)";
             }},
         YEAR("Years") {
             @Override
-            public String getSQL(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate)
+            public String getSQL(VisualizationSourceColumn startCol, VisualizationSourceColumn endCol, boolean isVisitTagQuery)
             {
-                return "AGE(" + startDate.getSQLAlias() + ", " + endDate.getSQLOther() + ", SQL_TSI_YEAR)";
+                if (isVisitTagQuery)
+                    return "CAST(FLOOR((" + Interval.DAY.getSQL(startCol, endCol, isVisitTagQuery) + ")/365.25) AS Integer)";
+                else
+                    return "AGE(" + startCol.getSQLAlias() + ", " + endCol.getSQLOther() + ", SQL_TSI_YEAR)";
             }};
 
         private String _label;
@@ -61,24 +70,25 @@ public class VisualizationIntervalColumn
             return _label;
         }
 
-        public abstract String getSQL(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate);
+        public abstract String getSQL(VisualizationSourceColumn startCol, VisualizationSourceColumn endCol, boolean isVisitTagQuery);
     }
 
-    private VisualizationSourceColumn _startDate;
-    private VisualizationSourceColumn _endDate;
+    private VisualizationSourceColumn _startCol;
+    private VisualizationSourceColumn _endCol;
     private Interval _interval;
+    private boolean _isVisitTagQuery;
 
-    public VisualizationIntervalColumn(VisualizationSourceColumn startDate, VisualizationSourceColumn endDate, String interval)
+    public VisualizationIntervalColumn(VisualizationSourceColumn startCol, VisualizationSourceColumn endCol, String interval, boolean isVisitTagQuery)
     {
-        _startDate = startDate;
-        _endDate = endDate;
-        // be fault-tolerant in case the user asked for 'days' instead of 'day'
+        _startCol = startCol;
+        _endCol = endCol;
         _interval = Interval.valueOf(interval.toUpperCase());
+        _isVisitTagQuery = isVisitTagQuery;
     }
 
-    public VisualizationSourceColumn getEndDate()
+    public VisualizationSourceColumn getEndCol()
     {
-        return _endDate;
+        return _endCol;
     }
 
     public String getLabel()
@@ -91,14 +101,14 @@ public class VisualizationIntervalColumn
         return _interval;
     }
 
-    public VisualizationSourceColumn getStartDate()
+    public VisualizationSourceColumn getStartCol()
     {
-        return _startDate;
+        return _startCol;
     }
 
     public String getSQL()
     {
-        return _interval.getSQL(_startDate, _endDate);
+        return _interval.getSQL(_startCol, _endCol, _isVisitTagQuery);
     }
 
 
@@ -115,6 +125,6 @@ public class VisualizationIntervalColumn
 
     public String getFullAlias()
     {
-        return ColumnInfo.legalNameFromName(_endDate.getSchemaName() + "_" + _endDate.getQueryName() + "_" + _endDate.getOriginalName() + "_" + getSimpleAlias());
+        return ColumnInfo.legalNameFromName(_endCol.getSchemaName() + "_" + _endCol.getQueryName() + "_" + _endCol.getOriginalName() + "_" + getSimpleAlias());
     }
 }
