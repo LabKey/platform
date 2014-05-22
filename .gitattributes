@@ -8250,7 +8250,6 @@ internal/webapp/app/Route.js -text
 internal/webapp/app/Selection.js -text
 internal/webapp/app/State.js -text
 internal/webapp/app/View.js -text
-internal/webapp/applet.js -text
 internal/webapp/codemirror.lib.xml -text
 internal/webapp/codemirror/LICENSE -text
 internal/webapp/codemirror/keymap/emacs.js -text

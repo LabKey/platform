@@ -30,7 +30,6 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromFilePath("applet.js"));
       resources.add(ClientDependency.fromFilePath("FileUploadField.js"));
       resources.add(ClientDependency.fromFilePath("StatusBar.js"));
       resources.add(ClientDependency.fromFilePath("fileBrowser.js"));
