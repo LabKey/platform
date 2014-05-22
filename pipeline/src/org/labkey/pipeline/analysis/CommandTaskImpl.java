@@ -36,6 +36,7 @@ import org.labkey.api.util.Path;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -362,6 +363,19 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     }
 
     /**
+     * The task info file will be written into the analysis directory, similar to the .log file.
+     * Since it will remain in the pipeline root after the job is complete, it shouldn't contain sensitive information.
+     */
+    public File getTaskInfoFile()
+    {
+        if (!isWriteTaskInfoFile())
+            return null;
+
+        String infoFileName = getJobSupport().getBaseName() + "-taskInfo.tsv";
+        return new File(getJobSupport().getAnalysisDirectory(), infoFileName);
+    }
+
+    /**
      * Returns a file path to a resource from the declaring module.
      */
     protected String getModuleResourcePath(String path)
@@ -412,7 +426,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     }
 
     // CONSIDER: Move to ScriptTaskImpl -- it's the only usage of this method
-    protected void writeTaskInfo(File file) throws IOException
+    protected void writeTaskInfo(File file, RecordedAction action) throws IOException
     {
         RowMapFactory<Object> factory = new RowMapFactory<>("Name", "Value");
         List<Map<String, Object>> rows = new ArrayList<>();
@@ -445,17 +459,19 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         // Task information
         rows.add(factory.getRowMap("taskId", _factory.getId()));
 
-        for (Map.Entry<String, TaskPath> entry : _factory.getInputPaths().entrySet())
+        // Write out the known inputs to this task
+        for (RecordedAction.DataFile inputFile : action.getInputs())
         {
-            String key = entry.getKey();
-            TaskPath path = entry.getValue();
+            String role = inputFile.getRole();
+            if (role == null)
+                continue;
 
-            // CONSIDER: Include the TaskPath information (optional, etc.)
-
-            String[] inputPaths = getProcessPaths(WorkDirectory.Function.input, key);
-            for (String inputPath : inputPaths)
+            URI uri = inputFile.getURI();
+            File f = new File(uri);
+            if (f.exists())
             {
-                rows.add(factory.getRowMap(key, inputPath, path.getType().getDefaultSuffix()));
+                String inputPath = _wd.getRelativePath(f);
+                rows.add(factory.getRowMap(role, inputPath));
             }
         }
 

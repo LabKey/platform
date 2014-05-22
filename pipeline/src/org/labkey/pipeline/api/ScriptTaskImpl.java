@@ -128,8 +128,9 @@ public class ScriptTaskImpl extends CommandTaskImpl
         //replacements.put(PipelineJob.PIPELINE_JOB_INFO_PARAM, rewritePath(engine, jobInfoFile.getAbsolutePath()));
 
         // Task info replacement
-        String taskInfoFile = getJobSupport().getBaseName() + "-taskInfo.tsv";
-        replacements.put(ScriptTaskFactory.PIPELINE_TASK_INFO_PARAM, taskInfoFile);
+        File taskInfoFile = getTaskInfoFile();
+        String taskInfoRelativePath = _wd.getRelativePath(taskInfoFile);
+        replacements.put(ScriptTaskFactory.PIPELINE_TASK_INFO_PARAM, taskInfoRelativePath);
 
         return replacements;
     }
@@ -222,10 +223,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             // This needs to be called after the PIPELINE_ROOT is set in the engine bindings
             if (isWriteTaskInfoFile())
             {
-                String infoFileName = getJobSupport().getBaseName() + "-taskInfo.tsv";
-
-                File taskInfoFile = new File(_wd.getDir(), infoFileName);
-                writeTaskInfo(taskInfoFile);
+                writeTaskInfo(getTaskInfoFile(), action);
             }
 
             // Just output the replaced script, if debug mode is set.
