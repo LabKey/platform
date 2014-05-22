@@ -432,8 +432,12 @@ public class Olap4Js
         {
             out.write("{");
 //            out.write("\"dimension":{"\"name\"":" + valueToString(member.getDimension().getName()) + "},");
-            out.write("\"name\":" + valueToString(member.getName()) + ",");
+            out.write("\"name\":" + valueToString(member.getName()));
+            out.write(",");
             out.write("\"uniqueName\":" + valueToString(member.getUniqueName()));
+            int ordinal = member.getOrdinal();
+            if (0 <= ordinal)
+                out.write(",\"ordinal\":" + ordinal);
             if (withLevel)
             {
                 out.write(",");
