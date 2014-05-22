@@ -51,7 +51,7 @@ public class TypeParticipantReportFactory extends TypeReportFactory
     public String getLabel()
     {
         String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
-        return _participantId == null || isAllSubjectsOption(_participantId) ? "Typoe By " + subjectNoun : subjectNoun + " " + DemoMode.id(_participantId, getContainer(), getUser());
+        return _participantId == null || isAllSubjectsOption(_participantId) ? "Type By " + subjectNoun : subjectNoun + " " + DemoMode.id(_participantId, getContainer(), getUser());
     }
 
     public boolean allowsCohortFilter()
