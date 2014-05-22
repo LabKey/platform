@@ -528,33 +528,6 @@ Ext4.define('File.panel.Browser', {
             tooltip: 'Upload files or folders from your local machine to the server'
         });
 
-        this.actions.appletFileAction = new Ext4.Action({
-            text: '&nbsp;&nbsp;&nbsp;&nbsp;Choose File&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
-            hardText: '&nbsp;&nbsp;&nbsp;&nbsp;Choose File&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;',
-            itemId: 'appletFileAction',
-            scope: this,
-            disabled: false,
-            cls: 'applet-button'
-        });
-
-        this.actions.appletDirAction = new Ext4.Action({
-            text: '&nbsp;Choose Folder&nbsp;',
-            hardText: '&nbsp;Choose Folder&nbsp;',
-            itemId: 'appletDirAction',
-            scope: this,
-            disabled: false,
-            cls: 'applet-button'
-        });
-
-        this.actions.appletDragAndDropAction = new Ext4.Action({
-            text: 'Drag and Drop&nbsp;',
-            hardText: 'Drag and Drop&nbsp;',
-            itemId: 'appletDragAndDropAction',
-            scope: this,
-            disabled: false,
-            cls: 'applet-button'
-        });
-
         this.actions.folderTreeToggle = new Ext4.Action({
             text: 'Toggle Folder Tree',
             hardText: 'Toggle Folder Tree',

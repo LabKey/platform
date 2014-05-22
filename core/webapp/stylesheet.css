@@ -2718,13 +2718,6 @@ td a.x-grid3-hd-btn:hover {
     padding: 2px 0px;
 }
 
-/* File browser applet buttons */
-table.applet-button
-{
-    padding: 2px 0;
-    *margin: 4px 0;
-}
-
 a.upload-button
 {
     left: 455px !important;

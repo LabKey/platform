@@ -11,11 +11,7 @@
     <!-- Called by the main build.xml with inheritall = true; other callers (e.g., top-level build target)
          must define all the properties used below. -->
     <target name="build_module" depends="core-scripts"
-            description="Builds applets and core module and deploys them into LabKey installation.">
-        <ant antfile="${basedir}/build.xml"
-             target="build_applets"
-             inheritall="true">
-        </ant>
+            description="Builds core module and deploys it into LabKey installation.">
         <ant antfile="${basedir}/build.xml"
              target="sub_build_module"
              inheritall="true">

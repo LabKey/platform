@@ -21,8 +21,6 @@ Ext4.define('File.panel.Upload', {
 
     allowFileDrop : true,
 
-    lastSummary: {info:0, success:0, file:'', pct:0},
-
     header : false,
 
     bodyStyle: 'background-color:#f0f0f0;',
@@ -108,8 +106,9 @@ Ext4.define('File.panel.Upload', {
         var self = this;
         var dropzone = LABKEY.internal.FileDrop.registerDropzone({
             peer: function () {
-                // Get the outer Browser's element
-                return self.ownerCt.el
+                // Get the grid component from the outer Browser component
+                var grid = self.ownerCt.getGrid();
+                return grid ? grid.el : self.ownerCt.el;
             },
 
             url: 'bogus.view',
@@ -133,14 +132,14 @@ Ext4.define('File.panel.Upload', {
 
             accept: function (file, done) {
                 var record = this.uploadPanel.getWorkingDirectory('model');
-                if (!record) {
-                    // TODO: The browser's tree store doesn't include a model record for the root node (why?),
+                var path = this.uploadPanel.getWorkingDirectory('path');
+
+                if (!record || path == '/') {
+                    // TODO: The browser's tree store doesn't include a model record for the root node,
                     // TODO: so just allow the upload and let the server send back an error if it fails.
                     done();
                     return;
                 }
-
-                var path = this.uploadPanel.getWorkingDirectory('path');
 
                 // Check permissions before sending
                 var canWrite = this.uploadPanel.fileSystem.canWrite(record);
@@ -161,17 +160,6 @@ Ext4.define('File.panel.Upload', {
             },
 
             init : function () {
-
-                this.on('dragover', function (evt) {
-                    this.uploadPanel.statusText.setText("Drop files to upload...");
-                });
-
-                this.on('dragleave', function (evt) {
-                    this.uploadPanel.statusText.setText("");
-                });
-
-                this.on('addedfile', function (file) {
-                });
 
                 this.on('processing', function (file) {
                     var cwd = this.uploadPanel.getWorkingDirectory('cwd');
@@ -202,7 +190,10 @@ Ext4.define('File.panel.Upload', {
                 });
 
                 this.on('sending', function (file, xhr, formData) {
-                    this.uploadPanel.setBusy(true);
+                    if (!this.uploadPanel.isBusy()) {
+                        this.uploadPanel.setBusy(true);
+                        this.uploadPanel.getEl().mask("Uploading files");
+                    }
                     this.uploadPanel.statusText.setText('Uploading ' + file.name + '...');
                 });
 
@@ -279,10 +270,12 @@ Ext4.define('File.panel.Upload', {
                 this.on('canceled', function (file) {
                     this.uploadPanel.statusText.setText('Canceled upload of ' + file.name);
                     this.uploadPanel.setBusy(false);
+                    this.uploadPanel.getEl().unmask();
                 });
 
                 this.on('queuecomplete', function () {
                     this.uploadPanel.setBusy(false);
+                    this.uploadPanel.getEl().unmask();
                     this.uploadPanel.hideProgressBar();
 
                     var errorFiles = [];
@@ -331,7 +324,6 @@ Ext4.define('File.panel.Upload', {
                     checked  : true,
                     handler  : function(cmp, checked) {
                         if(checked){
-                            //this.transferApplet.setEnabled(false);
                             uploadsPanel.getLayout().setActiveItem(this.getSingleUpload());
                         }
                     },
@@ -342,7 +334,6 @@ Ext4.define('File.panel.Upload', {
                     handler  : function(cmp, checked) {
                         if(checked){
                             uploadsPanel.getLayout().setActiveItem(this.getMultiUpload());
-                            //this.onMultiUpload();
                         }
                     },
                     scope    : this
@@ -442,87 +433,21 @@ Ext4.define('File.panel.Upload', {
 
         var helpLinkHtml =  '[<a class="help-link" href="javascript:void(0);">upload help</a>]';
 
-        /*
-        var testJavaHtml =  '<span id="testJavaLink">[<a target=_blank href="http://www.java.com/en/download/testjava.jsp">test java plugin</a>]</span>';
-
-        var loadingImageSrc = LABKEY.contextPath + "/" + LABKEY.extJsRoot + "/resources/images/default/shared/large-loading.gif";
-
-        var buttonPanel = Ext4.create('Ext.panel.Panel', {
-            border: false,
-            layout: 'vbox',
-            width: 135,
-            bodyPadding: '0 5 0 5',
-            bodyStyle: this.bodyStyle,
-            defaults: {
-                width: 125,
-                margins: '0 0 3 0'
-            },
-            items: [
-                {xtype:'button', text: 'Choose File', handler: function(){
-                    if (this.transferApplet) {
-                        var appletEl = this.transferApplet.getApplet();
-                        if (appletEl){
-                            appletEl.showFileChooser();
-                        }
-                    }
-                }, scope: this},
-                {xtype:'button', text:'Choose Folder', handler: function(){
-                    if (this.transferApplet) {
-                        var appletEl = this.transferApplet.getApplet();
-                        if (appletEl){
-                            appletEl.showDirectoryChooser();
-                        }
-                    }
-                }, scope: this},
-                {xtype:'button', text:'Drag and Drop', handler: function(){
-                    if (this.transferApplet) {
-                        var appletEl = this.transferApplet.getApplet();
-                        if (appletEl){
-                            appletEl.openDragAndDropWindow();
-                        }
-                    }
-                }, scope: this}
-            ]
-        });
-
-        this.appletPanel = Ext4.create('Ext.panel.Panel', {
-            border: false,
-            width: 90,
-            height: 90,
-            bodyStyle: this.bodyStyle,
-            items: [{
-                xtype: 'container',
-                html:'<img src="' + loadingImageSrc + '"><br>Loading Java applet...'
-            }]
-        });
-
-        this.appletContainer = Ext4.create('Ext.form.Panel', {
-            border: false,
-            margins: '0 0 0 10',
-            buttonAlign: 'left',
-            layout: 'hbox',
-            width: 565,
-            height: 90,
-            bodyStyle: this.bodyStyle,
-            items: [
-                {
-                    xtype: 'displayfield',
-                    fieldLabel: 'Upload Tool' + '<p>' + testJavaHtml + '<p>' + helpLinkHtml,
-                    labelSeparator: '',
-                    labelWidth: 135
-                },
-                this.appletPanel,
-                buttonPanel
-            ],
-        });
-         */
+        var html;
+        if (false && window.Dropzone && window.Dropzone.isBrowserSupported()) {
+            html = "To upload multiple files, drag files " + (Ext4.isChrome ? "and folders " : "") + " from your desktop onto the file browser."
+        } else {
+            html = "Your browser doesn't support drag and drop uploading of files.<br>" +
+                    "You can upgrade your browser or upload multiple files using an external " +
+                    "<a target=_blank href='https://www.labkey.org/wiki/home/Documentation/page.view?name=webdav'>WebDAV client</a>.";
+        }
 
         this.multiUpload = Ext4.create('Ext.panel.Panel', {
             border: false,
             bodyStyle: this.bodyStyle,
             items: [{
                 xtype: 'container',
-                html: "To upload multiple files, drag files " + (Ext4.isChrome ? "and folders " : "") + " from your desktop onto the file browser.<p>" + helpLinkHtml
+                html: html + "<p>" + helpLinkHtml
             }],
             listeners: {
                 afterrender: function (container) {
@@ -536,77 +461,6 @@ Ext4.define('File.panel.Upload', {
         });
 
         return this.multiUpload;
-    },
-
-    onMultiUpload: function(){
-        this.hideProgressBar();
-        this.lastSummary= {info:0, success:0, file:'', pct:0};
-        this.progressRecord = null;
-
-        if (!this.transferApplet) {
-
-            this.transferApplet = Ext4.create('File.panel.TransferApplet',{
-                id: Ext4.id(),
-                url: this.fileSystem.getAbsoluteBaseURL(),
-                directory: '',
-                text: 'initializing...',
-                width: 90,
-                height: 90
-            });
-
-            this.transferApplet.on('update', this.updateProgressBar, this);
-            this.transferApplet.getTransfers().on("update", this.updateProgressBarRecord, this);
-
-            // this event doesn't actually get fired
-            //this.fileSystem.on('transferstarted', function(result) {this.showProgressBar();}, this);
-
-            // Not calling fireUploadEvents as it does not seem to be necessary. It was used to detect duplicate files
-            // and display warnings, but that doesn't seem to actually work anymore.
-//            this.transferApplet.on('update', this.fireUploadEvents, this);
-
-            this.transferApplet.onReady(function(){
-                // Update applet state.
-                this.updateAppletState(this.getWorkingDirectory('model'), this.getWorkingDirectory('path'));
-                this.on('cwd', this.updateAppletState);
-
-            }, this);
-
-            this.appletPanel.removeAll();
-            this.appletPanel.add(this.transferApplet);
-        }
-    },
-
-    updateAppletState: function(record, folderLocation){
-
-        if(!this.transferApplet || !record){
-            return;
-        }
-
-        var canWrite = this.fileSystem.canWrite(record);
-        var canMkdir = this.fileSystem.canMkdir(record);
-
-        // Enable or disable applet buttons depending on permissions (canWrite and canMkDir)
-        var appletFileActionButton = this.appletContainer.down('.button[text=Choose File]');
-        if (appletFileActionButton)
-            appletFileActionButton[canWrite?'enable':'disable']();
-        appletFileActionButton = this.appletContainer.down('.button[text=Choose Folder]');
-        if (appletFileActionButton)
-            appletFileActionButton[canWrite?'enable':'disable']();
-        appletFileActionButton = this.appletContainer.down('.button[text=Drag and Drop]');
-        if (appletFileActionButton)
-            appletFileActionButton[canMkdir?'enable':'disable']();
-
-        try {
-            this.transferApplet.changeWorkingDirectory(folderLocation);
-            if (canWrite || canMkdir) {
-                this.transferApplet.setEnabled(true);
-                this.transferApplet.setAllowDirectoryUpload(canMkdir);
-            } else {
-                this.transferApplet.setEnabled(false);
-            }
-        } catch (e){
-            console.error(e);
-        }
     },
 
     getUploadStatusBar: function(){
@@ -673,7 +527,9 @@ Ext4.define('File.panel.Upload', {
 
         var msg = [
             '<p>',
-            'You can also use WebDav to transfer files to and from this folder using the Mac Finder, ' +
+            'You can also use ',
+            '<a target=_blank href="https://www.labkey.org/wiki/home/Documentation/page.view?name=webdav">WebDav</a> ',
+            'to transfer files to and from this folder using the Mac Finder, ' +
             'Windows Explorer or file transfer programs like <a target=_blank href="http://cyberduck.io/">CyberDuck</a>. The WebDav URL for this folder is:',
             '</p>',
             '<textarea style="font-family:monospace" readonly wrap="hard" cols="62" rows="3" size=' + url.length + '>' + Ext4.util.Format.htmlEncode(url) + '</textarea>',
@@ -702,72 +558,6 @@ Ext4.define('File.panel.Upload', {
             icon: Ext4.Msg.INFO,
             buttons: Ext4.Msg.OK
         });
-    },
-
-    updateProgressBarRecord: function(store, record){
-        var state = record.get('state');
-        var progress = record.get('percent' || 0) / 100;
-
-        if(state === 0 && 0 < progress && progress < 1.0){
-            this.progressRecord = record;
-        } else if (state != 0 && this.progressRecord == record){
-            this.progressRecord = null;
-        }
-    },
-
-    updateProgressBar: function()
-    {
-        var record = this.progressRecord && this.progressRecord.get('state') == 0 ? this.progressRecord : null;
-        var pct = record ? record.get('percent')/100 : 0;
-        var file = record ? record.get('name') : '';
-
-        var summary = this.transferApplet.getSummary();
-        if (!this.isBusy()) {
-            this.getEl().mask("Uploading files");
-            this.setBusy(true);
-        }
-
-        if (summary.info != this.lastSummary.info)
-        {
-            if (summary.info == 0)
-            {
-                this.statusText.setText('Ready');
-            }
-            else
-            {
-                this.statusText.setText('Copying... ' + summary.info + ' file' + (summary.info > 1 ? 's' : ''));
-            }
-        }
-
-        if (record)
-        {
-            this.showProgressBar();
-            if (pct != this.lastSummary.pct || file != this.lastSummary.file)
-                this.progressBar.updateProgress(pct, file);
-        }
-        else
-        {
-            this.progressBar.hide();
-            if (summary.info == 0) {
-
-                var fileRecords = [];
-                Ext4.each(this.transferApplet.getTransfers().getRange(), function(rec){
-                    // use the uri as the id and the href
-                    fileRecords.push({data: {name: rec.get("name"), id: rec.get("uri"), href: rec.get("uri")}});
-                });
-
-                // todo : need to add file & folder conflict handling
-                this.hideProgressBar();
-                this.setBusy(false);
-                this.fireEvent('transfercomplete', {fileRecords : fileRecords});
-                this.getEl().unmask();
-            }
-        }
-
-        // UNDONE: failed transfers
-        this.lastSummary = summary;
-        this.lastSummary.pct = pct;
-        this.lastSummary.file = file;
     },
 
     showProgressBar : function()
