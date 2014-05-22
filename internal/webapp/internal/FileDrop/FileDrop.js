@@ -157,10 +157,10 @@ LABKEY.internal.FileDrop = new function () {
         zone.classList.add("dz-clickable");
         zone.innerHTML =
                 "<div class='dz-message' style='display:table-cell;vertical-align:middle;" +
-                    "background: rgba(10, 150, 10, 0.3);" +
+                    "background: rgba(10, 10, 10, 0.1);" +
                     "opacity: 0.8;" +
-                    "border: 6px dashed rgba(10, 100, 10, 0.4);" +
-                    "color: rgb(10, 100, 10);" +
+                    "border: 6px dashed rgba(10, 10, 10, 0.4);" +
+                    "color: rgba(10, 10, 10, 0.4);" +
                     "font-size: 40px;" +
                     "text-align:center;'>" +
                 "<span style='font-weight: bold'>" +
