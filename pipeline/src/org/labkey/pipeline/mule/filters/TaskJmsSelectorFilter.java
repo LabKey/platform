@@ -100,7 +100,7 @@ public class TaskJmsSelectorFilter extends JmsSelectorFilter
         }
         expr.append(")");
         expr.append(" AND ");
-        expr.append(PipelineJob.LABKEY_TASKSTATUS_PROPERTY).append(" = 'waiting'");
+        expr.append(PipelineJob.LABKEY_TASKSTATUS_PROPERTY).append(" = '" + PipelineJob.TaskStatus.waiting.toString() + "'");
         expr.append(")");
 
         _log.debug("JMS Select: " + expr);
