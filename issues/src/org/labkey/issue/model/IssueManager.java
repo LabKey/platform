@@ -796,7 +796,7 @@ public class IssueManager
     {
         try (DbScope.Transaction transaction = _issuesSchema.getSchema().getScope().ensureTransaction())
         {
-            String deleteStmt = "DELETE FROM %s WHERE IssueId IN (SELECT IssueId FROM %s WHERE Container = ?";
+            String deleteStmt = "DELETE FROM %s WHERE IssueId IN (SELECT IssueId FROM %s WHERE Container = ?)";
 
             String deleteComments = String.format(deleteStmt, _issuesSchema.getTableInfoComments(), _issuesSchema.getTableInfoIssues());
             new SqlExecutor(_issuesSchema.getSchema()).execute(deleteComments, c.getId());
