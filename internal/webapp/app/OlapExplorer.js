@@ -15,6 +15,7 @@ Ext.define('LABKEY.app.model.OlapExplorer', {
         {name : 'value'},
         {name : 'level'},
         {name : 'levelUniqueName'},
+        {name : 'ordinal', type: 'int', defaultValue: -1},
         {name : 'uniqueName'},
         {name : 'isGroup', type : 'boolean'},
         {name : 'collapsed', type : 'boolean'},
@@ -32,8 +33,6 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
     collapseTrack: {},
 
     totals: {},
-
-    groupField: 'level',
 
     locked: false,
 
@@ -183,6 +182,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             }
 
             var grpLevelID = targetLevels[1].id, subPosition;
+            var customGroups = {};
 
             // skip (All)
             for (var x=1; x < pos.length; x++)
@@ -208,43 +208,54 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                     hierarchy: hierarchy.getUniqueName(),
                     isGroup: isGroup,
                     level: subPosition.name,
+                    ordinal: subPosition.ordinal,
                     levelUniqueName: subPosition.level.uniqueName,
                     collapsed: activeGroup && pos.length > 15 ? true : false,
                     btnShown: false
                 };
 
-                if (!target.isGroup) {
-                    target.level = activeGroup;
-                }
+                var instance = Ext.create('LABKEY.app.model.OlapExplorer', target);
 
                 if (target.isGroup) {
-                    groupTarget = target;
+                    groupTarget = instance;
+                    if (!customGroups[target.level]) {
+                        customGroups[target.level] = [];
+                    }
+                }
+                else {
+                    instance.set('level', activeGroup);
+                    if (!customGroups[activeGroup]) {
+                        customGroups[activeGroup] = [];
+                    }
+                    customGroups[activeGroup].push(instance);
                 }
 
-                target.collapsed = this.checkCollapse(target);
+                var collapse = this.checkCollapse(instance.data);
+                instance.set('collapsed', collapse);
+
                 if (groupTarget) {
-                    groupTarget.collapsed = target.collapsed;
+                    groupTarget.set('collapsed', collapse);
                 }
 
-                recs.push(target);
+                recs.push(instance);
             }
 
             var groupOnly = true;
             for (var r=0; r < recs.length; r++) {
-                if (!recs[r].isGroup) {
+                if (!recs[r].get('isGroup')) {
                     groupOnly = false;
                 }
             }
 
             if (!groupOnly) {
-                this.loadData(recs);
+                this.loadRecords(recs);
             }
             else {
                 max = 0;
                 this.removeAll();
             }
 
-            this.group(this.groupField, "ASC");
+            this.customGroups = customGroups;
 
             this.maxCount = max;
             this.fireEvent('maxcount', this.maxCount);
@@ -257,36 +268,24 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         }
     },
 
-    loadRecords : function(records, options) {
-        options = options || {};
-
-
-        if (!options.addRecords) {
-            delete this.snapshot;
-            this.clearData();
-        }
-
-        this.data.addAll(records);
-
-        for (var i=0; i < records.length; i++) {
-            if (options.start !== undefined) {
-                records[i].index = options.start + i;
-
-            }
-            records[i].join(this);
-        }
+    getCustomGroups : function() {
+        return this.customGroups;
     },
 
-    checkCollapse : function(target) {
-
-        var check = this.collapseTrack['' + target.hierarchy + '-' + target.level + '-' + target.value];
-        if (check === true || check === false)
-            return check;
-        return target.collapsed;
+    checkCollapse : function(data) {
+        var check = this.collapseTrack[this.getCollapseKey(data)];
+        if (!Ext.isBoolean(check)) {
+            check = data.collapsed;
+        }
+        return check;
     },
 
-    setCollapse : function(record, collapsed) {
-        this.collapseTrack['' + record.data.hierarchy + '-' + record.data.level + '-' + record.data.value] = collapsed;
+    setCollapse : function(data, collapsed) {
+        this.collapseTrack[this.getCollapseKey(data)] = collapsed;
+    },
+
+    getCollapseKey : function(data) {
+        return '' + data.hierarchy + '-' + data.level + '-' + data.value;
     },
 
     getMaxCount : function() {
@@ -333,45 +332,48 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
 
     selectionSuccess : function(cellset, mdx, x) {
         var me = this;
-        if (x.mflight != me.mflight) {
-            // There is a more recent selection request -- discard
-            return;
-        }
+        if (x.mflight === me.mflight) {
 
-        if ((!me.mdx._filter['stateSelectionFilter'] || me.mdx._filter['stateSelectionFilter'].length == 0) &&
-                (!me.mdx._filter['hoverSelectionFilter'] || me.mdx._filter['hoverSelectionFilter'].length == 0))
-        {
-            me.clearSelection();
-            return false;
-        }
+            var ssf = mdx._filter['stateSelectionFilter'];
+            var hsf = mdx._filter['hoverSelectionFilter'];
 
-        var recs = me.queryBy(function(rec, id) {
+            if ((!ssf || ssf.length == 0) && (!hsf || hsf.length == 0)) {
+                me.clearSelection();
+            }
+            else {
+                var recs = me.queryBy(function(rec) {
 
-            var updated = false, cellspan_value = 0; // to update rows not returned by the query
-            for (var c=0; c < cellset.cells.length; c++)
-            {
-                if (rec.data.uniqueName == cellset.cells[c][0].positions[1][0].uniqueName)
-                {
-                    updated = true;
-                    rec.set('subcount', cellset.cells[c][0].value);
-                }
-                else
-                {
-                    if(cellset.cells[c][0].value > 0) {
-                        cellspan_value++;
+                    var updated = false, cellspan_value = 0; // to update rows not returned by the query
+                    var cells = cellset.cells, cs;
+                    var un = rec.data.uniqueName;
+                    for (var c=0; c < cells.length; c++)
+                    {
+                        cs = cells[c][0];
+                        if (un === cs.positions[1][0].uniqueName)
+                        {
+                            updated = true;
+                            rec.set('subcount', cs.value);
+                        }
+                        else
+                        {
+                            if(cs.value > 0) {
+                                cellspan_value++;
+                            }
+                        }
                     }
-                }
-            }
-            if (!updated)
-            {
-                rec.set('subcount', 0);
-            }
-            return true;
+                    if (!updated)
+                    {
+                        rec.set('subcount', 0);
+                    }
+                    return true;
 
-        });
+                });
+                me.resumeEvents();
 
-        me.resumeEvents();
-        me.fireEvent('subselect', recs.items ? recs.items : []);
+                me.fireEvent('subselect', recs.items ? recs.items : []);
+            }
+
+        }
     }
 });
 
@@ -397,6 +399,8 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
     initComponent : function() {
 
         this.textCache = {};
+        this.positionLookup = "." + this.baseChartCls + " ." + this.barCls;
+        this.ordinal = LABKEY.devMode && Ext.isDefined(LABKEY.ActionURL.getParameter('ordinal'));
 
         this.initTemplate();
 
@@ -429,7 +433,9 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                                     '<p>+</p>',
                                 '</div>',
                                 '<div class="', this.barCls, ' large">',
-                                    '<span class="', this.barLabelCls, '">{label:htmlEncode}</span>',
+                                    '<span class="', this.barLabelCls, '">{label:htmlEncode}',
+                                    (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
+                                    '</span>',
                                     '<span class="count">{count}</span>',
                                     '<span class="index"></span>',
                                     '<span class="index-selected inactive"></span>',
@@ -446,7 +452,9 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                                     '<p>-</p>',
                                 '</div>',
                                 '<div class="', this.barCls, ' large">',
-                                    '<span class="', this.barLabelCls, '">{label:htmlEncode}</span>',
+                                    '<span class="', this.barLabelCls, '">{label:htmlEncode}',
+                                    (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
+                                    '</span>',
                                     '<span class="count">{count}</span>',
                                     '<span class="index"></span>',
                                     '<span class="index-selected inactive"></span>',
@@ -459,7 +467,9 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                         //
                         '<tpl if="isGroup === false && collapsed == true">',
                             '<div class="', this.barCls, ' small barcollapse <tpl if="level.length &gt; 0">saelevel</tpl>">',
-                                '<span class="', this.barLabelCls, '">{label:htmlEncode}</span>',
+                                '<span class="', this.barLabelCls, '">{label:htmlEncode}',
+                                (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
+                                '</span>',
                                 '<span class="count">{count}</span>',
                                 '<span class="info"></span>',
                                 '<span class="index"></span>',
@@ -472,7 +482,9 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                         //
                         '<tpl if="isGroup === false && collapsed == false">',
                             '<div class="', this.barCls, ' small <tpl if="level.length &gt; 0">saelevel</tpl>">',
-                                '<span class="', this.barLabelCls, '">{label:htmlEncode}</span>',
+                                '<span class="', this.barLabelCls, '">{label:htmlEncode}',
+                                (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
+                                '</span>',
                                 '<span class="count">{count}</span>',
                                 '<span class="info"></span>',
                                 '<span class="index"></span>',
@@ -486,10 +498,8 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
     },
 
     positionText: function(collapseMode) {
-        var bar,
-                bars = Ext.query("." + this.baseChartCls + " ." + this.barCls),
-                grps = this.store.getGroups(),
-                i, g=0,
+        var bars = Ext.query(this.positionLookup),
+                b, i,
                 bWidth,
                 info,
                 label,
@@ -499,12 +509,13 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                 t;
 
         for (i=0; i < bars.length; i++) {
-            t = Ext.get(Ext.query("." + this.barLabelCls, bars[i])[0]);
+            b = bars[i];
+            t = Ext.get(Ext.query("." + this.barLabelCls, b)[0]);
             sets.push({
-                bar: Ext.get(Ext.query(".index", bars[i])[0]),
+                bar: Ext.get(Ext.query(".index", b)[0]),
                 barLabel: t,
-                barCount: Ext.get(Ext.query(".count", bars[i])[0]),
-                info: Ext.get(Ext.query(".info", bars[i])[0]),
+                barCount: Ext.get(Ext.query(".count", b)[0]),
+                info: Ext.get(Ext.query(".info", b)[0]),
                 label: t.dom.innerHTML
             });
         }
@@ -562,13 +573,14 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
         this.suspendLayout = false;
 
         if (!collapseMode) {
-            for (; g < grps.length; g++) {
-                bar = Ext.get(Ext.query('.saecollapse')[g]);
+            var groupRecords = this.store.query('isGroup', true).items; // assumed to be in order of index
+            var expandos = Ext.query('.saecollapse');
+            Ext.each(groupRecords, function(record, idx) {
+                var bar = Ext.get(expandos[idx]);
                 if (bar) {
-                    i = bar.dom.id.split('-collapse')[0]-1;
-                    this.registerGroupClick(bar, this.store.getAt(i));
+                    this.registerGroupClick(bar, record);
                 }
-            }
+            }, this);
         }
     },
 
@@ -589,16 +601,14 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
 
     onMaxCount : function(count) { this.positionTask.delay(10); },
 
-    groupClick : function(rec, node) {
-        var grps = this.store.getGroups(),
-                field = this.store.groupField, g;
-        for (g=0; g < grps.length; g++) {
-            if (grps[g].name == rec.data[field]) {
-                this.toggleGroup(grps[g], false, true);
-                if (this.resizeTask)
-                    this.resizeTask.delay(100);
-                return;
-            }
+    groupClick : function(rec) {
+        var groups = this.store.getCustomGroups();
+        var f = rec.get('level');
+
+        if (Ext.isDefined(groups[f])) {
+            this.toggleGroup({ children: groups[f] }, false, true);
+            if (this.resizeTask)
+                this.resizeTask.delay(100);
         }
     },
 
@@ -607,13 +617,16 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                 first = true,
                 listeners,
                 node,
-                me = this, c;
+                me = this, c, child;
         this.store.suspendEvents();
+
         for (c=0; c < grp.children.length; c++) {
 
-            if (!grp.children[c].data.isGroup) {
+            child = grp.children[c];
 
-                node = this.getNodeByRecord(grp.children[c]);
+            if (!child.data.isGroup) {
+
+                node = this.getNodeByRecord(child);
                 ext = Ext.get(node);
                 current = ext.getActiveAnimation();
                 if (current && !force)
@@ -621,7 +634,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                 animConfig = {};
                 listeners  = {};
 
-                if (!grp.children[c].data.collapsed) // collapse
+                if (!child.data.collapsed) // collapse
                 {
                     animConfig = {
                         to : {opacity: 0, height: 0},
@@ -645,16 +658,16 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                 if (c == grp.children.length-1)
                 {
                     listeners.beforeanimate = function(anim) {
-                        anim.target.target.dom.style.display=animConfig.setDisplay;
+                        anim.target.target.dom.style.display = animConfig.setDisplay;
                         me.animate = false;
-                        me.positionTask.delay(0, null, null, [true]);
-                    }
+                        me.positionTask.delay(100, null, null, [true]);
+                    };
                 }
                 else
                 {
                     listeners.beforeanimate = function(anim) {
-                        anim.target.target.dom.style.display=animConfig.setDisplay;
-                    }
+                        anim.target.target.dom.style.display = animConfig.setDisplay;
+                    };
                 }
                 animConfig.listeners = listeners;
 
@@ -673,8 +686,8 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                     first = false;
                 }
 
-                grp.children[c].set('collapsed', animConfig.collapsed);
-                me.store.setCollapse(grp.children[c], animConfig.collapsed);
+                child.data['collapsed'] = animConfig.collapsed;
+                me.store.setCollapse(child.data, animConfig.collapsed);
             }
             else if (grp.children[c+1] && !grp.children[c+1].data.isGroup)
             {
@@ -748,7 +761,6 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
     },
 
     renderSelection : function(r) {
-
         var node;
         for (var i=0; i < r.length; i++) {
             node = this.getNode(r[i]);
@@ -787,15 +799,6 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
     positionHelper : function() {
         this.selectRequest = true;
         this.selectionTask.delay(100);
-    },
-
-    toggleCollapse : function(animate) {
-        var grps = this.store.getGroups();
-        for (var g=0; g < grps.length; g++)
-            this.toggleGroup(grps[g], true, animate);
-        if (this.resizeTask) {
-            this.resizeTask.delay(100);
-        }
     },
 
     toggleEmpty : function() {
