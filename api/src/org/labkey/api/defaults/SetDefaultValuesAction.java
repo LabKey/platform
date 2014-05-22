@@ -18,7 +18,15 @@ package org.labkey.api.defaults;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataColumn;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
@@ -30,7 +38,11 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.InsertView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.VBox;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -176,7 +188,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
                 if (entry.getValue() != null)
                 {
                     String stringValue = entry.getValue().toString();
-                    formDefaults.put(ColumnInfo.propNameFromName(entry.getKey().getName()), stringValue);
+                    decodePropertyValues(formDefaults, ColumnInfo.propNameFromName(entry.getKey().getName()), stringValue);
                 }
             }
             view.setInitialValues(formDefaults);
@@ -256,6 +268,11 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         return new VBox(headerView, view, new HtmlView(overrideHtml.toString()));
     }
 
+    protected void decodePropertyValues(Map<String, Object> formDefaults, String propName, String stringValue) throws IOException
+    {
+        formDefaults.put(propName, stringValue);
+    }
+
     private void appendEditURL(StringBuilder builder, Container container, Domain domain, ReturnURLString returnUrl)
     {
         ActionURL editURL = new ActionURL(this.getClass(), container);
@@ -275,7 +292,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         for (DomainProperty property : domain.getProperties())
         {
             String propName = ColumnInfo.propNameFromName(property.getName());
-            String value = domainIdForm.getRequest().getParameter(propName);
+            String value = encodePropertyValues(domainIdForm, propName);
             String label = property.getPropertyDescriptor().getNonBlankCaption();
             PropertyType type = property.getPropertyDescriptor().getPropertyType();
             if (value != null && value.length() > 0)
@@ -307,6 +324,11 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
             return false;
         }
         return true;
+    }
+
+    protected String encodePropertyValues(FormType domainIdForm, String propName) throws IOException
+    {
+        return domainIdForm.getRequest().getParameter(propName);
     }
 
     public NavTree appendNavTrail(NavTree root)

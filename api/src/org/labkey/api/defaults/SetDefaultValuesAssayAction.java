@@ -15,6 +15,8 @@
  */
 package org.labkey.api.defaults;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
@@ -26,13 +28,18 @@ import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
+import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 /*
  * User: brittp
  * Date: Mar 2, 2009
@@ -104,9 +111,10 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
             return false;
         }
 
-        protected boolean renderResolverSubSelectors()
+        @Override
+        protected boolean renderResolverSubSelectors(ParticipantVisitResolverType resolver)
         {
-            return false;
+            return resolver instanceof ThawListResolverType;
         }
 
         public DefaultValueType getDefaultValueType()
@@ -164,4 +172,54 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         return new AssayDefaultValueDataRegion(_provider);
     }
 
+    private static final String STRING_VALUE_PROPERTY_NAME = "stringValue";
+
+    @Override
+    protected String encodePropertyValues(AssayDomainIdForm domainIdForm, String propName) throws IOException
+    {
+        String value = super.encodePropertyValues(domainIdForm, propName);
+        if (propName.equalsIgnoreCase(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
+        {
+            Map<String, String> values = new LinkedHashMap<>();
+            values.put(STRING_VALUE_PROPERTY_NAME, value);
+
+            // We store additional ThawList settings as JSON property value pairs inside the default value for ParticipantVisitResolver
+            for (Object parameter : Collections.list(domainIdForm.getRequest().getParameterNames()))
+            {
+                String name = parameter.toString();
+                if (name.startsWith(ThawListResolverType.NAMESPACE_PREFIX) && !name.equalsIgnoreCase(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME))
+                {
+                    String thawListValue = domainIdForm.getRequest().getParameter(name);
+                    if (!thawListValue.isEmpty())
+                        values.put(name, thawListValue);
+                }
+            }
+
+            value = new ObjectMapper().writeValueAsString(values);
+        }
+        return value;
+    }
+
+    @Override
+    protected void decodePropertyValues(Map<String, Object> formDefaults, String propName, String stringValue) throws IOException
+    {
+        if (propName.equalsIgnoreCase(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
+        {
+            // ParticipantVisitResolver default value may be stored as a simple string, or it may be JSON encoded. If JSON encoded, it may have
+            // addition nested properties containing ThawList list settings.
+            try
+            {
+                Map<String, String> decodedVals = new ObjectMapper().readValue(stringValue, Map.class);
+                formDefaults.put(propName, decodedVals.remove(STRING_VALUE_PROPERTY_NAME));
+                formDefaults.putAll(decodedVals);
+            }
+            catch (JsonProcessingException e)
+            {
+                formDefaults.put(propName, stringValue);
+            }
+        }
+        else
+            formDefaults.put(propName, stringValue);
+
+    }
 }
