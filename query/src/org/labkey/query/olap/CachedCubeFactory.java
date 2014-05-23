@@ -18,7 +18,6 @@ package org.labkey.query.olap;
 import mondrian.olap.Annotated;
 import mondrian.olap.Annotation;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.olap4j.OlapException;
 import org.olap4j.OlapWrapper;
 import org.olap4j.impl.Named;
@@ -44,6 +43,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -156,6 +156,7 @@ public class CachedCubeFactory
             {
                 dimensions.add(new _Dimension(d, hash));
             }
+            dimensions.seal();
 
             Map<String,Annotation> map = new HashMap<>();
             if (c instanceof OlapWrapper)
@@ -271,6 +272,7 @@ public class CachedCubeFactory
             hash.add(getUniqueName());
             for (Hierarchy h : d.getHierarchies())
                 hierarchies.add(new _Hierarchy(this, h, hash));
+            hierarchies.seal();
             dimensionType = d.getDimensionType();
             Hierarchy def = d.getDefaultHierarchy();
             defaultHierarchy = null == def ? null : hierarchies.get(def.getName());
@@ -321,9 +323,23 @@ public class CachedCubeFactory
             Collections.reverse(list);
             for (_Level l : list)
                 this.levels.add(l);
+            this.levels.seal();
 
-            _Level l = levels.get(h.getDefaultMember().getLevel().getName());
-            defaultMember = l.getMembers().get(h.getDefaultMember().getName());
+            _Level defaultMemberLevel = levels.get(h.getDefaultMember().getLevel().getName());
+            defaultMember = defaultMemberLevel.getMembers().get(h.getDefaultMember().getUniqueName());
+
+            // NOTE: the cube configuration related to ordering members (ordinalColumn etc)
+            // only apply to the results of MDX queries.  It seems that ordering of members
+            // in the cube metadata can not be relied on.  So we sort them ourselves.
+            orderMembers(this);
+
+            for (_Level l : list)
+            {
+                l.orig = null;
+                l.members.seal();
+                for (_Member m : l.members)
+                    m.orig = null;
+            }
         }
 
 
@@ -359,12 +375,49 @@ public class CachedCubeFactory
     }
 
 
+    static void orderMembers(_Hierarchy h) throws OlapException
+    {
+        for (Level L : h.getLevels())
+        {
+            _Level l = (_Level) L;
+            orderLevelMembers(l.orig, l.members);
+        }
+        for (Level L : h.getLevels())
+        {
+            _Level l = (_Level) L;
+            if (l.getDepth() != h.getLevels().size() - 1)
+                orderChildMembers(l.members);
+        }
+    }
+
+
+    static void orderLevelMembers(Level l, _NamedList<_Member, Member> list)
+    {
+        Property keyProperty = l.getProperties().get("KEY");
+        Comparator<_Member> comp = new MemberComparator(keyProperty);
+        list.sort(comp);
+        for (int i = 0; i < list.size(); i++)
+            list.get(i).ordinal = i;
+    }
+
+
+    static void orderChildMembers(_NamedList<_Member, Member> list) throws OlapException
+    {
+        for (_Member m : list)
+            if (null != m.childMembers)
+                Arrays.sort(m.childMembers,ORDINAL_COMPARATOR);
+    }
+
+
     static class _Level extends _MetadataElement implements Level
     {
         final int depth;
         final _Hierarchy hierarchy;
         final Level.Type levelType;
         final _NamedList<_Member,Member> members = new _UniqueNamedList<>();
+
+        // temporary pointer
+        Level orig;
 
         _Level(_Hierarchy h, Level l, @Nullable _Level lowerLevel, _Hash hash) throws OlapException
         {
@@ -374,6 +427,7 @@ public class CachedCubeFactory
             this.depth = l.getDepth();
             this.hierarchy = h;
             this.levelType = l.getLevelType();
+            this.orig = l;
 
             ArrayList<_Member> list = new ArrayList<>(l.getMembers().size());
             if ("[Measures]".equals(getDimension().getUniqueName()))
@@ -390,17 +444,7 @@ public class CachedCubeFactory
                     list.add(new _Member(this, lowerLevel, m, hash));
                 }
             }
-            int ordinal = -1;
-            for (_Member m : list)
-                ordinal = Math.max(ordinal,m.ordinal);
-            for (_Member m : list)
-            {
-                if (m.ordinal == -1)
-                    m.ordinal = ++ordinal;
-            }
-            Collections.sort(list, ORDINAL_COMPARATOR);
-            for (_Member m : list)
-                members.add(m);
+            members.addAll(list);
         }
 
         @Override
@@ -491,6 +535,10 @@ public class CachedCubeFactory
         final _Level level;
         final Member.Type memberType;
         final Member[] childMembers;
+        Member _parent;
+
+        // orig is to facilitate sorting, should be cleard after cached cube is constructed
+        Member orig = null;
         int ordinal = -1;
 
         _Member(_Level level, _Level lowerLevel, Member m, _Hash hash) throws OlapException
@@ -500,19 +548,20 @@ public class CachedCubeFactory
             this.level = level;
             this.all = m.isAll();
             this.memberType = m.getMemberType();
-            this.ordinal = m.getOrdinal();
-            Member[] arr = null;
+            this.orig = m;
+
+            _Member[] arr = null;
 
             List<? extends Member> list = m.getChildMembers();
             if (null != lowerLevel && 0 < list.size())
             {
-                arr = new Member[list.size()];
+                arr = new _Member[list.size()];
                 for (int i=0 ; i<list.size() ; i++)
                 {
-                    arr[i] = lowerLevel.getMembers().get(list.get(i).getUniqueName());
+                    arr[i] = (_Member)lowerLevel.getMembers().get(list.get(i).getUniqueName());
                     assert null != arr[i];
+                    arr[i]._parent = this;
                 }
-                Arrays.sort(arr, ORDINAL_COMPARATOR);
             }
             childMembers = arr;
         }
@@ -690,16 +739,50 @@ public class CachedCubeFactory
 
     static class _NamedList<T extends org.olap4j.impl.Named,MDE> extends NamedListImpl<T>
     {
-        Map<String,Integer> indexMap = new CaseInsensitiveHashMap<Integer>();
+        Map<String,Integer> indexMap = null;
+        boolean readonly = false;
 
         NamedList<MDE> recast()
         {
             return (NamedList<MDE>)(NamedList)this;
         }
 
+        public boolean seal()
+        {
+            if (null==indexMap)
+                recompute();
+            readonly = true;
+            return true;
+        }
+
+        private void recompute()
+        {
+            if (readonly)
+                throw new IllegalStateException();
+            indexMap = new HashMap<>();
+            for (int i=0 ; i<size() ; i++)
+            {
+                T t = get(i);
+                Integer prev = indexMap.put(getName(t), i);
+                assert null == prev;
+            }
+            assert indexMap.size() == this.size();
+        }
+
+        public void sort(Comparator<? super T> c)
+        {
+            if (readonly)
+                throw new IllegalStateException();
+            indexMap = null;
+            Collections.sort(this, c);
+        }
+
         @Override
         public int indexOfName(String name)
         {
+            if (null == indexMap)
+                recompute();
+            assert indexMap.size() == this.size();
             Integer I = indexMap.get(name);
             return null==I ? -1 : I.intValue();
         }
@@ -719,14 +802,35 @@ public class CachedCubeFactory
         @Override
         public boolean add(T t)
         {
-            indexMap.put(getName(t),size());
+            if (readonly)
+                throw new IllegalStateException();
+            if (null != indexMap)
+                indexMap.put(getName(t),size());
             return super.add(t);
+        }
+
+        @Override
+        public boolean addAll(Collection<? extends T> c)
+        {
+            if (readonly)
+                throw new IllegalStateException();
+            for (T t : c)
+            {
+                if (null != indexMap)
+                    indexMap.put(getName(t),size());
+                super.add(t);
+            }
+            assert null == indexMap || indexMap.size() == this.size();
+            return !c.isEmpty();
         }
 
         @Override
         public T set(int index, T element)
         {
-            throw new UnsupportedOperationException();
+            if (readonly)
+                throw new IllegalStateException();
+            indexMap = null;
+            return super.set(index,element);
         }
 
         @Override
@@ -777,7 +881,13 @@ public class CachedCubeFactory
 
     static final NamedList<Property> emptyPropertyList = (new _EmptyNamedList<Property>()).recast();
     static final NamedList<NamedSet> emptyNamedSetList = (new _EmptyNamedList<NamedSet>()).recast();
-    static final NamedList<Member> emptyMemberList = (new _EmptyNamedList<Member>()).recast();
+    static final NamedList<Member> emptyMemberList = (new _EmptyNamedList<Member>() {
+        @Override
+        public void sort(Comparator<? super Named> c)
+        {
+        }
+    }).recast();
+
     static final Comparator<Member> ORDINAL_COMPARATOR = new Comparator<Member>(){
         @Override
         public int compare(Member o1, Member o2)
@@ -785,4 +895,69 @@ public class CachedCubeFactory
             return o1.getOrdinal() - o2.getOrdinal();
         }
     };
+
+
+    static class MemberComparator implements Comparator<_Member>
+    {
+        final Property key;
+
+        MemberComparator(Property key)
+        {
+            this.key = key;
+        }
+
+        @Override
+        public int compare(_Member m1, _Member m2)
+        {
+            try
+            {
+                // we sort parent levels first, so parent.ordinal should already be set
+                _Member p1 = (_Member)m1.getParentMember();
+                _Member p2 = (_Member)m2.getParentMember();
+                if (null != p1 && null != p2 && p1.ordinal != p2.ordinal)
+                    return p1.ordinal - p2.ordinal;
+
+                int o = m1.orig.getOrdinal() - m2.orig.getOrdinal();
+                if (0 != o)
+                    return o;
+
+                if (null != key)
+                {
+                    Object k1 = m1.orig.getPropertyValue(key);
+                    Object k2 = m2.orig.getPropertyValue(key);
+                    if (null != k1 && null != k2)
+                    {
+                        int k = compareKey((Comparable) k1, (Comparable) k2);
+                        if (0 != k)
+                            return k;
+                    }
+                }
+
+                return m1.getName().compareToIgnoreCase(m2.getName());
+            }
+            catch (OlapException x)
+            {
+                throw new RuntimeException(x);
+            }
+        }
+    }
+
+    static int compareKey(Comparable k1, Comparable k2)
+    {
+        if (k1 instanceof String && k2 instanceof String)
+        {
+            return ((String) k1).compareToIgnoreCase((String) k2);
+        }
+        if (k1.getClass() == k2.getClass())
+        {
+            return k1.compareTo(k2);
+        }
+        // handle special classes (e.g. #null)
+
+        // check for special classes (e.g. #null)
+        if (!(k1 instanceof Number) && !(k1 instanceof String) && !(k1 instanceof Date))
+            return k1.compareTo(k2);
+        else
+            return -1 * k2.compareTo(k1);
+    }
 }
