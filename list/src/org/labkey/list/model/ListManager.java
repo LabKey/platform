@@ -1322,26 +1322,34 @@ public class ListManager implements SearchService.DocumentProvider
             Then add a real container column to all List hard tables
          */
         ListDef[] listDefs = new TableSelector(getListMetadataTable()).getArray(ListDef.class);
-        for (ListDef def : listDefs)
+        try
         {
-            ListDefinition list = ListDefinitionImpl.of(def);
-            Domain domain = list.getDomain();
-            DomainProperty existingContainerProp = domain.getPropertyByName("Container");
-            if (existingContainerProp != null)
+            StorageProvisioner.setAllowRenameOfColumnsDuringUpgrade(true);
+            for (ListDef def : listDefs)
             {
-                String newName = domain.getPropertyByName("Container_old") == null ? "Container_old" : "Container_old_" + GUID.makeGUID();
-                existingContainerProp.setName(newName);
-                String uri = ListDomainKind.createPropertyURI(list.getName(), newName, domain.getContainer(), list.getKeyType()).toString();
-                existingContainerProp.setPropertyURI(uri);
-                try
+                ListDefinition list = ListDefinitionImpl.of(def);
+                Domain domain = list.getDomain();
+                DomainProperty existingContainerProp = domain.getPropertyByName("Container");
+                if (existingContainerProp != null)
                 {
-                    domain.save(u);
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e);
+                    String newName = domain.getPropertyByName("Container_old") == null ? "Container_old" : "Container_old_" + GUID.makeGUID();
+                    existingContainerProp.setName(newName);
+                    String uri = ListDomainKind.createPropertyURI(list.getName(), newName, domain.getContainer(), list.getKeyType()).toString();
+                    existingContainerProp.setPropertyURI(uri);
+                    try
+                    {
+                        domain.save(u);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
+        }
+        finally
+        {
+            StorageProvisioner.setAllowRenameOfColumnsDuringUpgrade(false);
         }
 
         DbScope scope = ListSchema.getInstance().getSchema().getScope();
