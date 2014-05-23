@@ -1649,7 +1649,7 @@ public class ReportsController extends SpringActionController
             form.setViewName(report.getDescriptor().getReportName());
             form.setReportId(form.getReportId());
             form.setDescription(report.getDescriptor().getReportDescription());
-            form.setShared(null == report.getDescriptor().getOwner());
+            form.setShared(report.getDescriptor().isShared());
 
             if (null != report.getDescriptor().getCategory())
                 form.setViewCategory(report.getDescriptor().getCategory());
@@ -1668,13 +1668,15 @@ public class ReportsController extends SpringActionController
             // see if this user can make a public report private
             // if not, then don't enable the sharing checkbox
             //
-            if (null == report.getDescriptor().getOwner())
-            {
-                List<ValidationError> errors = new ArrayList<>();
-                report.getDescriptor().setOwner(getUser().getUserId());
-                form.setCanChangeSharing(ReportService.get().tryValidateReportPermissions(getViewContext(), report, errors));
-                report.getDescriptor().setOwner(null);
-            }
+//            if (null == report.getDescriptor().getOwner())
+//            {
+//                List<ValidationError> errors = new ArrayList<>();
+//                report.getDescriptor().setOwner(getUser().getUserId());
+//                form.setCanChangeSharing(ReportService.get().tryValidateReportPermissions(getViewContext(), report, errors));
+//                report.getDescriptor().setOwner(null);
+//            }
+
+            form.setCanChangeSharing(report.canShare(getUser(), getContainer()));
         }
 
 

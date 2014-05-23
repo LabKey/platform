@@ -39,6 +39,6 @@ public class ClientDependencySubstitutionHandler implements HtmlRenderer.Substit
 
         cds.add(cd);
 
-        return new FormattedHtml("", false, null, cds);
+        return new FormattedHtml("", false, cds);
     }
 }

@@ -165,7 +165,7 @@
 <%!
     SecurityController.PermissionType getPermissionType(Report report)
     {
-        if (report.getDescriptor().getOwner() != null)
+        if (!report.getDescriptor().isShared())
             return SecurityController.PermissionType.privatePermission;
         if (!SecurityPolicyManager.getPolicy(report.getDescriptor(), false).isEmpty())
             return SecurityController.PermissionType.customPermission;

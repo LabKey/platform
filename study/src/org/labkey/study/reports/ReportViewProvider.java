@@ -204,7 +204,7 @@ public class ReportViewProvider implements DataViewProvider
                         access = "public";
                         info.setShared(true);
                     }
-                    else if (descriptor.getOwner() != null)
+                    else if (!descriptor.isShared())
                     {
                         access = "private";
                         info.setShared(false);

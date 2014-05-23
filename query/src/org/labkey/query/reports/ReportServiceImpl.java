@@ -561,14 +561,14 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
 
         if (descriptor.isNew())
         {
-            if (descriptor.getOwner() == null)
+            if (descriptor.isShared())
                 report.canShare(context.getUser(), context.getContainer(), errors);
         }
         else
         {
             if (report.canEdit(context.getUser(), context.getContainer(), errors))
             {
-                if (descriptor.getOwner() == null)
+                if (descriptor.isShared())
                     report.canShare(context.getUser(), context.getContainer(), errors);
             }
         }

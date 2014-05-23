@@ -176,7 +176,7 @@ public class HtmlRenderer implements WikiRenderer
             volatilePage = false;
         }
 
-        return new FormattedHtml(innerHtml.toString(), volatilePage, null, cds);
+        return new FormattedHtml(innerHtml.toString(), volatilePage, cds);
     }
 
 
@@ -288,7 +288,7 @@ public class HtmlRenderer implements WikiRenderer
             }
         }
 
-        return new FormattedHtml(sb.toString(), volatilePage, null, cds);
+        return new FormattedHtml(sb.toString(), volatilePage, cds);
     }
 
 

@@ -64,6 +64,7 @@ import org.radeox.util.StringBufferWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -786,6 +787,16 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         {
             assertEquals(html, _r.format(wiki).getHtml());
             assertEquals("<div class=\"labkey-wiki\">" + html + "</div>", _ws.getFormattedHtml(WikiRendererType.RADEOX, wiki));
+        }
+
+        @Test
+        public void testWikiDependencies()
+        {
+            FormattedHtml html = _r.format("[this] [that] [some text|tother] [some other text|this] nolink anothernolink");
+            Set<String> dependencies = html.getWikiDependencies();
+            assertNotNull(dependencies);
+            assertEquals(3, dependencies.size());
+            assertTrue(dependencies.containsAll(Arrays.asList("this", "that", "tother")));
         }
     }
 }

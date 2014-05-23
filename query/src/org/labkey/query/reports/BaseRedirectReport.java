@@ -34,7 +34,7 @@ public abstract class BaseRedirectReport extends RedirectReport
     {
         super.canEdit(user, container, errors);
 
-        if (errors.isEmpty() && getDescriptor().getOwner() != null)
+        if (errors.isEmpty() && !getDescriptor().isShared())
         {
             if (!container.hasPermission(user, InsertPermission.class))
                 errors.add(new SimpleValidationError("You must be in the Author role to update a private attachment report."));

@@ -41,7 +41,7 @@
     Integer createdBy = reportDescriptor.getCreatedBy();
     Date createdDate = reportDescriptor.getCreated();
     Date modifiedDate = reportDescriptor.getModified();
-    Boolean isShared = reportDescriptor.getOwner() == null ? true : false;
+    boolean isShared = reportDescriptor.isShared();
     Date refreshDate = null;
 
     ActionURL vewReportURL = report.getRunReportURL(context);

@@ -1268,7 +1268,7 @@ public class VisualizationController extends SpringActionController
                 return;
             }
 
-            if (report.getDescriptor().getOwner() != null && report.getDescriptor().getOwner() != getUser().getUserId())
+            if (!report.getDescriptor().isShared() && report.getDescriptor().getOwner() != getUser().getUserId())
             {
                 errors.reject(ERROR_MSG, "You do not have permissions to view this private report.");
                 return;
@@ -1294,8 +1294,8 @@ public class VisualizationController extends SpringActionController
             resp.put("schemaName", vizDescriptor.getProperty(ReportDescriptor.Prop.schemaName));
             resp.put("queryName", vizDescriptor.getProperty(ReportDescriptor.Prop.queryName));
             resp.put("type", vizDescriptor.getReportType());
-            resp.put("shared", vizDescriptor.getOwner() == null);
-            resp.put("ownerId", vizDescriptor.getOwner() != null ? vizDescriptor.getOwner() : null);
+            resp.put("shared", vizDescriptor.isShared());
+            resp.put("ownerId", !vizDescriptor.isShared() ? vizDescriptor.getOwner() : null);
             resp.put("createdBy", vizDescriptor.getCreatedBy());
             resp.put("reportProps", vizDescriptor.getReportProps());
             resp.put("thumbnailURL", PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(getContainer(), getReport(form)));
@@ -1418,7 +1418,7 @@ public class VisualizationController extends SpringActionController
                 _navTitle = report.getDescriptor().getReportName();
 
                 // check if the report is shared and if not, whether the user has access to the report
-                if (report.getDescriptor().getOwner() == null || (report.getDescriptor().getOwner() != null && report.getDescriptor().getOwner() == getUser().getUserId()))
+                if (report.getDescriptor().isShared() || (report.getDescriptor().getOwner() == getUser().getUserId()))
                 {
                     String title = "Discuss report - " + report.getDescriptor().getReportName();
                     DiscussionService.Service service = DiscussionService.get();
