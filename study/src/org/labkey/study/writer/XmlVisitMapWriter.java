@@ -16,6 +16,9 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.data.Container;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -158,7 +161,19 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
             }
         }
 
-        Collection<VisitTag> visitTags = StudyManager.getInstance().getVisitTags(study).values();
+        Study visitTagStudy = study;
+        Container container = visitTagStudy.getContainer();
+        if (null == container.getProject())
+            throw new IllegalStateException("Study Import/Export must happen within a project.");
+        if (container.getProject().isDataspace())
+        {
+            container = container.getProject();
+            visitTagStudy = StudyService.get().getStudy(container);
+            if (null == visitTagStudy)
+                throw new IllegalStateException("Expected project-level study in Dataspace project.");
+        }
+
+        Collection<VisitTag> visitTags = StudyManager.getInstance().getVisitTags(visitTagStudy).values();
 
         for (VisitTag visitTag : visitTags)
         {

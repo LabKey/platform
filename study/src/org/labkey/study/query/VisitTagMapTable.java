@@ -91,7 +91,7 @@ public class VisitTagMapTable extends BaseStudyTable
     }
 
     @Override
-    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    public boolean hasPermissionOverridable(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         // Only allow admins to edit directly.
         return getContainer().hasPermission(user, AdminPermission.class) && getContainer().hasPermission(user, perm);
