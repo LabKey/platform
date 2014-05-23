@@ -9,7 +9,6 @@ Ext4.define('File.panel.EditCustomFileProps', {
 
     constructor : function(config)
     {
-        Ext4.apply(config);
         Ext4.applyIf(config, {
             winId       : 'NoIdSupplied',
             fileRecords : [],
@@ -21,6 +20,9 @@ Ext4.define('File.panel.EditCustomFileProps', {
             padding : '10 0 0 10',
             minHeight : 150
         });
+
+        // Always include the Description field ("Flag/Comment")
+        config.extraColumns.unshift({name: "Flag/Comment"});
 
         this.callParent([config]);
     },
@@ -78,6 +80,10 @@ Ext4.define('File.panel.EditCustomFileProps', {
             {
                 var fieldConfig = LABKEY.ext4.Util.getFormEditorConfig(field);
                 fieldConfig.id = fieldConfig.name;
+
+                if (fieldConfig.name == "Flag/Comment")
+                    fieldConfig.label = "Description";
+
                 fieldConfig.width = 330;
                 fieldConfig.padding = "8 8 0 0";
 
@@ -176,27 +182,31 @@ Ext4.define('File.panel.EditCustomFileProps', {
                         this.saveFormPage();
                         for(var i = 0; i < this.formPages.length; i++)
                         {
-                            var row = {Name: this.fileRecords[i].data.name};
+                            var formPage = this.formPages[i];
+                            var rec = this.fileRecords[i];
+                            var row = {
+                                Name: rec.data.name,
+                                id: rec.data.href,
+                                'Flag/Comment': rec.data.description
+                            };
 
-                            var prevValues = this.fileProps[this.fileRecords[i].data.id];
-                            if (prevValues)
+                            var prevValues = this.fileProps[rec.data.id];
+                            if (prevValues) {
                                 row["RowId"] = prevValues["rowId"];
-
-                            for(var r = 0; r < this.extraColumns.length; r++)
-                            {
-                                row[this.extraColumns[r].name] = this.formPages[i][this.extraColumns[r].name];
                             }
 
-                            for(var r = 0; r < this.fileRecords.length; r++)
+                            for (var r = 0; r < this.extraColumns.length; r++)
                             {
-                                if(this.fileRecords[r].data.name === row["Name"])
-                                {
-                                    row.id = this.fileRecords[r].data.href;
-                                    files.push(Ext4.apply(this.fileRecords[r].data, row));
-                                    break;
-                                }
-
+                                var extraColName = this.extraColumns[r].name;
+                                row[extraColName] = formPage[extraColName];
                             }
+
+                            // Copy the field values back to the fileRecord
+                            Ext4.apply(rec.data, row);
+                            rec.data.description = row["Flag/Comment"];
+                            delete rec.data["Flag/Comment"];
+
+                            files.push(row);
                         }
 
                         Ext4.Ajax.request({
@@ -209,7 +219,7 @@ Ext4.define('File.panel.EditCustomFileProps', {
                             },
                             failure: function(response, opt){
                                 var errorTxt = 'An error occurred submitting the .';
-                                var jsonResponse = Ext4.util.JSON.decode(response.responseText);
+                                var jsonResponse = Ext4.JSON.decode(response.responseText);
                                 if (jsonResponse && jsonResponse.errors)
                                 {
                                     for (var i=0; i < jsonResponse.errors.length; i++)

@@ -1002,7 +1002,7 @@ Ext4.define('File.panel.Browser', {
         var config = {
             schemaName : 'exp',
             queryName : 'Data',
-            columns : ['Name', 'Run', 'Data File URL'].concat(extraColumnNames),
+            columns : ['Name', 'Flag/Comment', 'Run', 'Data File URL'].concat(extraColumnNames),
             requiredVersion : '9.1',
             success : function(resp) {
                 this.setFileObjects(resp.rows);
@@ -1849,7 +1849,11 @@ Ext4.define('File.panel.Browser', {
                             //
                             this.on('pipelineconfigured', function() {
                                 this.clearGridSelection();
-                                this.onCustomFileProperties(options);
+
+                                // Only show file property editor after transfercomplete if extra properties exist
+                                if (this.getExtraColumns().length > 0) {
+                                    this.onCustomFileProperties(options);
+                                }
                             }, this, {single: true});
                             this.configureActions();
                         },
@@ -2440,7 +2444,10 @@ Ext4.define('File.panel.Browser', {
 
 
     onEditFileProps : function() {
-        this.onCustomFileProperties({fileRecords : this.getGridSelection(), showErrors : true});
+        this.onCustomFileProperties({
+            fileRecords : this.getGridSelection(),
+            showErrors : true
+        });
     },
 
     onCustomFileProperties : function(options) {
@@ -2467,24 +2474,19 @@ Ext4.define('File.panel.Browser', {
         // no selected files in options
         if (!options.fileRecords || options.fileRecords.length == 0)
         {
-            this.showErrorMsg('Error', 'No files selected.');
+            if (options.showErrors)
+                this.showErrorMsg('Error', 'No files selected.');
             return;
-        }
-        else
-        {
-            Ext4.each(options.fileRecords, function(record){
-                if (!this.fileProps[record.data.id])
-                    this.fileProps[record.data.id] = record.data;
-            }, this);
         }
 
-        // no file fields specified yet
-        if (this.getExtraColumns().length == 0)
-        {
-            if (options.showErrors)
-                this.showErrorMsg("Error", "There are no file properties defined yet, please contact your administrator.");
-            return;
-        }
+        Ext4.each(options.fileRecords, function(record){
+            if (!this.fileProps[record.data.id]) {
+                this.fileProps[record.data.id] = record.data;
+            }
+
+            // Copy 'description' from fileRecord to fileProps.
+            this.fileProps[record.data.id]["Flag/Comment"] = record.data.description;
+        }, this);
 
         Ext4.create('Ext.Window', {
             title : 'Extended File Properties',

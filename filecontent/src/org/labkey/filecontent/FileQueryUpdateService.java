@@ -80,6 +80,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     public static final String KEY_COL_ID = "id";
     public static final String KEY_COL_DAV = "davUrl";
     public static final String KEY_COL_FILE = "filePath";
+    public static final String COL_COMMENT = "Flag/Comment";
 
 
     public FileQueryUpdateService(TableInfo queryTable, Container container)
@@ -205,6 +206,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             _columns = new HashSet<>();
 
             _columns.add(ExpDataTable.Column.Flag.name());
+            _columns.add(COL_COMMENT);
             _columns.add(ExpDataTable.Column.DataFileUrl.name());
 
             Domain domain = getFileProperties(c);
@@ -309,6 +311,13 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 catch (URISyntaxException ignored) {}
                 data.setDataFileURI(uri);
                 data.save(user);
+            }
+
+            // Get the Flag/Comment field
+            if (row.containsKey(COL_COMMENT))
+            {
+                String comment = String.valueOf(row.get(COL_COMMENT));
+                data.setComment(user, comment);
             }
 
             Domain domain = getFileProperties(container);
