@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.study.actions.ParticipantVisitResolverChooser;
@@ -30,6 +31,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.study.permissions.DesignAssayPermission;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
@@ -165,6 +167,14 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         }
         return super.getView(domainIdForm, reshow, errors);
 
+    }
+
+    @Override
+    protected ActionURL buildSetInheritedDefaultsURL(Domain domain, AssayDomainIdForm domainIdForm)
+    {
+        ActionURL url = super.buildSetInheritedDefaultsURL(domain, domainIdForm);
+        url.addParameter("providerName", domainIdForm.getProviderName());
+        return url;
     }
 
     protected DataRegion createDataRegion()

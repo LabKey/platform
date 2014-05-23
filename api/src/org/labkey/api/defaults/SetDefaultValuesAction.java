@@ -229,9 +229,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         headerHtml.append("</span>");
         if (!domain.getContainer().equals(getContainer()) && domain.getContainer().hasPermission(getUser(), AdminPermission.class))
         {
-            ActionURL url = new ActionURL(this.getClass(), domain.getContainer());
-            url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
-            url.addParameter("domainId", domain.getTypeId());
+            ActionURL url = buildSetInheritedDefaultsURL(domain, domainIdForm);
             headerHtml.append(PageFlowUtil.textLink("edit default values for this table in " + PageFlowUtil.filter(domain.getContainer().getPath()), url));
         }
         headerHtml.append("<br><br>Default values set here will be inherited by all sub-folders that use this table and do not specify their own defaults.");
@@ -266,6 +264,15 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         }
 
         return new VBox(headerView, view, new HtmlView(overrideHtml.toString()));
+    }
+
+    protected ActionURL buildSetInheritedDefaultsURL(Domain domain, FormType domainIdForm)
+    {
+        // Overrides to this method should call super, and then add any additional url parameters the entity type may need.
+        ActionURL url = new ActionURL(this.getClass(), domain.getContainer());
+        url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
+        url.addParameter("domainId", domain.getTypeId());
+        return url;
     }
 
     protected void decodePropertyValues(Map<String, Object> formDefaults, String propName, String stringValue) throws IOException
