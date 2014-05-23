@@ -50,15 +50,16 @@ public final class TableExtension
         String pkColumn = extensionTable.getPkColumnNames().get(0); // Note this only works for simple primary keys, not compound.
         String fkColumn = extensionTable.getColumn(pkColumn).getFk().getLookupColumnName();
 
-        return create(primaryTable, extensionTable, fkColumn, pkColumn);
+        return create(primaryTable, extensionTable, fkColumn, pkColumn, LookupColumn.JoinType.leftOuter);
     }
 
-    public static TableExtension create(AbstractTableInfo primaryTable, TableInfo extensionTable, String foreignKey, String lookupKey)
+    public static TableExtension create(AbstractTableInfo primaryTable, TableInfo extensionTable, String foreignKey, String lookupKey, LookupColumn.JoinType joinType)
     {
         ColumnInfo extensionCol = primaryTable.getColumn(foreignKey);
         assert extensionCol != null;
 
         QueryForeignKey extensionFK = new QueryForeignKey(extensionTable, null, lookupKey, null);
+        extensionFK.setJoinType(joinType);
 
         return new TableExtension(primaryTable, extensionTable, extensionCol, extensionFK);
     }

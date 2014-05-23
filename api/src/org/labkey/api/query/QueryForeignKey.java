@@ -51,6 +51,12 @@ public class QueryForeignKey implements ForeignKey
     String _displayField;
     QuerySchema _schema;
     boolean _useRawFKValue;
+    LookupColumn.JoinType _joinType = LookupColumn.JoinType.leftOuter;
+
+    public void setJoinType(LookupColumn.JoinType joinType)
+    {
+        _joinType = joinType;
+    }
 
     public QueryForeignKey(@NotNull String schemaName, @NotNull Container effectiveContainer, @Nullable Container lookupContainer, User user, String tableName, @Nullable String lookupKey, @Nullable String displayField, boolean useRawFKValue)
     {
@@ -147,7 +153,7 @@ public class QueryForeignKey implements ForeignKey
                 return null;
         }
 
-        return LookupColumn.create(foreignKey, lookupTable.getColumn(getLookupColumnName(lookupTable)), lookupTable.getColumn(displayField), false);
+        return LookupColumn.create(foreignKey, lookupTable.getColumn(getLookupColumnName(lookupTable)), lookupTable.getColumn(displayField), false, _joinType);
     }
 
     @Nullable

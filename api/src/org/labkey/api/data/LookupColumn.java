@@ -29,14 +29,46 @@ import java.util.Map;
 public class LookupColumn extends ColumnInfo
 {
     /**
+     * In the vast majority of cases, lookups will use a LEFT OUTER JOIN. However, in very specific scenarios
+     * we can benefit from optimizations databases make for other types of joins and the schema/cardinality support it
+     */
+    public enum JoinType
+    {
+        /** For special cases only */
+        inner("INNER"),
+        /** The normal lookup join operator */
+        leftOuter("LEFT OUTER");
+        private final String _sql;
+
+        private JoinType(String sql)
+        {
+            _sql = sql;
+        }
+
+        public String getSQL()
+        {
+            return _sql;
+        }
+    }
+
+    /**
      * Create a lookup column to a "real" table - one that actually exists
      * in the underlying database
      */
     static public LookupColumn create(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn, boolean prefixColumnCaption)
     {
+        return create(foreignKey, lookupKey, lookupColumn, prefixColumnCaption, JoinType.leftOuter);
+    }
+
+    /**
+     * Create a lookup column to a "real" table - one that actually exists
+     * in the underlying database
+     */
+    static public LookupColumn create(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn, boolean prefixColumnCaption, JoinType joinType)
+    {
         if (lookupKey == null || lookupColumn == null)
             return null;
-        LookupColumn ret = new LookupColumn(foreignKey, lookupKey, lookupColumn);
+        LookupColumn ret = new LookupColumn(foreignKey, lookupKey, lookupColumn, joinType);
         ret.copyAttributesFrom(lookupColumn);
         ret.copyURLFrom(lookupColumn, foreignKey.getFieldKey(), null);
         if (prefixColumnCaption)
@@ -69,8 +101,15 @@ public class LookupColumn extends ColumnInfo
     protected ColumnInfo _lookupColumn;
     /** Additional column pairs if this is a multi-column join. Maintain original order using LinkedHashMap to ensure that generated SQL is identical */
     protected Map<ColumnInfo, Pair<ColumnInfo, Boolean>> _additionalJoins = new LinkedHashMap<>();
+    /** How to connect from the reference to the target query */
+    protected JoinType _joinType;
 
     public LookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn)
+    {
+        this(foreignKey, lookupKey, lookupColumn, JoinType.leftOuter);
+    }
+
+    public LookupColumn(ColumnInfo foreignKey, ColumnInfo lookupKey, ColumnInfo lookupColumn, JoinType joinType)
     {
         // Bug 1166: always report that our parent table is the leftmost table, so the dataregion knows which
         // table to select from
@@ -79,6 +118,7 @@ public class LookupColumn extends ColumnInfo
         _lookupKey = lookupKey;
         assert lookupKey.getValueSql("test") != null;
         _lookupColumn = lookupColumn;
+        _joinType = joinType;
         setSqlTypeName(lookupColumn.getSqlTypeName());
         String alias = foreignKey.getAlias() + "$" + lookupColumn.getAlias();
         if (alias.length() > 60)
@@ -165,7 +205,9 @@ public class LookupColumn extends ColumnInfo
             {
                 columnInfo.declareJoins(baseAlias, map);
             }
-            SQLFragment strJoin = new SQLFragment("\n\tLEFT OUTER JOIN ");
+            SQLFragment strJoin = new SQLFragment("\n\t");
+            strJoin.append(_joinType.getSQL());
+            strJoin.append(" JOIN ");
 
             addLookupSql(strJoin, _lookupKey.getParentTable(), colTableAlias);
             strJoin.append(" ON ");
