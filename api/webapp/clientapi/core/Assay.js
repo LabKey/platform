@@ -243,11 +243,18 @@ LABKEY.Assay = new function()
                     <li>responseObj: the XMLHttpResponseObject instance used to make the AJAX request</li>
                 </ul>
         * @param {Function} [config.failure] Function called when execution of the "getNAbRuns" function fails.
-        *       This function will be called with the following arguments:
-                <ul>
-                    <li>responseObj: The XMLHttpRequest object containing the response data.</li>
-                    <li>exceptionObj: A JavaScript Error object caught by the calling code.</li>
-                </ul>
+         *       This function will be called with the following arguments:
+ 				<ul>
+ 				    <li><b>errorInfo:</b> an object describing the error with the following fields:
+                         <ul>
+                             <li><b>exception:</b> the exception message</li>
+                             <li><b>exceptionClass:</b> the Java class of the exception thrown on the server</li>
+                             <li><b>stackTrace:</b> the Java stack trace at the point when the exception occurred</li>
+                         </ul>
+                     </li>
+                     <li><b>responseObj:</b> the XMLHttpResponseObject instance used to make the AJAX request</li>
+ 				    <li><b>options:</b> the options used for the AJAX request</li>
+ 				</ul>
         *
         * @param {Array} [config.filterArray] Array of objects created by {@link LABKEY.Filter.create}.
         * @param {String} [config.sort]  String description of the sort.  It includes the column names
@@ -322,11 +329,18 @@ LABKEY.Assay = new function()
                     <li>runs: an array of NAb run objects</li>
                 </ul>
         * @param {Function} [config.failure] Function called when execution of the "getStudyNabRuns" function fails.
-        *       This function will be called with the following arguments:
-                <ul>
-                    <li>responseObj: The XMLHttpRequest object containing the response data.</li>
-                    <li>exceptionObj: A JavaScript Error object caught by the calling code.</li>
-                </ul>
+         *       This function will be called with the following arguments:
+ 				<ul>
+ 				    <li><b>errorInfo:</b> an object describing the error with the following fields:
+                         <ul>
+                             <li><b>exception:</b> the exception message</li>
+                             <li><b>exceptionClass:</b> the Java class of the exception thrown on the server</li>
+                             <li><b>stackTrace:</b> the Java stack trace at the point when the exception occurred</li>
+                         </ul>
+                     </li>
+                     <li><b>responseObj:</b> the XMLHttpResponseObject instance used to make the AJAX request</li>
+ 				    <li><b>options:</b> the options used for the AJAX request</li>
+ 				</ul>
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
         */
@@ -384,11 +398,18 @@ LABKEY.Assay = new function()
                     <li>options: the options used for the AJAX request</li>
                 </ul>
         * @param {Function} [config.failure] Function called when execution of the "getStudyNabGraphURL" function fails.
-        *       This function will be called with the following arguments:
-                <ul>
-                    <li>responseObj: The XMLHttpRequest object containing the response data.</li>
-                    <li>exceptionObj: A JavaScript Error object caught by the calling code.</li>
-                </ul>
+         *       This function will be called with the following arguments:
+ 				<ul>
+ 				    <li><b>errorInfo:</b> an object describing the error with the following fields:
+                         <ul>
+                             <li><b>exception:</b> the exception message</li>
+                             <li><b>exceptionClass:</b> the Java class of the exception thrown on the server</li>
+                             <li><b>stackTrace:</b> the Java stack trace at the point when the exception occurred</li>
+                         </ul>
+                     </li>
+                     <li><b>responseObj:</b> the XMLHttpResponseObject instance used to make the AJAX request</li>
+ 				    <li><b>options:</b> the options used for the AJAX request</li>
+ 				</ul>
         * @param {Integer} [config.timeout] The maximum number of milliseconds to allow for this operation before
         *       generating a timeout error (defaults to 30000).
         * @example Example:
