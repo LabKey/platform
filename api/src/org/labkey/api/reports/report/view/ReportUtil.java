@@ -292,7 +292,7 @@ public class ReportUtil
     {
         if (report != null)
         {
-            if (report.getDescriptor().getOwner() == null)
+            if (report.getDescriptor().isShared())
                 return true;
 
             return (report.getDescriptor().getOwner().equals(user.getUserId()));
@@ -679,7 +679,7 @@ public class ReportUtil
             json.put("viewName", descriptor.getProperty(ReportDescriptor.Prop.viewName));
 
             json.put("editable", report.canEdit(user, container));
-            json.put("public", descriptor.getOwner() == null);
+            json.put("public", descriptor.isShared());
 
             return json;
         }

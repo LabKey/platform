@@ -273,7 +273,7 @@ public class ReportDesignBean extends ReportForm
         setFilterParam(descriptor.getProperty(ReportDescriptor.Prop.filterParam));
         setCached(BooleanUtils.toBoolean(descriptor.getProperty(ReportDescriptor.Prop.cached)));
 
-        setShareReport((descriptor.getOwner() == null));
+        setShareReport((descriptor.isShared()));
         setInheritable((descriptor.getFlags() & ReportDescriptor.FLAG_INHERITABLE) != 0);
         setRedirectUrl(getViewContext().getActionURL().getParameter(ReportDescriptor.Prop.redirectUrl.name()));
     }

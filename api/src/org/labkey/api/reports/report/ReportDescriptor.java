@@ -239,9 +239,16 @@ public enum Prop implements ReportProperty
         return StringUtils.defaultIfEmpty(getProperty(Prop.version), "9.10");    
     }
 
+    @Deprecated  // Use isShared() instead... "owner" column and getter/setter should go away. "createdby" is the real owner.
     public Integer getOwner(){return _owner;}
 
     public void setOwner(Integer owner){_owner = owner;}
+
+    // TODO: Replace "owner" column with boolean "shared" column
+    public boolean isShared()
+    {
+        return null == _owner;
+    }
 
     @Nullable
     public Integer getAuthor()

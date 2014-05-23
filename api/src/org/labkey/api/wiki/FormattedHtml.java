@@ -19,7 +19,7 @@ package org.labkey.api.wiki;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.template.ClientDependency;
 
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -36,7 +36,7 @@ public class FormattedHtml
     private final boolean _volatile;
     private final String _html;
     private final Set<String> _wikiDependencies;
-    private Set<ClientDependency> _clientDependencies = new LinkedHashSet<>();
+    private final Set<ClientDependency> _clientDependencies;
 
     public FormattedHtml(String html)
     {
@@ -45,21 +45,25 @@ public class FormattedHtml
 
     public FormattedHtml(String html, boolean isVolatile)
     {
-        this(html, isVolatile, new HashSet<String>());
+        this(html, isVolatile, Collections.<String>emptySet());
     }
 
-    public FormattedHtml(String html, boolean isVolatile, Set<String> wikiDependencies)
+    public FormattedHtml(String html, boolean isVolatile, @NotNull Set<String> wikiDependencies)
     {
-        this(html, isVolatile, wikiDependencies, null);
+        this(html, isVolatile, wikiDependencies, new LinkedHashSet<ClientDependency>());
     }
 
-    public FormattedHtml(String html, boolean isVolatile, Set<String> wikiDependencies, LinkedHashSet<ClientDependency> clientDependencies)
+    public FormattedHtml(String html, boolean isVolatile, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
+    {
+        this(html, isVolatile, Collections.<String>emptySet(), clientDependencies);
+    }
+
+    public FormattedHtml(String html, boolean isVolatile, @NotNull Set<String> wikiDependencies, @NotNull LinkedHashSet<ClientDependency> clientDependencies)
     {
         _html = html;
         _volatile = isVolatile;
         _wikiDependencies = wikiDependencies;
-        if (clientDependencies != null)
-            _clientDependencies.addAll(clientDependencies);
+        _clientDependencies = clientDependencies;
     }
 
     public String getHtml()
@@ -72,6 +76,7 @@ public class FormattedHtml
         return _volatile;
     }
 
+    @NotNull
     public Set<String> getWikiDependencies()
     {
         return _wikiDependencies;

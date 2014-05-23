@@ -774,7 +774,7 @@ public class DbScope
      *
      * @return  the task that was inserted or the existing class that will be run instead
      */
-    public <T extends Runnable> T  addCommitTask(T task, CommitTaskOption taskOption)
+    public <T extends Runnable> T addCommitTask(T task, CommitTaskOption taskOption)
     {
         Transaction t = getCurrentTransaction();
 
@@ -1216,7 +1216,7 @@ public class DbScope
         /*
          * @return  the task that was inserted or the existing class that will be run instead
          */
-        public <T extends Runnable> T  addCommitTask(T runnable, DbScope.CommitTaskOption taskOption);
+        public <T extends Runnable> T addCommitTask(T runnable, DbScope.CommitTaskOption taskOption);
         public Connection getConnection();
         public void close();
         public void commit();

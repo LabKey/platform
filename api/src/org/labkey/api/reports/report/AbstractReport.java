@@ -183,7 +183,7 @@ public abstract class AbstractReport implements Report
         props.put("viewName", descriptor.getProperty(ReportDescriptor.Prop.viewName));
 
         props.put("editable", canEdit(user, container));
-        props.put("public", descriptor.getOwner() == null);
+        props.put("public", descriptor.isShared());
 
         // the rest of the properties
         props.put("properties", descriptor.getProperties());
@@ -436,7 +436,7 @@ public abstract class AbstractReport implements Report
      */
     protected boolean isPrivate()
     {
-        return isNew() || getDescriptor().getOwner() != null;
+        return isNew() || !getDescriptor().isShared();
     }
     
     protected boolean isOwner(User user)
