@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -112,7 +113,20 @@ public class RSSServiceImpl extends RSSService
             @Override
             public int compare(Object o1, Object o2)
             {
-                return ((SyndEntryImpl) o2).getPublishedDate().compareTo(((SyndEntryImpl) o1).getPublishedDate());
+                if (o1 == null && o2 == null)
+                    return 0;
+                else if (o1 == null)
+                    return -1;
+                else if (o2 == null)
+                    return 1;
+
+                Date d1 = ((SyndEntryImpl) o1).getPublishedDate();
+                Date d2 = ((SyndEntryImpl) o2).getPublishedDate();
+
+                if (d1 == null || d2 == null)
+                    return -1;
+
+                return d2.compareTo(d1);
             }
         });
 
