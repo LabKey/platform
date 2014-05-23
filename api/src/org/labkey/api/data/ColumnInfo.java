@@ -830,11 +830,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 xmlFk.setFkTable(sfk._tableName);
                 DbSchema fkDbOwnerSchema = sfk.getLookupTableInfo().getSchema().getScope().getSchema(sfk._dbSchemaName, DbSchemaType.Unknown);
 
-                if (null == fkDbOwnerSchema)
-                {
-                    xmlFk.setFkDbSchema("********** Error:  can't load schema " + sfk._dbSchemaName);
-                }
-                else if (fkDbOwnerSchema != getParentTable().getSchema())
+                if (fkDbOwnerSchema != getParentTable().getSchema())
                 {
                     xmlFk.setFkDbSchema(fkDbOwnerSchema.getName());
                 }

@@ -39,6 +39,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -66,10 +67,16 @@ public class FileSqlScriptProvider implements SqlScriptProvider
     @Override
     public Collection<DbSchema> getSchemas()
     {
+        Collection<String> moduleSchemaNames = new LinkedHashSet<>(_module.getSchemaNames());
+        moduleSchemaNames.removeAll(_module.getProvisionedSchemaNames());
+
         List<DbSchema> schemas = new LinkedList<>();
 
-        for (String schemaName : _module.getSchemaNames())
-            schemas.add(DbSchema.get(schemaName, DbSchemaType.Unknown));
+        for (String schemaName : moduleSchemaNames)
+            schemas.add(DbSchema.get(schemaName, DbSchemaType.Module));
+
+        for (String schemaName : _module.getProvisionedSchemaNames())
+            schemas.add(DbSchema.get(schemaName, DbSchemaType.Provisioned));
 
         return schemas;
     }
