@@ -1712,6 +1712,7 @@ public class SecurityManager
     }
 
     // TODO: Should return a set
+    // TODO: Why is the includeGlobal flag necessary?
     public static @NotNull List<User> getProjectUsers(Container c, boolean includeGlobal)
     {
         if (c != null && !c.isProject())
