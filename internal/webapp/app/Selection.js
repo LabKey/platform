@@ -48,7 +48,7 @@ Ext.define('LABKEY.app.view.Selection', {
                         var rec = v.getStore().getById(recordId);
                         el.recid = recordId;
 
-                        if (LABKEY.app.view.Selection.supportMemberClose) {
+                        if (rec.get('isPlot') === true || LABKEY.app.view.Selection.supportMemberClose) {
                             var members = rec.get('members');
                             if (members) {
                                 // listen for each member
