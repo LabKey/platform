@@ -316,8 +316,11 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             // Get the Flag/Comment field
             if (row.containsKey(COL_COMMENT))
             {
-                String comment = String.valueOf(row.get(COL_COMMENT));
-                data.setComment(user, comment);
+                Object comment = row.get(COL_COMMENT);
+                if (comment instanceof String)
+                    data.setComment(user, (String)comment);
+                else
+                    data.setComment(user, null);
             }
 
             Domain domain = getFileProperties(container);

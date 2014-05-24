@@ -3,6 +3,93 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+
+Ext4.define('File.panel.Action', {
+    extend: 'Ext.Action',
+
+    actionType: null,
+
+    statics: {
+        Type: {
+            NOMIN: 'NOMIN', // 'No file required',
+            ATLEASTONE: 'ATLEASTONE', // 'At least one file required',
+            ONLYONE: 'ONLYONE', // 'Only one file allowed',
+            ATLEASTTWO: 'ATLEASTTWO', // 'Needs at least two files',
+            NOFILE: 'NOFILE' // 'Only works with no files'
+        },
+
+        ItemType: {
+            ONLY_FILE: 'ONLY_FILE', // Only works on files
+            ONLY_FOLDER: 'ONLY_FOLDER', // Only works on folders
+            FILE_OR_FOLDER: 'FILE_OR_FOLDER' // Either files or folders (same as having no actionItemType set)
+        }
+    },
+
+    updateEnabled : function (fileSystem, selection) {
+        var actionType = this.initialConfig.actionType;
+        var actionItemType = this.initialConfig.actionItemType;
+
+        if (!actionType)
+            return;
+
+        var types = File.panel.Action.Type;
+        var itemTypes = File.panel.Action.ItemType;
+
+        if (actionType == types.NOMIN) {
+            // no nothing
+        }
+        else if (selection.length == 0) {
+            // Set disabled when case is: ATLEASTONE or ONLYONE or ATLEASTTWO
+            this.setDisabled((actionType == types.ATLEASTONE || actionType == types.ONLYONE || actionType == types.ATLEASTTWO));
+        }
+        else if (selection.length == 1) {
+            // Set disabled when case is: ATLEASTTWO or NOFILE
+            this.setDisabled((actionType == types.ATLEASTTWO || actionType == types.NOFILE));
+
+            // Set disabled if the any of the selected don't match the actionItemType
+            if (actionItemType) {
+                if (actionItemType == itemTypes.ONLY_FILE && selection[0].data.collection)
+                    this.disable();
+                if (actionItemType == itemTypes.ONLY_FOLDER && !selection[0].data.collection)
+                    this.disable();
+            }
+
+            // Let the action instance decide if it should be disabled
+            if (Ext4.isFunction(this.initialConfig.shouldDisable)) {
+                if (this.initialConfig.shouldDisable.call(this, fileSystem, selection[0]))
+                    this.disable();
+            }
+        }
+        else if (selection.length >= 2) {
+            // Set disabled when case is: ONLYONE or NOFILE
+            this.setDisabled((actionType == types.ONLYONE || actionType == types.NOFILE));
+
+            // Set disabled if the any of the selected don't match the actionItemType
+            for (var i = 0, len = selection.length; i < len; i++) {
+                if (actionItemType) {
+                    if (actionItemType == itemTypes.ONLY_FILE && selection[i].data.collection) {
+                        this.disable();
+                        break;
+                    }
+                    if (actionItemType == itemTypes.ONLY_FOLDER && !selection[i].data.collection) {
+                        this.disable();
+                        break;
+                    }
+                }
+
+                // Let the action instance decide if it should be disabled
+                if (Ext4.isFunction(this.initialConfig.shouldDisable)) {
+                    if (this.initialConfig.shouldDisable.call(this, fileSystem, selection[i])) {
+                        this.disable();
+                        break;
+                    }
+                }
+            }
+        }
+
+    }
+});
+
 Ext4.define('File.panel.Actions', {
     extend : 'Ext.panel.Panel',
 
