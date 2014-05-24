@@ -49,13 +49,7 @@ public class MenuBarView extends JspView<MenuBarView.MenuBarBean>
         Container container = ctx.getContainer();
         Container project = container.getProject();
 
-        //Probably not right for site-level admin pages...
-        if (null == project)
-            project = ContainerManager.getHomeContainer();
-
-        LookAndFeelProperties laf = LookAndFeelProperties.getInstance(project);
-
-        if (laf.isMenuUIEnabled())
+        if (null != project && LookAndFeelProperties.getInstance(project).isMenuUIEnabled())
         {
             Collection<Portal.WebPart> allParts = Portal.getParts(project, ctx);
             MultiMap<String, Portal.WebPart> locationMap = Portal.getPartsByLocation(allParts);
