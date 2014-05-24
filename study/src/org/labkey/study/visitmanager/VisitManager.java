@@ -21,10 +21,12 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BaseSelector;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LegacySqlExecutor;
 import org.labkey.api.data.Parameter;
@@ -44,6 +46,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
@@ -57,6 +60,7 @@ import org.labkey.study.model.VisitMapKey;
 import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.ServletContextEvent;
+import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Types;
@@ -349,7 +353,7 @@ public abstract class VisitManager
 
         return ret;
     }
-    
+
     /**
      * Return a map mapping the minimum value of a visit to the visit.
      * In the case of a date-based study, this is actually a "Day" map, not a sequence map
@@ -659,8 +663,7 @@ public abstract class VisitManager
                     ptids.append(" UNION\n");
                 }
                 ptids.append("SELECT DISTINCT ptid AS participantid FROM ");
-                ptids.append(tableSpecimen, "spec");
-
+                ptids.append(tableSpecimen, "_specimens_");
 
                 SQLFragment ptidsP = new SQLFragment();
                 ptidsP.append("SELECT participantid FROM ").append(tableParticipant.getSelectName()).append(" WHERE container=?");
@@ -679,10 +682,11 @@ public abstract class VisitManager
                 del.append("DELETE FROM ").append(tableParticipant.getSelectName());
                 del.append("\nWHERE container=? ");
                 del.add(study.getContainer().getId());
-                del.append(" AND participantid IN (SELECT ParticipantId FROM (");
-                del.append(ptids);
-                del.append(") _ptids_sd \nEXCEPT\n");
-                del.append(ptidsP);
+                del.append(" AND participantid IN\n");
+                del.append("(\n");
+                del.append("    ").append(ptidsP).append("\n");
+                del.append("    EXCEPT\n");
+                del.append("    (SELECT ParticipantId FROM (").append(ptids).append(") _existing_)\n");
                 del.append(")");
 
                 return new LegacySqlExecutor(schema).execute(del);
@@ -744,5 +748,20 @@ public abstract class VisitManager
                 TIMER.cancel();
             }
         }
+    }
+
+    void _dump(String sql)
+    {
+        LOGGER.debug("DUMP -- " + sql);
+        DbScope s = StudySchema.getInstance().getScope();
+        new SqlExecutor(s).executeWithResults(new SQLFragment(sql), new BaseSelector.ResultSetHandler()
+        {
+            @Override
+            public Object handle(ResultSet rs, Connection conn) throws SQLException
+            {
+                ResultSetUtil.logData(rs, LOGGER);
+                return null;
+            }
+        });
     }
 }
