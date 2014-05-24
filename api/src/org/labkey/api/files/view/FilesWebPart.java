@@ -30,6 +30,7 @@ import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
@@ -96,6 +97,8 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
                     getModelBean().setRootPath(root.getWebdavURL());
                     getModelBean().setRootDirectory(root.getRootPath());
                 }
+                setTitleHref(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(c));
+                //setTitleHref(PageFlowUtil.urlProvider(FileUrls.class).urlBegin(c).addParameter("fileSetName", fileSet));
                 setTitle("Pipeline Files");
             }
             else if (fileSet.startsWith(CloudStoreService.CLOUD_NAME))
