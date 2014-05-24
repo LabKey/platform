@@ -112,7 +112,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
     private static final Logger _log = Logger.getLogger(LuceneSearchServiceImpl.class);
     private static final MultiPhaseCPUTimer<SEARCH_PHASE> TIMER = new MultiPhaseCPUTimer<>(SEARCH_PHASE.class, SEARCH_PHASE.values());
 
-    static final Version LUCENE_VERSION = Version.LUCENE_47;
+    static final Version LUCENE_VERSION = Version.LUCENE_48;
 
     // Changes to _index are rare (only when admin changes the index path), but we want any changes to be visible to
     // other threads immediately. Initialize to Noop class to prevent rare NPE (e.g., system maintenance runs before index

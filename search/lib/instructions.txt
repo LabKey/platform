@@ -7,7 +7,7 @@ download lucene-x.x.x-src.tgz
 - right click "analysis" directory and "Copy To..." c:\temp
 - right click "core" directory and "Copy To..." c:\temp
 - right click "queryparser" directory and "Copy To..." c:\temp
-- navigate to c:\temp, select "analysis", "core" and "queryparser", right click them both, "Send To..." Compressed (zipped) folder
+- navigate to c:\temp, select "analysis", "core" and "queryparser", right click all three, "Send To..." Compressed (zipped) folder
 - rename the new zip file to lucene-x.x.x-src.zip and copy it to /labkey/server/modules/search/lib
 - open lucene-x.x.x-src.zip
   - navigate into "/analysis"

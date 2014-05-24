@@ -2695,10 +2695,10 @@ query/webapp/reports/xls.gif -text
 query/webapp/scriptreporteditor.lib.xml -text
 search/Search.iml -text
 search/lib/instructions.txt -text
-search/lib/lucene-4.7.1-src.zip -text
-search/lib/lucene-analyzers-common-4.7.1.jar -text
-search/lib/lucene-core-4.7.1.jar -text
-search/lib/lucene-queryparser-4.7.1.jar -text
+search/lib/lucene-4.8.1-src.zip -text
+search/lib/lucene-analyzers-common-4.8.1.jar -text
+search/lib/lucene-core-4.8.1.jar -text
+search/lib/lucene-queryparser-4.8.1.jar -text
 search/module.properties -text
 search/resources/credits/jars.txt -text
 search/resources/schemas/dbscripts/postgresql/obsolete/search-0.00-0.03.sql -text
