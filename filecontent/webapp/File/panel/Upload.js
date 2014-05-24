@@ -434,7 +434,7 @@ Ext4.define('File.panel.Upload', {
         var helpLinkHtml =  '[<a class="help-link" href="javascript:void(0);">upload help</a>]';
 
         var html;
-        if (false && window.Dropzone && window.Dropzone.isBrowserSupported()) {
+        if (window.Dropzone && window.Dropzone.isBrowserSupported()) {
             html = "To upload multiple files, drag files " + (Ext4.isChrome ? "and folders " : "") + " from your desktop onto the file browser."
         } else {
             html = "Your browser doesn't support drag and drop uploading of files.<br>" +
