@@ -202,12 +202,12 @@ public class StudyManager
     {
         // prevent external construction with a private default constructor
         _studyHelper = new QueryHelper<StudyImpl>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
             {
-                public TableInfo getTableInfo()
-                {
-                    return StudySchema.getInstance().getTableInfoStudy();
-                }
-            }, StudyImpl.class)
+                return StudySchema.getInstance().getTableInfoStudy();
+            }
+        }, StudyImpl.class)
         {
             public List<StudyImpl> get(final Container c, SimpleFilter filterArg, final String sortString)
             {
@@ -219,7 +219,7 @@ public class StudyManager
                 final Set<Container> siblingsWithNoStudies = new HashSet<>();
                 final Set<Study> siblingsStudies = new HashSet<>();
 
-                CacheLoader<String,Object> loader = new CacheLoader<String,Object>()
+                CacheLoader<String, Object> loader = new CacheLoader<String, Object>()
                 {
                     @Override
                     public Object load(String key, Object argument)
@@ -306,20 +306,20 @@ public class StudyManager
         };
 
         _visitHelper = new QueryHelper<>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
             {
-                public TableInfo getTableInfo()
-                {
-                    return StudySchema.getInstance().getTableInfoVisit();
-                }
-            }, VisitImpl.class);
+                return StudySchema.getInstance().getTableInfoVisit();
+            }
+        }, VisitImpl.class);
 
         _locationHelper = new QueryHelper<>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
             {
-                public TableInfo getTableInfo()
-                {
-                    return StudySchema.getInstance().getTableInfoSite();
-                }
-            }, LocationImpl.class);
+                return StudySchema.getInstance().getTableInfoSite();
+            }
+        }, LocationImpl.class);
 
         _assaySpecimenHelper = new QueryHelper<>(new TableInfoGetter()
         {
@@ -330,12 +330,12 @@ public class StudyManager
         }, AssaySpecimenConfigImpl.class);
 
         _cohortHelper = new QueryHelper<>(new TableInfoGetter()
+        {
+            public TableInfo getTableInfo()
             {
-                public TableInfo getTableInfo()
-                {
-                    return StudySchema.getInstance().getTableInfoCohort();
-                }
-            }, CohortImpl.class);
+                return StudySchema.getInstance().getTableInfoCohort();
+            }
+        }, CohortImpl.class);
 
         TableInfoGetter dataSetGetter = new TableInfoGetter()
         {
@@ -379,7 +379,8 @@ public class StudyManager
                         }
                         return Collections.unmodifiableSet(set);
                     }
-                });
+                }
+        );
 
         ViewCategoryManager.addCategoryListener(new CategoryListener(this));
     }
@@ -437,7 +438,7 @@ public class StudyManager
                 study = studies.get(0);
 
             // UNDONE: There is a subtle bug in QueryHelper caching, cached objects shouldn't hold onto Container objects
-            assert(study.getContainer().getId().equals(c.getId()));
+            assert (study.getContainer().getId().equals(c.getId()));
             if (study.getContainer() == c)
                 break;
 
@@ -497,7 +498,7 @@ public class StudyManager
             study.setProtocolDocumentEntityId(GUID.makeGUID());
 
         if (study.getAlternateIdDigits() == 0)
-           study.setAlternateIdDigits(StudyManager.ALTERNATEID_DEFAULT_NUM_DIGITS);
+            study.setAlternateIdDigits(StudyManager.ALTERNATEID_DEFAULT_NUM_DIGITS);
 
         study = _studyHelper.create(user, study);
 
@@ -617,7 +618,7 @@ public class StudyManager
             Domain domain = dataSetDefinition.getDomain();
 
             // Check if the extra key field has changed
-            boolean isProvisioned = domain != null && domain.getStorageTableName() != null ;
+            boolean isProvisioned = domain != null && domain.getStorageTableName() != null;
             boolean isKeyChanged = old.isDemographicData() != dataSetDefinition.isDemographicData() || !StringUtils.equals(old.getKeyPropertyName(), dataSetDefinition.getKeyPropertyName());
             if (isProvisioned && isKeyChanged)
             {
@@ -673,10 +674,10 @@ public class StudyManager
             if (!old.getName().equals(dataSetDefinition.getName()))
             {
                 QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
-                    QueryService.get().getUserSchema(user, dataSetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(dataSetDefinition.getName()),
-                    QueryChangeListener.QueryProperty.Name,
-                    old.getName(),
-                    dataSetDefinition.getName()
+                        QueryService.get().getUserSchema(user, dataSetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(dataSetDefinition.getName()),
+                        QueryChangeListener.QueryProperty.Name,
+                        old.getName(),
+                        dataSetDefinition.getName()
                 );
 
                 QueryService.get().fireQueryChanged(user, dataSetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
@@ -746,7 +747,7 @@ public class StudyManager
                 throw new VisitCreationException("Corrupt existing visit " + existingVisit.getLabel() +
                         ": SequenceNumMin must be less than or equal to SequenceNumMax");
             boolean disjoint = visit.getSequenceNumMax() < existingVisit.getSequenceNumMin() ||
-                               visit.getSequenceNumMin() > existingVisit.getSequenceNumMax();
+                    visit.getSequenceNumMin() > existingVisit.getSequenceNumMax();
             if (!disjoint)
                 throw new VisitCreationException("New visit " + visit.getLabel() + " overlaps existing visit " + existingVisit.getLabel());
         }
@@ -835,14 +836,14 @@ public class StudyManager
                 else
                 {
                     // If not, drop the decimal from the default name
-                    label = "Day " + (int)sequencenum;
+                    label = "Day " + (int) sequencenum;
                 }
             }
             else
             {
                 // Try to create a timepoint that spans the default number of days
                 // For example, if duration is 7 days, do timepoints for days 0-6, 7-13, 14-20, etc
-                int intervalNumber = (int)sequencenum / study.getDefaultTimepointDuration();
+                int intervalNumber = (int) sequencenum / study.getDefaultTimepointDuration();
                 visitIdMin = intervalNumber * study.getDefaultTimepointDuration();
                 visitIdMax = (intervalNumber + 1) * study.getDefaultTimepointDuration() - 1;
 
@@ -858,11 +859,11 @@ public class StudyManager
                 }
 
                 // Default label is "Day X"
-                label = "Day " + (int)visitIdMin + " - " + (int)visitIdMax;
-                if ((int)visitIdMin == (int)visitIdMax)
+                label = "Day " + (int) visitIdMin + " - " + (int) visitIdMax;
+                if ((int) visitIdMin == (int) visitIdMax)
                 {
                     // Single day timepoint, so don't use the range
-                    label = "Day " + (int)visitIdMin;
+                    label = "Day " + (int) visitIdMin;
                 }
                 else if (visitIdMin == intervalNumber * study.getDefaultTimepointDuration() &&
                         visitIdMax == (intervalNumber + 1) * study.getDefaultTimepointDuration() - 1)
@@ -904,7 +905,7 @@ public class StudyManager
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
             StandardETL etl = StandardETL.forInsert(tinfo, loader, study.getContainer(), user, context);
-            DataIteratorBuilder insert = ((UpdateableTableInfo)tinfo).persistRows(etl, context);
+            DataIteratorBuilder insert = ((UpdateableTableInfo) tinfo).persistRows(etl, context);
             Pump p = new Pump(insert, context);
             p.run();
 
@@ -1114,7 +1115,7 @@ public class StudyManager
             DataIteratorContext context = new DataIteratorContext();
             context.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
             StandardETL etl = StandardETL.forInsert(tinfo, loader, container, user, context);
-            DataIteratorBuilder insert = ((UpdateableTableInfo)tinfo).persistRows(etl, context);
+            DataIteratorBuilder insert = ((UpdateableTableInfo) tinfo).persistRows(etl, context);
             Pump p = new Pump(insert, context);
             p.run();
 
@@ -1128,15 +1129,40 @@ public class StudyManager
         return allVisitTagMap;
     }
 
-    public void createVisitTagMapEntry(User user, Container container, String visitTagName, @NotNull Integer visitId, @Nullable Integer cohortId) throws SQLException
+    public @NotNull Study getStudyForVisitTag(@NotNull Study study)
+    {
+        Study returnStudy = study;
+        Container projectContainer = returnStudy.getContainer().getProject();
+        assert (null != projectContainer);
+        if (projectContainer.isDataspace())
+            returnStudy = StudyService.get().getStudy(projectContainer);
+        assert (null != returnStudy);
+        return returnStudy;
+    }
+
+    public Integer createVisitTagMapEntry(User user, Container container, String visitTagName, @NotNull Integer visitId, @Nullable Integer cohortId) throws SQLException
     {
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
-        Map<String, Object> map = new HashMap<>();
+        Map<String, Object> map = new CaseInsensitiveHashMap<>();
         map.put("visitTag", visitTagName);
         map.put("visitId", visitId);
         map.put("cohortId", cohortId);
         map.put("containerId", container.getId());
-        Table.insert(user, tinfo, map);
+        map = Table.insert(user, tinfo, map);
+        return (Integer)map.get("RowId");
+    }
+
+    @Nullable
+    public String checkSingleUseVisitTag(VisitTag visitTag, @Nullable Integer cohortId, @NotNull List<VisitTagMapEntry> visitTagMapEntries, @Nullable Integer oldRowId)
+    {
+        for (VisitTagMapEntry visitTagMapEntry : visitTagMapEntries)
+            if ((null == oldRowId || !oldRowId.equals(visitTagMapEntry.getRowId())) &&
+                    ((null == cohortId && null == visitTagMapEntry.getCohortId()) || null != cohortId && cohortId.equals(visitTagMapEntry.getCohortId())))
+            {
+                return "Single use visit tag '" + visitTag.getName() +
+                        "' may not be used for more than one visit for the same cohort '" + (null != cohortId ? cohortId : "<null>") + "'.";
+            }
+        return null;
     }
 
     public Map<String, VisitTag> getVisitTags(Study study)
@@ -1154,6 +1180,28 @@ public class StudyManager
             }
         }, VisitTag.class);
         return visitTags;
+    }
+
+    public @Nullable VisitTag getVisitTag(Study study, String visitTagName)
+    {
+        final List<VisitTag> visitTags = new ArrayList<>();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
+        filter.addCondition(FieldKey.fromString("Name"), visitTagName);
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTag();
+        new TableSelector(tinfo, filter, null).forEach(new Selector.ForEachBlock<VisitTag>()
+        {
+            @Override
+            public void exec(VisitTag visitTag) throws SQLException
+            {
+                visitTags.add(visitTag);
+            }
+        }, VisitTag.class);
+
+        if (visitTags.isEmpty())
+            return null;
+        if (visitTags.size() > 1)
+            throw new IllegalStateException("Expected only one visit tag with given name.");
+        return visitTags.get(0);
     }
 
     public Map<Integer, List<VisitTagMapEntry>> getVisitTagMapMap(Study study)
@@ -1175,9 +1223,9 @@ public class StudyManager
         return visitTagMapMap;
     }
 
-    public Set<String> getVisitTagMapKeys(Study study)
+    public Map<String, List<VisitTagMapEntry>> getVisitTagToVisitTagMapEntries(Study study)
     {
-        final Set<String> visitTagMapKeys = new HashSet<>();
+        final Map<String, List<VisitTagMapEntry>> visitTagToVisitTagMapEntries = new HashMap<>();
         SimpleFilter containerFilter = SimpleFilter.createContainerFilter(study.getContainer());
         TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
         new TableSelector(tinfo, containerFilter, null).forEach(new Selector.ForEachBlock<VisitTagMapEntry>()
@@ -1185,11 +1233,31 @@ public class StudyManager
             @Override
             public void exec(VisitTagMapEntry visitTagMapEntry) throws SQLException
             {
-                visitTagMapKeys.add(makeVisitTagMapKey(visitTagMapEntry.getVisitTag(), visitTagMapEntry.getVisitId(), visitTagMapEntry.getCohortId()));
+                if (!visitTagToVisitTagMapEntries.containsKey(visitTagMapEntry.getVisitTag()))
+                    visitTagToVisitTagMapEntries.put(visitTagMapEntry.getVisitTag(), new ArrayList<VisitTagMapEntry>());
+                visitTagToVisitTagMapEntries.get(visitTagMapEntry.getVisitTag()).add(visitTagMapEntry);
             }
         }, VisitTagMapEntry.class);
 
-        return visitTagMapKeys;
+        return visitTagToVisitTagMapEntries;
+    }
+
+    public List<VisitTagMapEntry> getVisitTagMapEntries(Study study, String visitTagName)
+    {
+        final List<VisitTagMapEntry> visitTagMapEntries = new ArrayList<>();
+        SimpleFilter filter = SimpleFilter.createContainerFilter(study.getContainer());
+        filter.addCondition(FieldKey.fromString("VisitTag"), visitTagName);
+        TableInfo tinfo = StudySchema.getInstance().getTableInfoVisitTagMap();
+        new TableSelector(tinfo, filter, null).forEach(new Selector.ForEachBlock<VisitTagMapEntry>()
+        {
+            @Override
+            public void exec(VisitTagMapEntry visitTagMapEntry) throws SQLException
+            {
+                visitTagMapEntries.add(visitTagMapEntry);
+            }
+        }, VisitTagMapEntry.class);
+
+        return visitTagMapEntries;
     }
 
     public static String makeVisitTagMapKey(String visitTagName, int visitId, @Nullable Integer cohortId)

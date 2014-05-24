@@ -1022,6 +1022,7 @@ public class StudyQuerySchema extends UserSchema
         _dataspaceProjectLevelTables.add(PRODUCT_TABLE_NAME);
         _dataspaceProjectLevelTables.add(PRODUCT_ANTIGEN_TABLE_NAME);
         _dataspaceProjectLevelTables.add(PERSONNEL_TABLE_NAME);
+        _dataspaceProjectLevelTables.add(VISIT_TAG_TABLE_NAME);
 
         _dataspaceFolderLevelTables.add(TREATMENT_TABLE_NAME);
         _dataspaceFolderLevelTables.add(ASSAY_SPECIMEN_TABLE_NAME);

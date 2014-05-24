@@ -28,12 +28,14 @@ public class VisitTagMapEntry
     private final String _visitTag;
     private final int _visitId;
     private final Integer _cohortId;
+    private final Integer _rowId;
 
-    public VisitTagMapEntry(String visitTag, int visitId, @Nullable Integer cohortId)
+    public VisitTagMapEntry(String visitTag, int visitId, @Nullable Integer cohortId, Integer rowId)
     {
         _visitTag = visitTag;
         _visitId = visitId;
         _cohortId = cohortId;
+        _rowId = rowId;
     }
 
     private VisitTagMapEntry(Map m)
@@ -41,6 +43,7 @@ public class VisitTagMapEntry
         _visitTag = (String)m.get("visitTag");
         _visitId = (Integer)m.get("visitId");
         _cohortId = (Integer)m.get("cohortId");
+        _rowId = (Integer)m.get("rowId");
     }
 
     public String getVisitTag()
@@ -59,6 +62,11 @@ public class VisitTagMapEntry
     static
     {
         ObjectFactory.Registry.register(VisitTagMapEntry.class, new VisitTagMapEntryFactory());
+    }
+
+    public Integer getRowId()
+    {
+        return _rowId;
     }
 
     // UNDONE: should have BaseObjectFactory to implement handle in terms of fromMap()

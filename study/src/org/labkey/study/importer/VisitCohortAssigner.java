@@ -27,12 +27,16 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.VisitTag;
+import org.labkey.study.model.VisitTagMapEntry;
 import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -86,15 +90,16 @@ public class VisitCohortAssigner implements InternalStudyImporter
             Map<String, Integer> cohortIdMap = getCohortIdMap(user, study);
 
             // In Dataspace, VisitTags live at the project level
-            Study studyForVisitTags = study;
-            if (ctx.isDataspaceProject())
-            {
-                studyForVisitTags = StudyManager.getInstance().getStudy(ctx.getProject());
-                if (null == studyForVisitTags)
-                    throw new IllegalStateException("Expected project level study in Dataspace project.");
-            }
+            Study studyForVisitTags = studyManager.getStudyForVisitTag(study);
+
+            // Get maps and sets to avoid duplicates and check for errors
             Map<String, VisitTag> visitTags = studyManager.getVisitTags(studyForVisitTags);
-            Set<String> visitTagMapKeys = studyManager.getVisitTagMapKeys(study);
+            Map<String, List<VisitTagMapEntry>> visitTagToVisitTagEntries = studyManager.getVisitTagToVisitTagMapEntries(study);
+            Set<String> visitTagMapKeys = new HashSet<>();
+            for (List<VisitTagMapEntry> visitTagMapEntries : visitTagToVisitTagEntries.values())
+                for (VisitTagMapEntry visitTagMapEntry : visitTagMapEntries)
+                    visitTagMapKeys.add(StudyManager.makeVisitTagMapKey(visitTagMapEntry.getVisitTag(), visitTagMapEntry.getVisitId(), visitTagMapEntry.getCohortId()));
+
 
             for (VisitMapRecord record : records)
             {
@@ -116,10 +121,30 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
                     Integer cohortId = cohortIdMap.get(visitTagRecord.getCohortLabel());
                     String visitTagMapKey = StudyManager.makeVisitTagMapKey(visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId);
-                    if (!visitTagMapKeys.contains(visitTagMapKey))
+                    if (visitTagMapKeys.contains(visitTagMapKey))
                     {
-                        studyManager.createVisitTagMapEntry(user, c, visitTagRecord.getVisitTagName(),
-                                visit.getRowId(), cohortId);
+                        ctx.getLogger().info("VisitTagMap entry already in table or archive: " + visitTagMapKey);
+                    }
+                    else
+                    {
+                        if (visitTags.get(visitTagRecord.getVisitTagName()).isSingleUse())
+                        {
+                            List<VisitTagMapEntry> visitTagMapEntries = visitTagToVisitTagEntries.get(visitTagRecord.getVisitTagName());
+                            if (null == visitTagMapEntries)
+                                visitTagMapEntries = Collections.emptyList();
+                            String errorSingleUse = studyManager.checkSingleUseVisitTag(visitTags.get(visitTagRecord.getVisitTagName()),
+                                    cohortId, visitTagMapEntries, null);
+                            if (null != errorSingleUse)
+                            {
+                                ctx.getLogger().error(errorSingleUse);
+                                continue;
+                            }
+                        }
+                        Integer rowId = studyManager.createVisitTagMapEntry(user, c, visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId);
+                        visitTagMapKeys.add(visitTagMapKey);
+                        if (!visitTagToVisitTagEntries.containsKey(visitTagRecord.getVisitTagName()))
+                            visitTagToVisitTagEntries.put(visitTagRecord.getVisitTagName(), new ArrayList<VisitTagMapEntry>());
+                        visitTagToVisitTagEntries.get(visitTagRecord.getVisitTagName()).add(new VisitTagMapEntry(visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId, rowId));
                     }
                 }
             }

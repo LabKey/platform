@@ -107,6 +107,6 @@ public class VisitTagMapTable extends BaseStudyTable
     @Override
     public QueryUpdateService getUpdateService()
     {
-        return new DefaultQueryUpdateService(this, this.getRealTable(), _columnMappings);
+        return new VisitTagMapQueryUpdateService(this, this.getRealTable(), _columnMappings);
     }
 }

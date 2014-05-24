@@ -161,19 +161,9 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
             }
         }
 
-        Study visitTagStudy = study;
-        Container container = visitTagStudy.getContainer();
-        if (null == container.getProject())
-            throw new IllegalStateException("Study Import/Export must happen within a project.");
-        if (container.getProject().isDataspace())
-        {
-            container = container.getProject();
-            visitTagStudy = StudyService.get().getStudy(container);
-            if (null == visitTagStudy)
-                throw new IllegalStateException("Expected project-level study in Dataspace project.");
-        }
-
-        Collection<VisitTag> visitTags = StudyManager.getInstance().getVisitTags(visitTagStudy).values();
+        // In Dataspace, VisitTags live at the project level
+        Study studyForVisitTags = StudyManager.getInstance().getStudyForVisitTag(study);
+        Collection<VisitTag> visitTags = StudyManager.getInstance().getVisitTags(studyForVisitTags).values();
 
         for (VisitTag visitTag : visitTags)
         {
