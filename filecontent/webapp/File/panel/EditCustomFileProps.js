@@ -81,8 +81,10 @@ Ext4.define('File.panel.EditCustomFileProps', {
                 var fieldConfig = LABKEY.ext4.Util.getFormEditorConfig(field);
                 fieldConfig.id = fieldConfig.name;
 
-                if (fieldConfig.name == "Flag/Comment")
+                if (fieldConfig.name == "Flag/Comment") {
                     fieldConfig.label = "Description";
+                    fieldConfig.itemId = "descriptionField";
+                }
 
                 fieldConfig.width = 330;
                 fieldConfig.padding = "8 8 0 0";
@@ -113,6 +115,11 @@ Ext4.define('File.panel.EditCustomFileProps', {
             autoScroll: true,
             items: customFields
         });
+
+        // set intial focus on the first field in the form (always the description field)
+        var descriptionField = this.queryById("descriptionField");
+        if (descriptionField)
+            descriptionField.focus();
 
         this.applyCheckbox = Ext4.create('Ext.form.field.Checkbox', {
             boxLabel: "Apply to all remaining files",
@@ -176,69 +183,7 @@ Ext4.define('File.panel.EditCustomFileProps', {
                 {
                     xtype : 'button',
                     text : 'Save',
-                    handler : function()
-                    {
-                        var files = [];
-                        this.saveFormPage();
-                        for(var i = 0; i < this.formPages.length; i++)
-                        {
-                            var formPage = this.formPages[i];
-                            var rec = this.fileRecords[i];
-                            var row = {
-                                Name: rec.data.name,
-                                id: rec.data.href,
-                                'Flag/Comment': rec.data.description
-                            };
-
-                            var prevValues = this.fileProps[rec.data.id];
-                            if (prevValues) {
-                                row["RowId"] = prevValues["rowId"];
-                            }
-
-                            for (var r = 0; r < this.extraColumns.length; r++)
-                            {
-                                var extraColName = this.extraColumns[r].name;
-                                row[extraColName] = formPage[extraColName];
-                            }
-
-                            // Copy the field values back to the fileRecord
-                            Ext4.apply(rec.data, row);
-                            rec.data.description = row["Flag/Comment"];
-                            delete rec.data["Flag/Comment"];
-
-                            files.push(row);
-                        }
-
-                        Ext4.Ajax.request({
-                            url: LABKEY.ActionURL.buildURL("filecontent", "updateFileProps"),
-                            method : 'POST',
-                            scope: this,
-                            success: function(){
-                                Ext4.getCmp(this.winId).fireEvent('successfulsave');
-                                Ext4.getCmp(this.winId).close();
-                            },
-                            failure: function(response, opt){
-                                var errorTxt = 'An error occurred submitting the .';
-                                var jsonResponse = Ext4.JSON.decode(response.responseText);
-                                if (jsonResponse && jsonResponse.errors)
-                                {
-                                    for (var i=0; i < jsonResponse.errors.length; i++)
-                                    {
-                                        var error = jsonResponse.errors[i];
-                                        errorTxt = '<span class="labkey-error">' + error.message + '</span>'
-                                    }
-                                }
-                                var el = Ext4.get('file-props-status');
-                                if (el)
-                                    el.update(errorTxt);
-                                Ext4.getCmp(this.winId).close();
-                            },
-                            jsonData : {files : files},
-                            headers : {
-                                'Content-Type' : 'application/json'
-                            }
-                        });
-                    },
+                    handler : this.doSave,
                     anchor : 'right',
                     scope : this
                 },
@@ -256,6 +201,68 @@ Ext4.define('File.panel.EditCustomFileProps', {
         return buttons;
     },
 
+    doSave : function() {
+        var files = [];
+        this.saveFormPage();
+        for(var i = 0; i < this.formPages.length; i++)
+        {
+            var formPage = this.formPages[i];
+            var rec = this.fileRecords[i];
+            var row = {
+                Name: rec.data.name,
+                id: rec.data.href,
+                'Flag/Comment': rec.data.description
+            };
+
+            var prevValues = this.fileProps[rec.data.id];
+            if (prevValues) {
+                row["RowId"] = prevValues["rowId"];
+            }
+
+            for (var r = 0; r < this.extraColumns.length; r++)
+            {
+                var extraColName = this.extraColumns[r].name;
+                row[extraColName] = formPage[extraColName];
+            }
+
+            // Copy the field values back to the fileRecord
+            Ext4.apply(rec.data, row);
+            rec.data.description = row["Flag/Comment"];
+            delete rec.data["Flag/Comment"];
+
+            files.push(row);
+        }
+
+        Ext4.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("filecontent", "updateFileProps"),
+            method : 'POST',
+            scope: this,
+            success: function(){
+                Ext4.getCmp(this.winId).fireEvent('successfulsave');
+                Ext4.getCmp(this.winId).close();
+            },
+            failure: function(response, opt){
+                var errorTxt = 'An error occurred submitting the .';
+                var jsonResponse = Ext4.JSON.decode(response.responseText);
+                if (jsonResponse && jsonResponse.errors)
+                {
+                    for (var i=0; i < jsonResponse.errors.length; i++)
+                    {
+                        var error = jsonResponse.errors[i];
+                        errorTxt = '<span class="labkey-error">' + error.message + '</span>'
+                    }
+                }
+                var el = Ext4.get('file-props-status');
+                if (el)
+                    el.update(errorTxt);
+                Ext4.getCmp(this.winId).close();
+            },
+            jsonData : {files : files},
+            headers : {
+                'Content-Type' : 'application/json'
+            }
+        });
+    },
 
     saveFormPage : function()
     {

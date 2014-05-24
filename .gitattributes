@@ -1498,6 +1498,7 @@ filecontent/webapp/File/data/webdav/URI.js -text
 filecontent/webapp/File/panel/Actions.js -text
 filecontent/webapp/File/panel/Admin.js -text
 filecontent/webapp/File/panel/Browser.js -text
+filecontent/webapp/File/panel/ContextMenu.js -text
 filecontent/webapp/File/panel/EditCustomFileProps.js -text
 filecontent/webapp/File/panel/EmailProps.js -text
 filecontent/webapp/File/panel/FileProperties.js -text
