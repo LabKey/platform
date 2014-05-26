@@ -201,14 +201,20 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
                                 newInterval = new VisualizationIntervalColumn(zeroDateCol, dateCol, interval, false);
                             }
-                            else if (null != dateOptions.get("zeroDayVisitTag"))
+                            else if (dateOptions.containsKey("zeroDayVisitTag"))
                             {
-                                String zeroDayVisitTag = (String)dateOptions.get("zeroDayVisitTag");
+                                VisualizationSourceColumn zeroDayCol = null;
                                 boolean useProtocolDay = (null == dateOptions.get("useProtocolDay") || (boolean)dateOptions.get("useProtocolDay"));
-                                VisualizationSourceColumn zeroDayCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "ZeroDay", true,
-                                                                    zeroDayVisitTag, useProtocolDay, interval);
-                                zeroDayCol.setAllowNullResults(false);
-                                ensureSourceQuery(_viewContext.getContainer(), zeroDayCol, query).addSelect(zeroDayCol, false);
+
+                                //  Issue 20459: handle 'Unaligned' (i.e. null zero day) case for calculating weeks/months
+                                if (null != dateOptions.get("zeroDayVisitTag"))
+                                {
+                                    String zeroDayVisitTag = (String)dateOptions.get("zeroDayVisitTag");
+                                    zeroDayCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "ZeroDay", true,
+                                            zeroDayVisitTag, useProtocolDay, interval);
+                                    zeroDayCol.setAllowNullResults(false);
+                                    ensureSourceQuery(_viewContext.getContainer(), zeroDayCol, query).addSelect(zeroDayCol, false);
+                                }
 
                                 newInterval = new VisualizationIntervalColumn(zeroDayCol, measureCol, interval, true);
                             }
