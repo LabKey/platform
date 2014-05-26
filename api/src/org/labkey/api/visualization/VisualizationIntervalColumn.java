@@ -30,7 +30,7 @@ public class VisualizationIntervalColumn
             public String getSQL(VisualizationSourceColumn startCol, VisualizationSourceColumn endCol, boolean isVisitTagQuery)
             {
                 if (isVisitTagQuery)
-                    return "(" + endCol.getSQLOther() + " - " + startCol.getSQLAlias() + ")";
+                    return "(" + endCol.getSQLOther() + " - " + (startCol == null ? "0" : startCol.getSQLAlias()) + ")";
                 else
                     return "TIMESTAMPDIFF(SQL_TSI_DAY, " + startCol.getSQLAlias() + ", " + endCol.getSQLOther() + ")";
             }},
