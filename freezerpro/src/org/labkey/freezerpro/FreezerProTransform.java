@@ -26,6 +26,7 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ActionURL;
+import org.labkey.freezerpro.export.FreezerProExport;
 
 import java.io.File;
 
@@ -75,5 +76,26 @@ public class FreezerProTransform implements SpecimenTransform
             return new ActionURL(FreezerProController.ConfigureAction.class, c);
 */
         return null;
+    }
+
+    @Override
+    public ExternalImportConfig getExternalImportConfig(Container c, User user)
+    {
+        // TODO : wire up persisted freezerPro config settings
+        FreezerProController.FreezerProConfig config = new FreezerProController.FreezerProConfig();
+
+        config.setImportUserFields(true);
+
+        return config;
+    }
+
+    @Override
+    public void importFromExternalSource(@Nullable PipelineJob job, ExternalImportConfig importConfig, File inputArchive) throws PipelineJobException
+    {
+        if (importConfig instanceof FreezerProController.FreezerProConfig)
+        {
+            FreezerProExport export = new FreezerProExport((FreezerProController.FreezerProConfig)importConfig, job, inputArchive);
+            export.exportRepository();
+        }
     }
 }

@@ -86,4 +86,16 @@ public class SampleMindedTransform implements SpecimenTransform
     {
         return null;
     }
+
+    @Override
+    public void importFromExternalSource(@Nullable PipelineJob job, ExternalImportConfig importConfig, File inputArchive) throws PipelineJobException
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public ExternalImportConfig getExternalImportConfig(Container c, User user)
+    {
+        throw new UnsupportedOperationException();
+    }
 }

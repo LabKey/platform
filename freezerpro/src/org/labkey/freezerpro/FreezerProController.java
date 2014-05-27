@@ -27,6 +27,7 @@ import org.labkey.api.security.Encryption;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
@@ -110,13 +111,14 @@ public class FreezerProController extends SpringActionController
         }
     }
 
-    public static class FreezerProConfig
+    public static class FreezerProConfig implements SpecimenTransform.ExternalImportConfig
     {
         private String _baseServerUrl;
         private String _username;
         private String _password;
         private int _reloadInterval;
         private boolean _enableReload;
+        private boolean _importUserFields;
 
         public String getBaseServerUrl()
         {
@@ -166,6 +168,16 @@ public class FreezerProController extends SpringActionController
         public void setEnableReload(boolean enableReload)
         {
             _enableReload = enableReload;
+        }
+
+        public boolean isImportUserFields()
+        {
+            return _importUserFields;
+        }
+
+        public void setImportUserFields(boolean importUserFields)
+        {
+            _importUserFields = importUserFields;
         }
     }
 }

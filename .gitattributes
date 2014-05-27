@@ -1518,6 +1518,14 @@ freezerpro/src/org/labkey/freezerpro/FreezerProController.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProModule.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProTransform.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProTransformTask.java -text
+freezerpro/src/org/labkey/freezerpro/export/ExportLocationCommand.java -text
+freezerpro/src/org/labkey/freezerpro/export/ExportLocationResponse.java -text
+freezerpro/src/org/labkey/freezerpro/export/ExportSampleUserFieldsCommand.java -text
+freezerpro/src/org/labkey/freezerpro/export/ExportSamplesCommand.java -text
+freezerpro/src/org/labkey/freezerpro/export/ExportSamplesResponse.java -text
+freezerpro/src/org/labkey/freezerpro/export/ExportUserFieldsResponse.java -text
+freezerpro/src/org/labkey/freezerpro/export/FreezerProCommandResonse.java -text
+freezerpro/src/org/labkey/freezerpro/export/FreezerProExport.java -text
 freezerpro/src/org/labkey/freezerpro/view/configure.jsp -text
 issues/module.properties -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-11.30.sql -text
@@ -3560,6 +3568,9 @@ study/src/org/labkey/study/pipeline/SampleMindedTransformTask.java -text
 study/src/org/labkey/study/pipeline/SpecimenArchive.java -text
 study/src/org/labkey/study/pipeline/SpecimenBatch.java -text
 study/src/org/labkey/study/pipeline/SpecimenJobSupport.java -text
+study/src/org/labkey/study/pipeline/SpecimenReloadJob.java -text
+study/src/org/labkey/study/pipeline/SpecimenReloadJobSupport.java -text
+study/src/org/labkey/study/pipeline/SpecimenReloadTask.java -text
 study/src/org/labkey/study/pipeline/StandaloneDatasetTask.java -text
 study/src/org/labkey/study/pipeline/StandaloneSpecimenTask.java -text
 study/src/org/labkey/study/pipeline/StudyBatch.java -text

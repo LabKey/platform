@@ -17,6 +17,7 @@
 package org.labkey.study;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector.ForEachBlock;
@@ -32,6 +33,7 @@ import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.FileType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.controllers.samples.AutoCompleteAction;
@@ -49,6 +51,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -59,7 +62,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class SpecimenServiceImpl implements SpecimenService.Service
 {
     private final List<SpecimenImportStrategyFactory> _importStrategyFactories = new CopyOnWriteArrayList<>();
-    private final List<SpecimenTransform> _specimenTransforms = new CopyOnWriteArrayList<>();
+    private final Map<String, SpecimenTransform> _specimenTransformMap = new ConcurrentHashMap<>();
 
     private class StudyParticipantVisit implements ParticipantVisit
     {
@@ -281,7 +284,10 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     @Override
     public void registerSpecimenTransform(SpecimenTransform transform)
     {
-        _specimenTransforms.add(transform);
+        if (!_specimenTransformMap.containsKey(transform.getName()))
+            _specimenTransformMap.put(transform.getName(), transform);
+        else
+            throw new IllegalStateException("A specimen transform implementation with the name: " + transform.getName() + " is already registered");
     }
 
     @Override
@@ -289,11 +295,18 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     {
         List<SpecimenTransform> transforms = new ArrayList<>();
 
-        for (SpecimenTransform transform : _specimenTransforms)
+        for (SpecimenTransform transform : _specimenTransformMap.values())
         {
             if (transform.isEnabled(container))
                 transforms.add(transform);
         }
         return transforms;
+    }
+
+    @Nullable
+    @Override
+    public SpecimenTransform getSpecimenTransform(String name)
+    {
+        return _specimenTransformMap.get(name);
     }
 }
