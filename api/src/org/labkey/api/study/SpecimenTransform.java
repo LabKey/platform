@@ -56,4 +56,28 @@ public interface SpecimenTransform
 
     @Nullable
     ActionURL getManageAction(Container c, User user);
+
+    /**
+     * Returns and saved configuration information
+     * @param c
+     * @param user
+     * @return
+     */
+    ExternalImportConfig getExternalImportConfig(Container c, User user);
+
+    /**
+     * An optional capability to import from an external (API) source, data that can be transformed into
+     * a LabKey compatible specimen archive
+     *
+     * @param importConfig configuration object
+     * @param inputArchive the file to write the externally sourced data into
+     */
+    void importFromExternalSource(@Nullable PipelineJob job, ExternalImportConfig importConfig, File inputArchive) throws PipelineJobException;
+
+    public interface ExternalImportConfig
+    {
+        public String getBaseServerUrl();
+        public String getUsername();
+        public String getPassword();
+    }
 }

@@ -16,10 +16,12 @@
 
 package org.labkey.api.study;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileType;
 import org.labkey.api.util.Pair;
 
 import java.io.IOException;
@@ -80,6 +82,9 @@ public class SpecimenService
         void registerSpecimenTransform(SpecimenTransform transform);
 
         Collection<SpecimenTransform> getSpecimenTransforms(Container container);
+
+        @Nullable
+        SpecimenTransform getSpecimenTransform(String name);
     }
 
     public static void register(Service serviceImpl)
