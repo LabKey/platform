@@ -19,6 +19,7 @@ import com.drew.lang.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ActionURL;
@@ -63,7 +64,7 @@ public interface SpecimenTransform
      * @param user
      * @return
      */
-    ExternalImportConfig getExternalImportConfig(Container c, User user);
+    ExternalImportConfig getExternalImportConfig(Container c, User user) throws ValidationException;
 
     /**
      * An optional capability to import from an external (API) source, data that can be transformed into
