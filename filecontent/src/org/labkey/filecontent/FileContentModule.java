@@ -55,7 +55,7 @@ public class FileContentModule extends DefaultModule
 
     public double getVersion()
     {
-        return 14.10;
+        return 14.11;
     }
 
     protected void init()
@@ -63,9 +63,6 @@ public class FileContentModule extends DefaultModule
         addController("filecontent", FileContentController.class);
         PropertyService.get().registerDomainKind(new FilePropertiesDomainKind());
         ServiceRegistry.get().registerService(FileContentService.class, new FileContentServiceImpl());
-
-        AdminConsole.addExperimentalFeatureFlag(FileContentService.EXPERIMENTAL_DRAG_DROP_UPLOAD, "Drag-and-drop File Upload",
-                "Allow uploading of files in the file-browser by drag-and-drop from the desktop.", false);
     }
 
     @NotNull

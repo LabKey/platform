@@ -1456,12 +1456,14 @@ filecontent/gwtsrc/org/labkey/filecontent/designer/client/FilePropertiesServiceA
 filecontent/module.properties -text
 filecontent/resources/credits/scripts.txt -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-0.00-12.10.sql -text
+filecontent/resources/schemas/dbscripts/postgresql/filecontent-14.10-14.11.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/obsolete/filecontent-0.00-10.10.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/obsolete/filecontent-11.30-11.31.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/obsolete/filecontent-11.30-12.10.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/obsolete/filecontent-9.30-10.10.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/obsolete/filecontent-9.31-9.32.sql -text
 filecontent/resources/schemas/dbscripts/sqlserver/filecontent-0.00-12.10.sql -text
+filecontent/resources/schemas/dbscripts/sqlserver/filecontent-14.10-14.11.sql -text
 filecontent/resources/schemas/dbscripts/sqlserver/obsolete/filecontent-0.00-10.10.sql -text
 filecontent/resources/schemas/dbscripts/sqlserver/obsolete/filecontent-11.30-11.31.sql -text
 filecontent/resources/schemas/dbscripts/sqlserver/obsolete/filecontent-11.30-12.10.sql -text

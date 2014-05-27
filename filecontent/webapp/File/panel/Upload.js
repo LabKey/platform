@@ -435,10 +435,11 @@ Ext4.define('File.panel.Upload', {
 
         var html;
         if (window.Dropzone && window.Dropzone.isBrowserSupported()) {
-            html = "To upload multiple files, drag files " + (Ext4.isChrome ? "and folders " : "") + " from your desktop onto the file browser."
+            html = "To upload, drag files " + (Ext4.isChrome ? "and folders " : "") +
+                    "from your desktop onto this file browser.";
         } else {
-            html = "Your browser doesn't support drag and drop uploading of files.<br>" +
-                    "You can upgrade your browser or upload multiple files using an external " +
+            html = "Your web browser doesn't support drag and drop uploading of files.<br>" +
+                    "You can upgrade your web browser or upload multiple files using an external " +
                     "<a target=_blank href='https://www.labkey.org/wiki/home/Documentation/page.view?name=webdav'>WebDAV client</a>.";
         }
 
@@ -526,9 +527,10 @@ Ext4.define('File.panel.Upload', {
         var url = this.getCurrentWebdavURL();
 
         var msg = [
+            'To upload files from your desktop to LabKey Server, drag-and-drop them onto the file area.',
             '<p>',
             'You can also use ',
-            '<a target=_blank href="https://www.labkey.org/wiki/home/Documentation/page.view?name=webdav">WebDav</a> ',
+            '<a target=_blank href="https://www.labkey.org/wiki/home/Documentation/page.view?name=webdav">WebDAV</a> ',
             'to transfer files to and from this folder using the Mac Finder, ' +
             'Windows Explorer or file transfer programs like <a target=_blank href="http://cyberduck.io/">CyberDuck</a>. The WebDav URL for this folder is:',
             '</p>',
@@ -538,17 +540,8 @@ Ext4.define('File.panel.Upload', {
             'help documentation.</p>'
         ];
 
-        if (!LABKEY.experimental.dragDropUpload) {
-            if (LABKEY.user.isSystemAdmin) {
-                msg.push('<p><b>NOTE:</b> Administrators may enable drag-and-drop file upload in the ');
-                msg.push('<a target=_blank href="' + LABKEY.ActionURL.buildURL("admin", "experimentalFeatures.view") + '">experimental features</a> ');
-                msg.push('page of the admin console.');
-            } else {
-                msg.push('<p><b>NOTE:</b> Contact your site administrator to enable experimental drag-and-drop file upload.');
-            }
-        }
-        else if (!Dropzone.isBrowserSupported()) {
-            msg.push('<p><b>NOTE:</b> Your browser does not support drag-and-drop upload.  Please consider using one of the supported browsers: Chrome 7+, Firefox 4+, IE 10+, Opera 12+ (12 is disabled on mac), Safari 6+.');
+        if (!Dropzone.isBrowserSupported()) {
+            msg.push('<p><i><b>NOTE:</b> Your web browser does not support drag-and-drop upload.  Please consider upgrading your web browser or using a WebDAV client.</i>');
         }
 
         Ext4.Msg.show({
