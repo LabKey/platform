@@ -3,7 +3,8 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-Ext.define('LABKEY.app.model.Filter', {
+// This file is used outside of the application environment, so ExtJS 4.X must be referenced as Ext4.
+Ext4.define('LABKEY.app.model.Filter', {
     extend: 'Ext.data.Model',
 
     fields : [
@@ -15,12 +16,12 @@ Ext.define('LABKEY.app.model.Filter', {
         {name : 'isGrid', type: 'boolean', defaultValue: false}, // TODO: rename to isSql
         {name : 'isPlot', type: 'boolean', defaultValue: false},
         {name : 'gridFilter', convert: function(o){ // TODO: rename to sqlFilters
-            return Ext.isArray(o) ? o : [o];
+            return Ext4.isArray(o) ? o : [o];
         }, defaultValue: []}, // array of LABKEY.filter instances.
         {name : 'plotMeasures', defaultValue: [null, null, null], convert: function(o){
             var arr = [null, null, null];
 
-            if (Ext.isArray(o)) {
+            if (Ext4.isArray(o)) {
                 if (o.length == 1) {
                     arr[1] = o[0]; // If there's only 1 element then it's the y measure.
                 } else if (o.length == 2) {
@@ -41,19 +42,19 @@ Ext.define('LABKEY.app.model.Filter', {
         getErrorCallback : function () {
             return function(response)
             {
-                var json = Ext.decode(response.responseText);
+                var json = Ext4.decode(response.responseText);
                 if (json.exception) {
                     if (json.exception.indexOf('There is already a group named') > -1 ||
                             json.exception.indexOf('duplicate key value violates') > -1) {
                         // custom error response for invalid name
-                        Ext.Msg.alert("Error", json.exception);
+                        Ext4.Msg.alert("Error", json.exception);
                     }
                     else {
-                        Ext.Msg.alert("Error", json.exception);
+                        Ext4.Msg.alert("Error", json.exception);
                     }
                 }
                 else {
-                    Ext.Msg.alert('Failed to Save', response.responseText);
+                    Ext4.Msg.alert('Failed to Save', response.responseText);
                 }
             }
         },
@@ -109,7 +110,7 @@ Ext.define('LABKEY.app.model.Filter', {
                 //
                 // for Argos we don't bother sending participant IDs if the group is live (save as query)
                 //
-                Ext.Ajax.request(requestConfig);
+                Ext4.Ajax.request(requestConfig);
             }
             else {
                 //
@@ -119,8 +120,8 @@ Ext.define('LABKEY.app.model.Filter', {
                     useNamedFilters : ['statefilter'],
                     success : function(cs) {
                         // add the fetched participant ids to our json data
-                        requestConfig.jsonData.participantIds = Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions),'name');
-                        Ext.Ajax.request(requestConfig);
+                        requestConfig.jsonData.participantIds = Ext4.Array.pluck(Ext4.Array.flatten(cs.axes[1].positions),'name');
+                        Ext4.Ajax.request(requestConfig);
                     }
                 });
             }
@@ -174,15 +175,15 @@ Ext.define('LABKEY.app.model.Filter', {
 
             if (group.isLive) {
                 // don't bother sending participant ids for live filters
-                Ext.Ajax.request(requestConfig);
+                Ext4.Ajax.request(requestConfig);
             }
             else {
                 mdx.queryParticipantList({
                     filter : m.getOlapFilters(group.filters, subjectName),
                     success : function(cs) {
                         // add the fetched participant ids to our json data
-                        requestConfig.jsonData.participantIds = Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions),'name');
-                        Ext.Ajax.request(requestConfig);
+                        requestConfig.jsonData.participantIds = Ext4.Array.pluck(Ext4.Array.flatten(cs.axes[1].positions),'name');
+                        Ext4.Ajax.request(requestConfig);
                     }
                 });
             }
@@ -202,7 +203,7 @@ Ext.define('LABKEY.app.model.Filter', {
                 group : grpData,
                 success : function (cs, mdx, config) {
                     var group = config.group;
-                    var ids = Ext.Array.pluck(Ext.Array.flatten(cs.axes[1].positions),'name');
+                    var ids = Ext4.Array.pluck(Ext4.Array.flatten(cs.axes[1].positions),'name');
                     LABKEY.ParticipantGroup.updateParticipantGroup({
                         rowId : group.rowId,
                         participantIds : ids,
@@ -232,7 +233,7 @@ Ext.define('LABKEY.app.model.Filter', {
                 throw "You must specify categoryIds and success members in the config";
 
             var m = LABKEY.app.model.Filter;
-            Ext.Ajax.request({
+            Ext4.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('argos', 'deletePatientGroups'),
                 method: 'POST',
                 success: config.success,
@@ -245,12 +246,12 @@ Ext.define('LABKEY.app.model.Filter', {
         },
 
         fromJSON : function(jsonFilter) {
-            var filterWrapper = Ext.decode(jsonFilter);
+            var filterWrapper = Ext4.decode(jsonFilter);
             return filterWrapper.filters;
         },
 
         toJSON : function(filters, isLive) {
-            return Ext.encode({
+            return Ext4.encode({
                 isLive : isLive,
                 filters : filters
             });
@@ -261,7 +262,7 @@ Ext.define('LABKEY.app.model.Filter', {
                 for (var i = 0; i < data['gridFilter'].length; i++) {
                     var gf = data['gridFilter'][i];
 
-                    if (!Ext.isFunction(gf.getColumnName))
+                    if (!Ext4.isFunction(gf.getColumnName))
                     {
                         console.warn('invalid filter object being processed.');
                         return 'Unknown';
@@ -292,7 +293,7 @@ Ext.define('LABKEY.app.model.Filter', {
         getGridLabel : function(data) {
             if (data['gridFilter']) { // TODO: change to look for sqlFilters
                 var gf = data.gridFilter[0]; // TODO: Find a better way than hard coding this.
-                if (!Ext.isFunction(gf.getFilterType))
+                if (!Ext4.isFunction(gf.getFilterType))
                 {
                     console.warn('invalid label being processed');
                     return 'Unknown';
@@ -396,7 +397,7 @@ Ext.define('LABKEY.app.model.Filter', {
 
         getMemberLabel : function(member) {
             var label = member;
-            if (!Ext.isString(label) || label.length === 0 || label === "#null") {
+            if (!Ext4.isString(label) || label.length === 0 || label === "#null") {
                 label = LABKEY.app.model.Filter.emptyLabelText;
             }
             return label;
@@ -404,7 +405,7 @@ Ext.define('LABKEY.app.model.Filter', {
 
         convertOperatorType : function(type) {
 
-            if (!type || (Ext.isString(type) && type.length == 0)) {
+            if (!type || (Ext4.isString(type) && type.length == 0)) {
                 return LABKEY.app.model.Filter.Operators.INTERSECT;
             }
 
@@ -490,7 +491,7 @@ Ext.define('LABKEY.app.model.Filter', {
     isEqual : function(f) {
         var eq = false;
 
-        if (Ext.isDefined(f) && Ext.isDefined(f.data)) {
+        if (Ext4.isDefined(f) && Ext4.isDefined(f.data)) {
             var d = this.data;
             var fd = f.data;
 
@@ -508,7 +509,7 @@ Ext.define('LABKEY.app.model.Filter', {
 
                 for (m=0; m < fd.members.length; m++) {
                     uniqueName = fd.members[m].uniqueName;
-                    if (!Ext.isDefined(keys[uniqueName])) {
+                    if (!Ext4.isDefined(keys[uniqueName])) {
                         eq = false;
                         break;
                     }
