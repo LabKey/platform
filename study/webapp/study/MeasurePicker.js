@@ -1112,6 +1112,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     onSourceRowSelection : function(rowModel, sourceRecord, index) {
         // filter the measure grid based on the selected source query
         this.getEl().mask("filtering measures...", "x-mask-loading");
+        this.getMeasuresGrid().getSelectionModel().deselectAll(true);
         this.measuresStore.clearFilter();
         this.measuresStore.filter([{
             filterFn: function(measureRecord) {
@@ -1123,7 +1124,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         // since selections aren't remembered after filters are applied, reselect any of the selected measure that are visible for this filter
         Ext4.each(this.selectedMeasures, function(measure) {
-            this.getMeasuresGrid().getSelectionModel().select(measure, true, true);
+            if (this.measuresStore.findExact('id', measure.get('id')) > -1)
+                this.getMeasuresGrid().getSelectionModel().select(measure, true, true);
         }, this);
 
         this.getEl().unmask();
