@@ -233,38 +233,43 @@ public class ConditionalFormat extends GWTConditionalFormat
         {
             ConditionalFormat format = new ConditionalFormat(baseFormat);
             ConditionalFormatType xmlFormat = xmlFormats.addNewConditionalFormat();
-            xmlFormat.addNewFilters();
             SimpleFilter simpleFilter = format.getSimpleFilter();
-            for (SimpleFilter.FilterClause filterClause : simpleFilter.getClauses())
+            if (null != simpleFilter.getClauses() && !simpleFilter.getClauses().isEmpty())
             {
-                ConditionalFormatFilterType xmlFilter = xmlFormat.getFilters().addNewFilter();
-                if (filterClause instanceof CompareType.CompareClause)
+                // issue 20350 - don't add a <filters> element until we know the filter
+                // has clauses.
+                xmlFormat.addNewFilters();
+                for (SimpleFilter.FilterClause filterClause : simpleFilter.getClauses())
                 {
-                    CompareType.CompareClause compareClause = (CompareType.CompareClause)filterClause;
-                    xmlFilter.setOperator(compareClause.getComparison().getXmlType());
-                    Object[] paramValues = compareClause.getParamVals();
-                    if (paramValues != null && paramValues.length > 0 && paramValues[0] != null)
+                    ConditionalFormatFilterType xmlFilter = xmlFormat.getFilters().addNewFilter();
+                    if (filterClause instanceof CompareType.CompareClause)
                     {
-                        xmlFilter.setValue(paramValues[0].toString());
+                        CompareType.CompareClause compareClause = (CompareType.CompareClause) filterClause;
+                        xmlFilter.setOperator(compareClause.getComparison().getXmlType());
+                        Object[] paramValues = compareClause.getParamVals();
+                        if (paramValues != null && paramValues.length > 0 && paramValues[0] != null)
+                        {
+                            xmlFilter.setValue(paramValues[0].toString());
+                        }
                     }
-                }
-                else if (filterClause instanceof SimpleFilter.MultiValuedFilterClause)
-                {
-                    SimpleFilter.MultiValuedFilterClause multiValuedFilterClause = (SimpleFilter.MultiValuedFilterClause)filterClause;
-                    xmlFilter.setOperator(multiValuedFilterClause.getCompareType().getXmlType());
-                    StringBuilder values = new StringBuilder();
-                    String separator = "";
-                    for (Object inValue : multiValuedFilterClause.getParamVals())
+                    else if (filterClause instanceof SimpleFilter.MultiValuedFilterClause)
                     {
-                        values.append(separator);
-                        separator = ";";
-                        values.append(inValue == null ? "" : inValue.toString());
+                        SimpleFilter.MultiValuedFilterClause multiValuedFilterClause = (SimpleFilter.MultiValuedFilterClause) filterClause;
+                        xmlFilter.setOperator(multiValuedFilterClause.getCompareType().getXmlType());
+                        StringBuilder values = new StringBuilder();
+                        String separator = "";
+                        for (Object inValue : multiValuedFilterClause.getParamVals())
+                        {
+                            values.append(separator);
+                            separator = ";";
+                            values.append(inValue == null ? "" : inValue.toString());
+                        }
+                        xmlFilter.setValue(values.toString());
                     }
-                    xmlFilter.setValue(values.toString());
-                }
-                else
-                {
-                    throw new IllegalArgumentException("Unsupported filter clause: " + filterClause);
+                    else
+                    {
+                        throw new IllegalArgumentException("Unsupported filter clause: " + filterClause);
+                    }
                 }
             }
             if (format.isBold())
