@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.freezerpro.FreezerProController" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.freezerpro.FreezerProConfig" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -33,8 +34,8 @@
     }
 %>
 <%
-    JspView<FreezerProController.FreezerProConfig> me = (JspView<FreezerProController.FreezerProConfig>)HttpView.currentView();
-    FreezerProController.FreezerProConfig bean = me.getModelBean();
+    JspView<FreezerProConfig> me = (JspView<FreezerProConfig>)HttpView.currentView();
+    FreezerProConfig bean = me.getModelBean();
 
     ObjectMapper jsonMapper = new ObjectMapper();
 %>
@@ -80,6 +81,7 @@
                 fieldLabel  : 'Password',
                 allowBlank  : false,
                 name        : 'password',
+                inputType   : 'password',
                 value       : bean.password
             },{
                 xtype       : 'checkbox',
@@ -102,7 +104,7 @@
             },{
                 xtype   : 'button',
                 text    : 'Save',
-                //formBind: true,
+                formBind: true,
                 handler : function(btn) {
                     var form = formPanel.getForm();
                     if (form.isValid())

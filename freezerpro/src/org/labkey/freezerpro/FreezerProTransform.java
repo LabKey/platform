@@ -17,18 +17,23 @@ package org.labkey.freezerpro;
 
 import com.drew.lang.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.Encryption;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.study.DataSet;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.JspView;
 import org.labkey.freezerpro.export.FreezerProExport;
 
 import java.io.File;
+import java.util.Map;
 
 /**
  * User: klum
@@ -71,30 +76,45 @@ public class FreezerProTransform implements SpecimenTransform
     public ActionURL getManageAction(Container c, User user)
     {
         // uncomment once integration with freezerPro api's is implemented
-/*
         if (c.hasPermission(user, AdminPermission.class))
             return new ActionURL(FreezerProController.ConfigureAction.class, c);
-*/
         return null;
     }
 
     @Override
-    public ExternalImportConfig getExternalImportConfig(Container c, User user)
+    public ExternalImportConfig getExternalImportConfig(Container c, User user) throws ValidationException
     {
-        // TODO : wire up persisted freezerPro config settings
-        FreezerProController.FreezerProConfig config = new FreezerProController.FreezerProConfig();
+        if (Encryption.isMasterEncryptionPassPhraseSpecified())
+        {
+            Map<String, String> props = PropertyManager.getEncryptedStore().getProperties(c, FreezerProController.FREEZER_PRO_PROPERTIES);
+            FreezerProConfig config = new FreezerProConfig();
 
-        config.setImportUserFields(true);
+            String url = props.get(FreezerProConfig.Options.url.name());
+            String username = props.get(FreezerProConfig.Options.user.name());
+            String password = props.get(FreezerProConfig.Options.password.name());
 
-        return config;
+            if (url == null || username == null || password == null)
+                throw new ValidationException("Server URL, username and password must all be configured before the FreezerPro export can be run.");
+
+            config.setBaseServerUrl(url);
+            config.setUsername(username);
+            config.setPassword(password);
+            config.setImportUserFields(true);
+
+            return config;
+        }
+        else
+        {
+            throw new ValidationException("Unable to save or retrieve configuration information, MasterEncryptionKey has not been specified in labkey.xml.");
+        }
     }
 
     @Override
     public void importFromExternalSource(@Nullable PipelineJob job, ExternalImportConfig importConfig, File inputArchive) throws PipelineJobException
     {
-        if (importConfig instanceof FreezerProController.FreezerProConfig)
+        if (importConfig instanceof FreezerProConfig)
         {
-            FreezerProExport export = new FreezerProExport((FreezerProController.FreezerProConfig)importConfig, job, inputArchive);
+            FreezerProExport export = new FreezerProExport((FreezerProConfig)importConfig, job, inputArchive);
             export.exportRepository();
         }
     }

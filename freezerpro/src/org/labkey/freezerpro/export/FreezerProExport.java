@@ -1,21 +1,24 @@
 package org.labkey.freezerpro.export;
 
+import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+import org.apache.http.StatusLine;
 import org.apache.http.client.HttpClient;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.client.ResponseHandler;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.HttpClients;
-import org.labkey.api.data.ColumnInfo;
+import org.apache.http.message.BasicNameValuePair;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.reader.DataLoader;
-import org.labkey.api.util.FileUtil;
-import org.labkey.freezerpro.FreezerProController;
+import org.labkey.api.query.ValidationException;
+import org.labkey.freezerpro.FreezerProConfig;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -25,18 +28,18 @@ import java.util.Map;
  */
 public class FreezerProExport
 {
-    private FreezerProController.FreezerProConfig _config;
+    private FreezerProConfig _config;
     private PipelineJob _job;
     private File _archive;
 
-    public FreezerProExport(FreezerProController.FreezerProConfig config, PipelineJob job, File archive)
+    public FreezerProExport(FreezerProConfig config, PipelineJob job, File archive)
     {
         _config = config;
         _job = job;
         _archive = archive;
     }
 
-    public FreezerProController.FreezerProConfig getConfig()
+    public FreezerProConfig getConfig()
     {
         return _config;
     }
@@ -82,6 +85,45 @@ public class FreezerProExport
         }
 
         return _archive;
+    }
+
+    /**
+     * Tests the connection configuration
+     * @return
+     * @throws ValidationException
+     */
+    public void testConnection() throws ValidationException
+    {
+        HttpClient client = HttpClients.createDefault();
+        HttpPost post = new HttpPost(getConfig().getBaseServerUrl());
+
+        try {
+            List<NameValuePair> params = new ArrayList<NameValuePair>();
+
+            params.add(new BasicNameValuePair("method", "search_samples"));
+            params.add(new BasicNameValuePair("username", getConfig().getUsername()));
+            params.add(new BasicNameValuePair("password", getConfig().getPassword()));
+            params.add(new BasicNameValuePair("query", ""));
+            params.add(new BasicNameValuePair("limit", "1"));
+
+            post.setEntity(new UrlEncodedFormEntity(params));
+
+            ResponseHandler<String> handler = new BasicResponseHandler();
+            HttpResponse response = client.execute(post);
+            StatusLine status = response.getStatusLine();
+
+            if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
+            {
+                ExportSamplesResponse samplesResponse = new ExportSamplesResponse(handler.handleResponse(response), status.getStatusCode(), null);
+                samplesResponse.loadData();
+            }
+            else
+                throw new ValidationException("Attempted connection to the FreezerPro server failed with a status code of: " + response.getStatusLine().getStatusCode());
+        }
+        catch (Exception e)
+        {
+            throw new ValidationException(e.getMessage());
+        }
     }
 
     private List<Map<String, Object>> getSampleData(HttpClient client)

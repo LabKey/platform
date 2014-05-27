@@ -45,7 +45,11 @@ public abstract class FreezerProCommandResonse
 
             // locate the data array
             if (!ensureDataNode(_parser, _dataNodeName))
-                throw new IOException("Failed to locate data array: " + _dataNodeName);
+            {
+                if (_job != null)
+                    _job.error("Unable to locate data in the returned response: " + _text);
+                throw new IOException("Unable to locate data in the returned response: " + _text);
+            }
 
             // parse the data array
             parseDataArray(_parser, data);

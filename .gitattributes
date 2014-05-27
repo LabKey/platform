@@ -1516,6 +1516,7 @@ filecontent/webapp/ToolbarDroppable.js -text
 filecontent/webapp/ToolbarReorderer.js -text
 freezerpro/FreezerPro.iml -text
 freezerpro/module.properties -text
+freezerpro/src/org/labkey/freezerpro/FreezerProConfig.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProController.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProModule.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProTransform.java -text

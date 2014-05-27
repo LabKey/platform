@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.pipeline.AbstractSpecimenTransformTask;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -136,15 +137,16 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
 
     @Override
     @Nullable
-    protected Map<String, Object> transformRow(Map<String, Object> inputRow, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
+    protected Map<String, Object> transformRow(Map<String, Object> inputData, int rowIndex, Map<String, Integer> labIds, Map<String, Integer> primaryIds, Map<String, Integer> derivativeIds)
     {
-        Map<String, Object> outputRow = new CaseInsensitiveHashMap<>(inputRow);
-        inputRow = null;
+        Map<String, Object> inputRow = new CaseInsensitiveHashMap<>(inputData);
+        Map<String, Object> outputRow = new CaseInsensitiveHashMap<>();
+        inputData = null;
 
         String lab = "unknown";
         Integer labId = labIds.get(lab);
 
-        String derivative = getNonNullValue(outputRow, "sample type");
+        String derivative = getNonNullValue(inputRow, "sample type");
         // Check if it has a known primary type
         String primary = DERIVATIVE_PRIMARY_MAPPINGS.get(derivative);
         if (primary == null)
@@ -168,7 +170,7 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         }
 
         outputRow.put("record_id", rowIndex);
-        String ptid = getSubjectID(outputRow);
+        String ptid = getSubjectID(inputRow);
         if (ptid == null)
         {
             warn("Skipping data row could not find 'patient id' value, row number " + rowIndex);
@@ -176,7 +178,7 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         }
         outputRow.put("ptid", ptid);
 
-        String barcode = removeNonNullValue(outputRow, "barcode");
+        String barcode = removeNonNullValue(inputRow, "barcode");
         if (StringUtils.isEmpty(barcode))
         {
             warn("Skipping data row could not find 'barcode' value, row number " + rowIndex);
@@ -184,7 +186,7 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         }
         outputRow.put("global_unique_specimen_id", barcode);
 
-        String uid = removeNonNullValue(outputRow, "uid");
+        String uid = removeNonNullValue(inputRow, "uid");
         if (StringUtils.isEmpty(uid))
         {
             warn("Skipping data row could not find 'uid' value, row number " + rowIndex);
@@ -192,16 +194,16 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         }
         outputRow.put("unique_specimen_id", uid);
 
-        Date collectionDate = getDrawDate(outputRow);
+        Date collectionDate = getDrawDate(inputRow);
         outputRow.put("draw_timestamp", collectionDate);
         outputRow.put("visit_value", "-1");
 
-        Date processDate = parseDate("date of process", outputRow);
-        Date processTime = parseTime("time of process", outputRow);
+        Date processDate = parseDate("date of process", inputRow);
+        Date processTime = parseTime("time of process", inputRow);
 
         outputRow.put("processing_date", processDate);
         outputRow.put("processing_time", processTime);
-        String processedBy = removeNonNullValue(outputRow, "processed by");
+        String processedBy = removeNonNullValue(inputRow, "processed by");
         outputRow.put("processed_by_initials", processedBy);
 
         outputRow.put("lab_id", labId);
@@ -213,22 +215,35 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         outputRow.put("derivative_type_id", derivativeId);
 
         // freezer location
-        String level1 = removeNonNullValue(outputRow, "level1");
+        String level1 = removeNonNullValue(inputRow, "level1");
         outputRow.put("fr_level1", level1);
-        String level2 = removeNonNullValue(outputRow, "level2");
+        String level2 = removeNonNullValue(inputRow, "level2");
         outputRow.put("fr_level2", level2);
-        String box = removeNonNullValue(outputRow, "box");
+        String box = removeNonNullValue(inputRow, "box");
         outputRow.put("fr_container", box);
-        String position = removeNonNullValue(outputRow, "position");
+        String position = removeNonNullValue(inputRow, "position");
         outputRow.put("fr_position", position);
 
         // protocol
-        String protocol = removeNonNullValue(outputRow, "study protocol");
-        outputRow.put("protocol_number", protocol);
+        //String protocol = removeNonNullValue(outputRow, "study protocol");
+        //outputRow.put("protocol_number", protocol);
 
-        String comments = removeNonNullValue(outputRow, "comments");
+        String comments = removeNonNullValue(inputRow, "comments");
         outputRow.put("comments", comments);
 
+        // add any remaining columns, non-built in columns can be imported provided the admin has
+        // configured the specimen domain in the destination study
+        for (Map.Entry<String, Object> entry : inputRow.entrySet())
+        {
+            if (entry.getValue() != null)
+            {
+                String colName = ColumnInfo.legalNameFromName(entry.getKey());
+                if (!outputRow.containsKey(colName))
+                {
+                    outputRow.put(colName, entry.getValue());
+                }
+            }
+        }
         return outputRow;
     }
 
@@ -248,6 +263,8 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
     {
         if (row.containsKey("date of draw") && row.containsKey("time of draw"))
             return parseDateTime("date of draw", "time of draw", row);
+        else if (row.containsKey("date of draw"))
+            return parseDate("date of draw", row);
         else if (row.containsKey("created at"))
             return parseDate("created at", row);
 
