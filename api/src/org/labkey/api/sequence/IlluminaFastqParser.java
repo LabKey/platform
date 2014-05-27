@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2012-2014 LabKey Corporation
  *
@@ -16,11 +15,9 @@
  */
 package org.labkey.api.sequence;
 
-import net.sf.picard.fastq.AsyncFastqWriter;
-import net.sf.picard.fastq.BasicFastqWriter;
 import net.sf.picard.fastq.FastqReader;
 import net.sf.picard.fastq.FastqRecord;
-import net.sf.picard.fastq.FastqWriter;
+import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJobException;
@@ -28,11 +25,8 @@ import org.labkey.api.util.FileType;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.Pair;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,7 +50,7 @@ public class IlluminaFastqParser<SampleIdType>
     private Map<Integer, SampleIdType> _sampleMap;
     private File _destinationDir;
     private List<File> _files;
-    private Map<Pair<SampleIdType, Integer>, Pair<File, FastqWriter>> _fileMap;
+    private Map<Pair<SampleIdType, Integer>, File> _fileMap;
     private Map<Pair<SampleIdType, Integer>, Integer> _sequenceTotals;
     private Set<Integer> _skippedSampleIdx = new HashSet<>();
     private Logger _logger;
@@ -113,68 +107,61 @@ public class IlluminaFastqParser<SampleIdType>
         FastqReader reader = null;
         int _parsedReads;
 
-        try
+        for (File f : _files)
         {
-            for (File f : _files)
+            try
             {
-                try
+                _logger.info("Beginning to parse file: " + f.getName());
+                File targetDir = _destinationDir == null ? f.getParentFile() : _destinationDir;
+
+                reader = new FastqReader(f);
+                int sampleIdx = Integer.MIN_VALUE;
+                int pairNumber = Integer.MIN_VALUE;
+                int totalReads = 0;
+                while (reader.hasNext())
                 {
-                    _logger.info("Beginning to parse file: " + f.getName());
-                    File targetDir = _destinationDir == null ? f.getParentFile() : _destinationDir;
-
-                    _parsedReads = 0;
-
-                    reader = new FastqReader(f);
-                    while (reader.hasNext())
-                    {
-                        FastqRecord fq = reader.next();
-                        String header = fq.getReadHeader();
-                        IlluminaReadHeader parsedHeader = new IlluminaReadHeader(header);
-                        int sampleIdx = parsedHeader.getSampleNum();
-                        int pairNumber = parsedHeader.getPairNumber();
-
-                        FastqWriter writer = getWriter(sampleIdx, targetDir, pairNumber);
-                        if(writer != null)
-                        {
-                            writer.write(fq);
-
-                            _parsedReads++;
-                            updateCount(sampleIdx, pairNumber);
-
-                            if (0 == _parsedReads % 25000)
-                                logReadsProgress(_parsedReads);
-                        }
-                    }
-
-                    if (0 != _parsedReads % 25000)
-                        logReadsProgress(_parsedReads);
-
-                    _logger.info("Finished parsing file: " + f.getName());
+                    FastqRecord fq = reader.next();
+                    String header = fq.getReadHeader();
+                    IlluminaReadHeader parsedHeader = new IlluminaReadHeader(header);
+                    if ((sampleIdx != Integer.MIN_VALUE && sampleIdx != parsedHeader.getSampleNum()) ||
+                            (pairNumber != Integer.MIN_VALUE && pairNumber != parsedHeader.getPairNumber()))
+                        throw new IllegalStateException("Only one sample ID is allowed per fastq file.");
+                    sampleIdx = parsedHeader.getSampleNum();
+                    pairNumber = parsedHeader.getPairNumber();
+                    totalReads++;
                 }
-                catch (IOException e)
+                reader.close();
+                Pair<SampleIdType, Integer> key = Pair.of(_sampleMap.get(sampleIdx), pairNumber);
+                _sequenceTotals.put(key, totalReads);
+
+
+                SampleIdType sampleId = _sampleMap.get(sampleIdx);
+                String name = (_outputPrefix == null ? "Reads" : _outputPrefix) + "-R" + pairNumber + "-" + (sampleIdx == 0 ? "Control" : sampleId) + ".fastq.gz";
+                File newFile = new File(targetDir, name);
+
+                if (!f.equals(newFile))
                 {
-                    throw new PipelineJobException(e);
+                    FileUtils.moveFile(f, newFile);
+                    _logger.info("Move of file " + f.getName() + " to " + newFile.getName() );
                 }
-                finally
-                {
-                    if (reader != null)
-                        reader.close();
-                }
+                _fileMap.put(Pair.of(sampleId, pairNumber), newFile);
+                _logger.info("Finished parsing file: " + f.getName());
             }
-        }
-        finally
-        {
-            for (Pair<File, FastqWriter> pair : _fileMap.values())
+            catch (IOException e)
             {
-                if (pair.second != null)
-                    pair.second.close();
+                throw new PipelineJobException(e);
+            }
+            finally
+            {
+                if (reader != null)
+                    reader.close();
             }
         }
 
         Map<Pair<SampleIdType, Integer>, File> outputs = new HashMap<>();
         for (Pair<SampleIdType, Integer> key :_fileMap.keySet())
         {
-            outputs.put(key, _fileMap.get(key).getKey());
+            outputs.put(key, _fileMap.get(key));
         }
 
         return outputs;
@@ -199,42 +186,6 @@ public class IlluminaFastqParser<SampleIdType>
             total++;
 
             _sequenceTotals.put(key, total);
-        }
-    }
-
-    private FastqWriter getWriter (int sampleIdx, File targetDir, int pairNumber) throws IOException
-    {
-        if(!_sampleMap.containsKey(sampleIdx))
-        {
-            if (!_skippedSampleIdx.contains(sampleIdx))
-            {
-                _logger.warn("The CSV input does not contain sample info for a sample with index: " + sampleIdx);
-                _skippedSampleIdx.add(sampleIdx);
-            }
-            return null;
-        }
-
-        // NOTE: sampleIdx is the index of the sample according to the Illumina CSV file, and the number assigned
-        // by the illumina barcode callers.  Sample 0 always refers to control reads
-        SampleIdType sampleId = _sampleMap.get(sampleIdx);
-        Pair<SampleIdType, Integer> sampleKey = Pair.of(sampleId, pairNumber);
-        if (_fileMap.containsKey(sampleKey))
-        {
-            return _fileMap.get(sampleKey).getValue();
-        }
-        else
-        {
-            String name = (_outputPrefix == null ? "Reads" : _outputPrefix) + "-R" + pairNumber + "-" + (sampleIdx == 0 ? "Control" : sampleId) + ".fastq";
-            File newFile = new File(targetDir, name);
-            newFile.createNewFile();
-
-            // Buffer the output so we aren't constantly writing through to file system. See issue 19633
-            FastqWriter syncWriter = new BasicFastqWriter(new PrintStream(new BufferedOutputStream(new FileOutputStream(newFile), 64 * 1024)));
-            // Also use an async IO for better perf
-            FastqWriter writer = new AsyncFastqWriter(syncWriter, AsyncFastqWriter.DEFAULT_QUEUE_SIZE);
-
-            _fileMap.put(Pair.of(sampleId, pairNumber), Pair.of(newFile, writer));
-            return writer;
         }
     }
 
