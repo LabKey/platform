@@ -63,6 +63,9 @@ public class SpecimenRefreshMaintainanceTask implements SystemMaintenance.Mainte
     }
 
     @Override
+    public boolean hideFromAdminPage() { return false; }
+
+    @Override
     public void run()
     {
         Collection<StudySnapshot> snapshots = StudyManager.getInstance().getRefreshStudySnapshots();

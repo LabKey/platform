@@ -67,7 +67,7 @@
                 <%
                     for (MaintenanceTask task : tasks)
                     {
-                        if (task.canDisable())
+                        if (task.canDisable() && !task.hideFromAdminPage())
                         {
                 %><tr><td><input name="enable" value="<%=h(task.getName())%>" type="checkbox"<%=checked(!disabled.contains(task.getName()))%>/><%=textLink(task.getDescription(), "javascript:submitSystemMaintenance(" + q(task.getName()) + ")")%></td></tr><%
                     }
@@ -80,7 +80,7 @@
                     <%
                         for (MaintenanceTask task : tasks)
                         {
-                            if (!task.canDisable())
+                            if (!task.canDisable() && !task.hideFromAdminPage())
                             {
                     %><tr><td><input type="checkbox" disabled checked/><%=textLink(task.getDescription(), "javascript:submitSystemMaintenance(" + q(task.getName()) + ")")%></td></tr><%
                         }

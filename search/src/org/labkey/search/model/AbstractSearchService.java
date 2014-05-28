@@ -1498,6 +1498,9 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
             return true;
         }
 
+        @Override
+        public boolean hideFromAdminPage() { return false; }
+
         public void run()
         {
             SearchService ss = ServiceRegistry.get().getService(SearchService.class);

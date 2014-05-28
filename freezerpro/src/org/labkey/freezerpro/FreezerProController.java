@@ -68,6 +68,8 @@ public class FreezerProController extends SpringActionController
                     form.setEnableReload(Boolean.parseBoolean(map.get(FreezerProConfig.Options.enableReload.name())));
                 if (map.containsKey(FreezerProConfig.Options.reloadInterval.name()))
                     form.setReloadInterval(Integer.parseInt(map.get(FreezerProConfig.Options.reloadInterval.name())));
+                if (map.containsKey(FreezerProConfig.Options.reloadDate.name()))
+                    form.setReloadDate(map.get(FreezerProConfig.Options.reloadDate.name()));
 
                 return new JspView<>("/org/labkey/freezerpro/view/configure.jsp", form, errors);
             }
@@ -93,9 +95,9 @@ public class FreezerProController extends SpringActionController
             try
             {
                 FreezerProExport export = new FreezerProExport(form, null, null);
-                export.testConnection();
+//                export.testConnection();
             }
-            catch (ValidationException e)
+            catch (Exception e) // ValidationException e)
             {
                 errors.reject(ERROR_MSG, "Unable to connect with the specified configuration. The following error was returned : " + e.getMessage());
             }
@@ -114,6 +116,11 @@ public class FreezerProController extends SpringActionController
             map.put(FreezerProConfig.Options.reloadInterval.name(), String.valueOf(form.getReloadInterval()));
 
             PropertyManager.getEncryptedStore().saveProperties(map);
+
+            if (form.isEnableReload())
+                FreezerProUploadTask.addFreezerProContainer(getContainer().getId());
+            else
+                FreezerProUploadTask.removeFreezerProContainer(getContainer().getId());
 
             response.put("success", true);
             response.put("returnUrl", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(getContainer()).getLocalURIString());

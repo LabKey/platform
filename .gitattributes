@@ -1521,6 +1521,7 @@ freezerpro/src/org/labkey/freezerpro/FreezerProController.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProModule.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProTransform.java -text
 freezerpro/src/org/labkey/freezerpro/FreezerProTransformTask.java -text
+freezerpro/src/org/labkey/freezerpro/FreezerProUploadTask.java -text
 freezerpro/src/org/labkey/freezerpro/export/ExportLocationCommand.java -text
 freezerpro/src/org/labkey/freezerpro/export/ExportLocationResponse.java -text
 freezerpro/src/org/labkey/freezerpro/export/ExportSampleUserFieldsCommand.java -text

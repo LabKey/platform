@@ -45,6 +45,9 @@ public class PurgeParticipantsMaintenanceTask implements SystemMaintenance.Maint
     }
 
     @Override
+    public boolean hideFromAdminPage() { return false; }
+
+    @Override
     public void run()
     {
         for (StudyImpl study : StudyManager.getInstance().getAllStudies())

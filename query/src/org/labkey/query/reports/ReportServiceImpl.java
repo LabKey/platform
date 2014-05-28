@@ -1039,6 +1039,9 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
             return true;
         }
 
+        @Override
+        public boolean hideFromAdminPage() { return false; }
+
         public void run()
         {
             ReportService.get().maintenance();

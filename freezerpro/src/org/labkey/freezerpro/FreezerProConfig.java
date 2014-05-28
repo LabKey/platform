@@ -13,6 +13,7 @@ public class FreezerProConfig implements SpecimenTransform.ExternalImportConfig
     private int _reloadInterval;
     private boolean _enableReload;
     private boolean _importUserFields;
+    private String _reloadDate;
 
     public enum Options
     {
@@ -22,6 +23,7 @@ public class FreezerProConfig implements SpecimenTransform.ExternalImportConfig
         reloadInterval,
         enableReload,
         importUserFields,
+        reloadDate,
     }
 
     public String getBaseServerUrl()
@@ -74,6 +76,15 @@ public class FreezerProConfig implements SpecimenTransform.ExternalImportConfig
         _enableReload = enableReload;
     }
 
+    public String getReloadDate()
+    {
+        return _reloadDate;
+    }
+
+    public void setReloadDate(String reloadDate)
+    {
+        _reloadDate = reloadDate;
+    }
     public boolean isImportUserFields()
     {
         return _importUserFields;

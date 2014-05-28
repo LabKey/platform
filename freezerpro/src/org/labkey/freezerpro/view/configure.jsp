@@ -62,7 +62,7 @@
             },
             items : [{
                 xtype       : 'displayfield',
-                value       : '<span><b>Settings</b><br>Specify the configuration values used to connect to the FreezerPro server including ' +
+                value       : '<span><b>Settings</b><br><br>Specify the configuration values used to connect to the FreezerPro server including ' +
                         'the account settings used to connect to the FreezerPro server.</span><p>'
             },{
                 xtype       : 'textfield',
@@ -91,16 +91,25 @@
                 listeners : {
                     scope: this,
                     'change': function(cb, value) {
-                        formPanel.down('combobox[name=reloadInterval]').setDisabled(!value);
+                        formPanel.down('numberfield[name=reloadInterval]').setDisabled(!value);
+                        formPanel.down('datefield[name=reloadDate]').setDisabled(!value);
                     }
                 }
             },{
-                xtype       : 'combobox',
-                fieldLabel  : 'Reload Interval',
+                xtype       : 'datefield',
+                fieldLabel  : 'Load on',
+                disabled    : !bean.enableReload,
+                name        : 'reloadDate',
+                format      : 'Y-m-d',
+                altFormats  : '',
+                value       : bean.reloadDate
+            },{
+                xtype       : 'numberfield',
+                fieldLabel  : 'Repeat (days)',
                 disabled    : !bean.enableReload,
                 name        : 'reloadInterval',
                 value       : bean.reloadInterval,
-                store       : [[0, 'None'], [3600, '1 hour'], [3600 * 6, '6 hours'], [3600 * 12, '12 hours'], [3600 * 24, 'Daily']]
+                minValue    : 0
             },{
                 xtype   : 'button',
                 text    : 'Save',
