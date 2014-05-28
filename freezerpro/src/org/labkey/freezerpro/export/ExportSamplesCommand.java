@@ -23,12 +23,14 @@ public class ExportSamplesCommand
     private String _url;
     private String _username;
     private String _password;
+    private String _searchFilterString;
 
-    public ExportSamplesCommand(String url, String username, String password)
+    public ExportSamplesCommand(String url, String username, String password, String searchFilterString)
     {
         _url = url;
         _username = username;
         _password = password;
+        _searchFilterString = searchFilterString;
     }
 
     public FreezerProCommandResonse execute(HttpClient client, PipelineJob job)
@@ -41,7 +43,12 @@ public class ExportSamplesCommand
             params.add(new BasicNameValuePair("method", "search_samples"));
             params.add(new BasicNameValuePair("username", _username));
             params.add(new BasicNameValuePair("password", _password));
-            params.add(new BasicNameValuePair("query", ""));
+
+            if (_searchFilterString != null)
+                params.add(new BasicNameValuePair("query", _searchFilterString));
+            else
+                params.add(new BasicNameValuePair("query", ""));
+
             params.add(new BasicNameValuePair("limit", "10000"));
 
             post.setEntity(new UrlEncodedFormEntity(params));

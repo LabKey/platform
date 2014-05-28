@@ -16,6 +16,7 @@
 
 package org.labkey.freezerpro;
 
+import org.apache.xmlbeans.XmlException;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
@@ -28,10 +29,13 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.freezerpro.export.FreezerProExport;
+import org.labkey.study.xml.freezerProExport.FreezerProConfigDocument;
+import org.labkey.study.xml.redcapExport.RedcapConfigDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -70,6 +74,8 @@ public class FreezerProController extends SpringActionController
                     form.setReloadInterval(Integer.parseInt(map.get(FreezerProConfig.Options.reloadInterval.name())));
                 if (map.containsKey(FreezerProConfig.Options.reloadDate.name()))
                     form.setReloadDate(map.get(FreezerProConfig.Options.reloadDate.name()));
+                if (map.containsKey(FreezerProConfig.Options.metadata.name()))
+                    form.setMetadata(map.get(FreezerProConfig.Options.metadata.name()));
 
                 return new JspView<>("/org/labkey/freezerpro/view/configure.jsp", form, errors);
             }
@@ -92,14 +98,18 @@ public class FreezerProController extends SpringActionController
         @Override
         public void validateForm(FreezerProConfig form, Errors errors)
         {
-            try
+            // validate any metadata
+            String metadata = form.getMetadata();
+            if (metadata != null)
             {
-                FreezerProExport export = new FreezerProExport(form, null, null);
-//                export.testConnection();
-            }
-            catch (Exception e) // ValidationException e)
-            {
-                errors.reject(ERROR_MSG, "Unable to connect with the specified configuration. The following error was returned : " + e.getMessage());
+                try
+                {
+                    FreezerProConfigDocument.Factory.parse(metadata, XmlBeansUtil.getDefaultParseOptions());
+                }
+                catch (XmlException e)
+                {
+                    errors.reject(ERROR_MSG, "The metadata submitted was malformed. The following error was returned : " + e.getMessage());
+                }
             }
         }
 
@@ -114,6 +124,8 @@ public class FreezerProController extends SpringActionController
             map.put(FreezerProConfig.Options.password.name(), form.getPassword());
             map.put(FreezerProConfig.Options.enableReload.name(), String.valueOf(form.isEnableReload()));
             map.put(FreezerProConfig.Options.reloadInterval.name(), String.valueOf(form.getReloadInterval()));
+            map.put(FreezerProConfig.Options.metadata.name(), form.getMetadata());
+            map.put(FreezerProConfig.Options.reloadUser.name(), String.valueOf(getUser().getUserId()));
 
             PropertyManager.getEncryptedStore().saveProperties(map);
 
@@ -125,6 +137,32 @@ public class FreezerProController extends SpringActionController
             response.put("success", true);
             response.put("returnUrl", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(getContainer()).getLocalURIString());
 
+            return response;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class TestFreezerProConfig extends ApiAction<FreezerProConfig>
+    {
+        @Override
+        public ApiResponse execute(FreezerProConfig form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            try
+            {
+                FreezerProExport export = new FreezerProExport(form, null, null);
+                export.testConnection();
+
+                response.put("success", true);
+                response.put("message", "Successfully connected to the FreezerPro server.");
+
+                return response;
+            }
+            catch (ValidationException e)
+            {
+                response.put("success", true);
+                response.put("message", "Unable to connect with the specified configuration. The following error was returned : " + e.getMessage());
+            }
             return response;
         }
     }

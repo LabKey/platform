@@ -41,10 +41,12 @@ import java.util.Map;
  */
 public class FreezerProTransform implements SpecimenTransform
 {
+    public static final String NAME = "FreezerPro";
+
     @Override
     public String getName()
     {
-        return "FreezerPro";
+        return NAME;
     }
 
     @Override
@@ -99,6 +101,7 @@ public class FreezerProTransform implements SpecimenTransform
             config.setBaseServerUrl(url);
             config.setUsername(username);
             config.setPassword(password);
+            config.setMetadata(props.get(FreezerProConfig.Options.metadata.name()));
             config.setImportUserFields(true);
 
             return config;

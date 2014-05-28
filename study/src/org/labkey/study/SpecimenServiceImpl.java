@@ -26,6 +26,9 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
@@ -36,9 +39,11 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.study.controllers.samples.AutoCompleteAction;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.Specimen;
+import org.labkey.study.pipeline.SpecimenReloadJob;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -308,5 +313,16 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     public SpecimenTransform getSpecimenTransform(String name)
     {
         return _specimenTransformMap.get(name);
+    }
+
+    @Override
+    public PipelineJob createSpecimenReloadJob(Container container, User user, SpecimenTransform transform, @Nullable ActionURL url) throws SQLException, IOException, ValidationException
+    {
+        PipeRoot root = PipelineService.get().findPipelineRoot(container);
+        SpecimenReloadJob job = new SpecimenReloadJob(new ViewBackgroundInfo(container, user, url), root, transform.getName());
+
+        job.setExternalImportConfig(transform.getExternalImportConfig(container, user));
+
+        return job;
     }
 }

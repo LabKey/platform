@@ -21,13 +21,23 @@ import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.security.Encryption;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.view.ViewBackgroundInfo;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Set;
@@ -73,19 +83,40 @@ public class FreezerProUploadTask implements SystemMaintenance.MaintenanceTask
                 {
                     Map<String, String> map = PropertyManager.getEncryptedStore().getProperties(container, FREEZER_PRO_PROPERTIES);
 
-                    if (map.containsKey("enableReload") && Boolean.parseBoolean(map.get("enableReload")))
+                    if (map.containsKey(FreezerProConfig.Options.enableReload.name()) && Boolean.parseBoolean(map.get(FreezerProConfig.Options.enableReload.name())))
                     {
-                        int dayInterval = map.containsKey("reloadInterval") ? Integer.parseInt(map.get("reloadInterval")) : 1;
+                        int dayInterval = map.containsKey(FreezerProConfig.Options.reloadInterval.name()) ? Integer.parseInt(map.get(FreezerProConfig.Options.reloadInterval.name())) : 1;
                         Date today = DateUtil.getDateOnly(new Date());
-                        Date reloadDate = map.containsKey("reloadDate") ? DateUtil.getDateOnly(new Date(DateUtil.parseDateTime(container, map.get("reloadDate")))) : today;
+                        Date reloadDate = map.containsKey(FreezerProConfig.Options.reloadDate.name()) ? DateUtil.getDateOnly(new Date(DateUtil.parseDateTime(container, map.get(FreezerProConfig.Options.reloadDate.name())))) : today;
 
                         if ((today.getTime() - reloadDate.getTime()) % dayInterval == 0)
                         {
-//                    if (map.containsKey("url"))
-//                    if (map.containsKey("user"))
-//                    if (map.containsKey("password"))
+                            try
+                            {
+                                String user = map.get(FreezerProConfig.Options.reloadUser.name());
+                                if (user != null)
+                                {
+                                    int userId = Integer.parseInt(user);
+                                    User reloadUser = UserManager.getUser(userId);
 
-                            _log.info("Running FreezerPro upload for " + container.getName());
+                                    if (reloadUser != null)
+                                    {
+                                        _log.info("Running FreezerPro upload for " + container.getName());
+                                        SpecimenTransform transform = SpecimenService.get().getSpecimenTransform(FreezerProTransform.NAME);
+
+                                        PipelineJob job = SpecimenService.get().createSpecimenReloadJob(container, reloadUser, transform, null);
+                                        PipelineService.get().queueJob(job);
+                                    }
+                                    else
+                                        _log.error("The specified reload user is invalid");
+                                }
+                                else
+                                    _log.error("No reload user has been configured");
+                            }
+                            catch (Exception e)
+                            {
+                                _log.error("An error occurred exporting from FreezerPro", e);
+                            }
                         }
                     }
                 }

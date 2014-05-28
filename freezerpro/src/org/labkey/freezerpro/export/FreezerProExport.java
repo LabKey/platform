@@ -11,11 +11,14 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.freezerpro.FreezerProConfig;
+import org.labkey.study.xml.freezerProExport.FreezerProConfigDocument;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,16 +35,43 @@ public class FreezerProExport
     private PipelineJob _job;
     private File _archive;
 
+    private String _searchFilterString;
+
     public FreezerProExport(FreezerProConfig config, PipelineJob job, File archive)
     {
         _config = config;
         _job = job;
         _archive = archive;
+
+        if (config.getMetadata() != null)
+            parseConfigMetadata(config.getMetadata());
     }
 
     public FreezerProConfig getConfig()
     {
         return _config;
+    }
+
+    private void parseConfigMetadata(String metadata)
+    {
+        if (metadata != null)
+        {
+            try
+            {
+                FreezerProConfigDocument doc = FreezerProConfigDocument.Factory.parse(metadata, XmlBeansUtil.getDefaultParseOptions());
+                FreezerProConfigDocument.FreezerProConfig config = doc.getFreezerProConfig();
+
+                if (config != null)
+                {
+                    if (config.isSetFilterString())
+                        _searchFilterString = config.getFilterString();
+                }
+            }
+            catch (XmlException e)
+            {
+                _job.error("The FreezerPro metadata XML was malformed. The error was returned: " + e.getMessage());
+            }
+        }
     }
 
     public File exportRepository()
@@ -130,7 +160,7 @@ public class FreezerProExport
     {
         List<Map<String, Object>> data = new ArrayList<>();
         _job.info("requesting sample data from server url: " + _config.getBaseServerUrl());
-        ExportSamplesCommand exportSamplesCmd = new ExportSamplesCommand(_config.getBaseServerUrl(), _config.getUsername(), _config.getPassword());
+        ExportSamplesCommand exportSamplesCmd = new ExportSamplesCommand(_config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), _searchFilterString);
         FreezerProCommandResonse response = exportSamplesCmd.execute(client, _job);
 
         try

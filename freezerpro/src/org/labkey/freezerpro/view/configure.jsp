@@ -47,23 +47,17 @@
 
         var bean = <%=text(jsonMapper.writeValueAsString(bean))%>;
         var formPanel = Ext4.create('Ext.form.Panel', {
-            border  : false,
-            frame   : false,
-            bodyStyle   :'background-color: transparent;',
-            cls         : 'iScroll', // webkit custom scroll bars
-            buttonAlign : 'left',
-            renderTo    : 'fp-config-div',
+            title   : 'Connection',
             fieldDefaults  : {
                 labelWidth : 200,
                 width : 450,
                 height : 22,
-                //style      : 'margin: 0px 0px 10px 0px',
                 labelSeparator : ''
             },
             items : [{
                 xtype       : 'displayfield',
-                value       : '<span><b>Settings</b><br><br>Specify the configuration values used to connect to the FreezerPro server including ' +
-                        'the account settings used to connect to the FreezerPro server.</span><p>'
+                value       : '<span>Specify the configuration values used to connect to the FreezerPro server including ' +
+                        'the account credentials used to make the connection.</span><p>'
             },{
                 xtype       : 'textfield',
                 fieldLabel  : 'FreezerPro Server Base URL',
@@ -109,31 +103,103 @@
                 disabled    : !bean.enableReload,
                 name        : 'reloadInterval',
                 value       : bean.reloadInterval,
-                minValue    : 0
+                minValue    : 1
+            }]
+        });
+
+        var metadata = Ext4.create('Ext.form.Panel', {
+            title   : 'Advanced',
+            fieldDefaults  : {
+                labelWidth : 200,
+                width : 550,
+                height : 22,
+                labelSeparator : ''
+            },
+            items : [{
+                xtype       : 'displayfield',
+                value       : '<span>Add additional XML metadata to control filtering of sample exports and mapping of FreezerPro ' +
+                        'field names to LabKey field names. Click on this <a href="">link</a> for documentation on XML schema.</span><p>'
             },{
-                xtype   : 'button',
+                xtype       : 'textarea',
+                name        : 'metadata',
+                height      : 200,
+                value       : bean.metadata
+            }]
+        });
+
+        var panel = Ext4.create('Ext.tab.Panel', {
+            renderTo    : 'fp-config-div',
+            bodyPadding : 20,
+            buttonAlign : 'left',
+            items       : [formPanel, metadata],
+            bodyStyle   :'background-color: transparent;',
+            defaults  : {
+                height : 300,
+                border  : false,
+                frame   : false,
+                cls         : 'iScroll', // webkit custom scroll bars
+                bodyStyle   :'background-color: transparent;'
+            },
+
+            buttons     : [{
                 text    : 'Save',
-                formBind: true,
                 handler : function(btn) {
                     var form = formPanel.getForm();
-                    if (form.isValid())
+                    var formAdvanced = metadata.getForm();
+                    if (form.isValid() && formAdvanced.isValid())
                     {
-                        formPanel.getEl().mask("Saving...");
+                        panel.getEl().mask("Saving...");
                         var params = form.getValues();
 
+                        Ext4.apply(params, formAdvanced.getValues());
                         Ext4.Ajax.request({
                             url    : LABKEY.ActionURL.buildURL('freezerpro', 'saveFreezerProConfig.api'),
                             method  : 'POST',
                             params  : params,
+                            submitEmptyText : false,
                             success : function(response){
                                 var o = Ext4.decode(response.responseText);
-                                formPanel.getEl().unmask();
+                                panel.getEl().unmask();
 
                                 if (o.success)
                                     window.location = o.returnUrl;
                             },
                             failure : function(response){
-                                formPanel.getEl().unmask();
+                                panel.getEl().unmask();
+                                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+                            },
+                            scope : this
+                        });
+                    }
+                },
+                scope   : this
+            },{
+                text    : 'Test Connection',
+                handler : function(btn) {
+                    var form = formPanel.getForm();
+                    var formAdvanced = metadata.getForm();
+                    if (form.isValid() && formAdvanced.isValid())
+                    {
+                        panel.getEl().mask("Testing FreezerPro Connection...");
+                        var params = form.getValues();
+
+                        Ext4.apply(params, formAdvanced.getValues());
+                        Ext4.Ajax.request({
+                            url    : LABKEY.ActionURL.buildURL('freezerpro', 'testFreezerProConfig.api'),
+                            method  : 'POST',
+                            params  : params,
+                            submitEmptyText : false,
+                            success : function(response){
+                                var o = Ext4.decode(response.responseText);
+                                panel.getEl().unmask();
+
+                                if (o.success)
+                                    Ext4.Msg.alert('Success', o.message);
+                                else
+                                    Ext4.Msg.alert('Failure', o.message);
+                            },
+                            failure : function(response){
+                                panel.getEl().unmask();
                                 Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
                             },
                             scope : this
