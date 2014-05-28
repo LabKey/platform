@@ -135,7 +135,7 @@ public class ReportService
          * on permissions failure
          */
         public void validateReportPermissions(ContainerUser context, Report report);
-        public Boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors);
+        public boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors);
     }
 
     public interface ViewFactory

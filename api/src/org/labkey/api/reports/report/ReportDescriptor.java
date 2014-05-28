@@ -84,6 +84,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     private int _flags;
     private ViewCategory _category;
     private int _displayOrder;
+    private boolean _wasShared = false; // Used only by the save process
 
     protected Map<String, Object> _props = new LinkedHashMap<>();
 
@@ -93,7 +94,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     // serialize these twice
     protected Map<String, Object> _mapReportProps = new HashMap<>();
 
-public enum Prop implements ReportProperty
+    public enum Prop implements ReportProperty
     {
         descriptorType,
         reportId,
@@ -242,18 +243,26 @@ public enum Prop implements ReportProperty
     @Deprecated  // Use isShared() instead... "owner" column and getter/setter should go away. "createdby" is the real owner.
     public Integer getOwner(){return _owner;}
 
+    // TODO: Replace "owner" column with boolean "shared" column
     public void setOwner(Integer owner){_owner = owner;}
 
-    // TODO: Replace "owner" column with boolean "shared" column
     public boolean isShared()
     {
-        return null == _owner;
+        return null == _owner || _wasShared;
+    }
+
+    // Used by the save code path to convey that this report is transitioning from shared to unshared. The save code path
+    // needs to treat the report as if it's shared to let a non-creator admin unshare a shared report. The code couldn't
+    // otherwise determine this state change, since it doesn't receive old and new versions of the report.
+    public void setWasShared()
+    {
+        _wasShared = true;
     }
 
     @Nullable
     public Integer getAuthor()
     {
-        Object authorId  =  _mapReportProps.get(Prop.author.name());
+        Object authorId = _mapReportProps.get(Prop.author.name());
         // TODO: Why are author IDs returned as doubles?
         if (null != authorId)
         {

@@ -307,7 +307,7 @@ public abstract class AbstractReport implements Report
     {
         if (getDescriptor().isInherited(container))
         {
-            errors.add(new SimpleValidationError("An inherited report can only be modified from it's source folder."));
+            errors.add(new SimpleValidationError("An inherited report can only be modified from its source folder."));
             return false;
         }
 
@@ -438,7 +438,10 @@ public abstract class AbstractReport implements Report
     {
         return isNew() || !getDescriptor().isShared();
     }
-    
+
+    /**
+     * Did the current user create this report? This is our only real concept of "owner" with a report (the "owner" descriptor property is deprecated).
+     */
     protected boolean isOwner(User user)
     {
         return isNew() || (getDescriptor().getCreatedBy() != 0 && (getDescriptor().getCreatedBy() == user.getUserId()));
