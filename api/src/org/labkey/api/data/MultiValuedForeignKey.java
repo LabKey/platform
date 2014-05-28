@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpression;
@@ -33,16 +34,29 @@ public class MultiValuedForeignKey implements ForeignKey
 {
     private final ForeignKey _fk;
     private final String _junctionLookup;
+    private final String _displayField;
 
     /**
      * @param fk the foreign key from the current column to its target in the junction table
      * @param junctionLookup the name of the column in the junction table that points to the table that has multiple
-     * matches to this table 
+     * matches to this table
      */
     public MultiValuedForeignKey(ForeignKey fk, String junctionLookup)
     {
+        this(fk, junctionLookup, null);
+    }
+
+    /**
+     * @param fk the foreign key from the current column to its target in the junction table
+     * @param junctionLookup the name of the column in the junction table that points to the table that has multiple
+     * matches to this table
+     * @param displayField the name of the column in the value table to use as the display field.
+     */
+    public MultiValuedForeignKey(ForeignKey fk, String junctionLookup, @Nullable String displayField)
+    {
         _fk = fk;
         _junctionLookup = junctionLookup;
+        _displayField = displayField;
     }
 
     public String getJunctionLookup()
@@ -99,11 +113,28 @@ public class MultiValuedForeignKey implements ForeignKey
         }
         ForeignKey fk = junctionKey.getFk();                                // Wrapped foreign key to value table (elided lookup)
 
+        // Default display field on the lookup table
+        if (displayField == null)
+        {
+            displayField = _displayField;
+        }
+
         ColumnInfo lookupColumn = fk.createLookupColumn(junctionKey, displayField);
 
         if (lookupColumn == null)
         {
             return null;
+        }
+
+        // Pass the container filter through the lookup
+        TableInfo lookupTable = lookupColumn.getParentTable();
+        if (parent.getParentTable() != null && parent.getParentTable().supportsContainerFilter() && lookupTable != null && lookupTable.supportsContainerFilter())
+        {
+            ContainerFilterable table = (ContainerFilterable) lookupTable;
+            if (table.hasDefaultContainerFilter())
+            {
+                table.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable(), true));
+            }
         }
 
         if (lookupColumn.getURL() instanceof StringExpressionFactory.FieldKeyStringExpression)
@@ -190,7 +221,7 @@ public class MultiValuedForeignKey implements ForeignKey
     @Override
     public String getLookupDisplayName()
     {
-        return _fk.getLookupDisplayName();
+        return _displayField;
     }
 
     @Override

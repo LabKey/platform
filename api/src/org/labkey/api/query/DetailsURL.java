@@ -274,7 +274,17 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
     @Override
     public StringExpressionFactory.FieldKeyStringExpression dropParent(String parentName)
     {
-        return super.dropParent(parentName);
+        DetailsURL copy = (DetailsURL) super.dropParent(parentName);
+
+        if (copy._containerContext instanceof ContainerContext.FieldKeyContext)
+        {
+            FieldKey key = ((ContainerContext.FieldKeyContext)copy._containerContext).getFieldKey();
+            FieldKey newKey = key.removeParent(parentName);
+            if (newKey != null)
+                copy._containerContext = new ContainerContext.FieldKeyContext(newKey);
+        }
+
+        return copy;
     }
 
 

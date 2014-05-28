@@ -783,16 +783,10 @@ public class StringExpressionFactory
                 if (stringPart instanceof FieldPart)
                 {
                     FieldPart fieldPart = (FieldPart)stringPart;
-                    List<String> parts = fieldPart._key.getParts();
-                    // If it the first part of the FieldKey matches the parent name
-                    if (parts.get(0).equals(parentName))
+                    // Removes the parent if the first part of the FieldKey matches the parent name
+                    FieldKey newFieldKey = fieldPart._key.removeParent(parentName);
+                    if (newFieldKey != null)
                     {
-                        FieldKey newFieldKey = null;
-                        for (int i = 1; i < parts.size(); i++)
-                        {
-                            // Copy all of the subsequent parts
-                            newFieldKey = new FieldKey(newFieldKey, parts.get(i));
-                        }
                         fieldPart._key = newFieldKey;
                     }
                 }

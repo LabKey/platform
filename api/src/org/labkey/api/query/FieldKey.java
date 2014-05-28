@@ -178,6 +178,25 @@ public class FieldKey extends QueryKey<FieldKey>
         // return getName().equals("*");
     }
 
+    /**
+     * Remove the root component from this key if it matches the rootPart, otherwise null.
+     *
+     * @param rootPart The root FieldKey name to match.
+     * @return The new FieldKey with the root key removed
+     */
+    @Nullable
+    public FieldKey removeParent(String rootPart)
+    {
+        List<String> parts = getParts();
+        if (parts.size() > 1 && parts.get(0).equalsIgnoreCase(rootPart))
+        {
+            parts = parts.subList(1, parts.size());
+            return FieldKey.fromParts(parts);
+        }
+
+        return null;
+    }
+
     public int compareTo(FieldKey o)
     {
         return CASE_INSENSITIVE_ORDER.compare(this, o);
