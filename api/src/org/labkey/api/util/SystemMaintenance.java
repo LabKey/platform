@@ -346,5 +346,8 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
 
         // Can this task be disabled?
         public boolean canDisable();
+
+        // Hide this from the Admin page (because it will be controlled from elsewhere)
+        public boolean hideFromAdminPage();
     }
 }

@@ -42,6 +42,9 @@ class DatabaseMaintenanceTask implements SystemMaintenance.MaintenanceTask
         return true;
     }
 
+    @Override
+    public boolean hideFromAdminPage() { return false; }
+
     public void run()
     {
         DbScope scope = DbScope.getLabkeyScope();
