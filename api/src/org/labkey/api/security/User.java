@@ -357,6 +357,7 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
         props.put("isSystemAdmin", user.isSiteAdmin());
         props.put("isGuest", user.isGuest());
+        props.put("isSignedIn", 0 != user.getUserId() || !user.isGuest());
 
         return props;
     }

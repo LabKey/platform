@@ -203,12 +203,17 @@ Ext.define('LABKEY.app.controller.View', {
 
     routeView : function(controller, view, viewContext) {
 
-        if (!controller || (Ext.isString(controller) && controller.length === 0)) {
-            if (Ext.isDefined(this.application.defaultController)) {
-                controller = this.application.defaultController;
-            }
-            else {
-                console.log("Consider specifying a 'defaultController' on your Application.");
+        if (this.application.defaultLoginController && !LABKEY.user.isSignedIn) {
+            controller = this.application.defaultLoginController;
+            view = null;
+        } else {
+            if (!controller || (Ext.isString(controller) && controller.length === 0)) {
+                if (Ext.isDefined(this.application.defaultController)) {
+                    controller = this.application.defaultController;
+                }
+                else {
+                    console.log("Consider specifying a 'defaultController' on your Application.");
+                }
             }
         }
 
