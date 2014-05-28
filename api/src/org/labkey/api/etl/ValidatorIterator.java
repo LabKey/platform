@@ -32,6 +32,7 @@ import org.labkey.api.exp.property.ValidatorKind;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.security.User;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 
 import java.io.IOException;
@@ -40,6 +41,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: matthewb
@@ -229,6 +231,30 @@ checkRequired:
     }
 
 
+    // this is are postgres ranges, sql server supports a wide range
+    static long minTimestamp =  DateUtil.parseISODateTime("1753-01-01");
+    static long maxTimestamp = DateUtil.parseISODateTime("9999-12-31") + TimeUnit.DAYS.toMillis(1);
+
+    class DateValidator extends ColumnValidator
+    {
+        DateValidator(int col)
+        {
+            super(col);
+        }
+
+        @Override
+        public String validate(Object value)
+        {
+            if (!(value instanceof java.util.Date))
+                return null;
+            long t = ((java.util.Date)value).getTime();
+            if (t >= minTimestamp && t < maxTimestamp)
+                return null;
+            return "Only dates between January 1, 1753 and December 31, 9999 are accepted.";
+        }
+    }
+
+
     private void addValidator(int i, Validator v)
     {
         while (_validators.size() <= i)
@@ -264,6 +290,7 @@ checkRequired:
         addValidator(i, new DuplicateSingleKeyValidator(i, caseSensitive));
     }
 
+
     public void addLengthValidator(int i, ColumnInfo col)
     {
         if (col == null)
@@ -271,6 +298,12 @@ checkRequired:
 
         if (col.getJdbcType().isText() && col.getJdbcType() != JdbcType.GUID && col.getScale() > 0)
             addValidator(i, new LengthValidator(i, col.getScale()));
+    }
+
+
+    public void addDateValidator(int i)
+    {
+        addValidator(i, new DateValidator(i));
     }
 
 

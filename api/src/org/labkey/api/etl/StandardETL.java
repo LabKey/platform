@@ -244,6 +244,11 @@ public class StandardETL implements DataIteratorBuilder
 
             if (null != pair.dp)
                 validate.addPropertyValidator(indexConvert, pair.dp);
+
+            if (null != pair.target && pair.target.getJdbcType().isDateOrTime())
+            {
+                validate.addDateValidator(indexConvert);
+            }
         }
 
         DataIterator last = validate.hasValidators() ? validate : convert;
