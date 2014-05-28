@@ -434,6 +434,11 @@ public class LoginController extends SpringActionController
 
             ApiSimpleResponse response = null;
 
+            if (form.getEmail() == null || form.getPassword() == null)
+            {
+                errors.reject(ERROR_MSG, "The e-mail address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off.");
+            }
+
             if (!errors.hasErrors())
             {
                 User user = authenticate(form, errors, getViewContext(), true);
