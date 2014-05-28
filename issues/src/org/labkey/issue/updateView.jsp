@@ -74,8 +74,7 @@
 %>
 
 <script type="text/javascript">
-    var numberRe = /[0-9]/;
-    function filterNumber(e, input)
+    function filterRe(e, input, re)
     {
         if (e.isSpecialKey())
             return true;
@@ -84,7 +83,7 @@
         if (!cc)
             return true;
 
-        if (!numberRe.test(cc))
+        if (!re.test(cc))
         {
             if (e.stopPropagation) {
                 e.stopPropagation();
@@ -100,6 +99,16 @@
         }
 
         return true;
+    }
+
+    function filterNumber(e, input)
+    {
+        return filterRe(e, input, /[0-9]/);
+    }
+
+    function filterCommaSepNumber(e, input)
+    {
+        return filterRe(e, input, /^[\d,\s]+$/);
     }
 </script>
 <form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" action="<%=IssuesController.issueURL(c, bean.getAction())%>">
@@ -209,7 +218,7 @@
                         <%=text(bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), "id=related tabindex=\"2\""))%>
 
                         <script type="text/javascript">
-                            Ext.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterNumber);
+                            Ext.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterCommaSepNumber);
                         </script>
 
                         <%=text(bean.writeCustomColumn(ColumnType.INT1, 2, true))%>
