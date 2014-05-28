@@ -19,14 +19,17 @@ package org.labkey.issue.query;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdRenderer;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueManager;
@@ -53,8 +56,6 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         addAllColumns();
 
         setDefaultVisibleColumns(getDefaultColumns());
-        ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
-        setDetailsURL(new DetailsURL(base, Collections.singletonMap("issueId", "IssueId")));
         setTitleColumn("Title");
     }
 
@@ -66,6 +67,9 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
 
     private void addAllColumns()
     {
+        ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
+        setDetailsURL(new DetailsURL(base, Collections.singletonMap("issueId", "IssueId")));
+
         EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
         CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(getContainer());
 
@@ -89,8 +93,11 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         addColumn(folder);
 
         addColumn(new AliasedColumn(this, getCustomCaption("Type", ccc), _rootTable.getColumn("Type")));
+
         addColumn(new AliasedColumn(this, getCustomCaption("Area", ccc), _rootTable.getColumn("Area")));
+
         addWrapColumn(_rootTable.getColumn("Title"));
+
         ColumnInfo assignedTo = wrapColumn("AssignedTo", _rootTable.getColumn("AssignedTo"));
         assignedTo.setFk(new UserIdForeignKey(getUserSchema()));
         assignedTo.setDisplayColumnFactory(new DisplayColumnFactory()
@@ -101,28 +108,48 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
             }
         });
         addColumn(assignedTo);
+
         addColumn(new AliasedColumn(this, getCustomCaption("Priority", ccc), _rootTable.getColumn("Priority")));
+
         addWrapColumn(_rootTable.getColumn("Status"));
+
         addColumn(new AliasedColumn(this, getCustomCaption("Milestone", ccc), _rootTable.getColumn("Milestone")));
 
         addWrapColumn(_rootTable.getColumn("BuildFound"));
+
         ColumnInfo modifiedBy = wrapColumn(_rootTable.getColumn("ModifiedBy"));
         UserIdForeignKey.initColumn(modifiedBy);
         addColumn(modifiedBy);
         addWrapColumn(_rootTable.getColumn("Modified"));
+
         ColumnInfo createdBy = wrapColumn(_rootTable.getColumn("CreatedBy"));
         UserIdForeignKey.initColumn(createdBy);
         addColumn(createdBy);
         addWrapColumn(_rootTable.getColumn("Created"));
+
         ColumnInfo resolvedBy = wrapColumn(_rootTable.getColumn("ResolvedBy"));
         UserIdForeignKey.initColumn(resolvedBy);
         addColumn(resolvedBy);
+
         addWrapColumn(_rootTable.getColumn("Resolved"));
         addColumn(new AliasedColumn(this, getCustomCaption("Resolution", ccc), _rootTable.getColumn("Resolution")));
-        addWrapColumn(_rootTable.getColumn("Duplicate"));
+
+        ColumnInfo duplicate = addWrapColumn(_rootTable.getColumn("Duplicate"));
+        duplicate.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "Duplicate")));
+
+        ColumnInfo related = addColumn(new AliasedColumn(this, "Related", issueIdColumn));
+        DetailsURL relatedURL = new DetailsURL(base, Collections.singletonMap("issueId", FieldKey.fromParts("Related", "IssueId")));
+        relatedURL.setContainerContext(new ContainerContext.FieldKeyContext(FieldKey.fromParts("Related", "Folder")));
+        related.setURL(relatedURL);
+        related.setFk(new MultiValuedForeignKey(
+                new QueryForeignKey(getUserSchema(), getContainer(), "RelatedIssues", "IssueId", null),
+                "RelatedIssueId",
+                "IssueId"));
+
         ColumnInfo closedBy = wrapColumn(_rootTable.getColumn("ClosedBy"));
         UserIdForeignKey.initColumn(closedBy);
         addColumn(closedBy);
+
         addWrapColumn(_rootTable.getColumn("Closed"));
         addWrapColumn(_rootTable.getColumn("NotifyList"));
 

@@ -16,9 +16,11 @@
 
 package org.labkey.issue.query;
 
+import org.labkey.api.collections.Sets;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
+import org.labkey.api.query.SimpleUserSchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
@@ -30,7 +32,6 @@ import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 
 import java.util.Set;
-import java.util.LinkedHashSet;
 import java.util.Collections;
 
 public class IssuesQuerySchema extends UserSchema 
@@ -48,6 +49,18 @@ public class IssuesQuerySchema extends UserSchema
                 return new IssuesTable(schema);
             }
         },
+        RelatedIssues
+        {
+            @Override
+            public TableInfo createTable(IssuesQuerySchema schema)
+            {
+                SimpleUserSchema.SimpleTable<IssuesQuerySchema> table =
+                        new SimpleUserSchema.SimpleTable<>(
+                                schema, IssuesSchema.getInstance().getTableInfoRelatedIssues()).init();
+
+                return table;
+            }
+        },
         Comments
         {
             @Override
@@ -59,14 +72,15 @@ public class IssuesQuerySchema extends UserSchema
 
         public abstract TableInfo createTable(IssuesQuerySchema schema);
     }
-    static private Set<String> tableNames = new LinkedHashSet<>();
+    static private Set<String> tableNames;
+    static private Set<String> visibleTableNames;
     static
     {
-        for (TableType type : TableType.values())
-        {
-            tableNames.add(type.toString());
-        }
-        tableNames = Collections.unmodifiableSet(tableNames);
+        tableNames = Collections.unmodifiableSet(
+                Sets.newCaseInsensitiveHashSet(TableType.Issues.toString(), TableType.Comments.toString(), TableType.RelatedIssues.toString()));
+
+        visibleTableNames = Collections.unmodifiableSet(
+                Sets.newCaseInsensitiveHashSet(TableType.Issues.toString(), TableType.Comments.toString()));
     }
 
     static public void register(final Module module)
@@ -94,6 +108,12 @@ public class IssuesQuerySchema extends UserSchema
     public Set<String> getTableNames()
     {
         return tableNames;
+    }
+
+    @Override
+    public Set<String> getVisibleTableNames()
+    {
+        return visibleTableNames;
     }
 
     public TableInfo createTable(String name)
