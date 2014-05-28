@@ -554,9 +554,8 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         }
     }
 
-    public Boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors)
+    public boolean tryValidateReportPermissions(ContainerUser context, Report report, List<ValidationError> errors)
     {
-
         final ReportDescriptor descriptor = report.getDescriptor();
 
         if (descriptor.isNew())

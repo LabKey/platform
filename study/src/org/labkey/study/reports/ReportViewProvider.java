@@ -326,6 +326,7 @@ public class ReportViewProvider implements DataViewProvider
             {
                 try (DbScope.Transaction transaction = scope.ensureTransaction())
                 {
+                    ReportDescriptor descriptor = report.getDescriptor();
                     ViewCategory category = null;
 
                     // save the category information then the dataset information
@@ -335,36 +336,47 @@ public class ReportViewProvider implements DataViewProvider
                         category = ViewCategoryManager.getInstance().getCategory(categoryId);
                     }
 
-                    report.getDescriptor().setCategory(category);
+                    descriptor.setCategory(category);
 
                     if (props.containsKey(Property.viewName.name()))
-                        report.getDescriptor().setReportName(StringUtils.trimToNull(String.valueOf(props.get(Property.viewName.name()))));
+                        descriptor.setReportName(StringUtils.trimToNull(String.valueOf(props.get(Property.viewName.name()))));
 
                     if (props.containsKey(Property.description.name()))
-                        report.getDescriptor().setReportDescription(StringUtils.trimToNull(String.valueOf(props.get(Property.description.name()))));
+                        descriptor.setReportDescription(StringUtils.trimToNull(String.valueOf(props.get(Property.description.name()))));
 
                     if (props.containsKey(Property.visible.name()))
-                        report.getDescriptor().setHidden(!BooleanUtils.toBoolean(String.valueOf(props.get(Property.visible.name()))));
+                        descriptor.setHidden(!BooleanUtils.toBoolean(String.valueOf(props.get(Property.visible.name()))));
 
-                    boolean shared = BooleanUtils.toBoolean(String.valueOf(props.get(Property.shared.name())));
-                    if(shared)
-                        report.getDescriptor().setOwner(null);
+                    boolean isPrivate = !BooleanUtils.toBoolean(String.valueOf(props.get(Property.shared.name())));
+
+                    if (isPrivate)
+                    {
+                        // If switching from shared to private then set owner back to original creator.
+                        if (descriptor.isShared())
+                        {
+                            // Convey previous state to save code, otherwise admins will be denied the ability to unshare.
+                            descriptor.setWasShared();
+                            descriptor.setOwner(descriptor.getCreatedBy());
+                        }
+                    }
                     else
-                        report.getDescriptor().setOwner(context.getUser().getUserId());
+                    {
+                        descriptor.setOwner(null);
+                    }
 
                     if (props.containsKey(Property.author.name()))
-                        report.getDescriptor().setAuthor(props.get(Property.author.name()));
+                        descriptor.setAuthor(props.get(Property.author.name()));
                     if (props.containsKey(Property.status.name()))
-                        report.getDescriptor().setStatus((String)props.get(Property.status.name()));
+                        descriptor.setStatus((String)props.get(Property.status.name()));
                     if (props.containsKey(Property.refreshDate.name()))
-                        report.getDescriptor().setRefeshDate(props.get(Property.refreshDate.name()));
+                        descriptor.setRefeshDate(props.get(Property.refreshDate.name()));
 
                     List<ValidationError> errors = new ArrayList<>();
                     ReportService.get().tryValidateReportPermissions(context, report, errors);
                     if (!errors.isEmpty())
                         throw new ValidationException(errors);
 
-                    ReportService.get().saveReport(new DefaultContainerUser(context.getContainer(), context.getUser()), report.getDescriptor().getReportKey(), report);
+                    ReportService.get().saveReport(new DefaultContainerUser(context.getContainer(), context.getUser()), descriptor.getReportKey(), report);
 
                     if (props.containsKey(Property.customThumbnail.name()))
                     {

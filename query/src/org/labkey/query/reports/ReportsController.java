@@ -1713,10 +1713,8 @@ public class ReportsController extends SpringActionController
 
             try (DbScope.Transaction tx = scope.ensureTransaction())
             {
-                ViewCategory category = null;
-
                 // save the category information then the report
-                category = form.getViewCategory();
+                ViewCategory category = form.getViewCategory();
 
                 R report = initializeReportForSave(form);
                 ReportDescriptor descriptor = report.getDescriptor();
@@ -1728,10 +1726,23 @@ public class ReportsController extends SpringActionController
                 descriptor.setReportDescription(form.getDescription());
                 descriptor.setCategory(category);
 
-                if (!form.getShared())
-                    descriptor.setOwner(getUser().getUserId());
+                // Keep this code in sync with ReportViewProvider.updateProperties()
+                boolean isPrivate = !form.getShared();
+
+                if (isPrivate)
+                {
+                    // If switching from shared to private then set owner back to original creator.
+                    if (descriptor.isShared())
+                    {
+                        // Convey previous state to save code, otherwise admins will be denied the ability to unshare.
+                        descriptor.setWasShared();
+                        descriptor.setOwner(descriptor.getCreatedBy());
+                    }
+                }
                 else
+                {
                     descriptor.setOwner(null);
+                }
 
                 User author = UserManager.getUser(form.getAuthor());
                 ViewInfo.Status status = form.getStatus();
@@ -3455,7 +3466,8 @@ public class ReportsController extends SpringActionController
                 if (editInfo != null)
                 {
                     List<String> editable = Arrays.asList(editInfo.getEditableProperties(getContainer(), getUser()));
-                    try {
+                    try
+                    {
                         _propertiesMap = form.getPropertyMap(getPropertyValues(), editable, getFileMap());
                         editInfo.validateProperties(getContainer(), getUser(), form.getId(), _propertiesMap);
                     }
