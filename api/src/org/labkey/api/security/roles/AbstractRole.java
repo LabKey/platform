@@ -45,7 +45,7 @@ public abstract class AbstractRole implements Role
     private final String _name;
     private final String _description;
     private final Module _sourceModule;
-    private final Set<Class<? extends Permission>> _permissions = new HashSet<>();
+    private Set<Class<? extends Permission>> _permissions = Collections.unmodifiableSet(new HashSet<Class<? extends Permission>>());
     private final Set<UserPrincipal> _excludedPrincipals = new HashSet<>();
 
     @SafeVarargs
@@ -66,8 +66,13 @@ public abstract class AbstractRole implements Role
         _name = name;
         _description = description;
         _sourceModule = sourceModule;
-        if(null != perms && perms.length > 0)
-            _permissions.addAll(Arrays.asList(perms));
+
+        if (null != perms && perms.length > 0)
+        {
+            Set<Class<? extends Permission>> p = new HashSet<>();
+            p.addAll(Arrays.asList(perms));
+            _permissions = Collections.unmodifiableSet(p);
+        }
     }
 
     @NotNull
@@ -89,19 +94,17 @@ public abstract class AbstractRole implements Role
     }
 
     @NotNull
-    public Set<Class<? extends Permission>> getPermissions()
+    public synchronized Set<Class<? extends Permission>> getPermissions()
     {
         return Collections.unmodifiableSet(_permissions);
     }
 
-    public void addPermission(@NotNull Class<? extends Permission> perm)
+    public synchronized void addPermission(@NotNull Class<? extends Permission> perm)
     {
-        //although this is unlikley to be called from multiple threads
-        //at once, it is conceivable, so lock the set before adding
-        synchronized (_permissions)
-        {
-            _permissions.add(perm);
-        }
+        Set<Class<? extends Permission>> p = new HashSet<>();
+        p.addAll(_permissions);
+        p.add(perm);
+        _permissions = Collections.unmodifiableSet(p);
     }
 
     @NotNull

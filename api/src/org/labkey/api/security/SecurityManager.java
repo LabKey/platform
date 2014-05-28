@@ -43,6 +43,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
@@ -1122,7 +1123,27 @@ public class SecurityManager
         // Need to invalidate all computed group lists. This isn't quite right, but it gets the job done.
         GroupMembershipCache.handleGroupChange(group, group);
 
+        // NOTE: Most code can not tell the difference between a non-existant SecurityPolicy and an empty SecurityPolicy
+        // NOTE: Both are treated as meaning "inherit", we don't want to accidently create an empty security policy
+        // TODO: create an explicity inherit bit on policy (or distinguish undefined/empty)
+
+        SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ResourceId FROM " + core.getTableInfoRoleAssignments() + " WHERE UserId = ?",groupId);
+        List<String> resources = new SqlSelector(core.getSchema().getScope(), sqlf).getArrayList(String.class);
+
         Table.delete(core.getTableInfoRoleAssignments(), new SimpleFilter(FieldKey.fromParts("UserId"), groupId));
+
+        // make sure we didn't empty out any policies completely
+        // NOTE: we can almost do this with SecurityPolicy objects, but we don't have any SecurableResource objects
+        // NOTE: handy, so we'd have to rework the API/caching a bit
+
+        for (String id : resources)
+        {
+            if (0 == new TableSelector(core.getTableInfoRoleAssignments(),Table.ALL_COLUMNS,new SimpleFilter(),null).getRowCount())
+            {
+                SQLFragment insert = new SQLFragment("INSERT INTO " + core.getTableInfoRoleAssignments() + " (resourceid,userid,role) VALUES (?,-3,'org.labkey.api.security.roles.NoPermissionsRole')",id);
+                new SqlExecutor(core.getSchema()).execute(insert);
+            }
+        }
 
         Filter groupFilter = new SimpleFilter(FieldKey.fromParts("GroupId"), groupId);
         Table.delete(core.getTableInfoMembers(), groupFilter);
