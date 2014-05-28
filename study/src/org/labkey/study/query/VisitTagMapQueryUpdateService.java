@@ -45,7 +45,10 @@ public class VisitTagMapQueryUpdateService extends DefaultQueryUpdateService
     protected void checkSingleUse(Container container, Map<String, Object> row, @Nullable Map<String, Object> oldRow) throws ValidationException
     {
         String visitTagName = (String)row.get("VisitTag");
-        Integer cohortId = (Integer)row.get("Cohort");
+        Object cohortObj = row.get("Cohort");
+        if (!(cohortObj instanceof Integer))
+            return;                 // skip check
+        Integer cohortId = (Integer)cohortObj;
 
         StudyManager studyManager = StudyManager.getInstance();
         Study study = studyManager.getStudy(container);
