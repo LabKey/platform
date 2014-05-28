@@ -46,11 +46,10 @@ function showSystemRows(value)
 
 </script>
 <form action="<%=h(buildURL(SpecimenController.ManageStatusesAction.class))%>" name="manageStatuses" method="POST">
-<table width="600px">
+<table width="620px">
     <tr>
-        <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">The specimen request administrator moves requests through states for
-            organization and to communicate request progress to end-users.  All submitted requests will
-            start in step number 1, which cannot be removed.</td>
+        <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">Request statuses help a coordinator organize and track requests through the system and
+            communicate progress to requesters. All requests do not need to pass through all states.</td>
     </tr>
     <tr>
         <td>
@@ -137,7 +136,7 @@ function showSystemRows(value)
     </tr>
     <tr>
         <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">Allowing users to build up specimen requests over multiple
-            searches is generally more convenient, but requires the administrator to watch for abandoned unsubmitted requests.</td>
+            searches is generally more convenient, but requires the coordinator to watch for abandoned unsubmitted requests.</td>
     </tr>
     <tr>
         <td>
