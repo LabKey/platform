@@ -117,34 +117,38 @@ public class VisitCohortAssigner implements InternalStudyImporter
                 for (VisitMapRecord.VisitTagRecord visitTagRecord : record.getVisitTagRecords())
                 {
                     if (!visitTags.containsKey(visitTagRecord.getVisitTagName()))
-                        throw new IllegalStateException("Visit references non-existent visit tag: " + visitTagRecord.getVisitTagName());
-
-                    Integer cohortId = cohortIdMap.get(visitTagRecord.getCohortLabel());
-                    String visitTagMapKey = StudyManager.makeVisitTagMapKey(visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId);
-                    if (visitTagMapKeys.contains(visitTagMapKey))
                     {
-                        ctx.getLogger().info("VisitTagMap entry already in table or archive: " + visitTagMapKey);
+                        ctx.getLogger().error("Visit references non-existent visit tag: " + visitTagRecord.getVisitTagName());
                     }
                     else
                     {
-                        if (visitTags.get(visitTagRecord.getVisitTagName()).isSingleUse())
+                        Integer cohortId = cohortIdMap.get(visitTagRecord.getCohortLabel());
+                        String visitTagMapKey = StudyManager.makeVisitTagMapKey(visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId);
+                        if (visitTagMapKeys.contains(visitTagMapKey))
                         {
-                            List<VisitTagMapEntry> visitTagMapEntries = visitTagToVisitTagEntries.get(visitTagRecord.getVisitTagName());
-                            if (null == visitTagMapEntries)
-                                visitTagMapEntries = Collections.emptyList();
-                            String errorSingleUse = studyManager.checkSingleUseVisitTag(visitTags.get(visitTagRecord.getVisitTagName()),
-                                    cohortId, visitTagMapEntries, null);
-                            if (null != errorSingleUse)
-                            {
-                                ctx.getLogger().error(errorSingleUse);
-                                continue;
-                            }
+                            ctx.getLogger().info("VisitTagMap entry already in table or archive: " + visitTagMapKey);
                         }
-                        Integer rowId = studyManager.createVisitTagMapEntry(user, c, visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId);
-                        visitTagMapKeys.add(visitTagMapKey);
-                        if (!visitTagToVisitTagEntries.containsKey(visitTagRecord.getVisitTagName()))
-                            visitTagToVisitTagEntries.put(visitTagRecord.getVisitTagName(), new ArrayList<VisitTagMapEntry>());
-                        visitTagToVisitTagEntries.get(visitTagRecord.getVisitTagName()).add(new VisitTagMapEntry(visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId, rowId));
+                        else
+                        {
+                            if (visitTags.get(visitTagRecord.getVisitTagName()).isSingleUse())
+                            {
+                                List<VisitTagMapEntry> visitTagMapEntries = visitTagToVisitTagEntries.get(visitTagRecord.getVisitTagName());
+                                if (null == visitTagMapEntries)
+                                    visitTagMapEntries = Collections.emptyList();
+                                String errorSingleUse = studyManager.checkSingleUseVisitTag(visitTags.get(visitTagRecord.getVisitTagName()),
+                                        cohortId, visitTagMapEntries, null);
+                                if (null != errorSingleUse)
+                                {
+                                    ctx.getLogger().error(errorSingleUse);
+                                    continue;
+                                }
+                            }
+                            Integer rowId = studyManager.createVisitTagMapEntry(user, c, visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId);
+                            visitTagMapKeys.add(visitTagMapKey);
+                            if (!visitTagToVisitTagEntries.containsKey(visitTagRecord.getVisitTagName()))
+                                visitTagToVisitTagEntries.put(visitTagRecord.getVisitTagName(), new ArrayList<VisitTagMapEntry>());
+                            visitTagToVisitTagEntries.get(visitTagRecord.getVisitTagName()).add(new VisitTagMapEntry(visitTagRecord.getVisitTagName(), visit.getRowId(), cohortId, rowId));
+                        }
                     }
                 }
             }
