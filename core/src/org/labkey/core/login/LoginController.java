@@ -296,6 +296,17 @@ public class LoginController extends SpringActionController
     }
 
 
+    public static boolean deauthenticate(User user, ViewContext context)
+    {
+        if (user.isImpersonated())
+            SecurityManager.stopImpersonating(context.getRequest(), user.getImpersonationContext().getFactory());
+        else
+            SecurityManager.logoutUser(context.getRequest(), user);
+
+        return true;
+    }
+
+
     @RequiresNoPermission
     @ActionNames("login, showLogin")
     @IgnoresTermsOfUse
@@ -433,16 +444,10 @@ public class LoginController extends SpringActionController
             }
 
             ApiSimpleResponse response = null;
-
-            if (form.getEmail() == null || form.getPassword() == null)
-            {
-                errors.reject(ERROR_MSG, "The e-mail address and password you entered did not match any accounts on file.\nNote: Passwords are case sensitive; make sure your Caps Lock is off.");
-            }
+            User user = authenticate(form, errors, getViewContext(), true);
 
             if (!errors.hasErrors())
             {
-                User user = authenticate(form, errors, getViewContext(), true);
-
                 boolean success = (null != user);
 
                 if (success)
@@ -821,18 +826,23 @@ public class LoginController extends SpringActionController
 
         public boolean doAction(ReturnUrlForm form, BindException errors) throws Exception
         {
-            User user = getUser();
-
-            if (user.isImpersonated())
-                SecurityManager.stopImpersonating(getViewContext().getRequest(), user.getImpersonationContext().getFactory());
-            else
-                SecurityManager.logoutUser(getViewContext().getRequest(), user);
-
-            return true;
+            return deauthenticate(getUser(), getViewContext());
         }
 
         public void validateCommand(ReturnUrlForm form, Errors errors)
         {
+        }
+    }
+
+    @RequiresNoPermission
+    @IgnoresTermsOfUse
+    @AllowedDuringUpgrade
+    public class LogoutApiAction extends MutatingApiAction
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            return new ApiSimpleResponse("success", deauthenticate(getUser(), getViewContext()));
         }
     }
 
