@@ -184,7 +184,8 @@ public class StorageProvisioner
         DomainKind kind = domain.getDomainKind();
         if (kind == null)
         {
-            log.warn("Domain " + domain.getName() + " has no DomainKind, it cannot be dropped. URI: " + domain.getTypeURI(), new IllegalStateException());
+            if (null != domain.getStorageTableName())
+                log.warn("Domain " + domain.getName() + " has no DomainKind, it cannot be dropped. URI: " + domain.getTypeURI(), new IllegalStateException());
             return;
         }
 
@@ -239,6 +240,7 @@ public class StorageProvisioner
         for (PropertyStorageSpec s : kind.getBaseProperties())
             base.add(s.getName());
 
+        int changeCount = 0;
         for (DomainProperty prop : properties)
         {
             if (prop.getName() == null || prop.getName().length() == 0)
@@ -255,12 +257,17 @@ public class StorageProvisioner
             if (null != spec)
             {
                 change.addColumn(spec);
+                changeCount++;
             }
             if (prop.isMvEnabled())
             {
                 change.addColumn(makeMvColumn(prop));
+                changeCount++;
             }
         }
+
+        if (0 == changeCount)
+            return;
 
         Connection con = null;
 
