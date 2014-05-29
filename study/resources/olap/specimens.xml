@@ -1,19 +1,30 @@
 <Schema name="Study" description="HIV Collaborative Dataspace">
 
     <Cube name="SpecimenCube" visible="true" defaultMeasure="ParticipantCount" cache="true" enabled="true">
-        <Table schema="study" name="SpecimenSummary" >
-        </Table>
+        <Table schema="study" name="SpecimenSummary" />
 
         <Dimension name="Participant" visible="true" highCardinality="false" foreignKey="participantid">
-            <Hierarchy visible="true" hasAll="true" uniqueKeyLevelName="Name">
-                <Table schema="study" name="Participant" primaryKey="participantid" />
-                <Level name="Cohort" visible="true" column="cohort"
-                       type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"></Level>
-                <Level name="Participant" visible="true" column="participantid" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"></Level>
+
+            <Hierarchy visible="true" hasAll="true">
+                <Table schema="study" name="Participant" primaryKey="participantid"/>
+
+                <Level name="Cohort" visible="true" table="Participant" column="{$Cohort/label$}"
+                       type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"/>
+                <Level name="Participant" visible="true" table="Participant" column="participantid" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"/>
             </Hierarchy>
         </Dimension>
 
 
+        <Dimension name="Visit" visible="true" highCardinality="false" foreignKey="participantid">
+            <Hierarchy visible="true" hasAll="true">
+                <Level name="Visit" visible="true" column="{$Visit/label$}"
+                       type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+               </Level>
+            </Hierarchy>
+        </Dimension>
+
+
+<!-- PRIMARY/DERIVATIVE/ADDITIVE AS SEPARATE DIMENSIONS
         <Dimension name="PrimaryType"  visible="true" highCardinality="false" foreignKey="PrimaryType">
             <Hierarchy visible="true" hasAll="true" primaryKey="rowid" >
                 <Table schema="study" name="SpecimenPrimaryType" />
@@ -32,19 +43,160 @@
         </Dimension>
 
 
+        <Dimension name="Additive"  visible="true" highCardinality="false" foreignKey="Additive">
+            <Hierarchy visible="true" hasAll="true" primaryKey="rowid" >
+                <Table schema="study" name="SpecimenAdditive"/>
+                <Level name="Additive" visible="true" column="Description" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+-->
+
+        <!-- PRIMARY/DERIVATIVE/ADDITIVE AS A SINGLE DIMENSIONS -->
+        <Dimension name="SpecimenType"  visible="true" highCardinality="false" foreignKey="PrimaryType">
+        <Hierarchy visible="true" hasAll="true">
+            <Level name="PrimaryType" visible="true" column="{$PrimaryType/Description$}" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"/>
+            <Level name="DerivativeType" visible="true" column="{$DerivativeType/Description$}" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never"/>
+            <Level name="Additive" visible="true" column="{$AdditiveType/Description$}" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never"/>
+        </Hierarchy>
+        </Dimension>
+
         <Dimension name="Location"  visible="true" highCardinality="false" foreignKey="Clinic">
+            <Hierarchy visible="true" hasAll="true" primaryKey="rowid">
+                <Table schema="study" name="Location"/>
+                <Level name="Location" visible="true" column="Label" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+
+        <Measure name="VialCount" column="VialCount" aggregator="sum" visible="true">
+        </Measure>
+
+        <!--<Measure name="AvailableVialCount" column="AvailableVialCount" aggregator="sum" visible="true">-->
+        <!--</Measure>-->
+
+        <Measure name="SpecimenCount" column="Container" aggregator="count" visible="true">
+        </Measure>
+
+        <Measure name="TotalVolume" column="TotalVolume" aggregator="sum" visible="true">
+        </Measure>
+
+        <Measure name="AvailableVolume" column="AvailableVolume" aggregator="sum" visible="true">
+        </Measure>
+
+        <Measure name="ParticipantCount" column="ParticipantId" aggregator="distinct-count" visible="true">
+        </Measure>
+
+<!--
+        <Measure name="group.Controller" aggregator="sum" visible="true">
+            <MeasureExpression><SQL dialect="generic">
+                (CASE WHEN IFDEFINED("{$Participant/Controller$}") IS NULL THEN NULL ELSE 1 END)
+            </SQL></MeasureExpression>
+        </Measure>
+-->
+
+        </Cube>
+
+
+
+
+    <!-- Requested Vials CUBE
+      private static final String sql_pivotRequestedByLocation =
+            "SELECT \n" +
+            " Container, Visit, %s, %s, PivotColumn, COUNT(*) AS RequestedVials\n" +
+            "FROM\n" +
+            "\n" +
+            "(SELECT \n" +
+            "  Vial.Container, \n" +
+            "  Vial.Visit AS Visit, \n" +
+            "  Vial.%s, \n" +
+            "  Vial.%s, \n" +
+            "  '' || CAST(Vial.PrimaryType AS VARCHAR) || '-' || CAST(Vial.DerivativeType AS VARCHAR) || '-' || CAST(Request.Destination AS VARCHAR) AS PivotColumn,\n" +
+            "  Vial.DerivativeType, \n" +
+            "  Request.Destination \n" +
+            "FROM VialRequest) X\n" +
+            "\n" +
+            "GROUP BY\n" +
+            " Container, Visit, %s, %s, PivotColumn\n" +
+            "PIVOT RequestedVials BY PivotColumn\n";
+//            UNDONE: do we want a custom IN query?
+//            IN (SELECT ...)
+-->
+
+
+    <Cube name="RequestedVialCube" visible="true" defaultMeasure="ParticipantCount" cache="true" enabled="true">
+
+        <Table schema="study" name="VialRequest" />
+
+        <Dimension name="Participant" visible="true" highCardinality="false" foreignKey="{$Vial.ParticipantId$}">
+
             <Hierarchy visible="true" hasAll="true">
-                <Table schema="study" name="Location" />
+                <Table schema="study" name="Participant" primaryKey="participantid"/>
+
+                <Level name="Cohort" visible="true" table="Participant" column="{$Cohort/label$}"
+                       type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"/>
+                <Level name="Participant" visible="true" table="Participant" column="participantid" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"/>
+            </Hierarchy>
+        </Dimension>
+
+
+        <Dimension name="Visit" visible="true" highCardinality="false" foreignKey="{$Vial/Visit$}">
+            <Hierarchy visible="true" hasAll="true">
+                <Level name="Visit" visible="true" column="{$Vial/Visit/label$}"
+                       type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+
+
+        <!-- PRIMARY/DERIVATIVE/ADDITIVE AS SEPARATE DIMENSIONS
+                <Dimension name="PrimaryType"  visible="true" highCardinality="false" foreignKey="PrimaryType">
+                    <Hierarchy visible="true" hasAll="true" primaryKey="rowid" >
+                        <Table schema="study" name="SpecimenPrimaryType" />
+                        <Level name="PrimaryType" visible="true" column="Description" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+                        </Level>
+                    </Hierarchy>
+                </Dimension>
+
+
+                <Dimension name="DerivativeType"  visible="true" highCardinality="false" foreignKey="DerivativeType">
+                    <Hierarchy visible="true" hasAll="true" primaryKey="rowid" >
+                        <Table schema="study" name="SpecimenDerivative"/>
+                        <Level name="DerivativeType" visible="true" column="Description" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+                        </Level>
+                    </Hierarchy>
+                </Dimension>
+
+
+                <Dimension name="Additive"  visible="true" highCardinality="false" foreignKey="Additive">
+                    <Hierarchy visible="true" hasAll="true" primaryKey="rowid" >
+                        <Table schema="study" name="SpecimenAdditive"/>
+                        <Level name="Additive" visible="true" column="Description" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
+                        </Level>
+                    </Hierarchy>
+                </Dimension>
+        -->
+
+        <!-- PRIMARY/DERIVATIVE/ADDITIVE AS A SINGLE DIMENSIONS -->
+        <Dimension name="SpecimenType"  visible="true" highCardinality="false" foreignKey="{$Vial/PrimaryType$}">
+            <Hierarchy visible="true" hasAll="true">
+                <Level name="PrimaryType" visible="true" column="{$Vial/PrimaryType/Description$}" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never"/>
+                <Level name="DerivativeType" visible="true" column="{$Vial/DerivativeType/Description$}" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never"/>
+                <Level name="Additive" visible="true" column="{$Vial/AdditiveType/Description$}" type="String" uniqueMembers="false" levelType="Regular" hideMemberIf="Never"/>
+            </Hierarchy>
+        </Dimension>
+
+
+        <Dimension name="Location"  visible="true" highCardinality="false" foreignKey="{$Vial/Clinic$}">
+            <Hierarchy visible="true" hasAll="true" primaryKey="rowid">
+                <Table schema="study" name="Location"/>
                 <Level name="Location" visible="true" column="Label" type="String" uniqueMembers="true" levelType="Regular" hideMemberIf="Never">
                 </Level>
             </Hierarchy>
         </Dimension>
 
 
-        <Measure name="VialCount" column="VialCount" aggregator="sum" visible="true">
-        </Measure>
-
-        <Measure name="SpecimenCount" column="Container" aggregator="count" visible="true">
+        <Measure name="VialCount" column="RowId" aggregator="count" visible="true">
         </Measure>
 
     </Cube>
