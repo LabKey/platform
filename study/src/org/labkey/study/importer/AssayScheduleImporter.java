@@ -133,11 +133,17 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
 
                 if (newRow.containsKey("visitId") && newRow.containsKey("visitId.sequenceNumMin"))
                 {
-                    Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(newRow.get("visitId.sequenceNumMin"))));
-                    if (visit != null)
-                        newRow.put("visitId", visit.getId());
+                    Object sequenceObj = newRow.get("visitId.sequenceNumMin");
+                    if (null != sequenceObj)
+                    {
+                        Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(sequenceObj)));
+                        if (visit != null)
+                            newRow.put("visitId", visit.getId());
+                        else
+                            ctx.getLogger().warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
+                    }
                     else
-                        ctx.getLogger().warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
+                        ctx.getLogger().warn("Null sequence num found.");
 
                     newRow.remove("visitId.sequenceNumMin");
                 }

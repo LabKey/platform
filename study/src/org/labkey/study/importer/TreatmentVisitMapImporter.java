@@ -118,22 +118,34 @@ public class TreatmentVisitMapImporter extends DefaultStudyDesignImporter implem
 
                 if (newRow.containsKey("cohortId") && newRow.containsKey("cohortId.label"))
                 {
-                    CohortImpl cohort = _cohortMap.get(newRow.get("cohortId.label"));
-                    if (cohort != null)
-                        newRow.put("cohortId", cohort.getRowId());
+                    Object cohortObj = newRow.get("cohortId.label");
+                    if (null != cohortObj)
+                    {
+                        CohortImpl cohort = _cohortMap.get(cohortObj);
+                        if (cohort != null)
+                            newRow.put("cohortId", cohort.getRowId());
+                        else
+                            ctx.getLogger().warn("No cohort found matching the label : " + newRow.get("cohortId.label"));
+                    }
                     else
-                        ctx.getLogger().warn("No cohort found matching the label : " + newRow.get("cohortId.label"));
+                        ctx.getLogger().warn("Null cohortId found.");
 
                     newRow.remove("cohortId.label");
                 }
 
                 if (newRow.containsKey("visitId") && newRow.containsKey("visitId.sequenceNumMin"))
                 {
-                    Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(newRow.get("visitId.sequenceNumMin"))));
-                    if (visit != null)
-                        newRow.put("visitId", visit.getId());
+                    Object sequenceObj = newRow.get("visitId.sequenceNumMin");
+                    if (null != sequenceObj)
+                    {
+                        Visit visit = _visitMap.get(Double.parseDouble(String.valueOf(sequenceObj)));
+                        if (visit != null)
+                            newRow.put("visitId", visit.getId());
+                        else
+                            ctx.getLogger().warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
+                    }
                     else
-                        ctx.getLogger().warn("No visit found matching the sequence num : " + newRow.get("visitId.sequenceNumMin"));
+                        ctx.getLogger().warn("Null sequence num found.");
 
                     newRow.remove("visitId.sequenceNumMin");
                 }
