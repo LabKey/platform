@@ -17,14 +17,15 @@
 package org.labkey.wiki.renderer;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -55,6 +56,7 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
     };
 
 
+    @NotNull
     public FormattedHtml getSubstitution(Map<String, String> params)
     {
         params = new CaseInsensitiveHashMap<>(params);
@@ -68,9 +70,9 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
         try
         {
             String partName = params.get("partName");
-            WebPartFactory desc = Portal.getPortalPartCaseInsensitive(partName);
+            WebPartFactory factory = Portal.getPortalPartCaseInsensitive(partName);
 
-            if (null == desc)
+            if (null == factory)
                 return new FormattedHtml("<br><font class='error' color='red'>Error: Could not find webpart \"" + partName + "\"</font>");
 
             String partLocation = params.get("location");
@@ -81,62 +83,45 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                 part.setLocation(partLocation);
             part.getPropertyMap().putAll(params);
 
-            WebPartView view = null;
+            StringWriter sw = new StringWriter();
+
             try
             {
                 ViewContext ctx = HttpView.currentContext();
 
-                // Try to ensure that each webpart gets a unique default DataRegionName
-                if (null != ctx)
-                    part.setIndex(UniqueID.getRequestScopedUID(ctx.getRequest()));
+                if (null == ctx)
+                    throw new IllegalStateException("ViewContext should be set");
 
-                view = Portal.getWebPartViewSafe(desc, ctx, part);
+                // Try to ensure that each webpart gets a unique default DataRegionName
+                part.setIndex(UniqueID.getRequestScopedUID(ctx.getRequest()));
+
+                WebPartView<?> view = Portal.getWebPartViewSafe(factory, ctx, part);
+
+                if (null == view)
+                    throw new NotFoundException("Webpart factory \"" + factory.getName() + "\" did not return a view");
+
                 view.setEmbedded(true);  // Let the webpart know it's being embedded in another page
 
                 String showFrame = params.get("showFrame");
 
                 if (null != showFrame && !Boolean.parseBoolean(showFrame))
                     view.setFrame(WebPartView.FrameType.NONE);
-            }
-            catch (Exception e)
-            {
-                // Let's at least log these exceptions in dev mode
-                if (AppProps.getInstance().isDevMode())
-                    LOG.error("Error substituting " + partName, e);
-            }
 
-            if (null == view)
-                return null;
+                view.addAllObjects(params);
 
-            view.addAllObjects(params);
-            StringWriter sw = new StringWriter();
-
-            try
-            {
                 //Issue 15609: we need to include client dependencies for embedded webparts
-                if (view.getClientDependencies().size() > 0)
+                LinkedHashSet<ClientDependency> dependencies = view.getClientDependencies();
+
+                if (!dependencies.isEmpty())
                 {
-                    Container c;
-                    User u;
-                    ViewContext ctx = HttpView.currentContext();
-                    assert ctx != null;
+                    Container c = ctx.getContainer();
+                    User u = ctx.getUser();
 
-                    if (ctx == null)
-                    {
-                        c = ContainerManager.getRoot();
-                        u = User.guest;
-                    }
-                    else
-                    {
-                        c = ctx.getContainer();
-                        u = ctx.getUser();
-                    }
-
-                    LinkedHashSet<ClientDependency> dependencies = view.getClientDependencies();
                     LinkedHashSet<String> includes = new LinkedHashSet<>();
                     PageFlowUtil.getJavaScriptFiles(c, u, dependencies, includes, new LinkedHashSet<String>());
 
                     LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
+
                     for (ClientDependency d : dependencies)
                     {
                         cssScripts.addAll(d.getCssPaths(c, u, AppProps.getInstance().isDevMode()));
@@ -162,11 +147,17 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                         sw.write(sb.toString());
                     }
                 }
+
                 view.include(view, sw);
             }
             catch (Throwable e)
             {
-                return null;
+                // Let's at least log these exceptions in dev mode
+                if (AppProps.getInstance().isDevMode())
+                    LOG.error("Error substituting " + partName, e);
+
+                // Return HTML with error
+                return new FormattedHtml("<br><font class='error' color='red'>Error substituting " + partName + ": " + e.getMessage() + "</font>");
             }
 
             return new FormattedHtml(sw.toString(), true);  // All webparts are considered volatile... CONSIDER: Be more selective (e.g., query & messages, but not search) 

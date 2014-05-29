@@ -19,7 +19,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.announcements.CommSchema;
-import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.SqlExecutor;
@@ -193,15 +192,7 @@ public class WikiModule extends DefaultModule implements SearchService.DocumentP
         {
             getWikiManager().insertWiki(user, c, wiki, wikiversion, null);
         }
-        catch (SQLException e)
-        {
-            _log.error(e);
-        }
-        catch (AttachmentService.DuplicateFilenameException e)
-        {
-            _log.error(e);
-        }
-        catch (IOException e)
+        catch (SQLException | IOException e)
         {
             _log.error(e);
         }

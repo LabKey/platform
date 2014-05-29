@@ -18,6 +18,7 @@ package org.labkey.wiki.renderer;
 
 import org.apache.commons.lang3.StringUtils;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.util.PageFlowUtil;
@@ -263,13 +264,6 @@ public class HtmlRenderer implements WikiRenderer
             else
                 substitution = new FormattedHtml("<br><font class='error' color='red'>Error: unknown type, \"labkey." + definition.getType() + "\"</font>");
 
-            // Case where we're indexing wikis for search
-            if (null == substitution)
-            {
-                sb.replace(definition.getStart(), definition.getEnd(), "");
-                continue;
-            }
-
             sb.replace(definition.getStart(), definition.getEnd(), substitution.getHtml());
 
             if (substitution.isVolatile())
@@ -294,10 +288,10 @@ public class HtmlRenderer implements WikiRenderer
 
     private static class Definition
     {
-        private String _type;
-        private int _start;
-        private int _end;
-        private Map<String, String> _params;
+        private final String _type;
+        private final int _start;
+        private final int _end;
+        private final Map<String, String> _params;
 
         private Definition(String type, int start, int end, Map<String, String> params)
         {
@@ -331,6 +325,6 @@ public class HtmlRenderer implements WikiRenderer
 
     interface SubstitutionHandler
     {
-        FormattedHtml getSubstitution(Map<String, String> params);
+        @NotNull FormattedHtml getSubstitution(Map<String, String> params);
     }
 }

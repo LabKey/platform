@@ -15,6 +15,7 @@
  */
 package org.labkey.wiki.renderer;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.FormattedHtml;
@@ -24,6 +25,7 @@ import java.util.Map;
 
 public class ClientDependencySubstitutionHandler implements HtmlRenderer.SubstitutionHandler
 {
+    @NotNull
     public FormattedHtml getSubstitution(Map<String, String> params)
     {
         params = new CaseInsensitiveHashMap<>(params);

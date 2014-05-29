@@ -17,6 +17,7 @@
 package org.labkey.wiki;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
@@ -28,6 +29,8 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NavTreeManager;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.menu.NavTreeMenu;
 import org.labkey.api.view.template.ClientDependency;
@@ -41,86 +44,14 @@ import java.util.Stack;
 public class WikiTOC extends NavTreeMenu
 {
     private String _selectedLink;
-    private boolean _init = false;
-
-    static private Container getTocContainer(ViewContext context)
-    {
-        //set specified web part container
-        Container cToc;
-        //get stored property value for source container for toc
-        Object id = context.get("webPartContainer");
-        //if no value is stored, use the current container
-        if (id == null)
-            cToc = context.getContainer();
-        else
-        {
-            cToc = ContainerManager.getForId(id.toString());
-            assert (cToc != null) : "Could not find container for id: " + id;
-        }
-
-        return cToc;
-    }
-
-    @Override
-    public NavTree getNavMenu()
-    {
-        ViewContext context = getViewContext();
-        User user = context.getUser();
-        ensureInit(context);
-        Container cToc = getTocContainer(context);
-
-        //output only this one if wiki contains no pages
-        boolean bHasInsert = cToc.hasPermission("WikiTOC.getNavMenu()", user, InsertPermission.class);
-        boolean bHasCopy = cToc.hasPermission("WikiTOC.getNavMenu()", user, AdminPermission.class) && getElements().length > 0;
-        boolean bHasPrint = (bHasInsert || !isInWebPart(context)) && getElements().length > 0;
-
-        NavTree menu = new NavTree("");
-        if (bHasInsert)
-        {
-            ActionURL newPageUrl = new ActionURL(WikiController.EditWikiAction.class, cToc);
-            newPageUrl.addParameter("cancel", context.getActionURL().getLocalURIString());
-            menu.addChild("New", newPageUrl.getLocalURIString());
-        }
-        if (bHasCopy)
-        {
-            URLHelper copyUrl = new ActionURL(WikiController.CopyWikiLocationAction.class, cToc);
-            //pass in source container as a param.
-            copyUrl.addParameter("sourceContainer", cToc.getPath());
-            menu.addChild("Copy", copyUrl.toString());
-        }
-        if (bHasPrint)
-        {
-            menu.addChild("Print all", new ActionURL(WikiController.PrintAllAction.class, cToc).toString());
-        }
-        return menu;
-    }
-
-    @Override
-    public void enableExpandCollapse(String rootId, boolean collapsed)
-    {
-        addObject("collapsed", Boolean.valueOf(false));
-        addObject("rootId", rootId);
-    }
-
-    @Override
-    public boolean isCollapsible()
-    {
-        return false;
-    }
-    
-    static public String getNavTreeId(ViewContext context)
-    {
-        Container cToc = getTocContainer(context);
-        return "Wiki-TOC-" + cToc.getId();
-    }
-
-    static public NavTree[] getNavTree(ViewContext context)
-    {
-        Container cToc = getTocContainer(context);
-        return WikiSelectManager.getNavTree(cToc);
-    }
+    private final Container _cToc;
 
     public WikiTOC(ViewContext context)
+    {
+        this(context, null);
+    }
+
+    public WikiTOC(ViewContext context, @Nullable Portal.WebPart part)
     {
         super(context, "");
         setFrame(FrameType.PORTAL);
@@ -130,24 +61,96 @@ public class WikiTOC extends NavTreeMenu
         if (title == null)
             title = "Pages";
         setTitle(title.toString());
+
+        // get stored property value for source container for toc
+        String id = (null != part ? part.getPropertyMap().get("webPartContainer") : null);
+
+        // if no value is stored, use the current container
+        if (id == null)
+        {
+            _cToc = context.getContainer();
+        }
+        else
+        {
+            _cToc = ContainerManager.getForId(id);
+        }
+
+        if (null == _cToc)
+            throw new NotFoundException("Could not find container for id: \"" + id + "\"");
+
+        setId(getNavTreeId(_cToc));
+        setElements(context, getNavTree());
+    }
+
+    @Override
+    public NavTree getNavMenu()
+    {
+        ViewContext context = getViewContext();
+        User user = context.getUser();
+
+        //output only this one if wiki contains no pages
+        boolean bHasInsert = _cToc.hasPermission("WikiTOC.getNavMenu()", user, InsertPermission.class);
+        boolean bHasCopy = _cToc.hasPermission("WikiTOC.getNavMenu()", user, AdminPermission.class) && getElements().length > 0;
+        boolean bHasPrint = (bHasInsert || !isInWebPart(context)) && getElements().length > 0;
+
+        NavTree menu = new NavTree("");
+        if (bHasInsert)
+        {
+            ActionURL newPageUrl = new ActionURL(WikiController.EditWikiAction.class, _cToc);
+            newPageUrl.addParameter("cancel", context.getActionURL().getLocalURIString());
+            menu.addChild("New", newPageUrl.getLocalURIString());
+        }
+        if (bHasCopy)
+        {
+            URLHelper copyUrl = new ActionURL(WikiController.CopyWikiLocationAction.class, _cToc);
+            //pass in source container as a param.
+            copyUrl.addParameter("sourceContainer", _cToc.getPath());
+            menu.addChild("Copy", copyUrl.toString());
+        }
+        if (bHasPrint)
+        {
+            menu.addChild("Print all", new ActionURL(WikiController.PrintAllAction.class, _cToc).toString());
+        }
+        return menu;
+    }
+
+    @Override
+    public void enableExpandCollapse(String rootId, boolean collapsed)
+    {
+        addObject("collapsed", false);
+        addObject("rootId", rootId);
+    }
+
+    @Override
+    public boolean isCollapsible()
+    {
+        return false;
+    }
+    
+    public static String getNavTreeId(Container cToc)
+    {
+        return "Wiki-TOC-" + cToc.getId();
+    }
+
+    private NavTree[] getNavTree()
+    {
+        return WikiSelectManager.getNavTree(_cToc);
     }
 
     private Wiki findSelectedPage(ViewContext context)
     {
-        Container cToc = getTocContainer(context);
-
         //are there pages in the TOC container?
-        if (WikiSelectManager.hasPages(cToc))
+        if (WikiSelectManager.hasPages(_cToc))
         {
             //determine current page
             String pageViewName = context.getRequest().getParameter("name");
 
             //if no current page, determine the default page for the toc container
             if (null == pageViewName)
-                pageViewName = WikiController.getDefaultPage(cToc).getName().getSource();
+                pageViewName = WikiController.getDefaultPage(_cToc).getName().getSource();
 
             if (null != pageViewName)
-                return WikiSelectManager.getWiki(cToc, new HString(pageViewName));
+                return WikiSelectManager.getWiki(_cToc, new HString(pageViewName));
         }
 
         return null;
@@ -173,12 +176,9 @@ public class WikiTOC extends NavTreeMenu
     protected void renderView(Object model, PrintWriter out) throws Exception
     {
         ViewContext context = getViewContext();
-        ensureInit(context);
 
         boolean isInWebPart = isInWebPart(context);
 
-        Container cToc = getTocContainer(context);
-        
         //Should we show the option to expand all nodes?
         boolean showExpandOption = false;
 
@@ -246,7 +246,7 @@ public class WikiTOC extends NavTreeMenu
         if (null != selectedPage)
         {
             //get next and previous links
-            List<HString> nameList = WikiSelectManager.getPageNames(cToc);
+            List<HString> nameList = WikiSelectManager.getPageNames(_cToc);
 
             if (nameList.contains(selectedPage.getName()))
             {
@@ -256,13 +256,13 @@ public class WikiTOC extends NavTreeMenu
                 //if it's not the first page in the list, display the previous link
                 if (pageIndex > 0)
                 {
-                    prevURL = WikiController.getPageURL(cToc, nameList.get(pageIndex - 1));
+                    prevURL = WikiController.getPageURL(_cToc, nameList.get(pageIndex - 1));
                 }
 
                 //if it's not the last page in the list, display the next link
                 if (pageIndex < nameList.size() - 1)
                 {
-                    nextURL = WikiController.getPageURL(cToc, nameList.get(pageIndex + 1));
+                    nextURL = WikiController.getPageURL(_cToc, nameList.get(pageIndex + 1));
                 }
             }
         }
@@ -298,16 +298,6 @@ public class WikiTOC extends NavTreeMenu
         }
     }
 
-    private void ensureInit(ViewContext context)
-    {
-        if (!_init)
-        {
-            setId(getNavTreeId(context));
-            setElements(context, getNavTree(context));
-            _init = true;
-        }
-    }
-    
     private boolean isInWebPart(ViewContext context)
     {
         //is page being rendered in web part or in module?

@@ -50,12 +50,13 @@ import org.labkey.api.util.HString;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.api.wiki.FormattedHtml;
@@ -607,41 +608,52 @@ public class WikiManager implements WikiService
         if (null == ss || null == c)
             return;
 
-        indexWikiContainerFast(task, c, modifiedSince, null);
+        int stackSize = HttpView.getStackSize();
+
+        try
+        {
+            // This pushes a ViewContext onto the stack; wikis may need this to render embedded webpart
+            ViewContext.getMockViewContext(User.guest, c, null, true);
+            indexWikiContainerFast(task, c, modifiedSince, null);
+        }
+        finally
+        {
+            HttpView.resetStackSize(stackSize);
+        }
     }
 
 
     public void indexWikiContainerFast(@NotNull SearchService.IndexTask task, @NotNull Container c, @Nullable Date modifiedSince, String name)
     {
         LOG.debug("indexWikiContainerFast(" + name + ")");
-        ResultSet rs = null;
-        try
-        {
-            SQLFragment f = new SQLFragment();
-            f.append("SELECT P.entityid, P.container, P.name, owner$.searchterms as owner, createdby$.searchterms as createdby, P.created, modifiedby$.searchterms as modifiedby, P.modified,")
-                .append("V.title, V.body, V.renderertype\n");
-            f.append("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n")
-                .append("LEFT OUTER JOIN core.usersearchterms AS owner$ ON P.createdby = owner$.userid\n")
-                .append("LEFT OUTER JOIN core.usersearchterms AS createdby$ ON P.createdby = createdby$.userid\n")
-                .append("LEFT OUTER JOIN core.usersearchterms AS modifiedby$ ON P.createdby = modifiedby$.userid\n");
-            f.append("WHERE P.container = ?");
-            f.add(c);
-            SQLFragment since = new SearchService.LastIndexedClause(comm.getTableInfoPages(), modifiedSince, "P").toSQLFragment(null, comm.getSqlDialect());
-            if (!since.isEmpty())
-            {
-                f.append(" AND ").append(since);
-            }
-            if (null != name)
-            {
-                f.append(" AND P.name = ?");
-                f.add(name);
-            }
-            rs = new SqlSelector(comm.getSchema(), f).getResultSet(false, false);
 
-            HashMap<String, AttachmentParent> ids = new HashMap<>();
-            // AGGH wiki doesn't have a title!
-            HashMap<String, String> titles = new HashMap<>();
-            
+        SQLFragment f = new SQLFragment();
+        f.append("SELECT P.entityid, P.container, P.name, owner$.searchterms as owner, createdby$.searchterms as createdby, P.created, modifiedby$.searchterms as modifiedby, P.modified,")
+            .append("V.title, V.body, V.renderertype\n");
+        f.append("FROM comm.pages P INNER JOIN comm.pageversions V ON P.entityid=V.pageentityid and P.pageversionid=V.rowid\n")
+            .append("LEFT OUTER JOIN core.usersearchterms AS owner$ ON P.createdby = owner$.userid\n")
+            .append("LEFT OUTER JOIN core.usersearchterms AS createdby$ ON P.createdby = createdby$.userid\n")
+            .append("LEFT OUTER JOIN core.usersearchterms AS modifiedby$ ON P.createdby = modifiedby$.userid\n");
+        f.append("WHERE P.container = ?");
+        f.add(c);
+        SQLFragment since = new SearchService.LastIndexedClause(comm.getTableInfoPages(), modifiedSince, "P").toSQLFragment(null, comm.getSqlDialect());
+
+        if (!since.isEmpty())
+        {
+            f.append(" AND ").append(since);
+        }
+        if (null != name)
+        {
+            f.append(" AND P.name = ?");
+            f.add(name);
+        }
+
+        HashMap<String, AttachmentParent> ids = new HashMap<>();
+        // AGGH wiki doesn't have a title!
+        HashMap<String, String> titles = new HashMap<>();
+
+        try (ResultSet rs = new SqlSelector(comm.getSchema(), f).getResultSet(false, false))
+        {
             while (rs.next())
             {
                 name = rs.getString("name");
@@ -696,48 +708,44 @@ public class WikiManager implements WikiService
                 ids.put(entityId, parent);
                 titles.put(entityId, wikiTitle);
             }
-
-            // now attachments
-            ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, c);
-            ActionURL downloadUrl = new ActionURL(WikiController.DownloadAction.class, c);
-            
-            if (!ids.isEmpty())
-            {
-                List<Pair<String,String>> list = getAttachmentService().listAttachmentsForIndexing(ids.keySet(), modifiedSince);
-
-                for (Pair<String,String> pair : list)
-                {
-                    String entityId = pair.first;
-                    String documentName = pair.second;
-                    Wiki parent = (Wiki)ids.get(entityId);
-
-                    ActionURL wikiUrl = pageUrl.clone().addParameter("name", parent.getName());
-                    ActionURL attachmentURL = downloadUrl.clone()
-                            .replaceParameter("entityId",entityId)
-                            .replaceParameter("name",documentName);
-                    // UNDONE: set title to make LuceneSearchServiceImpl work
-                    String displayTitle = "\"" + documentName + "\" attached to page \"" + titles.get(entityId) + "\"";
-                    WebdavResource attachmentRes = getAttachmentService().getDocumentResource(
-                            new Path(entityId,documentName),
-                            attachmentURL, displayTitle,
-                            parent,
-                            documentName, searchCategory);
-
-                    NavTree t = new NavTree("wiki page", wikiUrl);
-                    String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
-                    attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
-                    task.addResource(attachmentRes, SearchService.PRIORITY.item);
-                }
-            }
         }
         catch (SQLException x)
         {
             LOG.error(x);
             throw new RuntimeSQLException(x);
         }
-        finally
+
+        // now attachments
+        ActionURL pageUrl = new ActionURL(WikiController.PageAction.class, c);
+        ActionURL downloadUrl = new ActionURL(WikiController.DownloadAction.class, c);
+
+        if (!ids.isEmpty())
         {
-            ResultSetUtil.close(rs);
+            List<Pair<String,String>> list = getAttachmentService().listAttachmentsForIndexing(ids.keySet(), modifiedSince);
+
+            for (Pair<String,String> pair : list)
+            {
+                String entityId = pair.first;
+                String documentName = pair.second;
+                Wiki parent = (Wiki)ids.get(entityId);
+
+                ActionURL wikiUrl = pageUrl.clone().addParameter("name", parent.getName());
+                ActionURL attachmentURL = downloadUrl.clone()
+                        .replaceParameter("entityId",entityId)
+                        .replaceParameter("name",documentName);
+                // UNDONE: set title to make LuceneSearchServiceImpl work
+                String displayTitle = "\"" + documentName + "\" attached to page \"" + titles.get(entityId) + "\"";
+                WebdavResource attachmentRes = getAttachmentService().getDocumentResource(
+                        new Path(entityId,documentName),
+                        attachmentURL, displayTitle,
+                        parent,
+                        documentName, searchCategory);
+
+                NavTree t = new NavTree("wiki page", wikiUrl);
+                String nav = NavTree.toJS(Collections.singleton(t), null, false).toString();
+                attachmentRes.getMutableProperties().put(SearchService.PROPERTY.navtrail.toString(), nav);
+                task.addResource(attachmentRes, SearchService.PRIORITY.item);
+            }
         }
     }
 
