@@ -97,16 +97,14 @@ Ext.define('LABKEY.app.controller.State', {
             }
 
             // Apply Filters
-            if (s.filters && s.filters.length > 0) {
+            if (Ext.isArray(s.filters) && s.filters.length > 0) {
 
-                // TODO: Remove this an apply grid filters properly from state
-                var nonGridFilters = [];
-                for (var f=0; f < s.filters.length; f++) {
-                    if (s.filters[f] && !s.filters[f].isGrid)
-                        nonGridFilters.push(s.filters[f]);
-                }
+                var _filters = [];
+                Ext.each(s.filters, function(_f) {
+                    _filters.push(_f);
+                });
 
-                this.setFilters(nonGridFilters, true);
+                this.setFilters(_filters, true);
             }
 
             // Apply Selections
@@ -202,10 +200,17 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     updateState : function() {
+
+        // prepare filters
+        var jsonReadyFilters = [];
+        Ext.each(this.filters, function(f) {
+            jsonReadyFilters.push(f.jsonify());
+        });
+
         this.state.add({
             viewState: {},
             customState: this.customState,
-            filters: this.getFilters(true),
+            filters: jsonReadyFilters,
             selections: this.getSelections(true)
         });
         this.state.sync();

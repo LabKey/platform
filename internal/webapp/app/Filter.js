@@ -15,8 +15,25 @@ Ext.define('LABKEY.app.model.Filter', {
         {name : 'isGroup', type: 'boolean', defaultValue: false},
         {name : 'isGrid', type: 'boolean', defaultValue: false}, // TODO: rename to isSql
         {name : 'isPlot', type: 'boolean', defaultValue: false},
-        {name : 'gridFilter', convert: function(o){ // TODO: rename to sqlFilters
-            return Ext.isArray(o) ? o : [o];
+        {name : 'gridFilter', convert: function(raw){ // TODO: rename to sqlFilters
+            var filters = [];
+            if (Ext.isArray(raw)) {
+                Ext.each(raw, function(r) {
+                    if (Ext.isString(r)) {
+                        var build = LABKEY.Filter.getFiltersFromUrl(r, 'query');
+                        if (Ext.isArray(build)) {
+                            filters.push(build[0]); // assume single filters
+                        }
+                    }
+                    else if (Ext.isDefined(r)) {
+                        filters.push(r);
+                    }
+                });
+            }
+            else if (Ext.isDefined(raw)) {
+                filters.push(raw);
+            }
+            return filters;
         }, defaultValue: []}, // array of LABKEY.filter instances.
         {name : 'plotMeasures', defaultValue: [null, null, null], convert: function(o){
             var arr = [null, null, null];
@@ -550,6 +567,34 @@ Ext.define('LABKEY.app.model.Filter', {
 
     getValue : function(key) {
         return this.data[key];
+    },
+
+    /**
+     * This method should be called before attempting to write a filter model to JSON.
+     * This is due to the fact that some properties do not represent themselves properly using
+     * JSON.stringify and they have to be manually curated.
+     * @returns {Object}
+     */
+    jsonify : function() {
+        var jsonable = Ext.clone(this.data);
+        if (Ext.isArray(jsonable.gridFilter)) {
+            var jsonGridFilters = [];
+            Ext.each(jsonable.gridFilter, function(filter) {
+                if (Ext.isDefined(filter)) {
+                    if (Ext.isString(filter)) {
+                        jsonGridFilters.push(filter);
+                    }
+                    else {
+                        var composed = filter.getURLParameterName() + '=' + filter.getURLParameterValue();
+                        jsonGridFilters.push(composed);
+                    }
+                }
+            });
+            jsonable.gridFilter = jsonGridFilters;
+        }
+
+        delete jsonable.id;
+        return jsonable;
     }
 });
 
