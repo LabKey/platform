@@ -135,6 +135,11 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, File fileInput)
     {
+        this(job, Collections.singletonList(fileInput));
+    }
+
+    public AbstractFileAnalysisJob(AbstractFileAnalysisJob job, List<File> filesInput)
+    {
         super(job);
 
         // Copy some parameters from the parent job.
@@ -150,9 +155,9 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _joinedBaseName = job._joinedBaseName;
 
         // Change parameters which are specific to the fraction job.
-        _filesInput = Collections.singletonList(fileInput);
+        _filesInput = filesInput;
         _inputTypes = FileType.findTypes(job._inputTypes, _filesInput);
-        _baseName = (_inputTypes.isEmpty() ? fileInput.getName() : _inputTypes.get(0).getBaseName(fileInput));
+        _baseName = (_inputTypes.isEmpty() ? filesInput.get(0).getName() : _inputTypes.get(0).getBaseName(filesInput.get(0)));
         setLogFile(FT_LOG.newFile(_dirAnalysis, _baseName));
 
         // CONSIDER: Remove writing out jobInfo file completely
