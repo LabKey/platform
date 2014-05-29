@@ -469,6 +469,9 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public abstract String getLabel();
 
+    /** Internal, stable, unique name used to identify this report type in webpart properties */
+    public abstract String getReportType();
+
     public boolean allowsCohortFilter()
     {
         return StudyManager.getInstance().showCohorts(getContainer(), getUser());

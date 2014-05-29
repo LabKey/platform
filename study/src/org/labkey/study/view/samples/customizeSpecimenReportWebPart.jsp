@@ -19,16 +19,15 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal.WebPart" %>
 <%@ page import="org.labkey.study.controllers.samples.SpecimenController.ReportConfigurationBean" %>
+<%@ page import="org.labkey.study.controllers.samples.SpecimenController.SpecimenReportWebPartFactory" %>
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
-<%@ page import="java.util.Set" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WebPart> me = (JspView<WebPart>) HttpView.currentView();
     WebPart webpart = me.getModelBean();
-    String currentReportFacoryClass = webpart.getPropertyMap().get("reportFactoryClass");
+    String currentReportName = webpart.getPropertyMap().get(SpecimenReportWebPartFactory.REPORT_TYPE_PARAMETER_NAME);
 
     ReportConfigurationBean bean = new ReportConfigurationBean(getViewContext());
-    Set<String> categories = bean.getCategories();
 %>
 <form method="post">
 <table>
@@ -41,13 +40,13 @@
         <td>
             Type
             <label>
-                <select name="reportFactoryClass"><%
-                    for (String category : categories)
+                <select name="<%=text(SpecimenReportWebPartFactory.REPORT_TYPE_PARAMETER_NAME)%>"><%
+                    for (String category : bean.getCategories())
                     {
                         for (SpecimenVisitReportParameters factory : bean.getFactories(category))
                         {
-                            String className = factory.getClass().getName(); %>
-                            <option value="<%=h(className)%>"<%=selected(className.equals(currentReportFacoryClass))%>><%=h(factory.getLabel())%></option><%
+                            String name = factory.getReportType(); %>
+                            <option value="<%=h(name)%>"<%=selected(name.equals(currentReportName))%>><%=h(factory.getLabel())%></option><%
                         }
                     }
                 %>

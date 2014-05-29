@@ -36,6 +36,12 @@ public class TypeSummaryReportFactory extends TypeReportFactory
         return "Type Summary Report";
     }
 
+    @Override
+    public String getReportType()
+    {
+        return "TypeSummary";
+    }
+
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());

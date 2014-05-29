@@ -56,7 +56,13 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
     public String getLabel()
     {
         Location location = _locationId != null ? StudyManager.getInstance().getLocation(getContainer(), _locationId) : null;
-        return "By Requesting Location" + (location != null ? ": " + location.getLabel() : "");
+        return "Requested by Requesting Location" + (location != null ? ": " + location.getLabel() : "");
+    }
+
+    @Override
+    public String getReportType()
+    {
+        return "RequestedByRequestingLocation";
     }
 
     protected List<? extends SpecimenVisitReport> createReports()

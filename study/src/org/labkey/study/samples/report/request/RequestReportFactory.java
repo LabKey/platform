@@ -34,7 +34,13 @@ public class RequestReportFactory extends BaseRequestReportFactory
 {
     public String getLabel()
     {
-        return "Request Summary";
+        return "Requested Summary";
+    }
+
+    @Override
+    public String getReportType()
+    {
+        return "RequestedSummary";
     }
 
     public boolean allowsAvailabilityFilter()

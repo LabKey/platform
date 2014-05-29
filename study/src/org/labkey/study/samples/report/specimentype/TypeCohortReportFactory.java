@@ -98,6 +98,12 @@ public class TypeCohortReportFactory extends TypeReportFactory
     {
         CohortFilter filter = getCohortFilter();
         CohortImpl cohort = filter != null ? filter.getCohort(getContainer(), getUser()) : null;
-        return cohort != null ? cohort.getLabel() : "Type By Cohort";
+        return cohort != null ? cohort.getLabel() : "Type by Cohort";
+    }
+
+    @Override
+    public String getReportType()
+    {
+        return "TypeByCohort";
     }
 }

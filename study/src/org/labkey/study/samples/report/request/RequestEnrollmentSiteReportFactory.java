@@ -59,7 +59,13 @@ public class RequestEnrollmentSiteReportFactory extends BaseRequestReportFactory
     public String getLabel()
     {
         Location location = _enrollmentSiteId != null ? StudyManager.getInstance().getLocation(getContainer(), _enrollmentSiteId) : null;
-        return "Requests by Enrollment Location" + (location != null ? ": " + location.getLabel() : "");
+        return "Requested by Enrollment Location" + (location != null ? ": " + location.getLabel() : "");
+    }
+
+    @Override
+    public String getReportType()
+    {
+        return "RequestedByEnrollmentLocation";
     }
 
     protected List<? extends SpecimenVisitReport> createReports()

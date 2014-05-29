@@ -172,7 +172,13 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 
     public String getLabel()
     {
-        return StudyService.get().getSubjectNounSingular(getContainer()) + " By Specimen Type";
+        return StudyService.get().getSubjectNounSingular(getContainer()) + " by Specimen Type";
+    }
+
+    @Override
+    public String getReportType()
+    {
+        return "ParticipantByType";
     }
 
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()

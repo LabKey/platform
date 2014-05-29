@@ -138,7 +138,13 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
 
     public String getLabel()
     {
-        return "Requests by " + StudyService.get().getSubjectNounSingular(getContainer());
+        return "Requested by " + StudyService.get().getSubjectNounSingular(getContainer());
+    }
+
+    @Override
+    public String getReportType()
+    {
+        return "RequestedByParticipant";
     }
 
     public Class<? extends SpecimenController.SpecimenVisitReportAction> getAction()

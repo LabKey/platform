@@ -46,6 +46,12 @@ public class ParticipantSummaryReportFactory extends SpecimenVisitReportParamete
         return StudyService.get().getSubjectNounSingular(getContainer()) + " Summary";
     }
 
+    @Override
+    public String getReportType()
+    {
+        return "ParticipantSummary";
+    }
+
     public boolean allowsParticipantAggregegates()
     {
         return false;

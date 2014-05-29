@@ -36,6 +36,7 @@
 <%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.Random" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
@@ -96,7 +97,7 @@ This folder does not contain a study.
         for (SpecimenVisitReportParameters factory : bean.getFactories(category))
         {
             rowClass = getShadeRowClass(formRowIndex++ %2 == 0);
-            String showHideSuffix = "_" + categoryIndex + "_" + formRowIndex;
+            String showHideSuffix = "_" + categoryIndex + "_" + formRowIndex + "_" + bean.getUniqueId();
             String formName = "form" + showHideSuffix;
 %>
     <tr><td>
