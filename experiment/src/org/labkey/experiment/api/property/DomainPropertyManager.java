@@ -22,6 +22,7 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Wrapper;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DatabaseCache;
@@ -43,6 +44,7 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -85,7 +87,7 @@ public class DomainPropertyManager
         return ExperimentServiceImpl.get().getExpSchema();
     }
 
-    public TableInfo getTinfoValidator()
+    static public TableInfo getTinfoValidator()
     {
         return getExpSchema().getTable("PropertyValidator");
     }
@@ -95,7 +97,7 @@ public class DomainPropertyManager
         return getExpSchema().getTable("PropertyDescriptor");
     }
 
-    public TableInfo getTinfoValidatorReference()
+    static public TableInfo getTinfoValidatorReference()
     {
         return getExpSchema().getTable("ValidatorReference");
     }
@@ -105,12 +107,12 @@ public class DomainPropertyManager
         return getExpSchema().getTable("ConditionalFormat");
     }
 
-    public PropertyValidator[] getValidators(DomainProperty property)
+    public Collection<PropertyValidator> getValidators(DomainProperty property)
     {
         return getValidators(property.getContainer(), property.getPropertyId());
     }
 
-    public PropertyValidator[] getValidators(PropertyDescriptor property)
+    public Collection<PropertyValidator> getValidators(PropertyDescriptor property)
     {
         return getValidators(property.getContainer(), property.getPropertyId());
     }
@@ -165,53 +167,54 @@ public class DomainPropertyManager
 
 
     // Container.getId() -> PropertyId -> Collection<PropertyValidator>
-    static Cache<String,MultiHashMap<Integer, PropertyValidator>> validatorCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, CacheManager.HOUR, "Property Validators");
-    private static final PropertyValidator[] _emptyArray = new PropertyValidator[0];
-    private static final MultiHashMap<Integer, PropertyValidator> _emptyMap = new MultiHashMap<>();;
+
+    static CacheLoader<String,  MultiHashMap<Integer, PropertyValidator>> PV_LOADER = new CacheLoader<String,  MultiHashMap<Integer, PropertyValidator>>()
+    {
+        @Override
+        public MultiHashMap<Integer, PropertyValidator> load(String containerId, @Nullable Object argument)
+        {
+        /*
+         * There are a LOT more property descriptors than property validators, let's just sweep them all up, if we have a container
+         * CONSIDER: Should PropertyValidators just be cached as part of the PropertyDescriptor?
+         */
+            String sql = "SELECT VR.PropertyId, PV.* " +
+                    "FROM " + getTinfoValidatorReference() + " VR " +
+                    "LEFT OUTER JOIN " + getTinfoValidator() + " PV ON (VR.ValidatorId = PV.RowId) " +
+                    "WHERE PV.Container=?\n";
+
+            ArrayList<PropertyValidator> list = new SqlSelector(getExpSchema(), sql, containerId).getArrayList(PropertyValidator.class);
+            MultiHashMap<Integer, PropertyValidator> validators = new MultiHashMap<>();
+            for (PropertyValidator pv : list)
+                validators.put(pv.getPropertyId(), pv);
+
+            if (validators.isEmpty())
+                validators = _emptyMap;
+            return validators.isEmpty() ? _emptyMap : validators;
+        }
+    };
+
+    static Cache<String,MultiHashMap<Integer, PropertyValidator>> validatorCache = new BlockingCache<>(
+            new DatabaseCache<Wrapper<MultiHashMap<Integer, PropertyValidator>>>(getExpSchema().getScope(), 5000, CacheManager.HOUR, "Property Validators"),PV_LOADER);
+    private static final Collection<PropertyValidator> _emptyArray = Collections.emptyList();
+    private static final MultiHashMap<Integer, PropertyValidator> _emptyMap = new MultiHashMap<>();
 
 
-    private PropertyValidator[] getValidators(@NotNull Container c, int propertyId)
+    private Collection<PropertyValidator> getValidators(@NotNull Container c, int propertyId)
     {
         if (propertyId == 0)
             return _emptyArray;
 
         MultiHashMap<Integer, PropertyValidator> validators = validatorCache.get(c.getId());
-        if (null != validators)
-        {
-            Collection<PropertyValidator> coll = validators.get(propertyId);
-            if (null == coll)
-                return _emptyArray;
-            else
-                return coll.toArray(new PropertyValidator[coll.size()]);
-        }
-
-        /*
-         * There are a LOT more property descriptors than property validators, let's just sweep them all up, if we have a container
-         * CONSIDER: Should PropertyValidators just be cached as part of the PropertyDescriptor?
-         */
-        String sql = "SELECT VR.PropertyId, PV.* " +
-                "FROM " + getTinfoValidatorReference() + " VR " +
-                "LEFT OUTER JOIN " +  getTinfoValidator() + " PV ON (VR.ValidatorId = PV.RowId) " +
-                "WHERE PV.Container=?\n";
-
-        ArrayList<PropertyValidator> list = new SqlSelector(getExpSchema(), sql, c.getId()).getArrayList(PropertyValidator.class);
-        validators = new MultiHashMap<>();
-        for (PropertyValidator pv : list)
-            validators.put(pv.getPropertyId(),pv);
-
-        if (validators.isEmpty())
-            validators = _emptyMap;
-        validatorCache.put(c.getId(),validators);
+        if (null == validators)
+            return _emptyArray;
         Collection<PropertyValidator> coll = validators.get(propertyId);
         if (null == coll)
             return _emptyArray;
         else
-            return coll.toArray(new PropertyValidator[coll.size()]);
+            return Collections.unmodifiableCollection(coll);
     }
 
 
-
-    /* TODO: this is for precaching validators, it's
 
     /**
      * Remove a domain property reference to a validator and delete the validator if there are
