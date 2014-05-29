@@ -5387,7 +5387,7 @@ public class SpecimenController extends BaseStudyController
             VBox outer = new VBox(configView, reportView);
             outer.setTitleHref(url);
             outer.setFrame(WebPartView.FrameType.PORTAL);
-            outer.setTitle("Specimen Report");
+            outer.setTitle("Specimen Report: " + factory.getLabel());
 
             return outer;
         }
