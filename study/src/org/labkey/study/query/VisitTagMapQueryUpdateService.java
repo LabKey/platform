@@ -30,7 +30,7 @@ public class VisitTagMapQueryUpdateService extends DefaultQueryUpdateService
     protected Map<String, Object> insertRow(User user, Container container, Map<String, Object> row)
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        checkSingleUse(container, row, null);
+        checkSingleUse(container, user, row, null);
         return super.insertRow(user, container, row);
     }
 
@@ -38,11 +38,11 @@ public class VisitTagMapQueryUpdateService extends DefaultQueryUpdateService
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
-        checkSingleUse(container, row, oldRow);
+        checkSingleUse(container, user, row, oldRow);
         return super.updateRow(user, container, row, oldRow);
     }
 
-    protected void checkSingleUse(Container container, Map<String, Object> row, @Nullable Map<String, Object> oldRow) throws ValidationException
+    protected void checkSingleUse(Container container, User user, Map<String, Object> row, @Nullable Map<String, Object> oldRow) throws ValidationException
     {
         String visitTagName = (String)row.get("VisitTag");
         Object cohortObj = row.get("Cohort");
@@ -62,7 +62,7 @@ public class VisitTagMapQueryUpdateService extends DefaultQueryUpdateService
         {
             List<VisitTagMapEntry> visitTagMapEntries = studyManager.getVisitTagMapEntries(study, visitTagName);
             String errorSingleUse = StudyManager.getInstance().checkSingleUseVisitTag(visitTag, cohortId, visitTagMapEntries,
-                    null != oldRow ? (Integer)oldRow.get("RowId") : null);
+                    null != oldRow ? (Integer)oldRow.get("RowId") : null, container, user);
             if (null != errorSingleUse)
                 throw new ValidationException(errorSingleUse);
         }

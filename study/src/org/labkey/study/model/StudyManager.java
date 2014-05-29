@@ -101,6 +101,7 @@ import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.AssaySpecimenConfig;
+import org.labkey.api.study.Cohort;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -1153,14 +1154,16 @@ public class StudyManager
     }
 
     @Nullable
-    public String checkSingleUseVisitTag(VisitTag visitTag, @Nullable Integer cohortId, @NotNull List<VisitTagMapEntry> visitTagMapEntries, @Nullable Integer oldRowId)
+    public String checkSingleUseVisitTag(VisitTag visitTag, @Nullable Integer cohortId, @NotNull List<VisitTagMapEntry> visitTagMapEntries,
+                                         @Nullable Integer oldRowId, Container container, User user)
     {
         for (VisitTagMapEntry visitTagMapEntry : visitTagMapEntries)
             if ((null == oldRowId || !oldRowId.equals(visitTagMapEntry.getRowId())) &&
                     ((null == cohortId && null == visitTagMapEntry.getCohortId()) || null != cohortId && cohortId.equals(visitTagMapEntry.getCohortId())))
             {
-                return "Single use visit tag '" + visitTag.getName() +
-                        "' may not be used for more than one visit for the same cohort '" + (null != cohortId ? cohortId : "<null>") + "'.";
+                Cohort cohort = null != cohortId ? getCohortForRowId(container, user, cohortId) : null;
+                return "Single use visit tag '" + visitTag.getCaption() +
+                        "' may not be used for more than one visit for the same cohort '" + (null != cohort ? cohort.getLabel() : "<null>") + "'.";
             }
         return null;
     }

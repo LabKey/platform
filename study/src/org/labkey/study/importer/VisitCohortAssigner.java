@@ -136,7 +136,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
                                 if (null == visitTagMapEntries)
                                     visitTagMapEntries = Collections.emptyList();
                                 String errorSingleUse = studyManager.checkSingleUseVisitTag(visitTags.get(visitTagRecord.getVisitTagName()),
-                                        cohortId, visitTagMapEntries, null);
+                                        cohortId, visitTagMapEntries, null, c, user);
                                 if (null != errorSingleUse)
                                 {
                                     ctx.getLogger().error(errorSingleUse);
