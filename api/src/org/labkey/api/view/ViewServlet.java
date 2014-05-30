@@ -67,7 +67,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class ViewServlet extends HttpServlet
 {
     private static final Logger _log = Logger.getLogger(ViewServlet.class);
-    private static final boolean _debug = _log.isDebugEnabled();
 
     public static final String ORIGINAL_URL_STRING = "LABKEY.OriginalURL";           // String
     public static final String ORIGINAL_URL_URLHELPER = "LABKEY.OriginalURLHelper";  // URLHelper
@@ -139,7 +138,8 @@ public class ViewServlet extends HttpServlet
         response.setHeader("Server", _serverHeader);
         HttpSession session = request.getSession(true);
 
-        if (_debug)
+        boolean isDebugEnabled = _log.isDebugEnabled();
+        if (isDebugEnabled)
         {
             User user = (User) request.getUserPrincipal();
             String description = request.getMethod() + " " + request.getRequestURI() + "?" + Objects.toString(request.getQueryString(), "") + " (" + (user.isGuest() ? "guest" : user.getEmail()) + ";" + session.getId() + ")";
@@ -188,7 +188,7 @@ public class ViewServlet extends HttpServlet
 
             module.dispatch(request, response, url);
 
-            if (_debug)
+            if (isDebugEnabled)
             {
                 _log.debug("<< " + request.getMethod());
             }

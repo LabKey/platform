@@ -668,9 +668,13 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return _nameToDescriptor.get(actionName).createController(actionController);
             }
 
+            if (null == _controllerName)
+                return null;
             Module module = ModuleLoader.getInstance().getModuleForController(_controllerName);
+            if (null == module)
+                return null;
 
-            Resource r = (module == null) ? null : module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
+            Resource r = module.getModuleResource("/" + VIEWS_DIRECTORY + "/" + actionName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
             if (r == null || !r.isFile())
             {
                 return null;
@@ -942,7 +946,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         }
 
 
-        private Controller resolveHTMLActionName(Controller actionController, String actionName)
+        protected Controller resolveHTMLActionName(Controller actionController, String actionName)
         {
             if(_htmlResolver == null)
             {
