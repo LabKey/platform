@@ -166,6 +166,12 @@ public class DavController extends SpringActionController
     WebdavResolver _webdavresolver;
 
 
+    protected Controller resolveHTMLActionName(Controller actionController, String actionName)
+    {
+        return null;
+    }
+
+
     HttpServletRequest getRequest()
     {
         return getViewContext().getRequest();
