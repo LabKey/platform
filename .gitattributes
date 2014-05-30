@@ -1274,7 +1274,6 @@ api/src/org/labkey/api/security/roles/SeeEmailAddressesRole.java -text
 api/src/org/labkey/api/security/roles/SiteAdminRole.java -text
 api/src/org/labkey/api/security/roles/SubmitterRole.java -text
 api/src/org/labkey/api/security/roles/TroubleshooterRole.java -text
-api/src/org/labkey/api/sequence/IlluminaFastqParser.java -text
 api/src/org/labkey/api/services/ServiceRegistry.java -text
 api/src/org/labkey/api/settings/AbstractSettingsGroup.java -text
 api/src/org/labkey/api/settings/AbstractWriteableSettingsGroup.java -text
