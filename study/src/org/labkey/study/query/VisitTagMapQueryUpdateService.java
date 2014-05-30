@@ -3,6 +3,7 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.DefaultQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
@@ -14,6 +15,7 @@ import org.labkey.api.study.Study;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitTag;
 import org.labkey.study.model.VisitTagMapEntry;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -31,7 +33,17 @@ public class VisitTagMapQueryUpdateService extends DefaultQueryUpdateService
             throws DuplicateKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         checkSingleUse(container, user, row, null);
-        return super.insertRow(user, container, row);
+
+        try
+        {
+            return super.insertRow(user, container, row);
+        }
+        catch (RuntimeSQLException e)
+        {
+            if (RuntimeSQLException.isConstraintException(e.getSQLException()))
+                throw new ValidationException("VisitTagMap may contain only one row for each (VisitTag, Visit, Cohort) combination.");
+            throw e;
+        }
     }
 
     @Override
@@ -39,7 +51,15 @@ public class VisitTagMapQueryUpdateService extends DefaultQueryUpdateService
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         checkSingleUse(container, user, row, oldRow);
-        return super.updateRow(user, container, row, oldRow);
+
+        try
+        {
+            return super.updateRow(user, container, row, oldRow);
+        }
+        catch (DataIntegrityViolationException e)
+        {
+            throw new ValidationException("VisitTagMap may contain only one row for each (VisitTag, Visit, Cohort) combination.");
+        }
     }
 
     protected void checkSingleUse(Container container, User user, Map<String, Object> row, @Nullable Map<String, Object> oldRow) throws ValidationException
