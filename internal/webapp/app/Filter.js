@@ -91,7 +91,7 @@ Ext.define('LABKEY.app.model.Filter', {
          *         label - name of the group
          *         participantIds - array of participant Ids
          *         description - optional description for the gruop
-         *         filters - array of filters to apply
+         *         filters - array of LABKEY.app.model.Filter instances to apply
          *         isLive - boolean, true if this is a query or false if just a group of participant ids.
          */
         doGroupSave : function(config) {
@@ -105,10 +105,12 @@ Ext.define('LABKEY.app.model.Filter', {
             var mdx = config.mdx;
             var m = LABKEY.app.model.Filter;
 
+            var controller = config.isArgos ? 'argos' : 'participant-group';
+            var action = config.isArgos ? 'createPatientGroup' : 'createParticipantCategory';
+
             // setup config for save call
             var requestConfig = {
-                url: config.isArgos ? LABKEY.ActionURL.buildURL('argos', 'createPatientGroup')
-                        : LABKEY.ActionURL.buildURL('participant-group', 'createParticipantCategory'),
+                url: LABKEY.ActionURL.buildURL(controller, action),
                 method: 'POST',
                 success: config.success,
                 failure: config.failure || m.getErrorCallback(),
@@ -143,6 +145,7 @@ Ext.define('LABKEY.app.model.Filter', {
                 });
             }
         },
+
         /**
          * Updates a participant group for non-study backed modules
          *
@@ -157,7 +160,7 @@ Ext.define('LABKEY.app.model.Filter', {
          *         label - name of the group
          *         participantIds - array of participant Ids
          *         description - optional description for the gruop
-         *         filters - array of filters to apply
+         *         filters - array of LABKEY.app.model.Filter instances to apply
          *         isLive - boolean, true if this is a query or false if just a group of participant ids.
          */
         doGroupUpdate : function(config) {
@@ -236,7 +239,7 @@ Ext.define('LABKEY.app.model.Filter', {
         /**
          * Deletes participant categories
          *
-         * @param config, an object which takes the following configuation properties.
+         * @param config an object which takes the following configuation properties.
          * @param {Array} [config.categoryIds] array of rowids for each category to delete
          * @param {Function} [config.failure] Optional.  Function called when the save action fails.  If not specified
          *        then a default function will be provided
@@ -267,10 +270,22 @@ Ext.define('LABKEY.app.model.Filter', {
             return filterWrapper.filters;
         },
 
+        /**
+         *
+         * @param {Array} filters Array of LABKEY.app.model.Filter instances to encode
+         * @param {boolean} isLive
+         * @returns {*}
+         */
         toJSON : function(filters, isLive) {
+
+            var jsonFilters = [];
+            Ext.each(filters, function(f) {
+                jsonFilters.push(f.jsonify());
+            });
+
             return Ext.encode({
                 isLive : isLive,
-                filters : filters
+                filters : jsonFilters
             });
         },
 

@@ -207,11 +207,17 @@ Ext.define('LABKEY.app.controller.State', {
             jsonReadyFilters.push(f.jsonify());
         });
 
+        // prepare selections
+        var jsonReadySelections = [];
+        Ext.each(this.selections, function(s) {
+            jsonReadySelections.push(s.jsonify());
+        });
+
         this.state.add({
             viewState: {},
             customState: this.customState,
             filters: jsonReadyFilters,
-            selections: this.getSelections(true)
+            selections: jsonReadySelections
         });
         this.state.sync();
     },
