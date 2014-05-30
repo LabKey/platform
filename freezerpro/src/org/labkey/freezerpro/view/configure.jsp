@@ -56,13 +56,14 @@
             },
             items : [{
                 xtype       : 'displayfield',
-                value       : '<span>Specify the configuration values used to connect to the FreezerPro server including ' +
-                        'the account credentials used to make the connection.</span><p>'
+                value       : '<span>This configuration enables the automatic reloading of specimen data directly from a FreezerPro server. The credentials specified ' +
+                        'will be used to connect to the remote FreezerPro server.</span><p>'
             },{
                 xtype       : 'textfield',
                 fieldLabel  : 'FreezerPro Server Base URL',
                 allowBlank  : false,
                 name        : 'baseServerUrl',
+                emptyText   : 'http://10.10.10.54/api',
                 value       : bean.baseServerUrl
             },{
                 xtype       : 'textfield',
@@ -77,6 +78,10 @@
                 name        : 'password',
                 inputType   : 'password',
                 value       : bean.password
+            },{
+                xtype       : 'displayfield',
+                value       : '<p><span>Automatic reloading can be configured to run at a specific frequency and start date. The specific ' +
+                                'time that the reload is run can be configured from the <a href="' + LABKEY.ActionURL.buildURL('admin', 'configureSystemMaintenance.view', '/') + '">system maintenance page</a>.</span><p>'
             },{
                 xtype       : 'checkbox',
                 fieldLabel  : 'Enable Reloading',
@@ -205,6 +210,40 @@
                             scope : this
                         });
                     }
+                },
+                scope   : this
+            },{
+                text    : 'Reload Now',
+                handler : function(btn) {
+                    var form = formPanel.getForm();
+                    var formAdvanced = metadata.getForm();
+                    if (!form.isDirty() && !formAdvanced.isDirty())
+                    {
+                        panel.getEl().mask("Testing FreezerPro Connection...");
+                        var params = form.getValues();
+
+                        Ext4.apply(params, formAdvanced.getValues());
+                        Ext4.Ajax.request({
+                            url    : LABKEY.ActionURL.buildURL('freezerpro', 'reloadFreezerPro.api'),
+                            method  : 'POST',
+                            params  : params,
+                            submitEmptyText : false,
+                            success : function(response){
+                                var o = Ext4.decode(response.responseText);
+                                panel.getEl().unmask();
+
+                                if (o.success)
+                                    window.location = o.returnUrl;
+                            },
+                            failure : function(response){
+                                panel.getEl().unmask();
+                                Ext4.Msg.alert('Failure', Ext4.decode(response.responseText).exception);
+                            },
+                            scope : this
+                        });
+                    }
+                    else
+                        Ext4.Msg.alert('Failure', 'There are unsaved changes in your settings. Please save before starting the reload.');
                 },
                 scope   : this
             }]

@@ -23,16 +23,24 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.PipelineUrls;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Encryption;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.freezerpro.export.FreezerProExport;
 import org.labkey.study.xml.freezerProExport.FreezerProConfigDocument;
 import org.labkey.study.xml.redcapExport.RedcapConfigDocument;
@@ -40,6 +48,7 @@ import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.io.IOException;
 import java.util.Map;
 
 public class FreezerProController extends SpringActionController
@@ -162,6 +171,31 @@ public class FreezerProController extends SpringActionController
             {
                 response.put("success", true);
                 response.put("message", "Unable to connect with the specified configuration. The following error was returned : " + e.getMessage());
+            }
+            return response;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ReloadFreezerPro extends ApiAction<FreezerProConfig>
+    {
+        @Override
+        public ApiResponse execute(FreezerProConfig form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            try
+            {
+                SpecimenTransform transform = SpecimenService.get().getSpecimenTransform(FreezerProTransform.NAME);
+
+                PipelineJob job = SpecimenService.get().createSpecimenReloadJob(getContainer(), getUser(), transform, getViewContext().getActionURL());
+                PipelineService.get().queueJob(job);
+
+                response.put("success", true);
+                response.put("returnUrl", PageFlowUtil.urlProvider(PipelineUrls.class).urlBegin(getContainer()));
+            }
+            catch (PipelineValidationException e)
+            {
+                throw new IOException(e);
             }
             return response;
         }
