@@ -83,12 +83,6 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
     }
 
     @Override
-    protected String getContainerFilterColumn()
-    {
-        return "Parent";
-    }
-
-    @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
@@ -112,7 +106,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         @Override
         protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
-            Filter filter = null;
+            Filter filter;
 
             // Support ID, RowId, or EntityId, or Container to identify a row
             String id = keys.get("ID") == null ? null : keys.get("ID").toString();
@@ -174,7 +168,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         }
 
         @Override
-        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
         {
             String idString = oldRow.get("ID") == null ? "" : oldRow.get("ID").toString();
             Container workbook = null;
@@ -183,7 +177,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
                 int id = Integer.parseInt(idString);
                 workbook = ContainerManager.getForRowId(id);
             }
-            catch (NumberFormatException e) {}
+            catch (NumberFormatException ignored) {}
 
             if (null == workbook || !workbook.isWorkbook())
                 throw new NotFoundException("Could not find a workbook with id '" + idString + "'");
@@ -208,7 +202,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
                 int id = Integer.parseInt(idString);
                 workbook = ContainerManager.getForRowId(id);
             }
-            catch (NumberFormatException e) {}
+            catch (NumberFormatException ignored) {}
 
             if (null == workbook || !workbook.isWorkbook())
                 throw new NotFoundException("Could not find a workbook with id '" + idString + "'");
