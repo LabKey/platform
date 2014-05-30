@@ -1050,8 +1050,11 @@ public class SqlParser
 	QNode qnode(CommonTree n, LinkedList<QNode> children)
 	{
 		QNode q = qnode(n);
-		if (q != null)
-			q._replaceChildren(children);
+        if (null == q)
+            return null;
+        if (q instanceof QDot && children.size() == 0)
+            return q;
+        q._replaceChildren(children);
 		return q;
 	}
 
@@ -1069,8 +1072,7 @@ public class SqlParser
 				break;
             case IDENT:
             case QUOTED_IDENTIFIER:
-                q = new QIdentifier();
-				break;
+                return QIdentifier.create(node);
             case IFDEFINED:
                 q = new QIfDefined(node);
                 break;
