@@ -138,6 +138,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         duplicate.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "Duplicate")));
 
         ColumnInfo related = addColumn(new AliasedColumn(this, "Related", issueIdColumn));
+        related.setKeyField(false);
+
         DetailsURL relatedURL = new DetailsURL(base, Collections.singletonMap("issueId", FieldKey.fromParts("Related", "IssueId")));
         relatedURL.setContainerContext(new ContainerContext.FieldKeyContext(FieldKey.fromParts("Related", "Folder")));
         related.setURL(relatedURL);

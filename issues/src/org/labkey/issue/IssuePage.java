@@ -16,6 +16,9 @@
 
 package org.labkey.issue;
 
+import com.google.common.base.Function;
+import com.google.common.base.Joiner;
+import com.google.common.collect.Collections2;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentParent;
@@ -438,6 +441,21 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return sb.toString();
     }
 
+    public String renderIssueIdLink(Integer id)
+    {
+        Issue issue = IssueManager.getIssue(null, id);
+        Container c = issue != null ? issue.lookupContainer() : null;
+        if (c != null && c.hasPermission(_user, ReadPermission.class))
+        {
+            IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
+            String title = String.format("%s %d: %s", PageFlowUtil.filter(names.singularName), issue.getIssueId(), PageFlowUtil.filter(issue.getTitle()));
+            return String.format("<a href='%s' title='%s'>%d</a>", IssuesController.getDetailsURL(c, id, false), title, id);
+        }
+        else
+        {
+            return String.valueOf(id);
+        }
+    }
 
     public String renderRelatedIssues(ArrayList<Integer> rels)
     {
@@ -449,17 +467,14 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public String renderDuplicates(Collection<Integer> dups)
     {
         StringBuilder sb = new StringBuilder();
-        for (Integer dup : dups)
+        Joiner.on(", ").skipNulls().appendTo(sb, Collections2.transform(dups, new Function<Integer, String>()
         {
-            Issue dupIssue = IssueManager.getIssue(null, dup);
-            if (dupIssue.lookupContainer().hasPermission(_user, ReadPermission.class))
-                sb.append("<a href='").append(IssuesController.getDetailsURL(_c, dup, false)).append("'>").append(dup).append("</a>");
-            else
-                sb.append(dup);
-            sb.append(", ");
-        }
-        if (dups.size() > 0)
-            sb.setLength(sb.length() - 2);
+            @Override
+            public String apply(Integer id)
+            {
+                return renderIssueIdLink(id);
+            }
+        }));
         return sb.toString();
     }
 
