@@ -764,7 +764,7 @@ public class CachedCubeFactory
             {
                 T t = get(i);
                 Integer prev = indexMap.put(getName(t), i);
-                assert null == prev;
+                assert null == prev : getName(t) + " found twice" ;
             }
             assert indexMap.size() == this.size();
         }
