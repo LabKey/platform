@@ -380,16 +380,17 @@ public class TabLoader extends DataLoader
         StringBuilder buf = line instanceof StringBuilder ? (StringBuilder)line : new StringBuilder(line);
 
         String field = null;
-        int start = 0;
+        int start = 0, colIndex = 0;
         listParse.clear();
-        Iterator<ColumnDescriptor> columnIter = null != columns ? new ArrayIterator<ColumnDescriptor>(getColumns()) : null;
 
         while (start < buf.length())
         {
-            boolean loadThisColumn = (null == columnIter || (columnIter.hasNext() && columnIter.next().load));
+            boolean loadThisColumn = null==columns || colIndex >= columns.length || columns[colIndex].load;
             int end;
             char ch = buf.charAt(start);
             char chQuote = '"';
+
+            colIndex++;
 
             if (ch == _chDelimiter)
             {
@@ -638,6 +639,8 @@ public class TabLoader extends DataLoader
             reader = getReader();
             for (int i = 0; i < lineNum(); i++)
                 reader.readLine();
+            // make sure _columns is initialized
+            getColumns();
         }
 
         public void close() throws IOException
@@ -655,7 +658,7 @@ public class TabLoader extends DataLoader
         @Override
         protected String[] readFields() throws IOException
         {
-            return TabLoader.this.readFields(reader, getColumns());
+            return TabLoader.this.readFields(reader, _columns);
         }
     }
 
