@@ -246,6 +246,49 @@ Ext.define('LABKEY.app.controller.State', {
         }, this);
     },
 
+    /**
+     * This method allows for updating a selection that is already being tracked.
+     * Given a selection id, the datas parameter will replace that selection's value for
+     * the given key in datas. Note: This will only replace those values specified
+     * leaving all other values on the selection as they were.
+     * @param id
+     * @param datas
+     */
+    updateSelection : function(id, datas) {
+
+        Ext.each(this.selections, function(selection) {
+            if (selection.id === id) {
+
+                Ext.iterate(datas, function(key, val) {
+                    selection.set(key, val);
+                });
+
+                selection.commit();
+
+                this.requestSelectionUpdate(false);
+            }
+        }, this);
+    },
+
+    _is : function(filterset, id) {
+        var found = false;
+        Ext.each(filterset, function(f) {
+            if (id === f.id) {
+                found = true;
+                return false;
+            }
+        });
+        return found;
+    },
+
+    isFilter : function(id) {
+        return this._is(this.filters, id);
+    },
+
+    isSelection : function(id) {
+        return this._is(this.selections, id);
+    },
+
     updateFilterMembers : function(id, members, skipState) {
         for (var f=0; f < this.filters.length; f++) {
             if (this.filters[f].id == id)
