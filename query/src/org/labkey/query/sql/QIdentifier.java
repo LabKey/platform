@@ -16,12 +16,43 @@
 
 package org.labkey.query.sql;
 
+import org.antlr.runtime.tree.CommonTree;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.query.FieldKey;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
 public class QIdentifier extends QFieldKey
 {
+    static QFieldKey create(CommonTree n)
+    {
+        if (n.getType() == SqlBaseParser.QUOTED_IDENTIFIER)
+        {
+            // check for "{$FIELDKEY$}" hack to enable mondrian to use lookup columns
+            String text = unquote(n.getText());
+            if (text.length() > 4 && text.startsWith("{$") && text.endsWith("$}"))
+            {
+                text = text.substring(2,text.length()-2);
+                FieldKey fk = FieldKey.decode(text);
+                QFieldKey prev = null;
+                while (null != fk)
+                {
+                    QIdentifier id = new QIdentifier(fk.getName());
+                    if (null == prev)
+                        prev = id;
+                    else
+                        prev = new QDot(id,prev);
+                    fk = fk.getParent();
+                }
+                prev.setLineAndColumn(n);
+                return prev;
+            }
+        }
+        // fall through
+        QIdentifier qid = new QIdentifier();
+        qid.from(n);
+        return qid;
+    }
+
     public QIdentifier()
     {
     }
@@ -50,7 +81,7 @@ public class QIdentifier extends QFieldKey
         return unquote(getTokenText());
     }
 
-    private String unquote(String str)
+    private static String unquote(String str)
     {
         if (str.length() < 2)
             throw new IllegalArgumentException();
