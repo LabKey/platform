@@ -17,9 +17,13 @@
 package org.labkey.issue.query;
 
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.MultiValuedForeignKey;
+import org.labkey.api.data.MultiValuedLookupColumn;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -30,6 +34,7 @@ import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdRenderer;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
 import org.labkey.issue.IssuesController;
 import org.labkey.issue.model.IssueManager;
@@ -136,6 +141,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
 
         ColumnInfo duplicate = addWrapColumn(_rootTable.getColumn("Duplicate"));
         duplicate.setURL(new DetailsURL(base, Collections.singletonMap("issueId", "Duplicate")));
+        duplicate.setDisplayColumnFactory(new URLTitleDisplayColumnFactory("Issue ${Duplicate}: ${Duplicate/Title:htmlEncode}"));
+        duplicate.setFk(new QueryForeignKey(getUserSchema(), getContainer(), "Issues", "IssueId", "IssueId"));
 
         ColumnInfo related = addColumn(new AliasedColumn(this, "Related", issueIdColumn));
         related.setKeyField(false);
@@ -146,7 +153,29 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         related.setFk(new MultiValuedForeignKey(
                 new QueryForeignKey(getUserSchema(), getContainer(), "RelatedIssues", "IssueId", null),
                 "RelatedIssueId",
-                "IssueId"));
+                "IssueId")
+        {
+            @Override
+            protected MultiValuedLookupColumn createMultiValuedLookupColumn(ColumnInfo relatedIssueId, ColumnInfo parent, ColumnInfo childKey, ColumnInfo junctionKey, ForeignKey fk)
+            {
+                relatedIssueId.setDisplayColumnFactory(new URLTitleDisplayColumnFactory("Issue ${Related/IssueId}: ${Related/Title:htmlEncode}"));
+
+                return super.createMultiValuedLookupColumn(relatedIssueId, parent, childKey, junctionKey, fk);
+            }
+        });
+
+        related.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                DataColumn dataColumn = new DataColumn(colInfo);
+                dataColumn.setURLTitle(new StringExpressionFactory.FieldKeyStringExpression("Issue ${Related/IssueId}: ${Related/Title:htmlEncode}", false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult));
+
+                MultiValuedDisplayColumn displayColumn = new MultiValuedDisplayColumn(dataColumn, true);
+                return displayColumn;
+            }
+        });
 
         ColumnInfo closedBy = wrapColumn(_rootTable.getColumn("ClosedBy"));
         UserIdForeignKey.initColumn(closedBy);
@@ -190,3 +219,29 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         return new FieldKey(null, "Folder");
     }
 }
+
+
+// TODO: Remove this class after adding a 'linkTitle' or 'urlTitle' property to ColumnRenderProperties
+class URLTitleDisplayColumnFactory implements DisplayColumnFactory
+{
+    StringExpressionFactory.FieldKeyStringExpression _urlTitleExpr;
+
+    public URLTitleDisplayColumnFactory(String urlTitleExpr)
+    {
+        this(new StringExpressionFactory.FieldKeyStringExpression(urlTitleExpr, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult));
+    }
+
+    public URLTitleDisplayColumnFactory(StringExpressionFactory.FieldKeyStringExpression urlTitleExpr)
+    {
+        _urlTitleExpr = urlTitleExpr;
+    }
+
+    @Override
+    public DisplayColumn createRenderer(ColumnInfo colInfo)
+    {
+        DisplayColumn displayColumn = new DataColumn(colInfo);
+        displayColumn.setURLTitle(_urlTitleExpr);
+        return displayColumn;
+    }
+}
+
