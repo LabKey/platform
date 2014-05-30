@@ -301,6 +301,13 @@ public class DataColumn extends DisplayColumn
                 out.write("<a href=\"");
                 out.write(PageFlowUtil.filter(url));
 
+                String linkTitle = renderURLTitle(ctx);
+                if (null != linkTitle)
+                {
+                    out.write("\" title=\"");
+                    out.write(linkTitle);
+                }
+
                 String linkTarget = getLinkTarget();
 
                 if (null != linkTarget)

@@ -142,6 +142,24 @@ public class DisplayColumnDecorator extends DisplayColumn
     }
 
     @Override
+    public void setURLTitle(StringExpression urlTitle)
+    {
+        _column.setURLTitle(urlTitle);
+    }
+
+    @Override
+    public StringExpression getURLTitle()
+    {
+        return _column.getURLTitle();
+    }
+
+    @Override
+    public String renderURLTitle(RenderContext ctx)
+    {
+        return _column.renderURLTitle(ctx);
+    }
+
+    @Override
     public boolean isQueryColumn()
     {
         return _column.isQueryColumn();

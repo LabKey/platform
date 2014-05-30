@@ -63,7 +63,10 @@ public abstract class DisplayColumn extends RenderColumn
     // for URL generation
     private String _url;
     private StringExpression _urlExpression;
-    private StringExpression _compiled;
+    private StringExpression _urlCompiled;
+
+    private StringExpression _urlTitle = null;
+    private StringExpression _urlTitleCompiled = null;
 
     public abstract void renderGridCellContents(RenderContext ctx, Writer out) throws IOException;
 
@@ -122,16 +125,44 @@ public abstract class DisplayColumn extends RenderColumn
 
     public StringExpression compileExpression(ViewContext context)
     {
-        if (null == _compiled)
+        if (null == _urlCompiled)
         {
             if (null != _urlExpression)
-                _compiled = _urlExpression.copy();
+                _urlCompiled = _urlExpression.copy();
             else if (null != _url)
-                _compiled = StringExpressionFactory.createURL(_url);
-            if (_compiled instanceof HasViewContext)
-                ((HasViewContext)_compiled).setViewContext(context);
+                _urlCompiled = StringExpressionFactory.createURL(_url);
+            if (_urlCompiled instanceof HasViewContext)
+                ((HasViewContext) _urlCompiled).setViewContext(context);
         }
-        return _compiled;
+        return _urlCompiled;
+    }
+
+    public void setURLTitle(StringExpression urlTitle)
+    {
+        _urlTitle = urlTitle;
+    }
+
+    public StringExpression getURLTitle()
+    {
+        return _urlTitle;
+    }
+
+    public String renderURLTitle(RenderContext ctx)
+    {
+        if (_urlTitleCompiled == null)
+        {
+            if (null != _urlTitle)
+            {
+                _urlTitleCompiled = _urlTitle.copy();
+                if (_urlTitleCompiled instanceof HasViewContext)
+                    ((HasViewContext) _urlTitleCompiled).setViewContext(ctx.getViewContext());
+            }
+        }
+
+        if (_urlTitleCompiled == null)
+            return null;
+
+        return _urlTitleCompiled.eval(ctx);
     }
 
     public Set<ClientDependency> getClientDependencies()
@@ -158,6 +189,12 @@ public abstract class DisplayColumn extends RenderColumn
         if (se instanceof StringExpressionFactory.FieldKeyStringExpression)
         {
             Set<FieldKey> fields = ((StringExpressionFactory.FieldKeyStringExpression)se).getFieldKeys();
+            keys.addAll(fields);
+        }
+
+        if (_urlTitle instanceof StringExpressionFactory.FieldKeyStringExpression)
+        {
+            Set<FieldKey> fields = ((StringExpressionFactory.FieldKeyStringExpression) _urlTitle).getFieldKeys();
             keys.addAll(fields);
         }
     }
