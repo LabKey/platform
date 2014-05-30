@@ -32,6 +32,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.ParameterDescriptionImpl;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
@@ -40,6 +41,7 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
@@ -579,11 +581,23 @@ public class TransformManager implements DataIntegrationService
 
     public TransformConfiguration saveTransformConfiguration(User user, TransformConfiguration config)
     {
-        TableInfo t = DbSchema.get("dataintegration").getTable("TransformConfiguration");
-        if (-1 == config.rowId)
-            return Table.insert(user, t, config);
-        else
-            return Table.update(user, t, config, new Object[] {config.rowId});
+        try
+        {
+            TableInfo t = DbSchema.get("dataintegration").getTable("TransformConfiguration");
+            if (-1 == config.rowId)
+                return Table.insert(user, t, config);
+            else
+                return Table.update(user, t, config, new Object[]{config.rowId});
+        }
+        catch (RuntimeSQLException x)
+        {
+            if (!x.isConstraintException())
+                throw x;
+            // if the container went away, ignore this exception
+            if (null == ContainerManager.getForId(config.getContainerId()))
+                return config;
+            throw x;
+        }
     }
 
 
