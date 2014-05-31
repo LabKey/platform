@@ -47,6 +47,7 @@ import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
@@ -648,13 +649,26 @@ public class Query
 
         try
         {
+            List<QueryException> resolveExceptions = new ArrayList<>();
             if (resolvedSchema instanceof UserSchema)
-                t  = ((UserSchema)resolvedSchema)._getTableOrQuery(key.getName(), true, false, _parseErrors);
+            {
+                t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), true, false, resolveExceptions);
+            }
             else
                 t = resolvedSchema.getTable(key.getName());
 
             if (t instanceof ContainerFilterable && ((ContainerFilterable)t).supportsContainerFilter() && getContainerFilter() != null)
                 ((ContainerFilterable) t).setContainerFilter(getContainerFilter());
+
+            for (QueryException x : resolveExceptions)
+            {
+                if (x instanceof QueryParseWarning)
+                    _parseWarnings.add((QueryParseWarning)x);
+                else if (x instanceof MetadataException)
+                    _parseWarnings.add(new QueryParseException(x.getMessage(),x,0,0));
+                else
+                    _parseErrors.add(x);
+            }
         }
         catch (QueryException ex)
         {
