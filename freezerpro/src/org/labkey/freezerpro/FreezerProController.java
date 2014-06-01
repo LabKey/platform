@@ -135,6 +135,7 @@ public class FreezerProController extends SpringActionController
             map.put(FreezerProConfig.Options.reloadInterval.name(), String.valueOf(form.getReloadInterval()));
             map.put(FreezerProConfig.Options.metadata.name(), form.getMetadata());
             map.put(FreezerProConfig.Options.reloadUser.name(), String.valueOf(getUser().getUserId()));
+            map.put(FreezerProConfig.Options.reloadDate.name(), form.getReloadDate());
 
             PropertyManager.getEncryptedStore().saveProperties(map);
 

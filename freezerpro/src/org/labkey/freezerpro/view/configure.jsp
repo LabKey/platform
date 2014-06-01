@@ -48,6 +48,7 @@
         var bean = <%=text(jsonMapper.writeValueAsString(bean))%>;
         var formPanel = Ext4.create('Ext.form.Panel', {
             title   : 'Connection',
+            trackResetOnLoad : true,
             fieldDefaults  : {
                 labelWidth : 200,
                 width : 450,
@@ -114,6 +115,7 @@
 
         var metadata = Ext4.create('Ext.form.Panel', {
             title   : 'Advanced',
+            trackResetOnLoad : true,
             fieldDefaults  : {
                 labelWidth : 200,
                 width : 550,
@@ -166,8 +168,23 @@
                                 var o = Ext4.decode(response.responseText);
                                 panel.getEl().unmask();
 
-                                if (o.success)
-                                    window.location = o.returnUrl;
+                                if (o.success) {
+                                    var msgbox = Ext4.create('Ext.window.Window', {
+                                        title    : 'Save Complete',
+                                        modal    : false,
+                                        closable : false,
+                                        border   : false,
+                                        html     : '<div style="padding: 15px;"><span class="labkey-message">' + 'FreezerPro configuration saved successfully' + '</span></div>'
+                                    });
+                                    msgbox.show();
+                                    msgbox.getEl().fadeOut({duration : 3000, callback : function(){ msgbox.close(); }});
+
+                                    form.setValues(form.getValues());
+                                    form.reset();
+
+                                    formAdvanced.setValues(formAdvanced.getValues());
+                                    formAdvanced.reset();
+                                }
                             },
                             failure : function(response){
                                 panel.getEl().unmask();

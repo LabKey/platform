@@ -12,6 +12,7 @@ import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.xmlbeans.XmlException;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.pipeline.PipelineJob;
@@ -36,6 +37,20 @@ public class FreezerProExport
     private File _archive;
 
     private String _searchFilterString;
+    private static Map<String, String> COLUMN_MAP;
+
+    static {
+        COLUMN_MAP = new CaseInsensitiveHashMap<>();
+
+        COLUMN_MAP.put("type", "sample type");
+        COLUMN_MAP.put("barcode_tag", "barcode");
+        COLUMN_MAP.put("sample_id", "uid");
+        COLUMN_MAP.put("scount", "vials");
+        COLUMN_MAP.put("created at", "created");
+        COLUMN_MAP.put("box_name", "box");
+        COLUMN_MAP.put("time of draw", "time of draw");
+        COLUMN_MAP.put("date of process", "date of draw");
+    }
 
     public FreezerProExport(FreezerProConfig config, PipelineJob job, File archive)
     {
@@ -65,6 +80,19 @@ public class FreezerProExport
                 {
                     if (config.isSetFilterString())
                         _searchFilterString = config.getFilterString();
+
+                    FreezerProConfigDocument.FreezerProConfig.ColumnMap columnMap = config.getColumnMap();
+                    if (columnMap != null)
+                    {
+                        for (FreezerProConfigDocument.FreezerProConfig.ColumnMap.Column col : columnMap.getColumnArray())
+                        {
+                            if (col.getSourceName() != null && col.getDestName() != null)
+                            {
+                                if (!COLUMN_MAP.containsKey(col.getSourceName()))
+                                    COLUMN_MAP.put(col.getSourceName(), col.getDestName());
+                            }
+                        }
+                    }
                 }
             }
             catch (XmlException e)
@@ -261,24 +289,8 @@ public class FreezerProExport
 
     static String translateFieldName(String fieldName)
     {
-        if ("type".equalsIgnoreCase(fieldName))
-            return "sample type";
-        if ("barcode_tag".equalsIgnoreCase(fieldName))
-            return "barcode";
-        if ("sample_id".equalsIgnoreCase(fieldName))
-            return "uid";
-        if ("scount".equalsIgnoreCase(fieldName))
-            return "vials";
-        if ("created at".equalsIgnoreCase(fieldName))
-            return "created";
-        if ("box_name".equalsIgnoreCase(fieldName))
-            return "box";
-
-        // these should be configurable since they are user defined
-        if ("time of draw".equalsIgnoreCase(fieldName))
-            return "time of draw";
-        if ("date of process".equalsIgnoreCase(fieldName))
-            return "date of draw";
+        if (COLUMN_MAP.containsKey(fieldName))
+            return COLUMN_MAP.get(fieldName);
 
         return fieldName;
     }

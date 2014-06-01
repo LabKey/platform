@@ -42,11 +42,14 @@ public class ExportLocationResponse extends FreezerProCommandResonse
     protected void parseDataArray(JsonParser parser, List<Map<String, Object>> data) throws IOException
     {
         Map node = _parser.readValueAs(Map.class);
-        Map<String, Object> row = new HashMap<>();
-        for (Object key : node.keySet())
+        if (node != null && !node.isEmpty())
         {
-            row.put(String.valueOf(key), node.get(key));
+            Map<String, Object> row = new HashMap<>();
+            for (Object key : node.keySet())
+            {
+                row.put(String.valueOf(key), node.get(key));
+            }
+            data.add(row);
         }
-        data.add(row);
     }
 }
