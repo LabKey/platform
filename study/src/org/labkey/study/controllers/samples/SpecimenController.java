@@ -57,6 +57,7 @@ import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
+import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.query.AbstractQueryImportAction;
 import org.labkey.api.query.BatchValidationException;
@@ -81,6 +82,8 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.SamplesUrls;
+import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
@@ -89,14 +92,15 @@ import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.FileType;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
-import org.labkey.api.view.Portal.WebPart;
 import org.labkey.api.view.*;
+import org.labkey.api.view.Portal.WebPart;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.SampleManager;
@@ -124,6 +128,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.pipeline.SpecimenArchive;
 import org.labkey.study.pipeline.SpecimenBatch;
+import org.labkey.study.pipeline.SpecimenReloadJob;
 import org.labkey.study.query.DataSetQuerySettings;
 import org.labkey.study.query.DataSetQueryView;
 import org.labkey.study.query.SpecimenDetailTable;
@@ -5860,4 +5865,36 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
+    /**
+     * Temporary, for testing freezer pro exports
+     */
+    @RequiresPermissionClass(AdminPermission.class)
+    public class FreezerProExport extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            try
+            {
+                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+                SpecimenTransform transform = SpecimenService.get().getSpecimenTransform("FreezerPro");
+                SpecimenReloadJob job = new SpecimenReloadJob(new ViewBackgroundInfo(getContainer(), getUser(), getViewContext().getActionURL()), root, transform.getName());
+
+                job.setExternalImportConfig(transform.getExternalImportConfig(getContainer(), getUser()));
+
+                PipelineService.get().queueJob(job);
+            }
+            catch (PipelineValidationException e)
+            {
+                throw new IOException(e);
+            }
+            return null;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
 }
