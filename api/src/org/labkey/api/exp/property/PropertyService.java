@@ -47,14 +47,13 @@ public class PropertyService
     public interface Interface
     {
         IPropertyType getType(Container container, String domainURI);
-        Domain getDomain(Container container, String domainURI);
+        @Nullable Domain getDomain(Container container, String domainURI);
         @Nullable Domain getDomain(int domainId);
         List<DomainKind> getDomainKinds();
         /** Get all the domains in the same project as the specified container. They may not be in use in the container directly */
         List<? extends Domain> getDomains(Container container);
         /** Creates an in-memory Domain. It is not automatically saved to the database */
-        @NotNull
-        Domain createDomain(Container container, String typeURI, String name);
+        @NotNull Domain createDomain(Container container, String typeURI, String name);
 
         /** Same as QueryService.get().getUserSchema(user, container, schemaName).getDomainURI(queryName) */
         @Nullable String getDomainURI(String schemaName, String queryName, Container container, User user);

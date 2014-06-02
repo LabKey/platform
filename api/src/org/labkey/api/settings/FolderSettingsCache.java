@@ -15,6 +15,7 @@
  */
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.CacheLoader;
@@ -24,6 +25,8 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 
 import java.beans.PropertyChangeEvent;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * User: adam
@@ -110,6 +113,13 @@ public class FolderSettingsCache
         {
             // When moving a tree, this is called only for the top node, so we need to clear the entire cache.
             clear();
+        }
+
+        @NotNull
+        @Override
+        public Collection<String> canMove(Container c, Container newParent, User user)
+        {
+            return Collections.emptyList();
         }
 
         @Override

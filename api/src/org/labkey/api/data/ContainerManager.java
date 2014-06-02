@@ -40,6 +40,8 @@ import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.SimpleValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityLogger;
@@ -1153,7 +1155,7 @@ public class ContainerManager
     // NOTE: Beware side-effect of changing ACLs and GROUPS if a container changes projects
     //
     // @return true if project has changed (should probably redirect to security page)
-    public static boolean move(Container c, Container newParent, User user)
+    public static boolean move(Container c, Container newParent, User user) throws ValidationException
     {
         if (c.isRoot())
             throw new IllegalArgumentException("can't move root container");
@@ -1161,6 +1163,21 @@ public class ContainerManager
         if (!isRenameable(c))
         {
             throw new IllegalArgumentException("Can't move container " + c.getPath());
+        }
+
+        List<String> errors = new ArrayList<>();
+        for (ContainerListener listener : getListeners())
+        {
+            errors.addAll(listener.canMove(c, newParent, user));
+        }
+        if (!errors.isEmpty())
+        {
+            ValidationException exception = new ValidationException();
+            for (String error : errors)
+            {
+                exception.addError(new SimpleValidationError(error));
+            }
+            throw exception;
         }
 
         if (c.getParent().getId().equals(newParent.getId()))
@@ -1654,11 +1671,47 @@ public class ContainerManager
     {
         enum Order {First, Last}
 
+        /** Called after a new container has been created */
         void containerCreated(Container c, User user);
 
+        /** Called immediately prior to deleting the row from core.containers */
         void containerDeleted(Container c, User user);
 
+        /** Called after the container has been moved to its new parent */
         void containerMoved(Container c, Container oldParent, User user);
+
+        /**
+         * Called prior to moving a container, to find out if there are any issues that would prevent a successful move
+         * @return a list of errors that should prevent the move from happening, if any
+         */
+        @NotNull
+        Collection<String> canMove(Container c, Container newParent, User user);
+    }
+
+    public static abstract class AbstractContainerListener implements ContainerListener
+    {
+        @Override
+        public void containerCreated(Container c, User user)
+        {}
+
+        @Override
+        public void containerDeleted(Container c, User user)
+        {}
+
+        @Override
+        public void containerMoved(Container c, Container oldParent, User user)
+        {}
+
+        @NotNull
+        @Override
+        public Collection<String> canMove(Container c, Container newParent, User user)
+        {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt)
+        {}
     }
 
 
@@ -2209,6 +2262,13 @@ public class ContainerManager
         @Override
         public void containerMoved(Container c, Container oldParent, User user)
         {
+        }
+
+        @NotNull
+        @Override
+        public Collection<String> canMove(Container c, Container newParent, User user)
+        {
+            return Collections.emptyList();
         }
     }
 

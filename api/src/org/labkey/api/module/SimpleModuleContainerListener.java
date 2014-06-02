@@ -33,7 +33,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 
-import java.beans.PropertyChangeEvent;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,7 +41,7 @@ import java.util.List;
  * Date: 3/4/13
  * Time: 10:45 AM
  */
-public class SimpleModuleContainerListener implements ContainerManager.ContainerListener
+public class SimpleModuleContainerListener extends ContainerManager.AbstractContainerListener
 {
     private Module _owner;
 
@@ -51,21 +50,12 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
         _owner = owner;
     }
 
-    public void containerCreated(Container c, User user)
-    {
-    }
-
     public void containerDeleted(Container c, User user)
     {
         for (final String schemaName : _owner.getSchemaNames())
         {
             purgeSchema(schemaName, c, user);
         }
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {
     }
 
     protected void purgeSchema(String schemaName, Container c, User user)
@@ -122,9 +112,5 @@ public class SimpleModuleContainerListener implements ContainerManager.Container
                 OntologyManager.deleteOntologyObjects(c, true, ArrayUtils.toPrimitive(ids));
             }
         }
-    }
-
-    public void propertyChange(PropertyChangeEvent evt)
-    {
     }
 }

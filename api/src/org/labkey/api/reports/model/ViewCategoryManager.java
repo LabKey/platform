@@ -37,7 +37,6 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
 
-import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -50,7 +49,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Date: Oct 12, 2011
  * Time: 7:13:20 PM
  */
-public class ViewCategoryManager implements ContainerManager.ContainerListener
+public class ViewCategoryManager extends ContainerManager.AbstractContainerListener
 {
     private static final ViewCategoryManager _instance = new ViewCategoryManager();
     private static final List<ViewCategoryListener> _listeners = new CopyOnWriteArrayList<>();
@@ -682,13 +681,6 @@ public class ViewCategoryManager implements ContainerManager.ContainerListener
             user = null;
         }
     }
-
-    @Override
-    public void containerCreated(Container c, User user){}
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user){}
-    @Override
-    public void propertyChange(PropertyChangeEvent evt){}
 
     @Override
     public void containerDeleted(Container c, User user)

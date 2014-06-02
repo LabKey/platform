@@ -2912,7 +2912,7 @@ public class OntologyManager
         }
 
         @Test
-        public void testContainerMove() throws SQLException
+        public void testContainerMove() throws Exception
         {
             deleteMoveTestContainers();
 
@@ -2933,7 +2933,7 @@ public class OntologyManager
 
         }
 
-        private void doMoveTest(Container proj1, Container proj2) throws SQLException
+        private void doMoveTest(Container proj1, Container proj2) throws Exception
         {
             String p1Path = proj1.getPath() + "/";
             String p2Path = proj2.getPath() + "/";

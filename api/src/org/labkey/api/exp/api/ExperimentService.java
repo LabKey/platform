@@ -332,5 +332,7 @@ public class ExperimentService
         void auditRunEvent(User user, ExpProtocol protocol, ExpRun run, @Nullable ExpExperiment runGroup, String message);
 
         List<? extends ExpExperiment> getMatchingBatches(String name, Container container, ExpProtocol protocol);
+
+        List<? extends ExpProtocol> getExpProtocolsUsedByRuns(Container c, ContainerFilter containerFilter);
     }
 }

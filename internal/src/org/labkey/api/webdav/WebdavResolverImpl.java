@@ -147,7 +147,7 @@ public class WebdavResolverImpl implements WebdavResolver
     }
 
 
-    private class WebdavListener implements ContainerManager.ContainerListener
+    private class WebdavListener extends ContainerManager.AbstractContainerListener
     {
         public void containerCreated(Container c, User user)
         {
@@ -158,11 +158,6 @@ public class WebdavResolverImpl implements WebdavResolver
         {
             invalidate(c.getParsedPath(), true);
             invalidate(c.getParsedPath().getParent(), false);
-        }
-
-        @Override
-        public void containerMoved(Container c, Container oldParent, User user)
-        {            
         }
 
         public void propertyChange(PropertyChangeEvent pce)

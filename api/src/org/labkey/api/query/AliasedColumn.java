@@ -28,6 +28,9 @@ public class AliasedColumn extends ColumnInfo
 {
     ColumnInfo _column;
 
+    /** Usually defer to the column we're aliasing for its concept URI, but allow explicit overrides */
+    private String _overriddenConceptURI;
+
     public AliasedColumn(TableInfo parent, FieldKey key, ColumnInfo column, boolean forceKeepLabel)
     {
         super(key, parent);
@@ -86,8 +89,15 @@ public class AliasedColumn extends ColumnInfo
     }
 
     @Override
+    public void setConceptURI(String conceptURI)
+    {
+        super.setConceptURI(conceptURI);
+        _overriddenConceptURI = conceptURI;
+    }
+
+    @Override
     public String getConceptURI()
     {
-        return _column.getConceptURI();
+        return _overriddenConceptURI == null ? _column.getConceptURI() : _overriddenConceptURI;
     }
 }

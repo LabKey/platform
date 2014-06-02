@@ -344,26 +344,12 @@ public class SecurityManager
     }
 
 
-    private static class SecurityContainerListener implements ContainerManager.ContainerListener
+    /** Move is handled by direct call from ContainerManager into SecurityManager */
+    private static class SecurityContainerListener extends ContainerManager.AbstractContainerListener
     {
-        //void wantsToDelete(Container c, List<String> messages);
-        public void containerCreated(Container c, User user)
-        {
-        }
-
         public void containerDeleted(Container c, User user)
         {
             deleteGroups(c, null);
-        }
-
-        @Override
-        public void containerMoved(Container c, Container oldParent, User user)
-        {            
-        }
-
-        public void propertyChange(PropertyChangeEvent evt)
-        {
-            /* NOTE move is handled by direct call from ContainerManager into SecurityManager */
         }
     }
 

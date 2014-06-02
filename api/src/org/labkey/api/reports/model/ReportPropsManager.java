@@ -40,7 +40,6 @@ import org.labkey.data.xml.reportProps.PropValueDocument;
 import org.labkey.data.xml.reportProps.PropertyDocument;
 import org.labkey.data.xml.reportProps.PropertyList;
 
-import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +49,7 @@ import java.util.Map;
  * User: klum
  * Date: Feb 13, 2012
  */
-public class ReportPropsManager implements ContainerManager.ContainerListener
+public class ReportPropsManager extends ContainerManager.AbstractContainerListener
 {
     private static final Logger _log = Logger.getLogger(ReportPropsManager.class);
     private static final String PROPERTIES_DOMAIN = "Report Properties";
@@ -200,11 +199,6 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
     }
 
     @Override
-    public void containerCreated(Container c, User user)
-    {
-    }
-
-    @Override
     public void containerDeleted(Container container, User user)
     {
         String uri = getDomainURI(container);
@@ -225,16 +219,6 @@ public class ReportPropsManager implements ContainerManager.ContainerListener
                 }
             }
         }
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
     }
 
     public List<Pair<DomainProperty, Object>> getProperties(String entityId, Container container) throws Exception
