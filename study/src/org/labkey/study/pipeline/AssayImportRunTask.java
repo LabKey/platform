@@ -19,13 +19,8 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.FileXarSource;
-import org.labkey.api.exp.XarFormatException;
-import org.labkey.api.exp.XarSource;
-import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpProtocol;
-import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.pipeline.XarGeneratorId;
@@ -62,7 +57,6 @@ import org.labkey.pipeline.xml.TaskType;
 
 import java.io.File;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -422,6 +416,9 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             factory.setComments(getComments());
 
+            // Add the job inputs as the assay run's inputs
+            factory.setInputDatas(getInputs(getJob()));
+
             factory.setUploadedData(Collections.singletonMap(AssayDataCollector.PRIMARY_FILE, matchedFile));
 
             factory.setBatchProperties(getBatchProperties());
@@ -438,30 +435,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId);
             ExpRun run = pair.second;
 
-            // TODO: Is there a better way to model this?  Can a run be an input to another run?
-            // Add the job inputs as assay run's inputs
-            XarSource source = new FileXarSource(_factory.getXarFile(getJob()), getJob());
-            ExpProtocolApplication assayInputApplication = run.getInputProtocolApplication();
-            Map<File, String> inputs = getInputs(getJob());
-            for (Map.Entry<File, String> entry : inputs.entrySet())
-            {
-                File file = entry.getKey();
-                String role = entry.getValue();
-
-                URI uri = file.toURI();
-                try
-                {
-                    uri = new URI(source.getCanonicalDataFileURL(uri.toString()));
-                }
-                catch (XarFormatException | URISyntaxException e)
-                {
-                    throw new PipelineJobException(e);
-                }
-                ExpData inputData = ExperimentService.get().createData(uri, source);
-                assayInputApplication.addDataInput(user, inputData, role);
-            }
-
-            assayInputApplication.save(user);
 
             // save any job-level custom properties from the run
 //            PropertiesJobSupport jobSupport = getJob().getJobSupport(PropertiesJobSupport.class);

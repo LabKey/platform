@@ -85,10 +85,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
             String targetStudy = json.optString("targetStudy");
             Integer reRunId = json.containsKey("reRunId") ? json.optInt("reRunId") : null;
 
-            AssayRunUploadContextImpl.Factory factory = new AssayRunUploadContextImpl.Factory<>(
-                    protocol,
-                    (ProviderType)provider,
-                    getViewContext());
+            AssayRunUploadContext.Factory factory = provider.createRunUploadFactory(protocol, getViewContext());
 
             factory.setName(name)
                    .setComments(comments)

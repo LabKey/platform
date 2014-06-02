@@ -16,16 +16,19 @@
 
 package org.labkey.study.assay;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
+import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.assay.AssayProvider;
+import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.ModuleRunUploadContext;
 import org.labkey.api.study.assay.TsvDataHandler;
@@ -45,15 +48,17 @@ import java.util.Map;
  */
 public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider> implements ModuleRunUploadContext<ModuleAssayProvider>
 {
-    JSONObject _runJsonObject;
-    List<Map<String, Object>> _uploadedData;
+    // required fields
+    private final JSONObject _runJsonObject;
+    private final List<Map<String, Object>> _uploadedData;
 
-    private Map<ExpData, String> inputDatas = new HashMap<>();
-    private Map<ExpData, String> outputDatas = new HashMap<>();
-    private Map<ExpMaterial, String> inputMaterials = new HashMap<>();
-    private Map<ExpMaterial, String> outputMaterials = new HashMap<>();
+    // optional fields
+    private Map<Object, String> inputDatas;
+    private Map<ExpData, String> outputDatas;
+    private Map<ExpMaterial, String> inputMaterials;
+    private Map<ExpMaterial, String> outputMaterials;
 
-    public ModuleRunUploadForm(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData)
+    private ModuleRunUploadForm(@NotNull ViewContext context, int protocolId, @NotNull JSONObject jsonObject, @NotNull List<Map<String, Object>> uploadedData)
     {
         _runJsonObject = jsonObject;
         _uploadedData = uploadedData;
@@ -110,15 +115,9 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider>
     }
 
     @Override
-    public Map<ExpData, String> getInputDatas()
+    public Map<Object, String> getInputDatas()
     {
         return inputDatas;
-    }
-
-    @Override
-    public void setInputDatas(Map<ExpData, String> inputDatas)
-    {
-        this.inputDatas = inputDatas;
     }
 
     @Override
@@ -128,33 +127,15 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider>
     }
 
     @Override
-    public void setOutputDatas(Map<ExpData, String> outputDatas)
-    {
-        this.outputDatas = outputDatas;
-    }
-
-    @Override
     public Map<ExpMaterial, String> getInputMaterials()
     {
         return inputMaterials;
     }
 
     @Override
-    public void setInputMaterials(Map<ExpMaterial, String> inputMaterials)
-    {
-        this.inputMaterials = inputMaterials;
-    }
-
-    @Override
     public Map<ExpMaterial, String> getOutputMaterials()
     {
         return outputMaterials;
-    }
-
-    @Override
-    public void setOutputMaterials(Map<ExpMaterial, String> outputMaterials)
-    {
-        this.outputMaterials = outputMaterials;
     }
 
     @Override
@@ -174,8 +155,9 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider>
     @Override
     public void addDataAndMaterials(Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials)
     {
-        if (!getInputDatas().isEmpty())
-            inputDatas.putAll(getInputDatas());
+        // NOTE: Adding inputs from this AssayRunUploadContext is handled by DefaultAssayRunCreator now. Eventually outputDatas and materials will also be handled there as well
+        //if (!getInputDatas().isEmpty())
+        //    inputDatas.putAll(getInputDatas());
 
         if (!getOutputDatas().isEmpty())
             outputDatas.putAll(getOutputDatas());
@@ -185,5 +167,43 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider>
 
         if (!getOutputMaterials().isEmpty())
             outputMaterials.putAll(getOutputMaterials());
+    }
+
+    public static class Factory extends ModuleRunUploadContext.Factory<ModuleAssayProvider, Factory>
+    {
+        public Factory(@NotNull ExpProtocol protocol, @NotNull ModuleAssayProvider provider, @NotNull ViewContext context, @NotNull JSONObject jsonObject, @NotNull List<Map<String, Object>> rawData)
+        {
+            super(protocol, provider, context, jsonObject, rawData);
+        }
+
+        public Factory(@NotNull ExpProtocol protocol, @NotNull ModuleAssayProvider provider, @NotNull ViewContext context)
+        {
+            super(protocol, provider, context);
+        }
+
+        @Override
+        public ModuleRunUploadForm.Factory self()
+        {
+            return this;
+        }
+
+        @Override
+        public AssayRunUploadContext<ModuleAssayProvider> create()
+        {
+            if (_jsonObject == null)
+                throw new IllegalStateException("jsonObject required");
+
+            if (_rawData == null)
+                throw new IllegalStateException("rawData required");
+
+            ModuleRunUploadForm form = new ModuleRunUploadForm(_context, _protocol.getRowId(), _jsonObject, _rawData);
+
+            form.inputDatas = Collections.unmodifiableMap(this._inputDatas);
+            form.inputMaterials = Collections.unmodifiableMap(this._inputMaterials);
+            form.outputDatas = Collections.unmodifiableMap(this._outputDatas);
+            form.outputMaterials = Collections.unmodifiableMap(this._outputMaterials);
+
+            return form;
+        }
     }
 }

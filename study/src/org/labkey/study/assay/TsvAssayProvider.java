@@ -136,12 +136,6 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
         return saveHandler;
     }
 
-    @Override
-    public AssayRunUploadContext createRunUploadContext(ViewContext context, int protocolId, JSONObject runJson, List<Map<String, Object>> uploadedData)
-    {
-        return new ModuleRunUploadForm(context, protocolId, runJson, uploadedData);
-    }
-
     @Override @NotNull
     public AssayTableMetadata getTableMetadata(@NotNull ExpProtocol protocol)
     {
