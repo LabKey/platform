@@ -132,24 +132,11 @@ public class MothershipModule extends DefaultModule
 
     public void doStartup(ModuleContext moduleContext)
     {
-        ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
+        ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
         {
-            public void containerCreated(Container c, User user)
-            {
-            }
-
             public void containerDeleted(Container c, User user)
             {
                 MothershipManager.get().deleteForContainer(c);
-            }
-
-            @Override
-            public void containerMoved(Container c, Container oldParent, User user)
-            {                
-            }
-
-            public void propertyChange(PropertyChangeEvent evt)
-            {
             }
         });
 

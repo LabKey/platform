@@ -26,7 +26,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 
-import java.beans.PropertyChangeEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,25 +34,10 @@ import java.util.List;
  * Date: Nov 5, 2008
  * Time: 3:40:18 PM
  */
-public class AnnouncementListener implements ContainerManager.ContainerListener, UserManager.UserListener, SecurityManager.GroupListener
+public class AnnouncementListener extends ContainerManager.AbstractContainerListener implements UserManager.UserListener, SecurityManager.GroupListener
 {
     private static Logger _log = Logger.getLogger(AnnouncementListener.class);
 
-    @Override
-    public void containerCreated(Container c, User user)
-    {
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {
-    }
-    
     // Note: Attachments are purged by AttachmentServiceImpl.containerDeleted()
     @Override
     public void containerDeleted(Container c, User user)

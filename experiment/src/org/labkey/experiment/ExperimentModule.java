@@ -239,12 +239,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         ServiceRegistry.get(FileContentService.class).addFileListener(new TableUpdaterFileListener(ExperimentService.get().getTinfoExperimentRun(), "FilePathRoot", TableUpdaterFileListener.Type.filePath, "RowId"));
         ServiceRegistry.get(FileContentService.class).addFileListener(new FileLinkFileListener());
 
-        ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
+        ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
         {
-            public void containerCreated(Container c, User user)
-            {
-            }
-
             public void containerDeleted(Container c, User user)
             {
                 try
@@ -255,11 +251,6 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
                 {
                     throw new RuntimeException(ee);
                 }
-            }
-
-            @Override
-            public void containerMoved(Container c, Container oldParent, User user)
-            {
             }
 
             public void propertyChange(PropertyChangeEvent evt)

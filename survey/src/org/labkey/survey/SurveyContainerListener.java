@@ -17,31 +17,14 @@
 package org.labkey.survey;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager.ContainerListener;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 
-import java.beans.PropertyChangeEvent;
-
-public class SurveyContainerListener implements ContainerListener
+public class SurveyContainerListener extends ContainerManager.AbstractContainerListener
 {
-    @Override
-    public void containerCreated(Container c, User user)
-    {
-    }
-
     @Override
     public void containerDeleted(Container c, User user)
     {
         SurveyManager.get().delete(c, user);
-    }
-
-    @Override
-    public void propertyChange(PropertyChangeEvent evt)
-    {
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {
     }
 }

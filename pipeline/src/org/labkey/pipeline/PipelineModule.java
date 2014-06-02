@@ -243,6 +243,13 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
     {        
     }
 
+    @NotNull
+    @Override
+    public Collection<String> canMove(Container c, Container newParent, User user)
+    {
+        return Collections.emptyList();
+    }
+
     public void propertyChange(PropertyChangeEvent evt)
     {
     }

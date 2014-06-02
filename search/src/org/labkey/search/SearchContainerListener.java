@@ -17,16 +17,14 @@
 package org.labkey.search;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager.ContainerListener;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.DavCrawler;
 
-import java.beans.PropertyChangeEvent;
-
-public class SearchContainerListener implements ContainerListener
+public class SearchContainerListener extends ContainerManager.AbstractContainerListener
 {
     public void containerCreated(Container c, User user)
     {
@@ -40,14 +38,5 @@ public class SearchContainerListener implements ContainerListener
         SearchService ss = ServiceRegistry.get().getService(SearchService.class);
         if (null != ss)
             ss.deleteContainer(c.getId());
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {        
-    }
-
-    public void propertyChange(PropertyChangeEvent evt)
-    {
     }
 }

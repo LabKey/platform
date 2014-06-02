@@ -80,6 +80,7 @@ public class PropertyServiceImpl implements PropertyService.Interface
         return new PrimitiveType(PropertyType.getFromURI(null, typeURI));
     }
 
+    @Nullable
     public Domain getDomain(Container container, String domainURI)
     {
         DomainDescriptor dd = OntologyManager.getDomainDescriptor(domainURI, container);

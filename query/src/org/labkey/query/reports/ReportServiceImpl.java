@@ -75,7 +75,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.api.writer.VirtualFile;
 
-import java.beans.PropertyChangeEvent;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -94,7 +93,7 @@ import java.util.concurrent.ConcurrentMap;
  * User: Karl Lum
  * Date: Dec 21, 2007
  */
-public class ReportServiceImpl implements ReportService.I, ContainerManager.ContainerListener
+public class ReportServiceImpl extends ContainerManager.AbstractContainerListener implements ReportService.I
 {
     private static final String SCHEMA_NAME = "core";
     private static final String TABLE_NAME = "Report";
@@ -462,17 +461,9 @@ public class ReportServiceImpl implements ReportService.I, ContainerManager.Cont
         return getSchema().getTable(TABLE_NAME);
     }
 
-    public void containerCreated(Container c, User user) {}
-    public void propertyChange(PropertyChangeEvent evt) {}
-
     public void containerDeleted(Container c, User user)
     {
         ContainerUtil.purgeTable(getTable(), c, "ContainerId");
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {        
     }
 
     public Report createFromQueryString(String queryString) throws Exception

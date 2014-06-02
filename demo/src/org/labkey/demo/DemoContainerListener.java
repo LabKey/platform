@@ -16,12 +16,11 @@
 package org.labkey.demo;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager.ContainerListener;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.User;
 import org.labkey.demo.model.DemoManager;
 
-import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
 
 /**
@@ -29,12 +28,8 @@ import java.sql.SQLException;
  * Date: Nov 3, 2008
  * Time: 2:08:18 PM
  */
-public class DemoContainerListener implements ContainerListener
+public class DemoContainerListener extends ContainerManager.AbstractContainerListener
 {
-    public void containerCreated(Container c, User user)
-    {
-    }
-
     public void containerDeleted(Container c, User user)
     {
         try
@@ -45,14 +40,5 @@ public class DemoContainerListener implements ContainerListener
         {
             throw new RuntimeSQLException(e);
         }
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {                
-    }
-
-    public void propertyChange(PropertyChangeEvent evt)
-    {
     }
 }

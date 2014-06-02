@@ -730,6 +730,13 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     {        
     }
 
+    @NotNull
+    @Override
+    public Collection<String> canMove(Container c, Container newParent, User user)
+    {
+        return Collections.emptyList();
+    }
+
     // CONSIDER: Return success/failure notification so caller can take action (render a default document) in all the failure scenarios.
     public void writeDocument(DocumentWriter writer, AttachmentParent parent, String name, boolean asAttachment) throws ServletException, IOException
     {

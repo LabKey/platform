@@ -52,7 +52,6 @@ import org.olap4j.metadata.Schema;
 import org.springframework.validation.BindException;
 
 import javax.servlet.ServletContextEvent;
-import java.beans.PropertyChangeEvent;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
@@ -97,14 +96,8 @@ public class ServerManager
 
     static
     {
-        ContainerManager.addContainerListener(new ContainerManager.ContainerListener()
+        ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
         {
-            @Override
-            public void containerCreated(Container c, User user)
-            {
-
-            }
-
             @Override
             public void containerDeleted(Container c, User user)
             {
@@ -115,12 +108,6 @@ public class ServerManager
             public void containerMoved(Container c, Container oldParent, User user)
             {
                 cubeDataChanged(c);
-            }
-
-            @Override
-            public void propertyChange(PropertyChangeEvent evt)
-            {
-
             }
         });
 

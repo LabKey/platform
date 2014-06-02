@@ -15,32 +15,35 @@
  */
 package org.labkey.study;
 
-import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.exp.api.ExpProtocol;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.study.assay.AssayManager;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: adam
  * Date: Nov 3, 2008
  * Time: 3:48:15 PM
  */
-public class StudyContainerListener implements ContainerManager.ContainerListener
+public class StudyContainerListener extends ContainerManager.AbstractContainerListener
 {
-    private static final Logger _log = Logger.getLogger(StudyContainerListener.class);
-
-    @Override
-    public void containerCreated(Container c, User user)
-    {
-    }
-
     @Override
     public void containerDeleted(Container c, User user)
     {
@@ -66,6 +69,60 @@ public class StudyContainerListener implements ContainerManager.ContainerListene
     public void containerMoved(Container c, Container oldParent, User user)
     {
         StudyManager.getInstance().clearCaches(c, true);
+    }
+
+    @NotNull
+    @Override
+    public Collection<String> canMove(Container c, Container newParent, User user)
+    {
+        List<ExpProtocol> assayProtocolsInUse = new ArrayList<>();
+        // Build a list of all assay designs that are in use
+        for (ExpProtocol protocol : ExperimentService.get().getExpProtocolsUsedByRuns(c, new ContainerFilter.CurrentAndSubfolders(user)))
+        {
+            // Not all protocols are assay designs, so filter them based on looking up their provider
+            if (org.labkey.api.study.assay.AssayService.get().getProvider(protocol) != null)
+            {
+                assayProtocolsInUse.add(protocol);
+            }
+        }
+
+        // Figure out the assay designs that will be in scope in the new parent
+        Set<ExpProtocol> assayProtocolsToBeInScope = new HashSet<>(AssayService.get().getAssayProtocols(newParent));
+        addAssayProtocols(c, assayProtocolsToBeInScope);
+
+        // Remove all of the designs that will still be in scope
+        assayProtocolsInUse.removeAll(assayProtocolsToBeInScope);
+
+        // If there's anything that will no longer be in scope, block the move
+        if (!assayProtocolsInUse.isEmpty())
+        {
+            StringBuilder sb = new StringBuilder(c.getPath() + " or its children contain assay runs that reference assay designs that would no longer be in scope if moved to " + newParent.getPath() + ". The assay designs are: ");
+            String separator = "";
+            for (ExpProtocol expProtocol : assayProtocolsInUse)
+            {
+                sb.append(separator);
+                sb.append(expProtocol.getName());
+                separator = ", ";
+            }
+            return Collections.singletonList(sb.toString());
+        }
+        return Collections.emptyList();
+    }
+
+    /** Recursively builds up the set of assay designs that are in defined in the given container or its children */
+    private void addAssayProtocols(Container c, Set<ExpProtocol> protocols)
+    {
+        for (ExpProtocol protocol : ExperimentService.get().getExpProtocols(c))
+        {
+            if (AssayService.get().getProvider(protocol) != null)
+            {
+                protocols.add(protocol);
+            }
+        }
+        for (Container child : c.getChildren())
+        {
+            addAssayProtocols(child, protocols);
+        }
     }
 
     @Override

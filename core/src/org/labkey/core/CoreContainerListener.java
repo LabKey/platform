@@ -16,6 +16,7 @@
 package org.labkey.core;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
@@ -32,6 +33,8 @@ import org.labkey.api.view.Portal;
 
 import java.beans.PropertyChangeEvent;
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * User: adam
@@ -75,6 +78,13 @@ public class CoreContainerListener implements ContainerManager.ContainerListener
         addAuditEvent(user, c, message);
 
         ((CoreModule)ModuleLoader.getInstance().getCoreModule()).enumerateDocuments(null, c, null);
+    }
+
+    @NotNull
+    @Override
+    public Collection<String> canMove(Container c, Container newParent, User user)
+    {
+        return Collections.emptyList();
     }
 
     private void addAuditEvent(User user, Container c, String comment)

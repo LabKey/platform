@@ -212,6 +212,13 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     {
     }
 
+    @NotNull
+    @Override
+    public Collection<String> canMove(Container c, Container newParent, User user)
+    {
+        return Collections.emptyList();
+    }
+
     @Override
     public void propertyChange(PropertyChangeEvent evt)
     {

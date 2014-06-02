@@ -48,7 +48,6 @@ import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.ExternalSchema;
 import org.labkey.query.ExternalSchemaDocumentProvider;
 
-import java.beans.PropertyChangeEvent;
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -630,28 +629,12 @@ public class QueryManager
         return dependents;
     }
 
-    static public final ContainerManager.ContainerListener CONTAINER_LISTENER = new ContainerManager.ContainerListener()
+    static public final ContainerManager.ContainerListener CONTAINER_LISTENER = new ContainerManager.AbstractContainerListener()
     {
-        public void containerCreated(Container c, User user)
-        {
-
-        }
-
-        @Override
-        public void containerMoved(Container c, Container oldParent, User user)
-        {
-            
-        }
-
         public void containerDeleted(Container c, User user)
         {
             QueryManager.get().containerDeleted(c);
         }
-
-        public void propertyChange(PropertyChangeEvent evt)
-        {
-        }
-
     };
 
     public void validateQuery(SchemaKey schemaPath, String queryName, User user, Container container) throws SQLException, QueryParseException

@@ -16,34 +16,19 @@
 package org.labkey.issue;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager.ContainerListener;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 import org.labkey.issue.model.IssueManager;
-
-import java.beans.PropertyChangeEvent;
 
 /**
  * User: adam
  * Date: Nov 5, 2008
  * Time: 3:30:34 PM
  */
-public class IssueContainerListener implements ContainerListener
+public class IssueContainerListener extends ContainerManager.AbstractContainerListener
 {
-    public void containerCreated(Container c, User user)
-    {
-    }
-
     public void containerDeleted(Container c, User user)
     {
         IssueManager.purgeContainer(c);
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {        
-    }
-
-    public void propertyChange(PropertyChangeEvent event)
-    {
     }
 }

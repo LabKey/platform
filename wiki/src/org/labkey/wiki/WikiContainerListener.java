@@ -19,31 +19,16 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.security.User;
 
-import java.beans.PropertyChangeEvent;
-
 /**
  * User: adam
  * Date: Nov 5, 2008
  * Time: 10:52:38 AM
  */
-public class WikiContainerListener implements ContainerManager.ContainerListener
+public class WikiContainerListener extends ContainerManager.AbstractContainerListener
 {
-    public void containerCreated(Container c, User user)
-    {
-    }
-
     // Note: Attachments are purged by AttachmentServiceImpl.containerDeleted()
     public void containerDeleted(Container c, User user)
     {
         WikiManager.get().purgeContainer(c);
-    }
-
-    @Override
-    public void containerMoved(Container c, Container oldParent, User user)
-    {        
-    }
-
-    public void propertyChange(PropertyChangeEvent evt)
-    {
     }
 }

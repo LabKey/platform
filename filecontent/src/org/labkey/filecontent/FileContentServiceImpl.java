@@ -62,6 +62,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -492,6 +493,13 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
                     moveFileRoot(src, dst, user, c);
             }
         }
+    }
+
+    @NotNull
+    @Override
+    public Collection<String> canMove(Container c, Container newParent, User user)
+    {
+        return Collections.emptyList();
     }
 
     public void propertyChange(PropertyChangeEvent propertyChangeEvent)

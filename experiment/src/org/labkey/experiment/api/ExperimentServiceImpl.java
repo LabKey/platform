@@ -229,6 +229,18 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpExperimentImpl.fromExperiments(experiment);
     }
 
+    @Override
+    public List<? extends ExpProtocol> getExpProtocolsUsedByRuns(Container c, ContainerFilter containerFilter)
+    {
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT p.* FROM ");
+        sql.append(getTinfoExperimentRun(), "er");
+        sql.append(", ");
+        sql.append(getTinfoProtocol(), "p");
+        sql.append(" WHERE p.LSID = er.ProtocolLSID AND ");
+        sql.append(containerFilter.getSQLFragment(getSchema(), new SQLFragment("er.Container"), c));
+        return ExpProtocolImpl.fromProtocols(new SqlSelector(getSchema(), sql).getArrayList(Protocol.class));
+    }
+
     public ExpRunImpl getExpRun(String lsid)
     {
         ExperimentRun run = getExperimentRun(lsid);

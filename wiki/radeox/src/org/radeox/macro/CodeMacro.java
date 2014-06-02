@@ -63,7 +63,7 @@ public class CodeMacro extends LocalePreserved {
   private String end;
 
   private String[] paramDescription =
-      {"?1: syntax highlighter to use, defaults to java"};
+      {"?1: syntax highlighter to use, defaults to java. Options include none, sql, xml, and java"};
 
   public String[] getParamDescription() {
     return paramDescription;
