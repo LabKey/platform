@@ -230,15 +230,22 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     }
 
     @Override
-    public List<? extends ExpProtocol> getExpProtocolsUsedByRuns(Container c, ContainerFilter containerFilter)
+    public List<ExpProtocolImpl> getExpProtocolsUsedByRuns(Container c, ContainerFilter containerFilter)
     {
-        SQLFragment sql = new SQLFragment("SELECT DISTINCT p.* FROM ");
+        // Get the Protocol LSIDs out instead of doing a DISTINCT on exp.Protocol.* since SQLServer can't do DISTINCT
+        // on ntext fields
+        SQLFragment sql = new SQLFragment("SELECT DISTINCT er.ProtocolLSID FROM ");
         sql.append(getTinfoExperimentRun(), "er");
-        sql.append(", ");
-        sql.append(getTinfoProtocol(), "p");
-        sql.append(" WHERE p.LSID = er.ProtocolLSID AND ");
+        sql.append(" WHERE ");
         sql.append(containerFilter.getSQLFragment(getSchema(), new SQLFragment("er.Container"), c));
-        return ExpProtocolImpl.fromProtocols(new SqlSelector(getSchema(), sql).getArrayList(Protocol.class));
+
+        // Translate the LSIDs into protocol objects
+        List<ExpProtocolImpl> result = new ArrayList<>();
+        for (String protocolLSID : new SqlSelector(getSchema(), sql).getArrayList(String.class))
+        {
+            result.add(getExpProtocol(protocolLSID));
+        }
+        return result;
     }
 
     public ExpRunImpl getExpRun(String lsid)
