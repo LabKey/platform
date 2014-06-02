@@ -163,6 +163,14 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
         return result;
     }
 
+    @NotNull
+    @Override
+    public Map<Object, String> getInputDatas()
+    {
+        // CONSIDER: get the run's input datas
+        return Collections.emptyMap();
+    }
+
     @Override
     public ProviderType getProvider()
     {

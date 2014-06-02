@@ -1233,9 +1233,9 @@ public abstract class AbstractAssayProvider implements AssayProvider
     }
 
     @Override
-    public AssayRunUploadContext createRunUploadContext(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData)
+    public AssayRunUploadContext.Factory createRunUploadFactory(ExpProtocol protocol, ViewContext context)
     {
-        return null;
+        return new AssayRunUploadContextImpl.Factory<>(protocol, this, context);
     }
 
     protected Boolean getBooleanProperty(ExpProtocol protocol, String propertySuffix)

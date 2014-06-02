@@ -810,6 +810,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return Collections.emptyMap();
         }
 
+        @NotNull
+        @Override
+        public Map<Object, String> getInputDatas()
+        {
+            return Collections.emptyMap();
+        }
+
         public AssayProvider getProvider()
         {
             return AssayService.get().getProvider(_protocol);

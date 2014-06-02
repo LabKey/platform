@@ -28,6 +28,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -69,9 +70,22 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
 
     ActionURL getActionURL();
 
-    /** @return Map of file input name to file on disk */
+    /**
+     * Map of file name to uploaded file that will be parsed and imported by the assay's DataHandler.
+     */
     @NotNull
     Map<String, File> getUploadedData() throws ExperimentException;
+
+    /**
+     * Map of inputs to roles that will be attached to the assay run.
+     * The map key will be converted into an ExpData object using {@link org.labkey.api.data.ExpDataFileConverter}
+     * The map value is the role of the file.
+     * Each input file will be attached as an input ExpData to the imported assay run.
+     *
+     * NOTE: These files will not be parsed or imported by the assay's DataHandler -- use {@link #getUploadedData()} instead.
+     */
+    @NotNull
+    Map<Object, String> getInputDatas();
 
     ProviderType getProvider();
 
@@ -99,4 +113,119 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
     void uploadComplete(ExpRun run) throws ExperimentException;
 
     Logger getLogger();
+
+
+    /**
+     * Builder pattern for creating a AssayRunUploadContext instance.
+     */
+    public static abstract class Factory<ProviderType extends AssayProvider, FACTORY extends Factory<ProviderType, FACTORY>>
+    {
+        // Required fields
+        protected final ExpProtocol _protocol;
+        protected final ProviderType _provider;
+        protected final User _user;
+        protected final Container _container;
+
+        // Optional fields
+        protected ViewContext _context;
+        protected String _comments;
+        protected String _name;
+        protected String _targetStudy;
+        protected Integer _reRunId;
+        protected Map<String, String> _rawRunProperties;
+        protected Map<String, String> _rawBatchProperties;
+        protected Map<Object, String> _inputDatas;
+        protected Map<String, File> _uploadedData;
+
+        public Factory(
+                @NotNull ExpProtocol protocol,
+                @NotNull ProviderType provider,
+                @NotNull ViewContext context)
+        {
+            this(protocol, provider, context.getUser(), context.getContainer());
+            setViewContext(context);
+        }
+
+        public Factory(
+                @NotNull ExpProtocol protocol,
+                @NotNull ProviderType provider,
+                @NotNull User user,
+                @NotNull Container container)
+        {
+            _protocol = protocol;
+            _provider = provider;
+            _user = user;
+            _container = container;
+        }
+
+        public FACTORY setViewContext(ViewContext context)
+        {
+            _context = context;
+            return self();
+        }
+
+        public FACTORY setComments(String comments)
+        {
+            _comments = comments;
+            return self();
+        }
+
+        public final FACTORY setName(String name)
+        {
+            _name = name;
+            return self();
+        }
+
+        public final FACTORY setTargetStudy(String targetStudy)
+        {
+            _targetStudy = targetStudy;
+            return self();
+        }
+
+        public final FACTORY setReRunId(Integer reRunId)
+        {
+            _reRunId = reRunId;
+            return self();
+        }
+
+        public final FACTORY setBatchProperties(Map<String, String> rawProperties)
+        {
+            _rawBatchProperties = rawProperties;
+            return self();
+        }
+
+        public final FACTORY setRunProperties(Map<String, String> rawProperties)
+        {
+            _rawRunProperties = rawProperties;
+            return self();
+        }
+
+        /**
+         * Map of inputs to roles that will be attached to the assay run.
+         * The map key will be converted into an ExpData object using {@link org.labkey.api.data.ExpDataFileConverter}
+         * The map value is the role of the file.
+         * Each input file will be attached as an input ExpData to the imported assay run.
+         *
+         * NOTE: These files will not be parsed or imported by the assay's DataHandler -- use {@link #getUploadedData()} instead.
+         */
+        public final FACTORY setInputDatas(Map<Object, String> inputDatas)
+        {
+            _inputDatas = inputDatas;
+            return self();
+        }
+
+        /**
+         * Map of file name to uploaded file that will be parsed and imported by the assay's DataHandler.
+         */
+        public final FACTORY setUploadedData(Map<String, File> uploadedData)
+        {
+            _uploadedData = uploadedData;
+            return self();
+        }
+
+        /** FACTORY and sefl() make it easier to chain setters while returning the correct subclass type. */
+        public abstract FACTORY self();
+
+        public abstract AssayRunUploadContext<ProviderType> create();
+    }
 }

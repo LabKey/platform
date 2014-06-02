@@ -264,5 +264,9 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     @Nullable AssaySaveHandler getSaveHandler();
 
-    AssayRunUploadContext createRunUploadContext(ViewContext context, int protocolId, JSONObject jsonObject, List<Map<String, Object>> uploadedData);
+    /**
+     * Create a factory to build an AssayRunUploadContext for importing an run.
+     */
+    AssayRunUploadContext.Factory createRunUploadFactory(ExpProtocol protocol, ViewContext context);
+
 }

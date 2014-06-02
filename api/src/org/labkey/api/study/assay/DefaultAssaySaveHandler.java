@@ -337,28 +337,6 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         return inputMaterial;
     }
 
-    /**
-     * @deprecated Should migrate applications to use saveExperimentRun which delegates most of the work to the AssayRunCreator
-     * and ensures that transform and validation get handled correctly.
-     */
-    protected void importRows(ViewContext context, ExpRun run, ExpData tsvData, ExpProtocol protocol, JSONObject runJsonObject, JSONArray dataArray)
-            throws ValidationException, ExperimentException
-    {
-        if (tsvData != null)
-        {
-            List<Map<String, Object>> rawData = dataArray.toMapList();
-
-            // programmatic qc validation
-            DataTransformer dataTransformer = _provider.getRunCreator().getDataTransformer();
-            if (dataTransformer != null)
-                dataTransformer.transformAndValidate(_provider.createRunUploadContext(context, protocol.getRowId(), runJsonObject, rawData), run);
-
-            TsvDataHandler dataHandler = new TsvDataHandler();
-            dataHandler.setAllowEmptyData(true);
-            dataHandler.importRows(tsvData, context.getUser(), run, protocol, _provider, rawData);
-        }
-    }
-
     protected void clearOutputDatas(ViewContext context, ExpRun run)
     {
         for (ExpData data : run.getOutputDatas(_provider.getDataType()))
@@ -436,18 +414,22 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     {
         if (runDataArray != null)
         {
-            AssayRunUploadContext uploadContext = getProvider().createRunUploadContext(context, protocol.getRowId(), runJsonObject, runDataArray.toMapList());
+            AssayRunUploadContext.Factory factory = getProvider().createRunUploadFactory(protocol, context);
+            factory.setInputDatas(inputData);
 
-            if (uploadContext instanceof ModuleRunUploadContext)
+            if (factory instanceof ModuleRunUploadContext.Factory)
             {
-                ModuleRunUploadContext moduleContext = (ModuleRunUploadContext)uploadContext;
+                ModuleRunUploadContext.Factory moduleContextFactory = (ModuleRunUploadContext.Factory)factory;
+                moduleContextFactory.setJsonObject(runJsonObject);
+                moduleContextFactory.setRawData(runDataArray.toMapList());
 
-                moduleContext.setInputDatas(inputData);
-                moduleContext.setOutputDatas(outputData);
-                moduleContext.setInputMaterials(inputMaterial);
-                moduleContext.setOutputMaterials(outputMaterial);
+                // TODO: Move the .setOutputDatas and materials to the AssayRunUploadContext.Factory
+                moduleContextFactory.setOutputDatas(outputData);
+                moduleContextFactory.setInputMaterials(inputMaterial);
+                moduleContextFactory.setOutputMaterials(outputMaterial);
             }
-            return uploadContext;
+
+            return factory.create();
         }
         return null;
     }

@@ -39,6 +39,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -313,6 +314,13 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     public Map<String, File> getUploadedData() throws ExperimentException
     {
         return _uploadedData;
+    }
+
+    @NotNull
+    @Override
+    public Map<Object, String> getInputDatas()
+    {
+        return Collections.emptyMap();
     }
 
     @Override

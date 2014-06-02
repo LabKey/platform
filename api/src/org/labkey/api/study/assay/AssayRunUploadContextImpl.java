@@ -58,6 +58,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Integer _reRunId;
     private final Map<String, String> _rawRunProperties;
     private final Map<String, String> _rawBatchProperties;
+    private final Map<Object, String> _inputDatas;
 
     // Lazily created fields
     private Map<String, File> _uploadedData;
@@ -78,39 +79,35 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         _name = factory._name;
         _comments = factory._comments;
 
-        _rawRunProperties = factory._rawRunProperties;
-        _rawBatchProperties = factory._rawBatchProperties;
+        if (factory._rawRunProperties == null)
+            _rawRunProperties = Collections.emptyMap();
+        else
+            _rawRunProperties = Collections.unmodifiableMap(factory._rawRunProperties);
+
+        if (factory._rawBatchProperties == null)
+            _rawBatchProperties = Collections.emptyMap();
+        else
+            _rawBatchProperties = Collections.unmodifiableMap(factory._rawBatchProperties);
+
+        if (factory._inputDatas == null)
+            _inputDatas = Collections.emptyMap();
+        else
+            _inputDatas = Collections.unmodifiableMap(factory._inputDatas);
+
         _uploadedData = factory._uploadedData;
 
         _reRunId = factory._reRunId;
         _targetStudy = factory._targetStudy;
     }
 
-    public static class Factory<ProviderType extends AssayProvider>
+    public static class Factory<ProviderType extends AssayProvider> extends AssayRunUploadContext.Factory<ProviderType, Factory<ProviderType>>
     {
-        // Required fields
-        private final ExpProtocol _protocol;
-        private final ProviderType _provider;
-        private final User _user;
-        private final Container _container;
-
-        // Optional fields
-        private ViewContext _context;
-        private String _comments;
-        private String _name;
-        private String _targetStudy;
-        private Integer _reRunId;
-        private Map<String, String> _rawRunProperties;
-        private Map<String, String> _rawBatchProperties;
-        private Map<String, File> _uploadedData;
-
         public Factory(
                 @NotNull ExpProtocol protocol,
                 @NotNull ProviderType provider,
                 @NotNull ViewContext context)
         {
-            this(protocol, provider, context.getUser(), context.getContainer());
-            setViewContext(context);
+            super(protocol, provider, context.getUser(), context.getContainer());
         }
 
         public Factory(
@@ -119,60 +116,16 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
                 @NotNull User user,
                 @NotNull Container container)
         {
-            _protocol = protocol;
-            _provider = provider;
-            _user = user;
-            _container = container;
+            super(protocol, provider, user, container);
         }
 
-        public Factory setViewContext(ViewContext context)
+        @Override
+        public Factory self()
         {
-            _context = context;
             return this;
         }
 
-        public Factory setComments(String comments)
-        {
-            _comments = comments;
-            return this;
-        }
-
-        public Factory setName(String name)
-        {
-            _name = name;
-            return this;
-        }
-
-        public Factory setTargetStudy(String targetStudy)
-        {
-            _targetStudy = targetStudy;
-            return this;
-        }
-
-        public Factory setReRunId(Integer reRunId)
-        {
-            _reRunId = reRunId;
-            return this;
-        }
-
-        public Factory setBatchProperties(Map<String, String> rawProperties)
-        {
-            _rawBatchProperties = rawProperties;
-            return this;
-        }
-
-        public Factory setRunProperties(Map<String, String> rawProperties)
-        {
-            _rawRunProperties = rawProperties;
-            return this;
-        }
-
-        public Factory setUploadedData(Map<String, File> uploadedData)
-        {
-            _uploadedData = uploadedData;
-            return this;
-        }
-
+        @Override
         public AssayRunUploadContext<ProviderType> create()
         {
             return new AssayRunUploadContextImpl<>(this);
@@ -263,8 +216,9 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     }
 
     /**
-     * Get the uploaded file data which will be imported.
+     * Map of file name to uploaded file that will be imported by the assay's DataHandler.
      * The uploaded file is expected to be POSTed as a form-data parameter named '<code>file</code>'.
+     * The file will be added as an output ExpData to the imported assay run.
      *
      * @return A singleton map with key {@link AssayDataCollector#PRIMARY_FILE} and value of the uploaded file.
      * @throws ExperimentException
@@ -287,6 +241,13 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
             }
         }
         return _uploadedData;
+    }
+
+    @NotNull
+    @Override
+    public Map<Object, String> getInputDatas()
+    {
+        return _inputDatas;
     }
 
     public ProviderType getProvider()

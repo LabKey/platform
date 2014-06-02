@@ -261,6 +261,13 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     }
 
     @NotNull
+    @Override
+    public Map<Object, String> getInputDatas()
+    {
+        return Collections.emptyMap();
+    }
+
+    @NotNull
     public ProviderType getProvider()
     {
         return (ProviderType)super.getProvider();

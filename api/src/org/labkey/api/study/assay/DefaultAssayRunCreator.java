@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ExpDataFileConverter;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -65,8 +66,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -232,7 +235,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         addInputMaterials(context, inputMaterials, resolverType);
         addInputDatas(context, inputDatas, resolverType);
         addOutputMaterials(context, outputMaterials, resolverType);
-        addOutputDatas(context, outputDatas, resolverType);
+        addOutputDatas(context, inputDatas, outputDatas, resolverType);
 
         DbScope scope = ExperimentService.get().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
@@ -266,7 +269,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     outputDatas,
                     transformedDatas,
                     info,
-                    LOG,
+                    context.getLogger() != null ? context.getLogger() : LOG,
                     false);
 
             // handle data transformation
@@ -395,9 +398,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             insertedDatas.addAll(inputDatas.keySet());
             insertedDatas.addAll(outputDatas.keySet());
 
+            Logger logger = context.getLogger() != null ? context.getLogger() : LOG;
             for (ExpData insertedData : insertedDatas)
             {
-                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, LOG, xarContext);
+                insertedData.findDataHandler().importFile(insertedData, insertedData.getFile(), info, logger, xarContext);
             }
         }
     }
@@ -442,6 +446,37 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     protected void addInputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> inputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
+        Map<Object, String> inputs = context.getInputDatas();
+
+        ExpDataFileConverter expDataFileConverter = new ExpDataFileConverter();
+        Container c = context.getContainer();
+
+        for (Map.Entry<Object, String> entry : inputs.entrySet())
+        {
+            Object input = entry.getKey();
+            String role = entry.getValue();
+
+            if (input instanceof ExpData)
+            {
+                inputDatas.put((ExpData)input, role);
+            }
+            else
+            {
+                File file = (File)expDataFileConverter.convert(File.class, entry.getKey());
+                if (file != null)
+                {
+                    ExpData data = ExperimentService.get().getExpDataByURL(file, c);
+                    if (data == null)
+                    {
+                        throw new UnsupportedOperationException("Creating new input ExpData not yet implemented");
+                        //DataType type = ... ?
+                        //ExperimentService.get().createData(c, type, file.getName());
+                    }
+
+                    inputDatas.put(data, role);
+                }
+            }
+        }
     }
 
     public static ExpData createData(Container c, File file, String name, DataType dataType, boolean reuseExistingDatas)
@@ -481,7 +516,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
     }
 
-    protected void addOutputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
+    protected void addOutputDatas(AssayRunUploadContext<ProviderType> context, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, ParticipantVisitResolverType resolverType) throws ExperimentException
     {
         Map<String, File> files = context.getUploadedData();
 
@@ -503,14 +538,14 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         File primaryFile = files.get(AssayDataCollector.PRIMARY_FILE);
         if (primaryFile != null)
         {
-            addRelatedOutputDatas(context, outputDatas, primaryFile);
+            addRelatedOutputDatas(context, inputDatas, outputDatas, primaryFile);
         }
     }
 
     /**
      * Add files that follow the general naming convention (same basename) as the primary file
      */
-    public void addRelatedOutputDatas(AssayRunUploadContext context, Map<ExpData, String> outputDatas, final File primaryFile) throws ExperimentException
+    public void addRelatedOutputDatas(AssayRunUploadContext context, Map<ExpData, String> inputDatas, Map<ExpData, String> outputDatas, final File primaryFile) throws ExperimentException
     {
         AssayDataType dataType = getProvider().getDataType();
         final String baseName = dataType == null ? null : dataType.getFileType().getBaseName(primaryFile);
@@ -520,8 +555,21 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             File[] relatedFiles = primaryFile.getParentFile().listFiles(getRelatedOutputDataFileFilter(primaryFile, baseName));
             if (relatedFiles != null)
             {
+                // Create set of existing input files
+                Set<File> inputFiles = new HashSet<>();
+                for (ExpData inputData : inputDatas.keySet())
+                {
+                    File f = inputData.getFile();
+                    if (f != null)
+                        inputFiles.add(f);
+                }
+
                 for (File relatedFile : relatedFiles)
                 {
+                    // Ignore files already considered inputs to the run
+                    if (inputFiles.contains(relatedFile))
+                        continue;
+
                     Pair<ExpData, String> dataOutput = createdRelatedOutputData(context, baseName, relatedFile);
                     if (dataOutput != null)
                     {
