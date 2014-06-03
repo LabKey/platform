@@ -18,6 +18,7 @@ package org.labkey.study.query;
 
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
@@ -55,7 +56,13 @@ public class ParticipantVisitTable extends FilteredTable<StudyQuerySchema>
         for (ColumnInfo col : _rootTable.getColumns())
         {
             if ("Container".equalsIgnoreCase(col.getName()))
-                continue;
+            {
+                // 20546: need to expose Container for use in DataSetTableImpl.ParticipantVisitForeignKey
+                col = new AliasedColumn(this, "Container", col);
+                col = ContainerForeignKey.initColumn(col, _userSchema);
+                col.setHidden(true);
+                addColumn(col);
+            }
             else if ("VisitRowId".equalsIgnoreCase(col.getName()))
             {
                 ColumnInfo visitColumn = new AliasedColumn(this, "Visit", col);

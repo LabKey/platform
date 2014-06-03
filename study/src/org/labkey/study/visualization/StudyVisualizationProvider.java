@@ -134,6 +134,16 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
 
         List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinCols = new ArrayList<>();
 
+        // prior to Dataspace we were always gettting data from a single study container, now we
+        // need to include the container in the where clause to make sure
+        Study firstStudy = StudyService.get().getStudy(first.getContainer());
+        if (firstStudy != null && firstStudy.isDataspaceStudy())
+        {
+            VisualizationSourceColumn firstContainerCol = factory.create(first.getSchema(), first.getQueryName(), "Container", true);
+            VisualizationSourceColumn secondContainerCol = factory.create(second.getSchema(), second.getQueryName(), "Container", true);
+            joinCols.add(new Pair<>(firstContainerCol, secondContainerCol));
+        }
+
         String firstSubjectColumnName = StudyService.get().getSubjectColumnName(first.getContainer());
         String firstSubjectNounSingular = StudyService.get().getSubjectNounSingular(first.getContainer());
         // allow null results for this column so as to follow the lead of the primary measure column for this query:

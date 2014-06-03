@@ -43,6 +43,9 @@ public class VisualizationVisitTagTable extends VirtualTable
         addColumn(new ExprColumn(this, StudyService.get().getSubjectColumnName(_study.getContainer()),
                   new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "ParticipantId"), JdbcType.VARCHAR));
 
+        // 20546: need to expose Container for use in StudyVisualizationProvider.getJoinColumns
+        addColumn(new ExprColumn(this, "Container", new SQLFragment(ExprColumn.STR_TABLE_ALIAS + "." + "Container"), JdbcType.VARCHAR));
+
         _visitTagName = visitTagName;
         _useProtocolDay = useProtocolDay;
 
@@ -71,7 +74,7 @@ public class VisualizationVisitTagTable extends VirtualTable
                          innerAlias + ".ParticipantId = study.ParticipantVisit.ParticipantId";
         }
 
-        SQLFragment from = new SQLFragment("(SELECT VisitId, " + _dayString + ", " + innerAlias + ".ParticipantId " + " FROM (SELECT ParticipantId, ");
+        SQLFragment from = new SQLFragment("(SELECT VisitId, " + _dayString + ", " + innerAlias + ".ParticipantId, Container " + " FROM (SELECT ParticipantId, ");
         from.append("COALESCE(CohortVisitTag.VisitId, NoCohortTag.VisitId) As VisitId, CurrentCohortId FROM study.Participant\n")
             .append("LEFT OUTER JOIN study.VisitTagMap CohortVisitTag ON study.Participant.CurrentCohortId = CohortVisitTag.CohortID AND CohortVisitTag.VisitTag=")
             .append("'" + _visitTagName + "'\n")

@@ -252,13 +252,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
                 // Add a copy of the ParticipantSequenceNum column without the FK so we can get the value easily when materializing to temp tables:
                 addWrapColumn(baseColumn).setHidden(true);
                 ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(dsd.getContainer()), baseColumn);//addWrapColumn(baseColumn);
-                pvColumn.setFk(new LookupForeignKey("ParticipantSequenceNum")
-                {
-                    public TableInfo getLookupTableInfo()
-                    {
-                        return new ParticipantVisitTable(_userSchema, true);
-                    }
-                });
+                pvColumn.setFk(new ParticipantVisitForeignKey("ParticipantSequenceNum"));
                 pvColumn.setIsUnselectable(true);
                 pvColumn.setUserEditable(false);
                 pvColumn.setShownInInsertView(false);
@@ -897,6 +891,24 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
         public StringExpression getURL(ColumnInfo parent)
         {
             return super.getURL(parent, true);
+        }
+    }
+
+    class ParticipantVisitForeignKey extends LookupForeignKey
+    {
+        ParticipantVisitForeignKey(String pkColumnName)
+        {
+            super(pkColumnName);
+
+            // 20546: row duplication for dataspace project w/ same ptid in multiple containers
+            if (_dsd.isShared())
+                addJoin(new FieldKey(null,"Folder"),"Container",false);
+        }
+
+        @Override
+        public TableInfo getLookupTableInfo()
+        {
+            return new ParticipantVisitTable(_userSchema, true);
         }
     }
 }
