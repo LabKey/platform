@@ -79,6 +79,8 @@ public class AttachmentService
         public void renameAttachment(AttachmentParent parent, String oldName, String newName, User auditUser) throws IOException;
         public void copyAttachment(AttachmentParent parent, Attachment a, String newName, User auditUser) throws IOException;
 
+        public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException;
+
         public @NotNull List<AttachmentFile> getAttachmentFiles(AttachmentParent parent, Collection<Attachment> attachments) throws IOException;
         // Returns an unmodifiable list of attachments for this parent
         public @NotNull List<Attachment> getAttachments(AttachmentParent parent);
