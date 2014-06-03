@@ -30,6 +30,7 @@ import org.labkey.issue.IssuesController;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -83,6 +84,21 @@ public class IssuesQueryView extends QueryView
             listDetailsButton.setDisplayPermission(ReadPermission.class);
             listDetailsButton.setNoFollow(true);
             bar.add(listDetailsButton);
+
+            ActionButton moveButton = new ActionButton("Move"){
+                public void render(RenderContext ctx, Writer out) throws IOException
+                {
+                    out.write("<script type=\"text/javascript\">\n");
+                    out.write("LABKEY.requiresExt4ClientAPI()\n");
+                    out.write("LABKEY.requiresScript('issues/detail.js')\n");
+                    out.write("</script>\n");
+                    super.render(ctx, out);
+                }
+            };
+            moveButton.setRequiresSelection(true);
+            moveButton.setDisplayPermission(AdminPermission.class);
+            moveButton.setScript("createMoveIssueWindow(LABKEY.DataRegions['" + view.getDataRegion().getName() + "'].getChecked());");
+            bar.add(moveButton);
 
             ActionButton adminButton = new ActionButton(IssuesController.AdminAction.class, "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);
             adminButton.setDisplayPermission(AdminPermission.class);

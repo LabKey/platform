@@ -31,6 +31,8 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.FormHandlerAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.LabkeyError;
+import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -38,23 +40,8 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.AttachmentParentEntity;
-import org.labkey.api.data.BeanViewForm;
-import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.DbScope;
-import org.labkey.api.data.ObjectFactory;
-import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TSVGridWriter;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
+import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.query.FieldKey;
@@ -66,6 +53,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.search.SearchResultTemplate;
 import org.labkey.api.search.SearchScope;
 import org.labkey.api.search.SearchUrls;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.SecurityManager;
@@ -375,6 +363,8 @@ public class IssuesController extends SpringActionController
             page.setCustomColumnConfiguration(getCustomColumnConfiguration());
             //pass user's update perms to jsp page to determine whether to show notify list
             page.setUserHasUpdatePermissions(hasUpdatePermission(getUser(), _issue));
+            page.setUserHasAdminPermissions(hasAdminPermission(getUser(), _issue));
+            page.setMoveDestinations(null != IssueManager.getMoveDestinationContainers(getContainer()) ? true : false);
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
 
             return new JspView<>("/org/labkey/issue/detailView.jsp", page);
@@ -1463,6 +1453,124 @@ public class IssuesController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetMoveDestinationsAction extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object object, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            Collection<Map<String, Object>> responseContainers = new LinkedList<>();
+            for (Container container : IssueManager.getMoveDestinationContainers(getContainer()))
+            {
+                Map<String, Object> map = new HashMap<>();
+                map.put("containerId", container.getId());
+                map.put("containerPath", container.getPath());
+                responseContainers.add(map);
+            }
+
+            response.put("containers", responseContainers);
+
+            return response;
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class GetContainersAction extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object object, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            Collection<Map<String, Object>> responseContainers = new LinkedList<>();
+            Container root = ContainerManager.getRoot();
+            List<Container> allContainers = ContainerManager.getAllChildren(root, getUser(), AdminPermission.class, false);
+
+            // remove current container
+            allContainers.remove(getContainer());
+            allContainers.remove(root);
+
+            for (Container container : allContainers)
+            {
+                // remove containers that start with underscroll
+                if (container.getName().startsWith("_")) continue;
+
+                Map<String, Object> map = new HashMap<>();
+                map.put("containerId", container.getId());
+                map.put("containerPath", container.getPath());
+                responseContainers.add(map);
+            }
+
+            response.put("containers", responseContainers);
+
+            return response;
+        }
+    }
+
+    public static class MoveIssueForm extends ReturnUrlForm
+    {
+        private String _containerId = null;
+        private Integer[] _issueIds = null;
+
+        public String getContainerId()
+        {
+            return _containerId;
+        }
+
+        public void setContainerId(String containerId)
+        {
+            _containerId = containerId;
+        }
+
+        public Integer[] getIssueIds()
+        {
+            return _issueIds;
+        }
+
+        public void setIssueIds(Integer[] issueIds)
+        {
+            _issueIds = issueIds;
+        }
+
+    }
+
+    // All three impersonate API actions have the same form
+    @RequiresPermissionClass(AdminPermission.class) @CSRF
+    public class MoveAction extends MutatingApiAction<MoveIssueForm>
+    {
+
+        @Override
+        public ApiResponse execute(MoveIssueForm form, BindException errors) throws Exception
+        {
+            DbSchema schema = IssuesSchema.getInstance().getSchema();
+
+            try (DbScope.Transaction transaction = schema.getScope().ensureTransaction())
+            {
+                List<AttachmentParent> attachmentParents = new ArrayList<>();
+                for (int issueId : form.getIssueIds())
+                    for (Issue.Comment comment : IssueManager.getIssue(null, issueId).getComments())
+                        attachmentParents.add(comment);
+
+                SQLFragment update = new SQLFragment("UPDATE issues.issues SET container = ? ", form.getContainerId());
+                update.append("WHERE issueId ");
+                schema.getSqlDialect().appendInClauseSql(update, form.getIssueIds());
+                new SqlExecutor(schema).execute(update);
+
+                Container newContainer = ContainerManager.getForId(form.getContainerId());
+                AttachmentService.get().moveAttachments(newContainer, attachmentParents, getUser());
+
+                transaction.commit();
+            }
+            catch (IOException x)
+            {
+                // TODO: do we want to do anything with the message here?
+                return new ApiSimpleResponse("success", false);
+            }
+
+            return new ApiSimpleResponse("success", true);
+        }
+    }
 
     public static final String REQUIRED_FIELDS_COLUMNS = "title,assignedto,type,area,priority,milestone,notifylist";
     public static final String DEFAULT_REQUIRED_FIELDS = "title;assignedto";
@@ -1634,6 +1742,9 @@ public class IssuesController extends SpringActionController
         private String _assignedToUser = null;
         private int _defaultUser = 0;
 
+        private String _moveToContainer = null;
+        private String _moveToContainerSelect = null;
+
         private HString[] _requiredFields = new HString[0];
 
         private HString _entrySingularName;
@@ -1689,6 +1800,26 @@ public class IssuesController extends SpringActionController
             _defaultUser = defaultUser;
         }
 
+        public String getMoveToContainer()
+        {
+            return _moveToContainer;
+        }
+
+        public void setMoveToContainer(String moveToContainer)
+        {
+            _moveToContainer = moveToContainer;
+        }
+
+        public String getMoveToContainerSelect()
+        {
+            return _moveToContainerSelect;
+        }
+
+        public void setMoveToContainerSelect(String moveToContainerSelect)
+        {
+            _moveToContainerSelect = moveToContainerSelect;
+        }
+
         public HString getEntrySingularName()
         {
             return _entrySingularName;
@@ -1718,6 +1849,7 @@ public class IssuesController extends SpringActionController
     {
         private Group _group = null;
         private User _user = null;
+        private List<Container> _moveToContainers = new LinkedList<>();
         private Sort.SortDirection _direction = Sort.SortDirection.ASC;
 
         public void validateCommand(ConfigureIssuesForm form, Errors errors)
@@ -1777,6 +1909,31 @@ public class IssuesController extends SpringActionController
             else
             {
                 errors.reject("assignedToUser", "Invalid assigned to setting!");
+            }
+
+            if (form.getMoveToContainer().equals("NoMoveToContainer"))
+            {
+                if (form.getMoveToContainerSelect() != null)
+                    errors.reject("moveToContainer", "No move to container setting shouldn't include a default container!");
+            }
+            else if (form.getMoveToContainer().equals("SpecificMoveToContainer"))
+            {
+                String[] containerPaths = StringUtils.split(form.getMoveToContainerSelect(),';');
+
+                for (String containerPath : containerPaths )
+                {
+                    Container container = ContainerManager.getForPath(containerPath);
+                    if (null == container)
+                    {
+                        errors.reject("moveToContainer", "Container does not exist!");
+                        break;
+                    }
+                    _moveToContainers.add(container);
+                }
+            }
+            else
+            {
+                errors.reject("moveToContainer", "Invalid move to setting!");
             }
 
             if (form.getEntrySingularName() == null || form.getEntrySingularName().trimToEmpty().length() == 0)
@@ -1846,6 +2003,7 @@ public class IssuesController extends SpringActionController
             IssueManager.saveAssignedToGroup(getContainer(), _group);
             IssueManager.saveCommentSortDirection(getContainer(), _direction);
             IssueManager.saveDefaultAssignedToUser(getContainer(), _user);
+            IssueManager.saveMoveDestinationContainers(getContainer(), _moveToContainers);
 
             CustomColumnConfiguration nccc = new CustomColumnConfiguration(getViewContext());
             IssueManager.saveCustomColumnConfiguration(getContainer(), nccc);
@@ -2388,7 +2546,7 @@ public class IssuesController extends SpringActionController
     {
         public AdminView(Container c, CustomColumnConfiguration ccc, BindException errors)
         {
-            super("/org/labkey/issue/admin.jsp", null, errors);
+            super("/org/labkey/issue/adminView.jsp", null, errors);
 
             KeywordAdminView keywordView = new KeywordAdminView(c, ccc);
             keywordView.addKeywordPicker(ColumnType.TYPE);
@@ -2417,6 +2575,7 @@ public class IssuesController extends SpringActionController
             bean.entryTypeNames = IssueManager.getEntryTypeNames(c);
             bean.assignedToGroup = IssueManager.getAssignedToGroup(c);
             bean.defaultUser = IssueManager.getDefaultAssignedToUser(c);
+            bean.moveToContainers = IssueManager.getMoveDestinationContainers(c);
             bean.commentSort = IssueManager.getCommentSortDirection(c);
             setModelBean(bean);
         }
@@ -2434,6 +2593,7 @@ public class IssuesController extends SpringActionController
         public EntryTypeNames entryTypeNames;
         public Group assignedToGroup;
         public User defaultUser;
+        public List<Container> moveToContainers;
         public Sort.SortDirection commentSort;
 
         public AdminBean(List<ColumnInfo> columns, String requiredFields, EntryTypeNames typeNames)
@@ -2745,6 +2905,12 @@ public class IssuesController extends SpringActionController
     private boolean hasUpdatePermission(User user, Issue issue)
     {
         return getContainer().hasPermission(user, UpdatePermission.class,
+                (issue.getCreatedBy() == user.getUserId() ? RoleManager.roleSet(OwnerRole.class) : null));
+    }
+
+    private boolean hasAdminPermission(User user, Issue issue)
+    {
+        return getContainer().hasPermission(user, AdminPermission.class,
                 (issue.getCreatedBy() == user.getUserId() ? RoleManager.roleSet(OwnerRole.class) : null));
     }
 

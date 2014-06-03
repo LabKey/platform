@@ -133,6 +133,9 @@ public class IssueManager
     private static final String CAT_DEFAULT_ASSIGNED_TO_LIST = "issueDefaultAsignedToList";
     private static final String PROP_DEFAULT_ASSIGNED_TO_USER = "issueDefaultAssignedToUser";
 
+    private static final String CAT_DEFAULT_MOVE_TO_LIST = "issueDefaultMoveToList";
+    private static final String PROP_DEFAULT_MOVE_TO_CONTAINER = "issueDefaultMoveToContainer";
+
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
     public static final String PICK_LIST_NAME = "pickListColumns";
 
@@ -704,6 +707,36 @@ public class IssueManager
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_ASSIGNED_TO_LIST, true);
         props.put(PROP_DEFAULT_ASSIGNED_TO_USER, null != user ? String.valueOf(user.getUserId()) : null);
+        PropertyManager.saveProperties(props);
+    }
+
+    public static @Nullable List<Container> getMoveDestinationContainers(Container c)
+    {
+        Map<String, String> props = PropertyManager.getProperties(c, CAT_DEFAULT_MOVE_TO_LIST);
+        String propsValue = props.get(PROP_DEFAULT_MOVE_TO_CONTAINER);
+        if (null == propsValue)
+            return null;
+
+        List<Container> containers = new LinkedList<>();
+        for (String containerId : StringUtils.split(propsValue, ';'))
+            containers.add( ContainerManager.getForId(containerId));
+
+        return containers;
+    }
+
+    public static void saveMoveDestinationContainers(Container c, @Nullable List<Container> containers)
+    {
+        String propsValue = null;
+        if (containers != null && containers.size() != 0)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (Container container : containers)
+                sb.append(String.format(";%s", container.getId()));
+            propsValue = sb.toString().substring(1);
+        }
+
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_MOVE_TO_LIST, true);
+        props.put(PROP_DEFAULT_MOVE_TO_CONTAINER, propsValue);
         PropertyManager.saveProperties(props);
     }
 

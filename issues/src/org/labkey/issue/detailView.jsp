@@ -35,7 +35,18 @@
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.util.Arrays" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("issues/detail.js"));
+        return resources;
+    }
+%>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
     IssuePage bean = me.getModelBean();
@@ -78,6 +89,11 @@
     else if (issue.getStatus().equals(Issue.statusCLOSED) && bean.getHasUpdatePermissions())
     {
         %><td><%= textLink("reopen", IssuesController.issueURL(c, ReopenAction.class).addParameter("issueId", issueId))%></td><%
+    }
+
+    if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
+    {
+        %><td><%= textLink("move", "javascript:void(0)", "createMoveIssueWindow(" + issueId + ")", "")%></td><%
     }
     %><td><%= textLink("print", context.cloneActionURL().replaceParameter("_print", "1"))%></td>
     <td><%= textLink("email prefs", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId))%></td>

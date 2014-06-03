@@ -41,13 +41,40 @@
 <%@ page import="org.labkey.issue.model.KeywordManager" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.json.JSONArray" %>
+<%@ page import="java.util.LinkedList" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("issues/admin.js"));
+        return resources;
+    }
+%>
 <%
     HttpView<AdminBean> me = (HttpView<AdminBean>) HttpView.currentView();
     AdminBean bean = me.getModelBean();
     CustomColumnConfiguration ccc = bean.ccc;
     Container c = getContainer();
+
+    List<String> containerIds = new LinkedList<>();
+    if (bean.moveToContainers != null)
+    {
+        for (Container container : bean.moveToContainers)
+            containerIds.add(container.getId());
+    }
 %>
+
+<script type="text/javascript">
+    // NOTE: needed for admin.js
+    var curDefaultUser = <%=bean.defaultUser == null ? null : bean.defaultUser.getUserId()%>;
+    var curDefaultContainers = <%= new JSONArray(containerIds.toString())%>;
+</script>
+
 <br>
 <table>
 <tr><td>
@@ -115,9 +142,9 @@
 <tr>
     <td valign="top" colspan="2">
         <table width="100%">
-            <tr><td align="center"><div class="labkey-form-label"><b>Additional Configuration</b></div></td></tr>
+            <tr><td align="center" colspan="2"><div class="labkey-form-label"><b>Additional Configuration</b></div></td></tr>
             <tr>
-                <td>
+                <td valign=top>
                     <table>
                         <tr>
                             <td>Singular item name</td>
@@ -133,6 +160,25 @@
                             <td>Comment sort direction</td>
                             <td>
                                 <%=PageFlowUtil.strSelect(ConfigureIssuesForm.ParamNames.direction.name(), Arrays.asList(Sort.SortDirection.values()), java.util.Arrays.asList("Oldest first", "Newest first"), bean.commentSort) %>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td valign="top" align="right">
+                    <table>
+                        <tr><td colspan="2">Set move to container:</td></tr>
+                        <tr>
+                            <td>
+                                <input onchange="disableMoveToContainerSelect()" type="radio" name="moveToContainer" value="NoMoveToContainer"<%=checked(null == bean.moveToContainers)%> />
+                            </td>
+                            <td>None</td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <input onchange="enableMoveToContainerSelect()" type="radio" name="moveToContainer" value="SpecificMoveToContainer"<%=checked(null != bean.moveToContainers)%> />
+                            </td>
+                            <td>
+                                <div class="moveToContainerCheckCombo"></div>
                             </td>
                         </tr>
                     </table>
@@ -153,7 +199,7 @@
                                 <input onchange="assignedToGroup.disabled=false;updateAssignedToUser();" type="radio" name="assignedToMethod" value="Group"<%=checked(null != bean.assignedToGroup)%> />
                             </td>
                             <td>Specific Group
-                                <select name="assignedToGroup" onchange="updateAssignedToUser();"<%=disabled(null == bean.assignedToGroup)%> ><%
+                                <select name="assignedToGroup" onchange="updateAssignedToUser()"<%=disabled(null == bean.assignedToGroup)%> ><%
                                     for (Group group : SecurityManager.getGroups(c.getProject(), true))
                                     {
                                         // 19532 partial. Only show Site: Users option to site admins
@@ -186,42 +232,6 @@
                             </td>
                             <td>Specific User
                                 <select onchange="updateCurDefaultUser();" name="defaultUser"<%=disabled(null == bean.defaultUser)%> ></select>
-                                <script>
-                                    var curDefaultUser = <%=bean.defaultUser == null ? null : bean.defaultUser.getUserId()%>;
-                                    function updateCurDefaultUser() {
-                                        var e = document.getElementsByName("defaultUser")[0];
-                                        curDefaultUser = e.options[e.selectedIndex].value;
-                                    }
-                                    function updateAssignedToUser() {
-                                        //NOTE: need to handle special user groups
-                                        var e = document.getElementsByName("assignedToGroup")[0];
-                                        var groupId = e.options[e.selectedIndex].value;
-                                        var config = {allMembers: true};
-                                        // if "All project Users" is selected than groupId is not used to obtain all project users
-                                        if (!document.getElementsByName("assignedToMethod")[0].checked)
-                                        {
-                                            config["groupId"] = parseInt(groupId)
-                                        }
-                                        config["success"] = function(data) {
-                                            var e = document.getElementsByName("defaultUser")[0];
-                                            e.options.length = 0;
-
-                                            Ext4.each(data.users, function(user){
-                                                var option = document.createElement("option");
-                                                var uid = user.userId;
-                                                option.text = user.displayName;
-                                                option.value = uid;
-                                                if (uid == curDefaultUser)
-                                                    option.selected = true;
-
-                                                e.add(option);
-                                            }, this);
-                                        }
-
-                                        LABKEY.Security.getUsers(config);
-                                    }
-                                    Ext4.onReady(updateAssignedToUser);
-                                </script>
                             </td>
                         </tr>
                     </table>

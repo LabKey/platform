@@ -525,6 +525,27 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         addAttachments(parent, Collections.singletonList((AttachmentFile)file), auditUser);
     }
 
+    @Override
+    public void moveAttachments(Container newContainer, List<AttachmentParent> parents, User auditUser) throws IOException
+    {
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        for (AttachmentParent parent : parents)
+        {
+            int rowsChanged = new SqlExecutor(coreTables().getSchema()).execute(sqlMove(parent, newContainer));
+            if (rowsChanged > 0)
+            {
+                List<Attachment> atts = getAttachments(parent);
+                String filename;
+                for (Attachment att : atts)
+                {
+                    filename = att.getName();
+                    ss.deleteResource(makeDocId(parent, filename));
+                    addAuditEvent(auditUser, parent, filename, "The attachment " + filename + " was moved");
+                }
+                AttachmentCache.removeAttachments(parent);
+            }
+        }
+    }
 
     /** may return fewer AttachmentFile than Attachment, if there have been deletions */
     @Override
@@ -923,6 +944,13 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     {
         return new SQLFragment("UPDATE " + coreTables().getTableInfoDocuments() + " SET DocumentName = ? WHERE Container = ? AND Parent = ? AND DocumentName = ?",
                 newName, parent.getContainerId(), parent.getEntityId(), oldName);
+    }
+
+    private SQLFragment sqlMove(AttachmentParent parent, Container newContainer)
+    {
+        // TODO: consider an inClause
+        return new SQLFragment("UPDATE " + coreTables().getTableInfoDocuments() + " SET Container = ? WHERE Container = ? AND Parent=?",
+                newContainer.getEntityId(), parent.getContainerId(), parent.getEntityId());
     }
 
     private static class ResponseWriter implements DocumentWriter

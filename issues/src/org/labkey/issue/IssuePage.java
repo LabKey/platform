@@ -71,9 +71,11 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     private Class<? extends Controller> _action;
     private String _body;
     private boolean _hasUpdatePermissions;
+    private boolean _hasAdminPermissions;
     private String _requiredFields;
     private String _dataRegionSelectionKey;
     private boolean _print = false;
+    private boolean _moveDestinations;
 
     public IssuePage(Container c, User user)
     {
@@ -191,6 +193,16 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         return _hasUpdatePermissions;
     }
 
+    public void setUserHasAdminPermissions(boolean hasAdminPermissions)
+    {
+        _hasAdminPermissions = hasAdminPermissions;
+    }
+
+    public boolean getHasAdminPermissions()
+    {
+        return _hasAdminPermissions;
+    }
+
     public String getRequiredFields()
     {
         return _requiredFields;
@@ -211,6 +223,15 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         _dataRegionSelectionKey = dataRegionSelectionKey;
     }
 
+    public boolean hasMoveDestinations()
+    {
+        return _moveDestinations;
+    }
+
+    public void setMoveDestinations(boolean moveDestinations)
+    {
+        _moveDestinations = moveDestinations;
+    }
 
     public String writeCustomColumn(ColumnType type, int tabIndex, boolean markIfRequired) throws IOException
     {
