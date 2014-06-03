@@ -108,6 +108,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
                 @NotNull ViewContext context)
         {
             super(protocol, provider, context.getUser(), context.getContainer());
+            setViewContext(context);
         }
 
         public Factory(
