@@ -104,10 +104,7 @@ public class ImportRunApiAction<ProviderType extends AssayProvider> extends Muta
 
             batchId = form.getBatchId();
 
-            AssayRunUploadContextImpl.Factory factory = new AssayRunUploadContextImpl.Factory<>(
-                    protocol,
-                    (ProviderType)provider,
-                    getViewContext());
+            AssayRunUploadContext.Factory factory = provider.createRunUploadFactory(protocol, getViewContext());
 
             factory.setName(form.getName())
                     .setComments(form.getComment())
