@@ -916,7 +916,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
             String description = StringUtils.trimToEmpty(c.getDescription());
             title = type + " -- " + containerTitle;
-            String user = UserManager.getUser(c.getCreatedBy()).getDisplayName(User.getSearchUser());
+            User u_user = UserManager.getUser(c.getCreatedBy());
+            String user = (u_user == null) ? "" : u_user.getDisplayName(User.getSearchUser());
             keywords = description + " " + type + " " + user;
             body = type + " " + containerTitle + (c.isProject() ? "" : " in Project " + p.getName());
             body += "\n" + description;
