@@ -969,6 +969,7 @@ api/src/org/labkey/api/query/JavaScriptExportScriptFactory.java -text
 api/src/org/labkey/api/query/LookupForeignKey.java -text
 api/src/org/labkey/api/query/MetadataException.java -text
 api/src/org/labkey/api/query/MetadataParseException.java -text
+api/src/org/labkey/api/query/MetadataParseWarning.java -text
 api/src/org/labkey/api/query/OlapSchemaInfo.java -text
 api/src/org/labkey/api/query/PdLookupForeignKey.java -text
 api/src/org/labkey/api/query/PerlExportScriptFactory.java -text

@@ -15,27 +15,31 @@
  */
 package org.labkey.api.query;
 
+import org.apache.log4j.Level;
 import org.json.JSONObject;
 
 /**
  * User: Nick Arnold
  * Date: 3/6/13
  */
-public class MetadataParseException extends QueryParseException
+public class MetadataParseWarning extends MetadataParseException
 {
-    public MetadataParseException(String message)
+    public MetadataParseWarning(String message)
     {
         super(message, null, 0, 0);
+        _level = Level.WARN_INT;
     }
 
-    public MetadataParseException(String message, Throwable cause, int line, int column)
+    public MetadataParseWarning(String message, Throwable cause, int line, int column)
     {
         super(message, cause, line, column);
+        _level = Level.WARN_INT;
     }
 
-    public MetadataParseException(String queryName, QueryParseException other)
+    public MetadataParseWarning(String queryName, QueryParseException other)
     {
         super(queryName + ":" + other.getMessage(), other.getCause(), other._line, other._column);
+        _level = Level.WARN_INT;
     }
 
     @Override

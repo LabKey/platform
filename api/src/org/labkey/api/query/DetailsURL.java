@@ -103,7 +103,7 @@ public final class DetailsURL extends StringExpressionFactory.FieldKeyStringExpr
         catch (IllegalArgumentException iae)
         {
             if (errors != null)
-                errors.add(new MetadataException("Illegal URL expression '" + str + "': " + iae.getMessage(), iae));
+                errors.add(new MetadataParseWarning("Illegal URL expression '" + str + "': " + iae.getMessage(), iae, 0, 0));
             else
                 throw iae;
         }

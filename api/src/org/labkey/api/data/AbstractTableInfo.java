@@ -34,7 +34,8 @@ import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.MetadataException;
+import org.labkey.api.query.MetadataParseException;
+import org.labkey.api.query.MetadataParseWarning;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QuerySchema;
@@ -793,7 +794,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
                 String msgColumnName =
                         (column.getParentTable()==null?"":column.getParentTable().getName()) +
                         column.getName();
-                qpe.add(new MetadataException("Schema " + xbColumn.getFk().getFkDbSchema() + " not found, in foreign key definition: " + msgColumnName));
+                qpe.add(new MetadataParseWarning("Schema " + xbColumn.getFk().getFkDbSchema() + " not found, in foreign key definition: " + msgColumnName));
                 return;
             }
             column.setFk(qfk);

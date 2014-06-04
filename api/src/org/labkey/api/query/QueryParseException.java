@@ -21,6 +21,9 @@ import org.json.JSONObject;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.util.ExceptionUtil;
+
+import java.util.Map;
 
 public class QueryParseException extends QueryException
 {
@@ -41,6 +44,17 @@ public class QueryParseException extends QueryException
         _line = other._line;
         _column = other._column;
     }
+
+    public boolean isError()
+    {
+        return _level >= Level.ERROR_INT;
+    }
+
+    public boolean isWarning()
+    {
+        return _level < Level.ERROR_INT;
+    }
+
 
     public String getMessage()
     {
@@ -92,11 +106,18 @@ public class QueryParseException extends QueryException
             error.put("col", getColumn());
         }
         error.put("type", "sql");
-
         if (lines != null && getLine() <= lines.length && getLine() >= 1 && getColumn() >= 0)
         {
             String errorStr = lines[getLine() - 1];
             error.put("errorStr", errorStr.substring(getColumn()));
+        }
+        Map<Enum,String> decorations = ExceptionUtil.getExceptionDecorations(this);
+        if (null != decorations && !decorations.isEmpty())
+        {
+            JSONObject d = new JSONObject();
+            for (Map.Entry<Enum,String> entry : decorations.entrySet())
+                d.put(entry.getKey().name(), entry.getValue());
+            error.put("decorations",d);
         }
         return error;
     }

@@ -145,8 +145,13 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         if (o instanceof QueryDefinition)
         {
             TableInfo t = ((QueryDefinition)o).getTable(this, errors, true);
-            if (!errors.isEmpty())
-                throw errors.get(0);
+            // throw if there are any non-warning errors
+            for (QueryException ex : errors)
+            {
+                if (ex instanceof QueryParseException && ((QueryParseException)ex).isWarning())
+                    continue;
+                throw ex;
+            }
             assert validateTableInfo(t);
             return t;
         }
