@@ -53,8 +53,8 @@ public interface ModuleRunUploadContext<ProviderType extends AssayProvider> exte
         protected JSONObject _jsonObject;
         protected List<Map<String, Object>> _rawData;
 
+        // TODO: Move outputDatas, inputMaterials, outputMaterials to the base class AssayRunUploadContext.Factory
         // optional fields
-        protected Map<Object, String> _inputDatas = new HashMap<>();
         protected Map<ExpData, String> _outputDatas = new HashMap<>();
         protected Map<ExpMaterial, String> _inputMaterials = new HashMap<>();
         protected Map<ExpMaterial, String> _outputMaterials = new HashMap<>();
