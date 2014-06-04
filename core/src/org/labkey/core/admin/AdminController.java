@@ -125,26 +125,8 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.util.BreakpointThread;
-import org.labkey.api.util.ConfigurationException;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.ExceptionReportingLevel;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.Formats;
-import org.labkey.api.util.GUID;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.HttpsUtil;
-import org.labkey.api.util.MailHelper;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.NetworkDrive;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.SessionAppender;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.SystemMaintenance;
+import org.labkey.api.util.*;
 import org.labkey.api.util.SystemMaintenance.SystemMaintenanceProperties;
-import org.labkey.api.util.URLHelper;
-import org.labkey.api.util.UsageReportingLevel;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.*;
@@ -6493,4 +6475,101 @@ public class AdminController extends SpringActionController
         }
     }
 
+    // API for reporting client-side exceptions.
+    // UNDONE: Throttle by IP to avoid DOS from buggy clients.
+    @RequiresNoPermission
+    public class LogMothershipErrorAction extends SimpleViewAction<ExceptionForm>
+    {
+        @Override
+        public ModelAndView getView(ExceptionForm exceptionForm, BindException errors) throws Exception
+        {
+            ExceptionUtil.logClientExceptionToMothership(
+                    exceptionForm.getStackTrace(),
+                    exceptionForm.getExceptionMessage(),
+                    exceptionForm.getBrowser(),
+                    null,
+                    exceptionForm.getRequestURL(),
+                    exceptionForm.getReferrerURL(),
+                    exceptionForm.getUsername()
+            );
+            return null;
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return null;
+        }
+    }
+
+    public static class ExceptionForm
+    {
+        private String _stackTrace;
+        private String _requestURL;
+        private String _browser;
+        private String _username;
+        private String _referrerURL;
+
+        public String getExceptionMessage()
+        {
+            return _exceptionMessage;
+        }
+
+        public void setExceptionMessage(String exceptionMessage)
+        {
+            _exceptionMessage = exceptionMessage;
+        }
+
+        private String _exceptionMessage;
+
+        public String getUsername()
+        {
+            return _username;
+        }
+
+        public void setUsername(String username)
+        {
+            _username = username;
+        }
+
+        public String getStackTrace()
+        {
+            return _stackTrace;
+        }
+
+        public void setStackTrace(String stackTrace)
+        {
+            _stackTrace = stackTrace;
+        }
+
+        public String getRequestURL()
+        {
+            return _requestURL;
+        }
+
+        public void setRequestURL(String requestURL)
+        {
+            _requestURL = requestURL;
+        }
+
+        public String getBrowser()
+        {
+            return _browser;
+        }
+
+        public void setBrowser(String browser)
+        {
+            _browser = browser;
+        }
+
+        public String getReferrerURL()
+        {
+            return _referrerURL;
+        }
+
+        public void setReferrerURL(String referrerURL)
+        {
+            _referrerURL = referrerURL;
+        }
+    }
 }
