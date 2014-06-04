@@ -189,6 +189,7 @@ abstract public class EHRService
 
     abstract public void registerMoreActionsButton(ButtonConfigFactory btn, String schema, String query);
 
+    @NotNull
     abstract public List<ButtonConfigFactory> getMoreActionsButtons(TableInfo ti);
 
     abstract public List<ButtonConfigFactory> getTbarButtons(TableInfo ti);

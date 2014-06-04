@@ -21,6 +21,7 @@ import org.labkey.api.ldk.table.SimpleButtonConfigFactory;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.DataSetTable;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.Set;
@@ -32,9 +33,9 @@ import java.util.Set;
  */
 public class ReassignRequestButton extends SimpleButtonConfigFactory
 {
-    public ReassignRequestButton(Module owner)
+    public ReassignRequestButton(Module owner, String queryName)
     {
-        super(owner, "Reassign Requests", "EHR.window.ReassignRequestWindow.buttonHandler(dataRegionName);");
+        super(owner, "Reassign Requests", "EHR.window.ReassignRequestWindow.buttonHandler(dataRegionName, " + PageFlowUtil.jsString(queryName) + ");");
 
         setClientDependencies(ClientDependency.fromFilePath("ehr/window/ReassignRequestWindow.js"));
     }

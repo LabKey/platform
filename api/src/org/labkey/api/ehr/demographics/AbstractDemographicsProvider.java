@@ -120,7 +120,7 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
         final TableInfo ti = us.getTable(_queryName);
         if (ti == null)
         {
-            throw new IllegalArgumentException("Table: " + _queryName + " not found in the container: " + c.getPath());
+            throw new IllegalArgumentException("Table: " + _schemaName + "." + _queryName + " not found in the container: " + c.getPath());
         }
 
         return ti;

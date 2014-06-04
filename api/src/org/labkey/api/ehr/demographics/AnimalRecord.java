@@ -58,6 +58,8 @@ public interface AnimalRecord
 
     public String getGeographicOrigin();
 
+    public String getDemographicsObjectId();
+
     public List<Map<String, Object>> getActiveAssignments();
 
     public List<Map<String, Object>> getActiveTreatments();

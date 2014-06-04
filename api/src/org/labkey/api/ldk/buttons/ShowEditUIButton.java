@@ -34,6 +34,7 @@ public class ShowEditUIButton extends SimpleButtonConfigFactory
     protected String _schemaName;
     protected String _queryName;
     private Map<String, String> _urlParamMap = null;
+    private boolean _copyFilters = true;
 
     protected Class<? extends Permission>[] _perms;
 
@@ -65,6 +66,11 @@ public class ShowEditUIButton extends SimpleButtonConfigFactory
         return true;
     }
 
+    public void setCopyFilters(boolean copyFilters)
+    {
+        _copyFilters = copyFilters;
+    }
+
     public void setUrlParamMap(Map<String, String> urlParamMap)
     {
         _urlParamMap = urlParamMap;
@@ -90,7 +96,7 @@ public class ShowEditUIButton extends SimpleButtonConfigFactory
             }
         }
 
-        ret += "});";
+        ret += "}, " + _copyFilters + ");";
 
         return ret;
     }

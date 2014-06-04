@@ -32,6 +32,12 @@ public class EHRShowEditUIButton extends ShowEditUIButton
         setClientDependencies(ClientDependency.fromModuleName("ehr"));
     }
 
+    public EHRShowEditUIButton(Module owner, String schemaName, String queryName, String label, Class<? extends Permission>... perms)
+    {
+        super(owner, schemaName, queryName, label, perms);
+        setClientDependencies(ClientDependency.fromModuleName("ehr"));
+    }
+
     @Override
     protected String getHandlerName()
     {

@@ -71,7 +71,7 @@ public class AbstractDataEntryForm implements DataEntryForm
         _name = name;
         _label = label;
         _category = category;
-        _sections = sections;
+        _sections = new ArrayList<>(sections);
     }
 
     public String getName()
@@ -82,6 +82,11 @@ public class AbstractDataEntryForm implements DataEntryForm
     public String getLabel()
     {
         return _label;
+    }
+
+    protected void addSection(FormSection s)
+    {
+        _sections.add(s);
     }
 
     protected void setDisplayReviewRequired(boolean displayReviewRequired)

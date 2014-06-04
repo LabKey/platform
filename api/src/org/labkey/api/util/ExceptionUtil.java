@@ -280,7 +280,43 @@ public class ExceptionUtil
                 username);
     }
 
+    /**
+     * This has been separated from logExceptionToMothership() in order to provide more verbose server-side logging of client context
+     */
+    public static void logClientExceptionToMothership(
+            String stackTrace,
+            String exceptionMessage,
+            String browser,
+            String sqlState,
+            String requestURL,
+            String referrerURL,
+            String username)
+    {
+        _logStatic.error("Client exception detected and logged to mothership:\n" +
+            requestURL + "\n" +
+            referrerURL + "\n" +
+            browser + "\n" +
+            stackTrace
+        );
+
+        reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username);
+    }
+
     public static void logExceptionToMothership(
+            String stackTrace,
+            String exceptionMessage,
+            String browser,
+            String sqlState,
+            String requestURL,
+            String referrerURL,
+            String username)
+    {
+        _logStatic.error("Exception detected and logged to mothership:\n" + stackTrace);
+
+        reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username);
+    }
+
+    private static void reportExceptionToMothership(
             String stackTrace,
             String exceptionMessage,
             String browser,
@@ -291,8 +327,6 @@ public class ExceptionUtil
     {
         //if (isIgnorable(stackTrace))
         //    return;
-
-        _logStatic.error("Exception detected and logged to mothership:\n" + stackTrace);
 
         ExceptionReportingLevel level = getExceptionReportingLevel();
         if (level == ExceptionReportingLevel.NONE)

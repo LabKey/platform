@@ -45,6 +45,7 @@ public class SimpleFormSection extends AbstractFormSection
     private String _queryName;
 
     protected boolean _showLocation = false;
+    protected boolean _allowRowEditing = true;
 
     public SimpleFormSection(String schemaName, String queryName, String label, String xtype)
     {
@@ -94,6 +95,7 @@ public class SimpleFormSection extends AbstractFormSection
         queries.put(q);
 
         json.put("queries", queries);
+        json.put("allowRowEditing", _allowRowEditing);
 
         return json;
     }
