@@ -1367,11 +1367,11 @@ public class QueryServiceImpl extends QueryService
         }
         catch (XmlException e)
         {
-            errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(e)));
+            errors.add(new MetadataParseException(XmlBeansUtil.getErrorMessage(e)));
         }
         for (XmlError xmle : xmlErrors)
         {
-            errors.add(new MetadataException(XmlBeansUtil.getErrorMessage(xmle)));
+            errors.add(new MetadataParseException(XmlBeansUtil.getErrorMessage(xmle)));
         }
 
         return null;

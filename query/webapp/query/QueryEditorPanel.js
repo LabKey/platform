@@ -710,23 +710,28 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
             return;
         }
 
-        var inner = '<div class="' + (css || "labkey-error error-container") + '"><ul>';
+        var inner = [];
+        inner.push('<div class="' + (css || "labkey-error error-container") + '"><ul>');
         for (var e = 0; e < errors.length; e++)
         {
-            inner += '<li>' + errors[e].msg + '</li>'
+            var err = errors[e];
+            inner.push('<li>' + err.msg);
+            if (err.decorations && err.decorations.ResolveText && err.decorations.ResolveURL)
+                inner.push('&nbsp;<a href="' + err.decorations.ResolveURL + '">' + Ext.util.Format.htmlEncode(err.decorations.ResolveText) + '</a>');
+            inner.push('</li>');
         }
-        inner += '</ul></div>';
+        inner.push('</ul></div>');
 
         if (errorEl)
         {
             errorEl.update('');
-            errorEl.update(inner);
+            errorEl.update(inner.join(''));
         }
 
         if (queryEl)
         {
             queryEl.update('');
-            queryEl.update(inner);
+            queryEl.update(inner.join(''));
         }
     },
 

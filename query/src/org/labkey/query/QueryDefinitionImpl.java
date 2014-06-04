@@ -33,7 +33,6 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryChangeListener.QueryProperty;
@@ -330,30 +329,29 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                 errors.add(new MetadataParseException(xmle.getMessage(), null, xmle.getLine(), xmle.getColumn()));
             }
         }
-        else
+
+        Query q = getQuery(schema);
+        if (q.getParseErrors().isEmpty())
         {
-            Query q = getQuery(schema);
-            if (q.getParseErrors().isEmpty())
+            try
             {
-                try
-                {
-                    q.getTableInfo();
-                }
-                catch (QueryService.NamedParameterNotProvided x)
-                {
-                    /* ignore */
-                }
-                catch (Exception x)
-                {
-                    log.error("Unexpected error",  x);
-                    errors.add(wrapParseException(x, false));
-                }
+                q.getTableInfo();
             }
-            for (QueryException e : q.getParseErrors())
-                errors.add(wrapParseException(e, true));
-            if (errors.isEmpty() && null != warnings)
-                warnings.addAll(q.getParseWarnings());
+            catch (QueryService.NamedParameterNotProvided x)
+            {
+                /* ignore */
+            }
+            catch (Exception x)
+            {
+                log.error("Unexpected error",  x);
+                errors.add(wrapParseException(x, false));
+            }
         }
+        for (QueryException e : q.getParseErrors())
+            errors.add(wrapParseException(e, true));
+        if (errors.isEmpty() && null != warnings)
+            warnings.addAll(q.getParseWarnings());
+
         return errors.isEmpty();
     }
 
@@ -361,13 +359,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
     static QueryParseException wrapParseException(Throwable e, boolean metadataExists)
     {
+        if (e instanceof MetadataParseException)
+        {
+            return new QueryParseException(metadataExists ? "Error with dependent query XML: " + e.getMessage() : e.getMessage(), e, 0, 0);
+        }
         if (e instanceof QueryParseException)
         {
             return (QueryParseException) e;
-        }
-        if (e instanceof MetadataException)
-        {
-            return new QueryParseException(metadataExists ? "Error with dependent query XML: " + e.getMessage() : e.getMessage(), e, 0, 0);
         }
         return new QueryParseException("Unexpected exception", e, 0, 0);
     }
@@ -537,7 +535,7 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
             }
         }
 
-        if (ret != null && errors.isEmpty())
+        if (ret != null)
         {
             // Apply ContainerContext to any URLs added in metadata override.
             ((AbstractTableInfo)ret).afterConstruct();

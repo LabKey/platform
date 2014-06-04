@@ -47,7 +47,6 @@ import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
@@ -604,16 +603,68 @@ public class Query
         return _countResolvedTables + (null == _parent ? 0 : _parent.getTotalCountResolved());
     }
 
+
 	/**
 	 * Resolve a particular table name.  The table name may have schema names (folder.schema.table etc.) prepended to it.
 	 */
-	QueryRelation resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias)
+    QueryRelation resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias)
+    {
+        // to simplify the logic a bit, break out the error translation from the _resolveTable()
+        List<QueryException> resolveExceptions = new ArrayList<>();
+        QueryDefinition[] queryDefOUT = new QueryDefinition[1];
+
+        QueryRelation ret = _resolveTable(currentSchema, node, key, alias, resolveExceptions, queryDefOUT);
+
+        QueryDefinition def = queryDefOUT[0];
+        ActionURL source = (null == def) ? null :  def.urlFor(QueryAction.sourceQuery);
+
+        QueryException firstError = null;
+        for (QueryException x : resolveExceptions)
+        {
+            if (!(x instanceof QueryParseException && ((QueryParseException)x).isWarning()))
+            {
+                firstError = x;
+                break;
+            }
+        }
+        if (null == firstError && !resolveExceptions.isEmpty())
+            firstError = resolveExceptions.get(0);
+
+        if (null != firstError)
+        {
+            QueryParseException qpe;
+            if (firstError instanceof QueryParseException && ((QueryParseException)firstError).isWarning())
+            {
+                qpe = new QueryParseWarning("Query '" + key.getName() + "' has warnings", null, null == node ? 0 : node.getLine(), null == node ? 0 : node.getColumn());
+                _parseWarnings.add(qpe);
+            }
+            else
+            {
+                qpe = new QueryParseException("Query '" + key.getName() + "' has errors", null, null == node ? 0 : node.getLine(), null == node ? 0 : node.getColumn());
+                _parseErrors.add(qpe);
+            }
+            if (null != source)
+            {
+                ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveURL, source.getLocalURIString(false), true);
+                ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveText, "edit " + def.getName(), true);
+            }
+        }
+
+        assert ret != null || !_parseErrors.isEmpty();
+        return ret;
+    }
+
+
+    private QueryRelation _resolveTable(QuerySchema currentSchema, QNode node, FieldKey key, String alias,
+            // OUT parameters
+            List<QueryException> resolveExceptions,
+            QueryDefinition[] queryDefOUT)
 	{
         ++_countResolvedTables;
         if (getTotalCountResolved() > 200 || _depth > 20)
         {
             // recursive query?
-            parseError(_parseErrors, "Too many tables used in this query (recursive?)", null);
+            parseError(resolveExceptions, "Too many tables used in this query (recursive?)", node);
             return null;
         }
 
@@ -640,7 +691,7 @@ public class Query
             resolvedSchema = resolvedSchema.getSchema(name);
 			if (resolvedSchema == null)
 			{
-				parseError(_parseErrors, "Table " + StringUtils.join(names,".") + " not found.", node);
+				parseError(resolveExceptions, "Table " + StringUtils.join(names,".") + " not found.", node);
 				return null;
 			}
 		}
@@ -649,7 +700,6 @@ public class Query
 
         try
         {
-            List<QueryException> resolveExceptions = new ArrayList<>();
             if (resolvedSchema instanceof UserSchema)
             {
                 t = ((UserSchema) resolvedSchema)._getTableOrQuery(key.getName(), true, false, resolveExceptions);
@@ -659,31 +709,21 @@ public class Query
 
             if (t instanceof ContainerFilterable && ((ContainerFilterable)t).supportsContainerFilter() && getContainerFilter() != null)
                 ((ContainerFilterable) t).setContainerFilter(getContainerFilter());
-
-            for (QueryException x : resolveExceptions)
-            {
-                if (x instanceof QueryParseWarning)
-                    _parseWarnings.add((QueryParseWarning)x);
-                else if (x instanceof MetadataException)
-                    _parseWarnings.add(new QueryParseException(x.getMessage(),x,0,0));
-                else
-                    _parseErrors.add(x);
-            }
         }
         catch (QueryException ex)
         {
-            _parseErrors.add(ex);
+            resolveExceptions.add(ex);
             return null;
         }
         catch (UnauthorizedException ex)
         {
-            parseError(_parseErrors, "No permission to read table: " + key.getName(), node);
+            parseError(resolveExceptions, "No permission to read table: " + key.getName(), node);
             return null;
         }
 
 		if (t == null)
 		{
-			parseError(_parseErrors, "Table " + StringUtils.join(names,".") + " not found.", node);
+			parseError(resolveExceptions, "Table " + StringUtils.join(names,".") + " not found.", node);
 			return null;
 		}
 
@@ -696,25 +736,12 @@ public class Query
         if (t instanceof QueryDefinition)
         {
             QueryDefinitionImpl def = (QueryDefinitionImpl)t;
-            List<QueryException> tableErrors = new ArrayList<>();
-            Query query = def.getQuery(resolvedSchema, tableErrors, this, true);
+            queryDefOUT[0] = def;
+            Query query = def.getQuery(resolvedSchema, resolveExceptions, this, true);
 
-            if (tableErrors.size() > 0 || query.getParseErrors().size() > 0)
+            if (query.getParseErrors().size() > 0)
             {
-                QueryParseException qpe;
-                if (node == null)
-                    //noinspection ThrowableInstanceNeverThrown
-                    qpe = new QueryParseException("Query '" + key.getName() + "' has errors", null, 0, 0);
-                else
-                    //noinspection ThrowableInstanceNeverThrown
-                    qpe = new QueryParseException("Query '" + key.getName() + "' has errors", null, node.getLine(), node.getColumn());
-                ActionURL source = def.urlFor(QueryAction.sourceQuery);
-                if (null != source)
-                {
-                    ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveURL, source.getLocalURIString(false), true);
-                    ExceptionUtil.decorateException(qpe, ExceptionUtil.ExceptionInfo.ResolveText, "edit " + def.getName(), true);
-                }
-                _parseErrors.add(qpe);
+                resolveExceptions.addAll(query.getParseErrors());
                 return null;
             }
 
@@ -728,19 +755,20 @@ public class Query
             if (!simpleSelect || hasMetadata)
             {
                 TableInfo ti;
+
                 if (resolvedSchema instanceof UserSchema)
                 {
-                    ti = def.createTable((UserSchema)resolvedSchema, getParseErrors(), true, query);
+                    ti = def.createTable((UserSchema)resolvedSchema, resolveExceptions, true, query);
                 }
                 else
                 {
-                    ti = def.getTable(getParseErrors(), true);
+                    ti = def.getTable(resolveExceptions, true);
                 }
 
                 if (null == ti)
                 {
-                    if (getParseErrors().isEmpty())
-                        parseError(getParseErrors(), "Could not load table: " +  key.getName() + "' has errors", node);
+                    if (resolveExceptions.isEmpty())
+                        parseError(resolveExceptions, "Could not load table: " +  key.getName() + "' has errors", node);
                     return null;
                 }
                 return new QueryTable(this, resolvedSchema, ti, alias);
@@ -749,7 +777,7 @@ public class Query
             // move relation to new outer query
             QueryRelation ret = query._queryRoot;
             ret.setQuery(this);
-            this.getParseErrors().addAll(query.getParseErrors());
+            resolveExceptions.addAll(query.getParseErrors());
 
             TableType tableType = null;
             if (query.getTablesDocument() != null && query.getTablesDocument().getTables().getTableArray().length > 0)
