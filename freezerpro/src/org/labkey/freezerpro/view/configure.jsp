@@ -88,6 +88,7 @@
                 fieldLabel  : 'Enable Reloading',
                 name        : 'enableReload',
                 checked     : bean.enableReload,
+                uncheckedValue : 'false',
                 listeners : {
                     scope: this,
                     'change': function(cb, value) {
@@ -99,6 +100,7 @@
                 xtype       : 'datefield',
                 fieldLabel  : 'Load on',
                 disabled    : !bean.enableReload,
+                allowBlank  : false,
                 name        : 'reloadDate',
                 format      : 'Y-m-d',
                 altFormats  : '',

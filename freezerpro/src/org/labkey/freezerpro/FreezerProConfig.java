@@ -10,7 +10,7 @@ public class FreezerProConfig implements SpecimenTransform.ExternalImportConfig
     private String _baseServerUrl;
     private String _username;
     private String _password;
-    private int _reloadInterval = 1;
+    private int _reloadInterval;
     private boolean _enableReload;
     private boolean _importUserFields;
     private String _reloadDate;
