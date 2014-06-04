@@ -46,11 +46,11 @@
         <tr>
             <td colspan="2">The follow tasks are (typically) run every night to clear unused data, update database statistics, perform nightly data refreshes,
                 and generally keep this server running smoothly and quickly. We recommend leaving all system maintenance tasks enabled, but some
-                of the tasks can be disabled if absolutely necessary. See the LabKey documentation for <%=helpLink("configAdmin", "more info...")%></td>
+                of the tasks can be disabled if absolutely necessary. See the LabKey documentation for <%=helpLink("systemMaint", "more info...")%></td>
         </tr>
 
         <tr>
-            <td style="padding-top: 10px;" colspan="2">You can run all enabled maintenace tasks now: <%=textLink("Run all tasks", "javascript:submitSystemMaintenance()")%></td>
+            <td style="padding-top: 10px;" colspan="2">You can run all enabled maintenance tasks now: <%=textLink("Run all tasks", "javascript:submitSystemMaintenance()")%></td>
         </tr>
 
         <tr>
