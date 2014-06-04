@@ -10,7 +10,7 @@ Ext.define('LABKEY.app.model.OlapExplorer', {
     fields: [
         {name : 'label'},
         {name : 'count', type : 'int'},
-        {name : 'subcount', type : 'int'},
+        {name : 'subcount', type : 'int', defaultValue: 0},
         {name : 'hierarchy'},
         {name : 'value'},
         {name : 'level'},
@@ -19,7 +19,11 @@ Ext.define('LABKEY.app.model.OlapExplorer', {
         {name : 'uniqueName'},
         {name : 'isGroup', type : 'boolean'},
         {name : 'collapsed', type : 'boolean'},
-        {name : 'btnId'}
+        {name : 'btnId'},
+
+        // Global properties
+        {name : 'maxcount', type : 'int'},
+        {name : 'hasSelect', type : 'boolean', defaultValue: false}
     ]
 });
 
@@ -44,16 +48,19 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
     // subject ids as bars.
     subjectName : '',
 
+    KEYED_LOAD: false,
+
     constructor : function(config) {
 
         this.locked = false;
 
         this.callParent([config]);
 
-        this.addEvents('maxcount', 'selectrequest', 'subselect');
+        this.addEvents('selectrequest', 'subselect');
     },
 
-    load : function(dimension, hIndex, useSelection, showEmpty) {
+    load : function(dimension, hIndex, selections, showEmpty) {
+        this.KEYED_LOAD = true;
 
         if (!this.olapProvider) {
             console.error('Explorer must initialize olapProvider object.');
@@ -73,27 +80,25 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 // reset selection ignoring inflight requests
                 this.mflight = 0;
             }
-            this.loadDimension(useSelection);
+            this.loadDimension(selections);
         }
         else {
             // mark as stale, processed once previous request is unlocked
             this.stale = {
                 dimension: dimension,
                 hIndex: hIndex,
-                useSelection: useSelection,
+                selections: selections,
                 showEmpty: showEmpty
             };
         }
     },
 
-    loadDimension : function(useSelection) {
+    loadDimension : function(selections) {
         var hierarchies = this.dim.getHierarchies();
         if (hierarchies.length > 0) {
             var hierarchy = hierarchies[this.hIndex];
             var uniqueName = hierarchy.getUniqueName();
             var me = this;
-//            this.D1 = new Date();
-//            console.log('LOAD STORE');
             if (!this.totals[uniqueName]) {
                 // Asks for Total Count
                 this.olapProvider.onMDXReady(function(mdx) {
@@ -103,32 +108,64 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                         showEmpty: me.showEmpty,
                         success: function(qr) {
                             me.totals[uniqueName] = me.processMaxCount.call(me, qr);
-                            me.requestDimension(hierarchy, useSelection);
+                            me.requestDimension(hierarchy, selections);
                         }
                     });
 
                 }, this);
             }
             else {
-                me.requestDimension(hierarchy, useSelection);
+                me.requestDimension(hierarchy, selections);
             }
         }
     },
 
-    requestDimension : function(hierarchy, useSelection) {
+    requestDimension : function(hierarchy, selections) {
         // Asks for the Gray area
         this.flight++;
+        var hasSelection = Ext.isArray(selections) && selections.length > 0;
+        if (hasSelection) {
+            this.mflight++;
+        }
         this.olapProvider.onMDXReady(function(mdx){
             var me = this;
+
+            var scoped = {
+                baseResult: undefined,
+                selectionResult: undefined,
+                useSelection: hasSelection
+            };
+
+            var check = function() {
+                if (Ext.isDefined(scoped.baseResult)) {
+                    if (hasSelection) {
+                        if (Ext.isDefined(scoped.selectionResult)) {
+                            me.requestsComplete(scoped);
+                        }
+                    }
+                    else {
+                        me.requestsComplete(scoped);
+                    }
+                }
+            };
+
             mdx.query({
                 onRows : [{hierarchy: hierarchy.getUniqueName(), members:'members'}],
                 useNamedFilters : ['statefilter'],
                 showEmpty : me.showEmpty,
                 success: function(qr) {
-                    me.baseResult = qr;
-                    me.requestsComplete(useSelection);
+                    scoped.baseResult = qr;
+                    check();
                 }
             });
+            if (hasSelection) {
+                me.requestSelection(this.mflight, function(qr, _mdx, x) {
+                    if (this.mflight === x.mflight) {
+                        scoped.selectionResult = qr;
+                        check();
+                    }
+                }, this);
+            }
         }, this);
     },
 
@@ -142,7 +179,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         return t;
     },
 
-    requestsComplete : function(useSelection) {
+    requestsComplete : function(response) {
         this.flight--;
         if (this.flight == 0) {
 
@@ -154,12 +191,13 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
 
             // first check for 'stale'
             if (Ext.isObject(this.stale)) {
-                this.load(this.stale.dimension, this.stale.hIndex, this.stale.useSelection, this.stale.showEmpty);
+                this.load(this.stale.dimension, this.stale.hIndex, this.stale.selections, this.stale.showEmpty);
                 return;
             }
 
             var hierarchy = this.dim.getHierarchies()[this.hIndex];
-            var baseResult = this.baseResult;
+            var baseResult = response.baseResult;
+            var selectionResult = response.selectionResult;
             var targetLevels = hierarchy.levels;
             if (baseResult.metadata.cube.dimensions.length > 1)
                 targetLevels = baseResult.metadata.cube.dimensions[1].hierarchies[0].levels;
@@ -204,6 +242,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                     label: LABKEY.app.model.Filter.getMemberLabel(subPosition.name),
                     uniqueName: subPosition.uniqueName,
                     count: baseResult.cells[x][0].value,
+                    maxcount: max,
                     value: subPosition.name,
                     hierarchy: hierarchy.getUniqueName(),
                     isGroup: isGroup,
@@ -211,8 +250,13 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                     ordinal: subPosition.ordinal,
                     levelUniqueName: subPosition.level.uniqueName,
                     collapsed: activeGroup && pos.length > 15 ? true : false,
-                    btnShown: false
+                    btnShown: false,
+                    hasSelect: response.useSelection === true
                 };
+
+                if (response.useSelection) {
+                    target.subcount = this._calculateSubcount(selectionResult, target.uniqueName);
+                }
 
                 var instance = Ext.create('LABKEY.app.model.OlapExplorer', target);
 
@@ -256,13 +300,9 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             }
 
             this.customGroups = customGroups;
-
             this.maxCount = max;
-            this.fireEvent('maxcount', this.maxCount);
-//            var D2 = new Date();
-//            console.log('LOAD STORE COMPLETE:', D2 - this.D1);
 
-            if (useSelection) {
+            if (response.useSelection) {
                 this.fireEvent('selectrequest');
             }
         }
@@ -288,49 +328,48 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         return '' + data.hierarchy + '-' + data.level + '-' + data.value;
     },
 
-    getMaxCount : function() {
-        return this.maxCount;
-    },
-
     setEnableSelection : function(enableSelection) {
         this.enableSelection = enableSelection;
     },
 
     clearSelection : function() {
         if (this.enableSelection) {
-            this.suspendEvents();
-            var recs = this.queryBy(function(rec, id){
-                rec.set('subcount', 0);
+            this.suspendEvents(true);
+            this.queryBy(function(rec) {
+                rec.set({
+                    subcount: 0,
+                    hasSelect: false
+                });
                 return true;
             }, this);
             this.resumeEvents();
-            this.fireEvent('subselect', recs.items);
+            this.fireEvent('subselect', this);
         }
     },
 
-    loadSelection : function(useLast) {
+    requestSelection : function(mflight, callback, scope) {
+        this.mdx.query({
+            onRows : [{
+                hierarchy: this.dim.getHierarchies()[this.hIndex].getUniqueName(),
+                members: 'members'
+            }],
+            useNamedFilters: ['stateSelectionFilter', 'hoverSelectionFilter', 'statefilter'],
+            mflight: mflight,
+            showEmpty: this.showEmpty,
+            success: callback,
+            scope : scope
+        });
+    },
+
+    loadSelection : function() {
         if (this.enableSelection) {
             // asks for the subselected portion
-            var me = this;
-
-            me.suspendEvents();
-
-            me.mflight++;
-            me.mdx.query({
-                onRows : [{
-                    hierarchy: me.dim.getHierarchies()[this.hIndex].getUniqueName(),
-                    members: 'members'
-                }],
-                useNamedFilters: ['stateSelectionFilter', 'hoverSelectionFilter', 'statefilter'],
-                mflight: me.mflight,
-                showEmpty: me.showEmpty,
-                success: this.selectionSuccess,
-                scope : this
-            });
+            this.mflight++;
+            this.requestSelection(this.mflight, this.onLoadSelection, this);
         }
     },
 
-    selectionSuccess : function(cellset, mdx, x) {
+    onLoadSelection : function(cellset, mdx, x) {
         var me = this;
         if (x.mflight === me.mflight) {
 
@@ -341,39 +380,31 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 me.clearSelection();
             }
             else {
-                var recs = me.queryBy(function(rec) {
-
-                    var updated = false, cellspan_value = 0; // to update rows not returned by the query
-                    var cells = cellset.cells, cs;
-                    var un = rec.data.uniqueName;
-                    for (var c=0; c < cells.length; c++)
-                    {
-                        cs = cells[c][0];
-                        if (un === cs.positions[1][0].uniqueName)
-                        {
-                            updated = true;
-                            rec.set('subcount', cs.value);
-                        }
-                        else
-                        {
-                            if(cs.value > 0) {
-                                cellspan_value++;
-                            }
-                        }
-                    }
-                    if (!updated)
-                    {
-                        rec.set('subcount', 0);
-                    }
+                this.suspendEvents(true);
+                me.queryBy(function(rec) {
+                    rec.set({
+                        subcount: this._calculateSubcount(cellset, rec.get('uniqueName')),
+                        hasSelect: true
+                    });
                     return true;
-
-                });
-                me.resumeEvents();
-
-                me.fireEvent('subselect', recs.items ? recs.items : []);
+                }, this);
+                this.resumeEvents();
             }
 
+            this.fireEvent('subselect', this);
         }
+    },
+
+    _calculateSubcount : function(cellset, uniqueName) {
+        var cells = cellset.cells, cs, sc=0;
+        for (var c=0; c < cells.length; c++) {
+            cs = cells[c][0];
+            if (uniqueName === cs.positions[1][0].uniqueName)
+            {
+                sc = cs.value;
+            }
+        }
+        return sc;
     }
 });
 
@@ -392,17 +423,71 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
 
     baseGroupCls: 'bargroup',
 
+    selectedItemCls: 'bar-selected',
+
+    highlightItemCls: 'bar-highlight',
+
     barCls: 'bar',
 
     barLabelCls: 'barlabel',
 
+    statics: {
+        APPLY_ANIMATE: false
+    },
+
+    refresh : function() {
+        if (this.store.KEYED_LOAD === true) {
+            this.addAnimations();
+            this.callParent(arguments);
+            this.removeAnimations();
+        }
+    },
+
+    addAnimations : function() {
+        LABKEY.app.view.OlapExplorer.APPLY_ANIMATE = true;
+    },
+
+    removeAnimations : function() {
+        LABKEY.app.view.OlapExplorer.APPLY_ANIMATE = false;
+    },
+
     initComponent : function() {
 
-        this.textCache = {};
         this.positionLookup = "." + this.baseChartCls + " ." + this.barCls;
         this.ordinal = LABKEY.devMode && Ext.isDefined(LABKEY.ActionURL.getParameter('ordinal'));
 
         this.initTemplate();
+
+        this.loadTask = new Ext.util.DelayedTask(function() {
+            if (Ext.isDefined(this.dimension)) {
+                this.store.load(this.dimension, this.hierarchyIndex, this.selections, this.showEmpty);
+            }
+        }, this);
+
+        this.refreshTask = new Ext.util.DelayedTask(function() {
+            //
+            // Remove animators
+            //
+            var anims = Ext.DomQuery.select('.animator');
+            Ext.each(anims, function(a) {
+                a = Ext.get(a);
+                a.replaceCls('animator', '');
+            });
+
+            //
+            // Bind groups toggles
+            //
+            var groups = this.store.query('isGroup', true).getRange(); // assumed to be in order of index
+            if (groups.length > 0) {
+                var expandos = Ext.query('.saecollapse'), bar;
+                Ext.each(groups, function(group, idx) {
+                    bar = Ext.get(expandos[idx]);
+                    if (bar) {
+                        this.registerGroupClick(bar, group);
+                    }
+                }, this);
+            }
+        }, this);
 
         this.positionTask = new Ext.util.DelayedTask(this.positionText, this);
         this.groupClickTask = new Ext.util.DelayedTask(this.groupClick, this);
@@ -410,178 +495,104 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
 
         this.callParent();
 
-        this.store.on('maxcount', this.onMaxCount, this);
-        this.store.on('subselect', this.renderSelection, this);
-        this.store.on('selectrequest', function() { this.selectRequest = true; },   this);
+        this.store.on('selectrequest', function() { this.selectRequest = true; }, this);
+
+        this.on('refresh', function() { this.refreshTask.delay(600); }, this); // wait until the animations are finished
+
+        this.on('refresh', this.highlightSelections, this);
+        this.store.on('subselect', this.highlightSelections, this);
     },
 
     initTemplate : function() {
+
+        var barTpl = this.getBarTemplate();
+        var countTpl = this.getCountTemplate();
+
         //
         // This template is meant to be bound to a set of LABKEY.app.model.OlapExplorer instances
         //
         this.tpl = new Ext.XTemplate(
             '<div class="', this.baseChartCls, '">',
                 '<div class="', this.baseGroupCls, '">',
-                    // For each record
                     '<tpl for=".">',
-                        //
-                        // Collapsed Group
-                        //
-                        '<tpl if="isGroup === true && collapsed == true">',
+                        '<tpl if="isGroup === true">',
                             '<div class="saeparent">',
                                 '<div class="saecollapse {#}-collapse" id="{#}-collapse">',
-                                    '<p>+</p>',
+                                    '<p><tpl if="collapsed === true">+<tpl else>-</tpl></p>',
                                 '</div>',
                                 '<div class="', this.barCls, ' large">',
                                     '<span class="', this.barLabelCls, '">{label:htmlEncode}',
                                     (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
                                     '</span>',
-                                    '<span class="count">{count}</span>',
-                                    '<span class="index"></span>',
-                                    '<span class="index-selected inactive"></span>',
+                                    '{[ this.renderCount(values) ]}',
+                                    '{[ this.renderBars(values) ]}',
                                 '</div>',
                             '</div>',
-                        '</tpl>',
-
-                        //
-                        // Expanded Group
-                        //
-                        '<tpl if="isGroup === true && collapsed == false">',
-                            '<div class="saeparent">',
-                                '<div class="saecollapse {#}-collapse" id="{#}-collapse">',
-                                    '<p>-</p>',
-                                '</div>',
-                                '<div class="', this.barCls, ' large">',
-                                    '<span class="', this.barLabelCls, '">{label:htmlEncode}',
-                                    (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
-                                    '</span>',
-                                    '<span class="count">{count}</span>',
-                                    '<span class="index"></span>',
-                                    '<span class="index-selected inactive"></span>',
-                                '</div>',
-                            '</div>',
-                        '</tpl>',
-
-                        //
-                        // Collpased Ungrouped
-                        //
-                        '<tpl if="isGroup === false && collapsed == true">',
-                            '<div class="', this.barCls, ' small barcollapse <tpl if="level.length &gt; 0">saelevel</tpl>">',
+                        '<tpl else>',
+                            '<div class="', this.barCls, ' small<tpl if="collapsed === true"> barcollapse</tpl><tpl if="level.length &gt; 0"> saelevel</tpl>">',
                                 '<span class="', this.barLabelCls, '">{label:htmlEncode}',
                                 (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
                                 '</span>',
-                                '<span class="count">{count}</span>',
-                                '<span class="info"></span>',
-                                '<span class="index"></span>',
-                                '<span class="index-selected inactive"></span>',
-                            '</div>',
-                        '</tpl>',
-
-                        //
-                        // Expanded Ungrouped
-                        //
-                        '<tpl if="isGroup === false && collapsed == false">',
-                            '<div class="', this.barCls, ' small <tpl if="level.length &gt; 0">saelevel</tpl>">',
-                                '<span class="', this.barLabelCls, '">{label:htmlEncode}',
-                                (this.ordinal ? '&nbsp;({ordinal:htmlEncode})' : ''),
-                                '</span>',
-                                '<span class="count">{count}</span>',
-                                '<span class="info"></span>',
-                                '<span class="index"></span>',
-                                '<span class="index-selected inactive"></span>',
+                                '{[ this.renderCount(values) ]}',
+//                                '<span class="info" style="left: {[ this.calcLeft(values) ]}%"></span>',
+//                                '<span class="info" style="left: 115%"></span>',
+                                '{[ this.renderBars(values) ]}',
                             '</div>',
                         '</tpl>',
                     '</tpl>',
                 '</div>',
-            '</div>'
+            '</div>',
+                {
+//                    calcLeft : function(v) {
+//                        return ((v.count / v.maxcount) * 100) + 15;
+//                    },
+                    renderBars : function(values) {
+                        return barTpl.apply(values);
+                    },
+                    renderCount : function(values) {
+                        return countTpl.apply(values);
+                    }
+                }
         );
     },
 
-    positionText: function(collapseMode) {
-        var bars = Ext.query(this.positionLookup),
-                b, i,
-                bWidth,
-                info,
-                label,
-                numpercent,
-                percent,
-                sets = [], _set,
-                t;
+    getBarTemplate : function() {
+        return new Ext.XTemplate(
+                '<span class="index {[ this.doAnimate() ]}" style="width: {[ this.calcWidth(values) ]}%"></span>',
+                '<span class="index-selected inactive {[ this.doAnimate() ]}" style="width: {[ this.calcSubWidth(values) ]}%"></span>',
+                {
+                    doAnimate : function() {
+                        return LABKEY.app.view.OlapExplorer.APPLY_ANIMATE === true ? 'animator' : '';
+                    },
+                    calcWidth : function(v) {
+                        return (v.count / v.maxcount) * 100;
+                    },
+                    calcSubWidth : function(v) {
+                        var ps = (v.subcount / v.count);
+                        var pt = (v.count / v.maxcount);
+                        var pts;
 
-        for (i=0; i < bars.length; i++) {
-            b = bars[i];
-            t = Ext.get(Ext.query("." + this.barLabelCls, b)[0]);
-            sets.push({
-                bar: Ext.get(Ext.query(".index", b)[0]),
-                barLabel: t,
-                barCount: Ext.get(Ext.query(".count", b)[0]),
-                info: Ext.get(Ext.query(".info", b)[0]),
-                label: t.dom.innerHTML
-            });
-        }
-
-        this.suspendLayout = true;
-        var count = this.store.getMaxCount();
-
-        for (i=0; i < sets.length; i++) {
-
-            _set = sets[i];
-            label = _set.label;
-            if (this.textCache[label]) {
-                t = this.textCache[label];
-            }
-            else {
-                t = this.textCache[label] = sets[i].barLabel.getTextWidth();
-            }
-
-            // optimization for 0 case
-            if (_set.barCount.dom.innerHTML == '0') {
-                _set.bar.setWidth('0%');
-                _set.barCount.setLeft(t + 15);
-                if (_set.info)
-                    _set.info.setLeft(t + 60);
-                continue;
-            }
-
-            // barCount.dom.innerText is a number like '100'
-            numpercent = (_set.barCount.dom.innerHTML / count) * 100;
-            percent = '' + numpercent + '%';
-
-            _set.bar.setWidth(percent);
-            bWidth = _set.bar.getWidth(); // returns width in pixels
-            if (bWidth > t) {
-                t = bWidth;
-            }
-
-            _set.barCount.setLeft(t + 15);
-            if (_set.info) {
-                _set.info.setLeft(t + 60);
-            }
-
-            if (this.animate) {
-                _set.bar.setWidth("0%");
-                _set.bar.setWidth(percent, {
-                    duration: 300,
-                    easing: 'linear',
-                    callback: this.positionHelper,
-                    scope: this
-                });
-            } else {
-                this.positionHelper.call(this);
-            }
-        }
-        this.suspendLayout = false;
-
-        if (!collapseMode) {
-            var groupRecords = this.store.query('isGroup', true).items; // assumed to be in order of index
-            var expandos = Ext.query('.saecollapse');
-            Ext.each(groupRecords, function(record, idx) {
-                var bar = Ext.get(expandos[idx]);
-                if (bar) {
-                    this.registerGroupClick(bar, record);
+                        if (isNaN(ps)) {
+                            pts = 0;
+                        }
+                        else if (ps >= 1) {
+                            pts = pt;
+                        }
+                        else {
+                            pts = ps*pt;
+                        }
+                        return pts * 100;
+                    }
                 }
-            }, this);
-        }
+        );
+    },
+
+    getCountTemplate : function() {
+        return new Ext.XTemplate('<span class="count">{count}</span>');
+    },
+
+    positionText: function(collapseMode) {
+        this.positionHelper.call(this);
     },
 
     setDimension : function(dim, hierarchyIndex) {
@@ -590,16 +601,13 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
     },
 
     setHierarchy : function(index) {
-        this.animate = true;
         this.hierarchyIndex = index;
         this.loadStore();
     },
 
     loadStore : function() {
-        this.store.load(this.dimension, this.hierarchyIndex, true, this.showEmpty);
+        this.loadTask.delay(50);
     },
-
-    onMaxCount : function(count) { this.positionTask.delay(10); },
 
     groupClick : function(rec) {
         var groups = this.store.getCustomGroups();
@@ -709,7 +717,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
         if (this.dimension) {
             Ext.defer(function() {
                 if (sel.length > 0) {
-                    this.selection(false);
+                    this.selection();
                 }
                 else {
                     if (!isPrivate) {
@@ -725,15 +733,12 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
     },
 
     filterChange : function() {
-        if (this.dimension) {
-            this.animate = false;
-            this.loadStore();
-        }
+        this.loadStore();
     },
 
-    selection : function(useLast) {
-        if (this.selectRequest && this.selections && this.selections.length > 0) {
-            this.store.loadSelection(useLast);
+    selection : function() {
+        if (this.selectRequest || (Ext.isArray(this.selections) && this.selections.length > 0)) {
+            this.store.loadSelection();
         }
         else {
             this.getSelectionModel().deselectAll();
@@ -741,52 +746,24 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
         }
     },
 
-    _renderHasAdd : function(sel, countNode, width, remove, trueCount, subCount) {
-        var cls = 'inactive';
-        if (sel) {
-            sel.setWidth('' + width + 'px');
-        }
-        if (remove) {
-            if (countNode.hasCls(cls)) {
-                countNode.removeCls(cls);
-            }
-            countNode.update(trueCount);
-        }
-        else {
-            if (!countNode.hasCls(cls)) {
-                countNode.addCls(cls);
-            }
-            countNode.update(subCount);
-        }
-    },
+    highlightSelections : function() {
+        if (Ext.isArray(this.selections) && this.selections.length > 0) {
+            var members, uniques = [];
+            Ext.each(this.selections, function(sel) {
+                members = Ext.isFunction(sel.get) ? sel.get('members') : sel.membersQuery.members;
+                uniques = uniques.concat(Ext.Array.pluck(members, "uniqueName"));
+            }, this);
 
-    renderSelection : function(r) {
-        var node;
-        for (var i=0; i < r.length; i++) {
-            node = this.getNode(r[i]);
-            if (node) {
-
-                var selBar = Ext.query('.index-selected', node);
-
-                if (selBar) {
-                    var countNode = Ext.get(Ext.query('.count', node)[0]);
-                    var bar = Ext.get(Ext.query(".index", node)[0]);
-
-                    var _w = parseFloat(bar.getStyle('width'));
-                    var sub = r[i].data.subcount; var count = r[i].data.count;
-                    var _c = sub / count;
-                    var sel = Ext.get(selBar[0]);
-                    if (_c == 0 || isNaN(_c)) {
-                        this._renderHasAdd(sel, countNode, 0, true, count, sub);
-                    }
-                    else if (_c >= 1) {
-                        this._renderHasAdd(sel, countNode, _w, false, count, sub);
-                    }
-                    else {
-                        this._renderHasAdd(sel, countNode, (_c * _w), false, count, sub);
+            Ext.each(uniques, function(uniqueName) {
+                var idx = this.store.findExact('uniqueName', uniqueName);
+                if (idx > -1) {
+                    var rec = this.store.getAt(idx);
+                    var node = this.getNode(rec);
+                    if (node) {
+                        Ext.get(node).addCls(this.highlightItemCls);
                     }
                 }
-            }
+            }, this);
         }
     },
 
