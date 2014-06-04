@@ -327,29 +327,6 @@ Ext.define('LABKEY.app.controller.State', {
         return flatFilters;
     },
 
-    getFlatFilters : function() {
-        if (!this.filters || this.filters.length == 0)
-            return [];
-
-        var flatFilters = [];
-
-        for (var f=0; f < this.filters.length; f++) {
-            if (this.filters[f].isGroup()) {
-                // Connector.model.FilterGroup
-                var _f = this.filters[f].get('filters');
-                for (var i=0; i < _f.length; i++) {
-                    flatFilters.push(Ext.clone(_f[i].data));
-                }
-            }
-            else {
-                // Connector.model.Filter
-                flatFilters.push(Ext.clone(this.filters[f].data));
-            }
-        }
-
-        return flatFilters;
-    },
-
     getFilterGroupModelName : function() {
         console.error('Failed to get filter group model name.');
     },
