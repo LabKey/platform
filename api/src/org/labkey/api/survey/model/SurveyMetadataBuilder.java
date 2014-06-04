@@ -544,18 +544,28 @@ public class SurveyMetadataBuilder
 
     private void setType(JSONObject extConfig, ColumnInfo column)
     {
+        boolean isTypeSet = false;
         if (column.isLookup())
         {
             TableInfo lookupTableInfo = column.getFk().getLookupTableInfo();
-            extConfig.put("xtype", "lk-genericcombo");
-            extConfig.put("schemaName", lookupTableInfo.getUserSchema().getName());
-            extConfig.put("queryName", lookupTableInfo.getName());
-            List<String> pkColumnNames = lookupTableInfo.getPkColumnNames();
-            extConfig.put("keyField", !pkColumnNames.isEmpty() ? pkColumnNames.get(0) : "RowId");   // We only support 1 PK
-            extConfig.put("displayField", lookupTableInfo.getTitleColumn());
-            extConfig.put("emptyText", "Select...");
+            if (null != lookupTableInfo && null != lookupTableInfo.getUserSchema())
+            {
+                extConfig.put("xtype", "lk-genericcombo");
+                extConfig.put("schemaName", lookupTableInfo.getUserSchema().getName());
+                extConfig.put("queryName", lookupTableInfo.getName());
+                List<String> pkColumnNames = lookupTableInfo.getPkColumnNames();
+                extConfig.put("keyField", !pkColumnNames.isEmpty() ? pkColumnNames.get(0) : "RowId");   // We only support 1 PK
+                extConfig.put("displayField", lookupTableInfo.getTitleColumn());
+                extConfig.put("emptyText", "Select...");
+                isTypeSet = true;
+            }
+            else
+            {
+                extConfig.put("disabled", "true");      // Lookup does not have UserSchema
+            }
         }
-        else
+
+        if (!isTypeSet)
         {
             if (column.getJdbcType().equals(JdbcType.BOOLEAN))
             {
