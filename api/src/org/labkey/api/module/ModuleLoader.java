@@ -323,7 +323,7 @@ public class ModuleLoader implements Filter
         doInit(explodedModuleDirs);
 
         // set the project source root before calling .initialize() on modules
-        Module coreModule = _modules.get(0);
+        Module coreModule = _modules.isEmpty() ? null : _modules.get(0);
         if (coreModule == null || !DefaultModule.CORE_MODULE_NAME.equals(coreModule.getName()))
             throw new IllegalStateException("Core module was not first or could not find the Core module. Ensure that Tomcat user can create directories under the <LABKEY_HOME>/modules directory.");
         setProjectRoot(coreModule);
