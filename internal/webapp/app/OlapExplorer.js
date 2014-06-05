@@ -453,7 +453,6 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
 
     initComponent : function() {
 
-        this.positionLookup = "." + this.baseChartCls + " ." + this.barCls;
         this.ordinal = LABKEY.devMode && Ext.isDefined(LABKEY.ActionURL.getParameter('ordinal'));
 
         this.initTemplate();
@@ -464,43 +463,49 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
             }
         }, this);
 
-        this.refreshTask = new Ext.util.DelayedTask(function() {
-            //
-            // Remove animators
-            //
-            var anims = Ext.DomQuery.select('.animator');
-            Ext.each(anims, function(a) {
-                a = Ext.get(a);
-                a.replaceCls('animator', '');
-            });
-
-            //
-            // Bind groups toggles
-            //
-            var groups = this.store.query('isGroup', true).getRange(); // assumed to be in order of index
-            if (groups.length > 0) {
-                var expandos = Ext.query('.saecollapse'), bar;
-                Ext.each(groups, function(group, idx) {
-                    bar = Ext.get(expandos[idx]);
-                    if (bar) {
-                        this.registerGroupClick(bar, group);
-                    }
-                }, this);
-            }
-        }, this);
-
         this.positionTask = new Ext.util.DelayedTask(this.positionText, this);
         this.groupClickTask = new Ext.util.DelayedTask(this.groupClick, this);
+        this.refreshTask = new Ext.util.DelayedTask(this.onDelayedRefresh, this);
         this.selectionTask = new Ext.util.DelayedTask(this.selection, this);
 
         this.callParent();
 
         this.store.on('selectrequest', function() { this.selectRequest = true; }, this);
 
-        this.on('refresh', function() { this.refreshTask.delay(600); }, this); // wait until the animations are finished
+        this.on('refresh', function() {
+            this.onRefresh();
+            this.refreshTask.delay(600); // wait until the animations are finished
+        }, this);
 
-        this.on('refresh', this.highlightSelections, this);
         this.store.on('subselect', this.highlightSelections, this);
+    },
+
+    onRefresh : function() {
+        //
+        // Bind groups toggles
+        //
+        var groups = this.store.query('isGroup', true).getRange(); // assumed to be in order of index
+        if (groups.length > 0) {
+            var expandos = Ext.query('.saecollapse'), bar;
+            Ext.each(groups, function(group, idx) {
+                bar = Ext.get(expandos[idx]);
+                if (bar) {
+                    this.registerGroupClick(bar, group);
+                }
+            }, this);
+        }
+        this.highlightSelections();
+    },
+
+    onDelayedRefresh : function() {
+        //
+        // Remove animators
+        //
+        var anims = Ext.DomQuery.select('.animator');
+        Ext.each(anims, function(a) {
+            a = Ext.get(a);
+            a.replaceCls('animator', '');
+        });
     },
 
     initTemplate : function() {
