@@ -88,7 +88,7 @@ Ext4.onReady( function() {
         allowBlank: false,
         valueField: 'containerId',
         displayField: 'containerPath',
-        disabled: (curDefaultContainers.size == 0)
+        disabled: (curDefaultContainers.length == 0)
     });
 
     Ext4.create('Ext.panel.Panel', {
