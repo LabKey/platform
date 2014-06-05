@@ -50,6 +50,7 @@ public class Olap4Js
     private static class CellSetWriter
     {
         boolean _includeLevelMembers = false;
+        boolean _includeMemberProperties = true;
         int _indent = 0;
         static String spaces = "                                                 ";
         TreeMap<String, String> _idMap = new TreeMap<>();
@@ -97,6 +98,8 @@ public class Olap4Js
 
         void write(CellSet cs, boolean withMetaData, Writer out) throws IOException, OlapException
         {
+            _includeMemberProperties = false;
+
             CellSetMetaData csmd = cs.getMetaData();
             NamedList<Property> cellProperties = csmd.getCellProperties();
 
@@ -360,7 +363,23 @@ public class Olap4Js
             out.write("\"name\":" + valueToString(l.getName()) + ",");
             out.write("\"uniqueName\":" + valueToString(l.getUniqueName()) + ",");
             out.write("\"depth\":" + l.getDepth());
-            if (_includeLevelMembers)
+
+            if (_includeMemberProperties)
+            {
+                indent(",", out);
+                NamedList<Property> properties = l.getProperties();
+                String comma = "";
+                indent("\"propertyNames\":[",out);
+                for (Property p : properties)
+                {
+                    out.write(comma);
+                    out.write(valueToString(p.getName()));
+                    comma = ",";
+                }
+                out.write("]");
+            }
+
+            if (withMembers)
             {
                 List<Member> members = null;
                 try
@@ -448,23 +467,28 @@ public class Olap4Js
                 writeRef(member.getLevel(), out);
             }
 
-            String prefix=",\"properties\":{";
-            String suffix = "";
-            for (Property p : member.getProperties())
+            if (_includeMemberProperties)
             {
-                if (p instanceof Property.StandardMemberProperty) continue;
-                if (!p.isVisible()) continue;
-                Object value = member.getPropertyValue(p);
-                if (null == value)
-                    continue;
-                if (p.getUniqueName().equals("KEY") && member.getName().equals(value))
-                    continue;
-                out.write(prefix);
-                prefix = ",";
-                suffix = "}";
-                out.write("\"" + p.getUniqueName() + "\":" + valueToString(value));
+                String prefix = ",\"properties\":{";
+                String suffix = "";
+                for (Property p : member.getProperties())
+                {
+                    //                if (p instanceof Property.StandardMemberProperty)
+                    //                    continue;
+                    if (!p.isVisible())
+                        continue;
+                    Object value = member.getPropertyValue(p);
+                    if (null == value)
+                        continue;
+                    if ((p.getUniqueName().equals("KEY") || p.getUniqueName().equals("MEMBER_CAPTION")) && member.getName().equals(value))
+                        continue;
+                    out.write(prefix);
+                    prefix = ",";
+                    suffix = "}";
+                    out.write("\"" + p.getUniqueName() + "\":" + valueToString(value));
+                }
+                out.write(suffix);
             }
-            out.write(suffix);
 
             out.write("}");
         }

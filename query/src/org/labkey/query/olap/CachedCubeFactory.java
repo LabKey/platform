@@ -18,6 +18,8 @@ package org.labkey.query.olap;
 import mondrian.olap.Annotated;
 import mondrian.olap.Annotation;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.util.Pair;
 import org.olap4j.OlapException;
 import org.olap4j.OlapWrapper;
 import org.olap4j.impl.Named;
@@ -45,6 +47,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -89,6 +92,7 @@ public class CachedCubeFactory
             // at mondrian.olap4j.MondrianOlap4jCube.getDescription(MondrianOlap4jCube.java:169)
 //            this.caption = mde.getCaption();
 //            this.desciption = mde.getDescription();
+//          isVisible() seems to be missing a null check
 //            this.visible = mde.isVisible();
         }
 
@@ -119,7 +123,7 @@ public class CachedCubeFactory
         @Override
         public boolean isVisible()
         {
-            throw new UnsupportedOperationException();
+            return true;
         }
     }
 
@@ -415,6 +419,8 @@ public class CachedCubeFactory
         final _Hierarchy hierarchy;
         final Level.Type levelType;
         final _NamedList<_Member,Member> members = new _UniqueNamedList<>();
+        final ArrayListMap.FindMap<String> memberPropertiesFindMap= new ArrayListMap.FindMap<>(new HashMap<String,Integer>());
+        final _NamedList<_Property,Property> memberProperties = new _NamedList<>();
 
         // temporary pointer
         Level orig;
@@ -428,6 +434,16 @@ public class CachedCubeFactory
             this.hierarchy = h;
             this.levelType = l.getLevelType();
             this.orig = l;
+
+            for (Property p : l.getProperties())
+            {
+                String n = p.getName();
+                if (n.endsWith("_NAME") || n.startsWith("LEVEL_") || n.startsWith("PARENT_"))
+                    continue;
+                if (n.equals("MEMBER_ORDINAL") || n.equals("MEMBER_TYPE") || n.equals("CHILDREN_CARDINALITY"))
+                    continue;
+                memberProperties.add(new _Property(p));
+            }
 
             ArrayList<_Member> list = new ArrayList<>(l.getMembers().size());
             if ("[Measures]".equals(getDimension().getUniqueName()))
@@ -480,7 +496,7 @@ public class CachedCubeFactory
         @Override
         public NamedList<Property> getProperties()
         {
-            return null;
+            return memberProperties.recast();
         }
 
 
@@ -523,11 +539,13 @@ public class CachedCubeFactory
             if (null == o)
                 return "''";
             return String.valueOf(o);
-        }catch(OlapException x)
+        }
+        catch(OlapException x)
         {
             return "<exception>";
         }
     }
+
 
     public static class _Member extends _MetadataElement implements Member
     {
@@ -536,6 +554,7 @@ public class CachedCubeFactory
         final Member.Type memberType;
         final Member[] childMembers;
         Member _parent;
+        final Map<String,Pair<Object,String>> _properties;
 
         // orig is to facilitate sorting, should be cleard after cached cube is constructed
         Member orig = null;
@@ -564,7 +583,19 @@ public class CachedCubeFactory
                 }
             }
             childMembers = arr;
+
+            ArrayListMap<String,Pair<Object,String>> map = new ArrayListMap<>(level.memberPropertiesFindMap);
+            for (Property p : level.memberProperties)
+            {
+                Object value = m.getPropertyValue(p);
+                if (null == value)
+                    continue;
+                String formatted = m.getPropertyFormattedValue(p);
+                map.put(p.getUniqueName(), new Pair<>(value,formatted));
+            }
+            _properties = map.isEmpty() ? null : map;
         }
+
 
         public List<? extends Member> getChildMembersArray() // well not array actually, but fast list
         {
@@ -669,25 +700,35 @@ public class CachedCubeFactory
         @Override
         public Object getPropertyValue(Property property) throws OlapException
         {
-            return null;
+            if (null == _properties)
+                return null;
+            Pair<Object,String> p = _properties.get(property.getUniqueName());
+            if (null == p)
+                return null;
+            return p.first;
         }
 
         @Override
         public String getPropertyFormattedValue(Property property) throws OlapException
         {
-            return null;
+            if (null == _properties)
+                return null;
+            Pair<Object,String> p = _properties.get(property.getUniqueName());
+            if (null == p)
+                return null;
+            return p.second;
         }
 
         @Override
         public void setProperty(Property property, Object o) throws OlapException
         {
-
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public NamedList<Property> getProperties()
         {
-            return emptyPropertyList;
+            return level.getProperties();
         }
 
         @Override
@@ -735,6 +776,49 @@ public class CachedCubeFactory
             return null;
         }
     }
+
+
+    public static class _Property extends _MetadataElement implements Property
+    {
+        final Datatype datatype;
+        final Set<TypeFlag> type;
+        final ContentType contentType;
+        final boolean visible;
+
+        _Property(Property p)
+        {
+            super(p);
+            datatype = p.getDatatype();
+            type = Collections.unmodifiableSet(new HashSet<TypeFlag>(p.getType()));
+            contentType = p.getContentType();
+            visible = p.isVisible();
+        }
+
+        @Override
+        public Datatype getDatatype()
+        {
+            return datatype;
+        }
+
+        @Override
+        public Set<TypeFlag> getType()
+        {
+            return type;
+        }
+
+        @Override
+        public ContentType getContentType()
+        {
+            return contentType;
+        }
+
+        @Override
+        public boolean isVisible()
+        {
+            return visible;
+        }
+    }
+
 
 
     static class _NamedList<T extends org.olap4j.impl.Named,MDE> extends NamedListImpl<T>
