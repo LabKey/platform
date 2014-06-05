@@ -275,6 +275,13 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         return url;
     }
 
+    /**
+     * Convenience method for subclasses to override if they've done addtional processing of values before they were stored.
+     * @param formDefaults
+     * @param propName
+     * @param stringValue
+     * @throws IOException
+     */
     protected void decodePropertyValues(Map<String, Object> formDefaults, String propName, String stringValue) throws IOException
     {
         formDefaults.put(propName, stringValue);
@@ -333,6 +340,13 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         return true;
     }
 
+    /**
+     * Convenience method for subclasses to override to handle additional form parameters before storing them in the property values.
+     * @param domainIdForm
+     * @param propName
+     * @return
+     * @throws IOException
+     */
     protected String encodePropertyValues(FormType domainIdForm, String propName) throws IOException
     {
         return domainIdForm.getRequest().getParameter(propName);

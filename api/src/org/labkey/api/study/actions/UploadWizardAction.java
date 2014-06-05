@@ -277,7 +277,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     private void decodePropertyValues(Map<String, Object> inputNameToValue, String propName, Object propValue)
     {
-        if (propName.equalsIgnoreCase(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
+        if (propName.equalsIgnoreCase(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME) && propValue != null)
         {
             // ParticipantVisitResolver default value may be stored as a simple string, or it may be JSON encoded. If JSON encoded, it may have
             // addition nested properties containing ThawList list settings.

@@ -15,10 +15,12 @@
  */
 package org.labkey.api.exp.property;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.FastDateFormat;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -49,6 +51,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringExpression;
@@ -87,6 +90,24 @@ public class DomainUtil
                 return DateUtil.formatDateTime(defaultDate, property.getFormat());
             else
                 return DateUtil.formatDate(property.getContainer(), defaultDate);
+        }
+        else if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(property.getName()))
+        {
+            // ParticipantVisitResolver default value may be stored as a simple string, or it may be JSON encoded. If JSON encoded, it may have
+            // addition nested properties containing ThawList list settings.
+            try
+            {
+                Map<String, String> decodedVals = new ObjectMapper().readValue(defaultValue.toString(), Map.class);
+                String stringValue = decodedVals.get("stringValue");
+                if (stringValue != null)
+                    return stringValue;
+                // Fall through below to return defaultValue.toString();
+            }
+            catch (Exception e)
+            {
+                Logger.getLogger(DomainUtil.class).debug("Failed to parse JSON for default value. It may predate JSON encoding for thaw list.", e);
+                // And then fall through below to return defaultValue.toString();
+            }
         }
         else if (property.getLookup() != null)
         {
