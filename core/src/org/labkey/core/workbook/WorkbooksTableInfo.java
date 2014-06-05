@@ -83,6 +83,12 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
     }
 
     @Override
+    protected String getContainerFilterColumn()
+    {
+        return "Parent";
+    }
+
+    @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
         if (getUpdateService() != null)
