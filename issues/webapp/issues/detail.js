@@ -48,7 +48,7 @@ Ext4.define('Issues.window.MoveIssue', {
 
         this.moveCombo = Ext4.create('Ext.form.field.ComboBox', {
             store: this.getUserStore(),
-            name: 'move',
+            name: 'moveIssueCombo',
             allowBlank: false,
             valueField: 'containerId',
             displayField: 'containerPath',
@@ -57,7 +57,16 @@ Ext4.define('Issues.window.MoveIssue', {
             labelWidth: 65,
             queryMode: 'local',
             typeAhead: true,
-            forceSelection: true,
+            msgTarget: "under",
+            forceSelection: false,
+            validateOnChange: false,
+            validateOnBlur: true,
+            allowBlank: true,
+            validator: function(val)
+            {
+                var index = this.getStore().findExact(this.displayField, val);
+                return (index != -1) ? true : 'Invalid selection';
+            },
             tpl: Ext4.create('Ext.XTemplate',
                     '<tpl for=".">',
                     '<div class="x4-boundlist-item">{containerPath:htmlEncode}</div>',
