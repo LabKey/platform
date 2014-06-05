@@ -85,6 +85,14 @@ public class DataSetAutoJoinTable extends VirtualTable
             assert _keyFieldKey != null;
             TableInfo parent = _participantIdColumn.getParentTable();
 
+            // Container is always available, but we only need it for Dataspace shared datasets
+            if (source.isShared())
+            {
+                ColumnInfo colContainer = new AliasedColumn(parent, "Container", parent.getColumn("Container"));
+                colContainer.setHidden(true);
+                addColumn(colContainer);
+            }
+
             // SequenceNum is always available
             ColumnInfo colSequenceNum = new AliasedColumn(parent, "SequenceNum", parent.getColumn(sequenceNumFieldKey.getName()));
             colSequenceNum.setHidden(true);
@@ -177,6 +185,10 @@ public class DataSetAutoJoinTable extends VirtualTable
         // The join type was not supported.
         if (fk == null)
             return null;
+
+        // 20546: row duplication for dataspace project w/ same ptid in multiple containers
+        if (_participantIdColumn != null && dsd.isShared())
+            fk.addJoin(new FieldKey(null,"Container"), "Container", false);
 
         ret.setFk(fk);
         ret.setLabel(dsd.getLabel());
