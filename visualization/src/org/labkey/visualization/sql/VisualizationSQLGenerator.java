@@ -399,7 +399,11 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         // Add inner joins to the inner-join queries
         queries.addAll(innerJoinQueries);
 
-        String sql = getSQL(null, _columnFactory, queries, new ArrayList<>(_intervals.values()), "INNER JOIN", _groupBys.isEmpty(), _limit != null);
+        String joinOperator = "INNER JOIN";
+        for (VisualizationSourceQuery innerJoinQuery : innerJoinQueries)
+            joinOperator = getVisualizationProvider(innerJoinQuery.getSchemaName()).getJoinOperator(getViewContext().getContainer());
+
+        String sql = getSQL(null, _columnFactory, queries, new ArrayList<>(_intervals.values()), joinOperator, _groupBys.isEmpty(), _limit != null);
 
         if (!_groupBys.isEmpty())
         {
@@ -643,10 +647,13 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     VisualizationSourceColumn rightColumn = condition.getValue();
                     IVisualizationSourceQuery rightQuery = findQuery(condition.getValue(), queries);
 
+                    // issue 20526: inner join gets confused about which alias to use for the join condition after coalesce
+                    String rightAlias = parentQuery != null ? rightColumn.getSQLAlias() : rightColumn.getSQLOther();
+
                     sql.append(andSep);
                     andSep = " AND ";
                     sql.append(leftQuery.getSQLAlias()).append(".").append(leftColumn.getSQLAlias()).append(" = ");
-                    sql.append(rightQuery.getSQLAlias()).append(".").append(rightColumn.getSQLAlias()).append("\n");
+                    sql.append(rightQuery.getSQLAlias()).append(".").append(rightAlias).append("\n");
                 }
             }
         }

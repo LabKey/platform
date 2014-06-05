@@ -137,9 +137,9 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     @Override
     public String getSelectListName(Set<VisualizationSourceColumn> selectAliases)
     {
-        String finalAlias = selectAliases.iterator().next().getSQLAlias();
+        VisualizationSourceColumn finalAlias = selectAliases.iterator().next();
         if (selectAliases.size() == 1)
-            return finalAlias;
+            return finalAlias.getSQLAlias();
         // Rather than just choosing a single alias from one of our sub-queries, we need to coalesce the values
         // to make sure we have non-null results:
         StringBuilder coalesce = new StringBuilder();
@@ -149,9 +149,12 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
         {
             coalesce.append(sep).append(alias.getSQLAlias());
             sep = ", ";
+
+            // issue 20526: inner join gets confused about which alias to use for the join condition after coalesce
+            alias.setOtherAlias(finalAlias.getAlias());
         }
         // Alias the coalesced value as the first alias:
-        coalesce.append(") AS ").append(finalAlias);
+        coalesce.append(") AS ").append(finalAlias.getSQLAlias());
         return coalesce.toString();
     }
 
