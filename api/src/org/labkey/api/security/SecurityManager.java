@@ -2872,9 +2872,12 @@ public class SecurityManager
             ContainerManager.getRoot().hasPermission(user, SeeUserEmailAddressesPermission.class);
     }
 
-    public static boolean canSeeAuditLog(Container c, User user)
+    public static boolean canSeeAuditLog(User user)
     {
-        return c.hasPermission(user, CanSeeAuditLogPermission.class) ||
-                ContainerManager.getRoot().hasPermission(user, CanSeeAuditLogPermission.class);
+        //
+        // Only returns true if the user has the site permission.  If the user is an admin, then the permission
+        // check on the current container filter will return true
+        //
+        return ContainerManager.getRoot().hasPermission(user, CanSeeAuditLogPermission.class);
     }
 }

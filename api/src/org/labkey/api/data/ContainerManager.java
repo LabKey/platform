@@ -671,37 +671,56 @@ public class ContainerManager
 
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getChildren(parent, u, perm, true);
+        return getChildren(parent, u, perm, null, true);
+    }
+
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
+    {
+        return getChildren(parent, u, perm, roles, true);
     }
 
     public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, boolean includeWorkbooksAndTabs)
     {
+        return getChildren(parent, u, perm, null, includeWorkbooksAndTabs);
+    }
+
+    public static List<Container> getChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, boolean includeWorkbooksAndTabs)
+    {
         List<Container> children = new ArrayList<>();
         for (Container child : getChildrenMap(parent).values())
-            if (child.hasPermission(u, perm) && (includeWorkbooksAndTabs || !child.isWorkbookOrTab()))
+            if (child.hasPermission(u, perm, roles) && (includeWorkbooksAndTabs || !child.isWorkbookOrTab()))
                 children.add(child);
 
         return children;
     }
 
-
     public static List<Container> getAllChildren(Container parent, User u)
     {
-        return getAllChildren(parent, u, ReadPermission.class);
+        return getAllChildren(parent, u, ReadPermission.class, null, true);
     }
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm)
     {
-        return getAllChildren(parent, u, perm, true);
+        return getAllChildren(parent, u, perm, null, true);
+    }
+
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles)
+    {
+        return getAllChildren(parent, u, perm, roles, true);
     }
 
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, boolean includeWorkbooksAndTabs)
+    {
+        return getAllChildren(parent, u, perm, null, includeWorkbooksAndTabs);
+    }
+    
+    public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, boolean includeWorkbooksAndTabs)
     {
         List<Container> result = new ArrayList<>();
 
         for (Container container : getAllChildren(parent))
         {
-            if (container.hasPermission(u, perm) && (includeWorkbooksAndTabs || !container.isWorkbookOrTab()))
+            if (container.hasPermission(u, perm, roles) && (includeWorkbooksAndTabs || !container.isWorkbookOrTab()))
             {
                 result.add(container);
             }

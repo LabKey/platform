@@ -24,7 +24,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -36,14 +35,19 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: klum
@@ -58,7 +62,8 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     
     public DefaultAuditTypeTable(AuditTypeProvider provider, Domain domain, DbSchema dbSchema, UserSchema schema)
     {
-        super(StorageProvisioner.createCachedTableInfo(domain, dbSchema), schema);
+        super(StorageProvisioner.createCachedTableInfo(domain, dbSchema), schema,
+                ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
 
         _provider = provider;
 
@@ -109,10 +114,6 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         impersonatedBy.setLabel("Impersonated By");
         UserIdForeignKey.initColumn(impersonatedBy);
 
-        // issue 16758:  if the user doesn't have permission to see the audit log, then don't return any rows
-        if (!SecurityManager.canSeeAuditLog(schema.getContainer(), schema.getUser()))
-            addCondition(new SQLFragment("0=1"));
-
         initColumns();
     }
 
@@ -135,7 +136,9 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     @Override
     protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
     {
-        return filter.createFilterClause(getSchema(), fieldKey, getContainer(), CanSeeAuditLogPermission.class);
+        User user = (null == getUserSchema()) ? null : getUserSchema().getUser();
+        Set<Role> roles = SecurityManager.canSeeAuditLog(user) ? RoleManager.roleSet(CanSeeAuditLogRole.class) : null;
+        return filter.createFilterClause(getSchema(), fieldKey, getContainer(), CanSeeAuditLogPermission.class, roles);
     }
 
     // Subclasses may override this to provide customizations to the column

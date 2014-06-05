@@ -17,8 +17,10 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.roles.Role;
 
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * User: jeckels
@@ -49,12 +51,12 @@ public class DelegatingContainerFilter extends ContainerFilter.ContainerFilterWi
      * permission.  See issue 19515
      */
     @Nullable
-    public Collection<String> getIds(Container currentContainer, Class<? extends Permission> permission)
+    public Collection<String> getIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
     {
         currentContainer = getContainer(currentContainer);
         ContainerFilter cf = _source.getContainerFilter();
         if (cf instanceof ContainerFilterWithUser)
-            return ((ContainerFilterWithUser)cf).getIds(currentContainer, permission);
+            return ((ContainerFilterWithUser)cf).getIds(currentContainer, permission, roles);
 
         return cf.getIds(currentContainer);
     }
