@@ -19,6 +19,8 @@
 <%@ page import="org.labkey.api.pipeline.TaskPipeline" %>
 <%@ page import="org.labkey.api.pipeline.TaskId" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.pipeline.analysis.AnalysisController" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -38,7 +40,11 @@
     </tr>
     <tr>
         <td><b>Task Id</b></td>
-        <td><%=h(pipeline.getId())%></td>
+        <td>
+            <a href="<%=h(new ActionURL(AnalysisController.InternalDetailsAction.class, getContainer()).addParameter("taskId", pipeline.getId().toString()))%>">
+                <%=h(pipeline.getId())%>
+            </a>
+        </td>
     </tr>
     <tr>
         <td><b>Protocol Id</b></td>
@@ -59,7 +65,12 @@
                 TaskId[] tasks = pipeline.getTaskProgression();
                 if (tasks != null) {
                     for (TaskId task : pipeline.getTaskProgression()) {
-                        %><%=h(task)%><br/><%
+            %>
+            <a href="<%=h(new ActionURL(AnalysisController.InternalDetailsAction.class, getContainer()).addParameter("taskId", task.toString()))%>">
+            <%=h(task)%>
+            </a>
+            <br/>
+            <%
                     }
                 }
             %>

@@ -15,8 +15,12 @@
  */
 package org.labkey.pipeline.analysis;
 
+import com.google.common.base.Function;
+import com.google.common.collect.Collections2;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.input.ReaderInputStream;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -47,7 +51,9 @@ import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.DotRunner;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -61,6 +67,7 @@ import org.springframework.web.servlet.ModelAndView;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -71,6 +78,7 @@ import java.util.Map;
 public class AnalysisController extends SpringActionController
 {
     private static DefaultActionResolver _resolver = new DefaultActionResolver(AnalysisController.class);
+    private static final Logger LOG = Logger.getLogger(AnalysisController.class);
 
     public AnalysisController()
     {
@@ -645,15 +653,29 @@ public class AnalysisController extends SpringActionController
             }
 
             StringBuilder sb = new StringBuilder();
-            sb.append("<table>");
-            for (Map.Entry<String, Object> entry : map.entrySet())
+            if (map.isEmpty())
             {
-                sb.append("<tr>");
-                sb.append("<td>").append(PageFlowUtil.filter(entry.getKey())).append("</td>");
-                sb.append("<td>").append(PageFlowUtil.filter(entry.getValue())).append("</td>");
-                sb.append("</tr>");
+                sb.append("no task or pipeline found");
             }
-            sb.append("</table>");
+            else
+            {
+                sb.append("<table>");
+                for (Map.Entry<String, Object> entry : map.entrySet())
+                {
+                    sb.append("<tr>");
+                    sb.append("<td>").append(PageFlowUtil.filter(entry.getKey())).append("</td>");
+                    sb.append("<td>").append(PageFlowUtil.filter(entry.getValue())).append("</td>");
+                    sb.append("</tr>");
+                }
+                sb.append("</table>");
+
+                if (pipeline != null)
+                {
+                    String svg = generateGraph(pipeline);
+                    if (svg != null)
+                        sb.append(svg);
+                }
+            }
 
             return new HtmlView(sb.toString());
 
@@ -667,5 +689,162 @@ public class AnalysisController extends SpringActionController
         }
     }
 
+    private String generateGraph(TaskPipeline pipeline)
+    {
+        File svgFile = null;
+        try
+        {
+            File dir = FileUtil.getTempDirectory();
+            String dot = buildDigraph(pipeline);
+            svgFile = File.createTempFile("pipeline", ".svg", dir);
+            DotRunner runner = new DotRunner(dir, dot);
+            runner.addSvgOutput(svgFile);
+            runner.execute();
+            return PageFlowUtil.getFileContentsAsString(svgFile);
+        }
+        catch (Exception e)
+        {
+            LOG.error("Error running dot", e);
+        }
+        finally
+        {
+            if (svgFile != null)
+                svgFile.delete();
+        }
+        return null;
+    }
+
+    /**
+     * Generate a dot graph of the pipeline.
+     * Each task is drawn as a box with inputs on the left and outputs on the right:
+     * <pre>
+     * +--------------------+
+     * |      task id       |
+     * +---------+----------+
+     * | in1.xls | out1.txt |
+     * | in2.xls |          |
+     * +---------+----------+
+     * </pre>
+     *
+     * @param pipeline
+     * @return
+     */
+    private String buildDigraph(TaskPipeline pipeline)
+    {
+        TaskId[] progression = pipeline.getTaskProgression();
+        if (progression == null)
+            return null;
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("digraph pipeline {\n");
+
+        // First, add all the nodes
+        for (TaskId taskId : progression)
+        {
+            String name = taskId.getName();
+            if (name == null)
+                name = taskId.getNamespaceClass().getSimpleName();
+
+            TaskFactory factory = PipelineJobService.get().getTaskFactory(taskId);
+
+            if (factory == null)
+            {
+                // not found
+                sb.append("\t\"").append(taskId.toString()).append("\"");
+                sb.append(" [label=\"").append(name).append("\"");
+                sb.append(" color=red");
+                sb.append("];");
+            }
+            else
+            {
+                sb.append("\t\"").append(taskId.toString()).append("\"");
+                sb.append(" [shape=record label=\"{");
+                sb.append(name).append(" | {");
+
+                // inputs
+                // TODO: include parameters as inputs
+                sb.append("{");
+                if (factory instanceof CommandTaskImpl.Factory)
+                {
+                    CommandTaskImpl.Factory f = (CommandTaskImpl.Factory)factory;
+
+                    sb.append(StringUtils.join(
+                            Collections2.transform(f.getInputPaths().keySet(), new Function<String, Object>()
+                            {
+                                @Override
+                                public Object apply(String input)
+                                {
+                                    return escapeDotFieldLabel(input) + "\\l";
+                                }
+                            }),
+                            " | "));
+                }
+                else
+                {
+                    StringUtils.join(factory.getInputTypes(), " | ");
+                }
+                sb.append("}"); // end inputs
+
+                sb.append(" | ");
+
+                // outputs
+                sb.append("{");
+                if (factory instanceof CommandTaskImpl.Factory)
+                {
+                    CommandTaskImpl.Factory f = (CommandTaskImpl.Factory)factory;
+
+                    sb.append(StringUtils.join(
+                            Collections2.transform(f.getOutputPaths().keySet(), new Function<String, Object>()
+                            {
+                                @Override
+                                public Object apply(String input)
+                                {
+                                    return escapeDotFieldLabel(input) + "\\r";
+                                }
+                            }),
+                            " | "));
+                }
+                else
+                {
+                    // CONSIDER: can other tasks have outputs?
+                }
+                sb.append("}"); // end outputs
+
+                sb.append("}"); // end body
+                sb.append("}\""); // end label
+                sb.append("];");
+            }
+
+            sb.append("\n\n");
+        }
+
+        sb.append("\n");
+
+        // Now draw edges
+        // For now, we draw just a sequence from a->b->c. Eventaully, we should connect outputs to inputs and draw splits/joins.
+        sb.append("\t");
+        sb.append(StringUtils.join(
+                Collections2.transform(Arrays.asList(progression), new Function<TaskId, String>()
+                {
+                    @Override
+                    public String apply(TaskId task)
+                    {
+                        return "\"" + task.toString() + "\"";
+                    }
+                }),
+                " -> "));
+
+        sb.append("}");
+        return sb.toString();
+    }
+
+    // Escape a field within a dot record node:
+    // - backslash escape [] {} <>
+    // - spaces with '&#92;'
+    private String escapeDotFieldLabel(String field)
+    {
+        field = field.replaceAll("[\\[\\]\\{\\}<>]", "\\\\$0");
+        return field.replaceAll("\\s", "&#92;");
+    }
 
 }
