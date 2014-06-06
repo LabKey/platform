@@ -298,6 +298,8 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 
         if (isHidden())
             customViewXml.setHidden(isHidden());
+        if(canInherit())
+            customViewXml.setCanInherit(canInherit());
 
         // At the moment, CustomViewImpl always returns null.  If that changes, this will export it, though  it needs
         //  to be enabled on the import side.

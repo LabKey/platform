@@ -71,6 +71,7 @@ public class CustomViewXmlReader
     private String _query;
     private List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty, String>>> _colList = new ArrayList<>();
     private boolean _hidden = false;
+    private boolean _canInherit = false;
     private List<Pair<String,String>> _filters;
     private List<String> _sorts;
     private List<Aggregate> _aggregates;
@@ -108,6 +109,11 @@ public class CustomViewXmlReader
     public boolean isHidden()
     {
         return _hidden;
+    }
+
+    public boolean canInherit()
+    {
+        return _canInherit;
     }
 
     public List<Pair<String, String>> getFilters()
@@ -257,6 +263,7 @@ public class CustomViewXmlReader
             reader._schema = viewElement.getSchema();
             reader._query = viewElement.getQuery();
             reader._hidden = viewElement.isSetHidden() && viewElement.getHidden();
+            reader._canInherit = viewElement.isSetCanInherit() && viewElement.getCanInherit();
             reader._customIconUrl = viewElement.getCustomIconUrl();
             reader._label = viewElement.getLabel();
 

@@ -597,6 +597,7 @@ public class QueryServiceImpl extends QueryService
             cv.setColumnProperties(reader.getColList());
             cv.setFilterAndSort(reader.getFilterAndSortString());
             cv.setIsHidden(reader.isHidden());
+            cv.setCanInherit(reader.canInherit());
             cv.save(user, request);
 
             count++;

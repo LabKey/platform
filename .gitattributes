@@ -706,6 +706,7 @@ core/src/org/labkey/core/admin/folderType.jsp -text
 core/src/org/labkey/core/admin/fullTextSearch.jsp -text
 core/src/org/labkey/core/admin/importFolder.jsp -text
 core/src/org/labkey/core/admin/importer/FolderTypeImporterFactory.java -text
+core/src/org/labkey/core/admin/importer/ModulePropertiesImporterFactory.java -text
 core/src/org/labkey/core/admin/importer/PageImporterFactory.java -text
 core/src/org/labkey/core/admin/importer/SearchSettingsImporterFactory.java -text
 core/src/org/labkey/core/admin/importer/SubfolderImporterFactory.java -text
@@ -742,6 +743,7 @@ core/src/org/labkey/core/admin/view/folderSettingsHeader.jsp -text
 core/src/org/labkey/core/admin/webTheme.jsp -text
 core/src/org/labkey/core/admin/writer/FolderSerializationRegistryImpl.java -text
 core/src/org/labkey/core/admin/writer/FolderTypeWriterFactory.java -text
+core/src/org/labkey/core/admin/writer/ModulePropertiesWriterFactory.java -text
 core/src/org/labkey/core/admin/writer/PageWriterFactory.java -text
 core/src/org/labkey/core/admin/writer/SearchSettingsWriterFactory.java -text
 core/src/org/labkey/core/analytics/AnalyticsController.java -text
