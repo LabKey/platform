@@ -539,30 +539,31 @@ public class Table
 
 
     // Standard SQLException catch block: log exception, query SQL, and params
-    static void logException(SQLFragment sql, @Nullable Connection conn, SQLException e, Level logLevel)
+    static void logException(@Nullable SQLFragment sql, @Nullable Connection conn, SQLException e, Level logLevel)
     {
         if (SqlDialect.isCancelException(e))
         {
             return;
         }
 
-        String trim = sql.getSQL().trim();
-
-        if (RuntimeSQLException.isConstraintException(e) && (StringUtils.startsWithIgnoreCase(trim, "INSERT") || StringUtils.startsWithIgnoreCase(trim, "UPDATE")))
+        if (null != sql)
         {
-            if (Level.WARN.isGreaterOrEqual(logLevel))
+            String trim = sql.getSQL().trim();
+
+            if (RuntimeSQLException.isConstraintException(e) && (StringUtils.startsWithIgnoreCase(trim, "INSERT") || StringUtils.startsWithIgnoreCase(trim, "UPDATE")))
             {
-                _log.warn("SQL Exception", e);
-                _logQuery(Level.WARN, sql, conn);
+                if (Level.WARN.isGreaterOrEqual(logLevel))
+                {
+                    _log.warn("SQL Exception", e);
+                    _logQuery(Level.WARN, sql, conn);
+                }
             }
         }
-        else
+
+        if (Level.ERROR.isGreaterOrEqual(logLevel))
         {
-            if (Level.ERROR.isGreaterOrEqual(logLevel))
-            {
-                _log.error("SQL Exception", e);
-                _logQuery(Level.ERROR, sql, conn);
-            }
+            _log.error("SQL Exception", e);
+            _logQuery(Level.ERROR, sql, conn);
         }
     }
 
@@ -1183,9 +1184,9 @@ public class Table
     }
 
 
-    private static void _logQuery(Level level, SQLFragment sqlFragment, @Nullable Connection conn)
+    private static void _logQuery(Level level, @Nullable SQLFragment sqlFragment, @Nullable Connection conn)
     {
-        if (!_log.isEnabledFor(level))
+        if (!_log.isEnabledFor(level) || null == sqlFragment)
             return;
 
         String sql = sqlFragment.getSQL();

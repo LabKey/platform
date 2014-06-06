@@ -261,7 +261,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
         private final boolean _scrollable;
         private final boolean _tweakJdbcParameters;
 
-        private SQLFragment _sql = null;
+        private @Nullable SQLFragment _sql = null;
 
         protected ExecutingResultSetFactory(SqlFactory factory)
         {
@@ -412,7 +412,10 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
         public void handleSqlException(SQLException e, @Nullable Connection conn)
         {
             Table.logException(_sql, conn, e, getLogLevel());
-            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.toString(), false);
+
+            if (null != _sql)
+                ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.DialectSQL, _sql.toString(), false);
+
             throw getExceptionFramework().translate(getScope(), "ExecutingSelector", e);
         }
     }
