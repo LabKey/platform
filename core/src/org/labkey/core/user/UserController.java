@@ -29,7 +29,6 @@ import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.RedirectAction;
 import org.labkey.api.action.ReturnUrlForm;
-import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
@@ -82,9 +81,9 @@ import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
 import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
-import org.labkey.api.security.impersonation.ImpersonationContext;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.NoPermissionsRole;
 import org.labkey.api.security.roles.OwnerRole;
@@ -1812,6 +1811,8 @@ public class UserController extends SpringActionController
         private Integer _groupId;
         private String _name;
         private boolean _allMembers;
+        private boolean _active;
+        private Permission[] _permissions;
 
         public String getGroup()
         {
@@ -1852,6 +1853,27 @@ public class UserController extends SpringActionController
         {
             _allMembers = allMembers;
         }
+
+        public Permission[] getPermissions()
+        {
+            return _permissions;
+        }
+
+        public void setPermissions(Permission[] permission)
+        {
+            _permissions = permission;
+        }
+
+        public boolean isActive()
+        {
+            return _active;
+        }
+
+        public void setActive(boolean active)
+        {
+            _active = active;
+        }
+
     }
 
     @RequiresLogin
@@ -1899,11 +1921,17 @@ public class UserController extends SpringActionController
                 response.put("groupName", group.getName());
                 response.put("groupCaption", SecurityManager.getDisambiguatedGroupName(group));
 
+                MemberType<User> userMemberType;
+                if (form.isActive())
+                    userMemberType = MemberType.ACTIVE_USERS;
+                else
+                    userMemberType = MemberType.ACTIVE_AND_INACTIVE_USERS;
+
                 // if the allMembers flag is set, then recurse and if group is users then return all site users
                 if (form.isAllMembers())
-                    users = SecurityManager.getAllGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS, group.isUsers());
+                    users = SecurityManager.getAllGroupMembers(group, userMemberType, group.isUsers());
                 else
-                    users = SecurityManager.getGroupMembers(group, MemberType.ACTIVE_AND_INACTIVE_USERS);
+                    users = SecurityManager.getGroupMembers(group, userMemberType);
             }
             else
             {
@@ -1925,9 +1953,23 @@ public class UserController extends SpringActionController
 
                 if (nameFilter.length() > 0)
                     response.put("name", nameFilter);
-                
+
+                boolean userHasPermission;
                 for (User user : users)
                 {
+                    // handle if user has desired permission
+                    userHasPermission = true;
+                    for (Permission permission : form.getPermissions())
+                    {
+                        if (!container.hasPermission(user, permission.getClass()))
+                        {
+                            userHasPermission = false;
+                            break;
+                        }
+                    }
+                    if (!userHasPermission)
+                        continue;
+
                     //according to the docs, startsWith will return true even if nameFilter is empty string
                     if (user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
                     {
@@ -1942,6 +1984,7 @@ public class UserController extends SpringActionController
 
                         userResponseList.add(userInfo);
                     }
+
                 }
             }
 

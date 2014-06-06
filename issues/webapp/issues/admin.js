@@ -12,7 +12,7 @@ function updateAssignedToUser() {
 
     if (e.length != 0)
     {
-        var config = {allMembers: true};
+        var config = {allMembers: true, active: true, permissions: LABKEY.Security.effectivePermissions.update};
         // if "All project Users" is selected than groupId is not used to obtain all project users
         if (!document.getElementsByName("assignedToMethod")[0].checked)
         {
