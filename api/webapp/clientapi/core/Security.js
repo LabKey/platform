@@ -350,6 +350,9 @@ LABKEY.Security = new function()
          * @param {string} [config.name] The first part of the user name, useful for user name completion. If specified,
          * only users whose email address or display name starts with the value supplied will be returned.
          * @param {boolean} [config.allMembers] This value is used to fetch all members in subgroups.
+         * @param {boolean} [config.active] This value is used to filter members based on activity (defaults to false).
+         * @param {Mixed} [config.permissions] A permissions string or an Array of permissions strings.
+         * If not present, no permission filtering occurs. If multiple permissions, all permissions are required.
          * @param {function} config.success A reference to a function to call with the API results. This
          * function will be passed the following parameters:
          * <ul>
@@ -394,6 +397,18 @@ LABKEY.Security = new function()
 
             if(undefined != config.allMembers)
                 params.allMembers = config.allMembers;
+
+            if (undefined != config.active)
+                params.active = config.active;
+
+            if (undefined != config.permissions)
+            {
+                if (!LABKEY.Utils.isArray(config.permissions))
+                {
+                    config.permissions = [ config.permissions ];
+                }
+                params.permissions = config.permissions;
+            }
 
             return LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("user", "getUsers", config.containerPath),
