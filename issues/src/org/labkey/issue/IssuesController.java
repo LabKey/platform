@@ -40,8 +40,26 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentParent;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
-import org.labkey.api.data.*;
-import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.AttachmentParentEntity;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ObjectFactory;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
+import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TSVGridWriter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.issues.IssuesUrls;
 import org.labkey.api.query.FieldKey;
@@ -513,7 +531,8 @@ public class IssuesController extends SpringActionController
             if (!form.getSkipPost())
             {
                 validateRequiredFields(form, errors);
-                validateNotifyList(form.getBean(), form, errors);
+                validateNotifyList(form, errors);
+                validateAssignedTo(form, errors);
                 validateStringFields(form, errors);
             }
         }
@@ -528,7 +547,7 @@ public class IssuesController extends SpringActionController
 
             _issue = form.getBean();
             _issue.open(c, user);
-            validateNotifyList(_issue, form, errors);
+            validateNotifyList(form, errors);
             // convert from email addresses & display names to userids before we hit the database
 
             if(_issue.getNotifyList() != null)
@@ -828,7 +847,8 @@ public class IssuesController extends SpringActionController
         public void validateCommand(IssuesForm form, Errors errors)
         {
             validateRequiredFields(form, errors);
-            validateNotifyList(form.getBean(), form, errors);
+            validateNotifyList(form, errors);
+            validateAssignedTo(form, errors);
             validateStringFields(form, errors);
         }
 
@@ -1235,11 +1255,11 @@ public class IssuesController extends SpringActionController
     }
     
 
-    private void validateNotifyList(Issue issue, IssuesForm form, Errors errors)
+    private void validateNotifyList(IssuesForm form, Errors errors)
     {
         String[] rawEmails = StringUtils.split(StringUtils.trimToEmpty(form.getNotifyList()), ";\n");
         List<String> invalidEmails = new ArrayList<>();
-        List<ValidEmail> emails = SecurityManager.normalizeEmails(rawEmails, invalidEmails);
+        SecurityManager.normalizeEmails(rawEmails, invalidEmails);
 
         for (String rawEmail : invalidEmails)
         {
@@ -1256,6 +1276,20 @@ public class IssuesController extends SpringActionController
                     errors.rejectValue("notifyList","Error",new Object[] {message}, message);
                 }
             }
+        }
+    }
+
+    private void validateAssignedTo(IssuesForm form, Errors errors)
+    {
+        // here we check that the user is a valid assignee
+        Integer userId = form.getBean().getAssignedTo();
+
+        if (userId != null)
+        {
+            User user = UserManager.getUser(userId);
+            // TODO: consider exposing IssueManager.canAssignTo
+            if (!user.isActive() || !getContainer().hasPermission(user, UpdatePermission.class))
+                errors.rejectValue("assignedTo", ERROR_MSG, "An invalid user was set for the Assigned To");
         }
     }
 
