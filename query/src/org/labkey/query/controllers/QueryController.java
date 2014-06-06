@@ -3012,7 +3012,8 @@ public class QueryController extends SpringActionController
         {
             ensureQueryExists(form);
 
-            SQLFragment sql = getDistinctSql(form, errors);
+            TableInfo table = form.getSchema().getTable(form.getQueryName());
+            SQLFragment sql = getDistinctSql(table, form, errors);
 
             if (errors.hasErrors())
                 return null;
@@ -3024,7 +3025,7 @@ public class QueryController extends SpringActionController
             writer.writeProperty("queryName", form.getQueryName());
             writer.startList("values");
 
-            try (ResultSet rs = new SqlSelector(form.getSchema().getDbSchema(), sql).getResultSet())
+            try (ResultSet rs = new SqlSelector(table.getSchema(), sql).getResultSet())
             {
                 while (rs.next())
                 {
@@ -3042,9 +3043,8 @@ public class QueryController extends SpringActionController
         }
 
         @Nullable
-        private SQLFragment getDistinctSql(SelectDistinctForm form, BindException errors)
+        private SQLFragment getDistinctSql(TableInfo table, SelectDistinctForm form, BindException errors)
         {
-            TableInfo table = form.getSchema().getTable(form.getQueryName());
             QuerySettings settings = form.getQuerySettings();
             QueryService service = QueryService.get();
 
