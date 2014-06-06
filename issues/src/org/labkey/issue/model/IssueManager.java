@@ -57,6 +57,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.FileStream;
@@ -594,7 +595,7 @@ public class IssueManager
 
     private static boolean canAssignTo(Container c, @NotNull User user)
     {
-        return user.isActive() && c.hasPermission(user, ReadPermission.class);  // TODO: Check for UpdatePermission instead?
+        return user.isActive() && c.hasPermission(user, UpdatePermission.class);
     }
 
 
@@ -700,7 +701,10 @@ public class IssueManager
         String userId = props.get(PROP_DEFAULT_ASSIGNED_TO_USER);
         if (null == userId)
             return null;
-        return UserManager.getUser(Integer.parseInt(userId));
+        User user = UserManager.getUser(Integer.parseInt(userId));
+        if (!canAssignTo(c, user))
+            return null;
+        return user;
     }
 
     public static void saveDefaultAssignedToUser(Container c, @Nullable User user)
