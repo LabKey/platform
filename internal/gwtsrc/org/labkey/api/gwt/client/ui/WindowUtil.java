@@ -147,7 +147,7 @@ public class WindowUtil
 
     public static void centerDialog(DialogBox dialogBox)
     {
-        dialogBox.setPopupPosition((Window.getClientWidth() - dialogBox.getOffsetWidth()) / 2 + Window.getScrollLeft(), (Window.getClientHeight() - dialogBox.getOffsetHeight()) / 2 + Window.getScrollTop());
+        dialogBox.setPopupPosition((Window.getClientWidth() - dialogBox.getOffsetWidth()) / 2 + WindowUtil.getScrollLeft(), (Window.getClientHeight() - dialogBox.getOffsetHeight()) / 2 + WindowUtil.getScrollTop());
     }
 
     public static class NavigateCommand implements Command
