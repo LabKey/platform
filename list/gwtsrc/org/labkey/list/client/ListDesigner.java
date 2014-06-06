@@ -56,7 +56,7 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
 
     private boolean _readonly = true;
     private int _listId = 0;
-    private HashSet<String> _listNames = new HashSet<String>();
+    private HashSet<String> _listNames = new HashSet<String>();   // Really want CaseInsenstiveHashSet, but not accessible here
     private GWTList _list;
     private GWTDomain _domain;
 
@@ -639,7 +639,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
         _service.getListNames(new ErrorDialogAsyncCallback<List<String>>(){
             public void onSuccess(List<String> result)
             {
-                _listNames.addAll(result);
+                for (String name : result)
+                    if (null != name)
+                        _listNames.add(name.toLowerCase());
             }
         });
     }
@@ -1210,7 +1212,9 @@ public class ListDesigner implements EntryPoint, Saveable<GWTList>
             String msg = super.validateValue(name);
             if (null != msg)
                 return msg;
-            if (_listNames.contains(name) && !origName.equalsIgnoreCase(name))
+            if (null == name)
+                return "The name cannot be null.";
+            if (_listNames.contains(name.toLowerCase()) && !origName.equalsIgnoreCase(name))
                 return "The name '" + name + "' is already in use.";
             return null;
         }
