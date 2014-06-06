@@ -3837,4 +3837,39 @@ public class SpecimenImporter
             }
         }
     }
+
+    public static Map<String, String> getVialToEventNameMap(List<PropertyDescriptor> vialProps, List<PropertyDescriptor> eventProps)
+    {
+        return getRollupNameMap(vialProps, eventProps, SpecimenImporter.getEventVialRollups());
+    }
+
+    public static Map<String, String> getSpecimenToVialNameMap(List<PropertyDescriptor> vialProps, List<PropertyDescriptor> eventProps)
+    {
+        return getRollupNameMap(vialProps, eventProps, SpecimenImporter.getVialSpecimenRollups());
+    }
+
+    // Build a map that indicates for a property in Vial or Specimen, which property in Event or Vial, respectively will rollup to it
+    private static <K extends Rollup> Map<String, String> getRollupNameMap(List<PropertyDescriptor> toProps,
+                                                              List<PropertyDescriptor> fromProps, List<K> considerRollups)
+    {
+        RollupMap<K> matchedRollups = new RollupMap<>();
+        for (PropertyDescriptor property : fromProps)
+        {
+            SpecimenImporter.findRollups(matchedRollups, property, toProps, considerRollups);
+        }
+
+        Map<String, String> resultMap = new HashMap<>();
+        for (PropertyDescriptor eventProp : fromProps)
+        {
+            List<RollupInstance<K>> rollupInstances = matchedRollups.get(eventProp.getName());
+            if (null != rollupInstances)
+            {
+                for (RollupInstance<K> rollupInstance : rollupInstances)
+                {
+                    resultMap.put(rollupInstance.getKey().toLowerCase(), eventProp.getName());
+                }
+            }
+        }
+        return resultMap;
+    }
 }

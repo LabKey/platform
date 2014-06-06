@@ -19,6 +19,7 @@ package org.labkey.study.controllers.samples;
 import gwt.client.org.labkey.specimen.client.SpecimenService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
 import org.labkey.api.gwt.client.model.GWTDomain;
@@ -28,10 +29,12 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
+import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class SpecimenServiceImpl extends DomainEditorServiceBase implements SpecimenService
 {
@@ -100,6 +103,49 @@ public class SpecimenServiceImpl extends DomainEditorServiceBase implements Spec
         return errors;
     }
 
+    public List<String> checkRollups(
+            List<GWTPropertyDescriptor> eventFields,
+            List<GWTPropertyDescriptor> vialFields,
+            List<GWTPropertyDescriptor> specimenFields
+    )
+    {
+        List<String> errors = new ArrayList<>();
+
+        // Check for rollups and report any errors
+        List<PropertyDescriptor> eventProps = new ArrayList<>();
+        List<PropertyDescriptor> vialProps = new ArrayList<>();
+        List<PropertyDescriptor> specimenProps = new ArrayList<>();
+
+        for (GWTPropertyDescriptor gwtProp : eventFields)
+            eventProps.add(getPropFromGwtProp(gwtProp));
+
+        for (GWTPropertyDescriptor gwtProp : vialFields)
+            vialProps.add(getPropFromGwtProp(gwtProp));
+
+        for (GWTPropertyDescriptor gwtProp : specimenFields)
+            specimenProps.add(getPropFromGwtProp(gwtProp));
+
+        Map<String, String> vialToEventNameMap = SpecimenImporter.getVialToEventNameMap(vialProps, eventProps);
+        for (PropertyDescriptor prop : vialProps)
+            if (!vialToEventNameMap.containsKey(prop.getName().toLowerCase()))
+                errors.add("Vial field '" + prop.getName() + "' has no SpecimenEvent field that will rollup to it.");
+
+        Map<String, String> specimenToVialNameMap = SpecimenImporter.getSpecimenToVialNameMap(specimenProps, vialProps);
+        for (PropertyDescriptor prop : specimenProps)
+            if (!specimenToVialNameMap.containsKey(prop.getName().toLowerCase()))
+                errors.add("Specimen field '" + prop.getName() + "' has no Vial field that will rollup to it.");
+
+        return errors;
+    }
+
+    private PropertyDescriptor getPropFromGwtProp(GWTPropertyDescriptor gwtProp)
+    {
+        PropertyDescriptor pd = new PropertyDescriptor();
+        pd.setRangeURI(gwtProp.getRangeURI());
+        pd.setConceptURI(gwtProp.getConceptURI());
+        pd.setName(gwtProp.getName());
+        return pd;
+    }
 
     public boolean canUpdateSpecimenDomains()
     {

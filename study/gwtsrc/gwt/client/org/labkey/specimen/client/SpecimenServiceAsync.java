@@ -34,4 +34,11 @@ public interface SpecimenServiceAsync extends LookupServiceAsync
             GWTDomain updateSpecimen,
             AsyncCallback<List<String>> async
     );
+
+    void checkRollups(
+            List<GWTPropertyDescriptor> eventFields,
+            List<GWTPropertyDescriptor> vialFields,
+            List<GWTPropertyDescriptor> specimenFields,
+            AsyncCallback<List<String>> errors
+    );
 }

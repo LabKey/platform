@@ -213,7 +213,7 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
 
     private boolean validate()
     {
-        List<String> errors = new ArrayList<String>();
+        final List<String> errors = new ArrayList<String>();
 
         // Get the errors for each of the PropertiesEditors
         for (PropertiesEditor<GWTDomain<GWTPropertyDescriptor>, GWTPropertyDescriptor> propeditor : _domainEditors)
@@ -225,13 +225,19 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
 
         // Check for the same name in Specimen and Vial
         Set<String> specimenFields = new HashSet<String>();
+        List<GWTPropertyDescriptor> optionalSpecimenFields = new ArrayList<GWTPropertyDescriptor>();
         for (GWTPropertyDescriptor prop : domainSpecimen.getFields())
         {
             if (null != prop.getName())
+            {
                 specimenFields.add(prop.getName().toLowerCase());
+                if (!prop.isRequired())
+                    optionalSpecimenFields.add(prop);
+            }
         }
 
         Set<String> vialFields = new HashSet<String>();
+        List<GWTPropertyDescriptor> optionalVialFields = new ArrayList<GWTPropertyDescriptor>();
         for (GWTPropertyDescriptor prop : domainVial.getFields())
         {
             if (null != prop.getName())
@@ -240,6 +246,9 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
                     errors.add("Vial cannot have a custom field of the same name as a Specimen field: " + prop.getName());
                 else
                     vialFields.add(prop.getName().toLowerCase());       // only add if we aren't already reporting error on that name
+
+                if (!prop.isRequired())
+                    optionalVialFields.add(prop);
             }
         }
 
@@ -249,14 +258,45 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
                 errors.add("Specimen cannot have a custom field of the same name as a Vial field: " + prop.getName());
         }
 
+        if (0 == errors.size())
+        {
+            List<GWTPropertyDescriptor> optionalEventFields = new ArrayList<GWTPropertyDescriptor>();
+            for (GWTPropertyDescriptor prop : domainEvent.getFields())
+                if (!prop.isRequired())
+                    optionalEventFields.add(prop);
+
+            // Ask server to check rollups
+            getService().checkRollups(optionalEventFields, optionalVialFields, optionalSpecimenFields,
+                new AsyncCallback<List<String>>()
+                {
+                    public void onFailure(Throwable caught)
+                    {
+                    }
+
+                    public void onSuccess(List<String> result)
+                    {
+                        String sep = "";
+                        String errorString = "";
+                        for (String warn : result)
+                        {
+                            errorString += sep + warn;
+                            sep = "   ";
+                        }
+                        if (result.size() > 0)
+                            Window.alert("Warning:\n" + errorString);
+                    }
+                }
+            );
+        }
+
         if (errors.size() > 0)
         {
+            String sep = "";
             String errorString = "";
-            for (int i = 0; i < errors.size(); i++)
+            for (String error : errors)
             {
-                if (i > 0)
-                    errorString += "\n";
-                errorString += errors.get(i);
+                errorString += sep + error;
+                sep = "\n";
             }
             Window.alert(errorString);
             return false;
