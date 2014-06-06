@@ -27,14 +27,15 @@ import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.net.URISyntaxException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -44,6 +45,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1552,6 +1554,31 @@ public class SimpleFilter implements Filter
             // Convert to sets because we don't care about order for IN clauses
             assertEquals("Parameter values didn't match for IN clause", new HashSet<>(Arrays.asList(expectedValues)), new HashSet<>(Arrays.asList(clause._paramVals)));
         }
+
+        @Test  // TODO: Test much larger IN claues, once we support them on SQL Server
+        public void testLargeInClause() throws Exception
+        {
+            User user = TestContext.get().getUser();
+
+            testActiveUsersInClause(0, Collections.emptyList());
+            testActiveUsersInClause(1, Collections.singleton(user.getUserId()));
+            testActiveUsersInClause(1, Collections.singleton(user));
+
+            Collection<Integer> ids = new LinkedList<>();
+            for (int i = 0; i < 2000; i++)
+                ids.add(user.getUserId());
+
+            testActiveUsersInClause(1, ids);
+        }
+
+        private void testActiveUsersInClause(int expectedSize, Collection users)
+        {
+            SimpleFilter f = new SimpleFilter();
+            f.addInClause(FieldKey.fromParts("UserId"), users);
+            TableSelector userSelector = new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), f, null);
+            Collection<User> ret = userSelector.getCollection(User.class);
+            assertEquals(expectedSize, ret.size());
+        }
     }
 
     public static class BetweenClauseTestCase extends ClauseTestCase
@@ -1601,6 +1628,5 @@ public class SimpleFilter implements Filter
             assertEquals(Pair.of("query.Foo~notbetween", "-1,2.2"), new CompareType.BetweenClause(fieldKey, -1, 2.2, true).toURLParam("query."));
             assertEquals(Pair.of("query.Foo~between", "A,Z"), new CompareType.BetweenClause(fieldKey, "A", "Z", false).toURLParam("query."));
         }
-
     }
 }
