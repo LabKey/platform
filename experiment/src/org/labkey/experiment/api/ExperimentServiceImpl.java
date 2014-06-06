@@ -2621,12 +2621,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     ExpRun existingRun = outputData.getRun();
                     if (existingRun != null && !existingRun.equals(run))
                     {
-                        throw new IllegalArgumentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another run '" + outputData.getRun().getName() + "' (RowId " + outputData.getRunId() + ")");
+                        throw new ExperimentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another run '" + outputData.getRun().getName() + "' (RowId " + outputData.getRunId() + ")");
                     }
                     ExpProtocolApplication existingProtApp = outputData.getSourceApplication();
                     if (existingProtApp != null && !existingProtApp.equals(protApp2))
                     {
-                        throw new IllegalArgumentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another protocol application");
+                        throw new ExperimentException("Output data " + outputData.getName() + " (RowId " + outputData.getRowId() + ") is already marked as being created by another protocol application");
                     }
                     outputData.setSourceApplication(protApp2);
                     outputData.setRun(run);
