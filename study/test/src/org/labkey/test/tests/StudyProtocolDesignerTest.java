@@ -122,7 +122,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
     @LogMethod
     public void testVaccineDesign()
     {
-        Locator editButton = PortalHelper.Locators.webPart("Vaccine Design").append(Locator.navButton("Edit"));
+        Locator editButton = PortalHelper.Locators.webPart("Vaccine Design").append(Locator.lkButton("Edit"));
         clickAndWait(editButton);
         assertElementPresent(Locator.linkWithText("Manage Treatments"));
 
@@ -144,7 +144,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
     @LogMethod
     public void testTreatmentSchedule()
     {
-        Locator editButton = PortalHelper.Locators.webPart("Immunization Schedule").append(Locator.navButton("Edit"));
+        Locator editButton = PortalHelper.Locators.webPart("Immunization Schedule").append(Locator.lkButton("Edit"));
         clickAndWait(editButton);
 
         ManageTreatmentsTester treatments = new ManageTreatmentsTester(this);
@@ -175,7 +175,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
     @LogMethod
     public void testAssaySchedule()
     {
-        Locator editButton = PortalHelper.Locators.webPart("Assay Schedule").append(Locator.navButton("Edit"));
+        Locator editButton = PortalHelper.Locators.webPart("Assay Schedule").append(Locator.lkButton("Edit"));
         clickAndWait(editButton);
         _ext4Helper.waitForMaskToDisappear();
 

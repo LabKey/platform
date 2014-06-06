@@ -224,7 +224,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         waitForElement(Locator.name("ff_name0"), WAIT_FOR_JAVASCRIPT);
         _listHelper.setColumnName(0, "Value");
         clickButton("Save");
-        waitForElement(Locator.navButton("View Data"), WAIT_FOR_JAVASCRIPT);
+        waitForElement(Locator.lkButton("View Data"), WAIT_FOR_JAVASCRIPT);
         clickButton("View Data");
         clickButton("Import Data");
         _listHelper.submitTsvData("participantid\tDate\tValue\treplace\nP1\t2/1/2007\tHello\nPnew\t11/17/2007\tGoodbye");
