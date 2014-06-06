@@ -370,13 +370,13 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     }
 
     @Override
-    public String getJoinOperator(Container container)
+    public String getAlternateJoinOperator(Container container, IVisualizationSourceQuery query)
     {
         // issue 20526: use left join for Dataspace when adding color variable to plot (see Scatter.js use of allowNullResults)
         Study study = StudyService.get().getStudy(container);
-        if (study != null && study.isDataspaceStudy())
+        if (study != null && study.isDataspaceStudy() && !query.getQueryName().contains("VisualizationVisitTag"))
             return "LEFT JOIN";
         else
-            return super.getJoinOperator(container);
+            return super.getAlternateJoinOperator(container, query);
     }
 }

@@ -210,9 +210,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                                 if (null != dateOptions.get("zeroDayVisitTag"))
                                 {
                                     String zeroDayVisitTag = (String)dateOptions.get("zeroDayVisitTag");
-                                    zeroDayCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "ZeroDay", true,
+                                    zeroDayCol = _columnFactory.create(getPrimarySchema(), "VisualizationVisitTag", "ZeroDay", false,
                                             zeroDayVisitTag, useProtocolDay, interval);
-                                    zeroDayCol.setAllowNullResults(false);
                                     ensureSourceQuery(_viewContext.getContainer(), zeroDayCol, query).addSelect(zeroDayCol, false);
                                 }
 
@@ -399,11 +398,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         // Add inner joins to the inner-join queries
         queries.addAll(innerJoinQueries);
 
-        String joinOperator = "INNER JOIN";
-        for (VisualizationSourceQuery innerJoinQuery : innerJoinQueries)
-            joinOperator = getVisualizationProvider(innerJoinQuery.getSchemaName()).getJoinOperator(getViewContext().getContainer());
-
-        String sql = getSQL(null, _columnFactory, queries, new ArrayList<>(_intervals.values()), joinOperator, _groupBys.isEmpty(), _limit != null);
+        String sql = getSQL(null, _columnFactory, queries, new ArrayList<>(_intervals.values()), "INNER JOIN", _groupBys.isEmpty(), _limit != null);
 
         if (!_groupBys.isEmpty())
         {
@@ -632,7 +627,11 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             if (sql.length() == 0)
                 sql.append("SELECT ").append(masterSelectList).append(" FROM\n");
             else
-                sql.append("\n").append(joinOperator).append("\n");
+            {
+                VisualizationProvider provider = getVisualizationProvider(query.getSchema().getSchemaName());
+                String altJoinOperator = provider.getAlternateJoinOperator(getViewContext().getContainer(), query);
+                sql.append("\n").append(altJoinOperator != null ? altJoinOperator : joinOperator).append("\n");
+            }
             String querySql = query.getSQL(factory);
             sql.append("(").append(querySql).append(") AS ").append(query.getSQLAlias()).append("\n");
             if (query.getJoinTarget() != null)
