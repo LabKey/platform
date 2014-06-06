@@ -343,7 +343,9 @@ public class QueryServiceImpl extends QueryService
                     // Include both schemaName and path in key because some queries come from the same file on disk
                     // but are exposed in multiple schemas. For example, we support queries supplied as part
                     // of an assay provider that are exposed as part of each assay design of that type. See issue 16595
-                    String cacheKey = query.getPath().toString() + "||" + schemaName;
+                    // Also include container, so that we're respecting the right set of active modules (inactive
+                    // modules may contain queries of the same name) - see issue 20628
+                    String cacheKey = container.getRowId() + "||" + query.getPath().toString() + "||" + schemaName;
                     ModuleQueryDef moduleQueryDef = MODULE_QUERY_DEFS_CACHE.get(cacheKey);
                     if (null == moduleQueryDef || moduleQueryDef.isStale())
                     {
