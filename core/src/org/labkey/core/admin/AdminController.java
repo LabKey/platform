@@ -92,6 +92,8 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.view.SetupForm;
+import org.labkey.api.query.ValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.CSRF;
@@ -4216,7 +4218,19 @@ public class AdminController extends SpringActionController
                 return new JspView<>("/org/labkey/core/admin/confirmProjectMove.jsp", form);
             }
 
-            ContainerManager.move(c, newParent, getUser());
+            try
+            {
+                ContainerManager.move(c, newParent, getUser());
+            }
+            catch (ValidationException e)
+            {
+                getPageConfig().setTemplate(Template.Dialog);
+                for (ValidationError validationError : e.getErrors())
+                {
+                    errors.addError(new LabkeyError(validationError.getMessage()));
+                }
+                return new SimpleErrorView(errors);
+            }
 
             if (form.isAddAlias())
             {
