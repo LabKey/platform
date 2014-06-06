@@ -1179,7 +1179,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 @Override
                 protected void populateButtonBar(DataView dataView, ButtonBar bar)
                 {
-                    try {
+                    try
+                    {
                         // add the provider configuration views to the admin panel button
                         PanelButton adminButton = new PanelButton("Update Settings", getDataRegionName());
                         PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
@@ -1221,7 +1222,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private static class FolderGroupColumn extends DataColumn
     {
-        Set<String> _assignmentSet;
+        private final Set<String> _assignmentSet;
+
         public FolderGroupColumn(Set<String> assignmentSet, ColumnInfo col)
         {
             super(col);
@@ -1255,8 +1257,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
     private static class PanelConfig implements MessageConfigService.PanelInfo
     {
-        private ActionURL _returnUrl;
-        private String _dataRegionSelectionKey;
+        private final ActionURL _returnUrl;
+        private final String _dataRegionSelectionKey;
 
         public PanelConfig(ActionURL returnUrl, String selectionKey)
         {

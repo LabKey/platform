@@ -15,12 +15,13 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.announcements.config.AnnouncementEmailConfig.EmailConfigForm" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
-    org.labkey.announcements.config.AnnouncementEmailConfig.EmailConfigForm bean = ((JspView<org.labkey.announcements.config.AnnouncementEmailConfig.EmailConfigForm>)HttpView.currentView()).getModelBean();
+    EmailConfigForm bean = ((JspView<org.labkey.announcements.config.AnnouncementEmailConfig.EmailConfigForm>)HttpView.currentView()).getModelBean();
 
     String currentFolderDefault = "";
     final String ID_PREFIX = "labkey_";

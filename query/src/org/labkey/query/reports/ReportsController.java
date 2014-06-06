@@ -1726,7 +1726,7 @@ public class ReportsController extends SpringActionController
                 descriptor.setReportDescription(form.getDescription());
                 descriptor.setCategory(category);
 
-                // Keep this code in sync with ReportViewProvider.updateProperties()
+                // Note: Keep this code in sync with ReportViewProvider.updateProperties()
                 boolean isPrivate = !form.getShared();
 
                 if (isPrivate)

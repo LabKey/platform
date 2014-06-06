@@ -347,6 +347,7 @@ public class ReportViewProvider implements DataViewProvider
                     if (props.containsKey(Property.visible.name()))
                         descriptor.setHidden(!BooleanUtils.toBoolean(String.valueOf(props.get(Property.visible.name()))));
 
+                    // Note: Keep this code in sync with BaseReportAction.saveReport()
                     boolean isPrivate = !BooleanUtils.toBoolean(String.valueOf(props.get(Property.shared.name())));
 
                     if (isPrivate)
