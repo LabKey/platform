@@ -100,17 +100,24 @@ public class SimpleFormSection extends AbstractFormSection
         return json;
     }
 
+    protected List<FieldKey> getFieldKeys(TableInfo ti)
+    {
+        List<FieldKey> keys = EHRService.get().getDefaultFieldKeys(ti);
+        if (_showLocation)
+        {
+            keys.add(0, FieldKey.fromString("Id/curLocation/location"));
+        }
+
+        return keys;
+    }
+
     @Override
     protected List<FormElement> getFormElements(DataEntryFormContext ctx)
     {
         List<FormElement> list = new ArrayList<>();
         for (TableInfo ti : getTables(ctx))
         {
-            List<FieldKey> keys = EHRService.get().getDefaultFieldKeys(ti);
-            if (_showLocation)
-            {
-                keys.add(0, FieldKey.fromString("Id/curLocation/location"));
-            }
+            List<FieldKey> keys = getFieldKeys(ti);
 
             Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(ti, keys);
             for (FieldKey key : keys)
