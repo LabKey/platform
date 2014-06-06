@@ -41,13 +41,16 @@ public class StudyDesignAssaysTable extends StudyDesignLookupBaseTable
                 FieldKey.fromParts("Description"),
                 FieldKey.fromParts("Inactive"),
                 FieldKey.fromParts("Target"),
+                FieldKey.fromParts("TargetType"),
+                FieldKey.fromParts("TargetSubtype"),
                 FieldKey.fromParts("Methodology"),
                 FieldKey.fromParts("Category"),
                 FieldKey.fromParts("TargetFunction"),
                 FieldKey.fromParts("LeadContributor"),
                 FieldKey.fromParts("Contact"),
                 FieldKey.fromParts("Summary"),
-                FieldKey.fromParts("Keywords")
+                FieldKey.fromParts("Keywords"),
+                FieldKey.fromParts("Editorial")
         ));
         setDefaultVisibleColumns(defaultColumns);
     }
