@@ -5855,46 +5855,12 @@ public class SpecimenController extends BaseStudyController
         }
     }
 
-
     @RequiresPermissionClass(AdminPermission.class)
     public class ServiceAction extends GWTServiceAction
     {
         protected BaseRemoteService createService()
         {
             return new SpecimenServiceImpl(getViewContext());
-        }
-    }
-
-    /**
-     * Temporary, for testing freezer pro exports
-     */
-    @RequiresPermissionClass(AdminPermission.class)
-    public class FreezerProExport extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            try
-            {
-                PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
-                SpecimenTransform transform = SpecimenService.get().getSpecimenTransform("FreezerPro");
-                SpecimenReloadJob job = new SpecimenReloadJob(new ViewBackgroundInfo(getContainer(), getUser(), getViewContext().getActionURL()), root, transform.getName());
-
-                job.setExternalImportConfig(transform.getExternalImportConfig(getContainer(), getUser()));
-
-                PipelineService.get().queueJob(job);
-            }
-            catch (PipelineValidationException e)
-            {
-                throw new IOException(e);
-            }
-            return null;
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return null;
         }
     }
 }

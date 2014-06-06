@@ -122,7 +122,11 @@ public class FreezerProExport
                         getSampleUserData(client, id, row);
 
                     // retrieve the sample location info
-                    getSampleLocationData(client, id, row);
+                    if (row.containsKey("loc_id"))
+                    {
+                        String locationId = String.valueOf(row.get("loc_id"));
+                        getSampleLocationData(client, locationId, row);
+                    }
                 }
             }
         }
@@ -248,9 +252,9 @@ public class FreezerProExport
         }
     }
 
-    private void getSampleLocationData(HttpClient client, String sampleId, Map<String, Object> row)
+    private void getSampleLocationData(HttpClient client, String locationId, Map<String, Object> row)
     {
-        ExportLocationCommand exportLocationCommand = new ExportLocationCommand(_config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), sampleId);
+        ExportLocationCommand exportLocationCommand = new ExportLocationCommand(_config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), locationId);
         FreezerProCommandResonse response = exportLocationCommand.execute(client, _job);
 
         try

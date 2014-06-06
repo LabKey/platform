@@ -178,13 +178,13 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         }
         outputRow.put("ptid", ptid);
 
-        String barcode = removeNonNullValue(inputRow, "barcode");
-        if (StringUtils.isEmpty(barcode))
+        String uniqueSampleId = getGlobalUniqueSampleId(inputRow);
+        if (StringUtils.isEmpty(uniqueSampleId))
         {
-            warn("Skipping data row could not find 'barcode' value, row number " + rowIndex);
+            warn("Skipping data row could not find 'barcode' or 'barcode_tag' value, row number " + rowIndex);
             return null;
         }
-        outputRow.put("global_unique_specimen_id", barcode);
+        outputRow.put("global_unique_specimen_id", uniqueSampleId);
 
         String uid = removeNonNullValue(inputRow, "uid");
         if (StringUtils.isEmpty(uid))
@@ -254,6 +254,17 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
             return removeNonNullValue(row, "patient id");
         else if (row.containsKey("name"))
             return removeNonNullValue(row, "name");
+
+        return null;
+    }
+
+    @Nullable
+    private String getGlobalUniqueSampleId(Map<String, Object> row)
+    {
+        if (row.containsKey("barcode"))
+            return removeNonNullValue(row, "barcode");
+        else if (row.containsKey("barcode_tag"))
+            return removeNonNullValue(row, "barcode_tag");
 
         return null;
     }
