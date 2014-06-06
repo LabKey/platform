@@ -284,8 +284,8 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
         all,
     }
 
-    public String getJoinOperator(Container container)
+    public String getAlternateJoinOperator(Container container, IVisualizationSourceQuery query)
     {
-        return "INNER JOIN";
+        return null;
     }
 }
