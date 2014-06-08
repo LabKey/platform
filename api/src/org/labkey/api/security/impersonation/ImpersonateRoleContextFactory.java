@@ -128,6 +128,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
     private class ImpersonateRoleContext extends AbstractImpersonatingContext
     {
         /** Hold on to the role names and not the Roles themselves for serialization purposes. See issue #15660 */
+        // TODO: Hold only Set<Role> and use custom serialization, see below
         private final Set<String> _roleNames;
         private transient Set<Role> _roles;
 
@@ -178,7 +179,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
             return ImpersonateRoleContextFactory.this;
         }
 
-        // TODO: More expensive than it needs to be... should hold onto a Set<Roles> and use custom serialization (using unique names)
+        // TODO: More expensive than it needs to be... should actually hold onto a Set<Roles> and use custom serialization (using unique names)
         private synchronized Set<Role> getRoles()
         {
             if (_roles == null)

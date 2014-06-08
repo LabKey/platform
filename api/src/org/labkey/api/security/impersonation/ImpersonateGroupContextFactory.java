@@ -88,6 +88,10 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
 
     private static boolean canImpersonateGroup(@Nullable Container project, User user, Group group)
     {
+        // Impersonating the "Site: Guests" group leads to confusion and is not useful. Better to just log out. See #20140.
+        if (group.isGuests())
+            return false;
+
         // Site admin can impersonate any group
         if (user.isSiteAdmin())
             return true;
@@ -133,7 +137,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
 
         private ImpersonateGroupContext(@Nullable Container project, User user, Group group, URLHelper returnURL)
         {
-            // project is used to verify authorization, but isn't needed for impersonation itself... the group itself will
+            // project is used to verify authorization, but isn't needed while impersonating... the group itself will
             // limit the admin user appropriately
             super(user, null, returnURL);
 
@@ -142,18 +146,14 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
 
             // Seed the group list with guests, site users, and the passed in group (as appropriate)
             LinkedList<Integer> seedGroups = new LinkedList<>();
-            // Everyone always gets Guests
+
+            // Everyone always gets "Site: Guests" and "Site: Users"
             seedGroups.add(Group.groupGuests);
+            seedGroups.add(Group.groupUsers);
 
-            // Non-guest group gets site users
-            if (!group.isGuests())
-            {
-                seedGroups.add(Group.groupUsers);
-
-                // Non-site users group gets the requested group
-                if (!group.isUsers())
-                    seedGroups.add(group.getUserId());
-            }
+            // All groups except "Site: Users" gets the requested group
+            if (!group.isUsers())
+                seedGroups.add(group.getUserId());
 
             // Now expand the list of groups to include all groups they belong to (see #13802)
             _groups = GroupMembershipCache.computeAllGroups(seedGroups);
