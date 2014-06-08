@@ -613,7 +613,7 @@ public class WikiManager implements WikiService
         try
         {
             // This pushes a ViewContext onto the stack; wikis may need this to render embedded webpart
-            ViewContext.getMockViewContext(User.guest, c, null, true);
+            ViewContext.getMockViewContext(User.guest, c, new ActionURL(), true);
             indexWikiContainerFast(task, c, modifiedSince, null);
         }
         finally
