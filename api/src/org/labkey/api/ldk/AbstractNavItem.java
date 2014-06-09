@@ -23,6 +23,8 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
+import org.labkey.api.laboratory.DataProvider;
+import org.labkey.api.laboratory.LaboratoryService;
 import org.labkey.api.ldk.NavItem;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
@@ -38,8 +40,18 @@ abstract public class AbstractNavItem implements NavItem
 {
     protected static final Logger _log = Logger.getLogger(AbstractNavItem.class);
 
-    protected String _ownerKey = null;
-    protected Container _targetContainer = null;
+    private String _ownerKey = null;
+    private Container _targetContainer = null;
+    private LaboratoryService.NavItemCategory _itemType;
+    private String _reportCategory;
+    private DataProvider _provider;
+
+    protected AbstractNavItem(DataProvider provider, @Nullable LaboratoryService.NavItemCategory itemType, String reportCategory)
+    {
+        _provider = provider;
+        _itemType = itemType;
+        _reportCategory = reportCategory;
+    }
 
     @Override
     public JSONObject toJSON(Container c, User u)
@@ -47,7 +59,7 @@ abstract public class AbstractNavItem implements NavItem
         JSONObject ret = new JSONObject();
         ret.put("name", getName());
         ret.put("label", getLabel());
-        ret.put("category", getCategory());
+        ret.put("reportCategory", getReportCategory());
         ret.put("renderer", getRendererName());
         ret.put("visible", isVisible(c, u));
         ret.put("providerName", getDataProvider() == null ? null : getDataProvider().getName());
@@ -99,6 +111,24 @@ abstract public class AbstractNavItem implements NavItem
         _targetContainer = targetContainer;
     }
 
+    @Override
+    public LaboratoryService.NavItemCategory getItemType()
+    {
+        return _itemType;
+    }
+
+    @Override
+    public String getReportCategory()
+    {
+        return _reportCategory;
+    }
+
+    @Override
+    public DataProvider getDataProvider()
+    {
+        return _provider;
+    }
+
     public ActionURL appendDefaultView(Container c, ActionURL url, String dataRegionName)
     {
         String view = getDefaultViewName(c, getPropertyManagerKey());
@@ -113,7 +143,7 @@ abstract public class AbstractNavItem implements NavItem
     public static String getDefaultViewName(Container c, String key)
     {
         Map<String, String> map = PropertyManager.getProperties(c, NavItem.VIEW_PROPERTY_CATEGORY);
-        if (map != null && map.containsKey(key))
+        if (map.containsKey(key))
             return map.get(key);
 
         return null;
@@ -122,7 +152,7 @@ abstract public class AbstractNavItem implements NavItem
     @Override
     public String getPropertyManagerKey()
     {
-        return getDataProvider().getKey() + "||" + getCategory() + "||" + getName() + "||" + getLabel();
+        return getDataProvider().getKey() + "||" + getItemType().name() + "||" + getName() + "||" + getLabel();
     }
 
     public static String inferDataProviderNameFromKey(String key)

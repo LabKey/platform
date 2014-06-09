@@ -43,16 +43,16 @@ public class QueryTabbedReportItem extends TabbedReportItem
     private String _schemaName;
     private String _queryName;
 
-    public QueryTabbedReportItem(DataProvider provider, String schemaName, String queryName, String label, String category)
+    public QueryTabbedReportItem(DataProvider provider, String schemaName, String queryName, String label, String reportCategory)
     {
-        super(provider, queryName, label, category);
+        super(provider, queryName, label, reportCategory);
         _schemaName = schemaName;
         _queryName = queryName;
     }
 
-    public QueryTabbedReportItem(DataProvider provider, String label, String category, TableInfo ti)
+    public QueryTabbedReportItem(DataProvider provider, String label, String reportCategory, TableInfo ti)
     {
-        this(provider, ti.getUserSchema().getSchemaName(), ti.getName(), label, category);
+        this(provider, ti.getUserSchema().getSchemaName(), ti.getName(), label, reportCategory);
         if (ti.getUserSchema() != null)
         {
             _cachedUserSchemas.put(getUserSchemaKey(ti.getUserSchema().getContainer(), ti.getUserSchema().getUser(), ti.getUserSchema().getName()), ti.getUserSchema());

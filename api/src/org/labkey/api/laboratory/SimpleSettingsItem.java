@@ -15,6 +15,7 @@
  */
 package org.labkey.api.laboratory;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -33,9 +34,9 @@ import org.labkey.api.view.ActionURL;
  */
 public class SimpleSettingsItem extends QueryImportNavItem implements SettingsNavItem
 {
-    public SimpleSettingsItem(DataProvider provider, String schema, String query, String category, String label)
+    public SimpleSettingsItem(DataProvider provider, String schema, String query, String reportCategory, String label)
     {
-        super(provider, schema, query, category, label);
+        super(provider, schema, query, LaboratoryService.NavItemCategory.settings, label, reportCategory);
     }
 
     @Override
@@ -51,6 +52,7 @@ public class SimpleSettingsItem extends QueryImportNavItem implements SettingsNa
     }
 
     @Override
+    @NotNull
     public Container getTargetContainer(Container c)
     {
         Container target = super.getTargetContainer(c);

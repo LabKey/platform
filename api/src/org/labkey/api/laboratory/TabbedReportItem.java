@@ -47,8 +47,6 @@ public class TabbedReportItem extends AbstractNavItem
 {
     protected String _name;
     protected String _label;
-    protected String _category;
-    protected DataProvider _provider;
     protected boolean _visible = true;
     protected String _reportType = "query";
 
@@ -60,13 +58,11 @@ public class TabbedReportItem extends AbstractNavItem
     public static final String OVERRIDES_PROP_KEY = "laboratory.tabItemOverride";
     protected static final Logger _log = Logger.getLogger(TabbedReportItem.class);
 
-    public TabbedReportItem(DataProvider provider, String name, String label, String category)
+    public TabbedReportItem(DataProvider provider, String name, String label, String reportCategory)
     {
-        _provider = provider;
+        super(provider, LaboratoryService.NavItemCategory.tabbedReports, reportCategory);
         _name = name;
         _label = label;
-        _category = category;
-
     }
 
     public String getName()
@@ -77,16 +73,6 @@ public class TabbedReportItem extends AbstractNavItem
     public String getLabel()
     {
         return _label;
-    }
-
-    public String getCategory()
-    {
-        return _category;
-    }
-
-    public DataProvider getDataProvider()
-    {
-        return _provider;
     }
 
     public String getRendererName()
@@ -213,9 +199,15 @@ public class TabbedReportItem extends AbstractNavItem
         _visible = visible;
     }
 
+    @Override
+    public String getPropertyManagerKey()
+    {
+        return getDataProvider().getKey() + "||" + getReportCategory() + "||" + getName() + "||" + getLabel();
+    }
+
     public static String getOverridesPropertyKey(NavItem item)
     {
-        return item.getDataProvider().getKey() + "||tabReport||" + item.getCategory() + "||" + item.getName() + "||" + item.getLabel();
+        return item.getDataProvider().getKey() + "||tabReport||" + item.getReportCategory() + "||" + item.getName() + "||" + item.getLabel();
     }
 
     public static void applyOverrides(NavItem item, Container c, JSONObject json)
@@ -227,8 +219,11 @@ public class TabbedReportItem extends AbstractNavItem
             if (props.containsKey("label"))
                 json.put("label", props.get("label"));
 
-            if (props.containsKey("category"))
-                json.put("category", props.get("category"));
+            if (props.containsKey("reportCategory"))
+                json.put("reportCategory", props.get("reportCategory"));
+            // retained for settings saved prior to refactor
+            else if (props.containsKey("category"))
+                json.put("reportCategory", props.get("category"));
         }
     }
 }

@@ -24,8 +24,8 @@ import org.labkey.api.query.DetailsURL;
  */
 public class StaticURLNavItem extends AbstractUrlNavItem
 {
-    public StaticURLNavItem(DataProvider provider, String label, String itemText, String urlString, String category)
+    public StaticURLNavItem(DataProvider provider, String label, String itemText, String urlString, LaboratoryService.NavItemCategory itemType, String reportCategory)
     {
-        super(provider, label, itemText, urlString, category);
+        super(provider, label, itemText, urlString, itemType, reportCategory);
     }
 }

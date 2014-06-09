@@ -105,7 +105,7 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
 
     public boolean isAvailable(TableInfo ti)
     {
-        return ti.getUserSchema().getContainer().getActiveModules().contains(_owner);
+        return _owner == null || ti.getUserSchema().getContainer().getActiveModules().contains(_owner);
     }
 
     public Set<ClientDependency> getClientDependencies(Container c, User u)

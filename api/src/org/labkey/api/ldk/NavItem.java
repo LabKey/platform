@@ -18,6 +18,7 @@ package org.labkey.api.ldk;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.laboratory.DataProvider;
+import org.labkey.api.laboratory.LaboratoryService;
 import org.labkey.api.security.User;
 
 /**
@@ -40,7 +41,7 @@ public interface NavItem
 
     public String getLabel();
 
-    public String getCategory();
+    public String getReportCategory();
 
     public String getRendererName();
 
@@ -51,4 +52,6 @@ public interface NavItem
     public JSONObject toJSON(Container c, User u);
 
     public String getPropertyManagerKey();
+
+    public LaboratoryService.NavItemCategory getItemType();
 }

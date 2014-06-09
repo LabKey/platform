@@ -32,26 +32,17 @@ abstract public class AbstractQueryNavItem extends AbstractNavItem
 {
     private String _name;
     private String _label;
-    private String _category;
-    private DataProvider _provider;
     private String _schema;
     private String _query;
     private boolean _visible = true;
 
-    public AbstractQueryNavItem(DataProvider provider, String schema, String query, String category, String label)
+    public AbstractQueryNavItem(DataProvider provider, String schema, String query, LaboratoryService.NavItemCategory itemType, String reportCategory, String label)
     {
-        _provider = provider;
+        super(provider, itemType, reportCategory);
         _schema = schema;
         _query = query;
-        _category = category;
         _name = query;
         _label = label;
-    }
-
-    @Override
-    public DataProvider getDataProvider()
-    {
-        return _provider;
     }
 
     @Override
@@ -64,12 +55,6 @@ abstract public class AbstractQueryNavItem extends AbstractNavItem
     public String getLabel()
     {
         return _label;
-    }
-
-    @Override
-    public String getCategory()
-    {
-        return _category;
     }
 
     @Override

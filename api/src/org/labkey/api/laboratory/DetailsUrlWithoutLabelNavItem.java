@@ -29,15 +29,15 @@ import org.labkey.api.view.ActionURL;
  */
 public class DetailsUrlWithoutLabelNavItem extends AbstractUrlNavItem
 {
-    public DetailsUrlWithoutLabelNavItem(DataProvider provider, String itemText, DetailsURL itemUrl, String category)
+    public DetailsUrlWithoutLabelNavItem(DataProvider provider, String itemText, DetailsURL itemUrl, LaboratoryService.NavItemCategory itemType, String reportCategory)
     {
-        super(provider, itemText, null, itemUrl, category);
+        super(provider, itemText, null, itemUrl, itemType, reportCategory);
     }
 
-    public static DetailsUrlWithoutLabelNavItem createForQuery(DataProvider provider, User u, Container c, String schema, String query, String label, String category)
+    public static DetailsUrlWithoutLabelNavItem createForQuery(DataProvider provider, User u, Container c, String schema, String query, String label, LaboratoryService.NavItemCategory itemType, String reportCategory)
     {
         ActionURL url = QueryService.get().urlFor(u, c, QueryAction.executeQuery, schema, query);
 
-        return new DetailsUrlWithoutLabelNavItem(provider, label, new DetailsURL(url), category);
+        return new DetailsUrlWithoutLabelNavItem(provider, label, new DetailsURL(url), itemType, reportCategory);
     }
 }

@@ -426,7 +426,7 @@ LABKEY.ext4.FORMBUTTONS = {
         return Ext4.Object.merge({
             text: 'Submit',
             formBind: true,
-            successURL: LABKEY.ActionURL.getParameter('srcURL'),
+            successURL: LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnUrl'),
             handler: function(btn){
                 var panel = btn.up('form');
                 panel.doSubmit(btn);

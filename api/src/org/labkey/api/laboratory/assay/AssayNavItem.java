@@ -41,7 +41,7 @@ public class AssayNavItem extends AbstractImportingNavItem
 
     public AssayNavItem(AssayDataProvider provider, ExpProtocol protocol)
     {
-        super(provider, protocol.getName(), protocol.getName(), LaboratoryService.NavItemCategory.data.name());
+        super(provider, protocol.getName(), protocol.getName(), LaboratoryService.NavItemCategory.data, provider.getName());
         _ap = provider.getAssayProvider();
         _provider = provider;
         _protocol = protocol;
@@ -50,7 +50,7 @@ public class AssayNavItem extends AbstractImportingNavItem
     @Override
     public String getPropertyManagerKey()
     {
-        return getDataProvider().getKey() + "||" + getCategory() + "||" + getName() + "||" + _protocol.getRowId();
+        return getDataProvider().getKey() + "||" + getReportCategory() + "||" + getName() + "||" + _protocol.getRowId();
     }
 
     @Override

@@ -29,29 +29,25 @@ import org.labkey.api.view.ActionURL;
  */
 abstract public class AbstractUrlNavItem extends AbstractNavItem
 {
-    protected DataProvider _provider;
     protected String _labelText = null;
     protected String _itemText = null;
-    protected String _category;
     protected DetailsURL _detailsURL = null;
     protected String _staticURL = null;
 
-    public AbstractUrlNavItem(DataProvider provider, String labelText, String itemText, DetailsURL detailsURL, String category)
+    public AbstractUrlNavItem(DataProvider provider, String labelText, String itemText, DetailsURL detailsURL, LaboratoryService.NavItemCategory itemType, String reportCategory)
     {
-        _provider = provider;
+        super(provider, itemType, reportCategory);
         _labelText = labelText;
         _itemText = itemText;
         _detailsURL = detailsURL;
-        _category = category;
     }
 
-    public AbstractUrlNavItem(DataProvider provider, String labelText, String itemText, String staticURL, String category)
+    public AbstractUrlNavItem(DataProvider provider, String labelText, String itemText, String staticURL, LaboratoryService.NavItemCategory itemType, String reportCategory)
     {
-        _provider = provider;
+        super(provider, itemType, reportCategory);
         _labelText = labelText;
         _itemText = itemText;
         _staticURL = staticURL;
-        _category = category;
     }
 
     @Override
@@ -64,12 +60,6 @@ abstract public class AbstractUrlNavItem extends AbstractNavItem
     public String getLabel()
     {
         return getName();
-    }
-
-    @Override
-    public String getCategory()
-    {
-        return _category;
     }
 
     @Override
@@ -93,12 +83,6 @@ abstract public class AbstractUrlNavItem extends AbstractNavItem
     }
 
     @Override
-    public DataProvider getDataProvider()
-    {
-        return _provider;
-    }
-
-    @Override
     public JSONObject toJSON(Container c, User u)
     {
         JSONObject ret = super.toJSON(c, u);
@@ -112,10 +96,5 @@ abstract public class AbstractUrlNavItem extends AbstractNavItem
             ret.put("url", _staticURL);
 
         return ret;
-    }
-
-    public void setTargetContainer(Container c)
-    {
-        _targetContainer = c;
     }
 }

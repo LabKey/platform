@@ -101,6 +101,12 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
             AssayProvider provider = AssayService.get().getProvider(p);
             if (provider == null)
                 continue;
+
+            //only show this provider if owner is active
+            Module owner = provider.getDeclaringModule();
+            if (owner != null && !c.getActiveModules().contains(owner))
+                continue;
+
             if (provider.equals(getAssayProvider()))
                 list.add(p);
         }
@@ -219,7 +225,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
         {
             AssayNavItem nav = new AssayNavItem(this, p);
             AssayProtocolSchema schema = getAssayProvider().createProtocolSchema(u, c, p, null);
-            QueryImportNavItem item = new QueryImportNavItem(this, schema.getSchemaName(), AssayProtocolSchema.DATA_TABLE_NAME, _providerName, p.getName() + ": Raw Data");
+            QueryImportNavItem item = new QueryImportNavItem(this, schema.getSchemaName(), AssayProtocolSchema.DATA_TABLE_NAME, LaboratoryService.NavItemCategory.reports, p.getName() + ": Raw Data", _providerName);
             item.setVisible(nav.isVisible(c, u));
             item.setOwnerKey(nav.getPropertyManagerKey());
             items.add(item);
@@ -318,7 +324,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
                 TableInfo ti = AssayService.get().createRunTable(p, getAssayProvider(), u, c);
                 if (ti != null)
                 {
-                    items.add(new AssaySummaryNavItem(this, ti.getPublicSchemaName(), ti.getPublicName(), LaboratoryService.NavItemCategory.data.name(), p.getName() + " Runs", p));
+                    items.add(new AssaySummaryNavItem(this, ti.getPublicSchemaName(), ti.getPublicName(), LaboratoryService.NavItemCategory.data, LaboratoryService.NavItemCategory.data.name(), p.getName() + " Runs", p));
                 }
             }
         }
@@ -340,7 +346,7 @@ abstract public class AbstractAssayDataProvider extends AbstractDataProvider imp
                 ColumnInfo ci = getSubjectColumn(ti);
                 if (ci != null)
                 {
-                    QueryCountNavItem item = new QueryCountNavItem(this, schema.getSchemaName(), ti.getName(), LaboratoryService.NavItemCategory.data.name(), p.getName());
+                    QueryCountNavItem item = new QueryCountNavItem(this, schema.getSchemaName(), ti.getName(), LaboratoryService.NavItemCategory.reports, LaboratoryService.NavItemCategory.data.name(), p.getName());
                     item.setFilter(new SimpleFilter(FieldKey.fromString(ci.getName()), subjectId));
                     items.add(item);
                 }

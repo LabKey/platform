@@ -88,7 +88,7 @@ abstract public class LaboratoryService
 
     abstract public List<NavItem> getReportItems(Container c, User u);
 
-    abstract public Set<TabbedReportItem> getTabbedReportItems(Container c, User u);
+    abstract public List<TabbedReportItem> getTabbedReportItems(Container c, User u);
 
     abstract public List<NavItem> getSampleItems(Container c, User u);
 

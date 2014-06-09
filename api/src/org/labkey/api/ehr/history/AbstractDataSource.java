@@ -151,7 +151,7 @@ abstract public class AbstractDataSource implements HistoryDataSource
         List<HistoryRow> rows = processRows(ts, redacted, cols);
 
         Long duration = ((new Date()).getTime() - start.getTime()) / 1000;
-        if (duration > 4)
+        if (duration > 5)
         {
             String msg = "Loaded history on table " + _query + " in " + duration + " seconds";
             _log.error(msg);

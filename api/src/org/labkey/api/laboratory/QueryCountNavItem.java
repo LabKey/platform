@@ -35,16 +35,9 @@ public class QueryCountNavItem extends AbstractQueryNavItem implements SummaryNa
 {
     private SimpleFilter _filter = null;
 
-    public QueryCountNavItem(DataProvider provider, String schema, String query, String category, String label)
+    public QueryCountNavItem(DataProvider provider, String schema, String query, LaboratoryService.NavItemCategory itemType, String reportCategory, String label)
     {
-        this(provider, schema, query, category, label, null);
-    }
-
-    public QueryCountNavItem(DataProvider provider, String schema, String query, String category, String label, Container targetContainer)
-    {
-        super(provider, schema, query, category, label);
-
-        setTargetContainer(targetContainer);
+        super(provider, schema, query, itemType, reportCategory, label);
     }
 
     @Override

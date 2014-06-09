@@ -39,22 +39,22 @@ public class QueryImportNavItem extends AbstractImportingNavItem
     private String _query;
     private boolean _visible = true;
 
-    public QueryImportNavItem(DataProvider provider, String schema, String query, String category)
+    public QueryImportNavItem(DataProvider provider, String schema, String query, LaboratoryService.NavItemCategory itemType, String reportCategory)
     {
-        this(provider, schema, query, category, query);
+        this(provider, schema, query, itemType, query, reportCategory);
     }
 
-    public QueryImportNavItem(DataProvider provider, String schema, String query, String category, String label)
+    public QueryImportNavItem(DataProvider provider, String schema, String query, LaboratoryService.NavItemCategory itemType, String label, String reportCategory)
     {
-        this(provider, null, schema, query, category, label);
+        this(provider, null, schema, query, itemType, label, reportCategory);
     }
 
-    public QueryImportNavItem(DataProvider provider, Container targetContainer, String schema, String query, String category, String label)
+    public QueryImportNavItem(DataProvider provider, Container targetContainer, String schema, String query, LaboratoryService.NavItemCategory itemType, String label, String reportCategory)
     {
-        super(provider, query, label, category);
+        super(provider, query, label, itemType, reportCategory);
         _schema = schema;
         _query = query;
-        _targetContainer = targetContainer;
+        setTargetContainer(targetContainer);
     }
 
     @Override

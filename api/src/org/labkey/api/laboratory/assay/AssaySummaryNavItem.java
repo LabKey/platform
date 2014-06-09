@@ -18,6 +18,7 @@ package org.labkey.api.laboratory.assay;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.laboratory.DataProvider;
+import org.labkey.api.laboratory.LaboratoryService;
 import org.labkey.api.laboratory.QueryCountNavItem;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayUrls;
@@ -31,9 +32,9 @@ public class AssaySummaryNavItem extends QueryCountNavItem
 {
     private ExpProtocol _protocol;
 
-    public AssaySummaryNavItem(DataProvider provider, String schema, String query, String category, String label, ExpProtocol p)
+    public AssaySummaryNavItem(DataProvider provider, String schema, String query, LaboratoryService.NavItemCategory itemType, String reportCategory, String label, ExpProtocol p)
     {
-        super(provider, schema, query, category, label);
+        super(provider, schema, query, itemType, reportCategory, label);
         _protocol = p;
     }
 

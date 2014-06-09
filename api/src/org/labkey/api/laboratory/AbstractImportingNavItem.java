@@ -35,21 +35,12 @@ abstract public class AbstractImportingNavItem extends AbstractNavItem implement
 {
     private String _name;
     private String _label;
-    private String _category;
-    private DataProvider _provider;
 
-    public AbstractImportingNavItem(DataProvider provider, String name, String label, String category)
+    public AbstractImportingNavItem(DataProvider provider, String name, String label, LaboratoryService.NavItemCategory itemType, String reportCategory)
     {
-        _provider = provider;
+        super (provider, itemType, reportCategory);
         _name = name;
         _label = label;
-        _category = category;
-    }
-
-    @Override
-    public DataProvider getDataProvider()
-    {
-        return _provider;
     }
 
     @Override
@@ -65,18 +56,11 @@ abstract public class AbstractImportingNavItem extends AbstractNavItem implement
     }
 
     @Override
-    public String getCategory()
-    {
-        return _category;
-    }
-
-    @Override
     public JSONObject toJSON(Container c, User u)
     {
         JSONObject ret = super.toJSON(c, u);
 
         ret.put("importIntoWorkbooks", isImportIntoWorkbooks(c, u));
-
         ret.put("importUrl", getUrlObject(getImportUrl(c, u)));
         ret.put("searchUrl", getUrlObject(getSearchUrl(c, u)));
         ret.put("browseUrl", getUrlObject(getBrowseUrl(c, u)));

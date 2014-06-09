@@ -17,6 +17,7 @@ package org.labkey.api.laboratory;
 
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
+import org.labkey.api.ldk.AbstractNavItem;
 import org.labkey.api.security.User;
 
 /**
@@ -24,16 +25,26 @@ import org.labkey.api.security.User;
  * Date: 5/5/13
  * Time: 9:41 AM
  */
-public class ReportItem extends QueryImportNavItem
+public class ReportItem extends AbstractQueryNavItem
 {
-    public ReportItem(DataProvider provider, Container targetContainer, String schema, String query, String category, String label)
+    private String _subjectFieldKey;
+    private String _sampleDateFieldKey;
+
+    public ReportItem(DataProvider provider, Container targetContainer, String schema, String query, String reportCategory, String label)
     {
-        super(provider, targetContainer, schema, query, category, label);
+        super(provider, schema, query, LaboratoryService.NavItemCategory.reports, reportCategory, label);
+        setTargetContainer(targetContainer);
     }
 
-    public ReportItem(DataProvider provider, String schema, String query, String category)
+    public ReportItem(DataProvider provider, String schema, String query, String reportCategory)
     {
-        super(provider, schema, query, category);
+        super(provider, schema, query, LaboratoryService.NavItemCategory.reports, reportCategory, query);
+    }
+
+    @Override
+    protected String getItemText(Container c, User u)
+    {
+        return getLabel();
     }
 
     @Override
@@ -43,5 +54,31 @@ public class ReportItem extends QueryImportNavItem
         TabbedReportItem.applyOverrides(this, c, json);
 
         return json;
+    }
+
+    public String getSubjectFieldKey()
+    {
+        return _subjectFieldKey;
+    }
+
+    public void setSubjectFieldKey(String subjectFieldKey)
+    {
+        _subjectFieldKey = subjectFieldKey;
+    }
+
+    public String getSampleDateFieldKey()
+    {
+        return _sampleDateFieldKey;
+    }
+
+    public void setSampleDateFieldKey(String sampleDateFieldKey)
+    {
+        _sampleDateFieldKey = sampleDateFieldKey;
+    }
+
+    @Override
+    public String getPropertyManagerKey()
+    {
+        return getDataProvider().getKey() + "||" + getReportCategory() + "||" + getName() + "||" + getLabel();
     }
 }
