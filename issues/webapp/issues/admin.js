@@ -93,7 +93,12 @@ Ext4.onReady( function() {
         allowBlank: false,
         valueField: 'containerId',
         displayField: 'containerPath',
-        disabled: (curDefaultContainers.length == 0)
+        disabled: (curDefaultContainers.length == 0),
+        listConfig : {
+            getInnerTpl: function (displayField) {
+                return '{' + displayField + ':htmlEncode}';
+            }
+        }
     });
 
     Ext4.create('Ext.panel.Panel', {
