@@ -1,6 +1,6 @@
 {table}
 Library|Version|Source|License|LabKey Dev|Purpose
-CodeMirror|2.36|{link:codemirror.net|http://www.codemirror.net}|{link:MIT|http://www.codemirror.net/LICENSE}|klum|browser based code editor
+CodeMirror|4.20|{link:codemirror.net|http://www.codemirror.net}|{link:MIT|http://www.codemirror.net/LICENSE}|klum|browser based code editor
 Crystal Project icons||{link:everaldo.com|http://www.everaldo.com/crystal/}|{link:LGPL|http://www.everaldo.com/crystal/?action=license}|matthewb|document, action, and other icons
 Ext JS|3.4|{link:Ext JS|http://www.sencha.com/products/extjs/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS Exception|http://www.sencha.com/legal/open-source-faq/open-source-license-exception-for-applications/}|nicka|Ajax Support, Various UI widgets
 Ext JS|4.2.1|{link:Ext JS|http://www.sencha.com/products/extjs/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS Exception|http://www.sencha.com/legal/open-source-faq/open-source-license-exception-for-applications/}|nicka|Ajax Support, Various UI widgets

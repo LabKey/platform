@@ -32,6 +32,7 @@ import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.util.Pair;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.freezerpro.FreezerProConfig;
 import org.labkey.study.xml.freezerProExport.FreezerProConfigDocument;
@@ -53,6 +54,7 @@ public class FreezerProExport
 
     private String _searchFilterString;
     private static Map<String, String> COLUMN_MAP;
+    private List<Pair<String, Object>> _columnFilters = new ArrayList<>();
 
     static {
         COLUMN_MAP = new CaseInsensitiveHashMap<>();
@@ -95,6 +97,16 @@ public class FreezerProExport
                 {
                     if (config.isSetFilterString())
                         _searchFilterString = config.getFilterString();
+
+                    FreezerProConfigDocument.FreezerProConfig.ColumnFilters columnFilters = config.getColumnFilters();
+                    if (columnFilters != null)
+                    {
+                        for (FreezerProConfigDocument.FreezerProConfig.ColumnFilters.Filter filter : columnFilters.getFilterArray())
+                        {
+                            if (filter.getName() != null && filter.getValue() != null)
+                                _columnFilters.add(new Pair<String, Object>(filter.getName(), filter.getValue()));
+                        }
+                    }
 
                     FreezerProConfigDocument.FreezerProConfig.ColumnMap columnMap = config.getColumnMap();
                     if (columnMap != null)
@@ -145,6 +157,9 @@ public class FreezerProExport
                 }
             }
         }
+
+        // if there are any column filters in the configuration, perform the filtering
+        data = filterColumns(data);
 
         // write out the archive
         try {
@@ -312,5 +327,31 @@ public class FreezerProExport
             return COLUMN_MAP.get(fieldName);
 
         return fieldName;
+    }
+
+    private List<Map<String, Object>> filterColumns(List<Map<String, Object>> data)
+    {
+        if (!_columnFilters.isEmpty())
+        {
+            List<Map<String, Object>> newData = new ArrayList<>();
+
+            for (Map<String, Object> record : data)
+            {
+                boolean addRecord = true;
+                for (Pair<String, Object> filter : _columnFilters)
+                {
+                    if (record.containsKey(filter.getKey()) && !record.get(filter.getKey()).equals(filter.getValue()))
+                    {
+                        addRecord = false;
+                        continue;
+                    }
+                }
+                if (addRecord)
+                    newData.add(record);
+            }
+            return newData;
+        }
+        else
+            return data;
     }
 }
