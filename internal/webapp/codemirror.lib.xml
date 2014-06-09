@@ -1,16 +1,15 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
-        <script path="codemirror/lib/codemirror.js"/>
-        <script path="codemirror/mode/javascript/javascript.js"/>
-        <script path="codemirror/mode/htmlembedded/htmlembedded.js"/>
-        <script path="codemirror/mode/htmlmixed/htmlmixed.js"/>
-        <script path="codemirror/mode/perl/perl.js"/>
-        <script path="codemirror/mode/python/python.js"/>
-        <script path="codemirror/mode/r/r.js"/>
-        <script path="codemirror/mode/xml/xml.js"/>
-        <script path="codemirror/mode/mysql/mysql.js"/>
-        <script path="codemirror/mode/plsql/plsql.js"/>
-        <script path="codemirror/util.js"/>
-        <script path="codemirror/lib/codemirror.css"/>
+        <script path="codemirror-4.2/lib/codemirror.js"/>
+        <script path="codemirror-4.2/mode/javascript/javascript.js"/>
+        <script path="codemirror-4.2/mode/htmlembedded/htmlembedded.js"/>
+        <script path="codemirror-4.2/mode/htmlmixed/htmlmixed.js"/>
+        <script path="codemirror-4.2/mode/perl/perl.js"/>
+        <script path="codemirror-4.2/mode/python/python.js"/>
+        <script path="codemirror-4.2/mode/r/r.js"/>
+        <script path="codemirror-4.2/mode/xml/xml.js"/>
+        <script path="codemirror-4.2/mode/sql/sql.js"/>
+        <script path="codemirror-4.2/util.js"/>
+        <script path="codemirror-4.2/lib/codemirror.css"/>
     </library>
 </libraries>
