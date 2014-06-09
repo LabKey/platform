@@ -100,6 +100,7 @@ public class ExperimentService
         ExpRun getExpRun(int rowid);
         ExpRun getExpRun(String lsid);
         List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
+        List<? extends ExpRun> getExpRunsByJobId(int jobId);
         ExpRun createExperimentRun(Container container, String name);
 
         ExpData getExpData(int rowid);
@@ -243,6 +244,8 @@ public class ExperimentService
         void deleteAllExpObjInContainer(Container container, User user) throws ExperimentException;
 
         Lsid getSampleSetLsid(String name, Container container);
+
+        void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds);
 
         void clearCaches();
 

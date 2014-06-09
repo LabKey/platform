@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -152,6 +153,7 @@ public abstract class ConfirmAction<FORM> extends BaseViewAction
     public abstract void validateCommand(FORM form, Errors errors);
 
 
+    @NotNull
     public abstract URLHelper getSuccessURL(FORM form);
 
     // not usually used but some actions return views that close the current window etc...

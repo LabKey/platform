@@ -15,17 +15,16 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.HString;
 import org.labkey.api.util.SkipMothershipLogging;
 import org.labkey.api.util.URLHelper;
-
-import javax.servlet.ServletException;
 
 public class RedirectException extends RuntimeException implements SkipMothershipLogging
 {
     String _url;
 
-    public RedirectException(URLHelper url)
+    public RedirectException(@NotNull URLHelper url)
     {
         this(url.getLocalURIString());
     }
