@@ -2030,6 +2030,7 @@ pipeline/src/org/labkey/pipeline/status/PipelineQueryView.java -text
 pipeline/src/org/labkey/pipeline/status/ProviderButtonBar.java -text
 pipeline/src/org/labkey/pipeline/status/StatusController.java -text
 pipeline/src/org/labkey/pipeline/status/StatusDataRegion.java -text
+pipeline/src/org/labkey/pipeline/status/deleteStatus.jsp -text
 pipeline/src/org/labkey/pipeline/status/enterprisePipelineAdmin.jsp -text
 pipeline/src/org/labkey/pipeline/status/escalateJobFailure.jsp -text
 pipeline/src/org/labkey/pipeline/xstream/FileXStreamConverter.java -text

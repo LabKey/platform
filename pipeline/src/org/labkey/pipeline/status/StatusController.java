@@ -20,6 +20,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.action.*;
 import org.labkey.api.data.*;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.query.QueryView;
@@ -47,6 +49,7 @@ import javax.mail.Message;
 import javax.mail.internet.InternetAddress;
 import javax.servlet.ServletException;
 import java.io.*;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -688,12 +691,95 @@ public class StatusController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class DeleteStatusAction extends PerformStatusActionBase
+    public static class ConfirmDeleteStatusForm extends SelectStatusForm
     {
-        public void handleSelect(SelectStatusForm form) throws PipelineProvider.HandlerException
+        private String _dataRegionSelectionKey;
+        private boolean _confirm;
+        private boolean _deleteRuns;
+
+        public String getDataRegionSelectionKey()
         {
-            deleteStatus(getViewBackgroundInfo(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
+            return _dataRegionSelectionKey;
+        }
+
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
+        {
+            _dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
+        public boolean isConfirm()
+        {
+            return _confirm;
+        }
+
+        public void setConfirm(boolean confirm)
+        {
+            _confirm = confirm;
+        }
+
+        public boolean isDeleteRuns()
+        {
+            return _deleteRuns;
+        }
+
+        public void setDeleteRuns(boolean deleteRuns)
+        {
+            _deleteRuns = deleteRuns;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DeleteStatusAction extends FormViewAction<ConfirmDeleteStatusForm>
+    {
+        @Override
+        public void validateCommand(ConfirmDeleteStatusForm form, Errors errors)
+        {
+            Set<String> runs = DataRegionSelection.getSelected(getViewContext(), true);
+
+            int i = 0;
+            int[] rowIds = new int[runs.size()];
+            for (String run : runs)
+            {
+                try
+                {
+                    rowIds[i++] = Integer.parseInt(run);
+                }
+                catch (NumberFormatException e)
+                {
+                    reject(errors, "The run " + run + " is not a valid number.");
+                    return;
+                }
+            }
+            form.setRowIds(rowIds);
+        }
+
+        @Override
+        public ModelAndView getView(ConfirmDeleteStatusForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/pipeline/status/deleteStatus.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(ConfirmDeleteStatusForm form, BindException errors) throws Exception
+        {
+            if (!form.isConfirm())
+                return false;
+
+            getContainerCheckAdmin();
+            deleteStatus(getViewBackgroundInfo(), form.isDeleteRuns(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(ConfirmDeleteStatusForm form)
+        {
+            return form.getReturnURLHelper();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Confirm Deletion");
         }
     }
 
@@ -909,6 +995,27 @@ public class StatusController extends SpringActionController
             ActionButton showData = new ActionButton(url, "Data");
             showData.setActionType(ActionButton.Action.LINK);
             bb.add(showData);
+        }
+
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRunsByJobId(sf.getRowId());
+        if (runs.size() == 1)
+        {
+            ExpRun run = runs.get(0);
+            URLHelper url = run.detailsURL();
+            ActionButton showRun = new ActionButton("Run", url);
+            showRun.setActionType(ActionButton.Action.LINK);
+            bb.add(showRun);
+        }
+        else if (runs.size() > 1)
+        {
+            MenuButton runsMenu = new MenuButton("Runs");
+            for (ExpRun run : runs)
+            {
+                ActionURL url = (ActionURL)run.detailsURL();
+                runsMenu.addMenuItem(run.getName(), url);
+            }
+            runsMenu.setDisplayModes(DataRegion.MODE_DETAILS);
+            bb.add(runsMenu);
         }
 
         if (sf.getFilePath() != null)

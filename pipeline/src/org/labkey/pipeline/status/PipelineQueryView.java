@@ -150,13 +150,16 @@ public class PipelineQueryView extends QueryView
 
         if (_buttonOption != PipelineService.PipelineButtonOption.Minimal)
         {
-            ActionURL deleteURL = new ActionURL(StatusController.DeleteStatusAction.class, getContainer());
-            deleteURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
-            ActionButton deleteStatus = new ActionButton(deleteURL, "Delete");
-            deleteStatus.setRequiresSelection(true);
-            deleteStatus.setActionType(ActionButton.Action.POST);
-            deleteStatus.setDisplayPermission(DeletePermission.class);
-            bar.add(deleteStatus);
+            if (showDeleteButton())
+            {
+                ActionURL deleteURL = new ActionURL(StatusController.DeleteStatusAction.class, getContainer());
+                deleteURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());
+                ActionButton deleteStatus = new ActionButton(deleteURL, "Delete");
+                deleteStatus.setRequiresSelection(true);
+                deleteStatus.setActionType(ActionButton.Action.POST);
+                deleteStatus.setDisplayPermission(DeletePermission.class);
+                bar.add(deleteStatus);
+            }
 
             ActionURL cancelURL = new ActionURL(StatusController.CancelStatusAction.class, getContainer());
             cancelURL.addParameter(ActionURL.Param.returnUrl, _returnURL.toString());

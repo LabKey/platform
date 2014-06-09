@@ -277,6 +277,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpRunImpl.fromRuns(new SqlSelector(getSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
+    public List<ExpRunImpl> getExpRunsByJobId(int jobId)
+    {
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("jobid"), jobId);
+        return ExpRunImpl.fromRuns(new TableSelector(getTinfoExperimentRun(), filter, null).getArrayList(ExperimentRun.class));
+    }
+
     public ExpRunImpl createExperimentRun(Container container, String name)
     {
         ExperimentRun run = new ExperimentRun();

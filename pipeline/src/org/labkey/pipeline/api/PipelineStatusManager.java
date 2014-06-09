@@ -85,6 +85,22 @@ public class PipelineStatusManager
     }
 
     /**
+     * Get a <code>PipelineStatusFileImpl</code> by RowId in the database.
+     *
+     * @param rowId id field
+     * @return the corresponding <code>PipelineStatusFileImpl</code>
+     */
+    public static List<PipelineStatusFileImpl> getStatusFiles(int... rowId)
+    {
+        ArrayList<Integer> ints = new ArrayList<>();
+        for (int id : rowId)
+            ints.add(id);
+
+        SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("RowId"), ints));
+        return new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
+    }
+
+    /**
      * Get a <code>PipelineStatusFileImpl</code> by the file path associated with the
      * entry.
      *
@@ -468,7 +484,7 @@ public class PipelineStatusManager
         }
     }
 
-    public static void deleteStatus(ViewBackgroundInfo info, int... rowIds) throws PipelineProvider.HandlerException
+    public static void deleteStatus(ViewBackgroundInfo info, boolean deleteExpRuns, int... rowIds) throws PipelineProvider.HandlerException
     {
         try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction())
         {
@@ -477,7 +493,7 @@ public class PipelineStatusManager
             {
                 ids.add(rowId);
             }
-            deleteStatus(info, ids);
+            deleteStatus(info, deleteExpRuns, ids);
             if (!ids.isEmpty())
             {
                 throw new PipelineProvider.HandlerException("Failed to delete " + ids.size() + " job" + (ids.size() > 1 ? "s" : ""));
@@ -486,7 +502,7 @@ public class PipelineStatusManager
         }
     }
 
-    private static void deleteStatus(ViewBackgroundInfo info, Set<Integer> rowIds)
+    private static void deleteStatus(ViewBackgroundInfo info, boolean deleteExpRuns, Set<Integer> rowIds)
     {
         assert _schema.getSchema().getScope().isTransactionActive() : "Should only be invoked inside of a transaction";
         if (rowIds.isEmpty())
@@ -539,16 +555,27 @@ public class PipelineStatusManager
             sql.append("DELETE FROM ").append(_schema.getTableInfoStatusFiles())
                     .append(" ").append("WHERE RowId IN (");
 
-            //also null any ExpRuns referencing these Jobs
+            // null any ExpRuns referencing these Jobs -- only executed if we aren't deleting the runs
             StringBuilder expSql = new StringBuilder();
             expSql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun())
                     .append(" SET JobId = NULL ")
                     .append("WHERE JobId IN (");
 
+            List<Integer> allRunIds = new ArrayList<>(deleteable.size());
+
             String separator = "";
             List<Object> params = new ArrayList<>();
             for (PipelineStatusFile pipelineStatusFile : deleteable)
             {
+                if (deleteExpRuns)
+                {
+                    // Get the list of runs that reference this job
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("jobid"), pipelineStatusFile.getRowId());
+                    TableInfo runsTable = ExperimentService.get().getTinfoExperimentRun();
+                    List<Integer> runIds = new TableSelector(runsTable, Collections.singleton("rowid"), filter, null).getArrayList(Integer.class);
+                    allRunIds.addAll(runIds);
+                }
+
                 // Allow the provider to do any necessary clean-up
                 PipelineProvider provider = PipelineService.get().getPipelineProvider(pipelineStatusFile.getProvider());
                 if (provider != null)
@@ -577,12 +604,28 @@ public class PipelineStatusManager
                 params.add(c.getId());
             }
 
-            new SqlExecutor(ExperimentService.get().getSchema()).execute(expSql.toString(), params.toArray());
+            if (deleteExpRuns)
+            {
+                // Delete the associated ExpRuns
+                int[] runIds = new int[allRunIds.size()];
+                int i = 0;
+                for (Integer runId : allRunIds)
+                {
+                    runIds[i++] = runId;
+                }
+                ExperimentService.get().deleteExperimentRunsByRowIds(info.getContainer(), info.getUser(), runIds);
+            }
+            else
+            {
+                // Otherwise, null any ExpRuns referencing these Jobs if we aren't deleting them
+                new SqlExecutor(ExperimentService.get().getSchema()).execute(expSql.toString(), params.toArray());
+            }
+
             new SqlExecutor(_schema.getSchema()).execute(sql.toString(), params.toArray());
 
             // If we deleted anything, try recursing since we may have deleted all the child jobs which would
             // allow a parent job to be deleted
-            deleteStatus(info, rowIds);
+            deleteStatus(info, deleteExpRuns, rowIds);
         }
     }
 
