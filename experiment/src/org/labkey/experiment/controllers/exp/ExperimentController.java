@@ -1455,7 +1455,8 @@ public class ExperimentController extends SpringActionController
 
                 String lowerCaseFileName = realContent.getName().toLowerCase();
                 boolean extended = "jsonTSVExtended".equalsIgnoreCase(form.getFormat());
-                if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended)
+                boolean ignoreTypes = "jsonTSVIgnoreTypes".equalsIgnoreCase(form.getFormat());
+                if ("jsonTSV".equalsIgnoreCase(form.getFormat()) || extended || ignoreTypes)
                 {
                     JSONArray sheetsArray;
                     if (lowerCaseFileName.endsWith(".xls") || lowerCaseFileName.endsWith(".xlsx"))
@@ -1477,7 +1478,13 @@ public class ExperimentController extends SpringActionController
                         {
                             tabLoader.parseAsCSV();
                         }
+                        tabLoader.setHasColumnHeaders(true);
                         ColumnDescriptor[] cols = tabLoader.getColumns();
+
+                        if (ignoreTypes)
+                            for (ColumnDescriptor col : cols)
+                                col.clazz = String.class;
+
                         JSONArray rowsArray = new JSONArray();
                         JSONArray headerArray = new JSONArray();
                         for (ColumnDescriptor col : cols)
