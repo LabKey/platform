@@ -283,3 +283,40 @@ LABKEY.vis.Geom.Boxplot.prototype.render = function(renderer, grid, scales, data
     renderer.renderBoxPlotGeom(data, this);
     return true;
 };
+
+LABKEY.vis.Geom.DataspaceBoxPlot = function(config){
+    this.type = "DataspaceBoxplot";
+
+    if(!config){
+        config = {};
+    }
+
+    this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000'; // line color
+    this.fill = ('fill' in config && config.fill != null && config.fill != undefined) ? config.fill : '#ffffff'; // fill color
+    this.lineWidth = ('lineWidth' in config && config.lineWidth != null && config.lineWidth != undefined) ? config.lineWidth : 1;
+    this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
+    this.showOutliers = ('showOutliers' in config && config.showOutliers != null && config.showOutliers != undefined) ? config.showOutliers : true;
+    this.outlierFill = ('outlierFill' in config && config.outlierFill != null && config.outlierFill != undefined) ? config.outlierFill : '#000000';
+    this.pointOpacity = ('pointOpacity' in config && config.outlierOpacity != null && config.outlierOpacity != undefined) ? config.outlierOpacity : .5;
+    this.pointSize = ('pointSize' in config && config.outlierSize != null && config.outlierSize != undefined) ? config.outlierSize : 3;
+
+    return this;
+};
+LABKEY.vis.Geom.DataspaceBoxPlot.prototype = new LABKEY.vis.Geom.XY();
+LABKEY.vis.Geom.DataspaceBoxPlot.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name, index){
+    if(!this.initAesthetics(scales, layerAes, parentAes, name, index)){
+        return false;
+    }
+
+    this.hoverTextAes = layerAes.hoverText ? layerAes.hoverText : parentAes.hoverText;
+    this.groupAes = layerAes.group ? layerAes.group : parentAes.group;
+    this.pointClickFnAes = layerAes.pointClickFn ? layerAes.pointClickFn : parentAes.pointClickFn;
+    this.pointHoverTextAes = layerAes.pointHoverText ? layerAes.pointHoverText : parentAes.pointHoverText;
+    this.shapeAes = layerAes.shape ? layerAes.shape : parentAes.shape;
+    this.shapeScale = scales.shape;
+    this.sizeAes = layerAes.size ? layerAes.size : parentAes.size;
+    this.sizeScale = scales.size;
+
+    renderer.renderDataspaceBoxPlotGeom(data, this);
+    return true;
+};

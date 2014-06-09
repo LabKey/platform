@@ -1201,11 +1201,28 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         return summary.sortedValues[i] > summary.Q3 ? summary.sortedValues[i] : null;
     };
 
-    var renderBox = function(layer, plot, geom, data) {
-        var heightFn, bBarFn, bWhiskerFn, tBarFn, tWhiskerFn, mLineFn, hoverTextFn, boxSelection, newBoxes;
-        var binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length);
-        var width = binWidth / 2;
+    var renderBoxes = function(layer, plot, geom, data) {
+        var binWidth, width, whiskers, medians, rects, whiskerFn, heightFn, mLineFn, hoverFn, boxWrappers, xAcc, yAcc;
 
+        binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length);
+        width = binWidth / 2;
+
+        xAcc = function(d){return geom.xScale.scale(d.name) - (binWidth / 4)};
+        yAcc = function(d){return Math.floor(geom.yScale.scale(d.summary.Q3)) + .5};
+        whiskerFn = function(d) {
+            var x, top, bottom, offset;
+            x = geom.xScale.scale(d.name);
+            top = Math.floor(geom.yScale.scale(getTopWhisker(d.summary))) + .5;
+            bottom = Math.floor(geom.yScale.scale(getBottomWhisker(d.summary))) + .5;
+            offset = width / 4;
+
+            return 'M ' + (x - offset) + ' ' + top +
+                    ' L ' + (x + offset) + ' ' + top +
+                    ' M ' + x + ' ' + top +
+                    ' L ' +  x + ' ' + bottom +
+                    ' M ' +  (x - offset) + ' ' + bottom +
+                    ' L ' + (x + offset) + ' ' + bottom + ' Z';
+        };
         heightFn = function(d) {
             return Math.floor(geom.yScale.scale(d.summary.Q1) - geom.yScale.scale(d.summary.Q3));
         };
@@ -1215,74 +1232,34 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             y = Math.floor(geom.yScale.scale(d.summary.Q2)) + .5;
             return LABKEY.vis.makeLine(x - (width/2), y, x + (width/2), y);
         };
-        tBarFn = function(d) {
-            var x, y, w;
-            w = getTopWhisker(d.summary);
-
-            if (w == null) {return null;}
-
-            y = Math.floor(geom.yScale.scale(w)) + .5;
-            x = geom.xScale.scale(d.name);
-            return LABKEY.vis.makeLine(x - width / 4, y, x + width / 4, y);
-        };
-        tWhiskerFn = function(d) {
-            var x, yTop, yBottom, w;
-            w = getTopWhisker(d.summary);
-
-            if (w == null) {return null;}
-
-            yTop = Math.floor(geom.yScale.scale(w)) + .5;
-            yBottom = Math.floor(geom.yScale.scale(d.summary.Q3)) + .5;
-            x = geom.xScale.scale(d.name);
-            return LABKEY.vis.makeLine(x, yTop, x, yBottom);
-        };
-        bBarFn = function(d) {
-            var x, y, w;
-            w = getBottomWhisker(d.summary);
-
-            if (w == null) {return null;}
-
-            y = Math.floor(geom.yScale.scale(w)) + .5;
-            x = geom.xScale.scale(d.name);
-            return LABKEY.vis.makeLine(x - width / 4, y, x + width / 4, y);
-        };
-        bWhiskerFn = function(d) {
-            var x, yTop, yBottom, w;
-            w = getBottomWhisker(d.summary);
-
-            if (w == null) {return null;}
-
-            yTop = Math.floor(geom.yScale.scale(d.summary.Q1)) + .5;
-            yBottom = Math.floor(geom.yScale.scale(w)) + .5;
-            x = geom.xScale.scale(d.name);
-            return LABKEY.vis.makeLine(x, yTop, x, yBottom);
-        };
-        hoverTextFn = geom.hoverTextAes ? function(d) {return geom.hoverTextAes.value(d.name, d.summary)} : null;
+        hoverFn = geom.hoverTextAes ? function(d) {return geom.hoverTextAes.value(d.name, d.summary)} : null;
 
         // Here we group each box with an a tag. Each part of a box plot (rect, whisker, etc.) gets its own class.
-        boxSelection = layer.selectAll('.box').data(data);
-        boxSelection.exit().remove();
+        boxWrappers = layer.selectAll('a.box').data(data);
+        boxWrappers.exit().remove();
+        boxWrappers.enter().append('a').attr('class', 'box');
+        boxWrappers.attr('xlink:title', hoverFn);
 
-        // Append new rects, whiskers, etc. as necessary.
-        newBoxes = boxSelection.enter().append('a').attr('class', 'box');
-        newBoxes.append('rect').attr('class', 'box-rect');
-        newBoxes.append('path').attr('class', 'box-mline');
-        newBoxes.append('path').attr('class', 'box-tbar');
-        newBoxes.append('path').attr('class', 'box-bbar');
-        newBoxes.append('path').attr('class', 'box-twhisker');
-        newBoxes.append('path').attr('class', 'box-bwhisker');
+        // Add and style the whiskers
+        whiskers = boxWrappers.selectAll('path.box-whisker').data(function(d){return [d];});
+        whiskers.exit().remove();
+        whiskers.enter().append('path').attr('class', 'box-whisker');
+        whiskers.attr('d', whiskerFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
 
-        // Set all attributes.
-        boxSelection.attr('xlink:title', hoverTextFn);
-        boxSelection.selectAll('.box-rect').attr('x', function(d) {return geom.xScale.scale(d.name) - (binWidth / 4)})
-                .attr('y', function(d) {return Math.floor(geom.yScale.scale(d.summary.Q3)) + .5})
+        // Add and style the boxes.
+        rects = boxWrappers.selectAll('rect.box-rect').data(function(d){return [d];});
+        rects.exit().remove();
+        rects.enter().append('rect').attr('class', 'box-rect');
+        rects.attr('x', xAcc).attr('y', yAcc)
                 .attr('width', width).attr('height', heightFn)
-                .attr('stroke', geom.color).attr('fill', geom.fill).attr('stroke-width', geom.lineWidth).attr('fill-opacity', geom.opacity);
-        boxSelection.selectAll('.box-mline').attr('d', mLineFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
-        boxSelection.selectAll('.box-tbar').attr('d', tBarFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
-        boxSelection.selectAll('.box-twhisker').attr('d', tWhiskerFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
-        boxSelection.selectAll('.box-bbar').attr('d', bBarFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
-        boxSelection.selectAll('.box-bwhisker').attr('d', bWhiskerFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
+                .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth)
+                .attr('fill', geom.fill).attr('fill-opacity', geom.opacity);
+
+        // Add and style the median lines.
+        medians = boxWrappers.selectAll('path.box-mline').data(function(d){return [d];});
+        medians.exit().remove();
+        medians.enter().append('path').attr('class', 'box-mline');
+        medians.attr('d', mLineFn).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
     };
 
     var renderOutliers = function(layer, plot, geom, data) {
@@ -1324,9 +1301,9 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         outlierSel = layer.selectAll('.outlier').data(data);
         outlierSel.exit().remove();
-
         outlierSel.enter().append('a').attr('class', 'outlier').append('path');
         outlierSel.attr('xlink:title', hoverAcc).attr('class', 'outlier');
+
         pathSel = outlierSel.selectAll('path');
         pathSel.attr('d', shapeAcc)
                 .attr('transform', translateAcc)
@@ -1359,14 +1336,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         return outliers;
     };
 
-    var renderBoxPlotGeom = function(data, geom) {
-        var layer = getLayer.call(this, geom);
+    var prepBoxPlotData = function(data, geom) {
         var groupName, groupedData, summary, summaries = [];
-
-        if (geom.xScale.scaleType == 'continuous') {
-            console.error('Box Plots not supported for continuous data yet.');
-            return;
-        }
 
         groupedData = LABKEY.vis.groupData(data, geom.xAes.getValue);
         for (groupName in groupedData) {
@@ -1381,9 +1352,23 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 }
             }
         }
+
+        return summaries;
+    };
+
+    var renderBoxPlotGeom = function(data, geom) {
+        var layer = getLayer.call(this, geom), summaries = [];
+
+        if (geom.xScale.scaleType == 'continuous') {
+            console.error('Box Plots not supported for continuous data yet.');
+            return;
+        }
+
+        summaries = prepBoxPlotData(data, geom);
+
         if (summaries.length > 0) {
             // Render box
-            layer.call(renderBox, plot, geom, summaries);
+            layer.call(renderBoxes, plot, geom, summaries);
             if (geom.showOutliers) {
                 // Render the outliers.
                 layer.call(renderOutliers, plot, geom, getOutliers(summaries, geom));
@@ -1448,6 +1433,157 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
+    var renderDataspaceBoxes = function(selection, plot, geom) {
+        var xBinWidth, padding, boxWidth, boxWrappers, rects, medians, whiskers, xAcc, yAcc, hAcc, whiskerAcc,
+                medianAcc, hoverAcc;
+
+        xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
+        padding = Math.max(xBinWidth * .05, 5); // Pad the space between the box and points.
+        boxWidth = xBinWidth / 4;
+
+        hAcc = function(d) {return Math.floor(geom.yScale.scale(d.summary.Q1) - geom.yScale.scale(d.summary.Q3));};
+        xAcc = function(d) {return geom.xScale.scale(d.name) - boxWidth - padding;};
+        yAcc = function(d) {return Math.floor(geom.yScale.scale(d.summary.Q3)) + .5};
+        hoverAcc = geom.hoverTextAes ? function(d) {return geom.hoverTextAes.value(d.name, d.summary)} : null;
+
+        whiskerAcc = function(d) {
+            var x, top, bottom, offset;
+            x = geom.xScale.scale(d.name) - (boxWidth /2) - padding;
+            top = Math.floor(geom.yScale.scale(getTopWhisker(d.summary))) +.5;
+            bottom = Math.floor(geom.yScale.scale(getBottomWhisker(d.summary))) +.5;
+            offset = boxWidth / 4;
+
+            return 'M ' + (x - offset) + ' ' + top +
+                    ' L ' + (x + offset) + ' ' + top +
+                    ' M ' + x + ' ' + top +
+                    ' L ' +  x + ' ' + bottom +
+                    ' M ' +  (x - offset) + ' ' + bottom +
+                    ' L ' + (x + offset) + ' ' + bottom + ' Z';
+        };
+
+        medianAcc = function(d) {
+            var x1, x2, y;
+            x1 = geom.xScale.scale(d.name) - boxWidth - padding;
+            x2 = geom.xScale.scale(d.name) - padding;
+            y = Math.floor(geom.yScale.scale(d.summary.Q2)) + .5;
+            return LABKEY.vis.makeLine(x1, y, x2, y);
+        };
+
+        boxWrappers = selection.selectAll('a.dataspace-box-plot').data(function(d){return [d];});
+        boxWrappers.exit().remove();
+        boxWrappers.enter().append('a').attr('class', 'dataspace-box-plot');
+        boxWrappers.attr('xlink:title', hoverAcc);
+
+        whiskers = boxWrappers.selectAll('path.box-whisker').data(function(d){return [d]});
+        whiskers.exit().remove();
+        whiskers.enter().append('path').attr('class', 'box-whisker');
+        whiskers.attr('d', whiskerAcc).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
+
+        rects = boxWrappers.selectAll('rect.box-rect').data(function(d){return [d]});
+        rects.exit().remove();
+        rects.enter().append('rect').attr('class', 'box-rect');
+        rects.attr('x', xAcc).attr('y', yAcc)
+                .attr('width', boxWidth).attr('height', hAcc)
+                .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth)
+                .attr('fill', geom.fill).attr('fill-opacity', geom.opacity);
+
+        medians = boxWrappers.selectAll('path.box-mline').data(function(d){return [d]});
+        medians.exit().remove();
+        medians.enter().append('path').attr('class', 'box-mline');
+        medians.attr('d', medianAcc).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
+    };
+
+    var renderDataspacePoints = function(selection, plot, geom) {
+        var pointWrapper, points, xBinWidth, padding, xAcc, yAcc, translateAcc, defaultShape, colorAcc, sizeAcc,
+                shapeAcc, hoverAcc;
+
+        xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
+        padding = Math.max(xBinWidth * .05, 5);
+
+        xAcc = function(row) {
+            var x, offset;
+            x = geom.getX(row) + padding;
+            offset = xBinWidth / 4;
+
+            if (x == null) {return null;}
+            return x + (Math.random() * offset);
+        };
+
+        yAcc = function(row) {
+            var value = geom.getY(row);
+            if (value == null || isNaN(value)) {return null;}
+            return value;
+        };
+
+        translateAcc = function(row) {
+            var x = xAcc(row), y = yAcc(row);
+            if (x == null || isNaN(x) || y == null || isNaN(y)) {
+                // If x or y isn't a valid value then we just don't translate the node.
+                return null;
+            }
+            return 'translate(' + xAcc(row) + ',' + yAcc(row) + ')';
+        };
+
+        colorAcc = geom.colorAes && geom.colorScale ? function(row) {
+            return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);
+        } : geom.color;
+
+        sizeAcc = geom.sizeAes && geom.sizeScale ? function(row) {
+            return geom.sizeScale.scale(geom.sizeAes.getValue(row));
+        } : function() {return geom.pointSize};
+
+        defaultShape = function(row) {
+            var circle = function(s) {return "M0," + s + "A" + s + "," + s + " 0 1,1 0," + -s + "A" + s + "," + s + " 0 1,1 0," + s + "Z";};
+            return circle(sizeAcc(row));
+        };
+
+        shapeAcc = geom.shapeAes && geom.shapeScale ? function(row) {
+            return geom.shapeScale.scale(geom.shapeAes.getValue(row) + geom.layerName)(sizeAcc(row));
+        } : defaultShape;
+
+        hoverAcc = geom.pointHoverTextAes ? geom.pointHoverTextAes.getValue : null;
+
+        pointWrapper = selection.selectAll('a.dataspace-point').data(function(d){
+            return d.rawData.filter(function(d){
+                var x = geom.getX(d), y = geom.getY(d);
+                return x !== null && y !== null;
+            });
+        });
+        pointWrapper.exit().remove();
+        pointWrapper.enter().append('a').attr('class', 'dataspace-point');
+        pointWrapper.attr('xlink:title', hoverAcc);
+
+        points = pointWrapper.selectAll('path').data(function(d){return [d];});
+        points.exit().remove();
+        points.enter().append('path');
+        points.attr('d', shapeAcc).attr('transform', translateAcc)
+                .attr('fill', colorAcc).attr('stroke', colorAcc)
+                .attr('fill-opacity', geom.pointOpacity).attr('stroke-opacity', geom.pointOpacity);
+    };
+
+    var renderDataspaceBoxGoups = function(layer, plot, geom, summaries) {
+        var boxGroups;
+        boxGroups = layer.selectAll('g.dataspace-box-group').data(summaries);
+        boxGroups.exit().remove();
+        boxGroups.enter().append('g').attr('class', 'dataspace-box-group');
+        boxGroups.call(renderDataspaceBoxes, plot, geom);
+        boxGroups.call(renderDataspacePoints, plot, geom);
+    };
+
+    var renderDataspaceBoxPlotGeom = function(data, geom) {
+        var layer = getLayer.call(this, geom), summaries;
+        if (geom.xScale.scaleType == 'continuous') {
+            console.error('Box Plots not supported for continuous data yet.');
+            return;
+        }
+
+        summaries = prepBoxPlotData(data, geom);
+
+        if (summaries.length > 0) {
+            layer.call(renderDataspaceBoxGoups, plot, geom, summaries);
+        }
+    };
+
     return {
         initCanvas: initCanvas,
         renderError: renderError,
@@ -1463,6 +1599,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderPointGeom: renderPointGeom,
         renderPathGeom: renderPathGeom,
         renderErrorBarGeom: renderErrorBarGeom,
-        renderBoxPlotGeom: renderBoxPlotGeom
+        renderBoxPlotGeom: renderBoxPlotGeom,
+        renderDataspaceBoxPlotGeom: renderDataspaceBoxPlotGeom
     };
 };
