@@ -872,6 +872,7 @@ LABKEY.Exp.Data.prototype.constructor = LABKEY.Exp.Data;
  * <li><b>error:</b> true if this cell has an error</li>
  * <li><b>formula:</b> if the cell's value is specified by a formula, the text of the formula</li>
  * </ul>
+ * <br/>Use 'jsonTSVIgnoreTypes' to always return string values for all cells, regardless of type.
  * <br/>
  * An example of the results for a request for 'jsonTsv' format:
  * <pre>
