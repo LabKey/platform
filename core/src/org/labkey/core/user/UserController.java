@@ -1957,18 +1957,22 @@ public class UserController extends SpringActionController
                 boolean userHasPermission;
                 for (User user : users)
                 {
-                    // handle if user has desired permission
-                    userHasPermission = true;
-                    for (Permission permission : form.getPermissions())
+                    // TODO: consider performance here (Aaron gets picky about this)
+                    // if permissions passed, then validate the user has all of such permissions
+                    if (form.getPermissions() != null)
                     {
-                        if (!container.hasPermission(user, permission.getClass()))
+                        userHasPermission = true;
+                        for (Permission permission : form.getPermissions())
                         {
-                            userHasPermission = false;
-                            break;
+                            if (!container.hasPermission(user, permission.getClass()))
+                            {
+                                userHasPermission = false;
+                                break;
+                            }
                         }
+                        if (!userHasPermission)
+                            continue;
                     }
-                    if (!userHasPermission)
-                        continue;
 
                     //according to the docs, startsWith will return true even if nameFilter is empty string
                     if (user.getEmail().toLowerCase().startsWith(nameFilter) || user.getDisplayName(null).toLowerCase().startsWith(nameFilter))
