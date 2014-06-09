@@ -335,7 +335,7 @@ public class SchemaColumnMetaData
         {
             throw new IllegalArgumentException("Column " + c + " is not part of table " + _tinfo);
         }
-        _columns.add(i, c);
+        _columns.add(Math.min(_columns.size(),i), c);
     }
 
     public boolean hasDefaultTitleColumn()

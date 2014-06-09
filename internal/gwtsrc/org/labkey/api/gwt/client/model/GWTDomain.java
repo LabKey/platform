@@ -221,7 +221,11 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
      */
     public void setReservedFieldNames(Set<String> reservedFieldNames)
     {
-        this.reservedFieldNames = reservedFieldNames;
+        this.reservedFieldNames = new HashSet<String>();
+        for (String s : reservedFieldNames)
+        {
+            this.reservedFieldNames.add(s.toLowerCase());
+        }
     }
 
     /**

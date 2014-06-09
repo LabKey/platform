@@ -266,8 +266,11 @@ public class StorageProvisioner
             }
         }
 
-        if (0 == changeCount)
+        if (change.getColumns().isEmpty())
+        {
+            // Nothing to do, so don't try to run an ALTER TABLE that doesn't actually do anything
             return;
+        }
 
         Connection con = null;
 
