@@ -46,6 +46,7 @@ import gwt.client.org.labkey.study.dataset.client.DatasetService;
 import gwt.client.org.labkey.study.dataset.client.model.GWTDataset;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.DatasetDomainKind;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -162,6 +163,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             GWTPropertyDescriptor prop = iter.next();
             if (DataSetDefinition.isDefaultFieldName(prop.getName(), study))
                 iter.remove();
+            else if (DatasetDomainKind.DATE.equalsIgnoreCase(prop.getName()))
+                prop.setRangeURI(PropertyType.DATE_TIME.getTypeUri());
         }
         update.setFields(updatedProps);
 

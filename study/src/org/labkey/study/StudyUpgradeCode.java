@@ -537,14 +537,6 @@ public class StudyUpgradeCode implements UpgradeCode
                 renameColumnWithTheNameOfWhichIDoNotApprove(def, dt);
             new SqlExecutor(t.getSchema()).execute("ALTER TABLE " + t.getSelectName() + " ADD Date " + t.getSqlDialect().getDefaultDateTimeDataType());
         }
-        else
-        {
-            // We co-opted a user-defined column, so get rid of its PropertyDescriptor
-            if (def.getDomain() != null && def.getDomain().getPropertyByName("Date") != null)
-            {
-                OntologyManager.deletePropertyDescriptor(def.getDomain().getPropertyByName("Date").getPropertyDescriptor());
-            }
-        }
 
         ColumnInfo ct = t.getColumn("container");
         if (null == ct || (ct.getJdbcType() != JdbcType.GUID && ct.getJdbcType() != JdbcType.VARCHAR))

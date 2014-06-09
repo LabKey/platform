@@ -33,6 +33,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.MetadataException;
 import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryChangeListener.QueryProperty;
@@ -40,6 +41,7 @@ import org.labkey.api.query.QueryChangeListener.QueryPropertyChange;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QueryParseWarning;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -516,7 +518,13 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
 
             if (includeMetadata)
             {
-                ret = applyQueryMetadata(schema, errors, query, (AbstractTableInfo) ret);
+                List<QueryException> metadataErrors = new ArrayList<>();
+                ret = applyQueryMetadata(schema, metadataErrors, query, (AbstractTableInfo) ret);
+                for (QueryException qe : metadataErrors)
+                {
+                    if (!(qe instanceof MetadataException) && !(qe instanceof QueryParseWarning))
+                        errors.add(qe);
+                }
             }
         }
 

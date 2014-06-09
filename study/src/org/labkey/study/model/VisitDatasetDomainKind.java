@@ -19,6 +19,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.TimepointType;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -44,7 +45,9 @@ public class VisitDatasetDomainKind extends DatasetDomainKind
     @Override
     public Set<String> getMandatoryPropertyNames(Domain domain)
     {
-        return Collections.unmodifiableSet(DataSetDefinition.DEFAULT_ABSOLUTE_DATE_FIELDS);
+        HashSet<String> ret = new HashSet<>(DataSetDefinition.DEFAULT_VISIT_FIELDS);
+        ret.add(DatasetDomainKind.DATE);
+        return ret;
     }
 
     @Override

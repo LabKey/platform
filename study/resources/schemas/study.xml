@@ -645,6 +645,9 @@
         <ns:propertyURI>http://cpas.labkey.com/Study#VisitDate</ns:propertyURI>
         <ns:datatype>date</ns:datatype>
       </ns:column>
+      <ns:column columnName="Date">
+        <ns:datatype>date</ns:datatype>
+      </ns:column>
       <ns:column columnName="VisitDate">
         <ns:propertyURI>http://cpas.labkey.com/Study#VisitDate</ns:propertyURI>
         <ns:datatype>date</ns:datatype>

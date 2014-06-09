@@ -194,7 +194,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     private static final String[] DEFAULT_VISIT_FIELD_NAMES_ARRAY = new String[]
     {
-        "Date",
         "VisitSequenceNum"
     };
 
@@ -296,6 +295,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         String subjectCol = StudyService.get().getSubjectColumnName(study.getContainer());
         if (subjectCol.equalsIgnoreCase(fieldName))
+            return true;
+
+        if (DatasetDomainKind.DATE.equalsIgnoreCase(fieldName) && !study.getTimepointType().isVisitBased())
             return true;
         
         switch (study.getTimepointType())
@@ -1210,11 +1212,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 if (null != getColumn(p.getName()))
                 {
                     ColumnInfo builtin = getColumn(p.getName());
-                    // CONSIDER: Call PropertyColumn.copyAttributes()
+                    // StorageProvisioner should have already handled copying most propertydescriptor attributes
                     if (!p.isHidden())
                         _showColumn(builtin);
                     if (null != p.getLabel())
                         builtin.setLabel(p.getLabel());
+                    builtin.setPropertyURI(p.getPropertyURI());
                     continue;
                 }
                 ColumnInfo col = getStorageColumn(d, p);
@@ -1433,15 +1436,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     static ColumnInfo newDatasetColumnInfo(TableInfo tinfo, final ColumnInfo from, final String propertyURI)
     {
-        // TODO: Yuck
-        ColumnInfo result = new ColumnInfo(from, tinfo)
-        {
-            @Override
-            public String getPropertyURI()
-            {
-                return null != propertyURI ? propertyURI : super.getPropertyURI();
-            }
-        };
+        ColumnInfo result = new ColumnInfo(from, tinfo);
+        if (null != propertyURI)
+            result.setPropertyURI(propertyURI);
         // Hidden doesn't get copied with the default set of properties
         result.setHidden(from.isHidden());
         result.setMetaDataName(from.getMetaDataName());

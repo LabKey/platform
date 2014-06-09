@@ -51,7 +51,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     public final static String LSID_PREFIX = "StudyDataset";
 
     final static String CONTAINER = "container";
-    final static String DATE = "date";
+    public final static String DATE = "date";
     final static String PARTICIPANTID = "participantid";
     final static String LSID = "lsid";
     final static String SEQUENCENUM = "sequencenum";
@@ -253,5 +253,11 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         DataSetDefinition dsd = schema.getDataSetDefinitionByName(name);
 
         return new DataSetTableImpl(schema, dsd);
+    }
+
+    @Override
+    public boolean hasPropertiesIncludeBaseProperties()
+    {
+        return false;
     }
 }
