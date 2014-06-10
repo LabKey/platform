@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
@@ -29,6 +30,7 @@ import org.labkey.study.xml.MissingValueIndicatorsType;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -84,10 +86,11 @@ public class MissingValueImporterFactory extends AbstractFolderImportFactory
             }
         }
 
+        @NotNull
         @Override
         public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
         {
-            return null;
+            return Collections.emptyList();
         }
 
         @Override

@@ -15,6 +15,7 @@
  */
 package org.labkey.query.reports;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
@@ -36,6 +37,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -89,6 +91,7 @@ public class ReportImporter implements FolderImporter
         }
     }
 
+    @NotNull
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
         // in 13.2, there was a change to use dataset names instead of label for query references in reports, views, etc.
@@ -121,7 +124,7 @@ public class ReportImporter implements FolderImporter
             }
         }
 
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

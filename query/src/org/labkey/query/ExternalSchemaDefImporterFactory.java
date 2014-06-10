@@ -16,18 +16,17 @@
 package org.labkey.query;
 
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.admin.InvalidFileException;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.externalSchema.ExportedSchemaType;
 import org.labkey.data.xml.externalSchema.ExternalSchemaDocument;
@@ -43,6 +42,7 @@ import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryManager;
 
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * User: cnathe
@@ -180,10 +180,11 @@ public class ExternalSchemaDefImporterFactory extends AbstractFolderImportFactor
         }
 
 
+        @NotNull
         @Override
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            return null;
+            return Collections.emptyList();
         }
 
         @Override

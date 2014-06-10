@@ -17,6 +17,7 @@ package org.labkey.query;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
@@ -192,6 +193,7 @@ public class QueryImporter implements FolderImporter
         }
     }
 
+    @NotNull
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
         List<PipelineJobWarning> warnings = new ArrayList<>();

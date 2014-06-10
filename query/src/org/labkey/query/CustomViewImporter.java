@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
@@ -28,6 +29,7 @@ import org.labkey.api.writer.VirtualFile;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * User: adam
@@ -58,9 +60,10 @@ public class CustomViewImporter implements FolderImporter
         }
     }
 
+    @NotNull
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

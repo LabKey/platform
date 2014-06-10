@@ -38,6 +38,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
@@ -766,14 +767,14 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         ResultSet rs = null;
         DbSchema schema = coreTables().getSchema();
 
-        try
+        try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
         {
             // we don't want a RowSet, so execute directly (not Table.executeQuery())
             conn = schema.getScope().getConnection();
             if (null == parent.getEntityId())
-                stmt = Table.prepareStatement(conn, sqlRootDocument(), new Object[]{name});
+                stmt = Table.prepareStatement(conn, sqlRootDocument(), Arrays.asList(name), jdbcParameters);
             else
-                stmt = Table.prepareStatement(conn, sqlDocument(), new Object[]{parent.getEntityId(), name});
+                stmt = Table.prepareStatement(conn, sqlDocument(), Arrays.asList(parent.getEntityId(), name), jdbcParameters);
             rs = stmt.executeQuery();
 
             OutputStream out;
@@ -848,14 +849,14 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         ResultSet rs = null;
         final DbSchema schema = coreTables().getSchema();
 
-        try
+        try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
         {
             // we don't want a RowSet, so execute directly (not Table.executeQuery())
             conn = schema.getScope().getConnection();
             if (null == parent.getEntityId())
-                stmt = Table.prepareStatement(conn, sqlRootDocument(), new Object[]{name});
+                stmt = Table.prepareStatement(conn, sqlRootDocument(), Arrays.asList(name), jdbcParameters);
             else
-                stmt = Table.prepareStatement(conn, sqlDocument(), new Object[]{parent.getEntityId(), name});
+                stmt = Table.prepareStatement(conn, sqlDocument(), Arrays.asList(parent.getEntityId(), name), jdbcParameters);
             rs = stmt.executeQuery();
 
             if (parent instanceof AttachmentDirectory)

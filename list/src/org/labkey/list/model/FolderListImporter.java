@@ -17,6 +17,7 @@
 package org.labkey.list.model;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
@@ -25,6 +26,7 @@ import org.labkey.api.pipeline.PipelineJobWarning;
 import org.labkey.api.writer.VirtualFile;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -62,9 +64,10 @@ public class FolderListImporter implements FolderImporter
         }
     }
 
+    @NotNull
     public Collection<PipelineJobWarning> postProcess(ImportContext ctx, VirtualFile root) throws Exception
     {
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

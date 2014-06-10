@@ -15,12 +15,12 @@
  */
 package org.labkey.announcements;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailService;
@@ -31,6 +31,7 @@ import org.labkey.folder.xml.FolderDocument;
 import org.labkey.folder.xml.NotificationsType;
 
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * User: cnathe
@@ -85,10 +86,11 @@ public class NotificationSettingsImporterFactory extends AbstractFolderImportFac
             }
         }
 
+        @NotNull
         @Override
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            return null;
+            return Collections.emptyList();
         }
 
         @Override

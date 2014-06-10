@@ -16,6 +16,7 @@
 package org.labkey.study.importer;
 
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.admin.*;
 import org.labkey.api.admin.ImportContext;
@@ -36,6 +37,7 @@ import org.springframework.validation.BindException;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * User: cnathe
@@ -119,10 +121,11 @@ public class StudyImporterFactory extends AbstractFolderImportFactory
             }
         }
 
+        @NotNull
         @Override
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
-            return null;
+            return Collections.emptyList();
         }
 
         @Override

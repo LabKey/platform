@@ -15,17 +15,12 @@
  */
 package org.labkey.core.dialect;
 
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.InClauseGenerator;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
-
-import java.sql.Array;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 /**
  * User: adam
@@ -36,7 +31,6 @@ import java.sql.SQLException;
 // Note: Use this only with a servlet container & scope that support JDBC4.
 public class ArrayParameterInClauseGenerator implements InClauseGenerator
 {
-    private final static boolean ENABLED = false;
     private final DbScope _scope;
     private final InClauseGenerator _parameterMarkerGenerator = new ParameterMarkerInClauseGenerator();
 
@@ -45,41 +39,42 @@ public class ArrayParameterInClauseGenerator implements InClauseGenerator
         _scope = scope;
     }
 
-    // TODO:
-    // - Trial call to createArrayOf()
-    // - Move createArrayOf() to Parameter
-    // - Try using underlying connection to call createArrayOf()
-
     @Override
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object... params)
     {
         SqlDialect dialect = _scope.getSqlDialect();
 
-        // Fall back on parameter marker approach  // TODO: Increase params.length check to 10? 100?
-        if (params.length < 1 || !dialect.isSqlArrayCompatible(params) || !ENABLED)
+        // TODO: Increase params.length check to 10? 100?
+        if (params.length <= 1 || !isSqlArrayCompatible(dialect, params))
+        {
+            // Fall back on parameter marker approach
             return _parameterMarkerGenerator.appendInClauseSql(sql, params);
-
-        Array array = null;
-        Connection conn = null;
-
-        try
-        {
-            conn = _scope.getConnection();
-            String typeName = StringUtils.lowerCase(dialect.getSqlTypeNameFromObject(params[0]));
-            array = conn.createArrayOf(typeName, params);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeException(e);
-        }
-        finally
-        {
-            _scope.releaseConnection(conn);
         }
 
         sql.append(" = ANY (?)");
-        sql.add(array);
+        sql.add(params);
 
         return sql;
+    }
+
+    /**
+     * Return true if this array can be converted to a JDBC SQL Array type. We must have a SQL type name for the
+     * class and all elements must have the same class.
+     */
+    private boolean isSqlArrayCompatible(SqlDialect dialect, Object... elements)
+    {
+        Object firstElement = elements[0];
+        String typeName = dialect.getSqlTypeNameFromObject(firstElement);
+
+        if (null == typeName)
+            return false;
+
+        Class firstParamClass = firstElement.getClass();
+
+        for (Object param : elements)
+            if (param.getClass() != firstParamClass)
+                return false;
+
+        return true;
     }
 }

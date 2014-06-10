@@ -15,6 +15,7 @@
  */
 package org.labkey.wiki.export;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.AbstractFolderImportFactory;
 import org.labkey.api.admin.FolderImporter;
 import org.labkey.api.admin.ImportContext;
@@ -221,6 +222,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             throw new ImportException("Could not find a content file for wiki with name \"" + wikiName + "\"");
         }
 
+        @NotNull
         @Override
         public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception
         {
