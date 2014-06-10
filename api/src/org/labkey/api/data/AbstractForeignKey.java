@@ -42,6 +42,7 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
 
     // Map original FieldKey to query's remapped FieldKey.
     private Map<FieldKey, FieldKey> _remappedFields;
+    private StackTraceElement[] _remappedStackTrace;
 
     protected AbstractForeignKey()
     {
@@ -150,7 +151,9 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
     @Override
     public ForeignKey remapFieldKeys(FieldKey parent, Map<FieldKey, FieldKey> mapping)
     {
-        assert _remappedFields == null : "Already remapped ForeignKey.  If we hit this we need to 'compose' the field mappings";
+        boolean assertsEnabled = false;
+        assert assertsEnabled = true;
+        assert _remappedFields == null : "Already remapped ForeignKey.  If we hit this we need to 'compose' the field mappings.  Original remapping stacktrace: " + appendStackTrace(_remappedStackTrace, 30);
 
         Set<FieldKey> suggested = getSuggestedColumns();
         if (suggested == null || suggested.isEmpty())
@@ -174,6 +177,8 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
         {
             AbstractForeignKey cloned = (AbstractForeignKey)this.clone();
             cloned._remappedFields = remappedSuggested;
+            if (assertsEnabled)
+                cloned._remappedStackTrace = Thread.currentThread().getStackTrace();
             return cloned;
         }
         catch (CloneNotSupportedException e)
@@ -182,6 +187,27 @@ public abstract class AbstractForeignKey implements ForeignKey, Cloneable
             e.printStackTrace();
             return null;
         }
+    }
+
+    private String appendStackTrace(StackTraceElement[] ste, int count)
+    {
+        int i=1;  // Always skip getStackTrace() call
+        for ( ; i<ste.length ; i++)
+        {
+            String line = ste[i].toString();
+            if (!(line.startsWith("org.labkey.api.data.") || line.startsWith("java.lang.Thread")))
+                break;
+        }
+        StringBuilder sb = new StringBuilder();
+        int last = Math.min(ste.length,i+count);
+        for ( ; i<last ; i++)
+        {
+            String line = ste[i].toString();
+            if (line.startsWith("javax.servlet.http.HttpServlet.service("))
+                break;
+            sb.append("\n    ").append(line);
+        }
+        return sb.toString();
     }
 
 
