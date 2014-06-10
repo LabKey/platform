@@ -120,10 +120,12 @@ Ext4.onReady( function() {
 
 });
 
-function disableMoveToContainerSelect() {
-    Ext4.ComponentQuery.query('combo[@name=moveToContainerSelect]')[0].setDisabled(true);
+function toggleMoveToContainerSelect() {
+    if (document.querySelector("input[name=moveToContainer]").checked)
+        Ext4.ComponentQuery.query('combo[@name=moveToContainerSelect]')[0].setDisabled(true);
+    else
+        Ext4.ComponentQuery.query('combo[@name=moveToContainerSelect]')[0].setDisabled(false);
 }
 
-function enableMoveToContainerSelect() {
-    Ext4.ComponentQuery.query('combo[@name=moveToContainerSelect]')[0].setDisabled(false);
-}
+Ext4.onReady(toggleMoveToContainerSelect);
+
