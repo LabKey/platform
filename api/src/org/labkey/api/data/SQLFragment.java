@@ -89,12 +89,7 @@ public class SQLFragment implements Appendable, CharSequence
         sql = "";
     }
 
-    /**
-     *
-     * @param sql
-     * @param params list may be modified so clone() before passing in if necessary
-     */
-    public SQLFragment(CharSequence sql, @Nullable List<Object> params)      // TODO: Should be List<?>
+    public SQLFragment(CharSequence sql, @Nullable List<?> params)
     {
         guard(sql);
         this.sql = sql.toString();
@@ -158,8 +153,7 @@ public class SQLFragment implements Appendable, CharSequence
             comma = ",\n\t";
             for (String token : cte.tokens)
             {
-                String r = StringUtils.replace(select, token, cte.name);
-                select = r;
+                select = StringUtils.replace(select, token, cte.name);
             }
         }
         ret.append("\n");
@@ -370,7 +364,7 @@ public class SQLFragment implements Appendable, CharSequence
     public SQLFragment appendStringLiteral(CharSequence s)
     {
         String source = HString.source(s);        
-        if (s instanceof HString || source.indexOf("'") >= 0 || source.indexOf("\\") >= 0)
+        if (s instanceof HString || source.contains("'") || source.contains("\\"))
         {
             append("?");
             add(s);
@@ -619,5 +613,16 @@ public class SQLFragment implements Appendable, CharSequence
                     "SELECT * FROM cte3 _3",
                 union.getSQL());
         }
+    }
+
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (!(obj instanceof SQLFragment))
+        {
+            return false;
+        }
+        SQLFragment other = (SQLFragment)obj;
+        return getSQL().equals(other.getSQL()) && getParams().equals(other.getParams());
     }
 }

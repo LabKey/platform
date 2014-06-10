@@ -29,8 +29,7 @@ public class ParameterMarkerInClauseGenerator implements InClauseGenerator
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object... params)
     {
         sql.append("IN (");
-        String questionMarks = StringUtils.repeat("?, ", params.length);
-        sql.append(questionMarks.substring(0, questionMarks.length() - 2));
+        sql.append(StringUtils.repeat("?", ", ", params.length));
         sql.append(")");
 
         sql.addAll(params);

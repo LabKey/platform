@@ -31,6 +31,7 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.InClauseGenerator;
+import org.labkey.api.data.InlineInClauseGenerator;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -459,11 +460,11 @@ public abstract class SqlDialect
     // Could be INSERT, UPDATE, or DELETE statement
     public abstract @Nullable ResultSet executeWithResults(@NotNull PreparedStatement stmt) throws SQLException;
 
-    private static final InClauseGenerator GENERATOR = new ParameterMarkerInClauseGenerator();
+    private static final InClauseGenerator DEFAULT_GENERATOR = new ParameterMarkerInClauseGenerator();
 
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params)
     {
-        return GENERATOR.appendInClauseSql(sql, params);
+        return DEFAULT_GENERATOR.appendInClauseSql(sql, params);
     }
 
     public abstract boolean requiresStatementMaxRows();

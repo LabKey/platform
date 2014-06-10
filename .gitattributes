@@ -289,6 +289,7 @@ api/src/org/labkey/api/data/HtmlWriter.java -text
 api/src/org/labkey/api/data/IconDisplayColumn.java -text
 api/src/org/labkey/api/data/ImportAliasable.java -text
 api/src/org/labkey/api/data/InClauseGenerator.java -text
+api/src/org/labkey/api/data/InlineInClauseGenerator.java -text
 api/src/org/labkey/api/data/InputColumn.java -text
 api/src/org/labkey/api/data/JavaScriptDisplayColumn.java -text
 api/src/org/labkey/api/data/JavaScriptDisplayColumnFactory.java -text
