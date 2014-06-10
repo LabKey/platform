@@ -46,6 +46,9 @@ public class LinkedSchemaForm extends AbstractExternalSchemaForm<LinkedSchemaDef
             if (sourceSchemaName == null && template != null)
                 sourceSchemaName = template.getSourceSchemaName();
 
+            if (sourceSchemaName != null && sourceSchemaName.length() > 50)
+                errors.reject(SpringActionController.ERROR_MSG, "Source schema name must not be longer than 50 characters");
+
             // Disallow recursive linked schema
             if ((targetContainer == null || targetContainer == sourceContainer) && bean.getUserSchemaName().equals(sourceSchemaName))
             {

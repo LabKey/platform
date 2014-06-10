@@ -282,7 +282,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     {name : 'access', mapping: 'access.label'},
                     {name : 'accessUrl', mapping: 'access.url'},
                     {name : 'runUrl'},
-                    {name : 'runTarget', defaultValue: undefined},
+                    {name : 'hrefTarget', defaultValue: undefined, mapping: 'runTarget'},
                     {name : 'detailsUrl'},
                     {name : 'thumbnail'},
                     {name : 'thumbnailType'},

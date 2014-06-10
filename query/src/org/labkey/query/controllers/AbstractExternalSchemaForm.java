@@ -47,6 +47,9 @@ public abstract class AbstractExternalSchemaForm<T extends AbstractExternalSchem
         if (null != IdentifierString.validateIdentifierString(bean.getUserSchemaName()))
             errors.reject(SpringActionController.ERROR_MSG, "Schema name should only contain alphanumeric characters and underscores");
 
+        if (bean.getUserSchemaName().length() > 50)
+            errors.reject(SpringActionController.ERROR_MSG, "Schema name must not be longer than 50 characters");
+
         if (bean.getSchemaTemplate() == null)
         {
             if (bean.getSourceSchemaName() == null)
