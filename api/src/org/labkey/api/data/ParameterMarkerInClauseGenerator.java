@@ -26,7 +26,7 @@ import org.jetbrains.annotations.NotNull;
 public class ParameterMarkerInClauseGenerator implements InClauseGenerator
 {
     @Override
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object... params)
     {
         sql.append("IN (");
         String questionMarks = StringUtils.repeat("?, ", params.length);

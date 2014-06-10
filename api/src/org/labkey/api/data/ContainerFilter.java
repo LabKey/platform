@@ -18,12 +18,14 @@ package org.labkey.api.data;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.*;
+import org.labkey.api.security.SecurityLogger;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.GUID;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,7 +47,7 @@ public abstract class ContainerFilter
      * @return null if no filtering should be done, otherwise the set of valid container ids
      */
     @Nullable
-    protected abstract Collection<String> getIds(Container currentContainer);
+    protected abstract Collection<GUID> getIds(Container currentContainer);
 
     /**
      * May return null if the ContainerFilter has no corresponding ContainerFilter.Type.
@@ -133,13 +135,13 @@ public abstract class ContainerFilter
     public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, boolean useJDBCParameters, boolean allowNulls)
     {
         SecurityLogger.indent("ContainerFilter");
-        Collection<String> ids = getIds(container);
+        Collection<GUID> ids = getIds(container);
         SecurityLogger.outdent();
         return getSQLFragment(schema, container, containerColumnSQL, ids, useJDBCParameters, allowNulls);
     }
 
     // instances of ContainerFilterWithUser will call this getSQLFragment after GetIds with a specific permission to check against the user
-    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<String> ids, boolean useJDBCParameters, boolean allowNulls)
+    protected SQLFragment getSQLFragment(DbSchema schema, Container container, SQLFragment containerColumnSQL, Collection<GUID> ids, boolean useJDBCParameters, boolean allowNulls)
     {
         if (ids == null)
         {
@@ -175,7 +177,7 @@ public abstract class ContainerFilter
         select.append(schema.getSqlDialect().getGuidType());
         select.append(") AS Id FROM (");
         String separator = "";
-        for (String containerId : ids)
+        for (GUID containerId : ids)
         {
             select.append(separator);
             separator = " UNION\n\t\t";
@@ -341,9 +343,9 @@ public abstract class ContainerFilter
 
     public static final ContainerFilter CURRENT = new ContainerFilter()
     {
-        public Collection<String> getIds(Container currentContainer)
+        public Collection<GUID> getIds(Container currentContainer)
         {
-            return Collections.singleton(currentContainer.getId());
+            return Collections.singleton(currentContainer.getEntityId());
         }
 
         @Override
@@ -361,7 +363,7 @@ public abstract class ContainerFilter
     /** Use this with extreme caution - it doesn't check permissions */
     public static final ContainerFilter EVERYTHING = new ContainerFilter()
     {
-        public Collection<String> getIds(Container currentContainer)
+        public Collection<GUID> getIds(Container currentContainer)
         {
             return null;
         }
@@ -394,25 +396,25 @@ public abstract class ContainerFilter
         public SQLFragment getSQLFragment(DbSchema schema, SQLFragment containerColumnSQL, Container container, Class<? extends Permission> permission, Set<Role> roles, boolean useJDBCParameters, boolean allowNulls)
         {
             SecurityLogger.indent("ContainerFilter");
-            Collection<String> ids = getIds(container, permission, roles);
+            Collection<GUID> ids = getIds(container, permission, roles);
             SecurityLogger.outdent();
             return getSQLFragment(schema, container, containerColumnSQL, ids, useJDBCParameters, allowNulls);
         }
 
         // each ContainerFilterWithUser subclass should override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
         {
-            Set<String> result = new HashSet<>();
+            Set<GUID> result = new HashSet<>();
             if (currentContainer.hasPermission(_user, permission, roles))
             {
-                result.add(currentContainer.getId());
+                result.add(currentContainer.getEntityId());
             }
             return result;
         }
 
         // If a permission is not explicitly passed, then use ReadPermission by default.  Otherwise, subclasses
         // of ContainerFilterWithUser should override getIds method above that takes a permission.
-        public Collection<String> getIds(Container currentContainer)
+        public Collection<GUID> getIds(Container currentContainer)
         {
             return getIds(currentContainer, ReadPermission.class, null);
         }
@@ -425,14 +427,14 @@ public abstract class ContainerFilter
 
     public static class SimpleContainerFilter extends ContainerFilter
     {
-        private final Collection<String> _ids;
+        private final Collection<GUID> _ids;
 
         public SimpleContainerFilter(Collection<Container> containers)
         {
             _ids = toIds(containers);
         }
 
-        public Collection<String> getIds(Container currentContainer)
+        public Collection<GUID> getIds(Container currentContainer)
         {
             return _ids;
         }
@@ -454,7 +456,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             Set<Container> containers = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
@@ -483,7 +485,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             Set<Container> containers = new HashSet<>();
             for(Container c : ContainerManager.getChildren(currentContainer, _user, perm, roles))
@@ -520,7 +522,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             List<Container> containers = new ArrayList<>(removeWorkbooks(ContainerManager.getAllChildren(currentContainer, _user, perm, roles)));
             if (currentContainer.hasPermission(_user, perm, roles))
@@ -543,7 +545,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             Set<Container> containers = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
@@ -570,7 +572,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             Set<Container> containers = new HashSet<>();
             do
@@ -599,16 +601,16 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            Collection<String> result = super.getIds(currentContainer, perm, roles);
+            Collection<GUID> result = super.getIds(currentContainer, perm, roles);
             if (result == null)
             {
                 return null;
             }
             if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, perm, roles))
             {
-                result.add(currentContainer.getParent().getId());
+                result.add(currentContainer.getParent().getEntityId());
             }
             return result;
         }
@@ -628,16 +630,16 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            Set<String> result = new HashSet<>();
+            Set<GUID> result = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
             {
-                result.add(currentContainer.getId());
+                result.add(currentContainer.getEntityId());
             }
             if (currentContainer.isWorkbook() && currentContainer.getParent().hasPermission(_user, perm, roles))
             {
-                result.add(currentContainer.getParent().getId());
+                result.add(currentContainer.getParent().getEntityId());
             }
             return result;
         }
@@ -657,16 +659,16 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            Set<String> result = new HashSet<>();
+            Set<GUID> result = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
-                result.add(currentContainer.getId());
+                result.add(currentContainer.getEntityId());
 
             if (currentContainer.isWorkbook())
             {
                 if(currentContainer.getParent().hasPermission(_user, perm, roles))
-                    result.add(currentContainer.getParent().getId());
+                    result.add(currentContainer.getParent().getEntityId());
             }
 
             return result;
@@ -687,12 +689,12 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            Set<String> result = new HashSet<>();
+            Set<GUID> result = new HashSet<>();
 
             if (currentContainer.isRoot() && currentContainer.hasPermission(_user, perm, roles))
-                result.add(currentContainer.getId());  //if not root, we will add the current container below
+                result.add(currentContainer.getEntityId());  //if not root, we will add the current container below
 
             Container parent = currentContainer.getParent();
             if(parent != null)
@@ -701,7 +703,7 @@ public abstract class ContainerFilter
                 {
                     if (c.hasPermission(_user, perm, roles))
                     {
-                        result.add(c.getId());
+                        result.add(c.getEntityId());
                     }
                 }
             }
@@ -727,12 +729,12 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
-            Set<String> result = new HashSet<>();
+            Set<GUID> result = new HashSet<>();
             if (_skipPermissionChecks || currentContainer.hasPermission(_user, perm, roles))
             {
-                result.add(currentContainer.getId());
+                result.add(currentContainer.getEntityId());
             }
             Study study = StudyService.get().getStudy(currentContainer);
             if (study != null && study.isAncillaryStudy())
@@ -740,7 +742,7 @@ public abstract class ContainerFilter
                 Study sourceStudy = study.getSourceStudy();
                 if (sourceStudy != null && (_skipPermissionChecks || sourceStudy.getContainer().hasPermission(_user, perm, roles)))
                 {
-                    result.add(sourceStudy.getContainer().getId());
+                    result.add(sourceStudy.getContainer().getEntityId());
                 }
             }
             return result;
@@ -761,12 +763,12 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> permission, Set<Role> roles)
         {
             Container project = currentContainer.getProject();
             if (null == project || !project.hasPermission(_user, permission, roles))
                 return Collections.emptyList();
-            return Collections.singleton(project.getId());
+            return Collections.singleton(project.getEntityId());
         }
 
         public Type getType()
@@ -784,7 +786,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             Set<Container> containers = new HashSet<>();
             if (currentContainer.hasPermission(_user, perm, roles))
@@ -816,7 +818,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             Container project = currentContainer.isProject() ? currentContainer : currentContainer.getProject();
             if (project == null)
@@ -844,7 +846,7 @@ public abstract class ContainerFilter
         }
 
         @Override
-        public Collection<String> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
+        public Collection<GUID> getIds(Container currentContainer, Class<? extends Permission> perm, Set<Role> roles)
         {
             if (_user.isSiteAdmin())
             {
@@ -854,17 +856,17 @@ public abstract class ContainerFilter
             List<Container> containers = ContainerManager.getAllChildren(ContainerManager.getRoot(), _user, perm, roles);
             // To reduce the number of ids that need to be passed around, filter out workbooks. They'll get included
             // automatically because we always add them via the SQL that we generate
-            Set<String> ids = new HashSet<>();
+            Set<GUID> ids = new HashSet<>();
             for (Container container : containers)
             {
                 if (!container.isWorkbook())
                 {
-                    ids.add(container.getId());
+                    ids.add(container.getEntityId());
                 }
             }
             if (ContainerManager.getRoot().hasPermission(_user, perm, roles))
             {
-                ids.add(ContainerManager.getRoot().getId());
+                ids.add(ContainerManager.getRoot().getEntityId());
             }
             return ids;
         }
@@ -875,12 +877,12 @@ public abstract class ContainerFilter
         }
     }
 
-    public static Set<String> toIds(Collection<Container> containers)
+    public static Set<GUID> toIds(Collection<Container> containers)
     {
-        Set<String> ids = new HashSet<>();
+        Set<GUID> ids = new HashSet<>();
         for (Container container : containers)
         {
-            ids.add(container.getId());
+            ids.add(container.getEntityId());
         }
         return ids;
     }

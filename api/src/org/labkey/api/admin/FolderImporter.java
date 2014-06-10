@@ -16,6 +16,7 @@
 package org.labkey.api.admin;
 
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -33,7 +34,7 @@ public interface FolderImporter<DocumentRoot extends XmlObject>
     /** Brief description of the types of objects this class imports */
     String getDescription();
     void process(@Nullable PipelineJob job, ImportContext<DocumentRoot> ctx, VirtualFile root) throws Exception;
-    @Nullable
+    @NotNull
     Collection<PipelineJobWarning> postProcess(ImportContext<DocumentRoot> ctx, VirtualFile root) throws Exception;
     /* temporary setting until all importers support using VirtualFile */
     boolean supportsVirtualFile();

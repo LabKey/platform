@@ -359,14 +359,10 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
                 PreparedStatement stmt = conn.prepareStatement(sql, scrollable ? ResultSet.TYPE_SCROLL_INSENSITIVE : ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
                 initializeStatement(stmt, asyncRequest, statementMaxRows);
 
-                try
+                try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
                 {
-                    Table.setParameters(stmt, parameters);
+                    Table.setParameters(stmt, parameters, jdbcParameters);
                     rs = stmt.executeQuery();
-                }
-                finally
-                {
-                    Table.closeParameters(parameters);
                 }
             }
 

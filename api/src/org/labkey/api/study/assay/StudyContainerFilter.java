@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.Study;
+import org.labkey.api.util.GUID;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -31,7 +32,7 @@ import java.util.Set;
 */
 public class StudyContainerFilter extends ContainerFilter
 {
-    private Collection<String> _ids;
+    private Collection<GUID> _ids;
     private final AssaySchema _schema;
 
     public StudyContainerFilter(AssaySchema schema)
@@ -40,7 +41,7 @@ public class StudyContainerFilter extends ContainerFilter
         _schema = schema;
     }
 
-    public Collection<String> getIds(Container currentContainer)
+    public Collection<GUID> getIds(Container currentContainer)
     {
         if (_ids == null)
         {
@@ -53,16 +54,16 @@ public class StudyContainerFilter extends ContainerFilter
             if (_schema.getTargetStudy() != null)
             {
                 if (_schema.getTargetStudy().hasPermission(_schema.getUser(), ReadPermission.class))
-                    _ids = Collections.singleton(_schema.getTargetStudy().getId());
+                    _ids = Collections.singleton(_schema.getTargetStudy().getEntityId());
                 else
                     return Collections.emptySet();
             }
             else
             {
                 Set<Study> studies = AssayPublishService.get().getValidPublishTargets(_schema.getUser(), ReadPermission.class);
-                Set<String> ids = new HashSet<>();
+                Set<GUID> ids = new HashSet<>();
                 for (Study study : studies)
-                    ids.add(study.getContainer().getId());
+                    ids.add(study.getContainer().getEntityId());
                 _ids = ids;
             }
         }

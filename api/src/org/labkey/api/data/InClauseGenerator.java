@@ -27,5 +27,5 @@ import org.jetbrains.annotations.NotNull;
 // database-specific implementation that scales or performs better (e.g., arrays or in-line parameter expansion)
 public interface InClauseGenerator
 {
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params);
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object... params);
 }

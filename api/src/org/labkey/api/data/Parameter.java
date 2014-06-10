@@ -17,6 +17,7 @@
 package org.labkey.api.data;
 
 import com.google.common.primitives.Ints;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,21 +25,26 @@ import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialectManager;
 import org.labkey.api.data.dialect.StatementWrapper;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.support.SQLErrorCodeSQLExceptionTranslator;
 import org.springframework.jdbc.support.SQLExceptionTranslator;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -63,7 +69,7 @@ import java.util.concurrent.Callable;
  * NOTE: does not do implicit conversion, just sets the parameter type
  */
 
-public class Parameter
+public class Parameter implements AutoCloseable
 {
     private static Logger LOG = Logger.getLogger(Parameter.class);
 
@@ -128,8 +134,9 @@ public class Parameter
 
     // only allow setting once, do not clear
     private boolean _constant = false;
-    
+
     private PreparedStatement _stmt;
+    private AutoCloseable _autoCloseable;
     private int[] _indexes;
 
     // used to to optimize calls to Statment.set*()
@@ -262,14 +269,15 @@ public class Parameter
                 if (_indexes.length > 1)
                     throw new IllegalArgumentException("AttachmentFile can only be bound to a single parameter");
 
+                final AttachmentFile attachmentFile = (AttachmentFile) value;
                 if (setFileAsName)
-                    _stmt.setString(_indexes[0], ((AttachmentFile) value).getFilename());
+                    _stmt.setString(_indexes[0], attachmentFile.getFilename());
                 else
                 {
                     try
                     {
-                        InputStream is = ((AttachmentFile) value).openInputStream();
-                        long len = ((AttachmentFile) value).getSize();
+                        InputStream is = attachmentFile.openInputStream();
+                        long len = attachmentFile.getSize();
 
                         if (len > Integer.MAX_VALUE)
                             throw new IllegalArgumentException("File length exceeds " + Integer.MAX_VALUE);
@@ -285,6 +293,46 @@ public class Parameter
                         throw sqlx;
                     }
                 }
+                // Set up to close it
+                _autoCloseable = new AutoCloseable()
+                {
+                    @Override
+                    public void close()
+                    {
+                        try
+                        {
+                            attachmentFile.closeInputStream();
+                        }
+                        catch (IOException ignored) {}
+                    }
+                };
+            }
+
+            if (value instanceof Object[])
+            {
+                Object[] array = (Object[]) value;
+
+                // Convert to a JDBC array
+                SqlDialect dialect = SqlDialectManager.getFromMetaData(_stmt.getConnection().getMetaData(), true);
+                String typeName = StringUtils.lowerCase(dialect.getSqlTypeNameFromObject(array[0]));
+                final Array jdbcArray = _stmt.getConnection().createArrayOf(typeName, array);
+                // Set up to close it
+                _autoCloseable = new AutoCloseable()
+                {
+                    @Override
+                    public void close() throws SQLException
+                    {
+                        try
+                        {
+                            jdbcArray.free();
+                        }
+                        catch (SQLFeatureNotSupportedException ignored)
+                        {
+                            // As of 6/9/14, the Postgres JDBC method doesn't support this method
+                        }
+                    }
+                };
+                value = jdbcArray;
             }
 
             setObject(type, value);
@@ -296,6 +344,25 @@ public class Parameter
         }
     }
 
+    @Override
+    public void close()
+    {
+        if (_autoCloseable != null)
+        {
+            try
+            {
+                _autoCloseable.close();
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+            catch (Exception e)
+            {
+                throw new UnexpectedException(e);
+            }
+        }
+    }
 
     private void setNull(JdbcType type) throws SQLException
     {
@@ -776,6 +843,19 @@ public class Parameter
         public void setDebugSql(String sql)
         {
             _debugSql = sql;
+        }
+    }
+
+    public static class ParameterList extends ArrayList<Parameter> implements AutoCloseable
+    {
+        @Override
+        public void close()
+        {
+            for (Parameter parameter : this)
+            {
+                parameter.close();
+            }
+            clear();
         }
     }
 }

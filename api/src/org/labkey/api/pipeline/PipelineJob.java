@@ -454,9 +454,9 @@ abstract public class PipelineJob extends Job implements Serializable
         TaskStatus status = getActiveTaskStatus();
 
         if (factory != null && !TaskStatus.error.equals(status) && !TaskStatus.cancelled.equals(status))
-            return setStatus(factory.getStatusName() + " " + status.toString().toUpperCase(), null);
+            return setStatus(factory.getStatusName() + " " + status.toString().toUpperCase());
         else
-            return setStatus(status.toString().toUpperCase(), null);
+            return setStatus(status);
     }
 
     /** Used for setting status to one of the standard states */

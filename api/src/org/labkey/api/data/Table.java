@@ -25,7 +25,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -345,21 +344,16 @@ public class Table
     // ================== These methods have not been converted to Selector/Executor ==================
 
     // Careful: caller must track and clean up parameters (e.g., close InputStreams) after execution is complete
-    public static PreparedStatement prepareStatement(Connection conn, String sql, Object[] parameters) throws SQLException
+    public static PreparedStatement prepareStatement(Connection conn, String sql, Collection<?> parameters, List<Parameter> jdbcParameters) throws SQLException
     {
         PreparedStatement stmt = conn.prepareStatement(sql);
-        setParameters(stmt, parameters);
+        setParameters(stmt, parameters, jdbcParameters);
         MemTracker.getInstance().put(stmt);
         return stmt;
     }
 
 
-    public static void setParameters(PreparedStatement stmt, Object[] parameters) throws SQLException
-    {
-        setParameters(stmt, Arrays.asList(parameters));
-    }
-
-    public static void setParameters(PreparedStatement stmt, Collection<?> parameters) throws SQLException
+    public static void setParameters(PreparedStatement stmt, Collection<?> parameters, List<Parameter> jdbcParameters) throws SQLException
     {
         if (null == parameters)
             return;
@@ -393,32 +387,10 @@ public class Table
 
             Parameter p = new Parameter(stmt, i);
             p.setValue(value);
+            jdbcParameters.add(p);
             i++;
         }
     }
-
-    public static void closeParameters(Collection<Object> parameters)
-    {
-        for (Object value : parameters)
-        {
-            if (value instanceof Parameter.TypedValue)
-            {
-                value = ((Parameter.TypedValue)value)._value;
-            }
-            if (value instanceof AttachmentFile)
-            {
-                try
-                {
-                    ((AttachmentFile)value).closeInputStream();
-                }
-                catch(IOException e)
-                {
-                    // Ignore... make sure we attempt to close all the parameters
-                }
-            }
-        }
-    }
-
 
     /** @return if this is a statement that starts with SELECT, ignoring comment lines that start with "--" */
     public static boolean isSelect(String sql)
@@ -441,13 +413,14 @@ public class Table
         Connection conn = schema.getScope().getConnection();
         PreparedStatement stmt = null;
 
-        try
+
+        try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
         {
             stmt = conn.prepareStatement(sql);
             int paramCounter = 0;
             for (Collection<?> params : paramList)
             {
-                setParameters(stmt, params);
+                setParameters(stmt, params, jdbcParameters);
                 stmt.addBatch();
 
                 paramCounter += params.size();
@@ -455,6 +428,7 @@ public class Table
                 {
                     paramCounter = 0;
                     stmt.executeBatch();
+                    jdbcParameters.close();
                 }
             }
             stmt.executeBatch();
@@ -543,6 +517,12 @@ public class Table
     {
         if (SqlDialect.isCancelException(e))
         {
+            return;
+        }
+
+        if (sql == null)
+        {
+            _log.error("SQL Exception, no SQL query text available", e);
             return;
         }
 
@@ -851,10 +831,10 @@ public class Table
         PreparedStatement stmt = null;
         ResultSet rs = null;
 
-        try
+        try (Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
         {
             conn = schema.getScope().getConnection();
-            stmt = prepareStatement(conn, insertSQL.toString(), parameters.toArray());
+            stmt = prepareStatement(conn, insertSQL.toString(), parameters, jdbcParameters);
 
             if (null == autoIncColumn)
             {
@@ -890,7 +870,6 @@ public class Table
         finally
         {
             doClose(rs, stmt, conn, schema.getScope());
-            closeParameters(parameters);
         }
 
         return returnObject;

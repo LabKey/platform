@@ -128,17 +128,14 @@ public class SqlExecutor extends JdbcCommand
             }
             else
             {
-                try (PreparedStatement stmt = conn.prepareStatement(sql))
+                try (PreparedStatement stmt = conn.prepareStatement(sql);
+                     Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
                 {
-                    Table.setParameters(stmt, parameters);
+                    Table.setParameters(stmt, parameters, jdbcParameters);
                     if (stmt.execute())
                         return -1;
                     else
                         return stmt.getUpdateCount();
-                }
-                finally
-                {
-                    Table.closeParameters(parameters);
                 }
             }
         }
@@ -152,18 +149,15 @@ public class SqlExecutor extends JdbcCommand
             List<Object> parameters = sqlFragment.getParams();
             String sql = sqlFragment.getSQL();
 
-            try (PreparedStatement stmt = conn.prepareStatement(sql))
+            try (PreparedStatement stmt = conn.prepareStatement(sql);
+                 Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
             {
-                Table.setParameters(stmt, parameters);
+                Table.setParameters(stmt, parameters, jdbcParameters);
 
                 try (ResultSet rs = dialect.executeWithResults(stmt))
                 {
                     return handler.handle(rs, conn);
                 }
-            }
-            finally
-            {
-                Table.closeParameters(parameters);
             }
         }
     }
@@ -176,15 +170,12 @@ public class SqlExecutor extends JdbcCommand
             List<Object> parameters = sqlFragment.getParams();
             String sql = sqlFragment.getSQL();
 
-            try (PreparedStatement stmt = conn.prepareStatement(sql))
+            try (PreparedStatement stmt = conn.prepareStatement(sql);
+                 Parameter.ParameterList jdbcParameters = new Parameter.ParameterList())
             {
-                Table.setParameters(stmt, parameters);
+                Table.setParameters(stmt, parameters, jdbcParameters);
 
                 return handler.handle(stmt, conn);
-            }
-            finally
-            {
-                Table.closeParameters(parameters);
             }
         }
     }

@@ -1163,27 +1163,6 @@ public abstract class SqlDialect
         return version;
     }
 
-
-    // Return true if this array can be converted to a JDBC SQL Array type. We must have a SQL type name for the
-    // class and all elements must have the same class.
-    public boolean isSqlArrayCompatible(Object[] elements)
-    {
-        Object firstElement = elements[0];
-        String typeName = getSqlTypeNameFromObject(firstElement);
-
-        if (null == typeName)
-            return false;
-
-        Class firstParamClass = firstElement.getClass();
-
-        for (Object param : elements)
-            if (param.getClass() != firstParamClass)
-                return false;
-
-        return true;
-    }
-
-
     // Return the SQL type name for this object if it can be found, otherwise null
     public @Nullable String getSqlTypeNameFromObject(Object o)
     {

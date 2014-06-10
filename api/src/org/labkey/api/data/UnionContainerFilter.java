@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.GUID;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -36,12 +37,12 @@ public class UnionContainerFilter extends ContainerFilter
 
 
     @Override @Nullable
-    protected Collection<String> getIds(Container currentContainer)
+    protected Collection<GUID> getIds(Container currentContainer)
     {
-        Set<String> result = new HashSet<>();
+        Set<GUID> result = new HashSet<>();
         for (ContainerFilter filter : _filters)
         {
-            Collection<String> ids = filter.getIds(currentContainer);
+            Collection<GUID> ids = filter.getIds(currentContainer);
             if (ids == null)
             {
                 // Null means don't filter

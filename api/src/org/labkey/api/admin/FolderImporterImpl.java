@@ -15,6 +15,7 @@
  */
 package org.labkey.api.admin;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobWarning;
@@ -71,6 +72,7 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
         }
     }
 
+    @NotNull
     @Override
     public Collection<PipelineJobWarning> postProcess(ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
@@ -83,9 +85,7 @@ public class FolderImporterImpl implements FolderImporter<FolderDocument.Folder>
                     _job.setStatus("POST-PROCESS " + importer.getDescription());
 
                 Collection<PipelineJobWarning> importerWarnings = importer.postProcess(ctx, vf);
-
-                if (null != importerWarnings)
-                    warnings.addAll(importerWarnings);
+                warnings.addAll(importerWarnings);
             }
         }
         return warnings;

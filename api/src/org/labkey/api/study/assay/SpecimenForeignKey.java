@@ -44,6 +44,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.ContainerContext;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.StringExpression;
 
 import java.util.ArrayList;
@@ -718,10 +719,10 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sqlf.append(join);
             }
 
-            Set<String> filterIds = null;
+            Set<GUID> filterIds = null;
             if (null != _studyContainerFilter)
             {
-                Collection<String> studyContainerFilterIds = ((StudyContainerFilter)_studyContainerFilter).getIds(_schema.getContainer());
+                Collection<GUID> studyContainerFilterIds = ((StudyContainerFilter)_studyContainerFilter).getIds(_schema.getContainer());
                 if (null != studyContainerFilterIds)
                     filterIds = new HashSet<>(studyContainerFilterIds);
             }
@@ -737,7 +738,7 @@ public class SpecimenForeignKey extends LookupForeignKey
                 Study study = StudyService.get().getStudy(c);
                 if (null == study)
                     continue;
-                if (null != filterIds && !filterIds.contains(c.getId()))
+                if (null != filterIds && !filterIds.contains(c.getEntityId()))
                     continue;
                 containers.add(c);
             }
