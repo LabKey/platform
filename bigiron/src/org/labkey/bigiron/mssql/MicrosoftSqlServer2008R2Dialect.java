@@ -24,6 +24,8 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.InClauseGenerator;
+import org.labkey.api.data.InlineInClauseGenerator;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
@@ -73,6 +75,8 @@ import java.util.regex.Pattern;
 public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 {
     private volatile boolean _groupConcatInstalled = false;
+
+    private static final InClauseGenerator DEFAULT_GENERATOR = new InlineInClauseGenerator();
 
     @Override
     protected @NotNull Set<String> getReservedWords()
@@ -203,6 +207,12 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     public String getDefaultDateTimeDataType()
     {
         return "DATETIME";
+    }
+
+    @Override
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params)
+    {
+        return DEFAULT_GENERATOR.appendInClauseSql(sql, params);
     }
 
     @Override

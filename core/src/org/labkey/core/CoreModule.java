@@ -832,7 +832,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 NumberUtilsLabKey.TestCase.class,
                 SimpleFilter.FilterTestCase.class,
                 SimpleFilter.InClauseTestCase.class,
-                SimpleFilter.BetweenClauseTestCase.class
+                SimpleFilter.BetweenClauseTestCase.class,
+                InlineInClauseGenerator.TestCase.class
         ));
     }
 
