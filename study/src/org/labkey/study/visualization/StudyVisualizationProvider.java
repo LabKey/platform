@@ -67,7 +67,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
 
         String name = column.getOriginalName().toLowerCase();
 
-        if (subjectColName.equals(name) || name.startsWith(subjectVisitName))
+        if (subjectColName.equals(name) || name.startsWith(subjectVisitName) || "container".equals(name))
             return true;
 
         return false;

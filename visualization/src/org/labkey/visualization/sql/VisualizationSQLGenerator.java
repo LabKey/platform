@@ -629,7 +629,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             else
             {
                 VisualizationProvider provider = getVisualizationProvider(query.getSchema().getSchemaName());
-                String altJoinOperator = provider.getAlternateJoinOperator(getViewContext().getContainer(), query);
+                String altJoinOperator = parentQuery == null ? provider.getAlternateJoinOperator(getViewContext().getContainer(), query): null;
                 sql.append("\n").append(altJoinOperator != null ? altJoinOperator : joinOperator).append("\n");
             }
             String querySql = query.getSQL(factory);
