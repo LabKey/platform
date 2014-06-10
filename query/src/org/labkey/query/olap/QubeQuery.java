@@ -315,7 +315,23 @@ public class QubeQuery
         Object cols = null != json.get("onColumns") ? json.get("onColumns") : json.get("onCols");
         onColumns = parseJsonExpr(cols, OP.MEMBERS, OP.XINTERSECT);
         filters = parseJsonExpr(json.get("filter"), OP.MEMBERS, OP.XINTERSECT);
-//        distinctMeasureFilters = parseJsonExpr(json.get("distinctMeasureFilters"), OP.XINTERSECT, OP.XINTERSECT);
+
+        Object countDistinctLevelNameSpec = json.get("countDistinctLevel");
+        String countDistinctLevelName = null;
+        if (countDistinctLevelNameSpec instanceof String)
+        {
+            countDistinctLevelName = (String)countDistinctLevelNameSpec;
+        }
+        else if (countDistinctLevelNameSpec instanceof Map && ((Map)countDistinctLevelNameSpec).get("uniqueName") instanceof String)
+        {
+            countDistinctLevelName = (String)((Map)countDistinctLevelNameSpec).get("uniqueName");
+        }
+        if (!StringUtils.isEmpty(countDistinctLevelName))
+        {
+            this.countDistinctLevel = _getLevel(countDistinctLevelName, null);
+            if (null == this.countDistinctLevel)
+                errors.reject(SpringActionController.ERROR_MSG, ("Could not find level: " + countDistinctLevelName));
+        }
     }
 
 
