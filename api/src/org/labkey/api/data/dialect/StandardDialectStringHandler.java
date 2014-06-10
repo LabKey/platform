@@ -16,14 +16,15 @@
 
 package org.labkey.api.data.dialect;
 
-import org.junit.Assert;
 import org.apache.commons.lang3.StringUtils;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.util.DateUtil;
 
+import java.sql.Array;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.LinkedList;
@@ -217,6 +218,10 @@ public class StandardDialectStringHandler implements DialectStringHandler
         else if (value instanceof Boolean)
         {
             return booleanValue((Boolean)value);
+        }
+        else if (value instanceof Array)
+        {
+            return quoteStringLiteral(value.toString());
         }
         else
         {
