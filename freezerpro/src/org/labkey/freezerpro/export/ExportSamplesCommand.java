@@ -35,13 +35,15 @@ import java.util.List;
  */
 public class ExportSamplesCommand
 {
+    private FreezerProExport _export;
     private String _url;
     private String _username;
     private String _password;
     private String _searchFilterString;
 
-    public ExportSamplesCommand(String url, String username, String password, String searchFilterString)
+    public ExportSamplesCommand(FreezerProExport export, String url, String username, String password, String searchFilterString)
     {
+        _export = export;
         _url = url;
         _username = username;
         _password = password;
@@ -73,9 +75,9 @@ public class ExportSamplesCommand
             StatusLine status = response.getStatusLine();
 
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
-                return new ExportSamplesResponse(handler.handleResponse(response), status.getStatusCode(), job);
+                return new ExportSamplesResponse(_export, handler.handleResponse(response), status.getStatusCode(), job);
             else
-                return new ExportSamplesResponse(status.getReasonPhrase(), status.getStatusCode(), job);
+                return new ExportSamplesResponse(_export, status.getReasonPhrase(), status.getStatusCode(), job);
         }
         catch (Exception e)
         {

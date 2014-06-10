@@ -34,8 +34,8 @@ public class ExportSamplesResponse extends FreezerProCommandResonse
 {
     public static final String DATA_NODE_NAME = "Samples";
 
-    public ExportSamplesResponse(String text, int statusCode, PipelineJob job)
+    public ExportSamplesResponse(FreezerProExport export, String text, int statusCode, PipelineJob job)
     {
-        super(text, statusCode, DATA_NODE_NAME, job);
+        super(export, text, statusCode, DATA_NODE_NAME, job);
     }
 }

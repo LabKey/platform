@@ -29,9 +29,9 @@ import java.util.Map;
  */
 public class ExportLocationResponse extends FreezerProCommandResonse
 {
-    public ExportLocationResponse(String text, int statusCode, PipelineJob job)
+    public ExportLocationResponse(FreezerProExport export, String text, int statusCode, PipelineJob job)
     {
-        super(text, statusCode, null, job);
+        super(export, text, statusCode, null, job);
     }
 
     /**

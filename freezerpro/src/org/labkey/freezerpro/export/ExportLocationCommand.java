@@ -39,9 +39,11 @@ public class ExportLocationCommand
     private String _username;
     private String _password;
     private String _locationId;
+    private FreezerProExport _export;
 
-    public ExportLocationCommand(String url, String username, String password, String locationId)
+    public ExportLocationCommand(FreezerProExport export, String url, String username, String password, String locationId)
     {
+        _export = export;
         _url = url;
         _username = username;
         _password = password;
@@ -68,9 +70,9 @@ public class ExportLocationCommand
             StatusLine status = response.getStatusLine();
 
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
-                return new ExportLocationResponse(handler.handleResponse(response), status.getStatusCode(), job);
+                return new ExportLocationResponse(_export, handler.handleResponse(response), status.getStatusCode(), job);
             else
-                return new ExportLocationResponse(status.getReasonPhrase(), status.getStatusCode(), job);
+                return new ExportLocationResponse(_export, status.getReasonPhrase(), status.getStatusCode(), job);
         }
         catch (Exception e)
         {

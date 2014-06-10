@@ -30,9 +30,9 @@ import java.util.Map;
  */
 public class ExportUserFieldsResponse extends FreezerProCommandResonse
 {
-    public ExportUserFieldsResponse(String text, int statusCode, PipelineJob job)
+    public ExportUserFieldsResponse(FreezerProExport export, String text, int statusCode, PipelineJob job)
     {
-        super(text, statusCode, null, job);
+        super(export, text, statusCode, null, job);
     }
 
     /**

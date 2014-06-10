@@ -35,14 +35,16 @@ import static org.labkey.api.util.JsonUtil.expectArrayStart;
  */
 public abstract class FreezerProCommandResonse
 {
-    String _text;
-    String _dataNodeName;
-    int _statusCode;
-    JsonParser _parser;
-    PipelineJob _job;
+    protected String _text;
+    protected String _dataNodeName;
+    protected int _statusCode;
+    protected JsonParser _parser;
+    protected PipelineJob _job;
+    protected FreezerProExport _export;
 
-    public FreezerProCommandResonse(String text, int statusCode, String dataNodeName, PipelineJob job)
+    public FreezerProCommandResonse(FreezerProExport export, String text, int statusCode, String dataNodeName, PipelineJob job)
     {
+        _export = export;
         _text = text;
         _statusCode = statusCode;
         _dataNodeName = dataNodeName;
@@ -125,7 +127,7 @@ public abstract class FreezerProCommandResonse
             {
                 String fieldName = String.valueOf(key);
                 if (FreezerProExport.exportField(fieldName))
-                    row.put(FreezerProExport.translateFieldName(fieldName), node.get(key));
+                    row.put(_export.translateFieldName(fieldName), node.get(key));
             }
             data.add(row);
             token = _parser.nextToken();

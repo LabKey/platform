@@ -40,8 +40,10 @@ import org.labkey.study.xml.freezerProExport.FreezerProConfigDocument;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by klum on 5/21/2014.
@@ -55,6 +57,8 @@ public class FreezerProExport
     private String _searchFilterString;
     private static Map<String, String> COLUMN_MAP;
     private List<Pair<String, Object>> _columnFilters = new ArrayList<>();
+    private Map<String, String> _columnMap = new CaseInsensitiveHashMap<>();
+    private Set<String> _columnSet = new HashSet<>();
 
     static {
         COLUMN_MAP = new CaseInsensitiveHashMap<>();
@@ -75,6 +79,7 @@ public class FreezerProExport
         _job = job;
         _archive = archive;
 
+        _columnMap.putAll(COLUMN_MAP);
         if (config.getMetadata() != null)
             parseConfigMetadata(config.getMetadata());
     }
@@ -116,7 +121,10 @@ public class FreezerProExport
                             if (col.getSourceName() != null && col.getDestName() != null)
                             {
                                 if (!COLUMN_MAP.containsKey(col.getSourceName()))
-                                    COLUMN_MAP.put(col.getSourceName(), col.getDestName());
+                                    _columnMap.put(col.getSourceName(), col.getDestName());
+                                else
+                                    _job.warn("The column name: " + col.getSourceName() + " is reserved and cannot be remapped. " +
+                                            "The configuration specificed to remap to: " + col.getDestName() + " will be ignored.");
                             }
                         }
                     }
@@ -165,7 +173,7 @@ public class FreezerProExport
         try {
             _job.info("data processing complete, a total of " + data.size() + " records were exported.");
             _job.info("creating the exported data .csv file");
-            TSVMapWriter tsvWriter = new TSVMapWriter(data);
+            TSVMapWriter tsvWriter = new TSVMapWriter(_columnSet, data);
             tsvWriter.setDelimiterCharacter(TSVWriter.DELIM.COMMA);
             tsvWriter.write(_archive);
             tsvWriter.close();
@@ -206,7 +214,7 @@ public class FreezerProExport
 
             if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK)
             {
-                ExportSamplesResponse samplesResponse = new ExportSamplesResponse(handler.handleResponse(response), status.getStatusCode(), null);
+                ExportSamplesResponse samplesResponse = new ExportSamplesResponse(this, handler.handleResponse(response), status.getStatusCode(), null);
                 samplesResponse.loadData();
             }
             else
@@ -222,7 +230,7 @@ public class FreezerProExport
     {
         List<Map<String, Object>> data = new ArrayList<>();
         _job.info("requesting sample data from server url: " + _config.getBaseServerUrl());
-        ExportSamplesCommand exportSamplesCmd = new ExportSamplesCommand(_config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), _searchFilterString);
+        ExportSamplesCommand exportSamplesCmd = new ExportSamplesCommand(this, _config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), _searchFilterString);
         FreezerProCommandResonse response = exportSamplesCmd.execute(client, _job);
 
         try
@@ -250,7 +258,7 @@ public class FreezerProExport
 
     private void getSampleUserData(HttpClient client, String sampleId, Map<String, Object> row)
     {
-        ExportSampleUserFieldsCommand exportUserFieldsCmd = new ExportSampleUserFieldsCommand(_config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), sampleId);
+        ExportSampleUserFieldsCommand exportUserFieldsCmd = new ExportSampleUserFieldsCommand(this, _config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), sampleId);
         FreezerProCommandResonse response = exportUserFieldsCmd.execute(client, _job);
 
         try
@@ -284,7 +292,7 @@ public class FreezerProExport
 
     private void getSampleLocationData(HttpClient client, String locationId, Map<String, Object> row)
     {
-        ExportLocationCommand exportLocationCommand = new ExportLocationCommand(_config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), locationId);
+        ExportLocationCommand exportLocationCommand = new ExportLocationCommand(this, _config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), locationId);
         FreezerProCommandResonse response = exportLocationCommand.execute(client, _job);
 
         try
@@ -321,10 +329,14 @@ public class FreezerProExport
         return true;
     }
 
-    static String translateFieldName(String fieldName)
+    public String translateFieldName(String fieldName)
     {
-        if (COLUMN_MAP.containsKey(fieldName))
-            return COLUMN_MAP.get(fieldName);
+        if (_columnMap.containsKey(fieldName))
+            fieldName = _columnMap.get(fieldName);
+
+        // keep track of the global column list for the export
+        if (!_columnSet.contains(fieldName))
+            _columnSet.add(fieldName);
 
         return fieldName;
     }

@@ -235,13 +235,10 @@ public class FreezerProTransformTask extends AbstractSpecimenTransformTask
         // configured the specimen domain in the destination study
         for (Map.Entry<String, Object> entry : inputRow.entrySet())
         {
-            if (entry.getValue() != null)
+            String colName = ColumnInfo.legalNameFromName(entry.getKey());
+            if (!outputRow.containsKey(colName))
             {
-                String colName = ColumnInfo.legalNameFromName(entry.getKey());
-                if (!outputRow.containsKey(colName))
-                {
-                    outputRow.put(colName, entry.getValue());
-                }
+                outputRow.put(colName, entry.getValue());
             }
         }
         return outputRow;
