@@ -386,31 +386,24 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         return allSels;
     };
 
-    var addBrushHandles = function(brush, brushSel){
-        // TODO: Brushing from handles when there are discrete axes is broken. Should probably just disable brushing on
-        // discrete axes (i.e. only allow 1D selection)...
-        var xBrushStart, xBrush, xBrushEnd, yBrushStart, yBrush, yBrushEnd;
+    var addXBrush = function(brush, brushSel) {
+        var xBrushStart, xBrush, xBrushEnd;
 
         if (!xHandleSel) {
             xHandleSel = this.canvas.insert('g', '.brush').attr('class', 'x-axis-handle');
             xHandleBrush = d3.svg.brush();
         }
 
-        if (!yHandleSel) {
-            yHandleSel = this.canvas.insert('g', '.brush').attr('class', 'y-axis-handle');
-            yHandleBrush = d3.svg.brush();
-        }
-
         xHandleBrush.x(brush.x());
         xHandleSel.call(xHandleBrush);
-        yHandleBrush.y(brush.y());
-        yHandleSel.call(yHandleBrush);
 
         xBrushStart = function(){
             if (brushSelectionType == 'y' || brushSelectionType === null) {
                 brushSelectionType = 'x';
-                yHandleBrush.clear();
-                yHandleBrush(yHandleSel);
+                if (yHandleBrush) {
+                    yHandleBrush.clear();
+                    yHandleBrush(yHandleSel);
+                }
             }
 
             brush.on('brushstart')('x');
@@ -418,18 +411,22 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         xBrush = function() {
             var bEx = brush.extent(),
-                xEx = xHandleBrush.extent(),
-                yEx = [],
-                newEx = [];
+                    xEx = xHandleBrush.extent(),
+                    yEx = [],
+                    newEx = [];
 
-            if (yHandleBrush.empty()) {
-                yEx = brush.y().domain();
+            if (yHandleBrush) {
+                if (yHandleBrush.empty()) {
+                    yEx = brush.y().domain();
+                } else {
+                    yEx = [bEx[0][1], bEx[1][1]];
+                }
+
+                newEx[0] = [xEx[0], yEx[0]];
+                newEx[1] = [xEx[1], yEx[1]];
             } else {
-                yEx = [bEx[0][1], bEx[1][1]];
+                newEx = xEx;
             }
-
-            newEx[0] = [xEx[0], yEx[0]];
-            newEx[1] = [xEx[1], yEx[1]];
 
             brush.extent(newEx);
             brush(brushSel);
@@ -439,51 +436,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         xBrushEnd = function() {
             if (xHandleBrush.empty()) {
                 brushSelectionType = null;
-                yHandleBrush.clear();
-                yHandleBrush(yHandleSel);
-                brush.clear();
-                brush(brushSel);
-                brush.on('brush')();
-            }
-
-            brush.on('brushend')();
-        };
-
-        yBrushStart = function() {
-            if (brushSelectionType == 'x' || brushSelectionType == null) {
-                brushSelectionType = 'y';
-                xHandleBrush.clear();
-                xHandleBrush(xHandleSel);
-            }
-
-            brush.on('brushstart')('y');
-        };
-
-        yBrush = function() {
-            var bEx = brush.extent(),
-                yEx = yHandleBrush.extent(),
-                xEx = [],
-                newEx = [];
-
-            if (xHandleBrush.empty()) {
-                xEx = brush.x().domain();
-            } else {
-                xEx = [bEx[0][0], bEx[1][0]];
-            }
-
-            newEx[0] = [xEx[0], yEx[0]];
-            newEx[1] = [xEx[1], yEx[1]];
-
-            brush.extent(newEx);
-            brush(brushSel);
-            brush.on('brush')('y');
-        };
-
-        yBrushEnd = function() {
-            if (yHandleBrush.empty()) {
-                brushSelectionType = null;
-                xHandleBrush.clear();
-                xHandleBrush(xHandleSel);
+                if (yHandleBrush) {
+                    yHandleBrush.clear();
+                    yHandleBrush(yHandleSel);
+                }
                 brush.clear();
                 brush(brushSel);
                 brush.on('brush')();
@@ -500,6 +456,69 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         xHandleBrush.on('brushstart', xBrushStart);
         xHandleBrush.on('brush', xBrush);
         xHandleBrush.on('brushend', xBrushEnd);
+    };
+
+    var addYBrush = function(brush, brushSel) {
+        var yBrushStart, yBrush, yBrushEnd;
+
+        if (!yHandleSel) {
+            yHandleSel = this.canvas.insert('g', '.brush').attr('class', 'y-axis-handle');
+            yHandleBrush = d3.svg.brush();
+        }
+
+        yHandleBrush.y(brush.y());
+        yHandleSel.call(yHandleBrush);
+
+        yBrushStart = function() {
+            if (brushSelectionType == 'x' || brushSelectionType == null) {
+                brushSelectionType = 'y';
+                if (xHandleBrush) {
+                    xHandleBrush.clear();
+                    xHandleBrush(xHandleSel);
+                }
+            }
+
+            brush.on('brushstart')('y');
+        };
+
+        yBrush = function() {
+            var bEx = brush.extent(),
+                    yEx = yHandleBrush.extent(),
+                    xEx = [],
+                    newEx = [];
+
+            if (xHandleBrush) {
+                if (xHandleBrush.empty()) {
+                    xEx = brush.x().domain();
+                } else {
+                    xEx = [bEx[0][0], bEx[1][0]];
+                }
+
+                newEx[0] = [xEx[0], yEx[0]];
+                newEx[1] = [xEx[1], yEx[1]];
+            } else {
+                newEx = yEx;
+            }
+
+            brush.extent(newEx);
+            brush(brushSel);
+            brush.on('brush')('y');
+        };
+
+        yBrushEnd = function() {
+            if (yHandleBrush.empty()) {
+                brushSelectionType = null;
+                if (xHandleBrush) {
+                    xHandleBrush.clear();
+                    xHandleBrush(xHandleSel);
+                }
+                brush.clear();
+                brush(brushSel);
+                brush.on('brush')();
+            }
+
+            brush.on('brushend')();
+        };
 
         yHandleSel.attr('transform', 'translate(' + (plot.grid.leftEdge - 30) + ',0)');
         yHandleSel.selectAll('rect').attr('width', 30);
@@ -511,24 +530,42 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         yHandleBrush.on('brushend', yBrushEnd);
     };
 
+    var addBrushHandles = function(brush, brushSel){
+        if(!plot.brushing.dimension || plot.brushing.dimension == 'x' || plot.brushing.dimension == 'both') {
+            addXBrush.call(this, brush, brushSel);
+        }
+
+        if(!plot.brushing.dimension || plot.brushing.dimension == 'y' || plot.brushing.dimension == 'both') {
+            addYBrush.call(this, brush, brushSel);
+        }
+    };
+
     var handleMove = function(handle){
         var ex = brush.extent();
         if (handle === undefined) {
             // Brush event fired from main brush surface
-            if (brushSelectionType == 'x' || brushSelectionType == 'both') {
-                xHandleBrush.extent([ex[0][0], ex[1][0]]);
+            if (brushSelectionType == 'x' || brushSelectionType == 'both' && xHandleBrush) {
+                if (yHandleBrush) {
+                    xHandleBrush.extent([ex[0][0], ex[1][0]]);
+                } else {
+                    xHandleBrush.extent(ex);
+                }
                 xHandleBrush(xHandleSel);
             }
 
-            if (brushSelectionType == 'y' || brushSelectionType == 'both') {
-                yHandleBrush.extent([ex[0][1], ex[1][1]]);
+            if (brushSelectionType == 'y' || brushSelectionType == 'both' && yHandleBrush) {
+                if (xHandleBrush) {
+                    yHandleBrush.extent([ex[0][1], ex[1][1]]);
+                } else {
+                    yHandleBrush.extent(ex);
+                }
                 yHandleBrush(yHandleSel);
             }
-        } else if (handle === 'x' && brushSelectionType == 'both') {
+        } else if (handle === 'x' && brushSelectionType == 'both' && yHandleBrush) {
             // Only update the x handle if not in a 1D selection.
             yHandleBrush.extent([ex[0][1], ex[1][1]]);
             yHandleBrush(yHandleSel);
-        } else if (handle === 'y' && brushSelectionType == 'both') {
+        } else if (handle === 'y' && brushSelectionType == 'both' && xHandleBrush) {
             // Only update the y handle if not in a 1D selection.
             xHandleBrush.extent([ex[0][0], ex[1][0]]);
             xHandleBrush(xHandleSel);
@@ -536,39 +573,65 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var handleResize = function(handle){
-        var ex = brush.extent(), xEx = [ex[0][0], ex[1][0]], yEx = [ex[0][1], ex[1][1]], yD = yHandleBrush.y().domain(),
-                xD = xHandleBrush.x().domain();
+        var ex = brush.extent(), yD, xD, xEx, yEx;
+
+        if (xHandleBrush && yHandleBrush) {
+            xEx = [ex[0][0], ex[1][0]];
+            yEx = [ex[0][1], ex[1][1]];
+        } else if (xHandleBrush) {
+            xEx = ex;
+        } else if(yHandleBrush) {
+            yEx = ex;
+        }
+
+        if (yHandleBrush) {
+            yD = yHandleBrush.y().domain()
+        }
+
+        if (xHandleBrush) {
+            xD = xHandleBrush.x().domain();
+        }
 
         if (handle === undefined) {// Brush event fired from main brush surface
 
             // If we have 1D selection, but the user adjusts the other dimension, change to a 2D selection.
-            if (brushSelectionType == 'x') {
+            if (brushSelectionType == 'x' && yD) {
                 if (yEx[0] > yD[0] || yEx[1] < yD[1]) {
                     brushSelectionType = 'both';
                 }
             }
 
             // If we have 1D selection, but the user adjusts the other dimension, change to a 2D selection.
-            if (brushSelectionType == 'y') {
+            if (brushSelectionType == 'y' && xD) {
                 if (xEx[0] > xD[0] || xEx[1] < xD[1]) {
                     brushSelectionType = 'both';
                 }
             }
 
-            if (brushSelectionType == 'x' || brushSelectionType == 'both') {
-                xHandleBrush.extent([ex[0][0], ex[1][0]]);
+            if ((brushSelectionType == 'x' || brushSelectionType == 'both') && xHandleBrush) {
+                if (xHandleBrush && yHandleBrush) {
+                    xHandleBrush.extent([ex[0][0], ex[1][0]]);
+                } else {
+                    xHandleBrush.extent(ex);
+                }
+
                 xHandleBrush(xHandleSel);
             }
 
-            if (brushSelectionType == 'y' || brushSelectionType == 'both') {
-                yHandleBrush.extent([ex[0][1], ex[1][1]]);
+            if ((brushSelectionType == 'y' || brushSelectionType == 'both') && yHandleBrush) {
+                if (xHandleBrush && yHandleBrush) {
+                    yHandleBrush.extent([ex[0][1], ex[1][1]]);
+                } else {
+                    yHandleBrush.extent(ex);
+                }
+
                 yHandleBrush(yHandleSel);
             }
-        } else if (handle === 'x' && brushSelectionType == 'both') {
+        } else if (handle === 'x' && brushSelectionType == 'both' && yHandleBrush) {
             // Only update the x handle if not in a 1D selection.
             yHandleBrush.extent([ex[0][1], ex[1][1]]);
             yHandleBrush(yHandleSel);
-        } else if (handle === 'y' && brushSelectionType == 'both') {
+        } else if (handle === 'y' && brushSelectionType == 'both' && xHandleBrush) {
             // Only update the y handle if not in a 1D selection.
             xHandleBrush.extent([ex[0][0], ex[1][0]]);
             xHandleBrush(xHandleSel);
@@ -604,8 +667,25 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 yScale = plot.scales.yLeft.scale;
             }
 
-            brush.x(xScale).y(yScale);
+            if (!plot.brushing.dimension || plot.brushing.dimension == 'x' || plot.brushing.dimension == 'both') {
+                brush.x(xScale);
+            }
+
+            if (!plot.brushing.dimension || plot.brushing.dimension == 'y' || plot.brushing.dimension == 'both') {
+                brush.y(yScale);
+            }
+
             brushSel.call(brush);
+
+            if (plot.brushing.dimension == 'y') {
+                // Manually set width of brush.
+                brushSel.selectAll('rect').attr('width', plot.grid.rightEdge - plot.grid.leftEdge)
+                        .attr('x', plot.grid.leftEdge);
+            } else if(plot.brushing.dimension == 'x') {
+                // Manually set height of brush.
+                brushSel.selectAll('rect').attr('height', plot.grid.bottomEdge - plot.grid.topEdge);
+            }
+
             brushSel.selectAll('.extent').attr('opacity', .75).attr('fill', '#EBF7F8').attr('stroke', '#14C9CC')
                     .attr('stroke-width', 1.5);
 
@@ -642,16 +722,21 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             });
 
             brush.on('brushend', function(){
-                var allData = getAllData();
-                var extent = brush.extent();
-                var event = d3.event;
+                var allData = getAllData(), event = d3.event;
 
                 if (brush.empty()) {
                     brushSelectionType = null;
-                    xHandleBrush.clear();
-                    xHandleBrush(xHandleSel);
-                    yHandleBrush.clear();
-                    yHandleBrush(yHandleSel);
+
+                    if (xHandleBrush) {
+                        xHandleBrush.clear();
+                        xHandleBrush(xHandleSel);
+                    }
+
+                    if (yHandleBrush) {
+                        yHandleBrush.clear();
+                        yHandleBrush(yHandleSel);
+                    }
+
                     if (plot.brushing.brushclear) {
                         plot.brushing.brushclear(event, allData, plot, getAllLayerSelections());
                     }
@@ -669,11 +754,41 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             var extent = brush.extent();
 
             if (brushSelectionType == 'both') {
-                return extent;
+                if (xHandleBrush && yHandleBrush) {
+                    return extent;
+                } else if (xHandleBrush) {
+                    return [
+                        [extent[0], null],
+                        [extent[1], null]
+                    ];
+                } else if (yHandleBrush) {
+                    return [
+                        [null, extent[0]],
+                        [null, extent[1]]
+                    ];
+                }
             } else if (brushSelectionType == 'x') {
-                return [[extent[0][0], null], [extent[1][0], null]];
+                if (xHandleBrush && yHandleBrush) {
+                    return [
+                        [extent[0][0], null],
+                        [extent[1][0], null]
+                    ];
+                }
+                return [
+                    [extent[0], null],
+                    [extent[1], null]
+                ];
             } else if (brushSelectionType == 'y') {
-                return [[null, extent[0][1]], [null, extent[1][1]]];
+                if (xHandleBrush && yHandleBrush) {
+                    return [
+                        [null, extent[0][1]],
+                        [null, extent[1][1]]
+                    ];
+                }
+                return [
+                    [null, extent[0]],
+                    [null, extent[1]]
+                ];
             }
         }
 
@@ -1493,7 +1608,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         medians.attr('d', medianAcc).attr('stroke', geom.color).attr('stroke-width', geom.lineWidth);
     };
 
-    var renderDataspacePoints = function(selection, plot, geom) {
+    var renderDataspacePoints = function(selection, plot, geom, layer) {
         var pointWrapper, points, xBinWidth, padding, xAcc, yAcc, translateAcc, defaultShape, colorAcc, sizeAcc,
                 shapeAcc, hoverAcc;
 
@@ -1543,14 +1658,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         hoverAcc = geom.pointHoverTextAes ? geom.pointHoverTextAes.getValue : null;
 
-        pointWrapper = selection.selectAll('a.dataspace-point').data(function(d){
+        pointWrapper = selection.selectAll('a.point').data(function(d){
             return d.rawData.filter(function(d){
                 var x = geom.getX(d), y = geom.getY(d);
                 return x !== null && y !== null;
             });
         });
         pointWrapper.exit().remove();
-        pointWrapper.enter().append('a').attr('class', 'dataspace-point');
+        pointWrapper.enter().append('a').attr('class', 'point');
         pointWrapper.attr('xlink:title', hoverAcc);
 
         points = pointWrapper.selectAll('path').data(function(d){return [d];});
@@ -1559,6 +1674,30 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         points.attr('d', shapeAcc).attr('transform', translateAcc)
                 .attr('fill', colorAcc).attr('stroke', colorAcc)
                 .attr('fill-opacity', geom.pointOpacity).attr('stroke-opacity', geom.pointOpacity);
+
+        if (geom.pointClickFnAes) {
+            points.on('click', function(data) {
+                geom.pointClickFnAes.value(d3.event, data, layer);
+            });
+        } else {
+            points.on('click', null);
+        }
+
+        if (geom.mouseOverFnAes) {
+            points.on('mouseover', function(data) {
+                geom.mouseOverFnAes.value(d3.event, data, layer);
+            });
+        } else {
+            points.on('mouseover', null);
+        }
+
+        if (geom.mouseOutFnAes) {
+            points.on('mouseout', function(data) {
+                geom.mouseOutFnAes.value(d3.event, data, layer);
+            });
+        } else {
+            points.on('mouseout', null);
+        }
     };
 
     var renderDataspaceBoxGoups = function(layer, plot, geom, summaries) {
@@ -1567,7 +1706,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         boxGroups.exit().remove();
         boxGroups.enter().append('g').attr('class', 'dataspace-box-group');
         boxGroups.call(renderDataspaceBoxes, plot, geom);
-        boxGroups.call(renderDataspacePoints, plot, geom);
+        boxGroups.call(renderDataspacePoints, plot, geom, layer);
     };
 
     var renderDataspaceBoxPlotGeom = function(data, geom) {

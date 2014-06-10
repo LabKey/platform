@@ -595,7 +595,7 @@ Ext.define('LABKEY.app.model.Filter', {
         if (Ext.isArray(jsonable.gridFilter)) {
             var jsonGridFilters = [];
             Ext.each(jsonable.gridFilter, function(filter) {
-                if (Ext.isDefined(filter)) {
+                if (Ext.isDefined(filter) && filter !== null) {
                     if (Ext.isString(filter)) {
                         jsonGridFilters.push(filter);
                     }
