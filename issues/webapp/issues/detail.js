@@ -4,10 +4,10 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-function createMoveIssueWindow(issueId) {
+function createMoveIssueWindow(issueIds) {
     Ext4.onReady(function()
     {
-        var cmp = Ext4.create('Issues.window.MoveIssue', {issueIds: [issueId]});
+        var cmp = Ext4.create('Issues.window.MoveIssue', {issueIds: issueIds});
         cmp.show();
     });
 }
