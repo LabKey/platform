@@ -183,6 +183,10 @@ public class ApiJsonWriter extends ApiResponseWriter
         {
             jg.writeObject(value);
         }
+        if (devMode)
+        {
+            jg.flush();
+        }
     }
 
     @Override

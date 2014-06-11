@@ -223,29 +223,22 @@ public abstract class ApiResponseWriter
     {
         int status;
 
-        try
+        if (e instanceof BatchValidationException)
         {
-            if (e instanceof BatchValidationException)
-            {
-                write((BatchValidationException)e);
-                return;
-            }
-            if (e instanceof ValidationException)
-            {
-                write((ValidationException)e);
-                return;
-            }
-            if (e instanceof NotFoundException)
-                status = HttpServletResponse.SC_NOT_FOUND;
-            else
-                status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+            write((BatchValidationException)e);
+            return;
+        }
+        if (e instanceof ValidationException)
+        {
+            write((ValidationException)e);
+            return;
+        }
+        if (e instanceof NotFoundException)
+            status = HttpServletResponse.SC_NOT_FOUND;
+        else
+            status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
 
-            write(e, status);
-        }
-        finally
-        {
-            complete();
-        }
+        write(e, status);
     }
 
 
