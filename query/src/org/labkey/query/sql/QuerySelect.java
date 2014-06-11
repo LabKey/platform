@@ -978,7 +978,7 @@ groupByLoop:
         }
         if (expr instanceof QIfDefined && !((QIfDefined)expr).isDefined)
         {
-            return expr;
+            return new QNull();
         }
 
         FieldKey key = expr.getFieldKey();
@@ -1394,6 +1394,8 @@ groupByLoop:
                     else
                     {
                         QExpr r = resolveFields(expr, _orderBy, _orderBy);
+                        if (r instanceof QNull)
+                            continue;
                         r.appendSql(sql, _query);
                     }
                     if (!entry.getValue().booleanValue())
