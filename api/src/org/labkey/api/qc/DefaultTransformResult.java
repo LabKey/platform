@@ -34,12 +34,14 @@ public class DefaultTransformResult implements TransformResult
     private Map<DomainProperty, String> _batchProperties = Collections.emptyMap();
     private Map<DomainProperty, String> _runProperties = Collections.emptyMap();
     private File _uploadedFile;
+    private String _assayId;
 
     public DefaultTransformResult(){}
 
     public DefaultTransformResult(Map<ExpData, List<Map<String, Object>>> dataMap)
     {
         _dataMap = dataMap;
+        _assayId = null;
     }
 
     public DefaultTransformResult(TransformResult mergeResult)
@@ -48,6 +50,7 @@ public class DefaultTransformResult implements TransformResult
         _batchProperties = mergeResult.getBatchProperties();
         _runProperties = mergeResult.getRunProperties();
         _uploadedFile = mergeResult.getUploadedFile();
+        _assayId = null;
     }
 
     public Map<ExpData, List<Map<String, Object>>> getTransformedData()
@@ -98,5 +101,15 @@ public class DefaultTransformResult implements TransformResult
             public boolean isEmpty() {return true;}
         };
 */
+    }
+
+    public String getAssayId()
+    {
+        return _assayId;
+    }
+
+    public void setAssayId(String assayId)
+    {
+        _assayId = assayId;
     }
 }

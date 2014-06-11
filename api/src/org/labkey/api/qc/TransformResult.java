@@ -33,4 +33,6 @@ public interface TransformResult
     Map<DomainProperty, String> getRunProperties();
     Map<DomainProperty, String> getBatchProperties();
     File getUploadedFile();
+    String getAssayId();
+    void setAssayId(String assayId);
 }

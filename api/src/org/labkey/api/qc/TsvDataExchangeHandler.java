@@ -82,6 +82,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     public static final String ERRORS_FILE = "validationErrors.tsv";
     public static final String RUN_DATA_FILE = "runData.tsv";
     public static final String TRANSFORMED_RUN_INFO_FILE = "transformedRunProperties.tsv";
+    public static final String ASSAY_ID = "assayId";
 
     private Map<String, String> _formFields = new HashMap<>();
     private Map<String, List<Map<String, Object>>> _sampleProperties = new HashMap<>();
@@ -701,6 +702,8 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
                         result.setRunProperties(runProps);
                     if (batchPropTransformed)
                         result.setBatchProperties(batchProps);
+                    if (transformedProps.containsKey(ASSAY_ID))
+                        result.setAssayId(transformedProps.get(ASSAY_ID));
                 }
                 if (runDataUploadedFile != null)
                     result.setUploadedFile(runDataUploadedFile);

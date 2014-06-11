@@ -290,6 +290,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     savePropertyObject(batch, batchProperties, context.getUser());
             }
 
+            if (null != transformResult.getAssayId())
+                run.setName(transformResult.getAssayId());
             if (!transformResult.getRunProperties().isEmpty())
             {
                 Map<DomainProperty, String> props = transformResult.getRunProperties();
