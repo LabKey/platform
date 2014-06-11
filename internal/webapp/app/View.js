@@ -201,11 +201,20 @@ Ext.define('LABKEY.app.controller.View', {
 
     showNotFound : function(controller, view, viewContext, title) { },
 
+    lastSignedIn : null,
+
     routeView : function(controller, view, viewContext) {
 
+        if (this.lastSignedIn != LABKEY.user.isSignedIn) {
+            this.lastSignedIn = LABKEY.user.isSignedIn;
+            this.application.fireEvent('userChanged');
+        }
+
         if (this.application.defaultLoginController && !LABKEY.user.isSignedIn) {
-            controller = this.application.defaultLoginController;
-            view = null;
+            if (controller.toLowerCase() != this.application.defaultLoginController.toLowerCase()) {
+                controller = this.application.defaultLoginController;
+                view = null;
+            }
         } else {
             if (!controller || (Ext.isString(controller) && controller.length === 0)) {
                 if (Ext.isDefined(this.application.defaultController)) {
@@ -288,7 +297,6 @@ Ext.define('LABKEY.app.controller.View', {
      * @param {Array} viewContext url-based context (optional)
      */
     changeView : function(controller, view, viewContext) {
-
         var hashDelimiter = '/';
         var hash = encodeURIComponent(controller);
         if (view) {
