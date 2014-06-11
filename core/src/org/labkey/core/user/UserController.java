@@ -1941,8 +1941,7 @@ public class UserController extends SpringActionController
                 if (container.isRoot())
                     users = UserManager.getActiveUsers();
                 else
-                    // TODO: this is the only place where true has been used for the includeGlobal flag
-                    users = SecurityManager.getProjectUsers(container, false);
+                    users = SecurityManager.getProjectUsers(container, form.isAllMembers());
             }
 
             if (null != users)
