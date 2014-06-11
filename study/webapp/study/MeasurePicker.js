@@ -1305,7 +1305,7 @@ Ext4.define('LABKEY.MeasureUtil', {
         else
         {
             var alias = measure.schemaName + '_' + measure.queryName + '_' + measure.name;
-            return alias.replace('/', '_');
+            return alias.replace(/\//g, '_');
         }
     }
 });

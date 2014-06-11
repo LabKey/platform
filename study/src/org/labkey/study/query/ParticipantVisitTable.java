@@ -26,13 +26,12 @@ import org.labkey.api.data.NullColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.api.study.StudyService;
 import org.labkey.study.CohortForeignKey;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
@@ -40,13 +39,13 @@ import org.labkey.study.model.StudyManager;
 
 import java.util.Map;
 
-public class ParticipantVisitTable extends FilteredTable<StudyQuerySchema>
+public class ParticipantVisitTable extends BaseStudyTable
 {
     Map<String, ColumnInfo> _demographicsColumns;
 
     public ParticipantVisitTable(StudyQuerySchema schema, boolean hideDataSets)
     {
-        super(StudySchema.getInstance().getTableInfoParticipantVisit(), schema);
+        super(schema, StudySchema.getInstance().getTableInfoParticipantVisit());
         _setContainerFilter(schema.getDefaultContainerFilter());
         setName(StudyService.get().getSubjectVisitTableName(schema.getContainer()));
         _demographicsColumns = new CaseInsensitiveHashMap<>();
@@ -108,8 +107,7 @@ public class ParticipantVisitTable extends FilteredTable<StudyQuerySchema>
             }
             else if ("ParticipantId".equalsIgnoreCase(col.getName()))
             {
-                ColumnInfo subjectColumn = wrapColumn(StudyService.get().getSubjectColumnName(getContainer()), col);
-                addColumn(subjectColumn);
+                addWrapParticipantColumn(col.getName());
             }
             else if (study != null && study.getTimepointType() != TimepointType.VISIT && "SequenceNum".equalsIgnoreCase(col.getName()))
             {
