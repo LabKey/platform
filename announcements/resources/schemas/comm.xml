@@ -113,7 +113,6 @@
       <ns:column columnName="Status">
         <ns:displayWidth>20</ns:displayWidth>
       </ns:column>
-      <ns:column columnName="EmailList"/>
       <ns:column columnName="DiscussionSrcIdentifier">
           <ns:description>EntityId of the object to which this announcement is attached. Null for rows that are part of the default forum for the container</ns:description>
       </ns:column>
