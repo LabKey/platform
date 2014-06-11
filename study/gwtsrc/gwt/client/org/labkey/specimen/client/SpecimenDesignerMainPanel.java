@@ -211,7 +211,7 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
         }
     }
 
-    private boolean validate()
+    private void validate(final AsyncCallback<List<String>> callback, final boolean saveAndClose)
     {
         final List<String> errors = new ArrayList<String>();
 
@@ -232,7 +232,11 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
             {
                 specimenFields.add(prop.getName().toLowerCase());
                 if (!prop.isRequired())
+                {
                     optionalSpecimenFields.add(prop);
+                    if (prop.getName().contains(" "))
+                        errors.add("Name '" + prop.getName() + "' should not contain spaces.");
+                }
             }
         }
 
@@ -248,45 +252,27 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
                     vialFields.add(prop.getName().toLowerCase());       // only add if we aren't already reporting error on that name
 
                 if (!prop.isRequired())
+                {
                     optionalVialFields.add(prop);
+                    if (prop.getName().contains(" "))
+                        errors.add("Name '" + prop.getName() + "' should not contain spaces.");
+                }
             }
         }
+
+        List<GWTPropertyDescriptor> optionalEventFields = new ArrayList<GWTPropertyDescriptor>();
+        for (GWTPropertyDescriptor prop : domainEvent.getFields())
+            if (!prop.isRequired())
+            {
+                optionalEventFields.add(prop);
+                if (prop.getName().contains(" "))
+                    errors.add("Name '" + prop.getName() + "' should not contain spaces.");
+            }
 
         for (GWTPropertyDescriptor prop : domainSpecimen.getFields())
         {
             if (!prop.isRequired() && null != prop.getName() && vialFields.contains(prop.getName().toLowerCase()))
                 errors.add("Specimen cannot have a custom field of the same name as a Vial field: " + prop.getName());
-        }
-
-        if (0 == errors.size())
-        {
-            List<GWTPropertyDescriptor> optionalEventFields = new ArrayList<GWTPropertyDescriptor>();
-            for (GWTPropertyDescriptor prop : domainEvent.getFields())
-                if (!prop.isRequired())
-                    optionalEventFields.add(prop);
-
-            // Ask server to check rollups
-            getService().checkRollups(optionalEventFields, optionalVialFields, optionalSpecimenFields,
-                new AsyncCallback<List<String>>()
-                {
-                    public void onFailure(Throwable caught)
-                    {
-                    }
-
-                    public void onSuccess(List<String> result)
-                    {
-                        String sep = "";
-                        String errorString = "";
-                        for (String warn : result)
-                        {
-                            errorString += sep + warn;
-                            sep = "   ";
-                        }
-                        if (result.size() > 0)
-                            Window.alert("Warning:\n" + errorString);
-                    }
-                }
-            );
         }
 
         if (errors.size() > 0)
@@ -299,10 +285,39 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
                 sep = "\n";
             }
             Window.alert(errorString);
-            return false;
+            return;
         }
 
-        return true;
+        // Ask server to check rollups
+        getService().checkRollups(optionalEventFields, optionalVialFields, optionalSpecimenFields,
+            new AsyncCallback<List<String>>()
+            {
+                public void onFailure(Throwable caught)
+                {
+                }
+
+                public void onSuccess(List<String> result)
+                {
+                    String sep = "";
+                    String errorString = "";
+                    for (String warn : result)
+                    {
+                        errorString += sep + warn;
+                        sep = "   ";
+                    }
+                    boolean done = true;
+                    if (result.size() > 0)
+                    {
+                        String message = saveAndClose ? "\n\nClick OK to ignore; Cancel to defer saving and stay on the page." :
+                                                        "\n\nClick OK to ignore; Cancel to defer saving.";
+                        done = Window.confirm("Warning:\n\n" + errorString + message);
+                    }
+
+                    if (done)
+                        updateWithCallback(callback);
+                }
+            }
+        );
     }
 
     public String getCurrentURL()
@@ -338,28 +353,28 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
                     listener.saveSuccessful(result, _designerURL);
                 }
             }
-        });
-        setAllowSave(false);
+        }, false);
     }
 
 
-    private void saveAsync(AsyncCallback<List<String>> callback)
+    private void saveAsync(AsyncCallback<List<String>> callback, boolean saveAndClose)
     {
-        if (validate())
-        {
-            GWTDomain<GWTPropertyDescriptor> updateEvent = _domainEditors.get(0).getUpdates();
-            GWTDomain<GWTPropertyDescriptor> updateVial = _domainEditors.get(1).getUpdates();
-            GWTDomain<GWTPropertyDescriptor> updateSpecimen = _domainEditors.get(2).getUpdates();
-
-            getService().updateDomainDescriptors(
-                    updateEvent,
-                    updateVial,
-                    updateSpecimen,
-                    callback
-            );
-        }
+        validate(callback, saveAndClose);     // Will call updateWithCallback after asyncs if appropriate
     }
 
+    private void updateWithCallback(AsyncCallback<List<String>> callback)
+    {
+        GWTDomain<GWTPropertyDescriptor> updateEvent = _domainEditors.get(0).getUpdates();
+        GWTDomain<GWTPropertyDescriptor> updateVial = _domainEditors.get(1).getUpdates();
+        GWTDomain<GWTPropertyDescriptor> updateSpecimen = _domainEditors.get(2).getUpdates();
+
+        getService().updateDomainDescriptors(
+                updateEvent,
+                updateVial,
+                updateSpecimen,
+                callback
+        );
+    }
 
     public void cancel()
     {
@@ -411,7 +426,7 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
                     }
                     WindowUtil.setLocation(doneLink);
                 }
-            });
+            }, true);
         }
     }
 
