@@ -264,3 +264,53 @@ Ext4.override(Ext4.grid.plugin.RowExpander, {
         };
     }
 });
+
+/**
+ *  Issue 20644: Individual explorer - IE11 - choosing an item in long list snaps the list back to top
+ *  Sencha issue: http://www.sencha.com/forum/showthread.php?279797-DataView-scrolls-to-the-top-in-IE-when-selecting-an-item
+ */
+Ext4.override(Ext4.view.View, {
+    focusNode: function(rec){
+        var me          = this,
+                node        = me.getNode(rec, true),
+                el          = me.el,
+                adjustmentY = 0,
+                adjustmentX = 0,
+                elRegion    = el.getRegion(),
+                nodeRegion;
+
+        // Viewable region must not include scrollbars, so use
+        // DOM client dimensions
+        elRegion.bottom = elRegion.top + el.dom.clientHeight;
+        elRegion.right = elRegion.left + el.dom.clientWidth;
+        if (node) {
+            nodeRegion = Ext.fly(node).getRegion();
+            // node is above
+            if (nodeRegion.top < elRegion.top) {
+                adjustmentY =nodeRegion.top - elRegion.top;
+                // node is below
+            } else if (nodeRegion.bottom > elRegion.bottom) {
+                adjustmentY = nodeRegion.bottom - elRegion.bottom;
+            }
+
+            // node is left
+            if (nodeRegion.left < elRegion.left) {
+                adjustmentX =nodeRegion.left - elRegion.left;
+                // node is right
+            } else if (nodeRegion.right > elRegion.right) {
+                adjustmentX = nodeRegion.right - elRegion.right;
+            }
+
+            if (adjustmentX || adjustmentY) {
+                me.scrollBy(adjustmentX, adjustmentY, false);
+            }
+
+            // Poke on a tabIndex to make the node focusable.
+            Ext.fly(node).set({
+                tabIndex: -1
+            });
+
+            node.focus();
+        }
+    }
+});
