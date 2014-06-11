@@ -211,7 +211,7 @@ Ext.define('LABKEY.app.controller.View', {
         }
 
         if (this.application.defaultLoginController && !LABKEY.user.isSignedIn) {
-            if (controller.toLowerCase() != this.application.defaultLoginController.toLowerCase()) {
+            if (!controller || controller.toLowerCase() != this.application.defaultLoginController.toLowerCase()) {
                 controller = this.application.defaultLoginController;
                 view = null;
             }
