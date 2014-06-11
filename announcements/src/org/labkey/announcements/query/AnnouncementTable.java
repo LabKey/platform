@@ -117,8 +117,6 @@ public class AnnouncementTable extends FilteredTable<AnnouncementSchema>
 
         setName(AnnouncementSchema.ANNOUNCEMENT_TABLE_NAME);
         setPublicSchemaName(AnnouncementSchema.SCHEMA_NAME);
-
-        removeColumn(getColumn(FieldKey.fromParts("emailList"))); // Deprecating usage of this column for 14.1; will likely drop the column in 14.2
     }
 
     @Override
