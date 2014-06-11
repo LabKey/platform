@@ -20,6 +20,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.util.GUID;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 /**
  * For longer IN clauses, passes the values as in-line SQL instead of JDBC parameters. This works around
  * a SQLServer limitation of 2000 JDBC parameters.
@@ -34,7 +37,7 @@ public class InlineInClauseGenerator implements InClauseGenerator
     private static final InClauseGenerator FALLBACK_GENERATOR = new ParameterMarkerInClauseGenerator();
 
     @Override
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object... params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         int inLineableCount = 0;
         for (Object param : params)
@@ -88,7 +91,7 @@ public class InlineInClauseGenerator implements InClauseGenerator
         {
             Assert.assertEquals(
                     new SQLFragment("IN (?, ?, ?)", 1, 2, 3),
-                    new InlineInClauseGenerator().appendInClauseSql(new SQLFragment(), 1, 2, 3));
+                    new InlineInClauseGenerator().appendInClauseSql(new SQLFragment(), Arrays.asList(1, 2, 3)));
         }
 
         @Test
@@ -97,7 +100,7 @@ public class InlineInClauseGenerator implements InClauseGenerator
             GUID g = new GUID();
             Assert.assertEquals(
                     new SQLFragment("IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, '" + g.toString() + "')"),
-                    new InlineInClauseGenerator().appendInClauseSql(new SQLFragment(), 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, g));
+                    new InlineInClauseGenerator().appendInClauseSql(new SQLFragment(), Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, g)));
         }
 
         @Test
@@ -106,7 +109,7 @@ public class InlineInClauseGenerator implements InClauseGenerator
             // We don't inline arbitrary strings
             Assert.assertEquals(
                     new SQLFragment("IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"),
-                    new InlineInClauseGenerator().appendInClauseSql(new SQLFragment(), "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"));
+                    new InlineInClauseGenerator().appendInClauseSql(new SQLFragment(), Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14")));
         }
     }
 }

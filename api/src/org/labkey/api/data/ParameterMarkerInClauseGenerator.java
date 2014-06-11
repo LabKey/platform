@@ -18,6 +18,8 @@ package org.labkey.api.data;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collection;
+
 /**
  * User: adam
  * Date: 8/7/12
@@ -26,10 +28,10 @@ import org.jetbrains.annotations.NotNull;
 public class ParameterMarkerInClauseGenerator implements InClauseGenerator
 {
     @Override
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object... params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         sql.append("IN (");
-        sql.append(StringUtils.repeat("?", ", ", params.length));
+        sql.append(StringUtils.repeat("?", ", ", params.size()));
         sql.append(")");
 
         sql.addAll(params);

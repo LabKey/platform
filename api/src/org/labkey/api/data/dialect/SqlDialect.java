@@ -31,7 +31,6 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.InClauseGenerator;
-import org.labkey.api.data.InlineInClauseGenerator;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -462,7 +461,7 @@ public abstract class SqlDialect
 
     private static final InClauseGenerator DEFAULT_GENERATOR = new ParameterMarkerInClauseGenerator();
 
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         return DEFAULT_GENERATOR.appendInClauseSql(sql, params);
     }

@@ -189,7 +189,7 @@ public class SecurityPolicyManager
         {
             resourceIds.add(resource.getResourceId());
         }
-        core.getSqlDialect().appendInClauseSql(sql, resourceIds.toArray());
+        core.getSqlDialect().appendInClauseSql(sql, resourceIds);
 
         sql.append(" AND UserId ");
         List<Integer> userIds = new ArrayList<>(principals.size());
@@ -197,7 +197,7 @@ public class SecurityPolicyManager
         {
             userIds.add(principal.getUserId());
         }
-        core.getSqlDialect().appendInClauseSql(sql, userIds.toArray());
+        core.getSqlDialect().appendInClauseSql(sql, userIds);
 
         new SqlExecutor(core.getSchema()).execute(sql);
 

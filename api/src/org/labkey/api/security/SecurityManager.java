@@ -1179,7 +1179,7 @@ public class SecurityManager
             {
                 userIds.add(userPrincipal.getUserId());
             }
-            core.getSqlDialect().appendInClauseSql(sql, userIds.toArray());
+            core.getSqlDialect().appendInClauseSql(sql, userIds);
 
             new SqlExecutor(core.getSchema()).execute(sql);
 
