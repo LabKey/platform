@@ -31,6 +31,8 @@ import org.labkey.api.view.WebPartView;
 
 import java.io.PrintWriter;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.labkey.api.util.PageFlowUtil.filter;
 
@@ -41,7 +43,7 @@ import static org.labkey.api.util.PageFlowUtil.filter;
  */
 public class NavTreeMenu extends WebPartView implements Collapsible
 {
-    private NavTree[] _elements;
+    private List<NavTree> _elements;
     private String _collapseId;
     protected boolean _highlightSelection = true;
 
@@ -52,7 +54,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         _collapseId = collapseId;
         if (titleHref != null)
             setTitleHref(titleHref);
-        _elements = elements;
+        _elements = Arrays.asList(elements);
         if (applyCollapseState)
         {
             // assume we're collapsed
@@ -92,7 +94,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
         _collapseId = id;
     }
     
-    protected void setElements(ViewContext context, NavTree... elements)
+    protected void setElements(ViewContext context, List<NavTree> elements)
     {
         _elements = elements;
         NavTreeManager.applyExpandState(this, context);
@@ -106,7 +108,7 @@ public class NavTreeMenu extends WebPartView implements Collapsible
 
     public NavTree[] getElements()
     {
-        return _elements;
+        return _elements.toArray(new NavTree[_elements.size()]);
     }
 
     public Collapsible findSubtree(String path)
