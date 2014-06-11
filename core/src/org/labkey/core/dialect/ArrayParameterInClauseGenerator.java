@@ -22,6 +22,8 @@ import org.labkey.api.data.ParameterMarkerInClauseGenerator;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.SqlDialect;
 
+import java.util.Collection;
+
 /**
  * User: adam
  * Date: 8/19/12
@@ -40,12 +42,12 @@ public class ArrayParameterInClauseGenerator implements InClauseGenerator
     }
 
     @Override
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object... params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         SqlDialect dialect = _scope.getSqlDialect();
 
         // TODO: Increase params.length check to 10? 100?
-        if (params.length <= 1 || !isSqlArrayCompatible(dialect, params))
+        if (params.size() <= 1 || !isSqlArrayCompatible(dialect, params))
         {
             // Fall back on parameter marker approach
             return _parameterMarkerGenerator.appendInClauseSql(sql, params);

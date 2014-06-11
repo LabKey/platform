@@ -163,7 +163,7 @@ public class SequenceVisitManager extends VisitManager
         if (null != potentiallyAddedParticipants && !potentiallyAddedParticipants.isEmpty() && potentiallyAddedParticipants.size() < 450)
         {
             sqlSelect.append(" WHERE SD.ParticipantId ");
-            schema.getSqlDialect().appendInClauseSql(sqlSelect, potentiallyAddedParticipants.toArray());
+            schema.getSqlDialect().appendInClauseSql(sqlSelect, potentiallyAddedParticipants);
         }
         sqlSelect.append("\nEXCEPT\n");
         sqlSelect.append("SELECT DISTINCT ParticipantId, SequenceNum, ParticipantSequenceNum FROM ").append(tableParticipantVisit.getFromSQL("PV")).append(" WHERE Container=?");

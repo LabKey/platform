@@ -97,8 +97,8 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             StudyImpl currentStudy = StudyManager.getInstance().getStudy(schema.getContainer());
             if (currentStudy != null && currentStudy.isAncillaryStudy())
             {
-                String[] ptids = ParticipantGroupManager.getInstance().getAllGroupedParticipants(schema.getContainer());
-                if (ptids.length > 0)
+                List<String> ptids = ParticipantGroupManager.getInstance().getAllGroupedParticipants(schema.getContainer());
+                if (!ptids.isEmpty())
                 {
                     StudyImpl sourceStudy = currentStudy.getSourceStudy();
                     if ("specimentables".equalsIgnoreCase(getRealTable().getSchema().getName()) ||

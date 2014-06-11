@@ -238,7 +238,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
             if (guids.size() == 1000)
             {
                 SQLFragment sql = new SQLFragment(sqlPrefix);
-                tableInfoSpecimenEvent.getSqlDialect().appendInClauseSql(sql, guids.toArray());
+                tableInfoSpecimenEvent.getSqlDialect().appendInClauseSql(sql, guids);
                 sql.append(")");
                 new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
                 guids.clear();
@@ -247,7 +247,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
         if (!guids.isEmpty())
         {
             SQLFragment sql = new SQLFragment(sqlPrefix);
-            tableInfoSpecimenEvent.getSqlDialect().appendInClauseSql(sql, guids.toArray());
+            tableInfoSpecimenEvent.getSqlDialect().appendInClauseSql(sql, guids);
             sql.append(")");
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
         }

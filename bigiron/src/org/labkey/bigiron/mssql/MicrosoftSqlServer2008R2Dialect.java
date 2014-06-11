@@ -210,7 +210,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         return DEFAULT_GENERATOR.appendInClauseSql(sql, params);
     }

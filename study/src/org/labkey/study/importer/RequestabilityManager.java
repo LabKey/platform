@@ -413,7 +413,7 @@ public class RequestabilityManager
             {
                 specimenIDs.add(specimen.getGlobalUniqueId());
             }
-            return StudySchema.getInstance().getSqlDialect().appendInClauseSql(new SQLFragment(), specimenIDs.toArray());
+            return StudySchema.getInstance().getSqlDialect().appendInClauseSql(new SQLFragment(), specimenIDs);
         }
 
         protected abstract SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException;

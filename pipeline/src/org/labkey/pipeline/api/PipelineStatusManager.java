@@ -584,8 +584,8 @@ public class PipelineStatusManager
                 LOG.info("Job " + pipelineStatusFile.getFilePath() + " was deleted by " + info.getUser());
                 statusFileIds.add(pipelineStatusFile.getRowId());
             }
-            _schema.getSqlDialect().appendInClauseSql(sql, statusFileIds.toArray());
-            _schema.getSqlDialect().appendInClauseSql(expSql, statusFileIds.toArray());
+            _schema.getSqlDialect().appendInClauseSql(sql, statusFileIds);
+            _schema.getSqlDialect().appendInClauseSql(expSql, statusFileIds);
 
             // Remember that we deleted these rows
             rowIds.removeAll(statusFileIds);

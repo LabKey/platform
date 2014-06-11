@@ -744,8 +744,8 @@ public class StudyQuerySchema extends UserSchema
     {
         assert _study.isAncillaryStudy();       // Don't call if it's not
         Map<Container, SQLFragment> filterFragments = new HashMap<>();
-        String[] ptids = ParticipantGroupManager.getInstance().getAllGroupedParticipants(_study.getContainer());
-        if (ptids.length > 0)
+        List<String> ptids = ParticipantGroupManager.getInstance().getAllGroupedParticipants(_study.getContainer());
+        if (!ptids.isEmpty())
         {
             SQLFragment condition = new SQLFragment("(PTID ");
             getDbSchema().getSqlDialect().appendInClauseSql(condition, ptids);

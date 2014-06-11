@@ -1742,7 +1742,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         if (specimenHashes != null)
         {
             extraClause = new SQLFragment(" WHERE SpecimenHash ");
-            tableInfoSpecimen.getSqlDialect().appendInClauseSql(extraClause, specimenHashes.toArray());
+            tableInfoSpecimen.getSqlDialect().appendInClauseSql(extraClause, specimenHashes);
         }
 
         final Map<String, Integer> map = new HashMap<>();

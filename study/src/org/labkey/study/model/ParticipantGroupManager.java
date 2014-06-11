@@ -859,7 +859,6 @@ public class ParticipantGroupManager
 
     public ParticipantGroup getParticipantGroupFromGroupRowId(Container container, User user, int rowId)
     {
-        ParticipantGroup[] groups;
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("RowId"), rowId);
 
@@ -867,14 +866,14 @@ public class ParticipantGroupManager
         return selector.getObject(ParticipantGroup.class);
     }
 
-    public String[] getAllGroupedParticipants(Container container)
+    public List<String> getAllGroupedParticipants(Container container)
     {
         SQLFragment sql = new SQLFragment("SELECT DISTINCT ParticipantId FROM ");
         sql.append(getTableInfoParticipantGroupMap(), "GroupMap");
         sql.append(" WHERE Container = ? ORDER BY ParticipantId");
         sql.add(container);
 
-        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArray(String.class);
+        return new SqlSelector(StudySchema.getInstance().getSchema(), sql).getArrayList(String.class);
     }
 
 

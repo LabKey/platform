@@ -435,7 +435,7 @@ public abstract class VisitManager
             {
                 // We have an explicit list of potentially added participants, so filter to only look at them
                 datasetParticipantsSQL.append("WHERE participantid ");
-                schema.getSqlDialect().appendInClauseSql(datasetParticipantsSQL, potentiallyInsertedParticipants.toArray());
+                schema.getSqlDialect().appendInClauseSql(datasetParticipantsSQL, potentiallyInsertedParticipants);
             }
             datasetParticipantsSQL.append("\nEXCEPT\n");
             datasetParticipantsSQL.append(
@@ -670,7 +670,7 @@ public abstract class VisitManager
                 {
                     // We have an explicit list of potentially deleted participants, so filter to only look at them
                     ptidsP.append(" AND participantid ");
-                    tableParticipant.getSqlDialect().appendInClauseSql(ptidsP, potentiallyDeletedParticipants.toArray());
+                    tableParticipant.getSqlDialect().appendInClauseSql(ptidsP, potentiallyDeletedParticipants);
                 }
 
                 SQLFragment del = new SQLFragment();

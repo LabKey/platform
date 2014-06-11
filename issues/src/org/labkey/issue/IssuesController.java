@@ -1588,7 +1588,7 @@ public class IssuesController extends SpringActionController
 
                 SQLFragment update = new SQLFragment("UPDATE issues.issues SET container = ? ", form.getContainerId());
                 update.append("WHERE issueId ");
-                schema.getSqlDialect().appendInClauseSql(update, form.getIssueIds());
+                schema.getSqlDialect().appendInClauseSql(update, Arrays.asList(form.getIssueIds()));
                 new SqlExecutor(schema).execute(update);
 
                 Container newContainer = ContainerManager.getForId(form.getContainerId());

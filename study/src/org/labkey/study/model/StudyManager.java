@@ -1686,7 +1686,7 @@ public class StudyManager
         sql.add(def.getContainer().getId());
         sql.add(def.getContainer().getId());
 
-        StudySchema.getInstance().getSqlDialect().appendInClauseSql(sql, dataLsids.toArray());
+        StudySchema.getInstance().getSqlDialect().appendInClauseSql(sql, dataLsids);
 
         final Study study = def.getStudy();
 
@@ -1794,7 +1794,7 @@ public class StudyManager
             sql.append(", modified = ?");
             sql.add(new Date());
             sql.append("\nWHERE lsid ");
-            StudySchema.getInstance().getSqlDialect().appendInClauseSql(sql, updateLsids.toArray());
+            StudySchema.getInstance().getSqlDialect().appendInClauseSql(sql, updateLsids);
 
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
 
@@ -3961,7 +3961,7 @@ public class StudyManager
         if (null != ptids)
         {
             f.append(prefix).append(" ParticipantId ");
-            StudySchema.getInstance().getSqlDialect().appendInClauseSql(f, ptids.toArray());
+            StudySchema.getInstance().getSqlDialect().appendInClauseSql(f, ptids);
         }
 
         final ActionURL indexURL = new ActionURL(StudyController.IndexParticipantAction.class, c);

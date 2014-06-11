@@ -298,7 +298,7 @@ public class PostgreSql84Dialect extends SqlDialect
     }
 
     @Override
-    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Object[] params)
+    public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
         return _inClauseGenerator.appendInClauseSql(sql, params);
     }

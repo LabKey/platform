@@ -840,7 +840,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             rowIds.add(run.getRowId());
         }
-        getExpSchema().getScope().getSqlDialect().appendInClauseSql(sql, rowIds.toArray());
+        getExpSchema().getScope().getSqlDialect().appendInClauseSql(sql, rowIds);
         sql.append(" GROUP BY ExperimentId) IncludedRuns, ");
         sql.append("(SELECT ExperimentId, COUNT(ExperimentRunId) AS C FROM ");
         sql.append(getTinfoRunList(), "RL2");
@@ -945,7 +945,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 typeNames.add(type.toString());
             }
-            getExpSchema().getSqlDialect().appendInClauseSql(sql, typeNames.toArray());
+            getExpSchema().getSqlDialect().appendInClauseSql(sql, typeNames);
             sql.append(" AND ");
         }
         else
@@ -1905,7 +1905,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             return Collections.emptyList();
         }
 
-        return ExpRunImpl.fromRuns(getRunsForMaterialList(getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ArrayUtils.toObject(ids))));
+        return ExpRunImpl.fromRuns(getRunsForMaterialList(getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), Arrays.asList(ArrayUtils.toObject(ids)))));
     }
 
     public List<? extends ExpRun> runsDeletedWithInput(List<? extends ExpRun> runs)
@@ -1930,12 +1930,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ret;
     }
 
-    public List<ExpRunImpl> getRunsUsingSampleSets(ExpSampleSet... source)
+    public List<ExpRunImpl> getRunsUsingSampleSets(ExpSampleSet... sources)
     {
-        Object[] materialSourceIds = new Object[source.length];
-        for (int i = 0; i < source.length; i++)
+        List<String> materialSourceIds = new ArrayList<>(sources.length);
+        for (ExpSampleSet source : sources)
         {
-            materialSourceIds[i] = source[i].getLSID();
+            materialSourceIds.add(source.getLSID());
         }
 
         SQLFragment materialRowIdSQL = new SQLFragment("IN (SELECT RowId FROM ");
