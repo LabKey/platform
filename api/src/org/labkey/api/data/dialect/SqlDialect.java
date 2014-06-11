@@ -133,6 +133,9 @@ public abstract class SqlDialect
     {
         StringBuilder sb = new StringBuilder();
 
+        // Per 18789, also include threads without db connections.
+        List<Thread> dbThreads = new ArrayList<>();
+
         for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet())
         {
             Thread thread = entry.getKey();
@@ -149,7 +152,7 @@ public abstract class SqlDialect
                 {
                     sb.append("\n");
                 }
-
+                dbThreads.add(thread);
                 sb.append(thread.getName());
                 sb.append(", SPIDs = ");
                 sb.append(spids);
@@ -164,7 +167,27 @@ public abstract class SqlDialect
             }
         }
 
-        return sb.length() > 0 ? sb.toString() : "No other threads with active database connections to report.";
+        if (dbThreads.size() == 0)
+            sb.append("No other threads with active database connections to report.\n");
+
+        sb.append("All other threads without active database connections:\n");
+        for (Map.Entry<Thread, StackTraceElement[]> entry : Thread.getAllStackTraces().entrySet())
+        {
+            Thread thread = entry.getKey();
+            if (!dbThreads.contains(thread))
+            {
+                sb.append(thread.getName());
+                sb.append("\n");
+
+                for (StackTraceElement stackTraceElement : entry.getValue())
+                {
+                    sb.append("\t");
+                    sb.append(stackTraceElement);
+                    sb.append("\n");
+                }
+            }
+        }
+        return sb.toString();
     }
 
     public abstract String getBooleanLiteral(boolean b);
