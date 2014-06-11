@@ -23,6 +23,7 @@ import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.exp.ExperimentMaterialListener;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.ExperimentRunListView;
@@ -289,6 +290,7 @@ public class ExperimentService
         public ExpProtocolApplication createSimpleRunExtraProtocolApplication(ExpRun expRun, String name);
         public ExpRun deriveSamples(Map<ExpMaterial, String> inputMaterials, Map<ExpMaterial, String> outputMaterials, ViewBackgroundInfo info, Logger log) throws ExperimentException;
 
+        public void registerExperimentMaterialListener(ExperimentMaterialListener listener);
         public void registerExperimentDataHandler(ExperimentDataHandler handler);
         public void registerExperimentRunTypeSource(ExperimentRunTypeSource source);
         public void registerDataType(DataType type);

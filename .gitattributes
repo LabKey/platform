@@ -589,6 +589,7 @@ api/src/org/labkey/api/exp/DuplicateMaterialException.java -text
 api/src/org/labkey/api/exp/ExpQCFlag.java -text
 api/src/org/labkey/api/exp/ExperimentDataHandler.java -text
 api/src/org/labkey/api/exp/ExperimentException.java -text
+api/src/org/labkey/api/exp/ExperimentMaterialListener.java -text
 api/src/org/labkey/api/exp/ExperimentRunListView.java -text
 api/src/org/labkey/api/exp/ExperimentRunType.java -text
 api/src/org/labkey/api/exp/ExperimentRunTypeSource.java -text

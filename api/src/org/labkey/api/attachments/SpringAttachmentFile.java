@@ -17,10 +17,14 @@
 package org.labkey.api.attachments;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.util.FileUtil;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -118,5 +122,18 @@ public class SpringAttachmentFile implements AttachmentFile
     public boolean isEmpty()
     {
         return _file.isEmpty();
+    }
+
+    public void saveTo(File targetFile) throws IOException
+    {
+        InputStream is = openInputStream();
+        try (OutputStream out = new FileOutputStream(targetFile))
+        {
+            FileUtil.copyData(is, out);
+        }
+        finally
+        {
+            closeInputStream();
+        }
     }
 }

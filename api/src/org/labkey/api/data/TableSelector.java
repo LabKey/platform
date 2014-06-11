@@ -288,10 +288,17 @@ public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFacto
         return this;
     }
 
-    // pk can be single value, an array of values, or a filter (??)
+    /** pk can be single value, an array of values, or a filter (??) */
     public <K> K getObject(Object pk, Class<K> clazz)
     {
         return getObject(null, pk, clazz);
+    }
+
+    /** pk can be single value, an array of values, or a filter (??) */
+    public Map<String, Object> getMap(Object pk)
+    {
+        //noinspection unchecked
+        return getObject(pk, Map.class);
     }
 
     // pk can be single value, an array of values, or a filter (??)
