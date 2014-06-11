@@ -223,6 +223,10 @@ public class StandardDialectStringHandler implements DialectStringHandler
         {
             return quoteStringLiteral(value.toString());
         }
+        else if (value instanceof Object[])
+        {
+            return quoteStringLiteral("{\"" + StringUtils.join((Object[])value, "\", \"") + "\"}");
+        }
         else
         {
             return value.toString();

@@ -689,14 +689,6 @@ public class OntologyManager
             sqlDeleteObjects.append(")");
             new SqlExecutor(getExpSchema()).execute(sqlDeleteObjects);
         }
-
-        // fall back implementation
-//        SQLFragment selectObjectIds = new SQLFragment();
-//        selectObjectIds.append("SELECT ObjectId FROM exp.Object WHERE ObjectURI IN (");
-//        selectObjectIds.append(sub);
-//        selectObjectIds.append(")");
-//        Integer[] objectIds = Table.executeArray(schema, selectObjectIds, Integer.class);
-//        deleteOntologyObjects(objectIds, c, deleteOwnedObjects);
     }
 
 

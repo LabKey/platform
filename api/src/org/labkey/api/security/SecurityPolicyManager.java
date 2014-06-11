@@ -35,7 +35,9 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -180,34 +182,22 @@ public class SecurityPolicyManager
 
         SQLFragment sql = new SQLFragment("DELETE FROM ");
         sql.append(core.getTableInfoRoleAssignments());
-        sql.append(" WHERE ResourceId IN (");
+        sql.append(" WHERE ResourceId ");
 
-        String sep = "";
-        SQLFragment resourcesList = new SQLFragment();
-
+        List<String> resourceIds = new ArrayList<>(resources.size());
         for (SecurableResource resource : resources)
         {
-            resourcesList.append(sep);
-            resourcesList.append("?");
-            resourcesList.add(resource.getResourceId());
-            sep = ", ";
+            resourceIds.add(resource.getResourceId());
         }
+        core.getSqlDialect().appendInClauseSql(sql, resourceIds.toArray());
 
-        sql.append(resourcesList);
-        sql.append(") AND UserId IN (");
-        sep = "";
-        SQLFragment principalsList = new SQLFragment();
-
+        sql.append(" AND UserId ");
+        List<Integer> userIds = new ArrayList<>(principals.size());
         for (UserPrincipal principal : principals)
         {
-            principalsList.append(sep);
-            principalsList.append("?");
-            principalsList.add(principal.getUserId());
-            sep = ", ";
+            userIds.add(principal.getUserId());
         }
-
-        sql.append(principalsList);
-        sql.append(")");
+        core.getSqlDialect().appendInClauseSql(sql, userIds.toArray());
 
         new SqlExecutor(core.getSchema()).execute(sql);
 

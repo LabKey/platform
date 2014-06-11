@@ -171,8 +171,13 @@ public abstract class ContainerFilter
                 return new SQLFragment(containerColumnSQL).append("=").append("'").append(first.getId()).append("'");
         }
 
+        // Revert to in-lining values if there are lots of values, so as not to blow the total JDBC parameter limit
+        // for SQLServer
+        useJDBCParameters = useJDBCParameters && ids.size() < 10;
+
         SQLFragment select = new SQLFragment("SELECT c.EntityId FROM ");
         select.append(CoreSchema.getInstance().getTableInfoContainers(), "c");
+        // Need to add cast to make Postgres happy
         select.append(" INNER JOIN (SELECT CAST(x.Id AS ");
         select.append(schema.getSqlDialect().getGuidType());
         select.append(") AS Id FROM (");
@@ -182,7 +187,6 @@ public abstract class ContainerFilter
             select.append(separator);
             separator = " UNION\n\t\t";
             select.append("SELECT ");
-            // Need to add casts to make Postgres happy
             if (useJDBCParameters)
             {
                 select.append("?");
@@ -197,7 +201,9 @@ public abstract class ContainerFilter
             select.append(" AS Id");
         }
         // Filter based on the container's ID, or the container is a child of the ID and of type workbook
-        select.append(") x) x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type = 'workbook')");
+        select.append(") x) x ON c.EntityId = x.Id OR (c.Parent = x.Id AND c.Type = '");
+        select.append(Container.TYPE.workbook.toString());
+        select.append("')");
 
 
         boolean useCTE = false;

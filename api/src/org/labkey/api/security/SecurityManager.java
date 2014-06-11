@@ -95,7 +95,6 @@ import javax.naming.NamingException;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
-import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
@@ -108,7 +107,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1174,18 +1172,14 @@ public class SecurityManager
         {
             SQLFragment sql = new SQLFragment(
             "DELETE FROM " + core.getTableInfoMembers() + "\n" +
-                    "WHERE GroupId = ? AND UserId IN(");
+                    "WHERE GroupId = ? AND UserId ");
             sql.add(groupId);
-            Iterator<UserPrincipal> it = membersToDelete.iterator();
-            String comma = "";
-            while (it.hasNext())
+            List<Integer> userIds = new ArrayList<>(membersToDelete.size());
+            for (UserPrincipal userPrincipal : membersToDelete)
             {
-                UserPrincipal member = it.next();
-                sql.append(comma).append("?");
-                comma = ",";
-                sql.add(member.getUserId());
+                userIds.add(userPrincipal.getUserId());
             }
-            sql.append(")");
+            core.getSqlDialect().appendInClauseSql(sql, userIds.toArray());
 
             new SqlExecutor(core.getSchema()).execute(sql);
 
