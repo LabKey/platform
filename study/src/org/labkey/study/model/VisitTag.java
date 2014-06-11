@@ -67,11 +67,11 @@ public class VisitTag
 
     static
     {
-        ObjectFactory.Registry.register(VisitTag.class, new VisitTagMapFactory());
+        ObjectFactory.Registry.register(VisitTag.class, new VisitTagFactory());
     }
 
     // UNDONE: should have BaseObjectFactory to implement handle in terms of fromMap()
-    private static class VisitTagMapFactory implements ObjectFactory<VisitTag>
+    private static class VisitTagFactory implements ObjectFactory<VisitTag>
     {
         public VisitTag fromMap(Map<String, ?> m)
         {
