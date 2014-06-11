@@ -2605,7 +2605,7 @@ public class WikiController extends SpringActionController
 
             Container container = getContainer();
 
-            NavTree[] toc = WikiSelectManager.getNavTree(container);
+            List<NavTree> toc = WikiSelectManager.getNavTree(container, getUser());
 
             List<Map<String, Object>> pageProps = getChildrenProps(toc);
             response.put("pages", pageProps);
@@ -2681,7 +2681,7 @@ public class WikiController extends SpringActionController
             }
         }
 
-        public List<Map<String, Object>> getChildrenProps(NavTree[] pages)
+        public List<Map<String, Object>> getChildrenProps(List<NavTree> pages)
         {
             List<Map<String, Object>> ret = new ArrayList<>();
 
@@ -2694,7 +2694,7 @@ public class WikiController extends SpringActionController
                 props.put("pageLink", page.getHref());
 
                 if (page.hasChildren())
-                    props.put("children", getChildrenProps(page.getChildren()));
+                    props.put("children", getChildrenProps(page.getChildList()));
 
                 ret.add(props);
             }

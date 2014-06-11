@@ -132,9 +132,9 @@ public class WikiTOC extends NavTreeMenu
         return "Wiki-TOC-" + cToc.getId();
     }
 
-    private NavTree[] getNavTree()
+    private List<NavTree> getNavTree()
     {
-        return WikiSelectManager.getNavTree(_cToc);
+        return WikiSelectManager.getNavTree(_cToc, getViewContext().getUser());
     }
 
     private Wiki findSelectedPage(ViewContext context)

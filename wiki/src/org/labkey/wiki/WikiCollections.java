@@ -33,6 +33,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -54,7 +55,7 @@ public class WikiCollections
     private final List<HString> _names = new ArrayList<>();
     private final int _pageCount;
     private final Map<HString, HString> _nameTitleMap = new LinkedHashMap<>();
-    private final NavTree[] _navTree;
+    private final List<NavTree> _navTree;
 
 
     private static final StringBuilder SQL = new StringBuilder();
@@ -112,7 +113,7 @@ public class WikiCollections
         for (HString name : _names)
             _nameTitleMap.put(name, _treesByName.get(name).getTitle());
 
-        _navTree = createNavTree(c, _root, "Wiki-TOC-" + c.getId());
+        _navTree = createNavTree(c, true);
     }
 
 
@@ -146,22 +147,34 @@ public class WikiCollections
         }
     }
 
+    protected List<NavTree> createNavTree(Container c, boolean showHidden)
+    {
+        String rootId = createRootId(c);
+        return createNavTree(c, rootId, _root, showHidden);
+    }
 
-    private NavTree[] createNavTree(Container c, WikiTree tree, String rootId)
+    private String createRootId(Container c)
+    {
+        return "Wiki-TOC-" + c.getId();
+    }
+
+    private List<NavTree> createNavTree(Container c, String rootId, WikiTree tree, boolean showHidden)
     {
         ArrayList<NavTree> elements = new ArrayList<>();
-        Collection<WikiTree> children = tree.getChildren();
 
         //add all pages to the nav tree
-        for (WikiTree child : children)
+        for (WikiTree child : tree.getChildren())
         {
-            NavTree node = new NavTree(child.getTitle().getSource(), WikiController.getPageURL(c, child.getName()), true);
-            node.addChildren(createNavTree(c, child, rootId));
-            node.setId(rootId);
-            elements.add(node);
+            if (!child.getName().startsWith("_") || showHidden)
+            {
+                NavTree node = new NavTree(child.getTitle().getSource(), WikiController.getPageURL(c, child.getName()), true);
+                node.addChildren(createNavTree(c, rootId, child, showHidden));
+                node.setId(rootId);
+                elements.add(node);
+            }
         }
 
-        return elements.toArray(new NavTree[elements.size()]);
+        return Collections.unmodifiableList(elements);
     }
 
 
@@ -184,7 +197,8 @@ public class WikiCollections
         return _names;
     }
 
-    NavTree[] getNavTree()
+    /** this gets the unfiltered version of the tree. */
+    List<NavTree>  getNavTree()
     {
         return _navTree;
     }

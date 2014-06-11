@@ -24,6 +24,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.HString;
 import org.labkey.api.view.NavTree;
 import org.labkey.wiki.WikiCache.WikiCacheLoader;
@@ -32,6 +34,7 @@ import org.labkey.wiki.model.WikiTree;
 import org.labkey.wiki.model.WikiVersion;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -149,19 +152,23 @@ public class WikiSelectManager
     }
 
 
-    static NavTree[] getNavTree(Container c)
+    static List<NavTree> getNavTree(Container c, User u)
     {
-        NavTree[] toc = getWikiCollections(c).getNavTree();
+        List<NavTree> toc;
+
+        // if admin get unfiltered, else filter navtree
+        if (c.hasPermission(u, AdminPermission.class))
+            toc = getWikiCollections(c).getNavTree();
+        else
+            toc = getWikiCollections(c).createNavTree(c, false);
 
         //need to make a deep copy of the NavTree so that
         //the caller can apply per-session expand state
         //and per-request selection state
-        NavTree[] copy = new NavTree[toc.length];
+        List<NavTree> copy = new ArrayList<>();
 
-        for (int idx = 0; idx < toc.length; ++idx)
-        {
-            copy[idx] = new NavTree(toc[idx]);
-        }
+        for (NavTree tree : toc)
+            copy.add(new NavTree(tree));
 
         return copy;
     }
