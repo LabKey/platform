@@ -43,7 +43,6 @@ import org.labkey.api.etl.StandardETL;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.MvColumn;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.RawValueColumn;
@@ -1662,10 +1661,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             for (Collection<String> rowLSIDs : rowLSIDSlices)
             {
-                SQLFragment sql = new SQLFragment(StringUtils.repeat("?", ", ", rowLSIDs.size()));
-                sql.addAll(rowLSIDs);
-                OntologyManager.deleteOntologyObjects(StudySchema.getInstance().getSchema(), sql, getContainer(), false);
-
                 SimpleFilter filter = new SimpleFilter();
                 filter.addWhereClause("Container=?", new Object[]{getContainer()});
                 filter.addInClause(FieldKey.fromParts("LSID"), rowLSIDs);
@@ -2576,7 +2571,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (null == getStorageTableInfo())
             return new SQLFragment("''");
 
-        ArrayList<SQLFragment> parts = new ArrayList<>();
+        List<SQLFragment> parts = new ArrayList<>();
         parts.add(new SQLFragment("''"));
         parts.add(new SQLFragment("?", getURNPrefix()));
         parts.add(new SQLFragment("participantid"));

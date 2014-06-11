@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
@@ -551,20 +552,19 @@ public class PipelineStatusManager
         if (!deleteable.isEmpty())
         {
             Container c = info.getContainer();
-            StringBuilder sql = new StringBuilder();
+            SQLFragment sql = new SQLFragment();
             sql.append("DELETE FROM ").append(_schema.getTableInfoStatusFiles())
-                    .append(" ").append("WHERE RowId IN (");
+                    .append(" ").append("WHERE RowId ");
 
             // null any ExpRuns referencing these Jobs -- only executed if we aren't deleting the runs
-            StringBuilder expSql = new StringBuilder();
+            SQLFragment expSql = new SQLFragment();
             expSql.append("UPDATE ").append(ExperimentService.get().getTinfoExperimentRun())
                     .append(" SET JobId = NULL ")
-                    .append("WHERE JobId IN (");
+                    .append("WHERE JobId ");
 
             List<Integer> allRunIds = new ArrayList<>(deleteable.size());
 
-            String separator = "";
-            List<Object> params = new ArrayList<>();
+            List<Object> statusFileIds = new ArrayList<>();
             for (PipelineStatusFile pipelineStatusFile : deleteable)
             {
                 if (deleteExpRuns)
@@ -581,27 +581,21 @@ public class PipelineStatusManager
                 if (provider != null)
                     provider.preDeleteStatusFile(pipelineStatusFile);
 
-                sql.append(separator);
-                expSql.append(separator);
-
-                separator = ", ";
-                sql.append("?");
-                expSql.append("?");
-
                 LOG.info("Job " + pipelineStatusFile.getFilePath() + " was deleted by " + info.getUser());
-                params.add(pipelineStatusFile.getRowId());
+                statusFileIds.add(pipelineStatusFile.getRowId());
             }
-            sql.append(")");
-            expSql.append(")");
+            _schema.getSqlDialect().appendInClauseSql(sql, statusFileIds.toArray());
+            _schema.getSqlDialect().appendInClauseSql(expSql, statusFileIds.toArray());
 
             // Remember that we deleted these rows
-            rowIds.removeAll(params);
+            rowIds.removeAll(statusFileIds);
 
             if (!c.isRoot())
             {
                 sql.append(" AND Container = ?");
                 expSql.append(" AND Container = ?");
-                params.add(c.getId());
+                sql.add(c.getId());
+                expSql.add(c.getId());
             }
 
             if (deleteExpRuns)
@@ -618,10 +612,10 @@ public class PipelineStatusManager
             else
             {
                 // Otherwise, null any ExpRuns referencing these Jobs if we aren't deleting them
-                new SqlExecutor(ExperimentService.get().getSchema()).execute(expSql.toString(), params.toArray());
+                new SqlExecutor(ExperimentService.get().getSchema()).execute(expSql);
             }
 
-            new SqlExecutor(_schema.getSchema()).execute(sql.toString(), params.toArray());
+            new SqlExecutor(_schema.getSchema()).execute(sql);
 
             // If we deleted anything, try recursing since we may have deleted all the child jobs which would
             // allow a parent job to be deleted

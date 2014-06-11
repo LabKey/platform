@@ -1682,19 +1682,11 @@ public class StudyManager
                 "JOIN study.Visit v ON\n" +
                 "\tpv.VisitRowId = v.RowId AND\n" +
                 "\tpv.Container = ? AND v.Container = ?\n" +
-                "WHERE sd.lsid IN(");
+                "WHERE sd.lsid ");
         sql.add(def.getContainer().getId());
         sql.add(def.getContainer().getId());
-        boolean first = true;
-        for (String dataLsid : dataLsids)
-        {
-            if (!first)
-                sql.append(", ");
-            sql.append("?");
-            sql.add(dataLsid);
-            first = false;
-        }
-        sql.append(")");
+
+        StudySchema.getInstance().getSqlDialect().appendInClauseSql(sql, dataLsids.toArray());
 
         final Study study = def.getStudy();
 
@@ -1801,17 +1793,8 @@ public class StudyManager
             sql.append(newState != null ? newState.getRowId() : "NULL");
             sql.append(", modified = ?");
             sql.add(new Date());
-            sql.append("\nWHERE lsid IN (");
-            boolean first = true;
-            for (String dataLsid : updateLsids)
-            {
-                if (!first)
-                    sql.append(", ");
-                sql.append("?");
-                sql.add(dataLsid);
-                first = false;
-            }
-            sql.append(")");
+            sql.append("\nWHERE lsid ");
+            StudySchema.getInstance().getSqlDialect().appendInClauseSql(sql, updateLsids.toArray());
 
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
 
@@ -2745,23 +2728,8 @@ public class StudyManager
 
     public ParticipantDataset[] getParticipantDatasets(Container container, Collection<String> lsids) throws SQLException
     {
-        StringBuilder whereClause = new StringBuilder();
-        whereClause.append("LSID IN (");
-        Object[] params = new Object[lsids.size()];
-        String comma = "";
-        int i = 0;
-
-        for (String lsid : lsids)
-        {
-            whereClause.append(comma);
-            whereClause.append("?");
-            params[i++] = lsid;
-            comma = ",";
-        }
-
-        whereClause.append(")");
         SimpleFilter filter = new SimpleFilter();
-        filter.addWhereClause(whereClause.toString(), params);
+        filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("LSID"), lsids));
         // We can't use the table layer to map results to our bean class because of the unfortunately named
         // "_VisitDate" column in study.StudyData.
 
@@ -3992,15 +3960,8 @@ public class StudyManager
 
         if (null != ptids)
         {
-            f.append(prefix).append(" ParticipantId IN (");
-            String marker="?";
-            for (String ptid : ptids)
-            {
-                f.append(marker);
-                f.add(ptid);
-                marker = ", ?";
-            }
-            f.append(")");
+            f.append(prefix).append(" ParticipantId ");
+            StudySchema.getInstance().getSqlDialect().appendInClauseSql(f, ptids.toArray());
         }
 
         final ActionURL indexURL = new ActionURL(StudyController.IndexParticipantAction.class, c);

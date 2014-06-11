@@ -22,7 +22,6 @@ import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -62,7 +61,6 @@ import org.labkey.study.CohortFilterFactory;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.query.ParticipantTable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -1096,24 +1094,9 @@ public class ParticipantGroupManager
 
         if (table != null)
         {
-            StringBuilder whereClause = new StringBuilder();
-            whereClause.append("lsid IN (");
-            Object[] params = new Object[lsids.size()];
-            String comma = "";
-            int i = 0;
-
-            for (String lsid : lsids)
-            {
-                whereClause.append(comma);
-                whereClause.append("?");
-                params[i++] = lsid;
-                comma = ",";
-            }
-
-            whereClause.append(")");
             SimpleFilter filter = new SimpleFilter();
-            filter.addWhereClause(whereClause.toString(), params);
-            FieldKey ptidKey = new FieldKey(null, StudyService.get().getSubjectColumnName(container));
+            filter.addClause(new SimpleFilter.InClause(FieldKey.fromParts("lsid"), lsids));
+            FieldKey ptidKey = FieldKey.fromParts(StudyService.get().getSubjectColumnName(container));
 
             try (Results r = new TableSelector(table, table.getColumns(ptidKey.toString(), "lsid"), filter, null).getResults())
             {

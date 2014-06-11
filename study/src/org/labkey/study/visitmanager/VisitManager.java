@@ -16,7 +16,6 @@
 
 package org.labkey.study.visitmanager;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -435,10 +434,8 @@ public abstract class VisitManager
             if (potentiallyInsertedParticipants != null && potentiallyInsertedParticipants.size() < 450)
             {
                 // We have an explicit list of potentially added participants, so filter to only look at them
-                datasetParticipantsSQL.append("WHERE participantid IN (");
-                datasetParticipantsSQL.append(StringUtils.repeat("?", ", ", potentiallyInsertedParticipants.size()));
-                datasetParticipantsSQL.addAll(potentiallyInsertedParticipants);
-                datasetParticipantsSQL.append(")");
+                datasetParticipantsSQL.append("WHERE participantid ");
+                schema.getSqlDialect().appendInClauseSql(datasetParticipantsSQL, potentiallyInsertedParticipants.toArray());
             }
             datasetParticipantsSQL.append("\nEXCEPT\n");
             datasetParticipantsSQL.append(
@@ -672,10 +669,8 @@ public abstract class VisitManager
                 if (potentiallyDeletedParticipants != null && potentiallyDeletedParticipants.size() < 450)
                 {
                     // We have an explicit list of potentially deleted participants, so filter to only look at them
-                    ptidsP.append(" AND participantid IN (");
-                    ptidsP.append(StringUtils.repeat("?", ", ", potentiallyDeletedParticipants.size()));
-                    ptidsP.addAll(potentiallyDeletedParticipants);
-                    ptidsP.append(")");
+                    ptidsP.append(" AND participantid ");
+                    tableParticipant.getSqlDialect().appendInClauseSql(ptidsP, potentiallyDeletedParticipants.toArray());
                 }
 
                 SQLFragment del = new SQLFragment();

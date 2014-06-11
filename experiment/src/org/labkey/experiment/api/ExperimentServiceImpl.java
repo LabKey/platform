@@ -831,18 +831,19 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         // An identical group will have the same total run count, and the same total count when the runs
         // are restricted to just the runs of interest
         SQLFragment sql = new SQLFragment("SELECT E.* FROM ");
-        sql.append(getTinfoExperiment() + " E, (SELECT ExperimentId, COUNT(ExperimentRunId) AS C FROM ");
-        sql.append(getTinfoRunList() + " WHERE ExperimentRunId IN (");
-        String separator = "";
+        sql.append(getTinfoExperiment(), "E");
+        sql.append(", (SELECT ExperimentId, COUNT(ExperimentRunId) AS C FROM ");
+        sql.append(getTinfoRunList(), "RL");
+        sql.append(" WHERE ExperimentRunId ");
+        List<Integer> rowIds = new ArrayList<>();
         for (ExpRun run : runs)
         {
-            sql.append(separator);
-            separator = ", ";
-            sql.append("?");
-            sql.add(run.getRowId());
+            rowIds.add(run.getRowId());
         }
-        sql.append(") GROUP BY ExperimentId) IncludedRuns, ");
-        sql.append("(SELECT ExperimentId, COUNT(ExperimentRunId) AS C FROM " + getTinfoRunList());
+        getExpSchema().getScope().getSqlDialect().appendInClauseSql(sql, rowIds.toArray());
+        sql.append(" GROUP BY ExperimentId) IncludedRuns, ");
+        sql.append("(SELECT ExperimentId, COUNT(ExperimentRunId) AS C FROM ");
+        sql.append(getTinfoRunList(), "RL2");
         sql.append(" GROUP BY ExperimentId) AllRuns ");
         sql.append(" WHERE IncludedRuns.C = ? AND AllRuns.C = ? AND ");
         sql.append(" E.RowId = AllRuns.ExperimentId AND E.RowId = IncludedRuns.ExperimentId AND E.Container = ? AND E.Hidden = ?");
@@ -851,10 +852,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         sql.add(container);
         sql.add(Boolean.TRUE);
 
-        Experiment[] exp = new SqlSelector(getSchema(), sql).getArray(Experiment.class);
-        if (exp.length > 0)
+        Experiment exp = new SqlSelector(getSchema(), sql).getObject(Experiment.class);
+        if (exp != null)
         {
-            return new ExpExperimentImpl(exp[0]);
+            return new ExpExperimentImpl(exp);
         }
         else
         {
@@ -938,16 +939,14 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             sql.append(", ");
             sql.append(getTinfoProtocol(), "p");
-            sql.append(" WHERE p.lsid = pa.protocollsid AND p.applicationtype IN (");
-            String separator = "";
+            sql.append(" WHERE p.lsid = pa.protocollsid AND p.applicationtype ");
+            List<String> typeNames = new ArrayList<>(types.length);
             for (ExpProtocol.ApplicationType type : types)
             {
-                sql.append(separator);
-                separator = ", ";
-                sql.append("?");
-                sql.add(type.toString());
+                typeNames.add(type.toString());
             }
-            sql.append(") AND ");
+            getExpSchema().getSqlDialect().appendInClauseSql(sql, typeNames.toArray());
+            sql.append(" AND ");
         }
         else
         {
@@ -1905,8 +1904,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             return Collections.emptyList();
         }
-        String materialRowIdSQL = StringUtils.join(ArrayUtils.toObject(ids), ", ");
-        return ExpRunImpl.fromRuns(getRunsForMaterialList(materialRowIdSQL));
+
+        return ExpRunImpl.fromRuns(getRunsForMaterialList(getExpSchema().getSqlDialect().appendInClauseSql(new SQLFragment(), ArrayUtils.toObject(ids))));
     }
 
     public List<? extends ExpRun> runsDeletedWithInput(List<? extends ExpRun> runs)
@@ -1933,32 +1932,41 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public List<ExpRunImpl> getRunsUsingSampleSets(ExpSampleSet... source)
     {
-        Object[] params = new Object[source.length];
-        StringBuilder sb = new StringBuilder();
-        String separator = "";
+        Object[] materialSourceIds = new Object[source.length];
         for (int i = 0; i < source.length; i++)
         {
-            params[i] = source[i].getLSID();
-            sb.append(separator);
-            sb.append("?");
-            separator = ", ";
+            materialSourceIds[i] = source[i].getLSID();
         }
-        String materialRowIdSQL = "SELECT RowId FROM " + getTinfoMaterial() + " WHERE CpasType IN (" + sb.toString() + ")";
-        return ExpRunImpl.fromRuns(getRunsForMaterialList(materialRowIdSQL, params));
+
+        SQLFragment materialRowIdSQL = new SQLFragment("IN (SELECT RowId FROM ");
+        materialRowIdSQL.append(getTinfoMaterial(), "m");
+        materialRowIdSQL.append(" WHERE CpasType ");
+        getExpSchema().getSqlDialect().appendInClauseSql(materialRowIdSQL, materialSourceIds);
+        materialRowIdSQL.append(")");
+        return ExpRunImpl.fromRuns(getRunsForMaterialList(materialRowIdSQL));
     }
 
-    private List<ExperimentRun> getRunsForMaterialList(String materialRowIdSQL, Object... params)
+    private List<ExperimentRun> getRunsForMaterialList(SQLFragment materialRowIdSQL)
     {
-        Object[] doubledParams = new Object[params.length * 2];
-        System.arraycopy(params, 0, doubledParams, 0, params.length);
-        System.arraycopy(params, 0, doubledParams, params.length, params.length);
-        return new SqlSelector(getExpSchema(), "SELECT * FROM " + getTinfoExperimentRun() + " WHERE \n" +
-            "RowId IN (SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE RowId IN " +
-                "(SELECT pa.RunId FROM " + getTinfoProtocolApplication() + " pa, " + getTinfoMaterialInput() + " mi " +
-                "WHERE mi.TargetApplicationId = pa.RowId AND mi.MaterialID IN (" + materialRowIdSQL + ")) \n" +
-            "UNION " +
-                "(SELECT pa.RunId FROM " + getTinfoProtocolApplication() + " pa, " + getTinfoMaterial() + " m " +
-                "WHERE m.SourceApplicationId = pa.RowId AND m.RowId IN (" + materialRowIdSQL + ")))", doubledParams).getArrayList(ExperimentRun.class);
+        SQLFragment sql = new SQLFragment("SELECT * FROM ");
+        sql.append(getTinfoExperimentRun(), "er");
+        sql.append(" WHERE \n RowId IN (SELECT RowId FROM ");
+        sql.append(getTinfoExperimentRun(), "er2");
+        sql.append(" WHERE RowId IN (SELECT pa.RunId FROM ");
+        sql.append(getTinfoProtocolApplication(), "pa");
+        sql.append(", ");
+        sql.append(getTinfoMaterialInput(), "mi");
+        sql.append(" WHERE mi.TargetApplicationId = pa.RowId AND mi.MaterialID ");
+        sql.append(materialRowIdSQL);
+        sql.append(")");
+        sql.append("\n UNION \n (SELECT pa.RunId FROM ");
+        sql.append(getTinfoProtocolApplication(), "pa");
+        sql.append(", ");
+        sql.append(getTinfoMaterial(), "m");
+        sql.append(" WHERE m.SourceApplicationId = pa.RowId AND m.RowId ");
+        sql.append(materialRowIdSQL);
+        sql.append("))");
+        return new SqlSelector(getExpSchema(), sql).getArrayList(ExperimentRun.class);
     }
 
     public void deleteSampleSet(int rowId, Container c, User user) throws ExperimentException

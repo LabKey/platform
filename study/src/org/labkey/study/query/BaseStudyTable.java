@@ -112,16 +112,10 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                     }
                     else
                     {   // TODO: are there cases here?
-                        SQLFragment condition = new SQLFragment("(Container = ? AND " + getParticipantColumnName() + " IN (");
+                        SQLFragment condition = new SQLFragment("(Container = ? AND " + getParticipantColumnName() + " ");
                         condition.add(sourceStudy.getContainer());
-                        String comma = "";
-                        for (String ptid : ptids)
-                        {
-                            condition.append(comma).append("?");
-                            condition.add(ptid);
-                            comma = ", ";
-                        }
-                        condition.append(")) OR Container = ?");
+                        getSqlDialect().appendInClauseSql(condition, ptids);
+                        condition.append(") OR Container = ?");
                         condition.add(currentStudy.getContainer());
                         addCondition(condition, FieldKey.fromParts("Container"), FieldKey.fromParts(getParticipantColumnName()));
                     }

@@ -400,24 +400,20 @@ public class RequestabilityManager
             SQLFragment sql = new SQLFragment();
             if (specimens != null && specimens.size() > 0)
             {
-                sql.append("GlobalUniqueId IN (");
+                sql.append("GlobalUniqueId ");
                 sql.append(getSpecimenGlobalUniqueIdSet(specimens));
-                sql.append(")");
             }
             return sql;
         }
 
         protected SQLFragment getSpecimenGlobalUniqueIdSet(List<Specimen> specimens)
         {
-            SQLFragment sql = new SQLFragment();
-            String sep = "";
+            List<String> specimenIDs = new ArrayList<>(specimens.size());
             for (Specimen specimen : specimens)
             {
-                sql.append(sep).append("?");
-                sep = ", ";
-                sql.add(specimen.getGlobalUniqueId());
+                specimenIDs.add(specimen.getGlobalUniqueId());
             }
-            return sql;
+            return StudySchema.getInstance().getSqlDialect().appendInClauseSql(new SQLFragment(), specimenIDs.toArray());
         }
 
         protected abstract SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException;
@@ -687,7 +683,7 @@ public class RequestabilityManager
             sql.add(container.getId());
             sql.add(false);
             if (specimens != null && specimens.size() > 0)
-                sql.append(" AND SpecimenGlobalUniqueId IN (").append(getSpecimenGlobalUniqueIdSet(specimens)).append(")");
+                sql.append(" AND SpecimenGlobalUniqueId ").append(getSpecimenGlobalUniqueIdSet(specimens));
 
             sql.append(")");
             return sql;

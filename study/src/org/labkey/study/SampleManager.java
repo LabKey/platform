@@ -1737,34 +1737,21 @@ public class SampleManager implements ContainerManager.ContainerListener
     public Map<String, Integer> getSampleCounts(Container container, Collection<String> specimenHashes)
     {
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(container);
-        if (null == tableInfoSpecimen)
-            return Collections.EMPTY_MAP;
 
-        List<Object> params = new ArrayList<>();
-        StringBuilder extraClause = new StringBuilder();
-
+        SQLFragment extraClause = null;
         if (specimenHashes != null)
         {
-            extraClause.append(" WHERE SpecimenHash IN(");
-            String separator = "";
-            for (String specimenNumber : specimenHashes)
-            {
-                extraClause.append(separator);
-                separator = ", ";
-                extraClause.append("?");
-                params.add(specimenNumber);
-            }
-            extraClause.append(")");
+            extraClause = new SQLFragment(" WHERE SpecimenHash ");
+            tableInfoSpecimen.getSqlDialect().appendInClauseSql(extraClause, specimenHashes.toArray());
         }
 
         final Map<String, Integer> map = new HashMap<>();
 
         SQLFragment sql = new SQLFragment("SELECT SpecimenHash, CAST(AvailableCount AS Integer) AS AvailableCount FROM ");
         sql.append(tableInfoSpecimen.getFromSQL(""));
-        if (!params.isEmpty())
+        if (extraClause != null)
         {
             sql.append(extraClause);
-            sql.addAll(params);
         }
         new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ResultSet>() {
             @Override

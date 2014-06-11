@@ -79,7 +79,7 @@
 
             <div class="auth-item">
                 <%= button((agreeOnly ? "Agree" : "Sign In")).submit(true) %>
-                <% if (!StringUtils.isBlank(props.getSupportEmail())) { %>
+                <% if (!StringUtils.isBlank(props.getSupportEmail()) && !agreeOnly) { %>
                 or <a href="mailto:<%= h(props.getSupportEmail()) %>?subject=Account request<%=h(StringUtils.isBlank(props.getShortName()) ? "" : " for " + props.getShortName())%>">Request an account</a>
                 <% } %>
             </div>

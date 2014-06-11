@@ -747,15 +747,9 @@ public class StudyQuerySchema extends UserSchema
         String[] ptids = ParticipantGroupManager.getInstance().getAllGroupedParticipants(_study.getContainer());
         if (ptids.length > 0)
         {
-            SQLFragment condition = new SQLFragment("(" + "PTID" + " IN (");
-            String comma = "";
-            for (String ptid : ptids)
-            {
-                condition.append(comma).append("?");
-                condition.add(ptid);
-                comma = ", ";
-            }
-            condition.append(")) ");
+            SQLFragment condition = new SQLFragment("(PTID ");
+            getDbSchema().getSqlDialect().appendInClauseSql(condition, ptids);
+            condition.append(") ");
             filterFragments.put(sourceStudyContainer, condition);
         }
         return filterFragments;
