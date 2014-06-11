@@ -18,6 +18,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.ConvertUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
@@ -39,6 +40,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
@@ -68,6 +70,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
@@ -75,6 +78,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 import org.labkey.experiment.controllers.exp.ExperimentMembershipDisplayColumnFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Writer;
 import java.sql.SQLException;
@@ -881,21 +885,22 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 for (Map.Entry<String, Object> entry : row.entrySet())
                 {
                     // Most fields in the hard table can't be modified, but there are a few
+                    Object value = entry.getValue();
                     if (entry.getKey().equalsIgnoreCase(Column.Name.toString()))
                     {
-                        String newName = entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class);
+                        String newName = value == null ? null : (String) ConvertUtils.convert(value.toString(), String.class);
                         appendPropertyIfChanged(sb, "Name", run.getName(), newName);
                         run.setName(newName);
                     }
                     else if (entry.getKey().equalsIgnoreCase(Column.Comments.toString()))
                     {
-                        String newComment = entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class);
+                        String newComment = value == null ? null : (String) ConvertUtils.convert(value.toString(), String.class);
                         appendPropertyIfChanged(sb, "Comment", run.getComments(), newComment);
                         run.setComments(newComment);
                     }
                     else if (entry.getKey().equalsIgnoreCase(Column.Flag.toString()))
                     {
-                        String newFlag = entry.getValue() == null ? null : (String) ConvertUtils.convert(entry.getValue().toString(), String.class);
+                        String newFlag = value == null ? null : (String) ConvertUtils.convert(value.toString(), String.class);
                         appendPropertyIfChanged(sb, "Flag", run.getComment(), newFlag);
                         run.setComment(user, newFlag);
                     }
@@ -907,27 +912,32 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         PropertyColumn propColumn = (PropertyColumn)col;
                         PropertyDescriptor propertyDescriptor = propColumn.getPropertyDescriptor();
                         Object oldValue = run.getProperty(propertyDescriptor);
-                        run.setProperty(user, propertyDescriptor, entry.getValue());
+                        if (value instanceof SpringAttachmentFile)
+                        {
+                            value = saveFile(container, value);
+                        }
+                        run.setProperty(user, propertyDescriptor, value);
 
-                        Object newValue = entry.getValue();
+                        Object newValue = value;
                         TableInfo fkTableInfo = col.getFkTableInfo();
                         if (fkTableInfo != null)
                         {
                             // Do type conversion in case there's a mismatch in the lookup source and target columns
-                            if (newValue != null && !fkTableInfo.getPkColumns().get(0).getJavaClass().isAssignableFrom(newValue.getClass()))
+                            Class<?> keyColumnType = fkTableInfo.getPkColumns().get(0).getJavaClass();
+                            if (newValue != null && !keyColumnType.isAssignableFrom(newValue.getClass()))
                             {
-                                newValue = ConvertUtils.convert(newValue.toString(), fkTableInfo.getPkColumns().get(0).getJavaClass());
+                                newValue = ConvertUtils.convert(newValue.toString(), keyColumnType);
                             }
-                            if (oldValue != null && !fkTableInfo.getPkColumns().get(0).getJavaClass().isAssignableFrom(oldValue.getClass()))
+                            if (oldValue != null && !keyColumnType.isAssignableFrom(oldValue.getClass()))
                             {
-                                oldValue = ConvertUtils.convert(oldValue.toString(), fkTableInfo.getPkColumns().get(0).getJavaClass());
+                                oldValue = ConvertUtils.convert(oldValue.toString(), keyColumnType);
                             }
-                            Map<String, Object> oldLookupTarget = new TableSelector(fkTableInfo).getObject(oldValue, Map.class);
+                            Map<String, Object> oldLookupTarget = new TableSelector(fkTableInfo).getMap(oldValue);
                             if (oldLookupTarget != null)
                             {
                                 oldValue = oldLookupTarget.get(fkTableInfo.getTitleColumn());
                             }
-                            Map<String, Object> newLookupTarget = new TableSelector(fkTableInfo).getObject(newValue, Map.class);
+                            Map<String, Object> newLookupTarget = new TableSelector(fkTableInfo).getMap(newValue);
                             if (newLookupTarget != null)
                             {
                                 newValue = newLookupTarget.get(fkTableInfo.getTitleColumn());
@@ -940,6 +950,23 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, null, sb.toString());
             }
             return getRow(user, container, oldRow);
+        }
+
+        private Object saveFile(Container container, Object value) throws QueryUpdateServiceException
+        {
+            SpringAttachmentFile saf = (SpringAttachmentFile)value;
+            try
+            {
+                File dir = AssayFileWriter.ensureUploadDirectory(container);
+                File file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
+                saf.saveTo(file);
+                value = file;
+            }
+            catch (IOException | ExperimentException e)
+            {
+                throw new QueryUpdateServiceException(e);
+            }
+            return value;
         }
 
         private StringBuilder appendPropertyIfChanged(StringBuilder sb, String label, Object oldValue, Object newValue)

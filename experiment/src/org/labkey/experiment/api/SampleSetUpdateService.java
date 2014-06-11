@@ -36,17 +36,13 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AssayFileWriter;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.experiment.samples.UploadMaterialSetForm;
 import org.labkey.experiment.samples.UploadSamplesHelper;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -162,20 +158,9 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
                     SpringAttachmentFile saf = (SpringAttachmentFile)value;
                     try
                     {
-                        InputStream is = saf.openInputStream();
-
                         File dir = AssayFileWriter.ensureUploadDirectory(container, "sampleset");
                         File file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
-
-                        try (OutputStream out = new FileOutputStream(file))
-                        {
-                            FileUtil.copyData(is, out);
-                            value = file;
-                        }
-                        finally
-                        {
-                            saf.closeInputStream();
-                        }
+                        saf.saveTo(file);
                     }
                     catch (IOException | ExperimentException e)
                     {

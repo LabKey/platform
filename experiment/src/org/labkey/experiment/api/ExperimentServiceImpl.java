@@ -33,6 +33,7 @@ import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.exp.ExperimentMaterialListener;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.ExperimentRunTypeSource;
@@ -138,6 +139,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class ExperimentServiceImpl implements ExperimentService.Interface
@@ -146,8 +148,9 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public static final String DEFAULT_MATERIAL_SOURCE_NAME = "Unspecified";
 
-    private List<ExperimentRunTypeSource> _runTypeSources = new ArrayList<>();
+    private List<ExperimentRunTypeSource> _runTypeSources = new CopyOnWriteArrayList<>();
     private Set<ExperimentDataHandler> _dataHandlers = new HashSet<>();
+    private List<ExperimentMaterialListener> _materialListeners = new CopyOnWriteArrayList<>();
     protected Map<String, DataType> _dataTypes = new HashMap<>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
 
@@ -1617,19 +1620,27 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                 if (to > selectedMaterialIds.length)
                     to = selectedMaterialIds.length;
 
-                // TODO: Use an InClause for scalability
-                String materialIds = StringUtils.join(new ArrayIterator(selectedMaterialIds, from, to), ", ");
-                String sql = "SELECT * FROM exp.Material WHERE RowId IN (" + materialIds + ");";
+                SQLFragment sql = new SQLFragment("SELECT * FROM exp.Material WHERE RowId ");
+                getExpSchema().getSqlDialect().appendInClauseSql(sql, Arrays.asList(ArrayUtils.toObject(selectedMaterialIds)));
 
-                Collection<Material> materials = new SqlSelector(getExpSchema(), sql).getCollection(Material.class);
+                List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
 
-                for (Material material : materials)
+                for (ExpMaterial material : materials)
                 {
                     if (!material.getContainer().hasPermission(user, DeletePermission.class))
                     {
                         throw new UnauthorizedException();
                     }
+                }
 
+                // Notify that a delete is about to happen
+                for (ExperimentMaterialListener materialListener : _materialListeners)
+                {
+                    materialListener.beforeDelete(materials);
+                }
+
+                for (ExpMaterial material : materials)
+                {
                     // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
                     List<ExpRunImpl> runArray = getRunsUsingMaterials(material.getRowId());
                     for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
@@ -1644,16 +1655,20 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
                     OntologyManager.deleteOntologyObjects(container, material.getLSID());
                 }
 
-                executor.execute("DELETE FROM exp.MaterialInput WHERE MaterialId IN (" + materialIds + ")");
-                executor.execute("DELETE FROM exp.Material WHERE RowId IN (" + materialIds + ")");
+                SQLFragment materialInputSQL = new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId ");
+                getExpSchema().getSqlDialect().appendInClauseSql(materialInputSQL, Arrays.asList(ArrayUtils.toObject(selectedMaterialIds)));
+                executor.execute(materialInputSQL);
+                SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE RowId ");
+                getExpSchema().getSqlDialect().appendInClauseSql(materialSQL, Arrays.asList(ArrayUtils.toObject(selectedMaterialIds)));
+                executor.execute(materialSQL);
 
                 // Remove from search index
                 SearchService ss = ServiceRegistry.get(SearchService.class);
                 if (null != ss)
                 {
-                    for (Material material : materials)
+                    for (ExpMaterial material : materials)
                     {
-                        ss.deleteResource(new ExpMaterialImpl(material).getDocumentId());
+                        ss.deleteResource(material.getDocumentId());
                     }
                 }
             }
@@ -2760,6 +2775,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         return saveSimpleExperimentRun(run, inputMaterials, Collections.<ExpData, String>emptyMap(), outputMaterials, Collections.<ExpData, String>emptyMap(),
                 Collections.<ExpData, String>emptyMap(), info, log, true);
+    }
+
+    @Override
+    public void registerExperimentMaterialListener(ExperimentMaterialListener listener)
+    {
+        _materialListeners.add(listener);
     }
 
     private ExpProtocol ensureSampleDerivationProtocol(User user) throws ExperimentException
