@@ -1647,7 +1647,7 @@
           <ns:column columnName="Inactive">
               <ns:description>Whether or not to show this records in the lookup drop-down for newly created study designs.</ns:description>
           </ns:column>
-          <ns:column columnName="Target">
+          <ns:column columnName="Type">
               <ns:description>Target of this specific assay. For example, "Antibody", "T-Cell", or "Humoral".</ns:description>
           </ns:column>
           <ns:column columnName="TargetType">
@@ -1656,7 +1656,7 @@
           <ns:column columnName="TargetSubtype">
               <ns:description>Subtype of the target type. For example, "CD4" or "CD8".</ns:description>
           </ns:column>
-          <ns:column columnName="Methodology">
+          <ns:column columnName="Platform">
               <ns:description>Experimental procedure followed; usually just the LabKey assay type.  For example, "NAb", "Elispot", or "ICS".</ns:description>
           </ns:column>
           <ns:column columnName="Category">
@@ -1677,6 +1677,15 @@
           </ns:column>
           <ns:column columnName="Editorial">
               <ns:description>Description of why this assay is important to the dataspace.</ns:description>
+          </ns:column>
+          <ns:column columnName="AlternateName">
+              <ns:description>An alternate way of referring to the assay.</ns:description>
+          </ns:column>
+          <ns:column columnName="Lab">
+              <ns:description>The lab responsible for creating this assay.</ns:description>
+          </ns:column>
+          <ns:column columnName="LabPI">
+              <ns:description>The principal investigator for the lab.</ns:description>
           </ns:column>
       </ns:columns>
   </ns:table>

@@ -50,7 +50,10 @@ public class StudyDesignAssaysTable extends StudyDesignLookupBaseTable
                 FieldKey.fromParts("Contact"),
                 FieldKey.fromParts("Summary"),
                 FieldKey.fromParts("Keywords"),
-                FieldKey.fromParts("Editorial")
+                FieldKey.fromParts("Editorial"),
+                FieldKey.fromParts("AlternateName"),
+                FieldKey.fromParts("Lab"),
+                FieldKey.fromParts("LabPI")
         ));
         setDefaultVisibleColumns(defaultColumns);
     }
