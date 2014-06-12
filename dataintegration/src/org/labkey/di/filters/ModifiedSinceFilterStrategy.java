@@ -106,6 +106,13 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         TableSelector ts = new TableSelector(_table, Collections.singleton(_tsCol), f, null);
         Map<String, List<Aggregate.Result>> results = ts.getAggregates(Arrays.asList(max));
         List<Aggregate.Result> list = results.get(_tsCol.getName());
+
+        // Diagnostic for 20659, from exception 17683. The aggregates resultset doesn't include the tsCol name.
+        if (list == null)
+        {
+            throw new IllegalArgumentException("Timestamp column '" +_tsCol.getName() + "' not found in aggregate results for table '" + _table.getName() + "'");
+        }
+
         Aggregate.Result maxResult = list.get(0);
 
         Date incrementalEndDate;
