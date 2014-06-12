@@ -470,6 +470,7 @@ Ext4.define('LABKEY.ext4.data.Store', {
         {
             row = rows[idx];
 
+            //an example row in this situation would be the response from a delete command
             if (!row || !row.values)
                 return;
 
@@ -478,7 +479,8 @@ Ext4.define('LABKEY.ext4.data.Store', {
 
             //records created client-side might not have a PK yet, so we try to use internalId to find it
             //we defer to snapshot, since this will contain all records, even if the store is filtered
-            record = (this.snapshot || this.data).get(row.oldKeys['_internalId']);
+            if (!record)
+                record = (this.snapshot || this.data).get(row.oldKeys['_internalId']);
 
             if (!record)
                 return;
