@@ -237,7 +237,8 @@ LABKEY.Query.Visualization = new function() {
                 filterUrl: config.filterUrl,
                 filterQuery: config.filterQuery,
                 limit   : config.limit,
-                groupBys: config.groupBys
+                groupBys: config.groupBys,
+                metaDataOnly: config.metaDataOnly
             };
 
             LABKEY.Ajax.request(
