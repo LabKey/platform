@@ -20,8 +20,6 @@ import java.util.Set;
 
 public class DatasetReportInfoProvider extends ReportInfoProvider
 {
-    private Map<String, Map<Integer, Set<ReportInfo>>> _reportInfoMap = null;
-
     @Override
     public Map<String, Map<Integer, Set<ReportInfo>>> getReportInfoMap(Date modifiedRangeStart, Date modifiedRangeEnd)
     {

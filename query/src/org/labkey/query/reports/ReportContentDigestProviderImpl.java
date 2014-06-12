@@ -66,11 +66,12 @@ public class ReportContentDigestProviderImpl implements ReportContentDigestProvi
         Map<Integer, Set<ReportInfo>> reportInfosByCategory = null;
         for (ReportInfoProvider provider : _reportInfoProviders)
         {
+            Map<Integer, Set<ReportInfo>> reportInfosForContainer = provider.getReportInfoMap(min, max).get(container.getId()); // could be null
             if (null == reportInfosByCategory)
-                reportInfosByCategory = provider.getReportInfoMap(min, max).get(container.getId());
-            else
+                reportInfosByCategory = reportInfosForContainer;
+            else if (null != reportInfosForContainer)
             {
-                for (Map.Entry<Integer, Set<ReportInfo>> categoryEntry : provider.getReportInfoMap(min, max).get(container.getId()).entrySet())
+                for (Map.Entry<Integer, Set<ReportInfo>> categoryEntry : reportInfosForContainer.entrySet())
                 {
                     if (!reportInfosByCategory.containsKey(categoryEntry.getKey()))
                         reportInfosByCategory.put(categoryEntry.getKey(), new HashSet<ReportInfo>());
