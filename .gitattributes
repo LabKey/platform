@@ -2516,8 +2516,10 @@ query/src/org/labkey/query/persist/QuerySnapshotDef.java -text
 query/src/org/labkey/query/reports/AttachmentReport.java -text
 query/src/org/labkey/query/reports/BaseRedirectReport.java -text
 query/src/org/labkey/query/reports/LinkReport.java -text
+query/src/org/labkey/query/reports/ReportContentDigestProviderImpl.java -text
 query/src/org/labkey/query/reports/ReportImporter.java -text
 query/src/org/labkey/query/reports/ReportQueryChangeListener.java -text
+query/src/org/labkey/query/reports/ReportReportInfoProvider.java -text
 query/src/org/labkey/query/reports/ReportServiceImpl.java -text
 query/src/org/labkey/query/reports/ReportWebdavProvider.java -text
 query/src/org/labkey/query/reports/ReportWriter.java -text
@@ -2562,8 +2564,11 @@ query/src/org/labkey/query/reports/view/configReportsAndScripts.jsp -text
 query/src/org/labkey/query/reports/view/createQueryReport.jsp -text
 query/src/org/labkey/query/reports/view/dataViews.jsp -text
 query/src/org/labkey/query/reports/view/linkReport.jsp -text
+query/src/org/labkey/query/reports/view/manageNotifications.jsp -text
 query/src/org/labkey/query/reports/view/rReportTabHeader.jsp -text
 query/src/org/labkey/query/reports/view/reportDetails.jsp -text
+query/src/org/labkey/query/reports/view/reportDigestNotify.jsp -text
+query/src/org/labkey/query/reports/view/reportDigestNotifyPlain.jsp -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
 query/src/org/labkey/query/reports/web.png -text
 query/src/org/labkey/query/reports/wordprocessing.png -text
@@ -2667,6 +2672,7 @@ query/webapp/dataview/DataViewPropertiesPanel.js -text
 query/webapp/dataview/DataViewUtil.js -text
 query/webapp/dataview/DataViewsPanel.css -text
 query/webapp/dataview/DataViewsPanel.js -text
+query/webapp/dataview/ManageNotifications.js -text
 query/webapp/dataviews.lib.xml -text
 query/webapp/query/ExportTablePanel.js -text
 query/webapp/query/QueryEditorPanel.js -text
@@ -3425,6 +3431,7 @@ study/src/org/labkey/study/controllers/samples/SpecimenUtils.java -text
 study/src/org/labkey/study/controllers/security/SecurityController.java -text
 study/src/org/labkey/study/dataset/DatasetAuditProvider.java -text
 study/src/org/labkey/study/dataset/DatasetAuditViewFactory.java -text
+study/src/org/labkey/study/dataset/DatasetReportInfoProvider.java -text
 study/src/org/labkey/study/dataset/DatasetSnapshotProvider.java -text
 study/src/org/labkey/study/dataset/DatasetViewProvider.java -text
 study/src/org/labkey/study/dataset/SnapshotDependency.java -text

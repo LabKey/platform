@@ -35,6 +35,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.AdminUrls;
@@ -55,6 +56,7 @@ import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -76,6 +78,7 @@ import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.model.DataViewEditForm;
@@ -106,6 +109,7 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -141,6 +145,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.ViewForm;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.ClientDependency;
@@ -172,6 +177,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -316,6 +322,12 @@ public class ReportsController extends SpringActionController
         public ActionURL urlQueryReport(Container c, Report r)
         {
             return new ActionURL(RenderQueryReport.class, c).addParameter(ReportDescriptor.Prop.reportId, r.getDescriptor().getReportId().toString());
+        }
+
+        @Override
+        public ActionURL urlManageNotifications(Container c)
+        {
+            return new ActionURL(ManageNotificationsAction.class, c);
         }
     }
 
@@ -3628,4 +3640,99 @@ public class ReportsController extends SpringActionController
             return response;
         }
     }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class ManageNotificationsAction extends SimpleViewAction<NotificationsForm>
+    {
+        public ModelAndView getView(NotificationsForm form, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/query/reports/view/manageNotifications.jsp", form, errors);
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Manage Report/Dataset Notifications");
+        }
+    }
+
+    public static class NotificationsForm extends ViewForm
+    {
+        public NotificationsForm()
+        {
+        }
+
+        public List<ViewCategoryManager.ViewCategoryTreeNode> getCategorySubcriptionTree()
+        {
+            Set<Integer> subscriptionSet = ReportContentEmailManager.getSubscriptionSet(getContainer(), getUser());
+            return ViewCategoryManager.getInstance().getCategorySubcriptionTree(getContainer(), getUser(), subscriptionSet);
+        }
+
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SaveCategoryNotificationsAction extends MutatingApiAction<SaveCategoryNotificationsForm>
+    {
+        @Override
+        public ApiResponse execute(SaveCategoryNotificationsForm form, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            ReportContentEmailManager.setSubscriptionSet(getContainer(), getUser(), form.getSubscriptionSet());
+            response.put("success", true);
+            return response;
+        }
+
+    }
+
+    public static class SaveCategoryNotificationsForm implements CustomApiForm
+    {
+        private Set<Integer> _subscriptionSet = new HashSet<>();
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            JSONArray categories = (JSONArray)props.get("categories");
+            if (null != categories)
+            {
+                for (int i = 0; i < categories.length(); i += 1)
+                {
+                    Integer rowId = ((JSONObject) categories.get(i)).getInt("rowid");
+                    Boolean subscribed = ((JSONObject) categories.get(i)).getBoolean("subscribed");
+                    assert(null != rowId);
+                    if (subscribed)
+                        _subscriptionSet.add(rowId);
+                }
+            }
+        }
+
+        public Set<Integer> getSubscriptionSet()
+        {
+            return _subscriptionSet;
+        }
+    }
+
+    // Used for testing the daily digest email notifications
+    @RequiresSiteAdmin
+    public class SendDailyDigest extends SimpleRedirectAction
+    {
+        @Override
+        public URLHelper getRedirectURL(Object o) throws Exception
+        {
+            // Normally, daily digest stops at previous midnight; override to include all messages through now
+            DailyMessageDigest messageDigest = new DailyMessageDigest() {
+                @Override
+                protected Date getEndRange(Date current, Date last)
+                {
+                    return current;
+                }
+            };
+            // Just reports
+            messageDigest.addProvider(DailyMessageDigest.getInstance().getReportContentDigestProvider());
+            messageDigest.sendMessageDigest();
+
+            return new ActionURL(ManageViewsAction.class, getContainer());
+
+        }
+    }
+
+
 }

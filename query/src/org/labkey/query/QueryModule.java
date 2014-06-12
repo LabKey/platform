@@ -22,9 +22,10 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.message.digest.DailyMessageDigest;
+import org.labkey.api.message.digest.ReportContentDigestProvider;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
@@ -54,7 +55,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -70,7 +70,9 @@ import org.labkey.query.olap.MemberSet;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
+import org.labkey.query.reports.ReportContentDigestProviderImpl;
 import org.labkey.query.reports.ReportImporter;
+import org.labkey.query.reports.ReportReportInfoProvider;
 import org.labkey.query.reports.ReportServiceImpl;
 import org.labkey.query.reports.ReportWriter;
 import org.labkey.query.reports.ReportsController;
@@ -213,6 +215,10 @@ public class QueryModule extends DefaultModule
 
         AuditLogService.registerAuditType(new QueryAuditProvider());
         AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
+
+        ReportContentDigestProvider reportContentDigestProvider = new ReportContentDigestProviderImpl();
+        reportContentDigestProvider.addReportInfoProvider(new ReportReportInfoProvider());
+        DailyMessageDigest.getInstance().addReportContentDisgestProvider(reportContentDigestProvider);
     }
 
     @Override

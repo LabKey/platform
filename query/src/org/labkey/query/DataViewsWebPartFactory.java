@@ -158,6 +158,12 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
             menu.addChild("Manage Views", url);
         }
 
+        if (portalCtx.hasPermission(ReadPermission.class) && !portalCtx.getUser().isGuest())
+        {
+            ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlManageNotifications(c);
+            menu.addChild("Manage Notifications", url);
+        }
+
         view.setNavMenu(menu);
 
         return view;

@@ -40,6 +40,8 @@ import org.labkey.api.exp.property.PlateBasedAssaySampleSetDomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
+import org.labkey.api.message.digest.DailyMessageDigest;
+import org.labkey.api.message.digest.ReportContentDigestProvider;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceLoader;
@@ -112,6 +114,7 @@ import org.labkey.study.controllers.samples.SpecimenController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
+import org.labkey.study.dataset.DatasetReportInfoProvider;
 import org.labkey.study.dataset.DatasetSnapshotProvider;
 import org.labkey.study.dataset.DatasetViewProvider;
 import org.labkey.study.designer.view.StudyDesignsWebPart;
@@ -465,6 +468,11 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
         AdminConsole.addExperimentalFeatureFlag(CreateChildStudyAction.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
+
+        ReportContentDigestProvider reportContentDigestProvider = DailyMessageDigest.getInstance().getReportContentDigestProvider();
+        if (null != reportContentDigestProvider)
+            reportContentDigestProvider.addReportInfoProvider(new DatasetReportInfoProvider());
+
     }
 
     @Override
