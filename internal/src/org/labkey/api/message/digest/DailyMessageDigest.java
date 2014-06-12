@@ -16,6 +16,7 @@
 package org.labkey.api.message.digest;
 
 import org.apache.commons.lang3.time.DateUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Calendar;
 import java.util.Date;
@@ -30,6 +31,7 @@ import java.util.TimerTask;
 public class DailyMessageDigest extends MessageDigest
 {
     private static final DailyMessageDigest _instance = new DailyMessageDigest();
+    private ReportContentDigestProvider _reportContentDigestProvider;
 
     public static DailyMessageDigest getInstance()
     {
@@ -82,5 +84,17 @@ public class DailyMessageDigest extends MessageDigest
         current.set(Calendar.MILLISECOND, 0);
 
         return current.getTime();
+    }
+
+    public void addReportContentDisgestProvider(ReportContentDigestProvider provider)
+    {
+        _reportContentDigestProvider = provider;
+        addProvider(provider);
+    }
+
+    @Nullable
+    public ReportContentDigestProvider getReportContentDigestProvider()
+    {
+        return _reportContentDigestProvider;
     }
 }

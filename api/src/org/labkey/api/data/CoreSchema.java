@@ -141,4 +141,9 @@ public class CoreSchema
     {
         return getSchema().getTable("ShortURL");
     }
+
+    public TableInfo getTableInfoReport()
+    {
+        return getSchema().getTable("Report");
+    }
 }

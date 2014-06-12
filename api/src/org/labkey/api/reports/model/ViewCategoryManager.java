@@ -32,6 +32,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.JunitUtil;
@@ -39,9 +40,12 @@ import org.labkey.api.util.TestContext;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -501,6 +505,99 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
                 m.put("Parent", bean.getParent().getRowId());
             }
         }
+    }
+
+    public class ViewCategoryTreeNode
+    {
+        private final ViewCategory _viewCategory;
+        private List<ViewCategoryTreeNode> _children = new ArrayList<>();
+        private boolean _isUserSubscribed;
+
+        public ViewCategoryTreeNode(ViewCategory viewCategory)
+        {
+            _viewCategory = viewCategory;
+        }
+
+        public List<ViewCategoryTreeNode> getChildren()
+        {
+            return _children;
+        }
+
+        public void setChildren(List<ViewCategoryTreeNode> children)
+        {
+            _children = children;
+        }
+
+        public void addChild(ViewCategoryTreeNode viewCategoryTreeNode)
+        {
+            _children.add(viewCategoryTreeNode);
+        }
+        public boolean isUserSubscribed()
+        {
+            return _isUserSubscribed;
+        }
+
+        public void setUserSubscribed(boolean isUserSubscribed)
+        {
+            _isUserSubscribed = isUserSubscribed;
+        }
+
+        public ViewCategory getViewCategory()
+        {
+            return _viewCategory;
+        }
+    }
+
+    public static final int UNCATEGORIZED_ROWID = -1;
+    public List<ViewCategoryTreeNode> getCategorySubcriptionTree(Container container, User user, Set<Integer> subscriptionSet)
+    {
+        // We take advantage of the fact that this is at most 2 levels; the 1st level may have multiple categories
+        List<ViewCategory> categories = Arrays.asList(getCategories(container, user));
+        sortViewCategories(categories);
+        List<ViewCategoryTreeNode> viewCategoryTreeNodes = new ArrayList<>();
+
+        // Add Uncategorized category
+        ViewCategory uncategoriedCategory = ReportUtil.getDefaultCategory(container, null, null);
+        uncategoriedCategory.setRowId(UNCATEGORIZED_ROWID);
+        viewCategoryTreeNodes.add(makeTreeNode(uncategoriedCategory, subscriptionSet));
+
+        for (ViewCategory category : categories)
+        {
+            if (null == category.getParent())
+            {
+                ViewCategoryTreeNode treeNode = makeTreeNode(category, subscriptionSet);
+                List<ViewCategory> subCategories = category.getSubcategories();
+                sortViewCategories(subCategories);
+                for (ViewCategory subCategory : subCategories)
+                {
+                    ViewCategoryTreeNode subTreeNode = makeTreeNode(subCategory, subscriptionSet);
+                    treeNode.addChild(subTreeNode);
+                }
+                viewCategoryTreeNodes.add(treeNode);
+            }
+        }
+
+        return viewCategoryTreeNodes;
+    }
+
+    private ViewCategoryTreeNode makeTreeNode(ViewCategory category, Set<Integer> subscriptionSet)
+    {
+        ViewCategoryTreeNode treeNode = new ViewCategoryTreeNode(category);
+        if (subscriptionSet.contains(category.getRowId()))
+            treeNode.setUserSubscribed(true);
+        return treeNode;
+    }
+
+    private static void sortViewCategories(List<ViewCategory> categories)
+    {
+        Collections.sort(categories, new Comparator<ViewCategory>()
+        {
+            @Override
+            public int compare(ViewCategory o1, ViewCategory o2)
+            {
+                return o1.getDisplayOrder() - o2.getDisplayOrder();
+            }
+        });
     }
 
     public static class TestCase extends Assert
