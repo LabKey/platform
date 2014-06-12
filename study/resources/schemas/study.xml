@@ -1657,7 +1657,7 @@
               <ns:description>Subtype of the target type. For example, "CD4" or "CD8".</ns:description>
           </ns:column>
           <ns:column columnName="Platform">
-              <ns:description>Experimental procedure followed; usually just the LabKey assay type.  For example, "NAb", "Elispot", or "ICS".</ns:description>
+              <ns:description>Platform on which the assay was performed. For example, ""ELISpot", “ELISA”, “Luminex” or "Flow Cytometry".</ns:description>
           </ns:column>
           <ns:column columnName="Category">
               <ns:description>Type of experiment that the assay represents.  For example, "Immunogenicity", "Epidemiology", or "Cell Engineering".</ns:description>
