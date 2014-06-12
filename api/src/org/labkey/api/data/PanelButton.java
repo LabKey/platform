@@ -34,7 +34,7 @@ import java.util.Map;
 public class PanelButton extends ActionButton
 {
     // Height of the vertical tab strip item label in pixels.
-    private static final int VERTICAL_TAB_HEIGHT = 28;
+    private static final int VERTICAL_TAB_HEIGHT = 32;
     private static final int MIN_HEIGHT = VERTICAL_TAB_HEIGHT * 4;
 
     private int _height;

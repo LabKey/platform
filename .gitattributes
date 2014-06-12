@@ -31,7 +31,6 @@ api/src/org/labkey/api/action/ApiStreamResponse.java -text
 api/src/org/labkey/api/action/ApiUsageException.java -text
 api/src/org/labkey/api/action/ApiVersion.java -text
 api/src/org/labkey/api/action/ApiXmlWriter.java -text
-api/src/org/labkey/api/action/BaseApiAction.java -text
 api/src/org/labkey/api/action/BaseViewAction.java -text
 api/src/org/labkey/api/action/ConfirmAction.java -text
 api/src/org/labkey/api/action/CustomApiForm.java -text
