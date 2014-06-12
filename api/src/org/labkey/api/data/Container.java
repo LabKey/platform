@@ -1149,38 +1149,39 @@ public class Container implements Serializable, Comparable<Container>, Securable
     public Map<String, Object> toJSON(User user, boolean includePermissions)
     {
         Map<String, Object> containerProps = new HashMap<>();
-        containerProps.put("name", getName());
-        containerProps.put("id", getId());
-        containerProps.put("path", getPath());
-        containerProps.put("sortOrder", getSortOrder());
-        if (includePermissions)
-        {
-            containerProps.put("userPermissions", getPolicy().getPermsAsOldBitMask(user));
-            containerProps.put("effectivePermissions", getPolicy().getPermissionNames(user));
-        }
-        if (null != getDescription())
-            containerProps.put("description", getDescription());
-        containerProps.put("isWorkbook", isWorkbook());
-        containerProps.put("isContainerTab", isContainerTab());
-        containerProps.put("type", getContainerNoun());
-        JSONArray activeModuleNames = new JSONArray();
-        Set<Module> activeModules = getActiveModules(user);
-        for (Module module : activeModules)
-        {
-            activeModuleNames.put(module.getName());
-        }
-        containerProps.put("activeModules", activeModuleNames);
-        containerProps.put("folderType", getFolderType().getName());
-        containerProps.put("hasRestrictedActiveModule", hasRestrictedActiveModule(activeModules));
-
         Container parent = getParent();
+        containerProps.put("name", getName());
+        containerProps.put("path", getPath());
         containerProps.put("parentPath", parent==null ? null : parent.getPath());
-        containerProps.put("parentId", parent==null ? null : parent.getId());
 
+        if (this.hasPermission(user, ReadPermission.class))
+        {
+            containerProps.put("id", getId());
+            containerProps.put("sortOrder", getSortOrder());
+            if (includePermissions)
+            {
+                containerProps.put("userPermissions", getPolicy().getPermsAsOldBitMask(user));
+                containerProps.put("effectivePermissions", getPolicy().getPermissionNames(user));
+            }
+            if (null != getDescription())
+                containerProps.put("description", getDescription());
+            containerProps.put("isWorkbook", isWorkbook());
+            containerProps.put("isContainerTab", isContainerTab());
+            containerProps.put("type", getContainerNoun());
+            JSONArray activeModuleNames = new JSONArray();
+            Set<Module> activeModules = getActiveModules(user);
+            for (Module module : activeModules)
+            {
+                activeModuleNames.put(module.getName());
+            }
+            containerProps.put("activeModules", activeModuleNames);
+            containerProps.put("folderType", getFolderType().getName());
+            containerProps.put("hasRestrictedActiveModule", hasRestrictedActiveModule(activeModules));
+            containerProps.put("parentId", parent==null ? null : parent.getId());
 
-        if (null != getTitle())
-            containerProps.put("title", getTitle());
-
+            if (null != getTitle())
+                containerProps.put("title", getTitle());
+        }
         return containerProps;
     }
 
