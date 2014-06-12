@@ -98,7 +98,9 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
                         "for (i = 0; i < typeElements.length; i++) " +
                         "{ var resolverSubSectionDiv = document.getElementById('ResolverDiv-' + typeElements[i].value); " +
                         " if (resolverSubSectionDiv != null) resolverSubSectionDiv.style.display='none'; } ");
-                if (renderResolverSubSelectors(resolver))
+
+                RenderSubSelectors renderSubs = renderResolverSubSelectors(resolver);
+                if (renderSubs != RenderSubSelectors.NONE)
                     out.write("document.getElementById('ResolverDiv-' + this.value).style.display='block';\" ");
                 else
                     out.write("\"");
@@ -113,12 +115,14 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
                 out.write(PageFlowUtil.filter(resolver.getDescription()));
                 out.write("</td></tr>");
 
-                if (renderResolverSubSelectors(resolver))
+                if (renderSubs != RenderSubSelectors.NONE)
                 {
+
                     out.write("<tr><td></td><td>");
                     out.write("<div id=\"ResolverDiv-" + resolver.getName() + "\"" + (selected == resolver ? "" : "style=\"display:none\"") +  ">");
                     try
                     {
+                        ctx.put(RenderSubSelectors.class.getSimpleName(), renderSubs);
                         resolver.render(ctx);
                     }
                     catch (Exception e)
@@ -135,9 +139,16 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         }
     }
 
-    protected boolean renderResolverSubSelectors(ParticipantVisitResolverType resolver)
+    public static enum RenderSubSelectors
     {
-        return true;
+        ALL,
+        NONE,
+        PARTIAL
+    }
+
+    protected RenderSubSelectors renderResolverSubSelectors(ParticipantVisitResolverType resolver)
+    {
+        return RenderSubSelectors.ALL;
     }
 
     protected Object getInputValue(RenderContext ctx)

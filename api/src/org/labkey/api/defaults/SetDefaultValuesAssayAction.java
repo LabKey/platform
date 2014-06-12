@@ -114,9 +114,9 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         }
 
         @Override
-        protected boolean renderResolverSubSelectors(ParticipantVisitResolverType resolver)
+        protected RenderSubSelectors renderResolverSubSelectors(ParticipantVisitResolverType resolver)
         {
-            return resolver instanceof ThawListResolverType;
+            return resolver instanceof ThawListResolverType ? RenderSubSelectors.PARTIAL : RenderSubSelectors.NONE;
         }
 
         public DefaultValueType getDefaultValueType()

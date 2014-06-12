@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.study.actions.ParticipantVisitResolverChooser.RenderSubSelectors" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -38,18 +39,23 @@
     RenderContext ctx = bean.getRenderContext();
     boolean listType = ThawListResolverType.LIST_NAMESPACE_SUFFIX.equalsIgnoreCase((String)ctx.getForm().get(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME));
     boolean textType = !listType;
+    boolean renderAll = ctx.get(RenderSubSelectors.class.getSimpleName()) == null ? true : ctx.get(RenderSubSelectors.class.getSimpleName()).equals(RenderSubSelectors.ALL);
 %>
 <table>
+    <% if (renderAll)
+    { %>
+        <tr>
+            <td><input type="radio" name="<%= ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME %>"<%=checked(textType)%> value="<%= ThawListResolverType.TEXT_NAMESPACE_SUFFIX %>" onClick="document.getElementById('ThawListDiv-List').style.display='none'; document.getElementById('ThawListDiv-TextArea').style.display='block';"></td>
+            <td>Paste a sample list as a TSV (tab-separated values)<%= helpPopup("Sample Lookup", "A lookup lets you assign a mapping from your own specimen numbers to participants and visits. The format is a tab-separated values (TSV), requiring the column 'Index' and using the values of the columns 'SpecimenID', 'ParticipantID', and 'VisitID'.<p>To use the template, fill in the values, select the entire spreadsheet (Ctrl-A), copy it to the clipboard, and paste it into the text area below.", true) %> <%=textLink("download template", request.getContextPath()+"/study/assay/SampleLookupTemplate.xls")%></td>
+        </tr>
+        <tr>
+            <td></td>
+            <td><div id="ThawListDiv-TextArea" style="display:<%= textType ? "block" : "none" %>;"><textarea id=<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %> name="<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %>" rows="4" cols="50"><%= h(ctx.get(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME)) %></textarea></div></td>
+        </tr>
+    <%
+    } %>
     <tr>
-        <td><input type="radio" name="<%= ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME %>"<%=checked(textType)%> value="<%= ThawListResolverType.TEXT_NAMESPACE_SUFFIX %>" onClick="document.getElementById('ThawListDiv-List').style.display='none'; document.getElementById('ThawListDiv-TextArea').style.display='block';"></td>
-        <td>Paste a sample list as a TSV (tab-separated values)<%= helpPopup("Sample Lookup", "A lookup lets you assign a mapping from your own specimen numbers to participants and visits. The format is a tab-separated values (TSV), requiring the column 'Index' and using the values of the columns 'SpecimenID', 'ParticipantID', and 'VisitID'.<p>To use the template, fill in the values, select the entire spreadsheet (Ctrl-A), copy it to the clipboard, and paste it into the text area below.", true) %> <%=textLink("download template", request.getContextPath()+"/study/assay/SampleLookupTemplate.xls")%></td>
-    </tr>
-    <tr>
-        <td></td>
-        <td><div id="ThawListDiv-TextArea" style="display:<%= textType ? "block" : "none" %>;"><textarea id=<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %> name="<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %>" rows="4" cols="50"><%= h(ctx.get(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME)) %></textarea></div></td>
-    </tr>
-    <tr>
-        <td><input type="radio" name="<%= ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME %>"<%=checked(listType)%> value="<%= ThawListResolverType.LIST_NAMESPACE_SUFFIX %>" onClick="document.getElementById('ThawListDiv-List').style.display='block'; document.getElementById('ThawListDiv-TextArea').style.display='none';"></td>
+        <td><input type="radio" name="<%= ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME %>"<%=checked(listType)%> value="<%= ThawListResolverType.LIST_NAMESPACE_SUFFIX %>" onClick="showChooseList()"></td>
         <td>Use an existing list<%= helpPopup("Sample Lookup", "A lookup lets you assign a mapping from your own specimen numbers to participants and visits. The target list must have your own specimen identifier as its primary key, and uses the values of the 'SpecimenID', 'ParticipantID', and 'VisitID' columns.") %></td>
     </tr>
     <tr>
@@ -65,7 +71,18 @@
     </tr>
 </table>
 
-<script type="text/javascript">
-    // Allow tabs in the TSV text area
-    Ext.EventManager.on('<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %>', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
-</script>
+
+    <script type="text/javascript">
+        var showChooseList = function(){
+            document.getElementById('ThawListDiv-List').style.display='block';
+            var thawListTextArea = document.getElementById('ThawListDiv-TextArea');
+            if (thawListTextArea != null)
+                    thawListTextArea.style.display='none';
+        };
+        <% if (renderAll)
+        { %>
+        // Allow tabs in the TSV text area
+        Ext.EventManager.on('<%= ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME %>', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
+        <% } %>
+    </script>
+
