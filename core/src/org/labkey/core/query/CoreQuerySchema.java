@@ -128,7 +128,20 @@ public class CoreQuerySchema extends UserSchema
     {
         TableInfo principalsBase = CoreSchema.getInstance().getTableInfoPrincipals();
         // We apply a special filter for containers below, so don't filter here too
-        FilteredTable groups = new FilteredTable<>(principalsBase, this, ContainerFilter.EVERYTHING);
+        FilteredTable groups = new FilteredTable<CoreQuerySchema>(principalsBase, this)
+        {
+            @Override
+            public boolean supportsContainerFilter()
+            {
+                return false;
+            }
+
+            @Override
+            protected void applyContainerFilter(ContainerFilter filter)
+            {
+                //ignore
+            }
+        };
         groups.setName("Groups");
 
         //expose UserId, Name, Container, and Type
