@@ -270,6 +270,21 @@ public class Parameter implements AutoCloseable
                     throw new IllegalArgumentException("AttachmentFile can only be bound to a single parameter");
 
                 final AttachmentFile attachmentFile = (AttachmentFile) value;
+
+                // Set up to close it
+                _autoCloseable = new AutoCloseable()
+                {
+                    @Override
+                    public void close()
+                    {
+                        try
+                        {
+                            attachmentFile.closeInputStream();
+                        }
+                        catch (IOException ignored) {}
+                    }
+                };
+
                 if (setFileAsName)
                     _stmt.setString(_indexes[0], attachmentFile.getFilename());
                 else
@@ -293,19 +308,6 @@ public class Parameter implements AutoCloseable
                         throw sqlx;
                     }
                 }
-                // Set up to close it
-                _autoCloseable = new AutoCloseable()
-                {
-                    @Override
-                    public void close()
-                    {
-                        try
-                        {
-                            attachmentFile.closeInputStream();
-                        }
-                        catch (IOException ignored) {}
-                    }
-                };
             }
 
             if (value instanceof Object[])
