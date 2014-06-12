@@ -200,7 +200,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     protected @Nullable UserSchema createSchema()
     {
         // Don't side-effect until all URL parameters have been bound.
-        if (_bindState != BindState.BOUND)
+        if (_bindState == BindState.BINDING)
             return null;
 
         String schemaName = getSchemaName();
@@ -229,7 +229,7 @@ public class QueryForm extends ReturnUrlForm implements HasViewContext, HasBindP
     final public QuerySettings getQuerySettings()
     {
         // Don't side-effect until all URL parameters have been bound.
-        if (_bindState != BindState.BOUND)
+        if (_bindState == BindState.BINDING)
             return null;
         if (_querySettings == null)
         {
