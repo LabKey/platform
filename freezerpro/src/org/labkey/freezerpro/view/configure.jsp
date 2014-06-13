@@ -127,7 +127,7 @@
             items : [{
                 xtype       : 'displayfield',
                 value       : '<span>Add additional XML metadata to control filtering of sample exports and mapping of FreezerPro ' +
-                        'field names to LabKey field names. Click on this <a href="">link</a> for documentation on XML schema.</span><p>'
+                        'field names to LabKey field names. Click on this <%=helpLink("freezerpro", "link")%> for documentation on XML schema.</span><p>'
             },{
                 xtype       : 'textarea',
                 name        : 'metadata',
