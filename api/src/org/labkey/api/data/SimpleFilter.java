@@ -1555,7 +1555,7 @@ public class SimpleFilter implements Filter
             assertEquals("Parameter values didn't match for IN clause", new HashSet<>(Arrays.asList(expectedValues)), new HashSet<>(Arrays.asList(clause._paramVals)));
         }
 
-        @Test  // TODO: Test much larger IN claues, once we support them on SQL Server
+        @Test
         public void testLargeInClause() throws Exception
         {
             User user = TestContext.get().getUser();
@@ -1569,12 +1569,21 @@ public class SimpleFilter implements Filter
                 ids.add(user.getUserId());
 
             testActiveUsersInClause(1, ids);
+
+            testActiveUsersInClause(1, ids, ids);
+            testActiveUsersInClause(1, ids, ids, ids);
+            testActiveUsersInClause(1, ids, ids, ids, ids);
         }
 
-        private void testActiveUsersInClause(int expectedSize, Collection users)
+        private void testActiveUsersInClause(int expectedSize, Collection... users)
         {
             SimpleFilter f = new SimpleFilter();
-            f.addInClause(FieldKey.fromParts("UserId"), users);
+            OrClause orClause = new OrClause();
+            for (Collection userSet : users)
+            {
+                orClause.addClause(new InClause(FieldKey.fromParts("UserId"), userSet));
+            }
+            f.addClause(orClause);
             TableSelector userSelector = new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), f, null);
             Collection<User> ret = userSelector.getCollection(User.class);
             assertEquals(expectedSize, ret.size());
