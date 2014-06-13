@@ -1952,18 +1952,24 @@ public class IssuesController extends SpringActionController
             }
             else if (form.getMoveToContainer().equals("SpecificMoveToContainer"))
             {
-                String[] containerPaths = StringUtils.split(form.getMoveToContainerSelect(),';');
-
-                for (String containerPath : containerPaths )
+                String moveToContainers = form.getMoveToContainerSelect();
+                if (moveToContainers != null)
                 {
-                    Container container = ContainerManager.getForPath(containerPath);
-                    if (null == container)
+                    String[] containerPaths = StringUtils.split(moveToContainers, ';');
+
+                    for (String containerPath : containerPaths)
                     {
-                        errors.reject("moveToContainer", "Container does not exist!");
-                        break;
+                        Container container = ContainerManager.getForPath(containerPath);
+                        if (null == container)
+                        {
+                            errors.reject("moveToContainer", "Container does not exist!");
+                            break;
+                        }
+                        _moveToContainers.add(container);
                     }
-                    _moveToContainers.add(container);
                 }
+                else
+                    errors.reject("moveToContainer", "The move to specific container option was selected with a blank.");
             }
             else
             {
