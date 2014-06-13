@@ -80,6 +80,7 @@ import org.labkey.api.reports.RConnectionHolder;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportContentEmailManager;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.model.DataViewEditForm;
 import org.labkey.api.reports.model.ReportPropsManager;
@@ -656,7 +657,7 @@ public class ReportsController extends SpringActionController
             //
             if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
             {
-                reportSessionId = "LabKey.ReportSession" + UniqueID.getServerSessionScopedUID();
+                reportSessionId = ReportUtil.createReportSessionId();
                 getViewContext().getSession().setAttribute(reportSessionId,
                         new RConnectionHolder(reportSessionId, form.getClientContext()));
             }
@@ -735,6 +736,7 @@ public class ReportsController extends SpringActionController
         private String _reportName;
         private String _schemaName;
         private String _queryName;
+        private String _functionName;
         private Map<String, Object> _inputParams;
 
         public ExecuteScriptForm()
@@ -792,6 +794,16 @@ public class ReportsController extends SpringActionController
             _queryName = queryName;
         }
 
+        public String getFunctionName()
+        {
+            return _functionName;
+        }
+
+        public void setFunctionName(String functionName)
+        {
+            _functionName = functionName;
+        }
+
         public Map<String, Object> getInputParams()
         {
             return _inputParams;
@@ -816,12 +828,28 @@ public class ReportsController extends SpringActionController
 
         public ApiResponse execute(ExecuteScriptForm form, BindException errors) throws Exception
         {
-            if (null == form.getReportId() && null == form.getReportName())
-                throw new IllegalArgumentException("You must provide a value for the " + Report.renderParam.reportId.name() +
-                        " or " + Report.renderParam.reportName.name() + " parameter!");
+            List<ScriptOutput> outputs;
+            String reportSessionId = form.getReportSessionId();
+            Map<String, Object> inputParams = form.getInputParams();
 
-            Report report = getReport(form);
+            // if we have a script (instead of report name) then execute it directly
+            if (null != form.getFunctionName())
+            {
+                outputs = execFunction(form.getFunctionName(), reportSessionId, inputParams);
+            }
+            else
+            {
+                outputs = execReport(getReport(form), reportSessionId, inputParams);
+            }
 
+            //
+            // break the outputs into console, error, and output params
+            //
+            return buildResponse(outputs);
+        }
+
+        private List<ScriptOutput> execReport(Report report, String reportSessionId, Map<String, Object> inputParams) throws Exception
+        {
             //
             // validate that the underlying report is present and based on a script
             //
@@ -836,19 +864,46 @@ public class ReportsController extends SpringActionController
             //
             if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
             {
-                getViewContext().put(Report.renderParam.reportSessionId.name(), form.getReportSessionId());
+                getViewContext().put(Report.renderParam.reportSessionId.name(), reportSessionId);
             }
 
             //
             // execute the script
             //
             Report.ScriptExecutor exec = (Report.ScriptExecutor) report;
-            List<ScriptOutput> outputs = exec.executeScript(getViewContext(), form.getInputParams());
+            return exec.executeScript(getViewContext(), inputParams);
+        }
+
+        private List<ScriptOutput> execFunction(String functionName, String reportSessionId, Map<String, Object> inputParams) throws Exception
+        {
+            List<ScriptOutput> scriptOutputs = new ArrayList<>();
 
             //
-            // break the outputs into console, error, and output params
+            // we must be using Rserve for this
             //
-            return buildResponse(outputs);
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            {
+                try
+                {
+                    Object result = RserveScriptEngine.eval(getViewContext(), functionName, reportSessionId, inputParams);
+                    //
+                    // currently only support a single json return value
+                    //
+                    scriptOutputs.add(new ScriptOutput(ScriptOutput.ScriptOutputType.json, "jsonout:", result.toString()));
+                }
+                catch(Exception e)
+                {
+
+                    String message = ReportUtil.makeExceptionString(e, "%s: %s");
+                    scriptOutputs.add(new ScriptOutput(ScriptOutput.ScriptOutputType.error, e.getClass().getName(), message));
+                }
+            }
+            else
+            {
+                throw new ScriptException("Executing a function requires that the 'Rserve Reports' experimental feature be turned on");
+            }
+
+            return scriptOutputs;
         }
 
         //
