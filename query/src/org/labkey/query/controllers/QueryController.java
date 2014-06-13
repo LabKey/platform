@@ -3569,7 +3569,9 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(UpdatePermission.class)
+    // Issue: 20522 - require read access to the action but executeJson will check for update privileges from the table
+    //
+    @RequiresPermissionClass(ReadPermission.class) //will check below
     @ApiVersion(8.3)
     public class UpdateRowsAction extends BaseSaveRowsAction
     {
@@ -3583,7 +3585,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) //will check below
     @ApiVersion(8.3)
     public class InsertRowsAction extends BaseSaveRowsAction
     {
@@ -3597,7 +3599,7 @@ public class QueryController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
+    @RequiresPermissionClass(ReadPermission.class) //will check below
     @ApiVersion(8.3)
     public class ImportRowsAction extends BaseSaveRowsAction
     {
@@ -3612,7 +3614,7 @@ public class QueryController extends SpringActionController
     }
 
     @ActionNames("deleteRows, delRows")
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermissionClass(ReadPermission.class) //will check below
     @ApiVersion(8.3)
     public class DeleteRowsAction extends BaseSaveRowsAction
     {

@@ -184,6 +184,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         var config = {
             schemaName  : this.reportConfig.schemaName,
             queryName   : this.reportConfig.queryName,
+            viewName    : this.reportConfig.viewName,
             removeableFilters   : filters,
             removeableSort      : sort,
             dataRegionName      : this.dataRegionName + '_report',
