@@ -135,8 +135,8 @@ Ext.define('LABKEY.app.controller.State', {
 
     manageState : function() {
         var size = this.state.getCount();
-        if (size > 20) {
-            var recs = this.state.getRange(size-10, size-1);
+        if (size > 10) {
+            var recs = this.state.getRange(size-5, size-1);
             this.state.removeAll();
             this.state.sync();
             this.state.getProxy().clear();
