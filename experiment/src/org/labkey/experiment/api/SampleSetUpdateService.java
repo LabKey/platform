@@ -161,6 +161,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
                         File dir = AssayFileWriter.ensureUploadDirectory(container, "sampleset");
                         File file = AssayFileWriter.findUniqueFileName(saf.getFilename(), dir);
                         saf.saveTo(file);
+                        value = file;
                     }
                     catch (IOException | ExperimentException e)
                     {
