@@ -119,13 +119,14 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         return DEFAULT_APP_PATH;
     }
 
-    public String toR(String s)
+    public static String toR(String s)
     {
         String r = PageFlowUtil.jsString(s);
         return "\"" + StringUtils.strip(r, "'") + "\"";
     }
 
-    private void appendParamList(StringBuilder labkey, Map<String, Object> inputParameters)
+    // static for access by RserveScriptEngine with no backing report
+    public static void appendParamList(StringBuilder labkey, Map<String, Object> inputParameters)
     {
         String sep = "";
         Set<Map.Entry<String, Object>> setParameters = inputParameters.entrySet();
@@ -149,7 +150,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         }
     }
 
-    private void appendParam(StringBuilder labkey, String key, String value)
+    private static void appendParam(StringBuilder labkey, String key, String value)
     {
         labkey.append(toR(key));
         labkey.append("=");

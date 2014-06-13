@@ -58,6 +58,7 @@ import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
@@ -556,6 +557,25 @@ public class ReportUtil
                 return true;
         }
         return false;
+    }
+
+    /**
+     * Create a unique ID appropriate for use as a reportSession
+     */
+    public static String createReportSessionId()
+    {
+        return "LabKey.ReportSession" + UniqueID.getServerSessionScopedUID();
+    }
+
+    /**
+     * These functions facilitate execution without a bound report (for example, executing a function that exists in
+     * a shared Rserve session
+     */
+    public static String makeExceptionString(Exception e, String formatString)
+    {
+        final String error1 = "Error executing command";
+        final String error2 = PageFlowUtil.filter(e.getMessage());
+        return String.format(formatString, error1, error2);
     }
 
     /**

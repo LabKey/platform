@@ -21,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.util.FileUtil;
 
 import java.io.File;
 import java.net.URI;
@@ -242,7 +243,9 @@ public class PathMapperImpl implements PathMapper
                 throw new RuntimeException("Local URI must not be empty");
 
             // Convert path to URI and validate paths are absolute
-            localURI = toURI(localURI);
+            // for local files, resolve. -  which strips .. and . from the path so that
+            // we can compare apples to apples (c:/bar/./foo versus c:/bar/foo)
+            localURI = toURI(localURI, true);
             remoteURI = toURI(remoteURI);
 
             if (!localURI.endsWith("/"))
@@ -262,11 +265,18 @@ public class PathMapperImpl implements PathMapper
 
     private static String toURI(String path)
     {
+        return toURI(path, false);
+    }
+    private static String toURI(String path, boolean resolve)
+    {
         if (!path.startsWith("file:"))
         {
             File f = new File(path);
             if (!f.isAbsolute())
                 throw new RuntimeException("File URI '" + path + "' must be an absolute path");
+
+            if (resolve)
+                f = FileUtil.getAbsoluteCaseSensitiveFile(f);
 
             return f.toURI().toString();
         }
@@ -277,6 +287,9 @@ public class PathMapperImpl implements PathMapper
             uri = new URI(path);
             if (!uri.isAbsolute())
                 throw new RuntimeException("File URI '" + path + "' must be an absolute path");
+
+            if (resolve)
+                uri = FileUtil.getAbsoluteCaseSensitiveFile(new File(uri)).toURI();
 
             return uri.toString();
         }

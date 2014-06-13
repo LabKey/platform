@@ -42,6 +42,56 @@ LABKEY.Report = new function(){
         }, this);
     }
 
+    function populateParams(config, isReport)
+    {
+        var execParams = {};
+
+        // fill in these parameters if we are executing a report
+        if (isReport)
+        {
+
+            if (config.reportId)
+                execParams["reportId"] = config.reportId;
+
+            if (config.reportName)
+                execParams["reportName"] = config.reportName;
+
+            if (config.schemaName)
+                execParams["schemaName"] = config.schemaName;
+
+            if (config.queryName)
+                execParams["queryName"] = config.queryName;
+        }
+        else
+        {
+            if (config.functionName)
+                execParams["functionName"] = config.functionName;
+        }
+
+        // the rest are common
+        if (config.reportSessionId)
+            execParams["reportSessionId"] = config.reportSessionId;
+
+        // bind client input params to our parameter map
+        for (var key in config.inputParams)
+        {
+            execParams["inputParams[" + key + "]"] = config.inputParams[key];
+        }
+
+        return execParams;
+    }
+
+    function _execute(config, isReport)
+    {
+        return LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("reports", "execute", config.containerPath),
+            method: 'POST',
+            success: getExecuteSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+            jsonData : populateParams(config, isReport)
+        });
+    }
+
     //public interface
     /** @scope LABKEY.Report */
     return {
@@ -99,7 +149,7 @@ LABKEY.Report = new function(){
                 url: LABKEY.ActionURL.buildURL("reports", "deleteSession", config.containerPath),
                 method: 'POST',
                 params: params,
-                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
@@ -126,7 +176,7 @@ LABKEY.Report = new function(){
             LABKEY.Ajax.request({
                 url: LABKEY.ActionURL.buildURL("reports", "getSessions", config.containerPath),
                 method: 'POST',
-                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
+                success: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope, false),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
             });
         },
@@ -163,36 +213,39 @@ LABKEY.Report = new function(){
             if (!config.reportId && !config.reportName)
                 throw "You must supply a value for the reportId or reportName config property.";
 
-            var execParams = {};
+            return _execute(config, true);
+        },
 
-            // bind client input params to our parameter map
-            for (var key in config.inputParams)
-            {
-                execParams["inputParams[" + key + "]"] = config.inputParams[key];
-            }
+        /**
+         * Executes a single method avaiable in the namespace of a previously created session context.
+         *
+         * @param {Object} config A configuration object with the following properties.
+         * @param {String} [config.containerPath] The container in which to make the request (defaults to current container)
+         * @param {Object} [config.scope] The scope to use when calling the callbacks (defaults to this).
+         * @param {String} [config.functionName] The name of the function to execute
+         * @param {String} [config.reportSessionId] Execute within the existsing report session.
+         * @param {String} [config.inputParams] An object with properties for input parameters.
+         * @param {Function} config.success The function to call if the operation is successful.  This function will
+         * receive an object with the following properties
+         * <ul>
+         *     <li>console:  a string[] of information written by the script to the console</li>
+         *     <li>error:  any exception thrown by the script that halted execution</li>
+         *     <li>ouputParams:  an outputParam[] of any output parameters (imgout, jsonout, etc) returned by the script</li>
+         * </ul>
+         * @param {Function} [config.failure] A function to call if an error preventing script execution occurs.
+         * This function will receive one parameter of type object with the following properites:
+         * <ul>
+         *  <li>exception: The exception message.</li>
+         * </ul>
+         */
+        executeFunction : function(config) {
+            if (!config)
+                throw "You must supply a config object to call this method.";
 
-            if (config.reportId)
-                execParams["reportId"] = config.reportId;
+            if (!config.functionName)
+                throw "You must supply a value for the functionName config property.";
 
-            if (config.reportName)
-                execParams["reportName"] = config.reportName;
-
-            if (config.schemaName)
-                execParams["schemaName"] = config.schemaName;
-
-            if (config.queryName)
-                execParams["queryName"] = config.queryName;
-
-            if (config.reportSessionId)
-                execParams["reportSessionId"] = config.reportSessionId;
-
-            return LABKEY.Ajax.request({
-                url: LABKEY.ActionURL.buildURL("reports", "execute", config.containerPath),
-                method: 'POST',
-                success: getExecuteSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.scope),
-                failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
-                jsonData : execParams
-            });
+            return _execute(config, false);
         }
     };
 };

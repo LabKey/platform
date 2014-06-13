@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports;
 
+import javax.script.ScriptException;
 import javax.servlet.http.HttpSessionBindingEvent;
 import javax.servlet.http.HttpSessionBindingListener;
 import org.rosuda.REngine.Rserve.RConnection;
@@ -78,6 +79,19 @@ public class RConnectionHolder implements HttpSessionBindingListener
             close();
             _connection = connection;
         }
+    }
+
+    public synchronized void acquire() throws ScriptException
+    {
+        if (!isInUse())
+            setInUse(true);
+        else
+            throw new ScriptException("The report session is currently in use");
+    }
+
+    public synchronized void release()
+    {
+        setInUse(false);
     }
 
     public boolean isInUse()

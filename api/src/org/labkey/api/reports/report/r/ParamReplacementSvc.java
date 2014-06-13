@@ -229,7 +229,8 @@ public class ParamReplacementSvc
                     // now that we've created the resultFile locally, replace the parameter with the remote
                     // machines view of it
                     //
-                    resultFileName = remoteParentDirectoryPath + "/" + resultFile.getName();
+                    String slash = remoteParentDirectoryPath.endsWith("/") ? "" : "/";
+                    resultFileName = remoteParentDirectoryPath + slash + resultFile.getName();
                 }
                 else
                 {

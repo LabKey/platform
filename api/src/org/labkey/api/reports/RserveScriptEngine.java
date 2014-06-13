@@ -18,13 +18,17 @@ package org.labkey.api.reports;
 import org.apache.axis.utils.StringUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.file.PathMapper;
+import org.labkey.api.reports.report.RReport;
 
 import javax.script.*;
 import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
+import java.util.Map;
 
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.view.ViewContext;
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
 import org.rosuda.REngine.Rserve.RConnection;
@@ -64,14 +68,51 @@ public class RserveScriptEngine extends RScriptEngine
         return getRemotePath(workingDir);
     }
 
+    //
+    // note this is only run in the context of Rserve (callers need to ensure this).  The incoming script must already
+    // have been parsed (i.e. we are evaluating a function that has already been loaded into the existing R sesssion on Rserve)
+    //
+    public static Object eval(ViewContext context, String script, String reportSessionId, Map<String, Object> inputParameters) throws ScriptException
+    {
+        //
+        // We never want to create a connection under the covers if one doesn't exist in this case (since we are
+        // about to execute a function that only exists in the session).  The only thing we can do is exit here if
+        // the connection has been closed out from under us.
+        //
+        RConnectionHolder rh = (RConnectionHolder) context.getSession().getAttribute(reportSessionId);
+        RConnection rconn = getConnectionFromHolder(rh);
+        if (rconn == null)
+        {
+            throw new ScriptException("The connection bound to this report session is no longer valid!");
+        }
+
+        StringBuilder paramsList = new StringBuilder();
+        RReport.appendParamList(paramsList, inputParameters);
+        script = script + "(" + paramsList.toString() + ")";
+
+        try
+        {
+            rh.acquire();
+            REXP rexp = rconn.eval(script);
+            if (rexp.inherits("try-error"))
+                throw new RuntimeException(getRserveOutput(rexp));
+            return getRserveOutput(rexp);
+        }
+        catch (RserveException re)
+        {
+            throw new RuntimeException(getRserveError(rconn, re));
+        }
+        finally
+        {
+            rh.release();
+        }
+    }
+
     public Object eval(String script, ScriptContext context) throws ScriptException
     {
         List<String> extensions = getFactory().getExtensions();
-        String rcmd = "";
         RConnection rconn = null;
         RConnectionHolder rh = null;
-
-        String connectionId = null;
 
         if (extensions.isEmpty())
         {
@@ -141,7 +182,7 @@ public class RserveScriptEngine extends RScriptEngine
         }
     }
 
-    public String getRserveError(RConnection rconn, RserveException re)
+    public static String getRserveError(RConnection rconn, RserveException re)
     {
         String rserveErr = re.getMessage();
         //
@@ -170,7 +211,7 @@ public class RserveScriptEngine extends RScriptEngine
     // by the R script itself.  Since we run the script as is using the Source command and don't
     // evaluate line by line, it is up to the author to determine what to print out
     //
-    public String getRserveOutput(REXP rexp)
+    public static String getRserveOutput(REXP rexp)
     {
         StringBuilder sb = new StringBuilder();
         String rserveOut = null;
@@ -206,7 +247,8 @@ public class RserveScriptEngine extends RScriptEngine
 
     public String getRemotePath(File localFile)
     {
-        String localPath = localFile.toURI().toString();
+        // get absolute path to make sure the paths are consistent
+        String localPath = FileUtil.getAbsoluteCaseSensitiveFile(localFile).toURI().toString();
         return getRemotePath(localPath);
     }
 
@@ -217,16 +259,20 @@ public class RserveScriptEngine extends RScriptEngine
         {
             // CONSIDER: Move converting file path to URI into the PathMapper.
             if (!localURI.startsWith("file:"))
-                localURI = new File(localURI).toURI().toString();
+                localURI = FileUtil.getAbsoluteCaseSensitiveFile(new File(localURI)).toURI().toString();
 
             String remoteURI = pathMap.localToRemote(localURI);
             remoteURI = remoteURI.replace('\\', '/');
             try
             {
-                File f = new File(new URI(remoteURI));
-                String remotePath = f.getAbsolutePath();
-                LOG.debug("Mapped path '" + localURI + "' ==> '" + remotePath + "'");
-                return remotePath;
+                // check that the remoteURI is valid
+                URI uri = new URI(remoteURI);
+                LOG.debug("Mapped path '" + localURI + "' ==> '" + remoteURI + "'");
+
+                if (remoteURI.startsWith("file:"))
+                    return remoteURI.substring(5);
+
+                return remoteURI;
             }
             catch (URISyntaxException e)
             {
@@ -346,6 +392,18 @@ public class RserveScriptEngine extends RScriptEngine
         */
     }
 
+    private static RConnection getConnectionFromHolder(RConnectionHolder rh)
+    {
+        if (rh != null)
+        {
+            RConnection rconn = rh.getConnection();
+            if (rconn != null && rconn.isConnected())
+                return rconn;
+        }
+
+        return null;
+    }
+
     /** Change to the R working directory on the remote RServe. */
     private void initEnv(RConnection rconn, ScriptContext context)
     {
@@ -361,33 +419,12 @@ public class RserveScriptEngine extends RScriptEngine
 
     private RConnection getConnection(RConnectionHolder rh, ScriptContext context)
     {
+        RConnection rconn = getConnectionFromHolder(rh);
+
         //
         // todo: on windows this will create a connection against the same environment
         // todo: on unix this will create a new separate environment
         //
-        RConnection rconn = null;
-
-        //
-        // by passing in an RConnectionHolder, the user has indicated that
-        // we should attempt to reuse an existing connection.  If the connection
-        // is null, then create one
-        //
-        if (rh != null)
-        {
-            rconn = rh.getConnection();
-
-            if (rconn != null)
-            {
-                if (!rconn.isConnected())
-                {
-                    //
-                    // connection got closed from underneath us
-                    //
-                    rconn = null;
-                }
-            }
-        }
-
         if (null == rconn)
         {
             try

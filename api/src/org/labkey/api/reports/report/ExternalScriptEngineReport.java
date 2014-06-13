@@ -30,6 +30,7 @@ import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.reports.report.r.ParamReplacement;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -128,7 +129,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             @Override
             public boolean handleRuntimeException(Exception e)
             {
-                String message = makeExceptionString(e, "%s: %s");
+                String message = ReportUtil.makeExceptionString(e, "%s: %s");
                 scriptOutputs.add(new ScriptOutput(ScriptOutput.ScriptOutputType.error, e.getClass().getName(), message));
                 return true;
             }
@@ -249,16 +250,9 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         return renderer.render(outputSubst);
     }
 
-    private String makeExceptionString(Exception e, String formatString)
-    {
-        final String error1 = "Error executing command";
-        final String error2 = PageFlowUtil.filter(e.getMessage());
-        return String.format(formatString, error1, error2);
-    }
-
     private HttpView handleException(Exception e)
     {
-        return new HtmlView(makeExceptionString(e, "<font class=\"labkey-error\">%s</font><pre>%s</pre>"));
+        return new HtmlView(ReportUtil.makeExceptionString(e, "<font class=\"labkey-error\">%s</font><pre>%s</pre>"));
     }
 
     @Override
@@ -330,23 +324,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                 if (!StringUtils.isEmpty(reportSessionId))
                 {
                     rh = (RConnectionHolder) context.getSession().getAttribute(reportSessionId);
-
-                    if (rh != null)
-                    {
-                        synchronized (rh)
-                        {
-                            if (!rh.isInUse())
-                            {
-                                rh.setInUse(true);
-                            }
-                            else
-                            {
-                                throw new ScriptException("The report session is currently in use");
-                            }
-                        }
-                        bindings.put(RserveScriptEngine.R_SESSION, rh);
-                    }
-                    else
+                    if (rh == null)
                     {
                         //
                         // This can happen if the client never called the createSession action or
@@ -354,6 +332,8 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                         //
                         throw new ScriptException("The report session is invalid");
                     }
+                    rh.acquire();
+                    bindings.put(RserveScriptEngine.R_SESSION, rh);
                 }
             }
 
@@ -366,15 +346,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         finally
         {
             if (rh != null)
-            {
-                synchronized (rh)
-                {
-                    //
-                    // we are done with the R session for this request
-                    //
-                    rh.setInUse(false);
-                }
-            }
+                rh.release();
         }
     }
 
