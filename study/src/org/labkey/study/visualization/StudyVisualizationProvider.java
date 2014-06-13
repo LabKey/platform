@@ -189,9 +189,12 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     // for non-demographic datasets, join on subject/visit, allowing null results for this column so as to follow the lead of the primary measure column for this query:
     private VisualizationSourceColumn getVisitJoinColumn(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query, String subjectNounSingular)
     {
+        // issue 20689 : always join by visit sequencenum for Dataspace
+        Study study = StudyService.get().getStudy(getSchema().getContainer());
+        String fieldName = (study != null && study.isDataspaceStudy()) || getType() == ChartType.TIME_VISITBASED ? "sequencenum" : "VisitDate";
+
         String subjectVisit = subjectNounSingular + "Visit";
-        String colName = query.getQueryName().equalsIgnoreCase(subjectVisit) ? "" : subjectVisit + "/";
-        colName += (getType() == ChartType.TIME_VISITBASED ? "sequencenum" : "VisitDate");
+        String colName = (query.getQueryName().equalsIgnoreCase(subjectVisit) ? "" : subjectVisit + "/") + fieldName;
         return factory.create(query.getSchema(), query.getQueryName(), colName, true);
     }
 
