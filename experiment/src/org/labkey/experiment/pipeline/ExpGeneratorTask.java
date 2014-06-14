@@ -99,10 +99,7 @@ public class ExpGeneratorTask extends PipelineJob.Task<ExpGeneratorTask.Factory>
         try
         {
             // Keep track of all of the runs that have been created by this task
-            // Using a FileXarSource will create input/output datas using names that are relative to the log file parent dir.
-            File file = new File(getJob().getLogFile().getParent(), "dummy.xar");
-            XarSource source = new FileXarSource(file, getJob());
-            ExpRun run = ExpGeneratorHelper.insertRun(getJob(), source, null);
+            ExpRun run = ExpGeneratorHelper.insertRun(getJob(), null, null);
 
             // save any job-level custom properties from the run
             if (getJob() instanceof PropertiesJobSupport)
