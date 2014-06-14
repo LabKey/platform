@@ -422,11 +422,13 @@ public class AssayPublishManager implements AssayPublishService.Service
             for (Map.Entry<String, Object> entry : dataMap.entrySet())
             {
                 String uri = propertyNamesToUris.get(entry.getKey());
+
+                // NOTE Date is always special for publish be sure to use VisitDateURI to 'mark' this column
+                if (AssayPublishService.DATE_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
+                    uri = DataSetDefinition.getVisitDateURI();
+
                 if (null == uri)
                 {
-                    if (AssayPublishService.DATE_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
-                        uri = DataSetDefinition.getVisitDateURI();
-
                     // Skip "TargetStudy"
                     if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(entry.getKey()))
                         continue;
