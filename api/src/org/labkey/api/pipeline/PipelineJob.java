@@ -84,6 +84,9 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public static final String PIPELINE_EMAIL_ADDRESS_PARAM = "pipeline, email address";
     public static final String PIPELINE_USERNAME_PARAM = "pipeline, username";
+    public static final String PIPELINE_PROTOCOL_NAME_PARAM = "pipeline, protocol name";
+    public static final String PIPELINE_PROTOCOL_DESCRIPTION_PARAM = "pipeline, protocol description";
+    public static final String PIPELINE_LOAD_FOLDER_PARAM = "pipeline, load folder";
     public static final String PIPELINE_JOB_INFO_PARAM = "pipeline, jobInfo";
 
     private static Logger _log = Logger.getLogger(PipelineJob.class);

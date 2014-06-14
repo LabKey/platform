@@ -101,7 +101,8 @@ public class ExperimentService
         ExpRun getExpRun(int rowid);
         ExpRun getExpRun(String lsid);
         List<? extends ExpRun> getExpRuns(Container container, @Nullable ExpProtocol parentProtocol, @Nullable ExpProtocol childProtocol);
-        List<? extends ExpRun> getExpRunsByJobId(int jobId);
+        List<? extends ExpRun> getExpRunsForJobId(int jobId);
+        List<? extends ExpRun> getExpRunsForFilePathRoot(File filePathRoot);
         ExpRun createExperimentRun(Container container, String name);
 
         ExpData getExpData(int rowid);

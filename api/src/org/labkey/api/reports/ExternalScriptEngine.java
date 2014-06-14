@@ -15,6 +15,7 @@
  */
 package org.labkey.api.reports;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -366,18 +367,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine
             String fileName = _def.getOutputFileName();
             if (fileName != null)
             {
-                // Replace the ${scriptName} substitution with the actual name of the script file (minus extension)
-                if (context.getAttribute(REWRITTEN_SCRIPT_FILE) instanceof File)
-                {
-                    File scriptFile = (File)context.getAttribute(REWRITTEN_SCRIPT_FILE);
-                    int index = scriptFile.getName().lastIndexOf(".");
-                    if (index != -1)
-                    {
-                        fileName = fileName.replace(SCRIPT_NAME_REPLACEMENT, scriptFile.getName().substring(0, index));
-                    }
-                }
-                File file = new File(getWorkingDir(context), fileName);
-                if (file.exists())
+                File file = getConsoleOutputFile(context);
+                if (file != null)
                 {
                     br = new BufferedReader(new FileReader(file));
                     String l;
@@ -406,5 +397,43 @@ public class ExternalScriptEngine extends AbstractScriptEngine
             if (br != null)
                 try {br.close();} catch(IOException ignored) {}
         }
+    }
+
+    /** Get the expected console out file or null if it doesn't exist. */
+    @Nullable
+    public File getConsoleOutputFile(ScriptContext context)
+    {
+        String fileName = _def.getOutputFileName();
+        if (fileName != null)
+        {
+            if (context.getAttribute(REWRITTEN_SCRIPT_FILE) instanceof File)
+            {
+                File scriptFile = (File)context.getAttribute(REWRITTEN_SCRIPT_FILE);
+
+                // Replace the ${scriptName} substitution with the actual name of the script file (minus extension)
+                // E.g., if "script.R" is the filename and "${scriptName}.Rout" is the replacement, try "script.Rout"
+                int index = scriptFile.getName().lastIndexOf(".");
+                if (index != -1)
+                {
+                    String outFile = fileName.replace(SCRIPT_NAME_REPLACEMENT, scriptFile.getName().substring(0, index));
+                    File file = new File(getWorkingDir(context), outFile);
+                    if (file.exists())
+                        return file;
+                }
+
+                // Replace the ${scriptName} substitution with the actual name of the script file (including extension)
+                // E.g., if "script.r" is the filename and "${scriptName}.Rout" is the replacement, try "script.r.Rout"
+                String outFile = fileName.replace(SCRIPT_NAME_REPLACEMENT, scriptFile.getName());
+                File file = new File(getWorkingDir(context), outFile);
+                if (file.exists())
+                    return file;
+            }
+
+            File file = new File(getWorkingDir(context), fileName);
+            if (file.exists())
+                return file;
+        }
+
+        return null;
     }
 }

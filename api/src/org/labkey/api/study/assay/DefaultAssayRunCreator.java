@@ -470,9 +470,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     ExpData data = ExperimentService.get().getExpDataByURL(file, c);
                     if (data == null)
                     {
-                        throw new UnsupportedOperationException("Creating new input ExpData not yet implemented");
-                        //DataType type = ... ?
-                        //ExperimentService.get().createData(c, type, file.getName());
+                        DataType dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+                        data = createData(c, file, file.getName(), dataType, false);
                     }
 
                     inputDatas.put(data, role);

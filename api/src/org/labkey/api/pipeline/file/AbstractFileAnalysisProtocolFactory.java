@@ -34,7 +34,7 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     private static Logger _log = Logger.getLogger(AbstractFileAnalysisProtocolFactory.class);
 
     public static final String DEFAULT_PARAMETERS_NAME = "default";
-    
+
     /**
      * Get the file name used for MS2 search parameters in analysis directories.
      *
@@ -173,10 +173,10 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
     protected T createProtocolInstance(ParamParser parser)
     {
         // Remove the pipeline specific parameters.
-        String name = parser.removeInputParameter("pipeline, protocol name");
-        String description = parser.removeInputParameter("pipeline, protocol description");
-        String folder = parser.removeInputParameter("pipeline, load folder");
-        String email = parser.removeInputParameter("pipeline, email address");
+        String name = parser.removeInputParameter(PipelineJob.PIPELINE_PROTOCOL_NAME_PARAM);
+        String description = parser.removeInputParameter(PipelineJob.PIPELINE_PROTOCOL_DESCRIPTION_PARAM);
+        String folder = parser.removeInputParameter(PipelineJob.PIPELINE_LOAD_FOLDER_PARAM);
+        String email = parser.removeInputParameter(PipelineJob.PIPELINE_EMAIL_ADDRESS_PARAM);
 
         T instance = createProtocolInstance(name, description, parser.getXML());
 

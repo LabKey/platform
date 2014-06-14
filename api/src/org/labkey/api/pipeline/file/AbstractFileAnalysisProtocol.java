@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineProtocol;
 import org.labkey.api.util.FileType;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -123,7 +124,7 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
     public void saveInstance(File file, Container c) throws IOException
     {
         Map<String, String> addParams = new HashMap<>();
-        addParams.put("pipeline, email address", email);
+        addParams.put(PipelineJob.PIPELINE_EMAIL_ADDRESS_PARAM, email);
         save(file, null, addParams);
     }
 
@@ -151,8 +152,8 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         if (!dir.exists() && !dir.mkdirs())
             throw new IOException("Failed to create directory '" + dir + "'.");
 
-        parser.setInputParameter("pipeline, protocol name", getName());
-        parser.setInputParameter("pipeline, protocol description", description);
+        parser.setInputParameter(PipelineJob.PIPELINE_PROTOCOL_NAME_PARAM, getName());
+        parser.setInputParameter(PipelineJob.PIPELINE_PROTOCOL_DESCRIPTION_PARAM, getDescription());
 
         if (addParams != null)
         {
