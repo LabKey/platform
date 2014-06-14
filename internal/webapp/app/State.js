@@ -138,10 +138,36 @@ Ext.define('LABKEY.app.controller.State', {
         if (size > 10) {
             var recs = this.state.getRange(size-5, size-1);
             this.state.removeAll();
-            this.state.sync();
+            this._sync();
             this.state.getProxy().clear();
-            this.state.add(recs);
+            this._sync(recs);
+        }
+    },
+
+    /**
+     * Managed sync that attempts to recover in case the storage fails.
+     * Ideally, this should be pushed down into the extended store instance in it's own
+     * sync method.
+     * @param records
+     * @private
+     */
+    _sync : function(records) {
+
+        try
+        {
+            if (Ext.isArray(records)) {
+                this.state.add(records);
+            }
             this.state.sync();
+        }
+        catch (e)
+        {
+            if (this.__LOCK__ !== true) {
+                this.__LOCK__ = true;
+                this.manageState();
+                this._sync(records);
+                this.__LOCK__ = false;
+            }
         }
     },
 
@@ -213,13 +239,12 @@ Ext.define('LABKEY.app.controller.State', {
             jsonReadySelections.push(s.jsonify());
         });
 
-        this.state.add({
+        this._sync([{
             viewState: {},
             customState: this.customState,
             filters: jsonReadyFilters,
             selections: jsonReadySelections
-        });
-        this.state.sync();
+        }]);
     },
 
     /**
