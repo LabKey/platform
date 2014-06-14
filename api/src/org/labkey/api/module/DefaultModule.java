@@ -136,6 +136,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _buildOS = null;
     private String _buildPath = null;
     private String _sourcePath = null;
+    private String _buildNumber = null;
     private File _explodedPath = null;
     protected String _resourcePath = null;
     private boolean _requireSitePermission = false;
@@ -766,6 +767,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _buildPath = buildPath;
     }
 
+    public String getBuildNumber()
+    {
+        return _buildNumber;
+    }
+
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void setBuildNumber(String buildNumber)
+    {
+        _buildNumber = buildNumber;
+    }
+
     public Map<String, String> getProperties()
     {
         Map<String, String> props = new LinkedHashMap<>();
@@ -781,6 +793,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         props.put("Build User", getBuildUser());
         props.put("Build Path", getBuildPath());
         props.put("Source Path", getSourcePath());
+        props.put("Build Number", getBuildNumber());
         props.put("Module Dependencies", StringUtils.trimToNull(getModuleDependencies()) == null ? "<none>" : getModuleDependencies());
 
         return props;
