@@ -548,7 +548,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         }
     }
 
-    public static final int UNCATEGORIZED_ROWID = -1;
+    public static final int UNCATEGORIZED_ROWID = 0;
     public List<ViewCategoryTreeNode> getCategorySubcriptionTree(Container container, User user, Set<Integer> subscriptionSet)
     {
         // We take advantage of the fact that this is at most 2 levels; the 1st level may have multiple categories

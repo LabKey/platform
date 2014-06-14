@@ -1,7 +1,11 @@
 package org.labkey.api.reports.model;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.study.DatasetDB;
 
 import java.io.IOException;
@@ -13,7 +17,7 @@ public class ReportInfo
     private Date _created;
     private Date _modified;
     private String _containerId;
-    private Integer _categoryId;
+    private int _categoryId;
     private Type _type;
     private Integer rowId;
 
@@ -33,8 +37,24 @@ public class ReportInfo
             setCreated(report.getCreated());
             setModified(report.getModified());
             setContainerId(report.getContainerId());
-            setCategoryId(null != report.getCategoryId() ? report.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID);
             setRowId(report.getRowId());
+
+            Integer categoryId = report.getCategoryId();
+            if (null == categoryId)
+            {
+                String schemaName = reportDescriptor.getProperty(ReportDescriptor.Prop.schemaName);
+                String queryName = reportDescriptor.getProperty(ReportDescriptor.Prop.queryName);
+                if (null != schemaName && null != queryName)
+                {
+                    Container container = ContainerManager.getForId(report.getContainerId());
+                    if (null != container)
+                    {
+                        ViewCategory category = ReportUtil.getDefaultCategory(container, schemaName, queryName);
+                        categoryId = category.getRowId();
+                    }
+                }
+            }
+            setCategoryId(null != categoryId ? categoryId : ViewCategoryManager.UNCATEGORIZED_ROWID);
         }
         catch (IOException e)
         {
@@ -47,8 +67,8 @@ public class ReportInfo
         this(dataset.getName(), Type.dataset);
         setModified(dataset.getModified());
         setContainerId(dataset.getContainer());
-        setCategoryId(null != dataset.getCategoryId() ? dataset.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID);
         setRowId(dataset.getDatasetId());
+        setCategoryId(null != dataset.getCategoryId() ? dataset.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID);
     }
 
     public String getName()
@@ -91,7 +111,7 @@ public class ReportInfo
         _containerId = containerId;
     }
 
-    public Integer getCategoryId()
+    public int getCategoryId()
     {
         return _categoryId;
     }
