@@ -26,6 +26,8 @@ import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.reports.ExternalScriptEngine;
+import org.labkey.api.reports.ExternalScriptEngineDefinition;
+import org.labkey.api.reports.ExternalScriptEngineFactory;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -256,17 +258,26 @@ public class ScriptTaskImpl extends CommandTaskImpl
                 FileUtils.write(fileOutput, String.valueOf(o), "UTF-8");
             }
 
-            File rewrittenScriptFile = null;
+            // If we got this far, we were successful in running the script.
+            // Delete the rewritten script and output files from the work directory
+            // so they won't be attached as related outputs of the task.
             if (bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE) instanceof File)
-                rewrittenScriptFile = (File)bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE);
-//            else
-//                rewrittenScriptFile = scriptFile;
+            {
+                File rewrittenScriptFile = (File)bindings.get(ExternalScriptEngine.REWRITTEN_SCRIPT_FILE);
+                _wd.discardFile(rewrittenScriptFile);
+            }
 
-            // TODO: process output?
-            // TODO: Perhaps signal to _wd that rewrittenScriptFile is a copied input so it can be deleted
-
-            if (rewrittenScriptFile != null)
-                action.addInput(rewrittenScriptFile, "Script File"); // CONSIDER: Add replacement script instead?
+            // Delete the console out file (e.g., "script.Rout") from the work directory
+            if (_engine.getFactory() instanceof ExternalScriptEngineFactory)
+            {
+                ExternalScriptEngineDefinition externalEngineDef = ((ExternalScriptEngineFactory)_engine.getFactory()).getDefinition();
+                if (externalEngineDef.getOutputFileName() != null)
+                {
+                    File consoleOutputFile = ((ExternalScriptEngine) _engine).getConsoleOutputFile(_engine.getContext());
+                    if (consoleOutputFile != null)
+                        _wd.discardFile(consoleOutputFile);
+                }
+            }
 
             return true;
         }

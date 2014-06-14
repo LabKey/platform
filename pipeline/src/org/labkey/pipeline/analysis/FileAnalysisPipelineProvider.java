@@ -15,13 +15,19 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpRun;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.permissions.InsertPermission;
@@ -100,5 +106,52 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
             }
         }
         return result;
+    }
+
+    @Override
+    public void preDeleteStatusFile(PipelineStatusFile sf)
+    {
+        // Delete the protocol analysis directory and it's contents if it is no longer used
+        File statusFile = new File(sf.getFilePath());
+        File analysisDir = statusFile.getParentFile();
+        if (NetworkDrive.exists(analysisDir))
+        {
+            boolean unused = true;
+
+            // Check if any runs use the analysis directory as the filePathRoot
+            List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForFilePathRoot(analysisDir);
+            if (!runs.isEmpty())
+            {
+                unused = false;
+            }
+
+            if (unused)
+            {
+                // Check if any runs have ExpData inputs/outputs that reference files in this directory
+                File[] files = analysisDir.listFiles();
+                if (files != null)
+                {
+                    for (File file : files)
+                    {
+                        ExpRun run = ExperimentService.get().getCreatingRun(file, null);
+                        if (run != null)
+                        {
+                            unused = false;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // If no usages were found, delete the entire analysis directory.
+            // CONSIDER: Perform file delete in post-commit transaction
+            if (unused)
+            {
+                if (FileUtil.moveToDeleted(analysisDir))
+                    Logger.getLogger(FileAnalysisPipelineProvider.class).info(String.format("Job '%s' analysis directory no longer referenced by any runs and was moved to .deleted: %s", sf.getInfo(), analysisDir));
+                else
+                    Logger.getLogger(FileAnalysisPipelineProvider.class).warn(String.format("Failed to move job '%s' analysis directory to .deleted: %s", sf.getDescription(), analysisDir));
+            }
+        }
     }
 }

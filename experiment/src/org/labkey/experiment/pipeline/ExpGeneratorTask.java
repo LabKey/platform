@@ -16,7 +16,9 @@
 package org.labkey.experiment.pipeline;
 
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.exp.FileXarSource;
 import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.XarSource;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.pipeline.ExpGeneratorId;
 import org.labkey.api.pipeline.AbstractTaskFactory;
@@ -30,6 +32,7 @@ import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.FileType;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -96,7 +99,10 @@ public class ExpGeneratorTask extends PipelineJob.Task<ExpGeneratorTask.Factory>
         try
         {
             // Keep track of all of the runs that have been created by this task
-            ExpRun run = ExpGeneratorHelper.insertRun(getJob(), null, null);
+            // Using a FileXarSource will create input/output datas using names that are relative to the log file parent dir.
+            File file = new File(getJob().getLogFile().getParent(), "dummy.xar");
+            XarSource source = new FileXarSource(file, getJob());
+            ExpRun run = ExpGeneratorHelper.insertRun(getJob(), source, null);
 
             // save any job-level custom properties from the run
             if (getJob() instanceof PropertiesJobSupport)

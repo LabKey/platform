@@ -551,6 +551,11 @@ public class PipelineStatusManager
 
         if (!deleteable.isEmpty())
         {
+            // Delete the associated ExpRuns.
+            // The runs must be deleted before the provider's preDeleteStatusFile is called
+            if (deleteExpRuns)
+                deleteAssocatedRuns(info, deleteable);
+
             Container c = info.getContainer();
             SQLFragment sql = new SQLFragment();
             sql.append("DELETE FROM ").append(_schema.getTableInfoStatusFiles())
@@ -562,20 +567,9 @@ public class PipelineStatusManager
                     .append(" SET JobId = NULL ")
                     .append("WHERE JobId ");
 
-            List<Integer> allRunIds = new ArrayList<>(deleteable.size());
-
             List<Object> statusFileIds = new ArrayList<>();
             for (PipelineStatusFile pipelineStatusFile : deleteable)
             {
-                if (deleteExpRuns)
-                {
-                    // Get the list of runs that reference this job
-                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("jobid"), pipelineStatusFile.getRowId());
-                    TableInfo runsTable = ExperimentService.get().getTinfoExperimentRun();
-                    List<Integer> runIds = new TableSelector(runsTable, Collections.singleton("rowid"), filter, null).getArrayList(Integer.class);
-                    allRunIds.addAll(runIds);
-                }
-
                 // Allow the provider to do any necessary clean-up
                 PipelineProvider provider = PipelineService.get().getPipelineProvider(pipelineStatusFile.getProvider());
                 if (provider != null)
@@ -598,20 +592,9 @@ public class PipelineStatusManager
                 expSql.add(c.getId());
             }
 
-            if (deleteExpRuns)
+            if (!deleteExpRuns)
             {
-                // Delete the associated ExpRuns
-                int[] runIds = new int[allRunIds.size()];
-                int i = 0;
-                for (Integer runId : allRunIds)
-                {
-                    runIds[i++] = runId;
-                }
-                ExperimentService.get().deleteExperimentRunsByRowIds(info.getContainer(), info.getUser(), runIds);
-            }
-            else
-            {
-                // Otherwise, null any ExpRuns referencing these Jobs if we aren't deleting them
+                // Not deleting runs: null any ExpRuns referencing these Jobs if we aren't deleting them
                 new SqlExecutor(ExperimentService.get().getSchema()).execute(expSql);
             }
 
@@ -620,6 +603,24 @@ public class PipelineStatusManager
             // If we deleted anything, try recursing since we may have deleted all the child jobs which would
             // allow a parent job to be deleted
             deleteStatus(info, deleteExpRuns, rowIds);
+        }
+    }
+
+    private static void deleteAssocatedRuns(ViewBackgroundInfo info, Set<PipelineStatusFile> deleteable)
+    {
+        for (PipelineStatusFile pipelineStatusFile : deleteable)
+        {
+            // Get the list of runs that reference this job
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("jobid"), pipelineStatusFile.getRowId());
+            TableInfo runsTable = ExperimentService.get().getTinfoExperimentRun();
+            List<Integer> runIds = new TableSelector(runsTable, Collections.singleton("rowid"), filter, null).getArrayList(Integer.class);
+
+            // Convert to varargs
+            int[] ints = new int[runIds.size()];
+            int i = 0;
+            for (Integer runId : runIds)
+                ints[i++] = runId;
+            ExperimentService.get().deleteExperimentRunsByRowIds(info.getContainer(), info.getUser(), ints);
         }
     }
 

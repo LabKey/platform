@@ -49,10 +49,10 @@
 
         Container c = file.lookupContainer();
         ActionURL detailsURL = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(c, file.getRowId());
-        sb.append("<span>job status: <a href='").append(h(detailsURL)).append("'>").append(h(file.getDescription())).append("</a></span>");
+        sb.append("<span>job: <a href='").append(h(detailsURL)).append("'>").append(h(file.getDescription())).append("</a></span>");
 
         // Get any associated experiment runs
-        List<? extends ExpRun> runs = ExperimentService.get().getExpRunsByJobId(file.getRowId());
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForJobId(file.getRowId());
         if (!runs.isEmpty())
         {
             for (ExpRun run : runs)
@@ -87,13 +87,15 @@
 
     Set<ExpRun> allRuns = new LinkedHashSet<>();
 %>
-<p>Delete selected pipeline job status?</p>
+<p>Delete selected pipeline jobs?</p>
 
 <ul>
 <% for (PipelineStatusFileImpl file : files) { %>
     <%=text(renderStatusFile(file, allRuns))%>
 <% } %>
 </ul>
+
+<form action="<%= h(getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
 
 <% if (!allRuns.isEmpty()) { %>
 
@@ -111,16 +113,14 @@
         }
     }
 </script>
-<input type="checkbox" id="deleteRuns" name="deleteRuns" <%=checked(form.isDeleteRuns())%> onchange="onDeleteRunsChange(this);">
-<label for="deleteRuns">Delete associated experiment runs when deleting job status files?<br>
-<span style="margin-left:1.5em;">When checked, both the job status record and the associated experiment run will be deleted.</span>
+<input type="checkbox" id="deleteRuns" name="deleteRuns" value="true" <%=checked(form.isDeleteRuns())%> onchange="onDeleteRunsChange(this);">
+<label for="deleteRuns">Delete associated experiment runs when deleting jobs?<br>
+<span style="margin-left:1.5em;">When checked, both the job and the associated experiment run will be deleted.</span>
 </label>
 
 <% } %>
 
-
 <p>
-<form action="<%= h(getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
     <input type="hidden" name="confirm" value="true">
 <%
     if (getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME) != null)

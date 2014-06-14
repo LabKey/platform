@@ -594,32 +594,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     static void moveToDeleted(File fileToMove)
     {
-        if (!fileToMove.exists())
-            return;
-        File parent = fileToMove.getParentFile();
-
-        File deletedDir = new File(parent, ".deleted");
-        if (!deletedDir.exists())
-            deletedDir.mkdir();
-
-        File newLocation = new File(deletedDir, fileToMove.getName());
-        if (newLocation.exists())
-            recursiveDelete(newLocation);
-
-        fileToMove.renameTo(newLocation);
-    }
-
-    static void recursiveDelete(File file)
-    {
-        if (file.isDirectory())
-        {
-            File[] files = file.listFiles();
-            if (null != files)
-                for (File child : files)
-                    recursiveDelete(child);
-        }
-
-        file.delete();
+        FileUtil.moveToDeleted(fileToMove);
     }
 
     static void logFileAction(File directory, String fileName, FileAction action, User user)

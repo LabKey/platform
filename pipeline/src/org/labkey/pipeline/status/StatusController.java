@@ -997,7 +997,7 @@ public class StatusController extends SpringActionController
             bb.add(showData);
         }
 
-        List<? extends ExpRun> runs = ExperimentService.get().getExpRunsByJobId(sf.getRowId());
+        List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForJobId(sf.getRowId());
         if (runs.size() == 1)
         {
             ExpRun run = runs.get(0);

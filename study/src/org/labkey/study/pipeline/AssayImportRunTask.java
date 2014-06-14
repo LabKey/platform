@@ -306,7 +306,7 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
         RecordedActionSet actionSet = job.getActionSet();
         List<RecordedAction> actions = new ArrayList<>(actionSet.getActions());
         if (actions.size() < 1)
-            throw new PipelineJobException("No recorded actions");
+            return Collections.emptyMap();
 
         Map<File, String> inputs = new LinkedHashMap<>();
 
@@ -324,6 +324,15 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
                 if (NetworkDrive.exists(file))
                     inputs.put(file, role);
             }
+        }
+
+        // Include the job's analysis parameters as input so we can track which assay runs were imported with it.
+        for (Map.Entry<URI, String> entry : actionSet.getOtherInputs().entrySet())
+        {
+            URI uri = entry.getKey();
+            File file = new File(uri);
+            if (NetworkDrive.exists(file))
+                inputs.put(file, entry.getValue());
         }
 
         return inputs;
@@ -435,6 +444,14 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             Pair<ExpExperiment, ExpRun> pair = provider.getRunCreator().saveExperimentRun(uploadContext, batchId);
             ExpRun run = pair.second;
 
+            if (getJob() instanceof FileAnalysisJobSupport)
+            {
+                File analysisDir = getJob().getJobSupport(FileAnalysisJobSupport.class).getAnalysisDirectory();
+                run.setFilePathRoot(analysisDir);
+            }
+
+            run.setJobId(PipelineService.get().getJobId(getJob().getUser(), getJob().getContainer(), getJob().getJobGUID()));
+            run.save(getJob().getUser());
 
             // save any job-level custom properties from the run
 //            PropertiesJobSupport jobSupport = getJob().getJobSupport(PropertiesJobSupport.class);

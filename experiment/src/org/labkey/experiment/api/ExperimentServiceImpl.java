@@ -280,9 +280,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return ExpRunImpl.fromRuns(new SqlSelector(getSchema(), sql).getArrayList(ExperimentRun.class));
     }
 
-    public List<ExpRunImpl> getExpRunsByJobId(int jobId)
+    public List<ExpRunImpl> getExpRunsForJobId(int jobId)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("jobid"), jobId);
+        return ExpRunImpl.fromRuns(new TableSelector(getTinfoExperimentRun(), filter, null).getArrayList(ExperimentRun.class));
+    }
+
+    public List<ExpRunImpl> getExpRunsForFilePathRoot(File filePathRoot)
+    {
+        String path = filePathRoot.getAbsolutePath();
+        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("filepathroot"), path);
         return ExpRunImpl.fromRuns(new TableSelector(getTinfoExperimentRun(), filter, null).getArrayList(ExperimentRun.class));
     }
 
