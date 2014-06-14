@@ -63,6 +63,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -854,6 +855,14 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         return new LinkedHashSet<>();
+    }
+
+    // Currently only used for R reports that want to expose a whitelist
+    // of functions to a shared R session.  However, this could be
+    // generalized to other report types
+    public HashSet<String> getCallableFunctions()
+    {
+        return new HashSet<>();
     }
 
     public String getViewClass()

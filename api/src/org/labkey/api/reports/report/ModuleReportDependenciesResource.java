@@ -21,8 +21,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.view.template.ClientDependency;
+import org.labkey.query.xml.DependenciesType;
 import org.labkey.query.xml.DependencyType;
-import org.labkey.query.xml.JavaScriptReportDescriptorType;
 import org.labkey.query.xml.ReportDescriptorType;
 import org.labkey.query.xml.ReportType;
 
@@ -41,23 +41,12 @@ public class ModuleReportDependenciesResource extends ModuleReportResource
         super(reportDescriptor, sourceFile);
     }
 
-    // Only JavaScript and Knitr R reports have dependency metadata
-    private JavaScriptReportDescriptorType getJavaScriptReportDescriptorType(ReportType type)
+    protected org.labkey.query.xml.DependenciesType getXmlDependencies(ReportType type) throws XmlException
     {
         if (type.isSetJavaScript())
-            return type.getJavaScript();
+            return type.getJavaScript().getDependencies();
 
-        if (type.isSetR())
-        {
-            // make sure this is a Knitr report
-            String value = _reportDescriptor.getProperty(ScriptReportDescriptor.Prop.knitrFormat);
-            if (value != null &&
-                (RReportDescriptor.KnitrFormat.None != RReportDescriptor.getKnitrFormatFromString(value)))
-                return type.getR();
-        }
-
-        // Query Reports and non-Knitr R reports do not support metadata
-        return null;
+        throw new XmlException("Metadata associated with a Report must have a ReportType of JavaScript");
     }
 
     protected ReportDescriptorType loadMetaData(Container container, User user)
@@ -70,16 +59,11 @@ public class ModuleReportDependenciesResource extends ModuleReportResource
             {
                 if (d.getReportType() != null)
                 {
-                    JavaScriptReportDescriptorType js = getJavaScriptReportDescriptorType(d.getReportType());
-                    if (js == null)
-                    {
-                        throw new XmlException("Metadata associated with a Report must have a ReportType of JavaScript or be a Knitr R report.");
-                    }
-
                     _dependencies = new LinkedHashSet<>();
-                    if (js.getDependencies() != null)
+                    DependenciesType xmlDependencies = getXmlDependencies(d.getReportType());
+                    if (xmlDependencies != null)
                     {
-                        for (DependencyType depend : js.getDependencies().getDependencyArray())
+                        for (DependencyType depend : xmlDependencies.getDependencyArray())
                         {
                             String path = depend.getPath();
                             if (null != path)

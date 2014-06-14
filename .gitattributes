@@ -1106,6 +1106,7 @@ api/src/org/labkey/api/reports/report/ModuleQueryRReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleQueryReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleQueryReportResource.java -text
 api/src/org/labkey/api/reports/report/ModuleRReportDescriptor.java -text
+api/src/org/labkey/api/reports/report/ModuleRReportResource.java -text
 api/src/org/labkey/api/reports/report/ModuleReportDependenciesResource.java -text
 api/src/org/labkey/api/reports/report/ModuleReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ModuleReportIdentifier.java -text

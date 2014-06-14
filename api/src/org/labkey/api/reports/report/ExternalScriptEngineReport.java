@@ -333,6 +333,11 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
                         throw new ScriptException("The report session is invalid");
                     }
                     rh.acquire();
+                    //
+                    // if the report exposes any functions that can be called by the shared session
+                    // then add them now
+                    //
+                    rh.addCallableFunctions(getDescriptor().getCallableFunctions());
                     bindings.put(RserveScriptEngine.R_SESSION, rh);
                 }
             }

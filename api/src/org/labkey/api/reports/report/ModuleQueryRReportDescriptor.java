@@ -22,6 +22,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.template.ClientDependency;
 
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.HashMap;
@@ -65,7 +66,7 @@ public class ModuleQueryRReportDescriptor extends ModuleRReportDescriptor
     @Override
     public ModuleReportResource getModuleReportResource(Resource sourceFile)
     {
-        return new ModuleReportDependenciesResource(this, sourceFile);
+        return new ModuleRReportResource(this, sourceFile);
     }
 
     public String getDefaultReportType(String reportKey)
@@ -81,5 +82,10 @@ public class ModuleQueryRReportDescriptor extends ModuleRReportDescriptor
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         return ((ModuleReportDependenciesResource) _resource).getClientDependencies();
+    }
+
+    public HashSet<String> getCallableFunctions()
+    {
+        return ((ModuleRReportResource) _resource).getCallableFunctions();
     }
 }

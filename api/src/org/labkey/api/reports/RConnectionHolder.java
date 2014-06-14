@@ -31,6 +31,8 @@ public class RConnectionHolder implements HttpSessionBindingListener
     Object _clientContext; // client supplied value to help identify a report session
     String _reportSessionId;
     static final HashSet<String> _reportSessions = new HashSet<>();
+    // list of functions in this session that can be called directly by the executeFunction method
+    HashSet<String> _callableFunctions = new HashSet<>();
 
     public RConnectionHolder(String reportSessionId, Object clientContext)
     {
@@ -79,6 +81,20 @@ public class RConnectionHolder implements HttpSessionBindingListener
             close();
             _connection = connection;
         }
+    }
+
+    public void addCallableFunctions(HashSet<String> functionList)
+    {
+        for(String function : functionList)
+        {
+            if (!_callableFunctions.contains(function))
+                _callableFunctions.add(function);
+        }
+    }
+
+    public boolean isFunctionCallable(String function)
+    {
+        return _callableFunctions.contains(function);
     }
 
     public synchronized void acquire() throws ScriptException

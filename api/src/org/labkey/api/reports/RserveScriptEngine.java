@@ -72,7 +72,7 @@ public class RserveScriptEngine extends RScriptEngine
     // note this is only run in the context of Rserve (callers need to ensure this).  The incoming script must already
     // have been parsed (i.e. we are evaluating a function that has already been loaded into the existing R sesssion on Rserve)
     //
-    public static Object eval(ViewContext context, String script, String reportSessionId, Map<String, Object> inputParameters) throws ScriptException
+    public static Object eval(ViewContext context, String function, String reportSessionId, Map<String, Object> inputParameters) throws ScriptException
     {
         //
         // We never want to create a connection under the covers if one doesn't exist in this case (since we are
@@ -86,14 +86,23 @@ public class RserveScriptEngine extends RScriptEngine
             throw new ScriptException("The connection bound to this report session is no longer valid!");
         }
 
+        //
+        // Verify that the function the user is trying to execute has been declared in our whitelist.  Callable functions are declared
+        // in the report metadata file by the script report authors.
+        //
+        if (!rh.isFunctionCallable(function))
+        {
+            throw new ScriptException("The function [" + function +"] is not allowed to be called in this session.  Please see your administrator.");
+        }
+
         StringBuilder paramsList = new StringBuilder();
         RReport.appendParamList(paramsList, inputParameters);
-        script = script + "(" + paramsList.toString() + ")";
+        function = function + "(" + paramsList.toString() + ")";
 
         try
         {
             rh.acquire();
-            REXP rexp = rconn.eval(script);
+            REXP rexp = rconn.eval(function);
             if (rexp.inherits("try-error"))
                 throw new RuntimeException(getRserveOutput(rexp));
             return getRserveOutput(rexp);
