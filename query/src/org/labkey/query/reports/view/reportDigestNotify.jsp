@@ -49,13 +49,13 @@
     <%=PageFlowUtil.getStylesheetIncludes(form.getContainer(), form.getUser())%>
 </head>
 <body>
-<table width="600px">
+<table width="100%">
     <tr><td>Summary of notifications of reports and dataset changes for folder <a href="<%=h(folderUrl.getURIString())%>"><%=h(form.getContainer().getPath())%></a>.</td></tr>
 </table>
 <hr size="1"/>
 <br>
 
-<table width="500px">
+<table width="900px">
     <tr><th>Report</th><th>Category</th><th>Modified</th></tr>
     <%
         int i = 0;
@@ -92,7 +92,7 @@
 <br>
 <hr size="1"/>
 
-<table width="600px%">
+<table width="100%">
     <tr><td>You have received this email because
         you are signed up to receive notifications about changes to reports and datasets at <a href="<%=h(folderUrl.getURIString())%>"><%= h(form.getContainer().getPath()) %></a>.
         If you no longer wish to receive these notifications you can <a href="<%=h(emailPrefs.getURIString())%>">change your email preferences</a>.

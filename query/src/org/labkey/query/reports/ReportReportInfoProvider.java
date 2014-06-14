@@ -39,10 +39,11 @@ public class ReportReportInfoProvider extends ReportInfoProvider
                     if (!reportInfoMap.containsKey(containerId))
                         reportInfoMap.put(containerId, new HashMap<Integer, Set<ReportInfo>>());
                     Map<Integer, Set<ReportInfo>> subMap = reportInfoMap.get(containerId);
-                    int categoryId = null != report.getCategoryId() ? report.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID;
+                    ReportInfo reportInfo = new ReportInfo(report);
+                    int categoryId = reportInfo.getCategoryId();
                     if (!subMap.containsKey(categoryId))
                         subMap.put(categoryId, new HashSet<ReportInfo>());
-                    subMap.get(categoryId).add(new ReportInfo(report));
+                    subMap.get(categoryId).add(reportInfo);
                 }
             }, ReportDB.class);
             _reportInfoMap = reportInfoMap;
