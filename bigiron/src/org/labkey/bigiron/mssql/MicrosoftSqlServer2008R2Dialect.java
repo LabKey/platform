@@ -43,6 +43,7 @@ import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.ServletException;
@@ -1050,7 +1051,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public String getAdminWarningMessage()
     {
-        return _groupConcatInstalled ? null : "The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server.";
+        return _groupConcatInstalled ? null : "The GROUP_CONCAT aggregate function is not installed. This function is required for optimal operation of this server. " + new HelpTopic("groupconcatinstall").getSimpleLinkHtml("View installation instructions.");
     }
 
     @Override
