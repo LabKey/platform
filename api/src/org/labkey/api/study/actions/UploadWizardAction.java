@@ -17,6 +17,7 @@
 package org.labkey.api.study.actions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -64,6 +65,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
 import org.springframework.context.MessageSourceResolvable;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -279,18 +281,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     {
         if (propName.equalsIgnoreCase(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME) && propValue != null)
         {
-            // ParticipantVisitResolver default value may be stored as a simple string, or it may be JSON encoded. If JSON encoded, it may have
-            // addition nested properties containing ThawList list settings.
-            try
-            {
-                Map<String, String> decodedVals = new ObjectMapper().readValue(propValue.toString(), Map.class);
-                inputNameToValue.put(propName, decodedVals.remove("stringValue"));
-                inputNameToValue.putAll(decodedVals);
-            }
-            catch (IOException e)
-            {
-                inputNameToValue.put(propName, propValue);
-            }
+            ParticipantVisitResolverType.Serializer.decode(propValue.toString(), inputNameToValue, propName);
         }
         else
             inputNameToValue.put(propName, propValue);
@@ -333,6 +324,8 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         _stepDescription = "Batch Properties";
 
         JspView<AssayRunUploadForm> headerView = new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/newUploadSet.jsp", runForm);
+        // Needed for thaw list participant visit resolvers
+        headerView.addClientDependency(ClientDependency.fromFilePath("sqv"));
         return new VBox(headerView, insertView);
     }
 
@@ -668,7 +661,6 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             ExpExperiment exp = pair.first;
             ExpRun run = pair.second;
 
-            // CONSIDER: move into saveExperimentRun?
             form.setBatchId(exp.getRowId());
             form.saveDefaultBatchValues();
             form.saveDefaultRunValues();
@@ -691,6 +683,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         }
     }
 
+    @Nullable
     protected ParticipantVisitResolverType getSelectedParticipantVisitResolverType(AssayProvider provider, AssayRunUploadForm<? extends AssayProvider> newRunForm)
     {
         String participantVisitResolverName = null;

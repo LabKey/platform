@@ -73,6 +73,9 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
             selected = _resolvers.get(0);
         }
 
+        // Keep track of listeners that want to know when the resolver selection has changed
+        out.write("<script type=\"text/javascript\">var participantVisitResolverSelectionListeners = []; function addParticipantVisitResolverSelectionChangeListener(callback){ participantVisitResolverSelectionListeners.push(callback); }</script>");
+
         if (_resolvers.size() < 2)
         {
             out.write("<input type=\"hidden\" name = \"" + _typeInputName + "\" value=\"" + PageFlowUtil.filter(selected.getName()) + "\"/>" + PageFlowUtil.filter(selected.getDescription()) + "<br/> ");
@@ -101,9 +104,12 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
 
                 RenderSubSelectors renderSubs = renderResolverSubSelectors(resolver);
                 if (renderSubs != RenderSubSelectors.NONE)
-                    out.write("document.getElementById('ResolverDiv-' + this.value).style.display='block';\" ");
-                else
-                    out.write("\"");
+                    out.write("document.getElementById('ResolverDiv-' + this.value).style.display='block';");
+
+                // Notify listeners that the selection has changed
+                out.write("for (i = 0; i < participantVisitResolverSelectionListeners.length; i++) { participantVisitResolverSelectionListeners[i].call(this); } ");
+
+                out.write("\" ");
                 out.write(" type=\"radio\" " +
                         "name=\"" + _typeInputName + "\"" +
                         ( resolver == selected ? " checked=\"true\"" : "") + " " +

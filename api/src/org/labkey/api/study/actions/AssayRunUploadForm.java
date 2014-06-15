@@ -52,6 +52,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.ParticipantVisitResolverType;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
@@ -425,6 +426,16 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void saveDefaultBatchValues() throws ExperimentException
     {
         Map<DomainProperty, Object> objectMap = new HashMap<DomainProperty, Object>(getBatchProperties());
+
+        for (Map.Entry<DomainProperty, Object> entry : objectMap.entrySet())
+        {
+            if (entry.getKey().getName().equalsIgnoreCase(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
+            {
+                String currentValue = entry.getValue() == null ? null : entry.getValue().toString();
+                objectMap.put(entry.getKey(), ParticipantVisitResolverType.Serializer.encode(currentValue, getViewContext().getRequest()));
+            }
+        }
+
         DefaultValueService.get().setDefaultValues(getContainer(), objectMap, getUser());
     }
 

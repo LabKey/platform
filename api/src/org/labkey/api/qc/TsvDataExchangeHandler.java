@@ -825,36 +825,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             return AssayService.get().getProvider(_protocol);
         }
 
-        public Map<DomainProperty, Object> getDefaultValues(Domain domain, String scope) throws ExperimentException
-        {
-            throw new UnsupportedOperationException("Not Supported");
-        }
-
-        public Map<DomainProperty, Object> getDefaultValues(Domain domain) throws ExperimentException
-        {
-            throw new UnsupportedOperationException("Not Supported");
-        }
-
-        public void saveDefaultValues(Map<DomainProperty, String> values, String scope) throws ExperimentException
-        {
-            throw new UnsupportedOperationException("Not Supported");
-        }
-
-        public void saveDefaultBatchValues() throws ExperimentException
-        {
-            throw new UnsupportedOperationException("Not Supported");
-        }
-
-        public void saveDefaultRunValues() throws ExperimentException
-        {
-            throw new UnsupportedOperationException("Not Supported");
-        }
-
-        public void clearDefaultValues(Domain domain) throws ExperimentException
-        {
-            throw new UnsupportedOperationException("Not Supported");
-        }
-
         @Override
         public Integer getReRunId()
         {

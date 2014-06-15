@@ -30,6 +30,7 @@ import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellGroupTemplate;
+import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.PlateUploadForm;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.InsertView;
@@ -291,7 +292,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
     private static final String PRIMARY_PREV_UPLOAD_PATH = "PreviouslyUploadedFilePaths";
 
     @Override
-    public void addSampleColumns(InsertView view, User user, final AssayRunUploadContext defaultValueContext, final boolean errorReshow) throws ExperimentException
+    public void addSampleColumns(InsertView view, User user, final AssayRunUploadForm defaultValueContext, final boolean errorReshow) throws ExperimentException
     {
         final File reshowFile;
         if (errorReshow)

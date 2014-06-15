@@ -75,7 +75,6 @@ public class AssayService
 
         ModelAndView createAssayDesignerView(Map<String, String> properties);
         ModelAndView createAssayImportView(Map<String, String> properties);
-        ModelAndView createListChooserView(Map<String, String> properties);
 
         ExpRunTable createRunTable(ExpProtocol protocol, AssayProvider provider, User user, Container container);
 

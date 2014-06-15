@@ -75,11 +75,6 @@ public class StudyParticipantVisitResolverType implements ParticipantVisitResolv
         // Don't need to do anything - the data's already all there
     }
 
-    public void putDefaultProperties(AssayRunUploadContext uploadContext, Map<String, String> properties)
-    {
-        // No form fields, so we don't need to add anything
-    }
-
     public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)
     {
         return true;

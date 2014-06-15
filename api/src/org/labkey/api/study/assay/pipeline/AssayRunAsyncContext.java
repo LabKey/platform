@@ -334,42 +334,6 @@ public class AssayRunAsyncContext<ProviderType extends AssayProvider> implements
     }
 
     @Override
-    public Map<DomainProperty, Object> getDefaultValues(Domain domain, String scope) throws ExperimentException
-    {
-        throw new UnsupportedOperationException("Not implemented/needed for background processing");
-    }
-
-    @Override
-    public Map<DomainProperty, Object> getDefaultValues(Domain domain) throws ExperimentException
-    {
-        throw new UnsupportedOperationException("Not implemented/needed for background processing");
-    }
-
-    @Override
-    public void saveDefaultValues(Map<DomainProperty, String> values, String scope) throws ExperimentException
-    {
-        throw new UnsupportedOperationException("Not implemented/needed for background processing");
-    }
-
-    @Override
-    public void saveDefaultBatchValues() throws ExperimentException
-    {
-        throw new UnsupportedOperationException("Not implemented/needed for background processing");
-    }
-
-    @Override
-    public void saveDefaultRunValues() throws ExperimentException
-    {
-        throw new UnsupportedOperationException("Not implemented/needed for background processing");
-    }
-
-    @Override
-    public void clearDefaultValues(Domain domain) throws ExperimentException
-    {
-        throw new UnsupportedOperationException("Not implemented/needed for background processing");
-    }
-
-    @Override
     public String getTargetStudy()
     {
         return _targetStudy;

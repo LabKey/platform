@@ -16,14 +16,15 @@
 
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.SpecimenService;
+import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AssayRunUploadContext;
 import org.labkey.api.view.InsertView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -86,7 +87,7 @@ public abstract class SamplePropertyHelper<ObjectType>
         }
     }
 
-    public void addSampleColumns(InsertView view, User user, AssayRunUploadContext defaultValueContext, boolean errorReshow) throws ExperimentException
+    public void addSampleColumns(InsertView view, User user, @Nullable AssayRunUploadForm defaultValueContext, boolean errorReshow) throws ExperimentException
     {
         DataRegion region = view.getDataRegion();
         List<String> sampleNames = getSampleNames();

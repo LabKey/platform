@@ -1441,7 +1441,6 @@ api/src/org/labkey/api/study/assay/StudyDataSetColumn.java -text
 api/src/org/labkey/api/study/assay/StudyParticipantVisitResolver.java -text
 api/src/org/labkey/api/study/assay/StudyParticipantVisitResolverType.java -text
 api/src/org/labkey/api/study/assay/TextAreaDataCollector.java -text
-api/src/org/labkey/api/study/assay/ThawListBean.java -text
 api/src/org/labkey/api/study/assay/ThawListFileResolver.java -text
 api/src/org/labkey/api/study/assay/ThawListListResolver.java -text
 api/src/org/labkey/api/study/assay/ThawListResolverType.java -text

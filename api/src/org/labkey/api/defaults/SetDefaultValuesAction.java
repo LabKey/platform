@@ -40,6 +40,7 @@ import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
@@ -155,7 +156,7 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         return new DefaultValueDataRegion();
     }
 
-    public ModelAndView getView(FormType domainIdForm, boolean reshow, BindException errors) throws Exception
+    public HttpView getView(FormType domainIdForm, boolean reshow, BindException errors) throws Exception
     {
         _returnUrl = domainIdForm.getReturnURLHelper();
         Domain domain = getDomain(domainIdForm);

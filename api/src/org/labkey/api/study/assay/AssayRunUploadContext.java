@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.security.User;
@@ -88,18 +87,6 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
     Map<Object, String> getInputDatas();
 
     ProviderType getProvider();
-
-    Map<DomainProperty, Object> getDefaultValues(Domain domain, String scope) throws ExperimentException;
-
-    Map<DomainProperty, Object> getDefaultValues(Domain domain) throws ExperimentException;
-
-    void saveDefaultValues(Map<DomainProperty, String> values, String scope) throws ExperimentException;
-
-    void saveDefaultBatchValues() throws ExperimentException;
-
-    void saveDefaultRunValues() throws ExperimentException;
-
-    void clearDefaultValues(Domain domain) throws ExperimentException;
 
     String getTargetStudy();
 

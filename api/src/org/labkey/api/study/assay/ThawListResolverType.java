@@ -39,7 +39,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -181,13 +180,10 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
 
     public void render(RenderContext ctx) throws Exception
     {
-        Map<String, String> gwtProps = new HashMap<>();
-        gwtProps.put("dialogTitle", "Select a Sample List");
-        ModelAndView listChooser = AssayService.get().createListChooserView(gwtProps);
-        JspView<ThawListBean> view = new JspView<>("/org/labkey/api/study/assay/thawListSelector.jsp", new ThawListBean(ctx, listChooser));
+        JspView<RenderContext> view = new JspView<>("/org/labkey/api/study/assay/thawListSelector.jsp", ctx);
         view.render(ctx.getRequest(), ctx.getViewContext().getResponse());
 
-        // hack for 4404 : Lookup picker performance is terrible when there are many containers
+        // hack for 4404 : Lookup picker performance is terrible when there are many containers, so prime the cache
         ContainerManager.getAllChildren(ContainerManager.getRoot());
     }
 
@@ -293,18 +289,6 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         thawListData.setName(name);
         thawListData.setLSID(dataLSID);
         inputDatas.put(thawListData, "ThawList");
-    }
-
-    public void putDefaultProperties(AssayRunUploadContext uploadContext, Map<String, String> properties)
-    {
-        String type = uploadContext.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME);
-        properties.put(THAW_LIST_TYPE_INPUT_NAME, type);
-        if (LIST_NAMESPACE_SUFFIX.equals(type))
-        {
-            properties.put(THAW_LIST_LIST_CONTAINER_INPUT_NAME, uploadContext.getRequest().getParameter(THAW_LIST_LIST_CONTAINER_INPUT_NAME));
-            properties.put(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME, uploadContext.getRequest().getParameter(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME));
-            properties.put(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME, uploadContext.getRequest().getParameter(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME));
-        }
     }
 
     public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)

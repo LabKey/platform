@@ -178,42 +178,6 @@ public class AssayRunDatabaseContext<ProviderType extends AssayProvider> impleme
     }
 
     @Override
-    public Map<DomainProperty, Object> getDefaultValues(Domain domain, String scope) throws ExperimentException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Map<DomainProperty, Object> getDefaultValues(Domain domain) throws ExperimentException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void saveDefaultValues(Map<DomainProperty, String> values, String scope) throws ExperimentException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void saveDefaultBatchValues() throws ExperimentException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void saveDefaultRunValues() throws ExperimentException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void clearDefaultValues(Domain domain) throws ExperimentException
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public String getTargetStudy()
     {
         throw new UnsupportedOperationException();
