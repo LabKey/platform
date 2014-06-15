@@ -44,15 +44,7 @@ public class FileRootManager
         {
             SimpleFilter filter = new SimpleFilter(FieldKey.fromString("Container"), c);
 
-            // TODO: Should use getObject() instead... but not until we add a constraint to this table, see #
-            // return new TableSelector(getTinfoFileRoots(), filter, null).getObject(FileRoot.class);
-
-            FileRoot[] fileRoots = new TableSelector(getTinfoFileRoots(), filter, null).getArray(FileRoot.class);
-
-            if (0 == fileRoots.length)
-                return null;
-            else
-                return fileRoots[0];
+            return new TableSelector(getTinfoFileRoots(), filter, null).getObject(FileRoot.class);
         }
     });
 
