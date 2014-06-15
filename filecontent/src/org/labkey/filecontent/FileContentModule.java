@@ -119,11 +119,6 @@ public class FileContentModule extends DefaultModule
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        @SuppressWarnings({"unchecked"})
-        Set<Class> testClasses = new HashSet<Class>(Arrays.asList(
-                FileContentServiceImpl.TestCase.class
-        ));
-
-        return testClasses;
+        return Collections.<Class>singleton(FileContentServiceImpl.TestCase.class);
     }
 }

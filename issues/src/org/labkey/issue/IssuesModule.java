@@ -28,7 +28,6 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -41,10 +40,9 @@ import org.labkey.issue.model.IssueManager;
 import org.labkey.issue.query.IssuesQuerySchema;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Set;
 
@@ -144,8 +142,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<Class>(Arrays.asList(
-            org.labkey.issue.model.IssueManager.TestCase.class ));
+        return Collections.<Class>singleton(org.labkey.issue.model.IssueManager.TestCase.class);
     }
 
     @Override
@@ -155,7 +152,7 @@ public class IssuesModule extends DefaultModule implements SearchService.Documen
         return PageFlowUtil.set(IssuesSchema.getInstance().getSchemaName());
     }
 
-    public void enumerateDocuments(final SearchService.IndexTask task, final Container c, final Date modifiedSince)
+    public void enumerateDocuments(final SearchService.IndexTask task, final @NotNull Container c, final Date modifiedSince)
     {
         Runnable r = new Runnable()
             {

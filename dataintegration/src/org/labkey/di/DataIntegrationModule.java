@@ -124,9 +124,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     @Override
     public Set<Class> getIntegrationTests()
     {
-        return new HashSet<Class>(Arrays.asList(
-                RemoteQueryTransformStep.TestCase.class
-        ));
+        return Collections.<Class>singleton(RemoteQueryTransformStep.TestCase.class);
     }
 
     /** web parts **/

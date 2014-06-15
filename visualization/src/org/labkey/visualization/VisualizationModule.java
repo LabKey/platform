@@ -96,9 +96,6 @@ public class VisualizationModule extends DefaultModule
     @NotNull
     public Set<Class> getIntegrationTests()
     {
-        Set<Class> set = new HashSet<>();
-        set.add(VisualizationController.TestCase.class);
-        return set;
+        return Collections.<Class>singleton(VisualizationController.TestCase.class);
     }
-
 }
