@@ -53,7 +53,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
@@ -608,17 +607,11 @@ public class WikiManager implements WikiService
         if (null == ss || null == c)
             return;
 
-        int stackSize = HttpView.getStackSize();
-
-        try
+        // Push a ViewContext onto the stack before indexing; wikis may need this to render embedded webpart
+        try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(User.guest, c, new ActionURL()))
         {
-            // This pushes a ViewContext onto the stack; wikis may need this to render embedded webpart
-            ViewContext.getMockViewContext(User.guest, c, new ActionURL(), true);
+            ViewContext.pushMockViewContext(User.guest, c, new ActionURL());
             indexWikiContainerFast(task, c, modifiedSince, null);
-        }
-        finally
-        {
-            HttpView.resetStackSize(stackSize);
         }
     }
 

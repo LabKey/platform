@@ -29,7 +29,6 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
@@ -77,19 +76,14 @@ public abstract class AbstractStudyPiplineJob extends PipelineJob
     public final void run()
     {
         boolean success = false;
-        // Silliness required because some stupid classes grab context from thread local
-        int stackSize = HttpView.getStackSize();
 
-        try
+        // Silliness required because some stupid classes grab context from thread local
+        try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(getUser(), getContainer(), getActionURL()))
         {
-            ViewContext context = ViewContext.getMockViewContext(getUser(), getContainer(), getActionURL(), true);
-            success = run(context);
+            success = run(resetter.getContext());
         }
         finally
         {
-            if (stackSize > -1)
-                HttpView.resetStackSize(stackSize);
-
             setStatus(success ? TaskStatus.complete : TaskStatus.error);
         }
     }

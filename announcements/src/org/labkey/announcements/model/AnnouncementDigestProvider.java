@@ -33,7 +33,6 @@ import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.MailHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
@@ -133,14 +132,13 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
     private static MailHelper.ViewMessage getDailyDigestMessage(Container c, DiscussionService.Settings settings, Permissions perm, List<AnnouncementModel> announcementModels, User recipient) throws Exception
     {
         ActionURL boardURL = AnnouncementsController.getBeginURL(c);
-        int stackSize = HttpView.getStackSize();
 
-        try
+        // Hack! Mock up a ViewContext with the recipient as the user, so embedded webparts get rendered with that
+        // user's permissions, etc. Push it to the stack so the renderer sees it and pop it in finally below.
+        // TODO: push the context through or come up with a cleaner solution.
+        try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(recipient, c, boardURL))
         {
-            // Hack! Mock up a ViewContext with the recipient as the user, so embedded webparts get rendered with that
-            // user's permissions, etc. Push it to the stack so the renderer sees it and pop it in finally below.
-            // TODO: push the context through or come up with a cleaner solution.
-            ViewContext context = ViewContext.getMockViewContext(recipient, c, boardURL, true);
+            ViewContext context = resetter.getContext();
 
             MailHelper.ViewMessage m = MailHelper.createMultipartViewMessage(LookAndFeelProperties.getInstance(c).getSystemEmailAddress(), recipient.getEmail());
             m.setSubject("New posts to " + c.getPath());
@@ -159,10 +157,6 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
             m.setTemplateContent(request, view, "text/html");
 
             return m;
-        }
-        finally
-        {
-            HttpView.resetStackSize(stackSize);
         }
     }
 
