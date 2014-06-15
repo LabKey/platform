@@ -246,6 +246,7 @@ public class LoginController extends SpringActionController
         {
             // Attempt authentication with all registered providers
             AuthenticationResult result = AuthenticationManager.authenticate(request, response, form.getEmail(), form.getPassword(), form.getReturnURLHelper(), logFailures);
+            LookAndFeelProperties laf;
 
             switch (result.getStatus())
             {
@@ -254,7 +255,7 @@ public class LoginController extends SpringActionController
                     SecurityManager.setAuthenticatedUser(request, user);
                     break;
                 case InactiveUser:
-                    LookAndFeelProperties laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
+                    laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
                     errors.addError(new FormattedError("Your account has been deactivated. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> if you need to reactivate this account."));
                     break;
                 case BadCredentials:
@@ -272,6 +273,10 @@ public class LoginController extends SpringActionController
                         new ValidEmail(form.getEmail());
                         errors.reject(ERROR_MSG, "Due to the number of recent failed login attempts, authentication has been temporarily paused.\nTry again in one minute.");
                     }
+                    break;
+                case UserCreationError:
+                    laf = LookAndFeelProperties.getInstance(viewContext.getContainer());
+                    errors.addError(new FormattedError("The server could not create your account. Please <a href=\"mailto:" + PageFlowUtil.filter(laf.getSystemEmailAddress()) + "\">contact a system administrator</a> for assistance."));
                     break;
                 default:
                     throw new IllegalStateException("Unknown authentication status: " + result.getStatus());
