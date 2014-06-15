@@ -22,6 +22,7 @@ import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.study.model.DataSetDefinition;
@@ -69,12 +70,14 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPiplineJob
         try
         {
             _sourceStudy = StudyManager.getInstance().getStudy(getContainer());
+
+            if (null == _sourceStudy)
+                throw new NotFoundException("Source study no longer exists");
+
             StudyImpl destStudy = StudyManager.getInstance().getStudy(_dstContainer);
 
-            if (destStudy != null)
-            {
-                // TODO: Skip
-            }
+            if (null == destStudy)
+                throw new NotFoundException("Destination study no longer exists");
 
             setStatus("REFRESHING SPECIMENS");
             MemoryVirtualFile vf = new MemoryVirtualFile();
@@ -99,16 +102,17 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPiplineJob
             ctx.addContext(StudyExportContext.class, studyCtx);
 
             // export specimens from the parent study
-            getLogger().info("Exporting specimen data from parent study.");
+            info("Exporting specimen data from parent study.");
             exportFromParentStudy(ctx, vf);
 
             // import the specimen data
-            getLogger().info("Importing specimen data into child study.");
+            info("Importing specimen data into child study.");
             importSpecimenData(destStudy, vf);
         }
         catch (Exception e)
         {
             error("Specimen refresh failed", e);
+            return false;
         }
 
         return true;
