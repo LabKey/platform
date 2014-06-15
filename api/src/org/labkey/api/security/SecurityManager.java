@@ -380,28 +380,20 @@ public class SecurityManager
 
     // This user has been authenticated, but may not exist (if user was added to the database and is visiting for the first
     //  time or user authenticated using LDAP, SSO, etc.)
-    public static User afterAuthenticate(ValidEmail email)
+    public static User afterAuthenticate(ValidEmail email) throws UserManagementException
     {
         User u = UserManager.getUser(email);
 
-        // If user is authenticated but doesn't exist in our system then
-        // add user to the database... must be an LDAP or SSO user's first visit
+        // If user is authenticated but doesn't exist in our system then add user to the database...
+        // must be an LDAP or SSO user's first visit
         if (null == u)
         {
-            try
-            {
-                NewUserStatus bean = addUser(email, false);
-                u = bean.getUser();
-                UserManager.addToUserHistory(u, u.getEmail() + " authenticated successfully and was added to the system automatically.");
-            }
-            catch (UserManagementException e)
-            {
-                // do nothing; we'll fall through and return null.
-            }
+            NewUserStatus bean = addUser(email, false);
+            u = bean.getUser();
+            UserManager.addToUserHistory(u, u.getEmail() + " authenticated successfully and was added to the system automatically.");
         }
 
-        if (null != u)
-            UserManager.updateLogin(u);
+        UserManager.updateLogin(u);
 
         return u;
     }
@@ -654,7 +646,7 @@ public class SecurityManager
             return _user;
         }
 
-        public void setUser(User user)
+        public void setUser(@NotNull User user)
         {
             _user = user;
         }
@@ -721,7 +713,7 @@ public class SecurityManager
     // createLogin == false in the case of a new LDAP or SSO user authenticating for the first time.
     // createLogin == true in any other case (e.g., manually added LDAP user), so we need an additional check below
     // to avoid sending verification emails to an LDAP user.
-    public static NewUserStatus addUser(ValidEmail email, boolean createLogin) throws UserManagementException
+    public static @NotNull NewUserStatus addUser(ValidEmail email, boolean createLogin) throws UserManagementException
     {
         NewUserStatus status = new NewUserStatus(email);
 
@@ -1109,7 +1101,7 @@ public class SecurityManager
 
         // NOTE: Most code can not tell the difference between a non-existant SecurityPolicy and an empty SecurityPolicy
         // NOTE: Both are treated as meaning "inherit", we don't want to accidently create an empty security policy
-        // TODO: create an explicity inherit bit on policy (or distinguish undefined/empty)
+        // TODO: create an explicit inherit bit on policy (or distinguish undefined/empty)
 
         SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ResourceId FROM " + core.getTableInfoRoleAssignments() + " WHERE UserId = ?",groupId);
         List<String> resources = new SqlSelector(core.getSchema().getScope(), sqlf).getArrayList(String.class);

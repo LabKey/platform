@@ -284,7 +284,7 @@ public class AuthenticationManager
     }
 
 
-    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused}
+    public enum AuthenticationStatus {Success, BadCredentials, InactiveUser, LoginPaused, UserCreationError}
 
     public static class AuthenticationResult
     {
@@ -390,7 +390,20 @@ public class AuthenticationManager
                 if (authResponse.isAuthenticated())
                 {
                     ValidEmail email = authResponse.getValidEmail();
-                    User user = SecurityManager.afterAuthenticate(email);
+                    User user;
+
+                    try
+                    {
+                        user = SecurityManager.afterAuthenticate(email);
+                    }
+                    catch (SecurityManager.UserManagementException e)
+                    {
+                        // Make sure we record any unexpected problems during user creation; one goal is to help track down cause of #20712
+                        ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ExtraMessage, email.getEmailAddress(), true);
+                        ExceptionUtil.logExceptionToMothership(request, e);
+
+                        return new AuthenticationResult(AuthenticationStatus.UserCreationError);
+                    }
 
                     if (!user.isActive())
                     {
