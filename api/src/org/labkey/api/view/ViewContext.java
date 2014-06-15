@@ -43,6 +43,7 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -128,6 +129,39 @@ public class ViewContext implements MessageSource, ContainerContext, ContainerUs
                 _map.put(key, list);
             }
         }
+    }
+
+
+    public static class StackResetter implements Closeable
+    {
+        private final ViewContext _context;
+        private final int _stackSize;
+
+        private StackResetter(ViewContext context, int stackSize)
+        {
+            _context = context;
+            _stackSize = stackSize;
+        }
+
+        @Override
+        public void close()
+        {
+            HttpView.resetStackSize(_stackSize);
+        }
+
+        public ViewContext getContext()
+        {
+            return _context;
+        }
+    }
+
+
+    public static StackResetter pushMockViewContext(User user, Container c, ActionURL url)
+    {
+        int stackSize = HttpView.getStackSize();
+        ViewContext context = getMockViewContext(user, c, url, true);
+
+        return new StackResetter(context, stackSize);
     }
 
 
