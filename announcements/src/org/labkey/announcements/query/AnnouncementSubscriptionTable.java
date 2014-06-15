@@ -192,7 +192,7 @@ public class AnnouncementSubscriptionTable extends AbstractSubscriptionTable
         }
 
         @Override
-        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException
         {
             Pair<User, AnnouncementModel> targets = getTargets(oldRow, user);
             Table.delete(getRealTable(), new SimpleFilter(FieldKey.fromParts("UserId"), targets.getKey().getUserId()).addCondition(FieldKey.fromParts("MessageId"), targets.getValue().getRowId()));

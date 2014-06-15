@@ -121,7 +121,7 @@ public class AuditLogUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException, ValidationException
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
     {
         throw new UnsupportedOperationException("Audit records aren't deleteable");
     }

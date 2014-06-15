@@ -208,6 +208,7 @@ import org.labkey.remoteapi.SelectRowsStreamHack;
 import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -2431,7 +2432,7 @@ public class QueryController extends SpringActionController
             }
 
             DbSchema dbSchema = table.getSchema();
-            try (DbScope.Transaction tx =  dbSchema.getScope().ensureTransaction())
+            try (DbScope.Transaction tx = dbSchema.getScope().ensureTransaction())
             {
                 updateService.deleteRows(getUser(), getContainer(), keyValues, null);
                 _url = forward;
@@ -2442,6 +2443,11 @@ public class QueryController extends SpringActionController
                 if (!RuntimeSQLException.isConstraintException(x))
                     throw x;
                 errors.reject(ERROR_MSG, getMessage(table.getSchema().getSqlDialect(), x));
+                return false;
+            }
+            catch (DataIntegrityViolationException dive)
+            {
+                errors.reject(ERROR_MSG, dive.getMessage());
                 return false;
             }
             catch (BatchValidationException x)

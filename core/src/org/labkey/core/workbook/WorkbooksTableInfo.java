@@ -199,7 +199,7 @@ public class WorkbooksTableInfo extends ContainerTable implements UpdateableTabl
         }
 
         @Override
-        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+        protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
         {
             String idString = oldRow.get("ID") == null ? "" : oldRow.get("ID").toString();
             Container workbook = null;

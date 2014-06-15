@@ -293,7 +293,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
     {
         throw new IllegalStateException();
     }

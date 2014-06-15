@@ -106,7 +106,7 @@ public class StudyPropertiesUpdateService extends AbstractQueryUpdateService
 
 
     @Override
-    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow) throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
     {
         throw new UnsupportedOperationException("You cannot delete all of a Study's properties");
     }

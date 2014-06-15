@@ -53,7 +53,7 @@ public class CohortUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, ValidationException, SQLException
     {
         int rowId = keyFromMap(oldRow);
         CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(container, user, rowId);

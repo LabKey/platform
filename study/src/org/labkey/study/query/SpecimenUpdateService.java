@@ -141,7 +141,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
     @Override
     protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
-            throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
+            throws InvalidKeyException, ValidationException, SQLException
     {
         long rowId = keyFromMap(oldRow);
         Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, rowId);
