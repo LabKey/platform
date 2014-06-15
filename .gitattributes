@@ -2802,7 +2802,6 @@ study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayDesigner.java -tex
 study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporter.java -text
 study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporterService.java -text
 study/gwtsrc/gwt/client/org/labkey/assay/designer/client/AssayImporterServiceAsync.java -text
-study/gwtsrc/gwt/client/org/labkey/assay/upload/client/ListChooser.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/GroupChangeListener.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/GroupChangeListenerAdapter.java -text
 study/gwtsrc/gwt/client/org/labkey/plate/designer/client/GroupTypePanel.java -text

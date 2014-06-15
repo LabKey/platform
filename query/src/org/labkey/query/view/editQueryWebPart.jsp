@@ -70,7 +70,7 @@
             labelWidth : 225,
             name : 'queryName'
         }));
-
+Ï
         var allowEnable = <%=PageFlowUtil.jsString(props.get("queryName"))%>;
         queryName.on('enable', function(){if(!allowEnable) queryName.disable();}, this);
 

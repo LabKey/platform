@@ -114,6 +114,7 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider>
         return _uploadedData;
     }
 
+    @NotNull
     @Override
     public Map<Object, String> getInputDatas()
     {

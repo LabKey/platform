@@ -283,14 +283,6 @@ public class AssayManager implements AssayService.Interface
         return new StudyGWTView(new StudyApplication.AssayImporter(), properties);
     }
 
-    @Override
-    public ModelAndView createListChooserView(Map<String, String> properties)
-    {
-        GWTView listChooser = new StudyGWTView(new StudyApplication.ListChooser(), properties);
-        listChooser.getModelBean().getProperties().put(StudyApplication.ListChooser.CONTROLLER_PROPERTY_NAME, ViewServlet.getControllerName(AssayController.class));
-        return listChooser;
-    }
-
     public List<ActionButton> getImportButtons(ExpProtocol protocol, User user, Container currentContainer, boolean isStudyView)
     {
         AssayProvider provider = AssayService.get().getProvider(protocol);
