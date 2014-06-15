@@ -438,8 +438,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap)
-            throws InvalidKeyException, QueryUpdateServiceException, SQLException
+    protected Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRowMap) throws QueryUpdateServiceException, SQLException, InvalidKeyException
     {
         if (oldRowMap == null)
             return null;
@@ -465,7 +464,7 @@ public class DefaultQueryUpdateService extends AbstractQueryUpdateService
         return oldRowMap;
     }
 
-    protected void _delete(Container c, Map<String, Object> row) throws SQLException, InvalidKeyException
+    protected void _delete(Container c, Map<String, Object> row) throws InvalidKeyException
     {
         ColumnInfo objectUriCol = getObjectUriColumn();
         if (objectUriCol != null)
