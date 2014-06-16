@@ -93,7 +93,6 @@ LABKEY.internal.FileDrop = new function () {
         clearTimeout(timeout);
         timeout = setTimeout(function () {
             if (!shouldShowDropzones) {
-                console.log("dragleave timeout. hiding dropzones");
                 hideDropzones();
             }
         }, 200);
