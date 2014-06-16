@@ -34,29 +34,13 @@ Ext4.define('File.panel.Upload', {
 
     initComponent : function() {
 
-        this.dockedItems = this.getUploadStatusBar();
         this.items = this.getItems();
 
         this.callParent();
-        window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this, 'an operation is still pending, please wait until it is complete.');
-    },
-
-    beforeUnload : function() {
-        if (this.isBusy()) {
-            return 'an operation is still pending, please wait until it is complete.';
-        }
-    },
-
-    isBusy : function() {
-        return this.busy;
-    },
-
-    setBusy : function(busy) {
-        this.busy = busy;
     },
 
     // From FileSystem.js
-    getPrefixUrl: function() {
+    /*getPrefixUrl: function() {
         var prefix = '';
 
         prefix = this.concatPaths(this.baseURL, this.rootPath);
@@ -66,7 +50,7 @@ Ext4.define('File.panel.Upload', {
         }
 
         return prefix;
-    },
+    },*/
 
     // From FileSystem.js
     concatPaths : function(a,b)
@@ -98,6 +82,7 @@ Ext4.define('File.panel.Upload', {
         {
             this.initDropzone();
         }
+        this.getUploadStatusWindow();
 
         return this.getOuterPanel();
     },
@@ -182,19 +167,20 @@ Ext4.define('File.panel.Upload', {
                 this.on('totaluploadprogress', function (progress, totalBytes, totalBytesSent) {
                     if (progress == 100 && totalBytes == 0 && totalBytesSent == 0) {
                         // Dropzone is telling us all transfers are complete
-                        this.uploadPanel.hideProgressBar();
+                        this.uploadPanel.hideUploadWindow();
                     } else {
-                        this.uploadPanel.showProgressBar();
+                        this.uploadPanel.showUploadWindow();
                         this.uploadPanel.progressBar.updateProgress(progress/100);
                     }
                 });
 
                 this.on('sending', function (file, xhr, formData) {
-                    if (!this.uploadPanel.isBusy()) {
-                        this.uploadPanel.setBusy(true);
-                        this.uploadPanel.getEl().mask("Uploading files");
+                    if (!this.uploadPanel.ownerCt.isBusy()) {
+                        this.uploadPanel.ownerCt.setBusy(true);
+                        this.uploadPanel.ownerCt.setDisabled(true);
+                        this.uploadPanel.statusText.setText('Uploading ' + file.name + '...');
                     }
-                    this.uploadPanel.statusText.setText('Uploading ' + file.name + '...');
+                    // shouldn't we show some kind of message here? (else case)
                 });
 
                 this.on('success', function (file, response, evt) {
@@ -208,7 +194,7 @@ Ext4.define('File.panel.Upload', {
 
                     if (response && Ext4.isString(response) && response.indexOf('<status>HTTP/1.1 200 OK</status>') > -1)
                     {
-//                // UNDONE: Should read status from the xml response instead of just looking for <status>
+//          // UNDONE: Should read status from the xml response instead of just looking for <status>
 //                var xhr = evt.target;
 //                var reader = new Ext4.data.reader.Xml({
 //                    record : 'response',
@@ -269,14 +255,13 @@ Ext4.define('File.panel.Upload', {
 
                 this.on('canceled', function (file) {
                     this.uploadPanel.statusText.setText('Canceled upload of ' + file.name);
-                    this.uploadPanel.setBusy(false);
-                    this.uploadPanel.getEl().unmask();
+                    this.uploadPanel.ownerCt.setBusy(false);
+                    this.uploadPanel.ownerCt.setDisabled(false);
                 });
 
                 this.on('queuecomplete', function () {
-                    this.uploadPanel.setBusy(false);
-                    this.uploadPanel.getEl().unmask();
-                    this.uploadPanel.hideProgressBar();
+                    this.uploadPanel.ownerCt.setBusy(false);
+                    this.uploadPanel.ownerCt.setDisabled(false);
 
                     var errorFiles = [];
                     var fileRecords = [];
@@ -309,7 +294,7 @@ Ext4.define('File.panel.Upload', {
         var radioPanel = {
             xtype   : 'panel',
             layout  : 'form',
-            width: 140,
+            width: 110,
             border : false,
             margins: '0 0 0 30',
             bodyStyle: this.bodyStyle,
@@ -359,10 +344,38 @@ Ext4.define('File.panel.Upload', {
             items: [radioPanel, uploadsPanel]
         });
 
-        var outerContainer = Ext4.create('Ext.container.Container', {
-            layout: 'vbox',
+        var closeBtn = Ext4.create('Ext.button.Button', {
+            iconCls: 'iconClose',
+            tooltip: 'Close the file upload panel',
+            style: 'background-color: transparent;',
+            scope: this,
+            border : false,
+            handler: function() {
+                this.fireEvent('closeUploadPanel');
+            }
+        });
+
+        var helpBtn = Ext4.create('Ext.button.Button', {
+            iconCls: 'iconHelp',
+            tooltip: 'File upload help',
+            style: 'background-color: transparent;',
+            allowDepress: false,
+            scope: this,
+            border : false,
+            handler: this.showHelpMessage
+        });
+
+        var btnContainer = Ext4.create('Ext.container.Container', {
+            layout: 'hbox',
             height: 60,
-            items: [uploadsContainer]
+            items: [helpBtn, closeBtn]
+        });
+
+        var outerContainer = Ext4.create('Ext.container.Container', {
+            layout: {type: 'hbox', align: 'stretch'},
+            height: 60,
+            // the flex box here eats up all the middle real estate to kick the btnContainer all the way right
+            items: [uploadsContainer, {xtype: 'box', flex: 1}, btnContainer]
         });
 
         return [outerContainer];
@@ -391,7 +404,7 @@ Ext4.define('File.panel.Upload', {
             bodyStyle: this.bodyStyle,
             items  : [{
                 xtype: 'container',
-                width: 800,
+                width: 525,
                 layout: 'hbox',
                 items: [{
                     xtype: 'filefield',
@@ -464,64 +477,6 @@ Ext4.define('File.panel.Upload', {
         return this.multiUpload;
     },
 
-    getUploadStatusBar: function(){
-
-        if (this.uploadStatusBar)
-            return this.uploadStatusBar;
-
-        this.progressBar = Ext4.create('Ext.ProgressBar', {
-            width: 250,
-            height: 25,
-            border: false,
-            autoRender : true,
-            hidden: true
-        });
-
-        this.progressBarContainer = Ext4.create('Ext.container.Container', {
-            width: 250,
-            items: [this.progressBar]
-        });
-
-        this.statusText = Ext4.create('Ext.form.Label', {
-            text: '',
-            margins: '5 0 0 20',
-            flex: 1,
-            border: false
-        });
-
-        this.closeBtn = Ext4.create('Ext.button.Button', {
-            iconCls: 'iconClose',
-            tooltip: 'Close the file upload panel',
-            style: 'background-color: transparent;',
-            scope: this,
-            border : false,
-            handler: function() {
-                this.fireEvent('closeUploadPanel');
-            }
-        });
-
-        this.helpBtn = Ext4.create('Ext.button.Button', {
-            iconCls: 'iconHelp',
-            tooltip: 'File upload help',
-            style: 'background-color: transparent;',
-            allowDepress: false,
-            scope: this,
-            border : false,
-            handler: this.showHelpMessage
-        });
-
-        this.uploadStatusBar = Ext4.create('Ext.panel.Panel', {
-              width: 500,
-              border: false,
-              height: 25,
-              bodyStyle: this.bodyStyle,
-              layout: 'hbox',
-              items: [this.progressBarContainer, this.statusText, this.helpBtn, this.closeBtn]
-        });
-
-        return this.uploadStatusBar;
-    },
-
     showHelpMessage : function ()
     {
         var url = this.getCurrentWebdavURL();
@@ -531,10 +486,10 @@ Ext4.define('File.panel.Upload', {
             '<p>',
             'You can also use ',
             '<a target=_blank href="https://www.labkey.org/wiki/home/Documentation/page.view?name=webdav">WebDAV</a> ',
-            'to transfer files to and from this folder using the Mac Finder, ' +
-            'Windows Explorer or file transfer programs like <a target=_blank href="http://cyberduck.io/">CyberDuck</a>. The WebDav URL for this folder is:',
+                    'to transfer files to and from this folder using the Mac Finder, ' +
+                    'Windows Explorer or file transfer programs like <a target=_blank href="http://cyberduck.io/">CyberDuck</a>. The WebDav URL for this folder is:',
             '</p>',
-            '<textarea style="font-family:monospace" readonly wrap="hard" cols="62" rows="3" size=' + url.length + '>' + Ext4.util.Format.htmlEncode(url) + '</textarea>',
+                    '<textarea style="font-family:monospace" readonly wrap="hard" cols="62" rows="3" size=' + url.length + '>' + Ext4.util.Format.htmlEncode(url) + '</textarea>',
             '<p>For more information on transferring files, please see the',
             '<a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=fileUpload">file upload</a>',
             'help documentation.</p>'
@@ -551,20 +506,6 @@ Ext4.define('File.panel.Upload', {
             icon: Ext4.Msg.INFO,
             buttons: Ext4.Msg.OK
         });
-    },
-
-    showProgressBar : function()
-    {
-        if (this.progressBar)
-            this.progressBar.setVisible(true);
-    },
-
-    hideProgressBar : function()
-    {
-        if (this.progressBar)
-            this.progressBar.reset(true);
-        if (this.statusText)
-            this.statusText.setText('');
     },
 
     submitFileUploadForm : function(fb, v) {
@@ -588,7 +529,6 @@ Ext4.define('File.panel.Upload', {
                     url : this.fileSystem.getURI(cwd) + '?Accept=application/json&overwrite=' + (overwrite ? 'T' : 'F'),
                     name : name,
                     success : function(f, action, message) {
-                        this.getEl().unmask();
 
                         var txt = (action.response.responseText || "").trim();
                         if (txt)
@@ -640,7 +580,6 @@ Ext4.define('File.panel.Upload', {
 //                form.errorReader = this.fileSystem.transferReader;
                 form.doAction(new Ext4.form.action.Submit(options));
                 this.fireEvent('transferstarted');
-                this.getEl().mask("Uploading " + name + '...');
             };
 
             this.doPost(false);
@@ -674,6 +613,62 @@ Ext4.define('File.panel.Upload', {
             cls : 'data-window',
             icon: Ext4.Msg.ERROR, buttons: Ext4.Msg.OK
         });
+    },
+
+    getUploadStatusWindow : function() {
+        if (this.uploadStatusWindow)
+            return this.uploadStatusWindow;
+
+        this.progressBar = Ext4.create('Ext.ProgressBar', {
+            width: 500,
+            height: 25,
+            border: false,
+            autoRender : true,
+            //hidden: true,
+            style: 'background-color: transparent; -moz-border-radius: 5px; -webkit-border-radius: 5px; -o-border-radius: 5px; -ms-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px;'
+        });
+
+        var progressBarContainer = Ext4.create('Ext.container.Container', {
+            width: 500,
+            margin: 4,
+            items: [this.progressBar]
+        });
+
+        this.statusText = Ext4.create('Ext.form.Label', {
+            text: '',
+            style: 'display: inline-block ;text-align: center',
+            width: 500,
+            margin: 4,
+            border: false
+        });
+
+        this.uploadStatusWindow = Ext4.create('Ext.window.Window', {
+            title: 'Upload Progress',
+            layout: 'vbox',
+            bodyPadding: 5,
+            closable: false,
+            items: [this.statusText, progressBarContainer]
+        });
+
+        return this.uploadStatusWindow;
+    },
+
+    showUploadWindow : function()
+    {
+        if (this.uploadStatusWindow)
+            this.uploadStatusWindow.show();
+        if (this.progressBar)
+            this.progressBar.setVisible(true);
+    },
+
+    hideUploadWindow : function()
+    {
+        if (this.uploadStatusWindow)
+            this.uploadStatusWindow.hide();
+        if (this.progressBar)
+            this.progressBar.reset(true);
+        if (this.statusText)
+            this.statusText.setText('');
     }
 });
 

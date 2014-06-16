@@ -32,6 +32,8 @@ Ext4.define('File.panel.Browser', {
      */
     dateRenderer : Ext4.util.Format.dateRenderer(LABKEY.extDefaultDateTimeFormat || "Y-m-d H:i:s"),
 
+    maskOnDisabled: true,
+
     /**
      * Size renderer used in the details panel.
      * @cfg {Ext4.util.Format.fileSize} fileSize
@@ -369,12 +371,31 @@ Ext4.define('File.panel.Browser', {
         if (this.showToolbar)
             this.initializeToolbar();
 
+        // NOTE: this has been broken sense the refactor of logic into upload.js (Aaron: attempted to fix it -- ended up a black hole)
+        //window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this, 'an operation is still pending, please wait until it is complete.');
+
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
         //Ext4.Ajax.timeout = 60000;
         File.panel.Browser._toggleActions(this.fileSystem, this.actions, []);
         this.callParent();
+
     },
+
+    /*beforeUnload : function() {
+        if (this.isBusy()) {
+            return 'an operation is still pending, please wait until it is complete.';
+        }
+    },
+
+    isBusy : function() {
+        window.alert(this.busy);
+        return this.busy;
+    },
+
+    setBusy : function(busy) {
+        this.busy = busy;
+    },*/
 
     createActions : function() {
         this.actions = {};
