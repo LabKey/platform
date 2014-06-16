@@ -317,8 +317,7 @@ public class SqlScriptController extends SpringActionController
                     {
                         consolidators.add(consolidator);
                     }
-
-                    if (includeSingleScripts)
+                    else if (includeSingleScripts)
                     {
                         String filename = consolidator.getFilename();
 
@@ -428,7 +427,7 @@ public class SqlScriptController extends SpringActionController
             List<ScriptConsolidator> consolidators = getConsolidators(fromVersion, toVersion, includeSingleScripts);
 
             out.write(":: This command line script primes each script directory for upcoming script consolidations. Using svn copy\n");
-            out.write(":: ensures that the SVN history and creation date of the first script is preserves in the consolidated script.\n");
+            out.write(":: ensures that the SVN history and creation date of the first script is preserved in the consolidated script.\n");
             out.write(":: The file is then deleted, because the consolidate action will recreate it and provide the actual content.\n\n");
 
             for (ScriptConsolidator consolidator : consolidators)
