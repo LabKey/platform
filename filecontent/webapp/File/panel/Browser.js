@@ -386,8 +386,9 @@ Ext4.define('File.panel.Browser', {
         if (this.isBusy()) {
             return 'an operation is still pending, please wait until it is complete.';
         }
-    },
+    },*/
 
+    // this is needed so that we can set the busyness of the element but the busyness of the element is currently used for jack all
     isBusy : function() {
         window.alert(this.busy);
         return this.busy;
@@ -395,7 +396,7 @@ Ext4.define('File.panel.Browser', {
 
     setBusy : function(busy) {
         this.busy = busy;
-    },*/
+    },
 
     createActions : function() {
         this.actions = {};
