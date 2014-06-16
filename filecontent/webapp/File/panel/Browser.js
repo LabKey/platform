@@ -390,7 +390,6 @@ Ext4.define('File.panel.Browser', {
 
     // this is needed so that we can set the busyness of the element but the busyness of the element is currently used for jack all
     isBusy : function() {
-        window.alert(this.busy);
         return this.busy;
     },
 
