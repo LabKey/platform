@@ -128,6 +128,7 @@
         <tr><td>Priority</td><td><input name="priority" value="<%=h(ccc.getCaption("priority"))%>" size=20></td></tr>
         <tr><td>Milestone</td><td><input name="milestone" value="<%=h(ccc.getCaption("milestone"))%>" size=20></td></tr>
         <tr><td>Resolution</td><td><input name="resolution" value="<%=h(ccc.getCaption("resolution"))%>" size=20></td></tr>
+        <tr><td>Related</td><td><input name="related" value="<%=h(ccc.getCaption("related"))%>" size=20></td></tr>
         <tr><td>Integer1</td><td><input name="int1" value="<%=h(ccc.getCaption("int1"))%>" size=20></td></tr>
         <tr><td>Integer2</td><td><input name="int2" value="<%=h(ccc.getCaption("int2"))%>" size=20></td></tr>
         <%=text(getStringFieldHtml(ccc, "string1"))%>

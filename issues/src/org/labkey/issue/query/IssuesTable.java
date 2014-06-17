@@ -144,11 +144,11 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         duplicate.setDisplayColumnFactory(new URLTitleDisplayColumnFactory("Issue ${Duplicate}: ${Duplicate/Title:htmlEncode}"));
         duplicate.setFk(new QueryForeignKey(getUserSchema(), getContainer(), "Issues", "IssueId", "IssueId"));
 
-        ColumnInfo related = addColumn(new AliasedColumn(this, "Related", issueIdColumn));
+        ColumnInfo related = addColumn(new AliasedColumn(this, getCustomCaption("Related", ccc), issueIdColumn));
         related.setKeyField(false);
 
-        DetailsURL relatedURL = new DetailsURL(base, Collections.singletonMap("issueId", FieldKey.fromParts("Related", "IssueId")));
-        relatedURL.setContainerContext(new ContainerContext.FieldKeyContext(FieldKey.fromParts("Related", "Folder")));
+        DetailsURL relatedURL = new DetailsURL(base, Collections.singletonMap("issueId", FieldKey.fromParts(getCustomCaption("Related", ccc), "IssueId")));
+        relatedURL.setContainerContext(new ContainerContext.FieldKeyContext(FieldKey.fromParts(getCustomCaption("Related", ccc), "Folder")));
         related.setURL(relatedURL);
         related.setFk(new MultiValuedForeignKey(
                 new QueryForeignKey(getUserSchema(), getContainer(), "RelatedIssues", "IssueId", null),

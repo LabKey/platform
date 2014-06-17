@@ -139,7 +139,7 @@
             }
             if (!issue.getRelatedIssues().isEmpty())
             {
-                %><tr><td class="labkey-form-label">Related</td><td><%=bean.renderRelatedIssues(issue.getRelatedIssues())%></td></tr><%
+                %><tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RELATED, false))%></td><td><%=bean.renderRelatedIssues(issue.getRelatedIssues())%></td></tr><%
             }
 %>
             <%=bean.writeCustomColumn(ColumnType.INT1, 10, false)%>

@@ -248,6 +248,20 @@ public enum ColumnType
         {
             return issue.getString5();
         }
+    },
+    RELATED(11, "related", false)
+    {
+        @Override
+        public void setValue(Issue issue, String value)
+        {
+            issue.setRelated(value);
+        }
+
+        @Override
+        public String getValue(Issue issue)
+        {
+            return issue.getRelated();
+        }
     };
 
     private final int _ordinal;            // Ordinal used for storing/retrieving associated keywords in database (same as old int fake enum)

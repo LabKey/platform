@@ -406,7 +406,12 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
         else if (col != null)
             name = col.getLabel();
 
-        String label = PageFlowUtil.filter(StringUtils.isEmpty(name) ? columnName : name).replaceAll(" ", "&nbsp;");
+        String capitalizedColumnName;
+        if (columnName != null && columnName.length() > 1)
+            capitalizedColumnName = columnName.substring(0,1).toUpperCase() + columnName.substring(1); // capitalize
+        else
+            capitalizedColumnName = columnName;
+        String label = PageFlowUtil.filter(StringUtils.isEmpty(name) ? capitalizedColumnName : name).replaceAll(" ", "&nbsp;");
 
         if (markIfRequired && _requiredFields != null && _requiredFields.contains(columnName.toLowerCase()))
             return label + "<span class=\"labkey-error\">*</span>";

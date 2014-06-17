@@ -392,7 +392,7 @@ public class IssueManager
 
     public static class CustomColumnConfiguration
     {
-        private static final String[] COLUMN_NAMES = {"type", "area", "priority", "milestone", "resolution", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
+        private static final String[] COLUMN_NAMES = {"type", "area", "priority", "milestone", "resolution", "related", "int1", "int2", "string1", "string2", "string3", "string4", "string5"};
 
         private final CustomColumnMap _map;
 

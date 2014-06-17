@@ -214,7 +214,7 @@
                         %>
                         </td></tr>
         <% } %>
-                        <tr><td class="labkey-form-label">Related</td><td>
+                        <tr><td class="labkey-form-label"><%=text(bean.getLabel(ColumnType.RELATED, false))%></td><td>
                         <%=text(bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), "id=related tabindex=\"2\""))%>
 
                         <script type="text/javascript">

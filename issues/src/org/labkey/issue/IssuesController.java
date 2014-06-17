@@ -1891,7 +1891,7 @@ public class IssuesController extends SpringActionController
             checkPickLists(form, errors);
             
             CustomColumnConfiguration ccc = new CustomColumnConfiguration(getViewContext());
-            String defaultCols[] = {"Milestone", "Area", "Type", "Priority", "Resolution", "Status"};
+            String defaultCols[] = {"Milestone", "Area", "Type", "Priority", "Resolution", "Related", "Status"};
 
             Map<String, String> captions = ccc.getColumnCaptions(); //All of the custom captions
             for (String column : defaultCols)
