@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay;
 
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.study.ParticipantVisit;
 import org.labkey.api.data.Container;
 import org.jetbrains.annotations.NotNull;
@@ -40,9 +41,15 @@ public class ThawListFileResolver implements ParticipantVisitResolver
         _aliases = aliases;
         _runContainer = runContainer;
     }
-    
+
+    @Override
+    public Container getRunContainer()
+    {
+        return _runContainer;
+    }
+
     @NotNull
-    public ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy)
+    public ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy) throws ExperimentException
     {
         ParticipantVisit values = _aliases.get(specimenID);
         if (values == null)

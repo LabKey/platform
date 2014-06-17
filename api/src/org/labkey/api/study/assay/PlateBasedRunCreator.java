@@ -69,6 +69,8 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
         Map<String, ExpMaterial> originalMaterials = new HashMap<>();
         PlateSamplePropertyHelper helper = getProvider().getSamplePropertyHelper((PlateUploadForm) context, null);
         Map<String, Map<DomainProperty, String>> materialProperties = helper.getSampleProperties(context.getRequest());
+        StringBuilder resolverErrors = new StringBuilder();
+
         for (Map.Entry<String, Map<DomainProperty, String>> entry : materialProperties.entrySet())
         {
             Map<DomainProperty, String> properties = entry.getValue();
@@ -131,22 +133,34 @@ public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBa
             ExpMaterial originalMaterial = null;
             if (resolver != null)
             {
-                ParticipantVisit pv = resolver.resolve(specimenID, participantID, visitID, date, targetStudy);
-                originalMaterial = pv.getMaterial();
-                Map<DomainProperty, String> wellgroupProperties = materialProperties.get(entry.getKey());
-                if (specimenIDProperty != null)
-                    wellgroupProperties.put(specimenIDProperty, pv.getSpecimenID());
-                if (participantProperty != null)
-                    wellgroupProperties.put(participantProperty, pv.getParticipantID());
-                if (visitProperty != null)
-                    wellgroupProperties.put(visitProperty, pv.getVisitID() != null ? "" + pv.getVisitID() : null);
-                if (dateProperty != null)
-                    wellgroupProperties.put(dateProperty, pv.getDate() != null ? "" + pv.getDate() : null);
-                if (targetStudyProperty != null)
-                    wellgroupProperties.put(targetStudyProperty, pv.getStudyContainer() != null ? "" + pv.getStudyContainer() : null);
+                try
+                {
+                    ParticipantVisit pv = resolver.resolve(specimenID, participantID, visitID, date, targetStudy);
+                    originalMaterial = pv.getMaterial();
+                    Map<DomainProperty, String> wellgroupProperties = materialProperties.get(entry.getKey());
+                    if (specimenIDProperty != null)
+                        wellgroupProperties.put(specimenIDProperty, pv.getSpecimenID());
+                    if (participantProperty != null)
+                        wellgroupProperties.put(participantProperty, pv.getParticipantID());
+                    if (visitProperty != null)
+                        wellgroupProperties.put(visitProperty, pv.getVisitID() != null ? "" + pv.getVisitID() : null);
+                    if (dateProperty != null)
+                        wellgroupProperties.put(dateProperty, pv.getDate() != null ? "" + pv.getDate() : null);
+                    if (targetStudyProperty != null)
+                        wellgroupProperties.put(targetStudyProperty, pv.getStudyContainer() != null ? "" + pv.getStudyContainer() : null);
+                }
+                catch (ThawListResolverException e)
+                {
+                    // Marshall these so we can report on all the rows which did not resolve rather than halting on first error.
+                    resolverErrors.append(e.getMessage() + "\n");
+                    continue;
+                }
             }
             originalMaterials.put(key, originalMaterial);
         }
+        if (resolverErrors.length() > 0)
+            throw new ExperimentException(resolverErrors.toString());
+
         Map<ExpMaterial, String> newMaterials = createDerivedMaterials(context, originalMaterials, materialProperties);
         inputMaterials.putAll(newMaterials);
     }

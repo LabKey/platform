@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.study.ParticipantVisit;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,6 +29,7 @@ import java.util.Date;
  */
 public interface ParticipantVisitResolver
 {
+    public Container getRunContainer();
     @NotNull
-    ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy);
+    ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy) throws ExperimentException;
 }

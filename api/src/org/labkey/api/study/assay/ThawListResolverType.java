@@ -16,6 +16,8 @@
 
 package org.labkey.api.study.assay;
 
+import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
@@ -27,6 +29,7 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reader.TabLoader;
@@ -39,14 +42,19 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.ViewForm;
+import org.springframework.validation.Errors;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -253,23 +261,13 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                 container = ContainerManager.getForPath(containerName);
             }
 
-            if (container == null || !container.hasPermission(context.getUser(), ReadPermission.class))
+            String validationErrMsg = validateThawList(context.getRequest(), container, context.getUser());
+            if (StringUtils.isNotEmpty(validationErrMsg))
             {
-                throw new ExperimentException("Could not reference container " + containerName);
+                throw new ExperimentException(validationErrMsg);
             }
 
-            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), container, schemaName);
-            if (schema == null)
-            {
-                throw new ExperimentException("Could not find schema " + schemaName);
-            }
-            TableInfo table = schema.getTable(queryName);
-            if (table == null)
-            {
-                throw new ExperimentException("Could not find table " + queryName);
-            }
-
-            name = schemaName + "." + queryName + " in " + container.getPath();
+            name = makeThawListName(schemaName, queryName, container);
             Lsid lsid = new Lsid(NAMESPACE_PREFIX, LIST_NAMESPACE_SUFFIX + ".Folder-" + context.getContainer().getRowId(),
                     schemaName + "." + queryName);
             lsid.setVersion(container.getPath());
@@ -289,6 +287,85 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
         thawListData.setName(name);
         thawListData.setLSID(dataLSID);
         inputDatas.put(thawListData, "ThawList");
+    }
+
+    /**
+     * Determine if the submitted form is using a thaw list, and if so, validate the list existence, permissions,
+     * and columns.
+     * @param form
+     * @param errors
+     */
+    public static void validationHelper(ViewForm form, Errors errors)
+    {
+        if (LIST_NAMESPACE_SUFFIX.equalsIgnoreCase(form.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME)))
+        {
+            String errMsg = validateThawList(form.getRequest(), form.getContainer(), form.getUser());
+            if (StringUtils.isNotEmpty(errMsg))
+            {
+                errors.reject(SpringActionController.ERROR_MSG, errMsg);
+            }
+        }
+    }
+
+    /**
+     * Validate the existence, permissions, and columns of a thaw list.
+     * @param request
+     * @param c
+     * @param u
+     * @return
+     */
+    private static String validateThawList(HttpServletRequest request, Container c, User u)
+    {
+        String containerName = request.getParameter(THAW_LIST_LIST_CONTAINER_INPUT_NAME);
+        String schemaName = request.getParameter(THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME);
+        String queryName = request.getParameter(THAW_LIST_LIST_QUERY_NAME_INPUT_NAME);
+        Container container;
+
+        if (containerName == null || "".equals(containerName))
+        {
+            container = c;
+        }
+        else
+        {
+            container = ContainerManager.getForPath(containerName);
+        }
+
+        if (container == null || !container.hasPermission(u, ReadPermission.class))
+        {
+            return("Could not reference container " + containerName);
+        }
+
+        UserSchema schema = QueryService.get().getUserSchema(u, container, schemaName);
+        if (schema == null)
+        {
+            return("Could not find schema " + schemaName);
+        }
+        TableInfo table = schema.getTable(queryName);
+        if (table == null)
+        {
+            return("Could not find table " + queryName);
+        }
+
+        List<String> requiredColumns = Arrays.asList("Index", "SpecimenId", "ParticipantId", "VisitId", "Date");
+        StringBuilder sb = new StringBuilder();
+        for (String column : requiredColumns)
+        {
+            if (table.getColumn(FieldKey.fromParts(column)) == null)
+            {
+                if (sb.length() > 0)
+                    sb.append("\n");
+                else
+                    sb.append(makeThawListName(schemaName, queryName, container) + " is missing required column(s):\n");
+                sb.append(column);
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private static String makeThawListName(String schemaName, String queryName, Container container)
+    {
+        return schemaName + "." + queryName + " in " + container.getPath();
     }
 
     public boolean collectPropertyOnUpload(AssayRunUploadContext uploadContext, String propertyName)

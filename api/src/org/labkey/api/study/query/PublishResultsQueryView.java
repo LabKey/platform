@@ -33,6 +33,7 @@ import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.UpdateColumn;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
@@ -56,6 +57,7 @@ import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayTableMetadata;
+import org.labkey.api.study.assay.ParticipantVisitImpl;
 import org.labkey.api.study.assay.ParticipantVisitResolver;
 import org.labkey.api.study.assay.StudyParticipantVisitResolverType;
 import org.labkey.api.util.DateUtil;
@@ -407,7 +409,16 @@ public class PublishResultsQueryView extends ResultsQueryView
             String specimenID = _specimenIDCol == null ? null : convertObjectToString(_specimenIDCol.getValue(ctx));
             String participantID = _ptidCol == null ? null : convertObjectToString(_ptidCol.getValue(ctx));
 
-            return resolver.resolve(specimenID, participantID, visitId, date, targetStudyContainer);
+            try
+            {
+                return resolver.resolve(specimenID, participantID, visitId, date, targetStudyContainer);
+            }
+            catch (ExperimentException e)
+            {
+                // We've added validation to the ThawListListResolver to reject imports if not all rows resolve.
+                // Preserving the previous behavior here for the publish case.
+                return new ParticipantVisitImpl(specimenID, participantID, visitId, date, resolver.getRunContainer(), targetStudyContainer);
+            }
         }
 
         public Object getUserVisitId(RenderContext ctx) throws IOException

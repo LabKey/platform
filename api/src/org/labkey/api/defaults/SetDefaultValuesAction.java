@@ -45,8 +45,6 @@ import org.labkey.api.view.InsertView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.VBox;
 import org.springframework.validation.BindException;
-import org.springframework.validation.Errors;
-import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,10 +70,6 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
     public SetDefaultValuesAction(Class formClass)
     {
         super(formClass);
-    }
-
-    public void validateCommand(FormType target, Errors errors)
-    {
     }
 
     private class DefaultableDataColumn extends DataColumn implements DefaultableDisplayColumn
@@ -215,6 +209,8 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         rgn.addHiddenFormField(ActionURL.Param.returnUrl, domainIdForm.getReturnUrl());
         rgn.setButtonBar(bbar);
 
+        addAdditionalFormFields(domainIdForm, rgn);
+
         List<Container> overridees = DefaultValueService.get().getDefaultValueOverridees(domainIdForm.getContainer(), domain);
         boolean inherited = !overridees.isEmpty();
         StringBuilder headerHtml = new StringBuilder("<span class=\"normal\">");
@@ -274,6 +270,16 @@ public class SetDefaultValuesAction<FormType extends DomainIdForm> extends Defau
         url.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
         url.addParameter("domainId", domain.getTypeId());
         return url;
+    }
+
+    /**
+     * Convenience method for subclasses to add additonal fields needed, e.g., on reshow.
+     * @param domainIdForm
+     * @param rgn
+     */
+    protected void addAdditionalFormFields(FormType domainIdForm, DataRegion rgn)
+    {
+        return;
     }
 
     /**

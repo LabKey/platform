@@ -34,6 +34,7 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.template.ClientDependency;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -177,6 +178,13 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         return url;
     }
 
+    @Override
+    protected void addAdditionalFormFields(AssayDomainIdForm domainIdForm, DataRegion rgn)
+    {
+        // Needed for reshow after validation errors
+        rgn.addHiddenFormField("providerName", domainIdForm.getProviderName());
+    }
+
     protected DataRegion createDataRegion()
     {
         return new AssayDefaultValueDataRegion(_provider);
@@ -202,5 +210,11 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         }
         else
             formDefaults.put(propName, stringValue);
+    }
+
+    @Override
+    public void validateCommand(AssayDomainIdForm target, Errors errors)
+    {
+        ThawListResolverType.validationHelper(target, errors);
     }
 }

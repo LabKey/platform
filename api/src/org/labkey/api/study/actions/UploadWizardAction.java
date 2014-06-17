@@ -16,7 +16,6 @@
 
 package org.labkey.api.study.actions;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
@@ -53,6 +52,7 @@ import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.AssayWarningsDisplayColumn;
 import org.labkey.api.study.assay.DefaultAssayRunCreator;
 import org.labkey.api.study.assay.ParticipantVisitResolverType;
+import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -787,5 +787,11 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             else
                 return super.getErrors(paramName);
         }
+    }
+
+    @Override
+    public void validate(FormType formType, BindException errors)
+    {
+        ThawListResolverType.validationHelper(formType, errors);
     }
 }

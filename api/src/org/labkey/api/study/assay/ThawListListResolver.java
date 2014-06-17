@@ -66,7 +66,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
     }
 
     @NotNull
-    protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date, Container targetStudyContainer)
+    protected ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date, Container targetStudyContainer) throws ExperimentException
     {
         List<String> pkNames = _tableInfo.getPkColumnNames();
         assert pkNames.size() == 1;
@@ -78,8 +78,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         }
         catch (ConversionException e)
         {
-            // It's OK, there just won't be a match for this row
-            return new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer(), targetStudyContainer);
+           throw new ThawListResolverException("Conversion exception resolving thaw list entry for specimenId: " + specimenID);
         }
 
         TableSelector selector = new TableSelector(_tableInfo, new SimpleFilter(pkNames.get(0), convertedID), null);
@@ -89,7 +88,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
 
         if (rows.length == 0)
         {
-            return new ParticipantVisitImpl(specimenID, participantID, visitID, date, getRunContainer(), targetStudyContainer);
+            throw new ThawListResolverException("Can not resolve thaw list entry for specimenId: " + specimenID);
         }
         else
         {

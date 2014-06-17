@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
 import org.jetbrains.annotations.NotNull;
@@ -50,7 +51,7 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
         _user = user;
     }
 
-    protected Container getRunContainer()
+    public Container getRunContainer()
     {
         return _runContainer;
     }
@@ -66,7 +67,7 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
      * The target study is considered on a row by row basis.  The target study from the result domain has the highest precendence followed by the run or batch domain.
      */
     @NotNull
-    public final ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy)
+    public final ParticipantVisit resolve(String specimenID, String participantID, Double visitID, Date date, Container resultDomainTargetStudy) throws ExperimentException
     {
         specimenID = specimenID == null ? null : specimenID.trim();
         if (specimenID != null && specimenID.length() == 0)
@@ -92,5 +93,5 @@ public abstract class AbstractParticipantVisitResolver implements ParticipantVis
     }
 
     @NotNull
-    protected abstract ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date, Container targetStudyContainer);
+    protected abstract ParticipantVisit resolveParticipantVisit(String specimenID, String participantID, Double visitID, Date date, Container targetStudyContainer) throws ExperimentException;
 }
