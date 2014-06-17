@@ -78,7 +78,7 @@
 </script>
 
 <div>
-    Select which categories about which you want to be notified.
+    Select the categories about which you want to be notified.
     You will receive a daily digest of any changes to reports and datasets in the categories you select.
     <br><br>
 </div>

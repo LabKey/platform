@@ -27,6 +27,8 @@
 <%@ page import="org.labkey.api.reports.model.ReportInfo" %>
 <%@ page import="org.labkey.api.reports.model.ViewCategory" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.study.StudyUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -35,7 +37,6 @@
 
     ActionURL emailPrefs = PageFlowUtil.urlProvider(ReportUrls.class).urlManageNotifications(form.getContainer());
     ActionURL folderUrl = PageFlowUtil.urlProvider(ProjectUrls.class).getBeginURL(form.getContainer());
-    Map<Integer, ViewCategory> viewCategoryMap = form.getViewCategoryMap();
 %>
 <html>
 <head>
@@ -55,38 +56,39 @@
 <hr size="1"/>
 <br>
 
-<table width="900px">
-    <tr><th>Report</th><th>Category</th><th>Modified</th></tr>
+<table width="1020px">
+    <tr><th>&nbsp;&nbsp;</th><th>Name</th><th>Type</th><th>Last Modified</th><th>Status</th></tr>
+    <%
+    for (Map.Entry<ViewCategory, List<ReportInfo>> catEntry : form.getReports().entrySet())
+    {
+    %>
+    <tr><th colspan="5">Category '<%=h(catEntry.getKey().getLabel())%>'</th></tr>
     <%
         int i = 0;
-        for (ReportInfo reportInfo : form.getReports())
+        for (ReportInfo reportInfo : catEntry.getValue())
         {
             String rowCls = (i++ % 2 == 0) ? "labkey-row" : "labkey-alternate-row";
+            ActionURL url = "Dataset".equalsIgnoreCase(reportInfo.getType()) ?
+                    PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(form.getContainer(), reportInfo.getRowId()) :
+                    reportInfo.getReport().getRunReportURL(getViewContext());
     %>
             <tr class="<%=text(rowCls)%>">
-                <td><%=h(reportInfo.getName())%></td>
-                <td><%=h(viewCategoryMap.get(reportInfo.getCategoryId()).getLabel())%></td>
+                <td>&nbsp;&nbsp;</td>
+                <td>
+                    <%if (null != url) {%> <a href='<%=h(url.getURIString())%>'> <%}%>
+                        <%=h(reportInfo.getName())%>
+                    <%if (null != url) {%> </a> <%}%>
+                </td>
+                <td><%=h(reportInfo.getType())%></td>
                 <td><%=h(DateUtil.formatDateTime(form.getContainer(), reportInfo.getModified()))%></td>
+                <td><%=h(reportInfo.getStatus())%></td>
             </tr>
     <%
         }
     %>
 
-    <tr><th></th><th></th><th></th></tr>
-    <tr><th>Dataset</th><th>Category</th><th>Modified</th></tr>
     <%
-        int j = 0;
-        for (ReportInfo reportInfo : form.getDatasets())
-        {
-            String rowCls = (j++ % 2 == 0) ? "labkey-row" : "labkey-alternate-row";
-    %>
-    <tr class="<%=text(rowCls)%>">
-        <td><%=h(reportInfo.getName())%></td>
-        <td><%=h(viewCategoryMap.get(reportInfo.getCategoryId()).getLabel())%></td>
-        <td><%=h(DateUtil.formatDateTime(form.getContainer(), reportInfo.getModified()))%></td>
-    </tr>
-    <%
-        }
+    }
     %>
 </table>
 <br>

@@ -20,9 +20,12 @@ import org.labkey.api.view.JspView;
 import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,11 +52,11 @@ public class ReportContentDigestProviderImpl implements ReportContentDigestProvi
         for (ReportInfoProvider provider : _reportInfoProviders)
         {
             provider.clearReportInfoMap();
-            Map<String, Map<Integer, Set<ReportInfo>>> reportInfoMap = provider.getReportInfoMap(start, end);
+            Map<String, Map<Integer, List<ReportInfo>>> reportInfoMap = provider.getReportInfoMap(start, end);
             for (String containerId : reportInfoMap.keySet())
             {
                 Container container = ContainerManager.getForId(containerId);
-                if (null != container)
+                if (null != container && !containers.contains(container))
                     containers.add(container);
             }
         }
@@ -63,18 +66,18 @@ public class ReportContentDigestProviderImpl implements ReportContentDigestProvi
     @Override
     public void sendDigest(Container container, Date min, Date max) throws Exception
     {
-        Map<Integer, Set<ReportInfo>> reportInfosByCategory = null;
+        Map<Integer, List<ReportInfo>> reportInfosByCategory = null;
         for (ReportInfoProvider provider : _reportInfoProviders)
         {
-            Map<Integer, Set<ReportInfo>> reportInfosForContainer = provider.getReportInfoMap(min, max).get(container.getId()); // could be null
+            Map<Integer, List<ReportInfo>> reportInfosForContainer = provider.getReportInfoMap(min, max).get(container.getId()); // could be null
             if (null == reportInfosByCategory)
                 reportInfosByCategory = reportInfosForContainer;
             else if (null != reportInfosForContainer)
             {
-                for (Map.Entry<Integer, Set<ReportInfo>> categoryEntry : reportInfosForContainer.entrySet())
+                for (Map.Entry<Integer, List<ReportInfo>> categoryEntry : reportInfosForContainer.entrySet())
                 {
                     if (!reportInfosByCategory.containsKey(categoryEntry.getKey()))
-                        reportInfosByCategory.put(categoryEntry.getKey(), new HashSet<ReportInfo>());
+                        reportInfosByCategory.put(categoryEntry.getKey(), new ArrayList<ReportInfo>());
                     reportInfosByCategory.get(categoryEntry.getKey()).addAll(categoryEntry.getValue());
                 }
             }
@@ -97,32 +100,41 @@ public class ReportContentDigestProviderImpl implements ReportContentDigestProvi
 
                 for (Map.Entry<Integer, Set<Integer>> userEntry : categoriesByUser.entrySet())
                 {
-                    Set<ReportInfo> reportsForUser = new HashSet<>();
-                    for (Integer category : userEntry.getValue())
-                    {
-                        if (null != category)
-                        {
-                            Set<ReportInfo> reportsForCategory = reportInfosByCategory.get(category);
-                            if (null != reportsForCategory)
-                                reportsForUser.addAll(reportsForCategory);
-                        }
-                    }
-
                     User user = UserManager.getUser(userEntry.getKey());
-                    if (!reportsForUser.isEmpty() && null != user)
+                    if (null != user)
                     {
-                        // Make email
-                        Map<Integer, ViewCategory> viewCategoryMap = getViewCategoryMap(container, user);
-                        ReportDigestForm form = new ReportDigestForm(user, container, reportsForUser, viewCategoryMap);
-                        EmailMessage msg = emailService.createMessage(LookAndFeelProperties.getInstance(container).getSystemEmailAddress(),
-                                                                      new String[]{user.getEmail()}, subject);
+                        Map<Integer, List<ReportInfo>> reportsForUserInitial = new HashMap<>();
+                        for (Integer category : userEntry.getValue())
+                        {
+                            if (null != category)
+                            {
+                                List<ReportInfo> reportsForCategory = reportInfosByCategory.get(category);
+                                if (null != reportsForCategory)
+                                    reportsForUserInitial.put(category, reportsForCategory);
+                            }
+                        }
 
-                        msg.addContent(EmailMessage.contentType.HTML, request,
-                                new JspView<>("/org/labkey/query/reports/view/reportDigestNotify.jsp", form));
-                        msg.addContent(EmailMessage.contentType.PLAIN, request,
-                                new JspView<>("/org/labkey/query/reports/view/reportDigestNotifyPlain.jsp", form));
+                        if (!reportsForUserInitial.isEmpty())
+                        {
+                            // Make email
+                            Map<Integer, ViewCategory> viewCategoryMap = getViewCategoryMap(container, user);
+                            Map<ViewCategory, List<ReportInfo>> reportsForUser = new LinkedHashMap<>();
+                            List<ViewCategory> viewCategories = getSortedViewCategories(viewCategoryMap);
+                            for (ViewCategory viewCategory : viewCategories)
+                                if (reportsForUserInitial.containsKey(viewCategory.getRowId()))
+                                    reportsForUser.put(viewCategory, sortReportInfoList(reportsForUserInitial.get(viewCategory.getRowId())));
 
-                        messages.add(msg);
+                            ReportDigestForm form = new ReportDigestForm(user, container, reportsForUser);
+                            EmailMessage msg = emailService.createMessage(LookAndFeelProperties.getInstance(container).getSystemEmailAddress(),
+                                    new String[]{user.getEmail()}, subject);
+
+                            msg.addContent(EmailMessage.contentType.HTML, request,
+                                    new JspView<>("/org/labkey/query/reports/view/reportDigestNotify.jsp", form));
+                            msg.addContent(EmailMessage.contentType.PLAIN, request,
+                                    new JspView<>("/org/labkey/query/reports/view/reportDigestNotifyPlain.jsp", form));
+
+                            messages.add(msg);
+                        }
                     }
                 }
 
@@ -140,40 +152,22 @@ public class ReportContentDigestProviderImpl implements ReportContentDigestProvi
 
     public static class ReportDigestForm
     {
-        Set<ReportInfo> _reports;
-        Set<ReportInfo> _datasets;
+        Map<ViewCategory, List<ReportInfo>> _reports;
         User _user;
         Container _container;
-        private Map<Integer, ViewCategory> _viewCategoryMap;
 
-        public ReportDigestForm(User user, Container container, Set<ReportInfo> reportInfos, Map<Integer, ViewCategory> viewCategoryMap)
+        public ReportDigestForm(User user, Container container, Map<ViewCategory, List<ReportInfo>> reports)
         {
             _user = user;
             _container = container;
-            _viewCategoryMap = viewCategoryMap;
 
             // Split reports and datasets
-            _reports = new HashSet<>();
-            _datasets = new HashSet<>();
-            for (ReportInfo reportInfo : reportInfos)
-            {
-                if (reportInfo.getType() == ReportInfo.Type.report)
-                    _reports.add(reportInfo);
-                else if (reportInfo.getType() == ReportInfo.Type.dataset)
-                    _datasets.add(reportInfo);
-                else
-                    assert false;       // Type added?
-            }
+            _reports = reports;
         }
 
-        public Set<ReportInfo> getReports()
+        public Map<ViewCategory, List<ReportInfo>> getReports()
         {
             return _reports;
-        }
-
-        public Set<ReportInfo> getDatasets()
-        {
-            return _datasets;
         }
 
         public User getUser()
@@ -184,11 +178,6 @@ public class ReportContentDigestProviderImpl implements ReportContentDigestProvi
         public Container getContainer()
         {
             return _container;
-        }
-
-        public Map<Integer, ViewCategory> getViewCategoryMap()
-        {
-            return _viewCategoryMap;
         }
     }
 
@@ -204,5 +193,31 @@ public class ReportContentDigestProviderImpl implements ReportContentDigestProvi
             viewCategoryMap.put(viewCategory.getRowId(), viewCategory);
         }
         return viewCategoryMap;
+    }
+
+    private List<ViewCategory> getSortedViewCategories(Map<Integer, ViewCategory> viewCategoryMap)
+    {
+        List<ViewCategory> sortedViewCategories = new ArrayList<>();
+        for (ViewCategory viewCategory : viewCategoryMap.values())
+            sortedViewCategories.add(viewCategory);
+        ViewCategoryManager.sortViewCategories(sortedViewCategories);
+        return sortedViewCategories;
+    }
+
+    private List<ReportInfo> sortReportInfoList(List<ReportInfo> reportInfos)
+    {
+        // It's ok to sort in place
+        Collections.sort(reportInfos, new Comparator<ReportInfo>()
+        {
+            @Override
+            public int compare(ReportInfo o1, ReportInfo o2)
+            {
+                int ret = o1.getDisplayOrder() - o2.getDisplayOrder();
+                if (0 == ret)
+                    ret = o1.getName().compareToIgnoreCase(o2.getName());
+                return ret;
+            }
+        });
+        return reportInfos;
     }
 }

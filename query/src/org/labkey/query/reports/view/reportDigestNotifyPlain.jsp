@@ -22,26 +22,25 @@
 <%@ page import="org.labkey.api.reports.model.ReportInfo" %>
 <%@ page import="org.labkey.api.reports.model.ViewCategory" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
 <%
     ReportDigestForm form = ((JspView<ReportDigestForm>)HttpView.currentView()).getModelBean();
-    Map<Integer, ViewCategory> viewCategoryMap = form.getViewCategoryMap();
 %>
 
     Summary of notifications of reports and dataset changes for folder <%=text(form.getContainer().getPath())%>
 
-    <%
-    for (ReportInfo reportInfo : form.getReports())
+<%
+    for (Map.Entry<ViewCategory, List<ReportInfo>> catEntry : form.getReports().entrySet())
+    {
+%>
+    Category '<%=h(catEntry.getKey().getLabel())%>'<%
+    for (ReportInfo reportInfo : catEntry.getValue())
     {%>
-    Report '<%=text(reportInfo.getName())%>' (Category '<%=text(viewCategoryMap.get(reportInfo.getCategoryId()).getLabel())%>') Modified <%=text(DateUtil.formatDateTime(form.getContainer(), reportInfo.getModified()))%><%}%>
-
-    <%
-    for (ReportInfo reportInfo : form.getDatasets())
-    {%>
-    Dataset '<%=text(reportInfo.getName())%>' (Category '<%=text(viewCategoryMap.get(reportInfo.getCategoryId()).getLabel())%>') Modified <%=text(DateUtil.formatDateTime(form.getContainer(), reportInfo.getModified()))%><%}%>
-
+        Name: <%=text(reportInfo.getName())%>, Type: <%=text(reportInfo.getType())%>, Last Modified: <%=text(DateUtil.formatDateTime(form.getContainer(), reportInfo.getModified()))%>, Status: <%=reportInfo.getStatus()%><%}%>
+<%}%>
 
     You have received this email because you are signed up to receive notifications about changes to
     reports and datasets at <%=text(form.getContainer().getPath()) %>.
