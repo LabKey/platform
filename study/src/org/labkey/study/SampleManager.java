@@ -581,7 +581,7 @@ public class SampleManager implements ContainerManager.ContainerListener
 
     //                "\tFROM ";
 
-    private void updateSpecimenCounts(Container container, User user, List<Specimen> specimens)
+    private void updateVialCounts(Container container, User user, List<Specimen> specimens)
     {
         TableInfo tableInfoSpecimen = StudySchema.getInstance().getTableInfoSpecimen(container);
         TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(container);
@@ -642,9 +642,9 @@ public class SampleManager implements ContainerManager.ContainerListener
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateSql);
     }
 
-    public void updateSpecimenCounts(Container container, User user) throws SQLException
+    public void updateVialCounts(Container container, User user) throws SQLException
     {
-        updateSpecimenCounts(container, user, null);
+        updateVialCounts(container, user, null);
     }
 
     private void updateRequestabilityAndCounts(List<Specimen> specimens, User user) throws SQLException, RequestabilityManager.InvalidRuleException
@@ -663,7 +663,7 @@ public class SampleManager implements ContainerManager.ContainerListener
         for (int start = 0; start < specimens.size(); start += 1000)
         {
             List<Specimen> subset = specimens.subList(start, start + Math.min(1000, specimens.size() - start));
-            updateSpecimenCounts(container, user, subset);
+            updateVialCounts(container, user, subset);
         }
     }
 

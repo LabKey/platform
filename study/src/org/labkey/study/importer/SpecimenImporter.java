@@ -46,13 +46,12 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MultiPhaseCPUTimer;
-import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer.*;
+import org.labkey.api.util.MultiPhaseCPUTimer.InvocationTimer.Order;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
@@ -106,20 +105,12 @@ import java.util.TreeSet;
 @SuppressWarnings({"AssertWithSideEffects", "ConstantConditions"})
 public class SpecimenImporter
 {
-    private final CPUTimer cpuPopulateMaterials = new CPUTimer("populateMaterials");
-    private final CPUTimer cpuUpdateSpecimens = new CPUTimer("updateSpecimens");
-    private final CPUTimer cpuInsertSpecimens = new CPUTimer("insertSpecimens");
-    private final CPUTimer cpuUpdateSpecimenEvents = new CPUTimer("updateSpecimenEvents");
-    private final CPUTimer cpuInsertSpecimenEvents = new CPUTimer("insertSpecimenEvents");
-    private final CPUTimer cpuMergeTable = new CPUTimer("mergeTable");
-    private final CPUTimer cpuCreateTempTable = new CPUTimer("createTempTable");
-    private final CPUTimer cpuPopulateTempTable = new CPUTimer("populateTempTable");
-    private final CPUTimer cpuCurrentLocations = new CPUTimer("updateCurrentLocations");
-
     private enum ImportPhases {UpdateCommentSpecimenHashes, MarkOrphanedRequestVials, SetLockedInRequest, VialUpdatePreLoopPrep,
         GetVialBatch, GetDateOrderedEvents, GetSpecimenComments, GetProcessingLocationId, GetFirstProcessedBy, GetCurrentLocationId,
         CalculateLocation, GetLastEvent, DetermineUpdateVial, SetUpdateParameters, HandleComments, UpdateVials, UpdateComments,
-        UpdateSpecimenProcessingInfo, UpdateRequestability, UpdateSpecimenCounts, PrepareQcComments}
+        UpdateSpecimenProcessingInfo, UpdateRequestability, UpdateVialCounts, ResyncStudy, SetLastSpecimenLoad, DropTempTable,
+        UpdateAllStatistics, CommitTransaction, ClearCaches, PopulateMaterials, PopulateSpecimens, PopulateVials, PopulateSpecimenEvents,
+        PopulateTempTable, PopulateLabs, SpecimenTypes, DeleteOldData, PrepareQcComments}
 
     private static MultiPhaseCPUTimer<ImportPhases> TIMER = new MultiPhaseCPUTimer<>(ImportPhases.class, ImportPhases.values());
 
@@ -1152,9 +1143,11 @@ public class SpecimenImporter
         {
             _iTimer = TIMER.getInvocationTimer();
 
+            _iTimer.setPhase(ImportPhases.PopulateLabs);
             if (null != sifMap.get(_labsTableType))
                 mergeTable(schema, sifMap.get(_labsTableType), true, true);
 
+            _iTimer.setPhase(ImportPhases.SpecimenTypes);
             if (merge)
             {
                 if (null != sifMap.get(_additivesTableType))
@@ -1176,6 +1169,7 @@ public class SpecimenImporter
 
             // Specimen temp table must be populated AFTER the types tables have been reloaded, since the SpecimenHash
             // calculated in the temp table relies on the new RowIds for the types:
+            _iTimer.setPhase(ImportPhases.PopulateTempTable);
             SpecimenImportFile specimenFile = sifMap.get(_specimensTableType);
             SpecimenLoadInfo loadInfo = populateTempSpecimensTable(schema, specimenFile, merge);
 
@@ -1185,51 +1179,39 @@ public class SpecimenImporter
             else
                 info("Specimens: 0 rows found in input");
 
-            cpuCurrentLocations.start();
+            // No need to setPhase() here... method sets timer phases immediately
             updateCalculatedSpecimenData(merge, _logger);
-            cpuCurrentLocations.stop();
-            info("Time to determine locations: " + cpuCurrentLocations.toString());
 
+            _iTimer.setPhase(ImportPhases.ResyncStudy);
             resyncStudy();
 
+            _iTimer.setPhase(ImportPhases.SetLastSpecimenLoad);
             // Set LastSpecimenLoad to now... we'll check this before snapshot study specimen refresh
             StudyImpl study = StudyManager.getInstance().getStudy(_container).createMutable();
             study.setLastSpecimenLoad(new Date());
             StudyManager.getInstance().updateStudy(_user, study);
 
+            _iTimer.setPhase(ImportPhases.DropTempTable);
             // Drop the temp table within the transaction; otherwise, we may get a different connection object,
             // where the table is no longer available.  Note that this means that the temp table will stick around
             // if an exception is thrown during loading, but this is probably okay- the DB will clean it up eventually.
             executeSQL(schema, "DROP TABLE " + loadInfo.getTempTableName());
 
+            _iTimer.setPhase(ImportPhases.UpdateAllStatistics);
             updateAllStatistics();
+
+            _iTimer.setPhase(ImportPhases.CommitTransaction);
             transaction.commit();
         }
         finally
         {
-            TIMER.releaseInvocationTimer(_iTimer);
-
-            if (DEBUG)
-                info(_iTimer.getTimings(Order.HighToLow, "|"));
-
+            _iTimer.setPhase(ImportPhases.ClearCaches);
             StudyManager.getInstance().clearCaches(_container, false);
             SampleManager.getInstance().clearCaches(_container);
-            dumpTimers();
-        }
-    }
 
-    private void dumpTimers()
-    {
-        Logger logDebug = Logger.getLogger(SpecimenImporter.class);
-        logDebug.debug("  cumulative\t     average\t       calls\ttimer");
-        logDebug.debug(cpuPopulateMaterials);
-        logDebug.debug(cpuInsertSpecimens);
-        logDebug.debug(cpuUpdateSpecimens);
-        logDebug.debug(cpuInsertSpecimenEvents);
-        logDebug.debug(cpuUpdateSpecimenEvents);
-        logDebug.debug(cpuMergeTable);
-        logDebug.debug(cpuCreateTempTable);
-        logDebug.debug(cpuPopulateTempTable);
+            TIMER.releaseInvocationTimer(_iTimer);
+            info(_iTimer.getTimings(Order.HighToLow, "|"));
+        }
     }
 
     private SpecimenLoadInfo populateTempSpecimensTable(DbSchema schema, SpecimenImportFile file, boolean merge) throws SQLException, IOException, ValidationException
@@ -1242,6 +1224,7 @@ public class SpecimenImporter
 
     private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws SQLException, IOException, ValidationException
     {
+        _iTimer.setPhase(ImportPhases.DeleteOldData);
         if (!merge)
         {
 //            SimpleFilter containerFilter = SimpleFilter.createContainerFilter(info.getContainer());
@@ -1256,11 +1239,16 @@ public class SpecimenImporter
             info("Complete.");
         }
 
+        _iTimer.setPhase(ImportPhases.PopulateMaterials);
         populateMaterials(info, merge);
+        _iTimer.setPhase(ImportPhases.PopulateSpecimens);
         populateSpecimens(info, merge);
+        _iTimer.setPhase(ImportPhases.PopulateVials);
         populateVials(info, merge);
-        populateVialEvents(info, merge);
+        _iTimer.setPhase(ImportPhases.PopulateSpecimenEvents);
+        populateSpecimenEvents(info, merge);
 
+        _iTimer.setPhase(ImportPhases.DeleteOldData);
         if (merge)
         {
             // Delete any orphaned specimen rows without vials
@@ -1592,7 +1580,7 @@ public class SpecimenImporter
         do
         {
             if (logger != null)
-                logger.info("Determining current locations for vials " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
+                logger.info("Updating vial rows " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
 
             _iTimer.setPhase(ImportPhases.GetVialBatch);
             {
@@ -1779,11 +1767,11 @@ public class SpecimenImporter
             throw new IllegalStateException("One or more requestability rules is invalid.  Please remove or correct the invalid rule.", e);
         }
 
-        _iTimer.setPhase(ImportPhases.UpdateSpecimenCounts);
+        _iTimer.setPhase(ImportPhases.UpdateVialCounts);
         if (logger != null)
             logger.info("Updating cached vial counts...");
 
-        SampleManager.getInstance().updateSpecimenCounts(_container, _user);
+        SampleManager.getInstance().updateVialCounts(_container, _user);
 
         if (logger != null)
             logger.info("Vial count update complete.");
@@ -1941,8 +1929,6 @@ public class SpecimenImporter
 
     private void populateMaterials(SpecimenLoadInfo info, boolean merge) throws SQLException
     {
-        assert cpuPopulateMaterials.start();
-
         String columnName = null;
 
         for (SpecimenColumn specimenColumn : info.getAvailableColumns())
@@ -2011,34 +1997,27 @@ public class SpecimenImporter
 
         Timestamp createdTimestamp = new Timestamp(System.currentTimeMillis());
 
-        try
+        int affected;
+        if (!merge)
         {
-            int affected;
-            if (!merge)
-            {
-                info("exp.Material: Deleting entries for removed specimens...");
-                SQLFragment deleteFragment = new SQLFragment(deleteSQL, cpasType, info.getContainer().getId());
-                if (DEBUG)
-                    logSQLFragment(deleteFragment);
-                affected = executeSQL(info.getSchema(), deleteFragment);
-                if (affected >= 0)
-                    info("exp.Material: " + affected + " rows removed.");
-            }
-
-            // NOTE: No need to update existing Materials when merging -- just insert any new materials not found.
-            info("exp.Material: Inserting new entries from temp table...");
-            SQLFragment insertFragment = new SQLFragment(insertSQL, info.getContainer().getId(), cpasType, createdTimestamp);
+            info("exp.Material: Deleting entries for removed specimens...");
+            SQLFragment deleteFragment = new SQLFragment(deleteSQL, cpasType, info.getContainer().getId());
             if (DEBUG)
-                logSQLFragment(insertFragment);
-            affected = executeSQL(info.getSchema(), insertFragment);
+                logSQLFragment(deleteFragment);
+            affected = executeSQL(info.getSchema(), deleteFragment);
             if (affected >= 0)
-                info("exp.Material: " + affected + " rows inserted.");
-            info("exp.Material: Update complete.");
+                info("exp.Material: " + affected + " rows removed.");
         }
-        finally
-        {
-            assert cpuPopulateMaterials.stop();
-        }
+
+        // NOTE: No need to update existing Materials when merging -- just insert any new materials not found.
+        info("exp.Material: Inserting new entries from temp table...");
+        SQLFragment insertFragment = new SQLFragment(insertSQL, info.getContainer().getId(), cpasType, createdTimestamp);
+        if (DEBUG)
+            logSQLFragment(insertFragment);
+        affected = executeSQL(info.getSchema(), insertFragment);
+        if (affected >= 0)
+            info("exp.Material: " + affected + " rows inserted.");
+        info("exp.Material: Update complete.");
     }
 
     private String getSpecimenEventTempTableColumns(SpecimenLoadInfo info)
@@ -2149,11 +2128,9 @@ public class SpecimenImporter
             if (DEBUG)
                 logSQLFragment(insertSql);
 
-            assert cpuInsertSpecimens.start();
             info("Specimens: Inserting new rows...");
             executeSQL(info.getSchema(), insertSql);
             info("Specimens: Insert complete.");
-            assert cpuInsertSpecimens.stop();
         }
     }
 
@@ -2260,11 +2237,9 @@ public class SpecimenImporter
             if (DEBUG)
                 logSQLFragment(insertSql);
 
-            assert cpuInsertSpecimens.start();
             info("Vials: Inserting new rows...");
             executeSQL(info.getSchema(), insertSql);
             info("Vials: Insert complete.");
-            assert cpuInsertSpecimens.stop();
         }
     }
 
@@ -2276,7 +2251,7 @@ public class SpecimenImporter
             info(param.toString());
     }
 
-    private void populateVialEvents(SpecimenLoadInfo info, boolean merge) throws SQLException, ValidationException
+    private void populateSpecimenEvents(SpecimenLoadInfo info, boolean merge) throws SQLException, ValidationException
     {
         TableInfo specimenEventTable = getTableInfoSpecimenEvent();
         String specimenEventTableSelectName = specimenEventTable.getSelectName();
@@ -2327,11 +2302,10 @@ public class SpecimenImporter
 
             if (DEBUG)
                 logSQLFragment(insertSql);
-            assert cpuInsertSpecimenEvents.start();
+
             info("Specimen Events: Inserting new rows.");
             executeSQL(info.getSchema(), insertSql);
             info("Specimen Events: Insert complete.");
-            assert cpuInsertSpecimenEvents.stop();
         }
     }
 
@@ -2438,7 +2412,6 @@ public class SpecimenImporter
         Iterator<Map<String, Object>> iter = values.iterator();
 
         assert !_specimensTableType.getTableName().equalsIgnoreCase(tableName);
-        assert cpuMergeTable.start();
         info(tableName + ": Starting merge of data...");
 
         List<T> availableColumns = new ArrayList<>();
@@ -2641,7 +2614,6 @@ public class SpecimenImporter
             if (null != conn)
                 schema.getScope().releaseConnection(conn);    
         }
-        assert cpuMergeTable.stop();
 
         return new Pair<>(availableColumns, rowCount);
     }
@@ -2670,7 +2642,6 @@ public class SpecimenImporter
         Iterator<Map<String, Object>> iter = values.iterator();
 
         assert !_specimensTableType.getTableName().equalsIgnoreCase(tableName);
-        assert cpuMergeTable.start();
         info(tableName + ": Starting merge of data...");
 
         List<T> availableColumns = new ArrayList<>();
@@ -2761,7 +2732,6 @@ public class SpecimenImporter
             if (null != conn)
                 schema.getScope().releaseConnection(conn);
         }
-        assert cpuMergeTable.stop();
 
         return new Pair<>(availableColumns, rowCount);
     }
@@ -2806,7 +2776,6 @@ public class SpecimenImporter
             return new Pair<>(Collections.<T>emptyList(), 0);
         }
 
-        assert cpuMergeTable.start();
         info(tableName + ": Starting replacement of all data...");
 
         assert !_specimensTableType.getTableName().equalsIgnoreCase(tableName);
@@ -2942,7 +2911,6 @@ public class SpecimenImporter
         {
             file.getStrategy().close();
         }
-        assert cpuMergeTable.stop();
 
         return new Pair<>(availableColumns, rowCount);
     }
@@ -2990,8 +2958,6 @@ public class SpecimenImporter
             SpecimenImportFile file, boolean merge)
         throws SQLException, IOException, ValidationException
     {
-        assert cpuPopulateTempTable.start();
-
         info("Populating specimen temp table...");
         int rowCount;
         List<SpecimenColumn> loadedColumns = new ArrayList<>();
@@ -3426,58 +3392,50 @@ public class SpecimenImporter
 
     private String createTempTable(DbSchema schema)
     {
-        assert cpuCreateTempTable.start();
-        try
+        info("Creating temp table to hold archive data...");
+        SqlDialect dialect = schema.getSqlDialect();
+        String tableName;
+        StringBuilder sql = new StringBuilder();
+        int randomizer = (new Random().nextInt(900000000) + 100000000);  // Ensure 9-digit random number
+        if (DEBUG)
         {
-            info("Creating temp table to hold archive data...");
-            SqlDialect dialect = schema.getSqlDialect();
-            String tableName;
-            StringBuilder sql = new StringBuilder();
-            int randomizer = (new Random().nextInt(900000000) + 100000000);  // Ensure 9-digit random number
-            if (DEBUG)
-            {
-                tableName = dialect.getGlobalTempTablePrefix() + "SpecimenUpload" + randomizer;
-                sql.append("CREATE TABLE ").append(tableName);
-            }
-            else
-            {
-                tableName = dialect.getTempTablePrefix() + "SpecimenUpload" + randomizer;
-                sql.append("CREATE ").append(dialect.getTempTableKeyword()).append(" TABLE ").append(tableName);
-            }
-            String strType = dialect.sqlTypeNameFromSqlType(Types.VARCHAR);
-            sql.append("\n(\n    RowId ").append(dialect.getUniqueIdentType()).append(", ");
-            sql.append("LSID ").append(strType).append("(300) NOT NULL, ");
-            sql.append("SpecimenHash ").append(strType).append("(300), ");
-            sql.append(DRAW_DATE.getDbColumnName()).append(" ").append(DRAW_DATE.getDbType()).append(", ");
-            sql.append(DRAW_TIME.getDbColumnName()).append(" ").append(DRAW_TIME.getDbType());
-            for (SpecimenColumn col : _specimenColumns)
-                sql.append(",\n    ").append(col.getDbColumnName()).append(" ").append(col.getDbType());
-            sql.append("\n);");
-            executeSQL(schema, sql);
-
-            String rowIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_RowId ON " + tableName + "(RowId)";
-            String globalUniqueIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_GlobalUniqueId ON " + tableName + "(GlobalUniqueId)";
-            String lsidIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_LSID ON " + tableName + "(LSID)";
-            String hashIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_SpecimenHash ON " + tableName + "(SpecimenHash)";
-            if (DEBUG)
-            {
-                info(globalUniqueIdIndexSql);
-                info(rowIdIndexSql);
-                info(lsidIndexSql);
-                info(hashIndexSql);
-            }
-            executeSQL(schema, globalUniqueIdIndexSql);
-            executeSQL(schema, rowIdIndexSql);
-            executeSQL(schema, lsidIndexSql);
-            executeSQL(schema, hashIndexSql);
-            info("Created temporary table " + tableName);
-
-            return tableName;
+            tableName = dialect.getGlobalTempTablePrefix() + "SpecimenUpload" + randomizer;
+            sql.append("CREATE TABLE ").append(tableName);
         }
-        finally
+        else
         {
-            assert cpuCreateTempTable.stop();
+            tableName = dialect.getTempTablePrefix() + "SpecimenUpload" + randomizer;
+            sql.append("CREATE ").append(dialect.getTempTableKeyword()).append(" TABLE ").append(tableName);
         }
+        String strType = dialect.sqlTypeNameFromSqlType(Types.VARCHAR);
+        sql.append("\n(\n    RowId ").append(dialect.getUniqueIdentType()).append(", ");
+        sql.append("LSID ").append(strType).append("(300) NOT NULL, ");
+        sql.append("SpecimenHash ").append(strType).append("(300), ");
+        sql.append(DRAW_DATE.getDbColumnName()).append(" ").append(DRAW_DATE.getDbType()).append(", ");
+        sql.append(DRAW_TIME.getDbColumnName()).append(" ").append(DRAW_TIME.getDbType());
+        for (SpecimenColumn col : _specimenColumns)
+            sql.append(",\n    ").append(col.getDbColumnName()).append(" ").append(col.getDbType());
+        sql.append("\n);");
+        executeSQL(schema, sql);
+
+        String rowIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_RowId ON " + tableName + "(RowId)";
+        String globalUniqueIdIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_GlobalUniqueId ON " + tableName + "(GlobalUniqueId)";
+        String lsidIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_LSID ON " + tableName + "(LSID)";
+        String hashIndexSql = "CREATE INDEX IX_SpecimenUpload" + randomizer + "_SpecimenHash ON " + tableName + "(SpecimenHash)";
+        if (DEBUG)
+        {
+            info(globalUniqueIdIndexSql);
+            info(rowIdIndexSql);
+            info(lsidIndexSql);
+            info(hashIndexSql);
+        }
+        executeSQL(schema, globalUniqueIdIndexSql);
+        executeSQL(schema, rowIdIndexSql);
+        executeSQL(schema, lsidIndexSql);
+        executeSQL(schema, hashIndexSql);
+        info("Created temporary table " + tableName);
+
+        return tableName;
     }
 
     private static final String SPECIMEN_SEQUENCE_NAME = "org.labkey.study.samples";
