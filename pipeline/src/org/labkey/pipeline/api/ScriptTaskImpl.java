@@ -28,6 +28,7 @@ import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.reports.ExternalScriptEngine;
 import org.labkey.api.reports.ExternalScriptEngineDefinition;
 import org.labkey.api.reports.ExternalScriptEngineFactory;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -137,6 +138,29 @@ public class ScriptTaskImpl extends CommandTaskImpl
         return replacements;
     }
 
+    private ScriptEngine getScriptEngine(ScriptEngineManager mgr, String extension)
+    {
+        ScriptEngine engine = mgr.getEngineByName(extension);
+        if (engine == null)
+        {
+            //
+            // since we allow both R and Rserve engines now, ask for Rserve if we are using the LabKeyScriptEngineManager and
+            // Rserve has been enabled
+            //
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING) &&
+                    mgr instanceof LabkeyScriptEngineManager)
+            {
+                engine = ((LabkeyScriptEngineManager) mgr).getEngineByExtension(extension, true /*requestRemote*/);
+            }
+            else
+            {
+                engine = mgr.getEngineByExtension(extension);
+            }
+        }
+
+        return engine;
+    }
+
     // TODO: I believe script task can only run on the webserver since the paths the ExternalScriptEngine is configured to are local to the server.
     // TODO: RServe
     // TODO: Rhino engine.  A non-ExternalScriptEngine won't use the PARAM_REPLACEMENT_MAP binding.
@@ -151,9 +175,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
         ScriptTaskFactory factory = (ScriptTaskFactory)_factory;
         String extension = factory._scriptExtension;
-        _engine = mgr.getEngineByName(extension);
-        if (_engine == null)
-            _engine = mgr.getEngineByExtension(extension);
+        _engine = getScriptEngine(mgr, extension);
         if (_engine == null)
             throw new PipelineJobException("Script engine not found: " + extension);
 
@@ -191,7 +213,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
             getJob().info("folder pipeline root: " + pipelineRootPath);
             bindings.put(RserveScriptEngine.PIPELINE_ROOT, pipelineRootPath);
 
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            if (_engine instanceof RserveScriptEngine)
             {
                 // TODO: RServe currently only configures site-wide pipeline share.
                 // TODO: We check that the current folder pipeline root is either equal to or is under the project's pipeline root.
@@ -293,7 +315,7 @@ public class ScriptTaskImpl extends CommandTaskImpl
 
     protected String rewritePath(String path)
     {
-        if (_engine != null && AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+        if (_engine instanceof RserveScriptEngine)
         {
             // Ensure local path is absolute before converting to remote path
             File f = new File(path);
@@ -314,5 +336,3 @@ public class ScriptTaskImpl extends CommandTaskImpl
         }
     }
 }
-
-

@@ -554,12 +554,16 @@ public class ReportsController extends SpringActionController
                     ExternalScriptEngineDefinition def = ((ExternalScriptEngineFactory)factory).getDefinition();
 
                     if (def instanceof LabkeyScriptEngineManager.EngineDefinition)
+                    {
                         record.put("key", ((LabkeyScriptEngineManager.EngineDefinition)def).getKey());
+                        record.put("remote", def.isRemote());
+                    }
+
                     record.put("exePath", def.getExePath());
                     record.put("exeCommand", def.getExeCommand());
                     record.put("outputFileName", def.getOutputFileName());
 
-                    if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+                    if (def.isRemote())
                     {
                         record.put("machine", def.getMachine());
                         record.put("port", String.valueOf(def.getPort()));
@@ -594,13 +598,9 @@ public class ReportsController extends SpringActionController
             if (def.isExternal())
             {
                 //
-                // If we are using Rserve for the R script engine instead of a local shell command then
-                // don't validate the exe and command line values.
+                // If the engine is remote then don't validate the exe and command line values
                 //
-                boolean ignoreExePath = AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING) &&
-                        Arrays.asList(def.getExtensions()).contains("R,r");
-
-                if (!ignoreExePath)
+                if (!def.isRemote())
                 {
                     File rexe = new File(def.getExePath());
                     if (!rexe.exists())
