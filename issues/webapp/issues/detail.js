@@ -49,7 +49,6 @@ Ext4.define('Issues.window.MoveIssue', {
         this.moveCombo = Ext4.create('Ext.form.field.ComboBox', {
             store: this.getUserStore(),
             name: 'moveIssueCombo',
-            allowBlank: false,
             valueField: 'containerId',
             displayField: 'containerPath',
             fieldLabel: 'Container',
@@ -60,7 +59,7 @@ Ext4.define('Issues.window.MoveIssue', {
             msgTarget: "under",
             forceSelection: false,
             validateOnChange: false,
-            validateOnBlur: true,
+            validateOnBlur: false,
             allowBlank: true,
             validator: function(val)
             {
@@ -109,7 +108,7 @@ Ext4.define('Issues.window.MoveIssue', {
     },
 
     handleMoveIssue: function(){
-        if (!this.moveCombo.isValid())
+        if (!this.moveCombo.validate())
             return;
 
         var containerId = this.moveCombo.getValue();
