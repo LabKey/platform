@@ -37,8 +37,6 @@ import java.util.Map;
  */
 public interface FileContentService
 {
-    public static final String EXPERIMENTAL_DRAG_DROP_UPLOAD = "dragDropUpload";
-
     public static final String FILES_LINK = "@files";
     public static final String FILE_SETS_LINK = "@filesets";
     public static final String PIPELINE_LINK = "@pipeline";

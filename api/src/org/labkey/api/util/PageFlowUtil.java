@@ -1943,7 +1943,6 @@ public class PageFlowUtil
         // Expose some experimental flags to the client
         JSONObject experimental = new JSONObject();
         experimental.put("containerRelativeURL", appProps.getUseContainerRelativeURL());
-        experimental.put(FileContentService.EXPERIMENTAL_DRAG_DROP_UPLOAD, appProps.isExperimentalFeatureEnabled(FileContentService.EXPERIMENTAL_DRAG_DROP_UPLOAD));
         json.put("experimental", experimental);
 
         json.put("contextPath", contextPath);

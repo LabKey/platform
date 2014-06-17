@@ -48,6 +48,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
     layout: 'fit',
     closeAction: 'destroy',
     title: 'Impersonate User',
+    defaultFocus: '#impersonate',
 
     initComponent : function() {
         this.buttons = ['->', {
@@ -63,9 +64,6 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
         this.items = [this.getPanel()];
 
         this.callParent();
-        this.on('show', function() {
-            this.userCombo.focus(false, 500);
-        }, this)
     },
 
     getPanel: function(){
@@ -83,6 +81,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
         this.userCombo = Ext4.create('Ext.form.field.ComboBox', {
             store: this.getUserStore(),
             name: 'impersonate',
+            itemId: 'impersonate',
             allowBlank: false,
             valueField: 'userId',
             displayField: 'displayName',
@@ -173,6 +172,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
     layout: 'fit',
     closeAction: 'destroy',
     title: 'Impersonate Group',
+    defaultFocus: '#impersonate',
 
     initComponent : function() {
         this.buttons = ['->', {
@@ -188,9 +188,6 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
         this.items = [this.getPanel()];
 
         this.callParent();
-        this.on('show', function() {
-            this.groupCombo.focus(false, 500);
-        }, this)
     },
 
     getPanel: function(){
@@ -206,6 +203,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
         this.groupCombo = Ext4.create('Ext.form.field.ComboBox', {
             store: this.getGroupStore(),
             name: 'impersonate',
+            itemId: 'impersonate',
             allowBlank: false,
             valueField: 'groupId',
             displayField: 'displayName',
