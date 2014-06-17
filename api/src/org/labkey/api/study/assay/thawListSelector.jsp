@@ -80,7 +80,7 @@
             id : 'thawListContainer',
             fieldLabel: 'Folder',
             value: <%= text(container == null ? "null" : PageFlowUtil.jsString(container.getPath())) %>,
-            width: 600
+            width: 500
         }));
 
         var schemaCombo = Ext4.create('Ext.form.field.ComboBox', sqvModel.makeSchemaComboConfig({
@@ -93,7 +93,7 @@
             fieldLabel : 'Schema',
             name: '<%= text(ThawListResolverType.THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME) %>',
             validateOnBlur: false,
-            width: 600
+            width: 500
         }));
 
         var queryCombo = ('Ext.form.field.ComboBox', sqvModel.makeQueryComboConfig({
@@ -105,7 +105,7 @@
             fieldLabel : 'Query',
             name: '<%= text(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME) %>',
             initialValue : <%=PageFlowUtil.jsString((String)ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_QUERY_NAME_INPUT_NAME))%>,
-            width: 600
+            width: 500
         }));
 
         thawListQueryPickerPanel = Ext4.create('Ext.form.Panel', {
@@ -113,7 +113,7 @@
             bodyStyle : 'background-color: transparent;',
             renderTo : 'SQVPicker',
             standardSubmit: true,
-            autoHeight: true,
+            width: 600,
             items : [sourceContainerCombo, schemaCombo, queryCombo]
         });
     });
