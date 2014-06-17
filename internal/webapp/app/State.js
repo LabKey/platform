@@ -633,10 +633,7 @@ Ext.define('LABKEY.app.controller.State', {
             match = false;
             for (var i=0; i < oldFilters.length; i++) {
 
-                if (oldFilters[i].data.hierarchy == newFilters[n].data.hierarchy &&
-                        oldFilters[i].data.isGroup == newFilters[n].data.isGroup &&
-                        oldFilters[i].data.range.min == null && newFilters[n].data.range.min == null)
-                {
+                if (this.shouldMergeFilters(oldFilters[i], newFilters[n])) {
 
                     for (var j=0; j < newFilters[n].data.members.length; j++) {
 
@@ -645,6 +642,9 @@ Ext.define('LABKEY.app.controller.State', {
                         if (!this.isExistingMemberByUniqueName(oldFilters[i].data.members, newFilters[n].data.members[j]))
                             oldFilters[i].data.members.push(newFilters[n].data.members[j]);
                     }
+
+                    // concatenate the array of range filters for the old and new filters (note: most cases will result in empty array)
+                    oldFilters[i].set('ranges', oldFilters[i].getRanges().concat(newFilters[n].getRanges()));
                 }
             }
 
@@ -679,6 +679,14 @@ Ext.define('LABKEY.app.controller.State', {
         }
 
         return oldFilters;
+    },
+
+    shouldMergeFilters : function(oldFilter, newFilter) {
+        return oldFilter.data.hierarchy == newFilter.data.hierarchy &&
+                oldFilter.data.isGroup == newFilter.data.isGroup &&
+                // either both have ranges or neither has a range
+                ((oldFilter.data.ranges.length == 0 && newFilter.data.ranges.length == 0) ||
+                 (oldFilter.data.ranges.length > 0 && newFilter.data.ranges.length > 0))
     },
 
     isExistingMemberByUniqueName : function(memberArray, newMember) {

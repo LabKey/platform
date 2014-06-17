@@ -15,7 +15,7 @@ Ext.define('LABKEY.app.model.Filter', {
         {name : 'isGroup', type: 'boolean', defaultValue: false},
         {name : 'isGrid', type: 'boolean', defaultValue: false}, // TODO: rename to isSql
         {name : 'isPlot', type: 'boolean', defaultValue: false},
-        {name : 'range', defaultValue: {min: null, max: null}},
+        {name : 'ranges', defaultValue: []},
         {name : 'gridFilter', convert: function(raw){ // TODO: rename to sqlFilters
             var filters = [];
             if (Ext.isArray(raw)) {
@@ -494,8 +494,8 @@ Ext.define('LABKEY.app.model.Filter', {
         return this.get('hierarchy');
     },
 
-    getRange : function() {
-        return this.get('range');
+    getRanges : function() {
+        return this.get('ranges');
     },
 
     getMembers : function() {
