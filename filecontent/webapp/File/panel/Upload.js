@@ -116,6 +116,13 @@ Ext4.define('File.panel.Upload', {
             },
 
             accept: function (file, done) {
+                // Filter out folder drag-drop on unsupported browsers (Firefox)
+                // See: https://github.com/enyo/dropzone/issues/528
+                if (!file.type && file.fullPath == undefined) {
+                    done("Drag-and-drop upload of folders is not supported by your browser. Please consider using Google Chrome or an external WebDAV client.");
+                    return;
+                }
+
                 var record = this.uploadPanel.getWorkingDirectory('model');
                 var path = this.uploadPanel.getWorkingDirectory('path');
 
@@ -215,7 +222,8 @@ Ext4.define('File.panel.Upload', {
                     {
                         if (response.status == 208)
                         {
-                            // File exists
+                            // File exists - mark the file as an error so the user isn't presented with the "Edit Properties" dialog
+                            file.status = Dropzone.ERROR;
                             Ext4.Msg.show({
                                 title : "File Conflict:",
                                 msg : "There is already a file named " + file.name + ' in this location. Would you like to replace it?',
@@ -611,7 +619,8 @@ Ext4.define('File.panel.Upload', {
             title: title,
             msg: msg,
             cls : 'data-window',
-            icon: Ext4.Msg.ERROR, buttons: Ext4.Msg.OK
+            icon: Ext4.Msg.ERROR,
+            buttons: Ext4.Msg.OK
         });
     },
 
