@@ -70,7 +70,7 @@ public class CohortWriter implements InternalStudyWriter
 
             if (null != datasetId && null != datasetProperty)
             {
-                cohortsXml.setDatasetId(study.getParticipantCohortDataSetId().intValue());
+                cohortsXml.setDatasetId(study.getParticipantCohortDataSetId());
                 cohortsXml.setDatasetProperty(study.getParticipantCohortProperty());
             }
         }
