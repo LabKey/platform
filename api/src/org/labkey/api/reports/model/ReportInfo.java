@@ -1,8 +1,9 @@
 package org.labkey.api.reports.model;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
@@ -18,43 +19,52 @@ public class ReportInfo
     private Date _modified;
     private String _containerId;
     private int _categoryId;
-    private Type _type;
-    private Integer rowId;
+    private String _type;
+    private Integer _rowId;
+    private Report _report;
+    private String _status;
+    private int _displayOrder;
 
-    public ReportInfo(String name, Type type)
+    public ReportInfo(String name, String type)
     {
         _name = name;
         _type = type;
     }
 
-    public ReportInfo(ReportDB report)
+    public ReportInfo(ReportDB reportDB)
     {
         try
         {
-            _type = Type.report;
-            ReportDescriptor reportDescriptor = ReportDescriptor.createFromXML(report.getDescriptorXML());
+            ReportDescriptor reportDescriptor = ReportDescriptor.createFromXML(reportDB.getDescriptorXML());
+            _report = ReportService.get().createReportInstance(reportDescriptor);
+            _type = _report.getTypeDescription();
             _name = reportDescriptor.getReportName();
-            setCreated(report.getCreated());
-            setModified(report.getModified());
-            setContainerId(report.getContainerId());
-            setRowId(report.getRowId());
+            _created = reportDB.getCreated();
+            _modified = reportDB.getModified();
+            _containerId = reportDB.getContainerId();
+            _rowId = reportDB.getRowId();
+            _displayOrder = reportDB.getDisplayOrder();
 
-            Integer categoryId = report.getCategoryId();
-            if (null == categoryId)
+            Integer categoryId = reportDB.getCategoryId();
+            Container container = ContainerManager.getForId(_containerId);
+            if (null != container)
             {
-                String schemaName = reportDescriptor.getProperty(ReportDescriptor.Prop.schemaName);
-                String queryName = reportDescriptor.getProperty(ReportDescriptor.Prop.queryName);
-                if (null != schemaName && null != queryName)
+                _status = (String)ReportPropsManager.get().getPropertyValue(reportDB.getEntityId(), container, "status");
+
+                if (null == categoryId)
                 {
-                    Container container = ContainerManager.getForId(report.getContainerId());
-                    if (null != container)
+                    String schemaName = reportDescriptor.getProperty(ReportDescriptor.Prop.schemaName);
+                    String queryName = reportDescriptor.getProperty(ReportDescriptor.Prop.queryName);
+                    if (null != schemaName && null != queryName)
                     {
-                        ViewCategory category = ReportUtil.getDefaultCategory(container, schemaName, queryName);
-                        categoryId = category.getRowId();
+                        {
+                            ViewCategory category = ReportUtil.getDefaultCategory(container, schemaName, queryName);
+                            categoryId = category.getRowId();
+                        }
                     }
                 }
+                _categoryId = null != categoryId ? categoryId : ViewCategoryManager.UNCATEGORIZED_ROWID;
             }
-            setCategoryId(null != categoryId ? categoryId : ViewCategoryManager.UNCATEGORIZED_ROWID);
         }
         catch (IOException e)
         {
@@ -64,11 +74,15 @@ public class ReportInfo
 
     public ReportInfo(DatasetDB dataset)
     {
-        this(dataset.getName(), Type.dataset);
-        setModified(dataset.getModified());
-        setContainerId(dataset.getContainer());
-        setRowId(dataset.getDatasetId());
-        setCategoryId(null != dataset.getCategoryId() ? dataset.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID);
+        this(dataset.getName(), "Dataset");
+        _modified = dataset.getModified();
+        _containerId = dataset.getContainer();
+        _rowId = dataset.getDatasetId();
+        _categoryId = null != dataset.getCategoryId() ? dataset.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID;
+        _displayOrder = dataset.getDisplayOrder();
+        Container container = ContainerManager.getForId(_containerId);
+        if (null != container)
+            _status = (String)ReportPropsManager.get().getPropertyValue(dataset.getEntityId(), container, "status");
     }
 
     public String getName()
@@ -76,19 +90,9 @@ public class ReportInfo
         return _name;
     }
 
-    public void setName(String name)
-    {
-        _name = name;
-    }
-
     public Date getCreated()
     {
         return _created;
-    }
-
-    public void setCreated(Date created)
-    {
-        _created = created;
     }
 
     public Date getModified()
@@ -96,19 +100,9 @@ public class ReportInfo
         return _modified;
     }
 
-    public void setModified(Date modified)
-    {
-        _modified = modified;
-    }
-
     public String getContainerId()
     {
         return _containerId;
-    }
-
-    public void setContainerId(String containerId)
-    {
-        _containerId = containerId;
     }
 
     public int getCategoryId()
@@ -116,29 +110,29 @@ public class ReportInfo
         return _categoryId;
     }
 
-    public void setCategoryId(Integer categoryId)
-    {
-        _categoryId = categoryId;
-    }
-
-    public Type getType()
+    public String getType()
     {
         return _type;
     }
 
-    public void setType(Type type)
-    {
-        _type = type;
-    }
-
     public Integer getRowId()
     {
-        return rowId;
+        return _rowId;
     }
 
-    public void setRowId(Integer rowId)
+    public Report getReport()
     {
-        this.rowId = rowId;
+        return _report;
+    }
+
+    public String getStatus()
+    {
+        return _status;
+    }
+
+    public int getDisplayOrder()
+    {
+        return _displayOrder;
     }
 
     public enum Type

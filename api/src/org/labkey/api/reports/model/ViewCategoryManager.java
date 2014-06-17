@@ -588,14 +588,17 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         return treeNode;
     }
 
-    private static void sortViewCategories(List<ViewCategory> categories)
+    public static void sortViewCategories(List<ViewCategory> categories)
     {
         Collections.sort(categories, new Comparator<ViewCategory>()
         {
             @Override
             public int compare(ViewCategory o1, ViewCategory o2)
             {
-                return o1.getDisplayOrder() - o2.getDisplayOrder();
+                int ret = o1.getDisplayOrder() - o2.getDisplayOrder();
+                if (0 == ret)
+                    ret = o1.getLabel().compareToIgnoreCase(o2.getLabel());
+                return ret;
             }
         });
     }
