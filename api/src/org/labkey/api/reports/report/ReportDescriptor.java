@@ -865,6 +865,14 @@ public class ReportDescriptor extends Entity implements SecurableResource
         return new HashSet<>();
     }
 
+    // Currently only used for R reports that want to expose properties to help choose which R engine to use.
+    // Concretely, we only support the 'remote' property to have the report hint to LabKey that if both remote
+    // and local R Script engines are available it should choose the remote one
+    public Map<String, String> getScriptEngineProperties()
+    {
+        return new HashMap<>();
+    }
+
     public String getViewClass()
     {
         return null;

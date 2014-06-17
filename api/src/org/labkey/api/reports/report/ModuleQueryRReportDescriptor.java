@@ -84,8 +84,15 @@ public class ModuleQueryRReportDescriptor extends ModuleRReportDescriptor
         return ((ModuleReportDependenciesResource) _resource).getClientDependencies();
     }
 
+    @Override
     public HashSet<String> getCallableFunctions()
     {
         return ((ModuleRReportResource) _resource).getCallableFunctions();
+    }
+
+    @Override
+    public Map<String, String> getScriptEngineProperties()
+    {
+        return ((ModuleRReportResource)_resource).getScriptEngineProperties();
     }
 }

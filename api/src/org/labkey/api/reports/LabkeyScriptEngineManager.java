@@ -51,6 +51,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
 
     private static final String SCRIPT_ENGINE_MAP = "ExternalScriptEngineMap";
     private static final String ENGINE_DEF_MAP_PREFIX = "ScriptEngineDefinition_";
+    private static final String REMOTE_ENGINE_DEF_MAP_PREFIX = ENGINE_DEF_MAP_PREFIX + "remote_";
 
     enum Props {
         key,
@@ -66,7 +67,8 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         port,
         pathMap,
         user,
-        password
+        password,
+        remote
     }
 
     ScriptEngineFactory rhino = null;
@@ -130,6 +132,11 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     @Override
     public ScriptEngine getEngineByExtension(String extension)
     {
+        return getEngineByExtension(extension, false);
+    }
+
+    public ScriptEngine getEngineByExtension(String extension, boolean requestRemote)
+    {
         if (!StringUtils.isBlank(extension))
         {
             ScriptEngine engine = super.getEngineByExtension(extension);
@@ -137,31 +144,57 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
 
             if (engine == null)
             {
+                ArrayList<ExternalScriptEngineDefinition> rEngines = new ArrayList<>();
+
                 for (ExternalScriptEngineDefinition def : getEngineDefinitions())
                 {
                     if (def.isEnabled() && Arrays.asList(def.getExtensions()).contains(extension))
                     {
-                        ScriptEngineFactory factory;
-
                         if (RScriptEngineFactory.isRScriptEngine(def.getExtensions()))
-                        {
-                            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
-                                factory = new RserveScriptEngineFactory(def);
-                            else
-                                factory = new RScriptEngineFactory(def);
-                        }
+                            rEngines.add(def);
                         else
-                            factory = new ExternalScriptEngineFactory(def);
-
-                        return factory.getScriptEngine();
+                            return (new ExternalScriptEngineFactory(def)).getScriptEngine();
                     }
                 }
+
+                return (rEngines.size() == 0) ? null : selectRScriptEngine(rEngines, requestRemote);
             }
             else if (isFactoryEnabled(engine.getFactory()))
                 return engine;
         }
         return null;
     }
+
+    //
+    // We allow both a local and a remote R engine to be registered.  Important:  this function assumes that remote
+    // engines are only returned from getEngineDefinitions() if the Rserve feature has been enabled.
+    //
+    // If a single engine is registered, return it.
+    //
+    // If both local and remote are available then return appropriate engine based on the requestRemote flag.
+    //
+    private static ScriptEngine selectRScriptEngine(ArrayList<ExternalScriptEngineDefinition> rEngines, boolean requestRemote)
+    {
+        ScriptEngineFactory factory;
+
+        if (rEngines.size() == 1)
+        {
+            ExternalScriptEngineDefinition def = rEngines.get(0);
+            factory = def.isRemote() ? new RserveScriptEngineFactory(def) : new RScriptEngineFactory(def);
+        }
+        else
+        {
+            assert 2 == rEngines.size() : "At most only two R script engines should be registered";
+            assert rEngines.get(0).isRemote() != rEngines.get(1).isRemote() : "One local and one remote R engine should be registered";
+
+            ExternalScriptEngineDefinition defRemote = rEngines.get(0).isRemote() ? rEngines.get(0) : rEngines.get(1);
+            ExternalScriptEngineDefinition defLocal = rEngines.get(0).isRemote() ? rEngines.get(1) : rEngines.get(0);
+
+            factory = requestRemote ? new RserveScriptEngineFactory(defRemote) : new RScriptEngineFactory(defLocal);
+        }
+
+        return factory.getScriptEngine();
+   }
 
     public static List<ExternalScriptEngineDefinition> getEngineDefinitions()
     {
@@ -171,10 +204,15 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         for (String name : map.values())
         {
             Map<String, String> def = PropertyManager.getProperties(name);
+            boolean isRemote = false;
+
+            if (def.containsKey(Props.remote.name()))
+                isRemote = Boolean.valueOf(def.get(Props.remote.name()));
 
             try
             {
-                engines.add(createDefinition(def));
+                if (!isRemote || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+                    engines.add(createDefinition(def));
             }
             catch (Exception e)
             {
@@ -227,7 +265,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
                 if (key == null)
                 {
                     // new engine definition
-                    key = makeKey(def.getExtensions());
+                    key = makeKey(def.isRemote(), def.getExtensions());
                     if (getProp(key, SCRIPT_ENGINE_MAP) != null)
                         throw new IllegalArgumentException("An existing definition is already mapped to those file extensions");
 
@@ -241,7 +279,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
                     setProp(Props.languageName.name(), def.getLanguageName(), key);
                     setProp(Props.languageVersion.name(), def.getLanguageVersion(), key);
 
-                    if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+                    if (def.isRemote())
                     {
                         setProp(Props.machine.name(), def.getMachine(), key);
                         setProp(Props.port.name(), String.valueOf(def.getPort()), key);
@@ -262,10 +300,9 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
                         setProp(Props.exePath.name(), def.getExePath(), key);
                         setProp(Props.exeCommand.name(), def.getExeCommand(), key);
                     }
-
                     setProp(Props.outputFileName.name(), def.getOutputFileName(), key);
                     setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
-
+                    setProp(Props.remote.name(), String.valueOf(def.isRemote()), key);
                 }
                 else
                     throw new IllegalArgumentException("Existing definition does not exist in the DB");
@@ -297,6 +334,12 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         }
     }
 
+    private static String makeKey(boolean isRemote, String[] engineExtensions)
+    {
+        String prefix = isRemote ? REMOTE_ENGINE_DEF_MAP_PREFIX : ENGINE_DEF_MAP_PREFIX;
+        return prefix + StringUtils.join(engineExtensions, ',');
+    }
+
     private static String makeKey(String[] engineExtensions)
     {
         return ENGINE_DEF_MAP_PREFIX + StringUtils.join(engineExtensions, ',');
@@ -309,17 +352,13 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         String exePath = props.get(Props.exePath.name());
         String extensionStr = props.get(Props.extensions.name());
         String pathMapStr = props.get(Props.pathMap.name());
+        boolean isRemote = Boolean.valueOf(props.get(Props.remote.name()));
 
         // Create a copy of the props so we can remove pathMap
         props = new HashMap<>(props);
         props.remove(Props.pathMap.name());
 
-        //
-        // if using Rserve then it's okay for the exePath to be null
-        //
-        boolean useRserve = AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING);
-
-        if (key != null && name != null && extensionStr != null && (useRserve || (exePath!=null)))
+        if (key != null && name != null && extensionStr != null && (isRemote || (exePath!=null)))
         {
             try
             {
@@ -388,6 +427,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         PathMapper _pathMap;
         boolean _enabled;
         boolean _external;
+        boolean _remote;
 
         public String getKey()
         {
@@ -498,6 +538,10 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
         {
             _enabled = enabled;
         }
+
+        public boolean isRemote() { return _remote; }
+
+        public void setRemote(boolean remote) {_remote = remote; }
 
         public boolean isExternal()
         {

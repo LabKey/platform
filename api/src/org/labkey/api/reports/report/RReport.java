@@ -23,6 +23,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.reports.LabkeyScriptEngineManager;
 import org.labkey.api.reports.RScriptEngine;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -34,7 +35,6 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
@@ -95,12 +95,28 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         return mgr.getEngineByExtension("r") != null;
     }
 
+    //
+    // For R reports honor the 'remote' metadata for scriptEngines if provided
+    //
     public ScriptEngine getScriptEngine()
     {
         ScriptEngineManager mgr = ServiceRegistry.get().getService(ScriptEngineManager.class);
 
+        if (mgr instanceof LabkeyScriptEngineManager)
+            return ((LabkeyScriptEngineManager)mgr).getEngineByExtension("r", requestRemote());
+
         // bypass the normal discovery mechanism
         return mgr.getEngineByExtension("r");
+    }
+
+    private boolean requestRemote()
+    {
+        Map<String, String> requestedEngineProperties = getDescriptor().getScriptEngineProperties();
+
+        if (requestedEngineProperties.containsKey(RScriptEngine.PROP_REMOTE))
+            return Boolean.valueOf(requestedEngineProperties.get(RScriptEngine.PROP_REMOTE));
+
+        return false;
     }
 
     public static synchronized String getDefaultRPath()
@@ -271,8 +287,8 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
             labkey.append("labkey.pipeline.root <- NULL\n");
         }
 
-        // pipeline path to resolve data files in reports
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+        // pipeline path to resolve data files in reports if we are using a remote engine
+        if (engine instanceof RserveScriptEngine)
         {
             RserveScriptEngine rengine = (RserveScriptEngine) engine;
 
@@ -327,7 +343,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         String localPath = getLocalPath(inputFile);
         String scriptOut = null;
 
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+        if (engine instanceof RserveScriptEngine)
         {
             //
             // if we are using Rserve then we need to replace the input parameters with the remote
@@ -351,7 +367,7 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
         File reportDir = getReportDir();
         String scriptOut = null;
 
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+        if (engine instanceof RserveScriptEngine)
         {
             RserveScriptEngine rengine = (RserveScriptEngine)engine;
             String localPath = getLocalPath(reportDir);

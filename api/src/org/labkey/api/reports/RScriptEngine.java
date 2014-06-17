@@ -35,6 +35,10 @@ public class RScriptEngine extends ExternalScriptEngine
 {
     public static final String KNITR_FORMAT = "r.script.engine.knitrFormat";
     public static final String KNITR_OUTPUT = "r.script.engine.knitrOutput";
+
+    // script engine properties that report can request
+    public static final String PROP_REMOTE = "remote";
+
     private RReportDescriptor.KnitrFormat _knitrFormat;
 
     public RScriptEngine(ExternalScriptEngineDefinition def)

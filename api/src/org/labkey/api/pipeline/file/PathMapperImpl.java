@@ -240,7 +240,7 @@ public class PathMapperImpl implements PathMapper
                 throw new RuntimeException("Local URI must not be empty");
 
             if (remoteURI == null)
-                throw new RuntimeException("Local URI must not be empty");
+                throw new RuntimeException("Remote URI must not be empty");
 
             // Convert path to URI and validate paths are absolute
             // for local files, resolve. -  which strips .. and . from the path so that

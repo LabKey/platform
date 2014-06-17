@@ -301,7 +301,7 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
             Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
             bindings.put(ExternalScriptEngine.WORKING_DIRECTORY, getReportDir().getAbsolutePath());
 
-            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_RSERVE_REPORTING))
+            if (engine instanceof RserveScriptEngine)
             {
                 //
                 // pass along the report temp directory and the pipeline root to the script engine for

@@ -58,6 +58,9 @@ public interface ExternalScriptEngineDefinition
     public void setExternal(boolean external);
     public boolean isExternal();
 
+    public void setRemote(boolean remote);
+    public boolean isRemote();
+
     //
     // consider:  move these to RemoteScriptEngineDefinition?
     //
