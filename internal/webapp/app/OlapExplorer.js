@@ -52,7 +52,9 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
 
     constructor : function(config) {
 
-        this.locked = false;
+        // initialize flight locks
+        this.flight = 0; // -- records
+        this.mflight = 0; // -- selections
 
         this.callParent([config]);
 
@@ -153,10 +155,14 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 onRows : [{hierarchy: hierarchy.getUniqueName(), members:'members'}],
                 useNamedFilters : ['statefilter'],
                 showEmpty : me.showEmpty,
-                success: function(qr) {
-                    scoped.baseResult = qr;
-                    check();
-                }
+                qFlight: this.flight,
+                success: function(qr, _mdx, x) {
+                    if (this.flight === x.qFlight) {
+                        scoped.baseResult = qr;
+                        check();
+                    }
+                },
+                scope: this
             });
             if (hasSelection) {
                 me.requestSelection(this.mflight, function(qr, _mdx, x) {
@@ -180,131 +186,123 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
     },
 
     requestsComplete : function(response) {
-        this.flight--;
-        if (this.flight == 0) {
 
-            // unlock for requests for other dimensions
-            this.locked = false;
-            if (this.eventsSuspended) {
-                this.resumeEvents();
+        // unlock for requests for other dimensions
+        this.locked = false;
+        if (this.eventsSuspended) {
+            this.resumeEvents();
+        }
+
+        // first check for 'stale'
+        if (Ext.isObject(this.stale)) {
+            this.load(this.stale.dimension, this.stale.hIndex, this.stale.selections, this.stale.showEmpty);
+            return;
+        }
+
+        var hierarchy = this.dim.getHierarchies()[this.hIndex];
+        var baseResult = response.baseResult;
+        var selectionResult = response.selectionResult;
+        var targetLevels = hierarchy.levels;
+
+        if (baseResult.metadata.cube.dimensions.length > 1) {
+            targetLevels = baseResult.metadata.cube.dimensions[1].hierarchies[0].levels;
+        }
+
+        var recs = [],
+                max = this.totals[hierarchy.getUniqueName()],
+                target,
+                pos = baseResult.axes[1].positions,
+                activeGroup = '',
+                isGroup = false,
+                groupTarget;
+
+        var hasSubjectLevel = targetLevels[targetLevels.length-1].name === this.subjectName;
+        var hasGrpLevel = targetLevels.length > (hasSubjectLevel ? 3 : 2);
+        var grpLevelID = targetLevels[1].id, subPosition;
+        var customGroups = {};
+
+        // skip (All)
+        for (var x=1; x < pos.length; x++)
+        {
+            subPosition = pos[x][0];
+
+            // Subjects should not be listed so do not roll up
+            if ((!this.showEmpty && baseResult.cells[x][0].value === 0) || (subPosition.level.name === this.subjectName)) {
+                continue;
             }
 
-            // first check for 'stale'
-            if (Ext.isObject(this.stale)) {
-                this.load(this.stale.dimension, this.stale.hIndex, this.stale.selections, this.stale.showEmpty);
-                return;
+            isGroup = false;
+            if (hasGrpLevel && subPosition.level.id == grpLevelID) {
+                activeGroup = subPosition.name;
+                isGroup = true;
             }
 
-            var hierarchy = this.dim.getHierarchies()[this.hIndex];
-            var baseResult = response.baseResult;
-            var selectionResult = response.selectionResult;
-            var targetLevels = hierarchy.levels;
-            if (baseResult.metadata.cube.dimensions.length > 1)
-                targetLevels = baseResult.metadata.cube.dimensions[1].hierarchies[0].levels;
-
-            var recs = [],
-                    max = this.totals[hierarchy.getUniqueName()],
-                    target,
-                    pos = baseResult.axes[1].positions,
-                    activeGroup = '',
-                    isGroup = false,
-                    groupTarget;
-
-            var hasSubjectLevel = targetLevels[targetLevels.length-1].name == this.subjectName;
-            var hasGrpLevel = false;
-
-            if (hasSubjectLevel) {
-                hasGrpLevel = targetLevels.length > 3;
-            } else {
-                hasGrpLevel = targetLevels.length > 2;
-            }
-
-            var grpLevelID = targetLevels[1].id, subPosition;
-            var customGroups = {};
-
-            // skip (All)
-            for (var x=1; x < pos.length; x++)
-            {
-                subPosition = pos[x][0];
-
-                // Subjects should not be listed so do not roll up
-                if ((!this.showEmpty && baseResult.cells[x][0].value == 0) || (subPosition.level.name == this.subjectName)) {
-                    continue;
-                }
-
-                isGroup = false;
-                if (hasGrpLevel && subPosition.level.id == grpLevelID) {
-                    activeGroup = subPosition.name;
-                    isGroup = true;
-                }
-
-                target = {
-                    label: LABKEY.app.model.Filter.getMemberLabel(subPosition.name),
-                    uniqueName: subPosition.uniqueName,
-                    count: baseResult.cells[x][0].value,
-                    maxcount: max,
-                    value: subPosition.name,
-                    hierarchy: hierarchy.getUniqueName(),
-                    isGroup: isGroup,
-                    level: subPosition.name,
-                    ordinal: subPosition.ordinal,
-                    levelUniqueName: subPosition.level.uniqueName,
-                    collapsed: activeGroup && pos.length > 15 ? true : false,
-                    btnShown: false,
-                    hasSelect: response.useSelection === true
-                };
-
-                if (response.useSelection) {
-                    target.subcount = this._calculateSubcount(selectionResult, target.uniqueName);
-                }
-
-                var instance = Ext.create('LABKEY.app.model.OlapExplorer', target);
-
-                if (target.isGroup) {
-                    groupTarget = instance;
-                    if (!customGroups[target.level]) {
-                        customGroups[target.level] = [];
-                    }
-                }
-                else {
-                    instance.set('level', activeGroup);
-                    if (!customGroups[activeGroup]) {
-                        customGroups[activeGroup] = [];
-                    }
-                    customGroups[activeGroup].push(instance);
-                }
-
-                var collapse = this.checkCollapse(instance.data);
-                instance.set('collapsed', collapse);
-
-                if (groupTarget) {
-                    groupTarget.set('collapsed', collapse);
-                }
-
-                recs.push(instance);
-            }
-
-            var groupOnly = true;
-            for (var r=0; r < recs.length; r++) {
-                if (!recs[r].get('isGroup')) {
-                    groupOnly = false;
-                }
-            }
-
-            if (!groupOnly) {
-                this.loadRecords(recs);
-            }
-            else {
-                max = 0;
-                this.removeAll();
-            }
-
-            this.customGroups = customGroups;
-            this.maxCount = max;
+            target = {
+                label: LABKEY.app.model.Filter.getMemberLabel(subPosition.name),
+                uniqueName: subPosition.uniqueName,
+                count: baseResult.cells[x][0].value,
+                maxcount: max,
+                value: subPosition.name,
+                hierarchy: hierarchy.getUniqueName(),
+                isGroup: isGroup,
+                level: subPosition.name,
+                ordinal: subPosition.ordinal,
+                levelUniqueName: subPosition.level.uniqueName,
+                collapsed: activeGroup && pos.length > 15 ? true : false,
+                btnShown: false,
+                hasSelect: response.useSelection === true
+            };
 
             if (response.useSelection) {
-                this.fireEvent('selectrequest');
+                target.subcount = this._calculateSubcount(selectionResult, target.uniqueName);
             }
+
+            var instance = Ext.create('LABKEY.app.model.OlapExplorer', target);
+
+            if (target.isGroup) {
+                groupTarget = instance;
+                if (!customGroups[target.level]) {
+                    customGroups[target.level] = [];
+                }
+            }
+            else {
+                instance.set('level', activeGroup);
+                if (!customGroups[activeGroup]) {
+                    customGroups[activeGroup] = [];
+                }
+                customGroups[activeGroup].push(instance);
+            }
+
+            var collapse = this.checkCollapse(instance.data);
+            instance.set('collapsed', collapse);
+
+            if (groupTarget) {
+                groupTarget.set('collapsed', collapse);
+            }
+
+            recs.push(instance);
+        }
+
+        var groupOnly = true;
+        for (var r=0; r < recs.length; r++) {
+            if (!recs[r].get('isGroup')) {
+                groupOnly = false;
+            }
+        }
+
+        if (!groupOnly) {
+            this.loadRecords(recs);
+        }
+        else {
+            max = 0;
+            this.removeAll();
+        }
+
+        this.customGroups = customGroups;
+        this.maxCount = max;
+
+        if (response.useSelection) {
+            this.fireEvent('selectrequest');
         }
     },
 
