@@ -1305,7 +1305,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         while (summary.sortedValues[i] < smallestNotOutlier) {i++;}
 
-        return summary.sortedValues[i] < summary.Q1 ? summary.sortedValues[i] : null;
+        return summary.sortedValues[i] < summary.Q1 ? summary.sortedValues[i] : summary.Q1;
     };
 
     var getTopWhisker = function(summary) {
@@ -1313,7 +1313,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         while (summary.sortedValues[i] > largestNotOutlier) {i--;}
 
-        return summary.sortedValues[i] > summary.Q3 ? summary.sortedValues[i] : null;
+        return summary.sortedValues[i] > summary.Q3 ? summary.sortedValues[i] : summary.Q3;
     };
 
     var renderBoxes = function(layer, plot, geom, data) {
