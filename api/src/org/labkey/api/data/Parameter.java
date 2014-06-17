@@ -83,13 +83,13 @@ public class Parameter implements AutoCloseable
 
     public static class TypedValue implements JdbcParameterValue
     {
-        Object _value;
-        JdbcType _type;
+        private final Object _value;
+        private final JdbcType _type;
 
         public TypedValue(Object value, JdbcType type)
         {
-            this._value = value;
-            this._type = type;
+            _value = value;
+            _type = type;
         }
 
         @Override

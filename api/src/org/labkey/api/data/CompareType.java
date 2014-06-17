@@ -834,7 +834,7 @@ public enum CompareType
             }
             if (value instanceof Parameter.TypedValue)
             {
-                value = ((Parameter.TypedValue)value)._value;
+                value = ((Parameter.TypedValue)value).getJdbcParameterValue();
             }
             return value == null || (value instanceof String && ((String)value).length() == 0);
         }
@@ -1571,7 +1571,7 @@ public enum CompareType
             Object id = getParamVals().length == 0 ? null : getParamVals()[0];
 
             // If we don't have a value to use, try using the current user
-            if (id == null || "".equals(id) || (id instanceof Parameter.TypedValue && ((Parameter.TypedValue)id)._value == null))
+            if (id == null || "".equals(id) || (id instanceof Parameter.TypedValue && ((Parameter.TypedValue)id).getJdbcParameterValue() == null))
             {
                 User user = (User)QueryService.get().getEnvironment(QueryService.Environment.USER);
                 if (user != null)
