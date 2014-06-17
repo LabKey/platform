@@ -67,7 +67,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -476,7 +475,9 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
         for (String name : colNameArray)
         {
-            ret.add(getColumn(name.trim()));
+            ColumnInfo col = getColumn(name.trim());
+            if (col != null)
+                ret.add(col);
         }
 
         return Collections.unmodifiableList(ret);

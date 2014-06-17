@@ -34,7 +34,6 @@ import org.labkey.api.query.AggregateRowConfig;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.MetadataParseException;
 import org.labkey.api.query.MetadataParseWarning;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryForeignKey;
@@ -328,7 +327,9 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         List<ColumnInfo> ret = new ArrayList<>(colNameArray.length);
         for (String name : colNameArray)
         {
-            ret.add(getColumn(name.trim()));
+            ColumnInfo col = getColumn(name.trim());
+            if (col != null)
+                ret.add(col);
         }
         return Collections.unmodifiableList(ret);
     }
