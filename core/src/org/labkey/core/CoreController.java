@@ -897,7 +897,7 @@ public class CoreController extends SpringActionController
                 target = ContainerManager.getForId(targetIdentifier);
                 if (null == target)
                 {
-                    errors.reject(ERROR_MSG, "Conatiner '" + targetIdentifier + "' does not exist.");
+                    errors.reject(ERROR_MSG, "Container '" + targetIdentifier + "' does not exist.");
                     return;
                 }
             }
