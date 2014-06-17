@@ -634,7 +634,9 @@ Ext.define('LABKEY.app.controller.State', {
             for (var i=0; i < oldFilters.length; i++) {
 
                 if (oldFilters[i].data.hierarchy == newFilters[n].data.hierarchy &&
-                        oldFilters[i].data.isGroup == newFilters[n].data.isGroup) {
+                        oldFilters[i].data.isGroup == newFilters[n].data.isGroup &&
+                        oldFilters[i].data.range.min == null && newFilters[n].data.range.min == null)
+                {
 
                     for (var j=0; j < newFilters[n].data.members.length; j++) {
 
