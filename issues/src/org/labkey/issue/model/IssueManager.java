@@ -702,6 +702,8 @@ public class IssueManager
         if (null == userId)
             return null;
         User user = UserManager.getUser(Integer.parseInt(userId));
+        if (user == null)
+            return null;
         if (!canAssignTo(c, user))
             return null;
         return user;
