@@ -718,7 +718,7 @@ public class IssuesController extends SpringActionController
 
         sb.append("<div class=\"wiki\"><table class=issues-Changes>");
         sb.append(String.format("<tr><td>Related</td><td>%s</td><td>&raquo;</td><td>%s</td></tr>", StringUtils.join(prevRelated, ", "), StringUtils.join(newRelated, ", ")));
-        sb.append("<table></div>");
+        sb.append("</table></div>");
 
         relatedIssue.addComment(user, sb.toString());
         relatedIssue.setRelatedIssues(newRelated);
