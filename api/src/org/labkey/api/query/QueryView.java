@@ -525,6 +525,10 @@ public class QueryView extends WebPartView<Object>
                     ret = getViewContext().cloneActionURL();
                     ret.addParameter("exportType", action.name());
                     ret.addParameter("dataRegionName", getExportRegionName());
+
+                    // NOTE: Default export will export all rows, but the user may choose to export ShowRows.SELECTED in the export panel
+                    ret.deleteParameter(getExportRegionName() + ".maxRows");
+                    ret.replaceParameter(getExportRegionName() + ".showRows", ShowRows.ALL.toString());
                     break;
                 }
                 ActionURL expandedURL = getViewContext().cloneActionURL();
@@ -969,7 +973,7 @@ public class QueryView extends WebPartView<Object>
 
     public PanelButton createExportButton(boolean exportAsWebPage)
     {
-        PanelButton exportButton = new PanelButton("Export", getDataRegionName(), 120);
+        PanelButton exportButton = new PanelButton("Export", getDataRegionName(), 132);
         ExcelExportOptionsBean excelBean = new ExcelExportOptionsBean(
                 getDataRegionName(),
                 getExportRegionName(),
