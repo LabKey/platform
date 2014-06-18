@@ -862,6 +862,13 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                 break;
             case RenameColumns:
                 sql.addAll(getRenameColumnsStatements(change));
+                break;
+            case DropIndices:
+                sql.addAll(getDropIndexStatements(change));
+                break;
+            case AddIndices:
+                sql.addAll(getCreateIndexStatements(change));
+                break;
         }
 
         return sql;
@@ -906,6 +913,19 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                     makeLegalIdentifier(pkColumn)));
 
 
+        addCreateIndexStatements(statements, change);
+        return statements;
+    }
+
+    private List<String> getCreateIndexStatements(TableChange change)
+    {
+        List<String> statements = new ArrayList<>();
+        addCreateIndexStatements(statements, change);
+        return statements;
+    }
+
+    private void addCreateIndexStatements(List<String> statements, TableChange change)
+    {
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
             statements.add(String.format("CREATE %s INDEX %s ON %s (%s)",
@@ -914,8 +934,24 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                     makeTableIdentifier(change),
                     makeLegalIdentifiers(index.columnNames)));
         }
+    }
 
+    private List<String> getDropIndexStatements(TableChange change)
+    {
+        List<String> statements = new ArrayList<>();
+        addDropIndexStatements(statements, change);
         return statements;
+    }
+
+    private void addDropIndexStatements(List<String> statements, TableChange change)
+    {
+        for (PropertyStorageSpec.Index index : change.getIndexedColumns())
+        {
+            statements.add(String.format("DROP INDEX %s ON %s",
+                    nameIndex(change.getTableName(), index.columnNames),
+                    makeTableIdentifier(change)
+                    ));
+        }
     }
 
     private String makeTableIdentifier(TableChange change)

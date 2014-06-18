@@ -74,6 +74,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -135,6 +136,7 @@ import org.labkey.study.query.SpecimenDetailTable;
 import org.labkey.study.query.SpecimenEventQueryView;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.query.SpecimenRequestQueryView;
+import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementType;
@@ -5863,4 +5865,30 @@ public class SpecimenController extends BaseStudyController
             return new SpecimenServiceImpl(getViewContext());
         }
     }
+
+/*
+    // Used for testing
+    @RequiresSiteAdmin
+    public class DropVialIndices extends SimpleRedirectAction
+    {
+        @Override
+        public URLHelper getRedirectURL(Object o) throws Exception
+        {
+            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
+            return new ActionURL(BeginAction.class, getContainer());
+        }
+    }
+
+    // Used for testing
+    @RequiresSiteAdmin
+    public class AddVialIndices extends SimpleRedirectAction
+    {
+        @Override
+        public URLHelper getRedirectURL(Object o) throws Exception
+        {
+            new SpecimenTablesProvider(getContainer(), getUser(), null).addTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
+            return new ActionURL(BeginAction.class, getContainer());
+        }
+    }
+*/
 }

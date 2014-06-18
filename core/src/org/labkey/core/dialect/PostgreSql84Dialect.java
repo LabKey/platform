@@ -962,6 +962,12 @@ public class PostgreSql84Dialect extends SqlDialect
             case RenameColumns:
                 sql.addAll(getRenameColumnsStatement(change));
                 break;
+            case DropIndices:
+                sql.addAll(getDropIndexStatements(change));
+                break;
+            case AddIndices:
+                sql.addAll(getCreateIndexStatements(change));
+                break;
         }
 
         return sql;
@@ -1071,6 +1077,19 @@ public class PostgreSql84Dialect extends SqlDialect
                     change.getTableName() + "_pk",
                     makePropertyIdentifier(pkColumn)));
 
+        addCreateIndexStatements(statements, change);
+        return statements;
+    }
+
+    private List<String> getCreateIndexStatements(TableChange change)
+    {
+        List<String> statements = new ArrayList<>();
+        addCreateIndexStatements(statements, change);
+        return statements;
+    }
+
+    private void addCreateIndexStatements(List<String> statements, TableChange change)
+    {
         for (PropertyStorageSpec.Index index : change.getIndexedColumns())
         {
             statements.add(String.format("CREATE %s INDEX %s ON %s (%s)",
@@ -1079,8 +1098,23 @@ public class PostgreSql84Dialect extends SqlDialect
                     makeTableIdentifier(change),
                     makePropertyIdentifiers(index.columnNames)));
         }
+    }
 
+    private List<String> getDropIndexStatements(TableChange change)
+    {
+        List<String> statements = new ArrayList<>();
+        addDropIndexStatements(statements, change);
         return statements;
+    }
+
+    private void addDropIndexStatements(List<String> statements, TableChange change)
+    {
+        for (PropertyStorageSpec.Index index : change.getIndexedColumns())
+        {
+            statements.add(String.format("DROP INDEX %s.%s",
+                    change.getSchemaName(),
+                    nameIndex(change.getTableName(), index.columnNames)));
+        }
     }
 
     private String nameIndex(String tableName, String[] indexedColumns)

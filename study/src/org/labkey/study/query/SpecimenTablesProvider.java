@@ -142,6 +142,20 @@ public class SpecimenTablesProvider
         }
     }
 
+    public void addTableIndices(String tableName)
+    {
+        Domain domain = getDomain(tableName, false);
+        if (null != domain)
+            StorageProvisioner.addOrDropTableIndices(domain, true);
+    }
+
+    public void dropTableIndices(String tableName)
+    {
+        Domain domain = getDomain(tableName, false);
+        if (null != domain)
+            StorageProvisioner.addOrDropTableIndices(domain, false);
+    }
+
     // We can cache these within the provider and provider can be cached for container/user (there's only max 1 study per container)
     // but these are not what is registered with Domain stuff, so extra info is only valid to be used here
     private AbstractSpecimenDomainKind _specimenDomainKind = null;
