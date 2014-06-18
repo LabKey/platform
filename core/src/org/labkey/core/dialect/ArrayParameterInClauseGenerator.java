@@ -46,8 +46,7 @@ public class ArrayParameterInClauseGenerator implements InClauseGenerator
     {
         SqlDialect dialect = _scope.getSqlDialect();
 
-        // TODO: Increase params.length check to 10? 100?
-        if (params.size() <= 1 || !isSqlArrayCompatible(dialect, params))
+        if (params.size() < 2 || !isSqlArrayCompatible(dialect, params))
         {
             // Fall back on parameter marker approach
             return _parameterMarkerGenerator.appendInClauseSql(sql, params);
@@ -63,9 +62,9 @@ public class ArrayParameterInClauseGenerator implements InClauseGenerator
      * Return true if this array can be converted to a JDBC SQL Array type. We must have a SQL type name for the
      * class and all elements must have the same class.
      */
-    private boolean isSqlArrayCompatible(SqlDialect dialect, Object... elements)
+    private boolean isSqlArrayCompatible(SqlDialect dialect, Collection<?> elements)
     {
-        Object firstElement = elements[0];
+        Object firstElement = elements.iterator().next();
         String typeName = dialect.getSqlTypeNameFromObject(firstElement);
 
         if (null == typeName)
@@ -75,7 +74,7 @@ public class ArrayParameterInClauseGenerator implements InClauseGenerator
 
         for (Object param : elements)
             if (param.getClass() != firstParamClass)
-                return false;
+                throw new IllegalArgumentException("Unexpected mixed types in a single IN clause: " + firstParamClass.getName() + " and " + param.getClass().getName());
 
         return true;
     }
