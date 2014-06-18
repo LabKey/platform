@@ -39,23 +39,34 @@ public class InlineInClauseGenerator implements InClauseGenerator
     @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
-        int inLineableCount = 0;
-        for (Object param : params)
+        if (!params.isEmpty())
         {
+            Object firstElement = params.iterator().next();
+
             // Check if we're capable of in-lining the value
-            if (param instanceof Number || param instanceof GUID)
+            if (firstElement instanceof Number || firstElement instanceof GUID)
             {
-                inLineableCount++;
+                Class<?> firstParamClass = firstElement.getClass();
+
+                // Make sure the rest of the parameters match
+                for (Object param : params)
+                    if (param.getClass() != firstParamClass)
+                        throw new IllegalArgumentException("Unexpected mixed types in a single IN clause: " + firstParamClass.getName() + " and " + param.getClass().getName());
+
+                // Don't bother in-lining for shorter IN clauses so that we have a chance of reusing a pre-compiled
+                // prepared statement
+                if (params.size() >= IN_LINE_MINIMUM_COUNT)
+                {
+                    return createInlineInClause(sql, params);
+                }
             }
         }
 
-        if (inLineableCount < IN_LINE_MINIMUM_COUNT)
-        {
-            // Don't bother in-lining for shorter IN clauses so that we have a chance of reusing a pre-compiled
-            // prepared statement
-            return FALLBACK_GENERATOR.appendInClauseSql(sql, params);
-        }
+        return FALLBACK_GENERATOR.appendInClauseSql(sql, params);
+    }
 
+    private SQLFragment createInlineInClause(SQLFragment sql, Collection<?> params)
+    {
         String separator = "";
         sql.append("IN (");
 
@@ -95,6 +106,14 @@ public class InlineInClauseGenerator implements InClauseGenerator
         }
 
         @Test
+        public void testInline()
+        {
+            Assert.assertEquals(
+                    new SQLFragment("IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)"),
+                    new InlineInClauseGenerator().appendInClauseSql(new SQLFragment(), Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+        }
+
+        @Test(expected = IllegalArgumentException.class)
         public void testMixedTypesInline()
         {
             GUID g = new GUID();

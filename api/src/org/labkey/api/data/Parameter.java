@@ -310,6 +310,11 @@ public class Parameter implements AutoCloseable
                 }
             }
 
+            if (value instanceof Collection)
+            {
+                value = ((Collection)value).toArray();
+            }
+
             if (value instanceof Object[])
             {
                 Object[] array = (Object[]) value;
