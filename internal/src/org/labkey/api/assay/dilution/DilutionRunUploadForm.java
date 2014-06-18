@@ -29,6 +29,7 @@ import org.labkey.api.study.actions.PlateUploadFormImpl;
 import org.labkey.api.study.assay.AssayDataCollector;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.PlateSamplePropertyHelper;
+import org.labkey.api.study.assay.ThawListResolverType;
 import org.labkey.api.view.NotFoundException;
 
 import java.io.File;
@@ -46,6 +47,7 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
 {
     private Map<String, Map<DomainProperty, String>> _sampleProperties;
     private PlateSamplePropertyHelper _samplePropertyHelper;
+    private Boolean _importedWithThawList = null;
 
     public PlateSamplePropertyHelper getSamplePropertyHelper()
     {
@@ -87,11 +89,34 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
             Map<String, Object> values = OntologyManager.getProperties(getContainer(), selected.getLSID());
             Map<DomainProperty, Object> ret = new HashMap<>();
             for (DomainProperty property : domain.getProperties())
-                ret.put(property, values.get(property.getPropertyURI()));
+            {
+                // 20047 On reimport with a thaw list, don't use the previously resolved LastEntered values for specimenIds. Users should reinput the Thaw List index values.
+                if (!didImportUseThawList(reRun) || !"SpecimenId".equalsIgnoreCase(property.getName()))
+                    ret.put(property, values.get(property.getPropertyURI()));
+            }
             return ret;
         }
         else
             return super.getDefaultValues(domain, scope);
+    }
+
+    private boolean didImportUseThawList(ExpRun reRun)
+    {
+        // Initialize on the first sample & property; all others will be the same.
+        if (_importedWithThawList == null)
+        {
+            _importedWithThawList = false;
+            for (String dataInputVal : reRun.getDataInputs().values())
+            {
+                if (ThawListResolverType.NAMESPACE_PREFIX.equalsIgnoreCase(dataInputVal))
+                {
+                    _importedWithThawList = true;
+                    break;
+                }
+            }
+        }
+
+        return _importedWithThawList;
     }
 
     @Override @NotNull

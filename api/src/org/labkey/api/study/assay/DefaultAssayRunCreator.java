@@ -60,6 +60,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewBackgroundInfo;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -284,10 +285,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     List<ValidationError> errors = validateProperties(props);
                     if (!errors.isEmpty())
                         throw new ValidationException(errors);
-                    savePropertyObject(batch, props, context.getUser());
+                    savePropertyObject(batch, processAdditionalProperties(new HashMap<>(props), context.getRequest()), context.getUser());
                 }
                 else
-                    savePropertyObject(batch, batchProperties, context.getUser());
+                    savePropertyObject(batch, processAdditionalProperties(new HashMap<>(batchProperties), context.getRequest()), context.getUser());
             }
 
             if (null != transformResult.getAssayId())
@@ -350,6 +351,25 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             transaction.commit();
             return batch;
         }
+    }
+
+    /**
+     * Helper to JSON encode the batch thaw list settings for the experiment level object properties, so they're available on rerun.
+     * @param props
+     * @param request
+     * @return
+     */
+    private Map<DomainProperty, String> processAdditionalProperties(Map<DomainProperty, String> props, HttpServletRequest request)
+    {
+        for (Map.Entry<DomainProperty, String> entry : props.entrySet())
+        {
+            if (entry.getKey().getName().equalsIgnoreCase(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
+            {
+                props.put(entry.getKey(), ParticipantVisitResolverType.Serializer.encode(entry.getValue(), request));
+            }
+        }
+
+        return props;
     }
 
     private void resolveParticipantVisits(AssayRunUploadContext<ProviderType> context, Map<ExpMaterial, String> inputMaterials, Map<ExpData, String> inputDatas, Map<ExpMaterial, String> outputMaterials, Map<ExpData, String> outputDatas, Map<DomainProperty, String> allProperties, ParticipantVisitResolverType resolverType) throws ExperimentException
