@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
@@ -54,7 +55,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -74,6 +74,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
     public static final String THAW_LIST_LIST_CONTAINER_INPUT_NAME = "ThawListList-Container";
     public static final String THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME = "ThawListList-SchemaName";
     public static final String THAW_LIST_LIST_QUERY_NAME_INPUT_NAME = "ThawListList-QueryName";
+    public static final Set<String> REQUIRED_COLUMNS = new CaseInsensitiveHashSet(Arrays.asList("Index", "SpecimenId", "ParticipantId", "VisitId", "Date"));
 
     public ParticipantVisitResolver createResolver(Collection<ExpMaterial> inputMaterials,
                                                    Collection<ExpData> inputDatas,
@@ -346,9 +347,8 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             return("Could not find table " + queryName);
         }
 
-        List<String> requiredColumns = Arrays.asList("Index", "SpecimenId", "ParticipantId", "VisitId", "Date");
         StringBuilder sb = new StringBuilder();
-        for (String column : requiredColumns)
+        for (String column : REQUIRED_COLUMNS)
         {
             if (table.getColumn(FieldKey.fromParts(column)) == null)
             {

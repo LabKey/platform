@@ -91,7 +91,7 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
             for (DomainProperty property : domain.getProperties())
             {
                 // 20047 On reimport with a thaw list, don't use the previously resolved LastEntered values for specimenIds. Users should reinput the Thaw List index values.
-                if (!didImportUseThawList(reRun) || !"SpecimenId".equalsIgnoreCase(property.getName()))
+                if (!didImportUseThawList(reRun) || !ThawListResolverType.REQUIRED_COLUMNS.contains((property.getName())))
                     ret.put(property, values.get(property.getPropertyURI()));
             }
             return ret;
