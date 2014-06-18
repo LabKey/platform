@@ -574,6 +574,30 @@ public class StorageProvisioner
         return ti;
     }
 
+    public static void addOrDropTableIndices(Domain domain, boolean doAdd)
+    {
+        DomainKind kind = domain.getDomainKind();
+        DbScope scope = kind.getScope();
+
+        String tableName = domain.getStorageTableName();
+        if (null == tableName)
+            throw new IllegalStateException("Table must already exist.");
+
+        TableChange change = new TableChange(kind.getStorageSchemaName(), tableName,
+                doAdd ? TableChange.ChangeType.AddIndices : TableChange.ChangeType.DropIndices);
+        change.setIndexedColumns(kind.getPropertyIndices());
+
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        {
+            execute(scope, scope.getConnection(), change);
+            transaction.commit();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
     public static void fixupProvisionedDomain(SchemaTableInfo ti, DomainKind kind, Domain domain, String tableName)
     {
         assert !ti.isLocked();

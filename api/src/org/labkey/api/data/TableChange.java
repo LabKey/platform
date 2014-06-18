@@ -146,7 +146,9 @@ public class TableChange
         DropTable,
         AddColumns,
         DropColumns,
-        RenameColumns
+        RenameColumns,
+        DropIndices,
+        AddIndices
     }
 
 
