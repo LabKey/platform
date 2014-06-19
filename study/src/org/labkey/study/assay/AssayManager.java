@@ -624,8 +624,7 @@ public class AssayManager implements AssayService.Interface
         {
             if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(property.getName()))
             {
-                String resolverName = ParticipantVisitResolverType.Serializer.decodeBaseStringValue(property.getStringValue());
-                resolverType = AbstractAssayProvider.findType(resolverName, provider.getParticipantVisitResolverTypes());
+                resolverType = AbstractAssayProvider.findType(property.getStringValue(), provider.getParticipantVisitResolverTypes());
                 if (resolverType != null)
                     break;
             }
