@@ -2152,6 +2152,12 @@ public class QueryServiceImpl extends QueryService
         ServerManager.cubeDataChanged(c);
     }
 
+    @Override
+    public void warmCube(User user, Container container, String schemaName, String configId, String cubeName)
+    {
+        ServerManager.warmCube(user, container, schemaName, configId, cubeName);
+    }
+
     public static class TestCase extends Assert
     {
         ResultSet rs = null;

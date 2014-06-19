@@ -28,6 +28,8 @@ import mondrian.spi.DataSourceChangeListener;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
@@ -38,6 +40,7 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
@@ -46,8 +49,10 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewServlet;
+import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.metadata.Cube;
+import org.olap4j.metadata.Dimension;
 import org.olap4j.metadata.Schema;
 import org.springframework.validation.BindException;
 
@@ -278,6 +283,70 @@ public class ServerManager
         }
     }
 
+    public static void warmCube(User u, Container c, String schemaName, String configId, String cubeName)
+    {
+        try
+        {
+            OlapSchemaDescriptor sd  = getDescriptor(c, configId);
+            if (null == sd)
+                return;
+
+            OlapConnection conn = sd.getConnection(c, u);
+            if (null == conn)
+                return;
+
+            Cube cube = getCachedCube(sd, conn, c, u, schemaName, cubeName, getDummyBindException());
+            if (null == cube)
+                return;
+
+            JSONArray jsonOnRows = new JSONArray();
+            JSONObject jsonQuery = new JSONObject();
+            jsonQuery.put("filter", new JSONArray());
+            jsonQuery.put("showEmpty", false);
+            jsonQuery.put("onRows", jsonOnRows);
+
+            long start = System.currentTimeMillis();
+            for (Dimension d : cube.getDimensions())
+            {
+                for (org.olap4j.metadata.Hierarchy h : d.getHierarchies())
+                {
+                    try
+                    {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("hierarchy", h.getUniqueName());
+                        map.put("members", "members");
+                        jsonOnRows.put(0, map);
+
+                        execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
+                    }
+                    catch (Exception ignore) {}
+                }
+            }
+            long end = System.currentTimeMillis();
+            _log.info("Warming the " + cubeName + " in container " + c.getName() + " took: " + DateUtil.formatDuration(end - start));
+        }
+        catch(Exception e)
+        {
+            _log.warn("Error trying to warm the " + cubeName + " in container " + c.getName(), e);
+        }
+    }
+
+    private static void execCountDistinct(Container c, OlapSchemaDescriptor sd, OlapConnection conn,  Cube cube, JSONObject jsonQuery, BindException errors) throws Exception
+    {
+        QubeQuery qquery = new QubeQuery(cube);
+        qquery.fromJson(jsonQuery, errors);
+
+        if (errors.hasErrors())
+            return;
+
+        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, sd, conn, qquery, errors);
+        try(CellSet ignored = bitsetquery.executeQuery()){}
+    }
+
+    private static BindException getDummyBindException()
+    {
+        return new BindException(new Object(), "dummy");
+    }
 
     public static OlapConnection getConnection(Container c, User u, String catalog) throws SQLException
     {
