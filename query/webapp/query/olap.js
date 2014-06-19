@@ -292,6 +292,7 @@ Ext4.define('LABKEY.query.olap.metadata.Member', {
     {
         Ext4.apply(this,member);
         this.level = parent;
+        this.level.hierarchy.dimension.cube.uniqueNameMap[this.uniqueName] = this;
     },
     getLevel : function()
     {
@@ -692,6 +693,16 @@ Ext4.define('LABKEY.query.olap.MDX', {
         }
 
         return level;
+    },
+
+    getMember : function(uniqueName) {
+        var member = this._cube.getByUniqueName(uniqueName);
+
+        if (member && (member.dimension || member.hierarchy)) {
+            member = undefined;
+        }
+
+        return member;
     },
 
     clearNamedFilter : function(name)
