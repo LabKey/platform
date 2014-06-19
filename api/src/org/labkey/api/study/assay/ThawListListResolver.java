@@ -106,7 +106,10 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
                 {
                     childVisitID = Double.parseDouble((String)rows[0].get("VisitID"));
                 }
-                catch (NumberFormatException e) {}
+                catch (NumberFormatException e)
+                {
+                    throw new ThawListResolverException("Can not convert VisitId value: " + rows[0].get("VisitID") + " to double for specimenId: " + specimenID);
+                }
             }
 
             Date childDate = null;
@@ -120,7 +123,10 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
                 {
                     DateUtil.parseDateTime((String)rows[0].get("Date"));
                 }
-                catch (ConversionException e) {}
+                catch (ConversionException e)
+                {
+                    throw new ThawListResolverException("Can not convert Date value: " + rows[0].get("Date") + " to date for specimenId: " + specimenID);
+                }
             }
 
             Container childTargetStudy = null;
