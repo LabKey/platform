@@ -436,6 +436,13 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
     refresh : function() {
         if (this.store.KEYED_LOAD === true) {
             this.addAnimations();
+
+            // 20637: This prevents an optimization made in Ext.view.AbstractView from getting
+            // an incorrent number of DOM node references relative to the number of records provided by
+            // the store.
+            // Related: http://www.sencha.com/forum/showthread.php?133011-4.0.0-Bug-in-AbstractView.updateIndexes
+            this.fixedNodes = 0;
+
             this.callParent(arguments);
             this.removeAnimations();
         }
