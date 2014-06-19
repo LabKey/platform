@@ -29,6 +29,7 @@ public class TaskPath
     private boolean _copyInput;
     private boolean _optional;
     private boolean _forceToAnalysisDir = false;
+    private boolean _useProtocolNameAsOutputBaseName;
 
     /**
      * Default bean constructor.
@@ -104,7 +105,7 @@ public class TaskPath
     }
 
     /**
-     * Gets a full filename used as an input/output.  The "extension" property
+     * Sets a full filename used as an input/output.  The "extension" property
      * must be null for this to be used.
      *
      * @param name A full filename
@@ -201,5 +202,22 @@ public class TaskPath
     public void setForceToAnalysisDir(boolean forceToAnalysisDir)
     {
         _forceToAnalysisDir = forceToAnalysisDir;
+    }
+
+    /**
+     * Indicates that the base name for this input or output file will use the protocol's name
+     * instead of the input file's base name.
+     * NOTE: This is experimental and may be change or removed from future releases without warning.
+     *
+     * @return true if the base name for this input or output file should use the protocol's name.
+     */
+    public boolean isUseProtocolNameAsBaseName()
+    {
+        return _useProtocolNameAsOutputBaseName;
+    }
+
+    public void setUseProtocolNameAsOutputBaseName(boolean useProtocolNameAsOutputBaseName)
+    {
+        _useProtocolNameAsOutputBaseName = useProtocolNameAsOutputBaseName;
     }
 }

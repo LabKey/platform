@@ -31,6 +31,11 @@ import java.util.Map;
 public interface FileAnalysisJobSupport
 {
     /**
+     * @return protocol name of the current protocol.
+     */
+    String getProtocolName();
+
+    /**
      * @return the base name for the full set of files.
      */
     String getJoinedBaseName();
