@@ -635,6 +635,8 @@ Ext.define('LABKEY.app.controller.State', {
 
                 if (this.shouldMergeFilters(oldFilters[i], newFilters[n])) {
 
+                    this.handleMergeRangeFilters(oldFilters[i], newFilters[n]);
+
                     for (var j=0; j < newFilters[n].data.members.length; j++) {
 
                         match = true;
@@ -642,9 +644,6 @@ Ext.define('LABKEY.app.controller.State', {
                         if (!this.isExistingMemberByUniqueName(oldFilters[i].data.members, newFilters[n].data.members[j]))
                             oldFilters[i].data.members.push(newFilters[n].data.members[j]);
                     }
-
-                    // concatenate the array of range filters for the old and new filters (note: most cases will result in empty array)
-                    oldFilters[i].set('ranges', oldFilters[i].getRanges().concat(newFilters[n].getRanges()));
                 }
             }
 
@@ -682,11 +681,20 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     shouldMergeFilters : function(oldFilter, newFilter) {
-        return oldFilter.data.hierarchy == newFilter.data.hierarchy &&
-                oldFilter.data.isGroup == newFilter.data.isGroup &&
-                // either both have ranges or neither has a range
-                ((oldFilter.data.ranges.length == 0 && newFilter.data.ranges.length == 0) ||
-                 (oldFilter.data.ranges.length > 0 && newFilter.data.ranges.length > 0))
+        return (oldFilter.data.hierarchy == newFilter.data.hierarchy &&
+                oldFilter.data.isGroup == newFilter.data.isGroup);
+    },
+
+    handleMergeRangeFilters : function(oldFilter, newFilter) {
+        // if the old filter is a member list and the new filter is a range, drop the range from new filter and merge will be a member list
+        // if the old filter is a range and the new filter is a member list, drop the range from old filter and merge will be a member list
+        // else concatenate the array of range filters for the old and new filters (note: most cases will result in empty array)
+        if (oldFilter.getRanges().length == 0 && newFilter.getRanges().length > 0)
+            newFilter.set('ranges', []);
+        else if (oldFilter.getRanges().length > 0 && newFilter.getRanges().length == 0)
+            oldFilter.set('ranges', []);
+        else
+            oldFilter.set('ranges', oldFilter.getRanges().concat(newFilter.getRanges()));
     },
 
     isExistingMemberByUniqueName : function(memberArray, newMember) {
