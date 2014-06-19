@@ -18,7 +18,6 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -718,9 +717,15 @@ public abstract class AbstractAssayProvider implements AssayProvider
         {
             return null;
         }
+
+        String decodedName = ParticipantVisitResolverType.Serializer.decodeBaseStringValue(name);
+        if (decodedName == null)
+        {
+            return null;
+        }
         for (ParticipantVisitResolverType type : types)
         {
-            if (name.equals(type.getName()))
+            if (decodedName.equals(type.getName()))
             {
                 return type;
             }
