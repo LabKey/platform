@@ -887,7 +887,7 @@ public class ParticipantGroupManager
                 @Override
                 public ParticipantGroup[] load(String key, @Nullable Object argument)
                 {
-                    ParticipantCategoryImpl def = (ParticipantCategoryImpl)argument;
+                    final ParticipantCategoryImpl def = (ParticipantCategoryImpl)argument;
 
                     SQLFragment sql = new SQLFragment("SELECT * FROM (");
 
@@ -899,32 +899,33 @@ public class ParticipantGroupManager
                     sql.append(" ORDER BY gm.groupId, gm.ParticipantId;");
                     sql.add(def.getRowId());
 
-                    SqlSelector selector = new SqlSelector(StudySchema.getInstance().getSchema(), sql);
-                    ParticipantGroupMap[] maps = selector.getArray(ParticipantGroupMap.class);
+                    final Map<Integer, ParticipantGroup> groupMap = new HashMap<>();
 
-                    Map<Integer, ParticipantGroup> groupMap = new HashMap<Integer, ParticipantGroup>();
-
-                    for (ParticipantGroupMap pg : maps)
+                    new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ParticipantGroupMap>()
                     {
-                        if (!groupMap.containsKey(pg.getGroupId()))
+                        @Override
+                        public void exec(ParticipantGroupMap pg) throws SQLException
                         {
-                            ParticipantGroup group = new ParticipantGroup();
-                            group.setCategoryId(def.getRowId());
-                            group.setCategoryLabel(def.getLabel());
-                            group.setLabel(pg.getLabel());
-                            group.setContainer(c.getId()); //For dataspace participant container may not be group container
-                            group.setRowId(pg.getRowId());
-                            group.setFilters(pg.getFilters());
-                            group.setDescription(pg.getDescription());
-                            group.setModified(pg.getModified());
-                            group.setModifiedBy(pg.getModifiedBy());
-                            group.setCreated(pg.getCreated());
-                            group.setCreatedBy(pg.getCreatedBy());
+                            if (!groupMap.containsKey(pg.getGroupId()))
+                            {
+                                ParticipantGroup group = new ParticipantGroup();
+                                group.setCategoryId(def.getRowId());
+                                group.setCategoryLabel(def.getLabel());
+                                group.setLabel(pg.getLabel());
+                                group.setContainer(c.getId()); //For dataspace participant container may not be group container
+                                group.setRowId(pg.getRowId());
+                                group.setFilters(pg.getFilters());
+                                group.setDescription(pg.getDescription());
+                                group.setModified(pg.getModified());
+                                group.setModifiedBy(pg.getModifiedBy());
+                                group.setCreated(pg.getCreated());
+                                group.setCreatedBy(pg.getCreatedBy());
 
-                            groupMap.put(pg.getGroupId(), group);
+                                groupMap.put(pg.getGroupId(), group);
+                            }
+                            groupMap.get(pg.getGroupId()).addParticipantId(pg.getParticipantId());
                         }
-                        groupMap.get(pg.getGroupId()).addParticipantId(pg.getParticipantId());
-                    }
+                    }, ParticipantGroupMap.class);
                     return groupMap.values().toArray(new ParticipantGroup[groupMap.size()]);
                 }
             });
