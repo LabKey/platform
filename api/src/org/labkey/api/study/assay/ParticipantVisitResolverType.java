@@ -87,6 +87,13 @@ public interface ParticipantVisitResolverType
 
         }
 
+        public static String decodeBaseStringValue(String stringValue)
+        {
+            Map<String, Object> decodedVals = new HashMap<>();
+            decode(stringValue, decodedVals, STRING_VALUE_PROPERTY_NAME);
+            return (String)decodedVals.get(STRING_VALUE_PROPERTY_NAME);
+        }
+
         /**
          * We store additional ThawList settings as JSON property value pairs inside the default value for
          * ParticipantVisitResolver
