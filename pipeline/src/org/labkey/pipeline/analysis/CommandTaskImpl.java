@@ -175,7 +175,19 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 // TODO: do we really want to only check for files of default extension type?
                 //       possibly author did not realize that type.getName single-arg overload used here does that
                 //       (bpratt renamed it to getDefaultName to make its function more obvious)
-                String fileName = type != null ? type.getDefaultName(support.getBaseName()) : tp.getName();
+                String fileName;
+                if (type == null)
+                {
+                    fileName = tp.getName();
+                }
+                else
+                {
+                    // CONSIDER: More flexable input/output file naming -- perhaps a string expression with protocol, task, job-id available.
+                    // CONSIDER: Or explicitly wire outputs from an upstream task as an input to this task which would make the baseName concept less important.
+                    String baseName = tp.isUseProtocolNameAsBaseName() ?
+                            support.getProtocolName() : support.getBaseName();
+                    fileName = type.getDefaultName(baseName);
+                }
 
                 File result;
                 // Check if the output is specifically flagged to go into the analysis directory so we check in the right
@@ -432,7 +444,6 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         List<Map<String, Object>> rows = new ArrayList<>();
 
         // Job information
-        //rows.add(factory.getRowMap("protocolName", getJob().getProtocolName()));
         rows.add(factory.getRowMap("provider", getJob().getProvider()));
         rows.add(factory.getRowMap("description", getJob().getDescription()));
         //rows.add(factory.getRowMap("taskPipelineId", getJob().getTaskPipelineId()));
@@ -451,6 +462,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
 
         // FileAnalysisJobSupport properties
         FileAnalysisJobSupport support = getJobSupport();
+        rows.add(factory.getRowMap("protocol", support.getProtocolName()));
         rows.add(factory.getRowMap("baseName", support.getBaseName()));
         rows.add(factory.getRowMap("joinedBaseName", support.getJoinedBaseName()));
         rows.add(factory.getRowMap("analysisDirectory", rewritePath(support.getAnalysisDirectory().toString())));

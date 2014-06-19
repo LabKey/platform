@@ -160,12 +160,6 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
             return Collections.emptyList();
         }
 
-        protected File getXarFile(PipelineJob job)
-        {
-            FileAnalysisJobSupport jobSupport = job.getJobSupport(FileAnalysisJobSupport.class);
-            return getOutputType().newFile(jobSupport.getAnalysisDirectory(), jobSupport.getBaseName());
-        }
-
         public boolean isJobComplete(PipelineJob job)
         {
             return false;

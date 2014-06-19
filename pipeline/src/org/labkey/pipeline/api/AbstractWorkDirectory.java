@@ -55,9 +55,9 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     protected FileAnalysisJobSupport _support;
     protected final WorkDirFactory _factory;
-    protected File _dir;
-    protected Logger _jobLog;
-    protected HashMap<File, File> _copiedInputs = new HashMap<>();
+    protected final File _dir;
+    protected final Logger _jobLog;
+    protected final HashMap<File, File> _copiedInputs = new HashMap<>();
 
     protected CopyingResource _copyingResource;
 
@@ -195,7 +195,13 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         if (tp.isSplitFiles())
             baseNames = _support.getSplitBaseNames();
         else
-            baseNames = Collections.singletonList(_support.getBaseName());
+        {
+            // CONSIDER: More flexable input/output file naming -- perhaps a string expression with protocol, task, job-id available.
+            // CONSIDER: Or explicitly wire outputs from an upstream task as an input to this task which would make the baseName concept less important.
+            String baseName = tp.isUseProtocolNameAsBaseName() ?
+                    _support.getProtocolName() : _support.getBaseName();
+            baseNames = Collections.singletonList(baseName);
+        }
 
         ArrayList<File> files = new ArrayList<>();
         for (String baseName : baseNames)
@@ -210,6 +216,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         {
             File fileOutput;
 
+            // TODO: Issue 20792: pipeline: Custom output directory for task outputs
             // Check if the output is specifically flagged to go into the analysis directory
             if (tp.isForceToAnalysisDir())
             {
@@ -283,6 +290,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     {
         if (Function.output.equals(f))
         {
+            // TODO: Issue 20792: pipeline: Custom output directory for task outputs
             // All output goes to the root work directory for now.
             return _dir;
         }
@@ -300,8 +308,17 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     public File newFile(Function f, FileType type)
     {
-        // that null arg to type.getName causes it to try all known filename extensions instead of just default
-        return newFile(f, type.getName(Function.output.equals(f)?_dir:(File)null,_support.getBaseName()));
+        if (f == Function.input)
+        {
+            // that null arg to type.getName causes it to try all known filename extensions instead of just default
+            return newFile(f, type.getName((File)null, _support.getBaseName()));
+        }
+        else if (f == Function.output)
+        {
+            // TODO: Issue 20792: pipeline: Custom output directory for task outputs
+            return newFile(f, type.getName(_dir, _support.getBaseName()));
+        }
+        throw new IllegalArgumentException("input or output expected");
     }
 
     public File newFile(String name)

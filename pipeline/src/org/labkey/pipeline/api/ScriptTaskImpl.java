@@ -161,8 +161,6 @@ public class ScriptTaskImpl extends CommandTaskImpl
         return engine;
     }
 
-    // TODO: I believe script task can only run on the webserver since the paths the ExternalScriptEngine is configured to are local to the server.
-    // TODO: RServe
     // TODO: Rhino engine.  A non-ExternalScriptEngine won't use the PARAM_REPLACEMENT_MAP binding.
     // CONSIDER: Use ScriptEngineReport to generate a script prolog
     @Override

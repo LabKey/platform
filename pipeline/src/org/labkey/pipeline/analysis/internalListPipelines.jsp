@@ -21,6 +21,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.pipeline.analysis.AnalysisController" %>
+<%@ page import="org.labkey.api.pipeline.file.FileAnalysisTaskPipeline" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -46,18 +47,35 @@
             </a>
         </td>
     </tr>
+
+    <% if (pipeline instanceof FileAnalysisTaskPipeline) { %>
+    <tr>
+        <td><b>Protocol Factory</b></td>
+        <td><%=h(((FileAnalysisTaskPipeline)pipeline).getProtocolFactoryName())%></td>
+    </tr>
+    <% } %>
+
+    <% if (!pipeline.getId().toString().equals(pipeline.getProtocolIdentifier())) { %>
     <tr>
         <td><b>Protocol Id</b></td>
         <td><%=h(pipeline.getProtocolIdentifier())%></td>
     </tr>
+    <% } %>
+
+    <% if (!pipeline.getId().toString().equals(pipeline.getProtocolShortDescription())) { %>
     <tr>
         <td><b>Protocol Description</b></td>
         <td><%=h(pipeline.getProtocolShortDescription())%></td>
     </tr>
+    <% } %>
+
+    <% if (!pipeline.getId().toString().equals(pipeline.getDescription())) { %>
     <tr>
         <td><b>Description</b></td>
         <td colspan=4><%=h(pipeline.getDescription())%></td>
     </tr>
+    <% } %>
+
     <tr>
         <td valign=top><b>Tasks</b></td>
         <td colspan=4>

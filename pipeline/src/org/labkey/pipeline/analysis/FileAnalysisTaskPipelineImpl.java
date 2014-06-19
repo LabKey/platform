@@ -255,6 +255,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         FileAnalysisTaskPipelineImpl pipeline = new FileAnalysisTaskPipelineImpl(pipelineTaskId);
         pipeline.setDeclaringModule(module);
+        pipeline._protocolFactoryName = pipelineTaskId.getName();
 
         TaskPipelineType xpipeline = doc.getPipeline();
         if (xpipeline == null)
