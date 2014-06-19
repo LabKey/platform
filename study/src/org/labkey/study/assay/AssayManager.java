@@ -62,19 +62,16 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.GWTView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchemaImpl;
-import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
@@ -627,7 +624,8 @@ public class AssayManager implements AssayService.Interface
         {
             if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equals(property.getName()))
             {
-                resolverType = AbstractAssayProvider.findType(property.getStringValue(), provider.getParticipantVisitResolverTypes());
+                String resolverName = ParticipantVisitResolverType.Serializer.decodeBaseStringValue(property.getStringValue());
+                resolverType = AbstractAssayProvider.findType(resolverName, provider.getParticipantVisitResolverTypes());
                 if (resolverType != null)
                     break;
             }
