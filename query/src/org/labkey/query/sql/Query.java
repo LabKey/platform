@@ -337,7 +337,6 @@ public class Query
                 {
                     if (field.getParent() != null)
                         continue;
-                    assert null != table.getColumn(field.getName());
                     if (null == table.getColumn(field.getName()))
                         continue;
                     List<String> parts = new ArrayList<>();
