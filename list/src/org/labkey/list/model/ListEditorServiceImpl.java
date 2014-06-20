@@ -21,6 +21,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.DomainDescriptor;
+import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.list.ListDefinition;
@@ -118,8 +119,34 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             throw new RuntimeException(x);
         }
 
+        verifyList(definition);
         int listId = definition.getListId();
         return getList(listId);
+    }
+
+    //
+    // Ensure the list was created correctly by trying to get the table.
+    // If we can't get the table then something went wrong and we need to delete the
+    // list.  Otherwise we'll have a list that can't be edited, updated, or deleted.
+    //
+    private void verifyList(ListDefinition def) throws ListImportException
+    {
+        try
+        {
+            ListTable table = new ListTable(new ListQuerySchema(getUser(), getContainer()), def);
+        }
+        catch (IllegalStateException e)
+        {
+            // cleanup the list
+            try
+            {
+                def.delete(getUser());
+            }
+            catch (DomainNotFoundException ignore) {}
+
+            // rethrow so the client knows that something went wrong
+            throw new ListImportException(e.getMessage());
+        }
     }
 
 
@@ -271,7 +298,23 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            List<String> errors = super.updateDomainDescriptor(orig, dd);
+            List<String> errors = null;
+            try
+            {
+                 errors = super.updateDomainDescriptor(orig, dd);
+            }
+            catch(RuntimeSQLException x)
+            {
+                // issue 19202 - check for null value exceptions in case provided file data not contain the column
+                // and return a better error message
+                if (x.isNullValueException())
+                {
+                    throw new ListImportException("The provided data does not contain the specified '"
+                            + def.getKeyName() + "' field or contains null key values.");
+                }
+
+                throw x;
+            }
             if (errors != null && !errors.isEmpty())
             {
                 return errors;

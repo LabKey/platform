@@ -491,30 +491,30 @@ public class ListDefinitionImpl implements ListDefinition
     public void delete(User user) throws DomainNotFoundException
     {
         TableInfo table = getTable(user);
+        QueryUpdateService qus = null;
 
         if (null != table)
+            qus = table.getUpdateService();
+
+        // In certain cases we may create a list that is not viable (i.e., one in which a table was never created becase
+        // the metadata wasn't valid).  Still allow deleting the list since
+        try (DbScope.Transaction transaction = (table != null) ? table.getSchema().getScope().ensureTransaction() :
+             ExperimentService.get().ensureTransaction())
         {
-            QueryUpdateService qus = table.getUpdateService();
+            // remove related attachments, discussions, and indices
+            if (qus instanceof ListQueryUpdateService)
+                ((ListQueryUpdateService)qus).deleteRelatedListData(user, getContainer());
 
-            if (qus != null && (qus instanceof ListQueryUpdateService))
-            {
-                try (DbScope.Transaction transaction = table.getSchema().getScope().ensureTransaction())
-                {
-                    // remove related attachments, discussions, and indices
-                    ((ListQueryUpdateService)qus).deleteRelatedListData(user, getContainer());
+            // then delete the list itself
+            Table.delete(ListManager.get().getListMetadataTable(), new Object[] {getContainer(), getListId()});
+            Domain domain = getDomain();
+            domain.delete(user);
 
-                    // then delete the list itself
-                    Table.delete(ListManager.get().getListMetadataTable(), new Object[] {getContainer(), getListId()});
-                    Domain domain = getDomain();
-                    domain.delete(user);
-
-                    transaction.commit();
-                }
-
-                SchemaKey schemaPath = SchemaKey.fromParts(ListQuerySchema.NAME);
-                QueryService.get().fireQueryDeleted(user, getContainer(), null, schemaPath, Collections.singleton(getName()));
-            }
+            transaction.commit();
         }
+
+        SchemaKey schemaPath = SchemaKey.fromParts(ListQuerySchema.NAME);
+        QueryService.get().fireQueryDeleted(user, getContainer(), null, schemaPath, Collections.singleton(getName()));
     }
 
 
