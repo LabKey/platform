@@ -85,16 +85,4 @@ public class DailyMessageDigest extends MessageDigest
 
         return current.getTime();
     }
-
-    public void addReportContentDisgestProvider(ReportContentDigestProvider provider)
-    {
-        _reportContentDigestProvider = provider;
-        addProvider(provider);
-    }
-
-    @Nullable
-    public ReportContentDigestProvider getReportContentDigestProvider()
-    {
-        return _reportContentDigestProvider;
-    }
 }

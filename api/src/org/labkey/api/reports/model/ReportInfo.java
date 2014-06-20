@@ -14,22 +14,15 @@ import java.util.Date;
 
 public class ReportInfo
 {
-    private String _name;
-    private Date _created;
-    private Date _modified;
-    private String _containerId;
-    private int _categoryId;
-    private String _type;
-    private Integer _rowId;
-    private Report _report;
-    private String _status;
-    private int _displayOrder;
-
-    public ReportInfo(String name, String type)
-    {
-        _name = name;
-        _type = type;
-    }
+    private final String _name;
+    private final Date _modified;
+    private final String _containerId;
+    private final int _categoryId;
+    private final String _type;
+    private final Integer _rowId;
+    private final Report _report;
+    private final String _status;
+    private final int _displayOrder;
 
     public ReportInfo(ReportDB reportDB)
     {
@@ -39,12 +32,10 @@ public class ReportInfo
             _report = ReportService.get().createReportInstance(reportDescriptor);
             _type = _report.getTypeDescription();
             _name = reportDescriptor.getReportName();
-            _created = reportDB.getCreated();
             _modified = reportDB.getModified();
             _containerId = reportDB.getContainerId();
             _rowId = reportDB.getRowId();
             _displayOrder = reportDB.getDisplayOrder();
-
             Integer categoryId = reportDB.getCategoryId();
             Container container = ContainerManager.getForId(_containerId);
             if (null != container)
@@ -65,6 +56,11 @@ public class ReportInfo
                 }
                 _categoryId = null != categoryId ? categoryId : ViewCategoryManager.UNCATEGORIZED_ROWID;
             }
+            else
+            {
+                _categoryId = 0;
+                _status = "";
+            }
         }
         catch (IOException e)
         {
@@ -74,25 +70,22 @@ public class ReportInfo
 
     public ReportInfo(DatasetDB dataset)
     {
-        this(dataset.getName(), "Dataset");
+        _name = dataset.getName();
+        _type = "Dataset";
         _modified = dataset.getModified();
         _containerId = dataset.getContainer();
         _rowId = dataset.getDatasetId();
         _categoryId = null != dataset.getCategoryId() ? dataset.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID;
         _displayOrder = dataset.getDisplayOrder();
+        _report = null;
         Container container = ContainerManager.getForId(_containerId);
-        if (null != container)
-            _status = (String)ReportPropsManager.get().getPropertyValue(dataset.getEntityId(), container, "status");
+        _status = (null != container) ?
+                (String)ReportPropsManager.get().getPropertyValue(dataset.getEntityId(), container, "status") : "";
     }
 
     public String getName()
     {
         return _name;
-    }
-
-    public Date getCreated()
-    {
-        return _created;
     }
 
     public Date getModified()
@@ -140,5 +133,4 @@ public class ReportInfo
         report,
         dataset
     }
-
 }
