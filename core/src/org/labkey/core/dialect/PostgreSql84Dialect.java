@@ -870,6 +870,22 @@ public class PostgreSql84Dialect extends SqlDialect
             errors.add("Script must end with a semicolon");
     }
 
+    @Override
+    public String getJDBCArrayType(Object object)
+    {
+        // The Postgres JDBC driver doesn't support "double precision" as the data type for a JDBC array, so use
+        // alternative mappings for Float and Double
+        if (object instanceof Float)
+        {
+            return "real";
+        }
+        else if (object instanceof Double)
+        {
+            return "numeric";
+        }
+        return super.getJDBCArrayType(object);
+    }
+
 
     @Override
     public String getMasterDataBaseName()
