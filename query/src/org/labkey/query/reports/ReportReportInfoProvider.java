@@ -41,10 +41,14 @@ public class ReportReportInfoProvider extends ReportInfoProvider
                         reportInfoMap.put(containerId, new HashMap<Integer, List<ReportInfo>>());
                     Map<Integer, List<ReportInfo>> subMap = reportInfoMap.get(containerId);
                     ReportInfo reportInfo = new ReportInfo(report);
-                    int categoryId = reportInfo.getCategoryId();
-                    if (!subMap.containsKey(categoryId))
-                        subMap.put(categoryId, new ArrayList<ReportInfo>());
-                    subMap.get(categoryId).add(reportInfo);
+                    if (null != reportInfo.getContainer() && !reportInfo.isHidden() && reportInfo.isShared())
+                    {
+                        // Don't include hidden reports (or if container was deleted)
+                        int categoryId = reportInfo.getCategoryId();
+                        if (!subMap.containsKey(categoryId))
+                            subMap.put(categoryId, new ArrayList<ReportInfo>());
+                        subMap.get(categoryId).add(reportInfo);
+                    }
                 }
             }, ReportDB.class);
             _reportInfoMap = reportInfoMap;

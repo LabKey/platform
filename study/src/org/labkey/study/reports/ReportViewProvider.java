@@ -198,28 +198,8 @@ public class ReportViewProvider implements DataViewProvider
                     info.setDescription(descriptor.getReportDescription());
                     info.setReadOnly(!r.canEdit(user, c));
 
-                    String access;
-                    if (descriptor.isModuleBased())
-                    {
-                        access = "public";
-                        info.setShared(true);
-                    }
-                    else if (!descriptor.isShared())
-                    {
-                        access = "private";
-                        info.setShared(false);
-                    }
-                    else if (!(descriptor instanceof ModuleRReportDescriptor) && !SecurityPolicyManager.getPolicy(descriptor, false).isEmpty())
-                    {
-                        // FIXME: see 10473: ModuleRReportDescriptor extends securable resource, but doesn't properly implement it.  File-based resources don't have a Container or Owner.
-                        access = "custom"; // 13571: Explicit is a bad name for custom permissions
-                        info.setShared(false);
-                    }
-                    else
-                    {
-                        access = "public";
-                        info.setShared(true);
-                    }
+                    String access = descriptor.getAccess();
+                    info.setShared(ReportDescriptor.REPORT_ACCESS_PUBLIC.equals(access));
 
                     // studies support dataset level report permissions
                     if (studyFolder)

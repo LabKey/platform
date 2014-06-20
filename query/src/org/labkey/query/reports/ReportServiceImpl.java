@@ -795,6 +795,17 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         return _createReports(reports);
     }
 
+    @Nullable
+    public Report getReport(ReportDB reportDB)
+    {
+        ReportDB[] rawReportDBs = new ReportDB[1];
+        rawReportDBs[0] = reportDB;
+        Report[] reports = _createReports(rawReportDBs);
+        if (reports.length > 0)
+            return reports[0];
+        return null;
+    }
+
     /**
      * Provides a module specific way to add ui to the report designers.
      */
