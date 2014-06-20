@@ -115,4 +115,15 @@ public class RuntimeSQLException extends RuntimeException implements Serializabl
             return false;
         return sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503");
     }
+
+    public boolean isNullValueException() { return isNullValueException(getSQLException()); }
+
+    public static boolean isNullValueException(SQLException x)
+    {
+        String sqlState = x.getSQLState();
+        if (null == sqlState || !sqlState.startsWith("23"))
+            return false;
+
+        return sqlState.equals("23502");
+    }
 }
