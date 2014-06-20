@@ -15,6 +15,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.JspView;
 
 import javax.servlet.http.HttpServletRequest;
@@ -30,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ReportContentDigestProviderImpl implements ReportContentDigestProvider
+public class ReportContentDigestProviderImpl extends ReportContentDigestProvider
 {
     private Set<ReportInfoProvider> _reportInfoProviders = new HashSet<>();
 
@@ -146,7 +147,7 @@ public class ReportContentDigestProviderImpl implements ReportContentDigestProvi
         catch (Exception e)
         {
             // Don't fail the request because of this error
-            //_log.warn("Unable to send email for report/dataset notification: " + e.getMessage());
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
     }
 

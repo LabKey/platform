@@ -57,6 +57,7 @@ import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.message.digest.DailyMessageDigest;
+import org.labkey.api.message.digest.ReportContentDigestProvider;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
@@ -3781,7 +3782,7 @@ public class ReportsController extends SpringActionController
                 }
             };
             // Just reports
-            messageDigest.addProvider(DailyMessageDigest.getInstance().getReportContentDigestProvider());
+            messageDigest.addProvider(ReportContentDigestProvider.get());
             messageDigest.sendMessageDigest();
 
             return new ActionURL(ManageViewsAction.class, getContainer());

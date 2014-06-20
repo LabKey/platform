@@ -469,10 +469,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AdminConsole.addExperimentalFeatureFlag(CreateChildStudyAction.CREATE_SPECIMEN_STUDY, "Create Specimen Study",
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
 
-        ReportContentDigestProvider reportContentDigestProvider = DailyMessageDigest.getInstance().getReportContentDigestProvider();
-        if (null != reportContentDigestProvider)
-            reportContentDigestProvider.addReportInfoProvider(new DatasetReportInfoProvider());
-
+        ReportContentDigestProvider.get().addReportInfoProvider(new DatasetReportInfoProvider());
     }
 
     @Override

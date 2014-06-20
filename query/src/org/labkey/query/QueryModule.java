@@ -105,6 +105,7 @@ public class QueryModule extends DefaultModule
         QueryServiceImpl i = new QueryServiceImpl();
         QueryService.set(i);
         QueryDriver.register();
+        ReportContentDigestProvider.set(new ReportContentDigestProviderImpl());
     }
 
     public String getName()
@@ -216,9 +217,7 @@ public class QueryModule extends DefaultModule
         AuditLogService.registerAuditType(new QueryAuditProvider());
         AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
 
-        ReportContentDigestProvider reportContentDigestProvider = new ReportContentDigestProviderImpl();
-        reportContentDigestProvider.addReportInfoProvider(new ReportReportInfoProvider());
-        DailyMessageDigest.getInstance().addReportContentDisgestProvider(reportContentDigestProvider);
+        ReportContentDigestProvider.get().addReportInfoProvider(new ReportReportInfoProvider());
     }
 
     @Override
