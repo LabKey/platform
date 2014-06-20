@@ -21,7 +21,6 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.User;
 
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -88,11 +87,8 @@ public abstract class AbstractPropertyStore implements PropertyStore
                 ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
                 String setSelectName = setColumn.getSelectName();   // Keyword in some dialects
 
-                Object[] params = new Object[]{user, container, category};
-
                 SQLFragment sql = new SQLFragment("SELECT " + setSelectName + ", Encryption FROM " + _prop.getTableInfoPropertySets() +
-                    " WHERE UserId = ? AND ObjectId = ? AND Category = ?");
-                sql.addAll(params);
+                    " WHERE UserId = ? AND ObjectId = ? AND Category = ?", user, container, category);
 
                 Map<String, Object> map = new SqlSelector(_prop.getSchema(), sql).getMap();
                 boolean newSet = (null == map);
@@ -227,7 +223,7 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
 
     // Delete properties associated with this store
-    void deleteProperties(Container c) throws SQLException
+    void deleteProperties(Container c)
     {
         String setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
         SQLFragment deleteProps = new SQLFragment("DELETE FROM " + _prop.getTableInfoProperties().getSelectName() +
