@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import com.google.common.primitives.Ints;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -321,7 +320,7 @@ public class Parameter implements AutoCloseable
 
                 // Convert to a JDBC array
                 SqlDialect dialect = SqlDialectManager.getFromMetaData(_stmt.getConnection().getMetaData(), true);
-                String typeName = StringUtils.lowerCase(dialect.getSqlTypeNameFromObject(array[0]));
+                String typeName = dialect.getJDBCArrayType(array[0]);
                 final Array jdbcArray = _stmt.getConnection().createArrayOf(typeName, array);
                 // Set up to close it
                 _autoCloseable = new AutoCloseable()

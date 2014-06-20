@@ -817,6 +817,11 @@ public abstract class SqlDialect
 
     abstract protected void checkSqlScript(String lower, String lowerNoWhiteSpace, Collection<String> errors);
 
+    public String getJDBCArrayType(Object object)
+    {
+        return StringUtils.lowerCase(getSqlTypeNameFromObject(object));
+    }
+
     protected class SQLSyntaxException extends SQLException
     {
         private Collection<String> _errors;
