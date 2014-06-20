@@ -137,6 +137,11 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
                 value = Boolean.FALSE.toString();
             value = StringUtils.trimToNull(value);
 
+            if (pd.getName().equals(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME) && value != null)
+            {
+                value = ParticipantVisitResolverType.Serializer.encode(value, getRequest());
+            }
+
             if (additionalFiles.containsKey(pd))
                 properties.put(pd, additionalFiles.get(pd).getPath());
             else
@@ -426,16 +431,6 @@ public class AssayRunUploadForm<ProviderType extends AssayProvider> extends Prot
     public void saveDefaultBatchValues() throws ExperimentException
     {
         Map<DomainProperty, Object> objectMap = new HashMap<DomainProperty, Object>(getBatchProperties());
-
-        for (Map.Entry<DomainProperty, Object> entry : objectMap.entrySet())
-        {
-            if (entry.getKey().getName().equalsIgnoreCase(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME))
-            {
-                String currentValue = entry.getValue() == null ? null : entry.getValue().toString();
-                objectMap.put(entry.getKey(), ParticipantVisitResolverType.Serializer.encode(currentValue, getViewContext().getRequest()));
-            }
-        }
-
         DefaultValueService.get().setDefaultValues(getContainer(), objectMap, getUser());
     }
 

@@ -64,6 +64,7 @@ import java.util.Set;
  */
 public class ThawListResolverType extends AssayFileWriter implements ParticipantVisitResolverType
 {
+    public static final String NAME = "Lookup";
     public static final String THAW_LIST_TYPE_INPUT_NAME = "ThawListType";
     public static final String THAW_LIST_TEXT_AREA_INPUT_NAME = "ThawListTextArea";
     static final String THAW_LIST_LIST_DEFINITION_INPUT_NAME = "ThawListListDefinition";
@@ -179,7 +180,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
 
     public String getName()
     {
-        return "Lookup";
+        return NAME;
     }
 
     public String getDescription()

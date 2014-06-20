@@ -100,23 +100,36 @@ public interface ParticipantVisitResolverType
          */
         public static String encode(String resolverType, HttpServletRequest request)
         {
+            try
+            {
+                // Prevent double encoding; if the resolverType string is already a json map, return it.
+                new ObjectMapper().readValue(resolverType, Map.class);
+                return resolverType;
+            }
+            catch (IOException e)
+            {
+                // Wasn't a json map, just a string. Proceed with encoding below.
+            }
             Map<String, String> jsonValues = new LinkedHashMap<>();
             jsonValues.put(ParticipantVisitResolverType.Serializer.STRING_VALUE_PROPERTY_NAME, resolverType);
 
             Map<String, String> values = new HashMap<>();
-            for (String name : (List<String>)Collections.list(request.getParameterNames()))
+            for (String name : (List<String>) Collections.list(request.getParameterNames()))
             {
                 values.put(name, request.getParameter(name));
             }
 
-            for (Map.Entry<String, String> entry : values.entrySet())
+            if (resolverType.equals(ThawListResolverType.NAME))
             {
-                String name = entry.getKey();
-                if (name.startsWith(ThawListResolverType.NAMESPACE_PREFIX) && !name.equalsIgnoreCase(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME))
+                for (Map.Entry<String, String> entry : values.entrySet())
                 {
-                    String thawListValue = entry.getValue();
-                    if (thawListValue != null && !thawListValue.isEmpty())
-                        jsonValues.put(name, thawListValue);
+                    String name = entry.getKey();
+                    if (name.startsWith(ThawListResolverType.NAMESPACE_PREFIX) && !name.equalsIgnoreCase(ThawListResolverType.THAW_LIST_TEXT_AREA_INPUT_NAME))
+                    {
+                        String thawListValue = entry.getValue();
+                        if (thawListValue != null && !thawListValue.isEmpty())
+                            jsonValues.put(name, thawListValue);
+                    }
                 }
             }
 

@@ -210,7 +210,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
             return self();
         }
 
-        /** FACTORY and sefl() make it easier to chain setters while returning the correct subclass type. */
+        /** FACTORY and self() make it easier to chain setters while returning the correct subclass type. */
         public abstract FACTORY self();
 
         public abstract AssayRunUploadContext<ProviderType> create();
