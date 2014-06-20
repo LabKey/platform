@@ -563,6 +563,10 @@ public class VisualizationController extends SpringActionController
                 props.put("lookup", lookupJSON);
             }
 
+            props.put("shownInDetailsView", col.isShownInDetailsView());
+            props.put("shownInInsertView", col.isShownInInsertView());
+            props.put("shownInUpdateView", col.isShownInUpdateView());
+
             return props;
         }
 
