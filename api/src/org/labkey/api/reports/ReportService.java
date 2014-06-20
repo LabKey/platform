@@ -24,6 +24,7 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.reports.report.ReportDB;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ScriptReportBean;
@@ -103,6 +104,7 @@ public class ReportService
         public Report[] getReports(User user, Container c, String key);
         public Report[] getReports(User user, Container c, String key, int flagMask, int flagValue);
         public Report[] getReports(Filter filter);
+        @Nullable public Report getReport(ReportDB reportDB);
 
         /**
          * Provides a module specific way to add ui to the report designers.

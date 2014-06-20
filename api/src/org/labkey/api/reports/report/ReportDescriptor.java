@@ -877,4 +877,25 @@ public class ReportDescriptor extends Entity implements SecurableResource
     {
         return null;
     }
+
+    public static final String REPORT_ACCESS_PUBLIC = "public";
+    public static final String REPORT_ACCESS_PRIVATE = "private";
+    public static final String REPORT_ACCESS_CUSTOM = "custom";
+    public String getAccess()
+    {
+        String access;
+        if (isModuleBased())
+            access = REPORT_ACCESS_PUBLIC;
+        else if (!isShared())
+            access = REPORT_ACCESS_PRIVATE;
+        else if (!(this instanceof ModuleRReportDescriptor) && !SecurityPolicyManager.getPolicy(this, false).isEmpty())
+        {
+            // FIXME: see 10473: ModuleRReportDescriptor extends securable resource, but doesn't properly implement it.  File-based resources don't have a Container or Owner.
+            access = REPORT_ACCESS_CUSTOM; // 13571: Explicit is a bad name for custom permissions
+        }
+        else
+            access = REPORT_ACCESS_PUBLIC;
+
+        return access;
+    }
 }

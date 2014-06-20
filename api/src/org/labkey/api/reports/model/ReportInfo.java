@@ -9,38 +9,42 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.study.DatasetDB;
 
-import java.io.IOException;
 import java.util.Date;
 
 public class ReportInfo
 {
     private final String _name;
     private final Date _modified;
-    private final String _containerId;
+    private final Container _container;
     private final int _categoryId;
     private final String _type;
     private final Integer _rowId;
     private final Report _report;
     private final String _status;
     private final int _displayOrder;
+    private final boolean _hidden;
+    private final boolean _shared;
 
     public ReportInfo(ReportDB reportDB)
     {
         try
         {
-            ReportDescriptor reportDescriptor = ReportDescriptor.createFromXML(reportDB.getDescriptorXML());
-            _report = ReportService.get().createReportInstance(reportDescriptor);
+            _report = ReportService.get().getReport(reportDB);
+            if (null == _report)
+                throw new IllegalStateException("Expected to get report.");
+            ReportDescriptor reportDescriptor = _report.getDescriptor();
             _type = _report.getTypeDescription();
             _name = reportDescriptor.getReportName();
             _modified = reportDB.getModified();
-            _containerId = reportDB.getContainerId();
             _rowId = reportDB.getRowId();
             _displayOrder = reportDB.getDisplayOrder();
             Integer categoryId = reportDB.getCategoryId();
-            Container container = ContainerManager.getForId(_containerId);
-            if (null != container)
+            _container = ContainerManager.getForId(reportDB.getContainerId());
+            if (null != _container)
             {
-                _status = (String)ReportPropsManager.get().getPropertyValue(reportDB.getEntityId(), container, "status");
+                _status = reportDescriptor.getStatus();
+                _hidden = reportDescriptor.isHidden();
+                _shared = reportDescriptor.isShared();
 
                 if (null == categoryId)
                 {
@@ -49,7 +53,7 @@ public class ReportInfo
                     if (null != schemaName && null != queryName)
                     {
                         {
-                            ViewCategory category = ReportUtil.getDefaultCategory(container, schemaName, queryName);
+                            ViewCategory category = ReportUtil.getDefaultCategory(_container, schemaName, queryName);
                             categoryId = category.getRowId();
                         }
                     }
@@ -60,9 +64,11 @@ public class ReportInfo
             {
                 _categoryId = 0;
                 _status = "";
+                _hidden = false;
+                _shared = true;
             }
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             throw new RuntimeException(e.getMessage());
         }
@@ -73,14 +79,15 @@ public class ReportInfo
         _name = dataset.getName();
         _type = "Dataset";
         _modified = dataset.getModified();
-        _containerId = dataset.getContainer();
         _rowId = dataset.getDatasetId();
         _categoryId = null != dataset.getCategoryId() ? dataset.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID;
         _displayOrder = dataset.getDisplayOrder();
         _report = null;
-        Container container = ContainerManager.getForId(_containerId);
-        _status = (null != container) ?
-                (String)ReportPropsManager.get().getPropertyValue(dataset.getEntityId(), container, "status") : "";
+        _hidden = false;
+        _shared = true;
+        _container = ContainerManager.getForId(dataset.getContainer());
+        _status = (null != _container) ?
+                (String)ReportPropsManager.get().getPropertyValue(dataset.getEntityId(), _container, "status") : "";
     }
 
     public String getName()
@@ -93,9 +100,9 @@ public class ReportInfo
         return _modified;
     }
 
-    public String getContainerId()
+    public Container getContainer()
     {
-        return _containerId;
+        return _container;
     }
 
     public int getCategoryId()
@@ -126,6 +133,16 @@ public class ReportInfo
     public int getDisplayOrder()
     {
         return _displayOrder;
+    }
+
+    public boolean isHidden()
+    {
+        return _hidden;
+    }
+
+    public boolean isShared()
+    {
+        return _shared;
     }
 
     public enum Type
