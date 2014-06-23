@@ -110,7 +110,11 @@ public class ModifiedSinceFilterStrategy implements FilterStrategy
         // Diagnostic for 20659, from exception 17683. The aggregates resultset doesn't include the tsCol name.
         if (list == null)
         {
-            throw new IllegalArgumentException("Timestamp column '" +_tsCol.getName() + "' not found in aggregate results for table '" + _table.getName() + "'");
+            StringBuilder sb = new StringBuilder("Timestamp column '" +_tsCol.getName() + "' not found in aggregate results for table '" + _table.getName() + "'\n");
+            sb.append("Available columns:\n");
+            for (String column : results.keySet())
+                sb.append(column + "\n");
+            throw new IllegalArgumentException(sb.toString());
         }
 
         Aggregate.Result maxResult = list.get(0);
