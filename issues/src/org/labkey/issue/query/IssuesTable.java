@@ -73,7 +73,8 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
     private void addAllColumns()
     {
         ActionURL base = IssuesController.issueURL(_userSchema.getContainer(), IssuesController.DetailsAction.class);
-        setDetailsURL(new DetailsURL(base, Collections.singletonMap("issueId", "IssueId")));
+        DetailsURL detailsURL = new DetailsURL(base, Collections.singletonMap("issueId", "IssueId"));
+        setDetailsURL(detailsURL);
 
         EntryTypeNames names = IssueManager.getEntryTypeNames(getContainer());
         CustomColumnConfiguration ccc = IssueManager.getCustomColumnConfiguration(getContainer());
@@ -91,6 +92,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
 
         issueIdColumn.setKeyField(true);
         issueIdColumn.setLabel(names.singularName.getSource() + " ID");
+        issueIdColumn.setURL(detailsURL);
         addColumn(issueIdColumn);
 
         ColumnInfo folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("container"));
