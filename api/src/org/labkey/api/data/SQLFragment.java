@@ -328,14 +328,19 @@ public class SQLFragment implements Appendable, CharSequence
             if (len > 0 && sb.charAt(len-1) != '\n')
                 sb.append('\n');
             sb.append("\n-- ");
-            if (comment.length() < Integer.MAX_VALUE)
-                sb.append(comment);
-            else
-                sb.append(comment.substring(0,1000)).append("...");
+            boolean truncated = comment.length() > 1000;
+            if (truncated)
+                comment = comment.substring(0,1000);
+            sb.append(comment);
+            if (StringUtils.countMatches(comment, "'")%2==1)
+                sb.append("'");
+            if (truncated)
+                sb.append("...");
             sb.append('\n');
         }
         return true;
     }
+
 
     /** use append(TableInfo, String alias) */
     @Deprecated
