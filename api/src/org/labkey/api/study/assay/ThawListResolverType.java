@@ -30,9 +30,9 @@ import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -47,10 +47,12 @@ import org.labkey.api.view.ViewForm;
 import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
@@ -130,10 +132,20 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
 
             Map<String, ParticipantVisit> values = new HashMap<>();
             TabLoader tabLoader = new TabLoader(file, true);
+            StringBuilder resolverErrors = new StringBuilder(validateThawListColumns(tabLoader.getColumns(), "Pasted tsv"));
 
+            int i = 0;
             for (Map<String, Object> data : tabLoader.load())
             {
+                i++;
                 Object index = data.get("Index");
+                if (index == null)
+                {
+                    if (resolverErrors.length() > 0)
+                        resolverErrors.append("\n");
+                    resolverErrors.append("Index value is missing in TSV for row: " + i);
+                    continue;
+                }
                 Object specimenIDObject = data.get("SpecimenID");
                 String specimenID = specimenIDObject == null ? null : specimenIDObject.toString();
                 Object participantIDObject = data.get("ParticipantID");
@@ -141,13 +153,19 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                 Object visitIDObject = data.get("VisitID");
                 if (visitIDObject != null && !(visitIDObject instanceof Number))
                 {
-                    throw new ExperimentException("The VisitID column in the thaw list must be a number.");
+                    if (resolverErrors.length() > 0)
+                        resolverErrors.append("\n");
+                    resolverErrors.append("Can not convert VisitId value: " + visitIDObject + " to double for index: " + index);
+                    continue;
                 }
                 Double visitID = visitIDObject == null ? null : ((Number) visitIDObject).doubleValue();
                 Object dateObject = data.get("Date");
                 if (dateObject != null && !(dateObject instanceof Date))
                 {
-                    throw new ExperimentException("The Date column in the thaw list must be a date.");
+                    if (resolverErrors.length() > 0)
+                        resolverErrors.append("\n");
+                    resolverErrors.append("Can not convert Date value: " + dateObject + " to date for index: " + index);
+                    continue;
                 }
                 Date date = (Date) dateObject;
 
@@ -163,8 +181,10 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                 }
 
                 Container targetStudy = rowLevelTargetStudy != null ? rowLevelTargetStudy : targetStudyContainer;
-                values.put(index == null ? null : index.toString(), new ParticipantVisitImpl(specimenID, participantID, visitID, date, runContainer, targetStudy));
+                values.put(index.toString(), new ParticipantVisitImpl(specimenID, participantID, visitID, date, runContainer, targetStudy));
             }
+            if (resolverErrors.length() > 0)
+                throw new ExperimentException(resolverErrors.toString());
             return new ThawListFileResolver(childResolver, values, runContainer);
         }
     }
@@ -243,6 +263,10 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
                         name).toString();
                 thawListData.setDataFileURI(FileUtil.getAbsoluteCaseSensitiveFile(file).toURI());
             }
+            catch (ExperimentException e)
+            {
+                throw e;
+            }
             finally
             {
                 if (in != null) { try { in.close(); } catch (IOException ignored) {} }
@@ -299,13 +323,31 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
      */
     public static void validationHelper(ViewForm form, Errors errors)
     {
-        if (LIST_NAMESPACE_SUFFIX.equalsIgnoreCase(form.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME)))
+        String errMsg;
+        String thawListType = form.getRequest().getParameter(THAW_LIST_TYPE_INPUT_NAME);
+        if (LIST_NAMESPACE_SUFFIX.equalsIgnoreCase(thawListType))
+            errMsg = validateThawList(form.getRequest(), form.getContainer(), form.getUser());
+        else if (TEXT_NAMESPACE_SUFFIX.equalsIgnoreCase(thawListType))
         {
-            String errMsg = validateThawList(form.getRequest(), form.getContainer(), form.getUser());
-            if (StringUtils.isNotEmpty(errMsg))
+            try
             {
-                errors.reject(SpringActionController.ERROR_MSG, errMsg);
+                String columnRow = new BufferedReader(new StringReader(form.getRequest().getParameter(THAW_LIST_TEXT_AREA_INPUT_NAME))).readLine();
+                if (columnRow == null || columnRow.isEmpty())
+                    errMsg = "You must paste a TSV into the text area below.";
+                else
+                    errMsg = validateThawListColumns(columnRow.split("\t"), "Pasted TSV");
             }
+            catch (IOException e)
+            {
+                errMsg = "Unable to parse pasted TSV.";
+            }
+        }
+        else
+            errMsg = "Unknown thaw list type option: " + thawListType;
+
+        if (StringUtils.isNotEmpty(errMsg))
+        {
+            errors.reject(SpringActionController.ERROR_MSG, errMsg);
         }
     }
 
@@ -348,15 +390,37 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
             return("Could not find table " + queryName);
         }
 
+        return validateThawListColumns(table.getColumnNameSet(), makeThawListName(schemaName, queryName, container));
+    }
+
+    private static String validateThawListColumns(String[] columnNames, String name)
+    {
+        return validateThawListColumns(new CaseInsensitiveHashSet(columnNames), name);
+    }
+
+    private static String validateThawListColumns(ColumnDescriptor[] columnDescriptors, String name)
+    {
+        Set<String> columnSet = new CaseInsensitiveHashSet();
+
+        for (ColumnDescriptor column : columnDescriptors)
+        {
+            columnSet.add(column.getColumnName());
+        }
+
+        return validateThawListColumns(columnSet, name);
+    }
+
+    private static String validateThawListColumns(Set<String> columnSet, String name)
+    {
         StringBuilder sb = new StringBuilder();
         for (String column : REQUIRED_COLUMNS)
         {
-            if (table.getColumn(FieldKey.fromParts(column)) == null)
+            if (!columnSet.contains(column))
             {
                 if (sb.length() > 0)
                     sb.append("\n");
                 else
-                    sb.append(makeThawListName(schemaName, queryName, container) + " is missing required column(s):\n");
+                    sb.append(name + " is missing required column(s):\n");
                 sb.append(column);
             }
         }

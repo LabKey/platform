@@ -215,6 +215,7 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
     @Override
     public void validateCommand(AssayDomainIdForm target, Errors errors)
     {
-        ThawListResolverType.validationHelper(target, errors);
+        if (ThawListResolverType.NAME.equals(target.getRequest().getParameter("participantVisitResolver")))
+            ThawListResolverType.validationHelper(target, errors);
     }
 }

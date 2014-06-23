@@ -54,7 +54,7 @@ public class ThawListFileResolver implements ParticipantVisitResolver
         ParticipantVisit values = _aliases.get(specimenID);
         if (values == null)
         {
-            return new ParticipantVisitImpl(_runContainer);
+            throw new ThawListResolverException("Can not resolve thaw list entry for specimenId: " + specimenID);
         }
         return _childResolver.resolve(values.getSpecimenID(), values.getParticipantID(), values.getVisitID(), date, resultDomainTargetStudy);
     }

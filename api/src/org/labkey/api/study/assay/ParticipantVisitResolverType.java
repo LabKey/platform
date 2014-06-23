@@ -113,14 +113,13 @@ public interface ParticipantVisitResolverType
             Map<String, String> jsonValues = new LinkedHashMap<>();
             jsonValues.put(ParticipantVisitResolverType.Serializer.STRING_VALUE_PROPERTY_NAME, resolverType);
 
-            Map<String, String> values = new HashMap<>();
-            for (String name : (List<String>) Collections.list(request.getParameterNames()))
-            {
-                values.put(name, request.getParameter(name));
-            }
-
             if (resolverType.equals(ThawListResolverType.NAME))
             {
+                Map<String, String> values = new HashMap<>();
+                for (String name : (List<String>) Collections.list(request.getParameterNames()))
+                {
+                    values.put(name, request.getParameter(name));
+                }
                 for (Map.Entry<String, String> entry : values.entrySet())
                 {
                     String name = entry.getKey();

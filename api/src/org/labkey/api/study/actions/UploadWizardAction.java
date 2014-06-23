@@ -16,7 +16,7 @@
 
 package org.labkey.api.study.actions;
 
-import org.jetbrains.annotations.Nullable;
+    import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -792,6 +792,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     @Override
     public void validate(FormType formType, BindException errors)
     {
-        ThawListResolverType.validationHelper(formType, errors);
+        if (ThawListResolverType.NAME.equals(formType.getRequest().getParameter("participantVisitResolver")))
+            ThawListResolverType.validationHelper(formType, errors);
     }
 }
