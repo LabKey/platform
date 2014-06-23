@@ -15,6 +15,7 @@
  */
 package org.labkey.query.reports.getdata;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
@@ -28,6 +29,7 @@ import java.util.List;
  * User: jeckels
  * Date: 5/15/13
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class DataRequest
 {
     private AbstractReportDataSourceBuilder _source;
