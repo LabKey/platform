@@ -121,21 +121,24 @@ public class RReportJob extends PipelineJob implements Serializable
         RReport report = getReport();
         info("Running R report job '" + report.getDescriptor().getReportName() + "'");
 
-        int stackSize = -1;
+        if (HttpView.hasCurrentView())
+        {
+            runReport(HttpView.currentContext(), report);
+        }
+        else
+        {
+            // Must be a background thread... push a fake ViewContext on the HttpView stack if so HttpView.currentContext() succeeds.
+            try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(getUser(), getContainer(), getActionURL()))
+            {
+                runReport(resetter.getContext(), report);
+            }
+        }
+    }
+
+    private void runReport(ViewContext context, RReport report)
+    {
         try
         {
-            ViewContext context;
-            if (HttpView.hasCurrentView())
-            {
-                context = HttpView.currentContext();
-            }
-            else
-            {
-                // Horrible nasty.  Push a fake ViewContext on the HttpView stack if necessary so HttpView.currentContext() succeeds.
-                stackSize = HttpView.getStackSize();
-                context = ViewContext.getMockViewContext(getUser(), getContainer(), getActionURL(), true);
-            }
-
             // get the input file which should have been previously created
             File inputFile = inputFile(report, context);
 
@@ -161,11 +164,6 @@ public class RReportJob extends PipelineJob implements Serializable
             _log.error("Error occurred running the report background job", e);
             error("Error occurred running the report background job", e);
             setStatus(TaskStatus.error, "Job finished at: " + DateUtil.nowISO());
-        }
-        finally
-        {
-            if (stackSize > -1)
-                HttpView.resetStackSize(stackSize);
         }
     }
 
