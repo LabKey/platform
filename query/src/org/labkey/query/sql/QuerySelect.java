@@ -1445,10 +1445,7 @@ groupByLoop:
             for (String s : queryText.split("(\n\r?)|(\r\n?)"))
             {
                 if (null != StringUtils.trimToNull(s))
-                {
-                    // balance quotes because postgres can't parse
-                    ret.appendComment("|         " + s + (StringUtils.countMatches(s, "'")%2==0?"":"'"));
-                }
+                    ret.appendComment("|         " + s);
             }
             if (truncated)
                 ret.appendComment("|         . . .");
