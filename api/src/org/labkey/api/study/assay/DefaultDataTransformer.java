@@ -54,6 +54,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
     public static final String RUN_INFO_REPLACEMENT = "runInfo";
     public static final String SRC_DIR_REPLACEMENT = "srcDirectory";
     public static final String R_SESSIONID_REPLACEMENT = "rLabkeySessionId";
+    public static final String SESSION_ID_REPLACEMENT = "httpSessionId";
+    public static final String SESSION_COOKIE_NAME_REPLACEMENT = "sessionCookieName";
 
     public TransformResult transformAndValidate(AssayRunUploadContext<ProviderType> context, ExpRun run) throws ValidationException
     {
@@ -126,6 +128,8 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
                         if (srcDir != null && srcDir.exists())
                             paramMap.put(SRC_DIR_REPLACEMENT, srcDir.getAbsolutePath().replaceAll("\\\\", "/"));
                         paramMap.put(R_SESSIONID_REPLACEMENT, getSessionInfo(context, transformSessionId));
+                        paramMap.put(SESSION_COOKIE_NAME_REPLACEMENT, getSessionCookieName(context));
+                        paramMap.put(SESSION_ID_REPLACEMENT, getSessionId(context, transformSessionId));
 
                         bindings.put(ExternalScriptEngine.PARAM_REPLACEMENT_MAP, paramMap);
 
@@ -197,6 +201,16 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
         return result;
     }
 
+    private String getSessionCookieName(AssayRunUploadContext<ProviderType> context)
+    {
+        if (context.getRequest() != null)
+        {
+            return "JSESSIONID";
+        }
+        // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
+        return SecurityManager.TRANSFORM_SESSIONID;
+    }
+
     protected File getScriptDir(ExpProtocol protocol, File scriptFile, boolean isDefault)
     {
         File tempDir = new File(System.getProperty("java.io.tmpdir"));
@@ -231,22 +245,18 @@ public class DefaultDataTransformer<ProviderType extends AssayProvider> implemen
      */
     private String getSessionInfo(AssayRunUploadContext<ProviderType> context, String transformSessionId)
     {
-        StringBuilder sb = new StringBuilder();
+        return "labkey.sessionCookieName = \"" + getSessionCookieName(context) + "\"\n" +
+               "labkey.sessionCookieContents = \"" + getSessionId(context, transformSessionId) + "\"\n";
+    }
+
+    private String getSessionId(AssayRunUploadContext<ProviderType> context, String transformSessionId)
+    {
         if (context.getRequest() != null)
         {
-            sb.append("labkey.sessionCookieName = \"JSESSIONID\"\n");
-            sb.append("labkey.sessionCookieContents = \"");
-            sb.append(PageFlowUtil.getCookieValue(context.getRequest().getCookies(), "JSESSIONID", ""));
-            sb.append("\"\n");
+            return PageFlowUtil.getCookieValue(context.getRequest().getCookies(), "JSESSIONID", "");
         }
-        else
-        {
-            // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
-            SecurityManager.addTransformSessionId(context.getUser(), transformSessionId);
-
-            sb.append("labkey.sessionCookieName = \"" + SecurityManager.TRANSFORM_SESSIONID + "\"\n");
-            sb.append("labkey.sessionCookieContents = \"" + transformSessionId + "\"\n");
-        }
-        return sb.toString();
+        // issue 19748: need alternative to JSESSIONID for pipeline job transform script usage
+        SecurityManager.addTransformSessionId(context.getUser(), transformSessionId);
+        return transformSessionId;
     }
 }
