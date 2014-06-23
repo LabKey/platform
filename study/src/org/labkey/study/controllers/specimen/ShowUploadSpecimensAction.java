@@ -39,7 +39,7 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.importer.SimpleSpecimenImporter;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.specimen.settings.RepositorySettings;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;

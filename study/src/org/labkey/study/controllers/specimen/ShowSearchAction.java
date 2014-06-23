@@ -26,7 +26,7 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.samples.SpecimenSearchBean;
+import org.labkey.study.specimen.SpecimenSearchBean;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;

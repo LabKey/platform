@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.study.SpecimenManager"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
 <%@ page import="org.labkey.study.model.SpecimenRequestStatus"%>
-<%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
+<%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

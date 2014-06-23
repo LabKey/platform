@@ -1,7 +1,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.study.samples.SpecimenSearchBean" %>
+<%@ page import="org.labkey.study.specimen.SpecimenSearchBean" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%
 /*

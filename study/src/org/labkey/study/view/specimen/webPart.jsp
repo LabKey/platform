@@ -21,7 +21,7 @@
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.SpecimenManager" %>
-<%@ page import="org.labkey.study.samples.SpecimenWebPart" %>
+<%@ page import="org.labkey.study.specimen.SpecimenWebPart" %>
 <%@ page import="org.labkey.study.security.permissions.RequestSpecimensPermission" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>

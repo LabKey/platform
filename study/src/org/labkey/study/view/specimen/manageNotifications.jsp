@@ -26,9 +26,9 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="org.labkey.study.samples.settings.RequestNotificationSettings" %>
-<%@ page import="org.labkey.study.samples.settings.RequestNotificationSettings.DefaultEmailNotifyEnum" %>
-<%@ page import="org.labkey.study.samples.settings.RequestNotificationSettings.SpecimensAttachmentEnum" %>
+<%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings" %>
+<%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.DefaultEmailNotifyEnum" %>
+<%@ page import="org.labkey.study.specimen.settings.RequestNotificationSettings.SpecimensAttachmentEnum" %>
 <%@ page import="org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>

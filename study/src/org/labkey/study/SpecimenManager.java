@@ -64,12 +64,12 @@ import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.requirements.RequirementProvider;
 import org.labkey.study.requirements.SpecimenRequestRequirementProvider;
-import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
-import org.labkey.study.samples.report.SpecimenCountSummary;
-import org.labkey.study.samples.settings.DisplaySettings;
-import org.labkey.study.samples.settings.RepositorySettings;
-import org.labkey.study.samples.settings.RequestNotificationSettings;
-import org.labkey.study.samples.settings.StatusSettings;
+import org.labkey.study.specimen.SpecimenCommentAuditViewFactory;
+import org.labkey.study.specimen.report.SpecimenCountSummary;
+import org.labkey.study.specimen.settings.DisplaySettings;
+import org.labkey.study.specimen.settings.RepositorySettings;
+import org.labkey.study.specimen.settings.RequestNotificationSettings;
+import org.labkey.study.specimen.settings.StatusSettings;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 

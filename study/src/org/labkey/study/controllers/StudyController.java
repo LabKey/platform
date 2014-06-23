@@ -197,7 +197,7 @@ import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.StudyQueryView;
 import org.labkey.study.reports.ReportManager;
-import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.specimen.settings.RepositorySettings;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.view.StudyGWTView;
 import org.labkey.study.view.SubjectsWebPart;

@@ -26,7 +26,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.importer.RequestabilityManager;
-import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.specimen.settings.RepositorySettings;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.security.permissions.ManageRequestsPermission;
 import org.labkey.study.controllers.BaseStudyController;

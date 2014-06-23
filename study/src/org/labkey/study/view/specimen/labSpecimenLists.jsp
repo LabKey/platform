@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
 <%@ page import="org.labkey.study.model.LocationImpl"%>
 <%@ page import="org.labkey.study.model.Vial"%>
-<%@ page import="org.labkey.study.samples.notifications.ActorNotificationRecipientSet" %>
+<%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.LabSpecimenListsBean> me = (JspView<SpecimenController.LabSpecimenListsBean>) HttpView.currentView();

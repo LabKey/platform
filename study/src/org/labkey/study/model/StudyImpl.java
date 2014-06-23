@@ -67,7 +67,7 @@ import org.labkey.study.DataspaceStudyFolderType;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.StudyQuerySchema;
-import org.labkey.study.samples.settings.RepositorySettings;
+import org.labkey.study.specimen.settings.RepositorySettings;
 
 import java.io.File;
 import java.io.IOException;

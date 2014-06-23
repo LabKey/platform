@@ -20,7 +20,7 @@
 <%@ page import="org.labkey.api.view.Portal.WebPart" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ReportConfigurationBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimenReportWebPartFactory" %>
-<%@ page import="org.labkey.study.samples.report.SpecimenVisitReportParameters" %>
+<%@ page import="org.labkey.study.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WebPart> me = (JspView<WebPart>) HttpView.currentView();

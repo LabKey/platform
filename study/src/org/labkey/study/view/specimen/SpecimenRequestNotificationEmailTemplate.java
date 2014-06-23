@@ -26,7 +26,7 @@ import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.samples.settings.RequestNotificationSettings;
+import org.labkey.study.specimen.settings.RequestNotificationSettings;
 
 import java.io.IOException;
 import java.io.InputStream;
