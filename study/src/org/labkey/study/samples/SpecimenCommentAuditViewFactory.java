@@ -28,7 +28,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.query.SpecimenQueryView;
 
 import java.io.IOException;

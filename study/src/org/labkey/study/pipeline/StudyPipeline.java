@@ -31,7 +31,7 @@ import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;

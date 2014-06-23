@@ -20,7 +20,7 @@ import org.labkey.study.model.VisitImpl;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenTypeVisitReport;
 import org.labkey.study.query.SpecimenQueryView;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 
 import java.util.List;
 
@@ -41,7 +41,7 @@ public class RequestEnrollmentLocationReport extends SpecimenTypeVisitReport
         _completedRequestsOnly = completedRequestsOnly;
     }
 
-    protected String getFilterQueryString(VisitImpl visit, SampleManager.SummaryByVisitType summary)
+    protected String getFilterQueryString(VisitImpl visit, SpecimenManager.SummaryByVisitType summary)
     {
         return super.getFilterQueryString(visit, summary)  + "&" +
                 (_completedRequestsOnly ? SpecimenQueryView.PARAMS.showCompleteRequestedByEnrollmentSite :

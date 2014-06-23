@@ -18,9 +18,9 @@ package org.labkey.study.samples.report.participant;
 import org.labkey.api.util.DemoMode;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.CohortFilter;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.samples.report.SpecimenReportTitle;
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
@@ -35,7 +35,7 @@ import java.sql.SQLException;
  * User: brittp
  * Created: Jan 29, 2008 4:52:26 PM
  */
-public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.SummaryByVisitParticipant>
+public class ParticipantVisitReport extends SpecimenVisitReport<SpecimenManager.SummaryByVisitParticipant>
 {
     boolean _showCohorts;
     public ParticipantVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
@@ -49,10 +49,10 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
         try
         {
             CohortFilter.Type cohortType = getCohortFilter() != null ? getCohortFilter().getType() : CohortFilter.Type.DATA_COLLECTION;
-            Collection<SampleManager.SummaryByVisitParticipant> countSummary =
-                    SampleManager.getInstance().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView(), cohortType);
+            Collection<SpecimenManager.SummaryByVisitParticipant> countSummary =
+                    SpecimenManager.getInstance().getParticipantSummaryByVisitType(_container, getUser(), _filter, getBaseCustomView(), cohortType);
             Map<String, Row> rows = new TreeMap<>();
-            for (SampleManager.SummaryByVisitParticipant count : countSummary)
+            for (SpecimenManager.SummaryByVisitParticipant count : countSummary)
             {
                 String cohort = _showCohorts ? count.getCohort() : "[cohort blinded]";
                 if (cohort == null || cohort.length() == 0)
@@ -87,7 +87,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
         return _showCohorts ? 2 : 1;
     }
 
-    protected String[] getCellExcelText(VisitImpl visit, SampleManager.SummaryByVisitParticipant summary)
+    protected String[] getCellExcelText(VisitImpl visit, SpecimenManager.SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
@@ -104,7 +104,7 @@ public class ParticipantVisitReport extends SpecimenVisitReport<SampleManager.Su
         return new String[] { summaryString.toString() };
     }
 
-    protected String getCellHtml(VisitImpl visit, SampleManager.SummaryByVisitParticipant summary)
+    protected String getCellHtml(VisitImpl visit, SpecimenManager.SummaryByVisitParticipant summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";

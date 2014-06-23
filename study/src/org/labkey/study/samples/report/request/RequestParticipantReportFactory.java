@@ -19,8 +19,8 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.DemoMode;
 import org.labkey.study.model.Participant;
 import org.labkey.study.samples.report.SpecimenVisitReport;
-import org.labkey.study.controllers.samples.SpecimenController;
-import org.labkey.study.SampleManager;
+import org.labkey.study.controllers.specimen.SpecimenController;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.VisitImpl;
@@ -119,7 +119,7 @@ public class RequestParticipantReportFactory extends BaseRequestReportFactory
                     visits = visitListCache.get(cohort.getRowId());
                     if (visits == null)
                     {
-                        visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
+                        visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
                         visitListCache.put(cohort.getRowId(), visits);
                     }
                 }

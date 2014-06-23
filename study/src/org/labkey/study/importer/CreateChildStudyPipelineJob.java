@@ -48,7 +48,7 @@ import org.labkey.study.model.ParticipantCategoryImpl;
 import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.ParticipantMapper;
-import org.labkey.study.model.Specimen;
+import org.labkey.study.model.Vial;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudySnapshot;
@@ -228,10 +228,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
                 // TODO: Need handlers for each "create study" type (ancillary, publish, specimen)
                 if (!_participantGroups.isEmpty())
                     studyExportContext.setParticipants(getGroupParticipants(_form, studyExportContext));
-                else if (null != _form.getSpecimens())
+                else if (null != _form.getVials())
                 {
                     studyExportContext.setParticipants(getSpecimenParticipants(_form));
-                    studyExportContext.setSpecimens(_form.getSpecimens());
+                    studyExportContext.setVials(_form.getVials());
                 }
 
                 folderExportContext.addContext(StudyExportContext.class, studyExportContext);
@@ -623,13 +623,13 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
     {
         Set<String> ptids = new HashSet<>();
 
-        for (Specimen specimen : form.getSpecimens())
+        for (Vial vial : form.getVials())
         {
-            String ptid = specimen.getPtid();
+            String ptid = vial.getPtid();
 
             // PTID can be null
             if (null != ptid)
-                ptids.add(specimen.getPtid());
+                ptids.add(vial.getPtid());
         }
 
         return new LinkedList<>(ptids);

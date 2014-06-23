@@ -21,8 +21,8 @@ import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
 import org.labkey.study.model.SpecimenTypeSummary;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -42,7 +42,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     protected List<? extends SpecimenVisitReport> createReports()
     {
         List<? extends SpecimenTypeSummary.TypeCount> types = getSelectedTypes();
-        List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         List<ParticipantVisitReport> reports = new ArrayList<>();
         for (SpecimenTypeSummary.TypeCount type : types)
         {
@@ -106,7 +106,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
 
     protected List<? extends SpecimenTypeSummary.TypeCount> getSelectedTypes()
     {
-        SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
+        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(getContainer());
         if (_selectedType == null || _selectedType.equals(ALL_PRIMARY_TYPES_FORM_VALUE))
             return summary.getPrimaryTypes();
         if (_selectedType.equals(ALL_DERIVATIVE_TYPES_FORM_VALUE))
@@ -151,7 +151,7 @@ public class ParticipantTypeReportFactory extends SpecimenVisitReportParameters
     protected Pair<String, String> getSpecimenTypePicker()
     {
         StringBuilder builder = new StringBuilder();
-        SpecimenTypeSummary summary = SampleManager.getInstance().getSpecimenTypeSummary(getContainer());
+        SpecimenTypeSummary summary = SpecimenManager.getInstance().getSpecimenTypeSummary(getContainer());
         builder.append("<select name=\"selectedType\">\n");
         builder.append("<option value=\"" + ALL_PRIMARY_TYPES_FORM_VALUE + "\"");
         builder.append(ALL_PRIMARY_TYPES_FORM_VALUE.equals(_selectedType) ? "SELECTED" : "");

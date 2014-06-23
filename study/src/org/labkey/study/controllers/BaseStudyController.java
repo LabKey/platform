@@ -35,7 +35,7 @@ import org.labkey.api.view.template.PageConfig;
 import org.labkey.study.AssayFolderType;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudyModule;
-import org.labkey.study.controllers.samples.SpecimenUtils;
+import org.labkey.study.controllers.specimen.SpecimenUtils;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;

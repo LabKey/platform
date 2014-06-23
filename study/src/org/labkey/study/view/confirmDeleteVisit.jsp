@@ -17,7 +17,7 @@
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.study.SampleManager" %>
+<%@ page import="org.labkey.study.SpecimenManager" %>
 <%@ page import="org.labkey.study.controllers.BaseStudyController" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
@@ -48,7 +48,7 @@
             datasetRowCount += e.getValue().get(VisitStatistic.RowCount);
     }
 
-    int vialCount = SampleManager.getInstance().getSampleCountForVisit(visit);
+    int vialCount = SpecimenManager.getInstance().getSampleCountForVisit(visit);
 %>
 <labkey:errors/>
 

@@ -20,8 +20,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.HttpView;
-import org.labkey.study.SampleManager;
-import org.labkey.study.model.SampleRequestActor;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.model.SpecimenRequestActor;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -32,10 +32,10 @@ import org.labkey.study.model.StudyManager;
 */
 public class ActorNotificationRecipientSet extends NotificationRecipientSet
 {
-    private SampleRequestActor _actor;
+    private SpecimenRequestActor _actor;
     private LocationImpl _location;
 
-    public ActorNotificationRecipientSet(SampleRequestActor actor, LocationImpl location)
+    public ActorNotificationRecipientSet(SpecimenRequestActor actor, LocationImpl location)
     {
         super();
         _actor = actor;
@@ -53,7 +53,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         setEmailAddresses(addresses, addressInactive);
     }
 
-    public SampleRequestActor getActor()
+    public SpecimenRequestActor getActor()
     {
         return _actor;
     }
@@ -90,7 +90,7 @@ public class ActorNotificationRecipientSet extends NotificationRecipientSet
         String[] ids = formValue.split(",");
         int actorId = Integer.parseInt(ids[0]);
         int locationId = Integer.parseInt(ids[1]);
-        SampleRequestActor actor = SampleManager.getInstance().getRequirementsProvider().getActor(container, actorId);
+        SpecimenRequestActor actor = SpecimenManager.getInstance().getRequirementsProvider().getActor(container, actorId);
         LocationImpl location = locationId >= 0 ? StudyManager.getInstance().getLocation(container, locationId) : null;
         return new ActorNotificationRecipientSet(actor, location);
     }

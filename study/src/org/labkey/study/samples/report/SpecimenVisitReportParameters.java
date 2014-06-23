@@ -30,9 +30,9 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewForm;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.Participant;
@@ -97,7 +97,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
     private boolean _excelExport;
     private int _participantGroupFilter = -1;
     private List<? extends SpecimenVisitReport> _reports;
-    private SampleManager.SpecimenTypeLevel _typeLevel = SampleManager.SpecimenTypeLevel.Derivative;
+    private SpecimenManager.SpecimenTypeLevel _typeLevel = SpecimenManager.SpecimenTypeLevel.Derivative;
 
     public SpecimenVisitReportParameters()
     {
@@ -111,10 +111,10 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public void setTypeLevel(String typeLevel)
     {
-        _typeLevel = SampleManager.SpecimenTypeLevel.valueOf(typeLevel);
+        _typeLevel = SpecimenManager.SpecimenTypeLevel.valueOf(typeLevel);
     }
 
-    public SampleManager.SpecimenTypeLevel getTypeLevelEnum()
+    public SpecimenManager.SpecimenTypeLevel getTypeLevelEnum()
     {
         return _typeLevel;
     }
@@ -479,7 +479,7 @@ public abstract class SpecimenVisitReportParameters extends ViewForm
 
     public boolean allowsAvailabilityFilter()
     {
-        return SampleManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
+        return SpecimenManager.getInstance().getRepositorySettings(getContainer()).isEnableRequests();
     }
 
     public boolean allowsParticipantAggregegates()

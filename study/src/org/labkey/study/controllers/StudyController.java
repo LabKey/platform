@@ -151,7 +151,7 @@ import org.labkey.api.writer.ZipUtil;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.CohortFilterFactory;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.StudyModule;
 import org.labkey.study.StudySchema;
@@ -1394,11 +1394,11 @@ public class StudyController extends BaseStudyController
 
     private static void updateRepositorySettings(Container c, boolean simple)
     {
-        RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
+        RepositorySettings reposSettings = SpecimenManager.getInstance().getRepositorySettings(c);
         reposSettings.setSimple(simple);
         reposSettings.setEnableRequests(!simple);
         reposSettings.setSpecimenDataEditable(false);
-        SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
+        SpecimenManager.getInstance().saveRepositorySettings(c, reposSettings);
     }
 
     @RequiresPermissionClass(ManageStudyPermission.class)

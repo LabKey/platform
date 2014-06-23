@@ -22,12 +22,12 @@ import org.labkey.api.security.GroupManager;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
-import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.SampleRequestActor;
-import org.labkey.study.model.SampleRequestRequirement;
-import org.labkey.study.model.SampleRequestStatus;
+import org.labkey.study.model.SpecimenRequestActor;
+import org.labkey.study.model.SpecimenRequestRequirement;
+import org.labkey.study.model.SpecimenRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.requirements.RequirementType;
@@ -105,7 +105,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     private void importSettings(StudyImpl study, StudyImportContext ctx, SpecimenSettingsType xmlSettings) throws SQLException
     {
         Container c = ctx.getContainer();
-        RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
+        RepositorySettings reposSettings = SpecimenManager.getInstance().getRepositorySettings(c);
 
         // webpart groupings
         SpecimenSettingsType.WebPartGroupings xmlWebPartGroupings = xmlSettings.getWebPartGroupings();
@@ -132,7 +132,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             reposSettings.setEnableRequests(xmlSettings.getEnableRequests());
         if (xmlSettings.isSetEditableRepository())
             reposSettings.setSpecimenDataEditable(xmlSettings.getEditableRepository());
-        SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
+        SpecimenManager.getInstance().saveRepositorySettings(c, reposSettings);
 
         // location types
         SpecimenSettingsType.LocationTypes xmlLocationTypes = xmlSettings.getLocationTypes();
@@ -170,10 +170,10 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 // remove any existing not in-use, non-system statuses for this container before importing the new ones
                 Set<Integer> inUseStatusIds = study.getSampleRequestStatusesInUse();
                 List<String> inUseStatusLabels = new ArrayList<>();
-                for (SampleRequestStatus existingStatus : study.getSampleRequestStatuses(ctx.getUser()))
+                for (SpecimenRequestStatus existingStatus : study.getSampleRequestStatuses(ctx.getUser()))
                 {
                     if (!existingStatus.isSystemStatus() && !inUseStatusIds.contains(existingStatus.getRowId()))
-                        SampleManager.getInstance().deleteRequestStatus(ctx.getUser(), existingStatus);
+                        SpecimenManager.getInstance().deleteRequestStatus(ctx.getUser(), existingStatus);
                     else
                         inUseStatusLabels.add(existingStatus.getLabel());
                 }
@@ -188,7 +188,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                     }
                     else if (newStatusLabel != null)
                     {
-                        SampleRequestStatus newStatus = new SampleRequestStatus();
+                        SpecimenRequestStatus newStatus = new SpecimenRequestStatus();
                         newStatus.setContainer(ctx.getContainer());
                         newStatus.setLabel(newStatusLabel);
                         newStatus.setSortOrder(i+1);
@@ -196,7 +196,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                             newStatus.setFinalState(xmlStatusArray[i].getFinalState());
                         if (xmlStatusArray[i].isSetLockSpecimens())
                             newStatus.setSpecimensLocked(xmlStatusArray[i].getLockSpecimens());
-                        SampleManager.getInstance().createRequestStatus(ctx.getUser(), newStatus);
+                        SpecimenManager.getInstance().createRequestStatus(ctx.getUser(), newStatus);
                     }
                     else
                     {
@@ -206,11 +206,11 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             }
             if (xmlRequestStatuses.isSetMultipleSearch())
             {
-                StatusSettings settings = SampleManager.getInstance().getStatusSettings(ctx.getContainer());
+                StatusSettings settings = SpecimenManager.getInstance().getStatusSettings(ctx.getContainer());
                 if (settings.isUseShoppingCart() != xmlRequestStatuses.getMultipleSearch())
                 {
                     settings.setUseShoppingCart(xmlRequestStatuses.getMultipleSearch());
-                    SampleManager.getInstance().saveStatusSettings(ctx.getContainer(), settings);
+                    SpecimenManager.getInstance().saveStatusSettings(ctx.getContainer(), settings);
                 }
             }
         }
@@ -227,8 +227,8 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 // remove any existing not in-use actors
                 // note: this will also remove all groups and members for that actor
                 Set<Integer> inUseActorIds = study.getSampleRequestActorsInUse();
-                Map<String, SampleRequestActor> inUseActors = new HashMap<>();
-                for (SampleRequestActor existingActor : study.getSampleRequestActors())
+                Map<String, SpecimenRequestActor> inUseActors = new HashMap<>();
+                for (SpecimenRequestActor existingActor : study.getSampleRequestActors())
                 {
                     if (!inUseActorIds.contains(existingActor.getRowId()))
                         existingActor.delete();
@@ -243,10 +243,10 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                     if (newActorLabel != null)
                     {
                         // create new request actor if label does not match existing in-use actor label
-                        SampleRequestActor actor;
+                        SpecimenRequestActor actor;
                         if (!inUseActors.keySet().contains(newActorLabel))
                         {
-                            actor = new SampleRequestActor();
+                            actor = new SpecimenRequestActor();
                             actor.setContainer(ctx.getContainer());
                             actor.setLabel(newActorLabel);
                             actor.setSortOrder(i);
@@ -300,16 +300,16 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         {
             // remove existing default requirements for this container, full replacement
             SpecimenController.ManageReqsBean existingDefaultReqBeans = new SpecimenController.ManageReqsBean(ctx.getUser(), study.getContainer());
-            List<SampleRequestRequirement> existingDefaultReqs = new ArrayList<>();
+            List<SpecimenRequestRequirement> existingDefaultReqs = new ArrayList<>();
             existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getOriginatorRequirements()));
             existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getProviderRequirements()));
             existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getReceiverRequirements()));
             existingDefaultReqs.addAll(Arrays.asList(existingDefaultReqBeans.getGeneralRequirements()));
-            for (SampleRequestRequirement existingReq : existingDefaultReqs)
+            for (SpecimenRequestRequirement existingReq : existingDefaultReqs)
             {
                 try
                 {
-                    SampleManager.getInstance().deleteRequestRequirement(ctx.getUser(), existingReq, false);
+                    SpecimenManager.getInstance().deleteRequestRequirement(ctx.getUser(), existingReq, false);
                 }
                 catch(AttachmentService.DuplicateFilenameException e)
                 {} // no op, this would only occur with deleteRequestRequirement when createEvent is true
@@ -332,15 +332,15 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         {
             for (DefaultRequirementType xmlReq : xmlReqs.getRequirementArray())
             {
-                List<SampleRequestActor> matchingActors = SampleManager.getInstance().getRequirementsProvider().getActorsByLabel(ctx.getContainer(), xmlReq.getActor());
+                List<SpecimenRequestActor> matchingActors = SpecimenManager.getInstance().getRequirementsProvider().getActorsByLabel(ctx.getContainer(), xmlReq.getActor());
                 if (matchingActors.size() > 0)
                 {
-                    SampleRequestRequirement requirement = new SampleRequestRequirement();
+                    SpecimenRequestRequirement requirement = new SpecimenRequestRequirement();
                     requirement.setContainer(ctx.getContainer());
                     requirement.setActorId(matchingActors.get(0).getRowId());
                     requirement.setDescription(xmlReq.getDescription());
                     requirement.setRequestId(-1);
-                    SampleManager.getInstance().getRequirementsProvider().createDefaultRequirement(ctx.getUser(), requirement, type);
+                    SpecimenManager.getInstance().getRequirementsProvider().createDefaultRequirement(ctx.getUser(), requirement, type);
                 }
                 else
                 {
@@ -354,7 +354,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
     private void importLegacySettings(StudyImpl study, StudyImportContext ctx, LegacySpecimenSettingsType xmlSettings)
     {
         Container c = ctx.getContainer();
-        RepositorySettings reposSettings = SampleManager.getInstance().getRepositorySettings(c);
+        RepositorySettings reposSettings = SpecimenManager.getInstance().getRepositorySettings(c);
 
         // webpart groupings
         StudyDocument.Study.Specimens.SpecimenWebPartGroupings xmlSpecimenWebPartGroupings = xmlSettings.getSpecimenWebPartGroupings();
@@ -378,7 +378,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         boolean simple = (SpecimenRepositoryType.STANDARD == repositoryType);
         reposSettings.setSimple(simple);
         reposSettings.setEnableRequests(!simple);
-        SampleManager.getInstance().saveRepositorySettings(c, reposSettings);
+        SpecimenManager.getInstance().saveRepositorySettings(c, reposSettings);
 
         // location types
         if (xmlSettings.isSetAllowReqLocRepository())
@@ -411,7 +411,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 display.setZeroVials(warnings.getZeroVials());
             }
 
-            SampleManager.getInstance().saveDisplaySettings(ctx.getContainer(), display);
+            SpecimenManager.getInstance().saveDisplaySettings(ctx.getContainer(), display);
         }
     }
 
@@ -420,8 +420,8 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
         ctx.getLogger().info("Importing specimen request forms");
         // try to merge with any existing request forms, even though there doesn't seem to be the notion of a duplicate value
         Set<String> currentInputs = new HashSet<>();
-        List<SampleManager.SpecimenRequestInput> inputs = new ArrayList<>();
-        for (SampleManager.SpecimenRequestInput input : SampleManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer(), false))
+        List<SpecimenManager.SpecimenRequestInput> inputs = new ArrayList<>();
+        for (SpecimenManager.SpecimenRequestInput input : SpecimenManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer(), false))
         {
             inputs.add(input);
             currentInputs.add(input.getTitle());
@@ -437,7 +437,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                 {
                     if (!currentInputs.contains(form.getTitle()))
                     {
-                        SampleManager.SpecimenRequestInput input = new SampleManager.SpecimenRequestInput(
+                        SpecimenManager.SpecimenRequestInput input = new SpecimenManager.SpecimenRequestInput(
                                 form.getTitle(),
                                 form.getHelpText(),
                                 form.getDisplayOrder(),
@@ -450,15 +450,15 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
                     else
                         ctx.getLogger().info("There is currently a form with the same title: " + form.getTitle() + ", skipping this from import");
                 }
-                Collections.sort(inputs, new Comparator<SampleManager.SpecimenRequestInput>()
+                Collections.sort(inputs, new Comparator<SpecimenManager.SpecimenRequestInput>()
                 {
                     @Override
-                    public int compare(SampleManager.SpecimenRequestInput o1, SampleManager.SpecimenRequestInput o2)
+                    public int compare(SpecimenManager.SpecimenRequestInput o1, SpecimenManager.SpecimenRequestInput o2)
                     {
                         return o1.getDisplayOrder() - o2.getDisplayOrder();
                     }
                 });
-                SampleManager.getInstance().saveNewSpecimenRequestInputs(ctx.getContainer(), inputs.toArray(new SampleManager.SpecimenRequestInput[inputs.size()]));
+                SpecimenManager.getInstance().saveNewSpecimenRequestInputs(ctx.getContainer(), inputs.toArray(new SpecimenManager.SpecimenRequestInput[inputs.size()]));
             }
         }
     }
@@ -486,7 +486,7 @@ public class SpecimenSettingsImporter implements InternalStudyImporter
             if (xmlNotifications.getSpecimensAttachment() != null)
                 notifications.setSpecimensAttachment(xmlNotifications.getSpecimensAttachment());
 
-            SampleManager.getInstance().saveRequestNotificationSettings(ctx.getContainer(), notifications);
+            SpecimenManager.getInstance().saveRequestNotificationSettings(ctx.getContainer(), notifications);
         }
     }
 

@@ -16,7 +16,7 @@
 package org.labkey.study.samples.report.specimentype;
 
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 
@@ -36,7 +36,7 @@ public abstract class TypeReportFactory extends SpecimenVisitReportParameters
 
         StringBuilder builder = new StringBuilder();
         builder.append("<select name=\"").append(PARAMS.typeLevel.name()).append("\">");
-        for (SampleManager.SpecimenTypeLevel level : SampleManager.SpecimenTypeLevel.values())
+        for (SpecimenManager.SpecimenTypeLevel level : SpecimenManager.SpecimenTypeLevel.values())
         {
             builder.append("<option value=\"").append(PageFlowUtil.filter(level.name())).append("\"");
             if (getTypeLevelEnum() == level)

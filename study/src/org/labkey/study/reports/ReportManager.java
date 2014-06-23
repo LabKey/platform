@@ -52,7 +52,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.DatasetManager;
 import org.labkey.study.model.SecurityType;

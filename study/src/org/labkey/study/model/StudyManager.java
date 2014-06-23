@@ -124,7 +124,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.SimpleDocumentResource;
 import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.QueryHelper;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyCache;
 import org.labkey.study.StudySchema;
 import org.labkey.study.assay.AssayManager;
@@ -1317,7 +1317,7 @@ public class StudyManager
             }
 
             // Delete samples first because we may need ParticipantVisit to figure out which samples
-            SampleManager.getInstance().deleteSamplesForVisit(visit);
+            SpecimenManager.getInstance().deleteSamplesForVisit(visit);
 
             TreatmentManager.getInstance().deleteTreatmentVisitMapForVisit(study.getContainer(), visit.getRowId());
             deleteAssaySpecimenVisits(study.getContainer(), visit.getRowId());
@@ -2521,7 +2521,7 @@ public class StudyManager
             //
             // samples
             //
-            SampleManager.getInstance().deleteAllSampleData(c, deletedTables);
+            SpecimenManager.getInstance().deleteAllSampleData(c, deletedTables);
 
             //
             // assay schedule

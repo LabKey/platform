@@ -20,7 +20,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleResourceLoadException;
 import org.labkey.api.module.ModuleResourceLoader;
 import org.labkey.api.resource.Resource;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.model.StudyManager;
 
 import java.io.File;
@@ -56,7 +56,7 @@ public class StudyViewLoader implements ModuleResourceLoader
 
             Resource extendedSpecimenRequestView = viewsDir.find("extendedrequest.html");
             if (extendedSpecimenRequestView != null && extendedSpecimenRequestView.exists() && extendedSpecimenRequestView.isFile())
-                SampleManager.getInstance().registerExtendedSpecimenRequestView(module, extendedSpecimenRequestView);
+                SpecimenManager.getInstance().registerExtendedSpecimenRequestView(module, extendedSpecimenRequestView);
         }
     }
 }

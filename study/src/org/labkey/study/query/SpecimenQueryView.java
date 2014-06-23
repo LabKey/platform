@@ -35,18 +35,17 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.security.permissions.EditSpecimenDataPermission;
 import org.labkey.api.study.StudyService;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.reports.StudyCrosstabReport;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
-import org.labkey.study.controllers.samples.SpecimenUtils;
-import org.labkey.study.controllers.samples.SpecimenController;
-import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.controllers.specimen.SpecimenUtils;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.ParticipantDataset;
-import org.labkey.study.model.Specimen;
+import org.labkey.study.model.Vial;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.StudyImpl;
 
@@ -342,7 +341,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         _participantVisitFiltered = participantVisitFiltered;
         _requireSequenceNum = requireSequenceNum;
 
-        RepositorySettings repositorySettings = SampleManager.getInstance().getRepositorySettings(schema.getContainer());
+        RepositorySettings repositorySettings = SpecimenManager.getInstance().getRepositorySettings(schema.getContainer());
         _enableRequests = repositorySettings.isEnableRequests();
         boolean isEditable = ViewType.VIALS == viewType && repositorySettings.isSpecimenDataEditable() && getContainer().hasPermission(getUser(), EditSpecimenDataPermission.class);
         setShowUpdateColumn(isEditable);
@@ -393,7 +392,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         return createView(context, filter, createDefaultSort(viewType), viewType, false, cohortFilter, false);
     }
 
-    public static SpecimenQueryView createView(ViewContext context, List<Specimen> samples, ViewType viewType)
+    public static SpecimenQueryView createView(ViewContext context, List<Vial> samples, ViewType viewType)
     {
         SimpleFilter filter = new SimpleFilter();
         addFilterClause(filter, samples, viewType);
@@ -515,19 +514,19 @@ public class SpecimenQueryView extends BaseStudyQueryView
                         specimenHashes.add(rs.getString("SpecimenHash"));
                         if (specimenHashes.size() > 150)
                         {
-                            _availableSpecimenCounts.putAll(SampleManager.getInstance().getSampleCounts(ctx.getContainer(), specimenHashes));
+                            _availableSpecimenCounts.putAll(SpecimenManager.getInstance().getSampleCounts(ctx.getContainer(), specimenHashes));
                             specimenHashes = new HashSet<>();
                         }
                     }
                     while (rs.next());
                     if (!specimenHashes.isEmpty())
                     {
-                        _availableSpecimenCounts.putAll(SampleManager.getInstance().getSampleCounts(ctx.getContainer(), specimenHashes));
+                        _availableSpecimenCounts.putAll(SpecimenManager.getInstance().getSampleCounts(ctx.getContainer(), specimenHashes));
                     }
                 }
                 else
                 {
-                    _availableSpecimenCounts.putAll(SampleManager.getInstance().getSampleCounts(ctx.getContainer(), null));
+                    _availableSpecimenCounts.putAll(SpecimenManager.getInstance().getSampleCounts(ctx.getContainer(), null));
                 }
                 rs.absolute(originalRow);
             }
@@ -547,22 +546,22 @@ public class SpecimenQueryView extends BaseStudyQueryView
             return new Sort(StudyService.get().getSubjectColumnName(getContextContainer()) + ",Visit,PrimaryType,DerivativeType,AdditiveType");
     }
 
-    protected static SimpleFilter addFilterClause(SimpleFilter filter, List<Specimen> specimens, ViewType viewType)
+    protected static SimpleFilter addFilterClause(SimpleFilter filter, List<Vial> vials, ViewType viewType)
     {
-        if (specimens != null && specimens.size() > 0)
+        if (vials != null && vials.size() > 0)
         {
             StringBuilder whereClause = new StringBuilder();
             if (viewType.isVialView())
                 whereClause.append("RowId IN (");
             else
                 whereClause.append("SpecimenHash IN (");
-            for (int i = 0; i < specimens.size(); i++)
+            for (int i = 0; i < vials.size(); i++)
             {
                 if (viewType.isVialView())
-                    whereClause.append(specimens.get(i).getRowId());
+                    whereClause.append(vials.get(i).getRowId());
                 else
-                    whereClause.append(specimens.get(i).getSpecimenHash());
-                if (i < specimens.size() - 1)
+                    whereClause.append(vials.get(i).getSpecimenHash());
+                if (i < vials.size() - 1)
                     whereClause.append(", ");
             }
             whereClause.append(")");
@@ -839,7 +838,7 @@ public class SpecimenQueryView extends BaseStudyQueryView
         boolean zeroVialIndicator = false;
         if (!_disableLowVialIndicators)
         {
-            DisplaySettings settings = SampleManager.getInstance().getDisplaySettings(getContainer());
+            DisplaySettings settings = SpecimenManager.getInstance().getDisplaySettings(getContainer());
             oneVialIndicator = settings.getLastVialEnum() == DisplaySettings.DisplayOption.ALL_USERS ||
                     (settings.getLastVialEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
                             getUser().isSiteAdmin());
@@ -847,12 +846,12 @@ public class SpecimenQueryView extends BaseStudyQueryView
                     (settings.getZeroVialsEnum() == DisplaySettings.DisplayOption.ADMINS_ONLY &&
                             getUser().isSiteAdmin());
         }
-        RepositorySettings settings = SampleManager.getInstance().getRepositorySettings(getContainer());
+        RepositorySettings settings = SpecimenManager.getInstance().getRepositorySettings(getContainer());
         if (settings.isEnableRequests() && !_viewType.isForExport() && getViewContext().getContainer().hasPermission(getUser(), RequestSpecimensPermission.class))
         {
             // Only add this column if we're using advanced specimen management and not exported to email or attachment
             cols.add(0, new SpecimenRequestDisplayColumn(this, getTable(), zeroVialIndicator, oneVialIndicator,
-                    SampleManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
+                    SpecimenManager.getInstance().isSpecimenShoppingCartEnabled(getContainer()) && _showRecordSelectors));
         }
 
         // this column is normally hidden but we need it on the select for any specimen filters

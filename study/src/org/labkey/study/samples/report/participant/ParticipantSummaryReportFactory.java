@@ -17,9 +17,9 @@ package org.labkey.study.samples.report.participant;
 
 import org.labkey.study.samples.report.SpecimenVisitReportParameters;
 import org.labkey.study.samples.report.SpecimenVisitReport;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.VisitImpl;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.StudyService;
 
@@ -34,7 +34,7 @@ public class ParticipantSummaryReportFactory extends SpecimenVisitReportParamete
 {
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         SimpleFilter filter = new SimpleFilter();
         addBaseFilters(filter);
         ParticipantVisitReport report = new ParticipantVisitReport("Summary", visits, filter, this);

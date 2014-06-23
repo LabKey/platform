@@ -19,8 +19,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.study.Location;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -71,11 +71,11 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
         if (getLocationId() != null)
             locations = new LocationImpl[] { StudyManager.getInstance().getLocation(getContainer(), getLocationId()) };
         else
-            locations = SampleManager.getInstance().getSitesWithRequests(getContainer());
+            locations = SpecimenManager.getInstance().getSitesWithRequests(getContainer());
         if (locations == null)
             return Collections.emptyList();
         List<SpecimenVisitReport> reports = new ArrayList<>();
-        List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         for (LocationImpl location : locations)
         {
             SimpleFilter filter = new SimpleFilter();
@@ -111,7 +111,7 @@ public class RequestLocationReportFactory extends BaseRequestReportFactory
         StringBuilder builder = new StringBuilder();
         builder.append("<select name=\"locationId\">\n" +
                 "<option value=\"\">All Requesting Locations</option>\n");
-        for (LocationImpl location : SampleManager.getInstance().getSitesWithRequests(getContainer()))
+        for (LocationImpl location : SpecimenManager.getInstance().getSitesWithRequests(getContainer()))
         {
             builder.append("<option value=\"").append(location.getRowId()).append("\"");
             if (_locationId != null && location.getRowId() == _locationId)

@@ -22,9 +22,9 @@ import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.CohortFilter;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.PageFlowUtil;
@@ -88,7 +88,7 @@ public class TypeCohortReportFactory extends TypeReportFactory
             SimpleFilter filter = new SimpleFilter();
             addBaseFilters(filter);
             addCohortFilter(filter, cohortFilter);
-            List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
+            List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), cohort);
             reports.add(new TypeCohortReport(title, visits, filter, this, cohortFilter));
         }
         return reports;

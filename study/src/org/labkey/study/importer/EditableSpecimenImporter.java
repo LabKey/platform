@@ -25,7 +25,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenImportStrategy;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 
 import java.io.IOException;
@@ -254,7 +254,7 @@ public class EditableSpecimenImporter extends SpecimenImporter
 
         if (guidRowCount > 0)
         {
-            SampleManager.getInstance().clearCaches(container);
+            SpecimenManager.getInstance().clearCaches(container);
         }
         return noGuidRowCount;
     }

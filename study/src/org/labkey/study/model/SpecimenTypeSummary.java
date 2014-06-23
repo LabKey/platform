@@ -18,7 +18,7 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.view.ActionURL;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenController;
 
 import java.util.*;
 

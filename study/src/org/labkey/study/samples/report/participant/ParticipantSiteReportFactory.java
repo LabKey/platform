@@ -19,8 +19,8 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
-import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.model.VisitImpl;
@@ -42,12 +42,12 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
 
     protected List<? extends SpecimenVisitReport> createReports()
     {
-        List<VisitImpl> visits = SampleManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
+        List<VisitImpl> visits = SpecimenManager.getInstance().getVisitsWithSpecimens(getContainer(), getUser(), getCohort());
         List<ParticipantVisitReport> reports = new ArrayList<>();
         Set<LocationImpl> enrollmentLocations;
         if (_enrollmentSiteId == null)
         {
-            enrollmentLocations = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer(), getUser());
+            enrollmentLocations = SpecimenManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer(), getUser());
             // add null to the set so we can search for ptid without an enrollment site:
             enrollmentLocations.add(null);
         }
@@ -88,7 +88,7 @@ public class ParticipantSiteReportFactory extends SpecimenVisitReportParameters
     public List<Pair<String, String>> getAdditionalFormInputHtml()
     {
         List<Pair<String, String>> inputs = new ArrayList<>(super.getAdditionalFormInputHtml());
-        Set<LocationImpl> locations = SampleManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer(), getUser());
+        Set<LocationImpl> locations = SpecimenManager.getInstance().getEnrollmentSitesWithSpecimens(getContainer(), getUser());
         // add null to the set so we can search for ptid without an enrollment site:
         locations.add(null);
         inputs.add(getEnrollmentSitePicker("enrollmentSiteId", locations, _enrollmentSiteId));

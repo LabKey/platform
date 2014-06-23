@@ -31,7 +31,7 @@ import org.labkey.api.writer.Writer;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.importer.SpecimenImporter.SpecimenColumn;
-import org.labkey.study.model.Specimen;
+import org.labkey.study.model.Vial;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
@@ -190,13 +190,13 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             conjunction = " AND ";
         }
 
-        if (null != ctx.getSpecimens() && !ctx.getSpecimens().isEmpty())
+        if (null != ctx.getVials() && !ctx.getVials().isEmpty())
         {
-            List<Specimen> specimens = ctx.getSpecimens();
+            List<Vial> vials = ctx.getVials();
             List<String> uniqueIds = new LinkedList<>();
 
-            for (Specimen specimen : specimens)
-                uniqueIds.add(specimen.getGlobalUniqueId());
+            for (Vial vial : vials)
+                uniqueIds.add(vial.getGlobalUniqueId());
 
             sql.append(conjunction).append("\n s.GlobalUniqueId IN (");
             sql.append(convertListToString(uniqueIds, true));

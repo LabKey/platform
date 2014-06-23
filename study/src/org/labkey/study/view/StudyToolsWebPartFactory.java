@@ -30,17 +30,16 @@ import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.VisualizationUrls;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.controllers.samples.ShowSearchAction;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.controllers.specimen.ShowSearchAction;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.permissions.RequestSpecimensPermission;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: brittp
@@ -70,7 +69,7 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
             vialSearchURL.addParameter("showVials", true);
             items.add(new StudyToolsWebPart.Item("Vial Search", iconBase + "specimen_search.png", vialSearchURL));
 
-            if (SampleManager.getInstance().isSampleRequestEnabled(portalCtx.getContainer()))
+            if (SpecimenManager.getInstance().isSampleRequestEnabled(portalCtx.getContainer()))
             {
                 if (portalCtx.getContainer().hasPermission(portalCtx.getUser(), RequestSpecimensPermission.class))
                     items.add(new StudyToolsWebPart.Item("New Request", iconBase + "specimen_request.png", new ActionURL(SpecimenController.ShowCreateSampleRequestAction.class, portalCtx.getContainer() )));

@@ -57,13 +57,13 @@ import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.TimeOnlyDate;
 import org.labkey.api.writer.VirtualFile;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
-import org.labkey.study.model.Specimen;
+import org.labkey.study.model.Vial;
 import org.labkey.study.model.SpecimenComment;
 import org.labkey.study.model.SpecimenEvent;
 import org.labkey.study.model.StudyImpl;
@@ -547,7 +547,7 @@ public class SpecimenImporter
                     return null;
                 if (!(events.get(0) instanceof SpecimenEvent))
                     throw new IllegalStateException("Expected SpecimenEvents.");
-                return SampleManager.getInstance().getLastEvent(events).get(eventColName);
+                return SpecimenManager.getInstance().getLastEvent(events).get(eventColName);
             }
             public boolean isTypeContraintMet(PropertyDescriptor from, PropertyDescriptor to)
             {
@@ -567,7 +567,7 @@ public class SpecimenImporter
                     return null;
                 if (!(events.get(0) instanceof SpecimenEvent))
                     throw new IllegalStateException("Expected SpecimenEvents.");
-                return SampleManager.getInstance().getFirstEvent(events).get(eventColName);
+                return SpecimenManager.getInstance().getFirstEvent(events).get(eventColName);
             }
             public boolean isTypeContraintMet(PropertyDescriptor from, PropertyDescriptor to)
             {
@@ -1207,7 +1207,7 @@ public class SpecimenImporter
         {
             _iTimer.setPhase(ImportPhases.ClearCaches);
             StudyManager.getInstance().clearCaches(_container, false);
-            SampleManager.getInstance().clearCaches(_container);
+            SpecimenManager.getInstance().clearCaches(_container);
 
             TIMER.releaseInvocationTimer(_iTimer);
             info(_iTimer.getTimings(Order.HighToLow, "|"));
@@ -1302,7 +1302,7 @@ public class SpecimenImporter
         return conflicts;
     }
 
-    private void clearConflictingVialColumns(Specimen specimen, Set<String> conflicts)
+    private void clearConflictingVialColumns(Vial vial, Set<String> conflicts)
     {
         SQLFragment sql = new SQLFragment();
         sql.append("UPDATE ").append(getTableInfoVial().getSelectName()).append(" SET\n  ");
@@ -1327,12 +1327,12 @@ public class SpecimenImporter
             return;
 
         sql.append("\nWHERE GlobalUniqueId = ?");
-        sql.add(specimen.getGlobalUniqueId());
+        sql.add(vial.getGlobalUniqueId());
 
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
-    private void clearConflictingSpecimenColumns(Specimen specimen, Set<String> conflicts)
+    private void clearConflictingSpecimenColumns(Vial vial, Set<String> conflicts)
     {
         SQLFragment sql = new SQLFragment();
         sql.append("UPDATE ").append(getTableInfoSpecimen().getSelectName()).append(" SET\n  ");
@@ -1358,7 +1358,7 @@ public class SpecimenImporter
             return;
 
         sql.append("\nWHERE AND RowId = ?");
-        sql.add(specimen.getSpecimenId());
+        sql.add(vial.getSpecimenId());
 
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
@@ -1545,7 +1545,7 @@ public class SpecimenImporter
 
         _iTimer.setPhase(ImportPhases.VialUpdatePreLoopPrep);
         // clear caches before determining current sites:
-        SampleManager.getInstance().clearCaches(_container);
+        SpecimenManager.getInstance().clearCaches(_container);
         Map<Integer, LocationImpl> siteMap = new HashMap<>();
 
         TableInfo vialTable = getTableInfoVial();
@@ -1573,7 +1573,7 @@ public class SpecimenImporter
         String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() +
                 " SET QualityControlComments = ? WHERE GlobalUniqueId = ?";
 
-        final List<Specimen> vials = new ArrayList<>();
+        final List<Vial> vials = new ArrayList<>();
         int offset = 0;
         TableSelector vialSelector = new TableSelector(getTableInfoVial()).setMaxRows(CURRENT_SITE_UPDATE_SIZE);
 
@@ -1593,29 +1593,29 @@ public class SpecimenImporter
                     @Override
                     public void exec(Map<String, Object> map) throws SQLException
                     {
-                        vials.add(new Specimen(_container, map));
+                        vials.add(new Vial(_container, map));
                     }
                 });
             }
 
             _iTimer.setPhase(ImportPhases.GetDateOrderedEvents);
-            Map<Specimen, List<SpecimenEvent>> specimenToOrderedEvents = SampleManager.getInstance().getDateOrderedEventLists(vials, false);
+            Map<Vial, List<SpecimenEvent>> specimenToOrderedEvents = SpecimenManager.getInstance().getDateOrderedEventLists(vials, false);
             _iTimer.setPhase(ImportPhases.GetSpecimenComments);
-            Map<Specimen, SpecimenComment> specimenComments = SampleManager.getInstance().getSpecimenComments(vials);
+            Map<Vial, SpecimenComment> specimenComments = SpecimenManager.getInstance().getSpecimenComments(vials);
 
             List<List<?>> vialPropertiesParams = new ArrayList<>();
             List<List<?>> commentParams = new ArrayList<>();
 
-            for (Map.Entry<Specimen, List<SpecimenEvent>> entry : specimenToOrderedEvents.entrySet())
+            for (Map.Entry<Vial, List<SpecimenEvent>> entry : specimenToOrderedEvents.entrySet())
             {
-                Specimen specimen = entry.getKey();
+                Vial vial = entry.getKey();
                 List<SpecimenEvent> dateOrderedEvents = entry.getValue();
                 _iTimer.setPhase(ImportPhases.GetProcessingLocationId);
-                Integer processingLocation = SampleManager.getInstance().getProcessingLocationId(dateOrderedEvents);
+                Integer processingLocation = SpecimenManager.getInstance().getProcessingLocationId(dateOrderedEvents);
                 _iTimer.setPhase(ImportPhases.GetFirstProcessedBy);
-                String firstProcessedByInitials = SampleManager.getInstance().getFirstProcessedByInitials(dateOrderedEvents);
+                String firstProcessedByInitials = SpecimenManager.getInstance().getFirstProcessedByInitials(dateOrderedEvents);
                 _iTimer.setPhase(ImportPhases.GetCurrentLocationId);
-                Integer currentLocation = SampleManager.getInstance().getCurrentLocationId(dateOrderedEvents);
+                Integer currentLocation = SpecimenManager.getInstance().getCurrentLocationId(dateOrderedEvents);
 
                 _iTimer.setPhase(ImportPhases.CalculateLocation);
                 boolean atRepository = false;
@@ -1641,18 +1641,18 @@ public class SpecimenImporter
 
                 // All of the additional fields (deviationCodes, Concetration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value
                 _iTimer.setPhase(ImportPhases.GetLastEvent);
-                SpecimenEvent lastEvent = SampleManager.getInstance().getLastEvent(dateOrderedEvents);
+                SpecimenEvent lastEvent = SpecimenManager.getInstance().getLastEvent(dateOrderedEvents);
 
                 _iTimer.setPhase(ImportPhases.DetermineUpdateVial);
                 boolean updateVial = false;
                 List<Object> params = new ArrayList<>();
 
-                if (!Objects.equals(currentLocation, specimen.getCurrentLocation()) ||
-                    !Objects.equals(processingLocation, specimen.getProcessingLocation()) ||
-                    !Objects.equals(firstProcessedByInitials, specimen.getFirstProcessedByInitials()) ||
-                    atRepository != specimen.isAtRepository() ||
-                    !Objects.equals(specimen.getLatestComments(), lastEvent.getComments()) ||
-                    !Objects.equals(specimen.getLatestQualityComments(), lastEvent.getQualityComments()))
+                if (!Objects.equals(currentLocation, vial.getCurrentLocation()) ||
+                    !Objects.equals(processingLocation, vial.getProcessingLocation()) ||
+                    !Objects.equals(firstProcessedByInitials, vial.getFirstProcessedByInitials()) ||
+                    atRepository != vial.isAtRepository() ||
+                    !Objects.equals(vial.getLatestComments(), lastEvent.getComments()) ||
+                    !Objects.equals(vial.getLatestQualityComments(), lastEvent.getQualityComments()))
                 {
                     updateVial = true;          // Something is different
                 }
@@ -1667,7 +1667,7 @@ public class SpecimenImporter
                             String vialColName = rollupItem.first;
                             Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColName,
                                                                     rollupItem.getFromType(), rollupItem.getToType());
-                            if (!Objects.equals(specimen.get(vialColName), rollupResult))
+                            if (!Objects.equals(vial.get(vialColName), rollupResult))
                             {
                                 updateVial = true;      // Something is different
                                 break;
@@ -1700,12 +1700,12 @@ public class SpecimenImporter
                         }
                     }
 
-                    params.add(specimen.getRowId());
+                    params.add(vial.getRowId());
                     vialPropertiesParams.add(params);
                 }
 
                 _iTimer.setPhase(ImportPhases.HandleComments);
-                SpecimenComment comment = specimenComments.get(specimen);
+                SpecimenComment comment = specimenComments.get(vial);
 
                 if (comment != null)
                 {
@@ -1715,7 +1715,7 @@ public class SpecimenImporter
 
                     if (comment.isQualityControlFlag() || comment.isQualityControlFlagForced())
                     {
-                        List<SpecimenEvent> events = SampleManager.getInstance().getSpecimenEvents(specimen);
+                        List<SpecimenEvent> events = SpecimenManager.getInstance().getSpecimenEvents(vial);
                         Set<String> conflicts = getConflictingEventColumns(events);
 
                         if (!conflicts.isEmpty())
@@ -1728,7 +1728,7 @@ public class SpecimenImporter
                                 // columns on the specimen table.  Vial columns are not part of the specimen hash and
                                 // can safely be cleared without compromising the specimen hash.
                                 //clearConflictingSpecimenColumns(specimen, conflicts);
-                                clearConflictingVialColumns(specimen, conflicts);
+                                clearConflictingVialColumns(vial, conflicts);
                             }
 
                             String sep = "";
@@ -1739,7 +1739,7 @@ public class SpecimenImporter
                                 sep = ", ";
                             }
                         }
-                        commentParams.add(Arrays.asList(message, specimen.getGlobalUniqueId()));
+                        commentParams.add(Arrays.asList(message, vial.getGlobalUniqueId()));
                     }
                 }
             }
@@ -1777,7 +1777,7 @@ public class SpecimenImporter
         if (logger != null)
             logger.info("Updating cached vial counts...");
 
-        SampleManager.getInstance().updateVialCounts(_container, _user);
+        SpecimenManager.getInstance().updateVialCounts(_container, _user);
 
         if (logger != null)
             logger.info("Vial count update complete.");

@@ -22,8 +22,8 @@ import org.labkey.api.query.*;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
-import org.labkey.study.controllers.samples.SpecimenController;
-import org.labkey.study.model.Specimen;
+import org.labkey.study.controllers.specimen.SpecimenController;
+import org.labkey.study.model.Vial;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -370,7 +370,7 @@ public class RequestabilityManager
 
         public abstract String getAvailabilityReason();
 
-        public int updateRequestability(User user, List<Specimen> specimens) throws InvalidRuleException
+        public int updateRequestability(User user, List<Vial> vials) throws InvalidRuleException
         {
             TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(_container);
             if (null == tableInfoVial)
@@ -382,7 +382,7 @@ public class RequestabilityManager
             updateSQL.append(getAvailableAssignmentSQL());
             updateSQL.append(", AvailabilityReason = ? WHERE ");
             updateSQL.add(reason);
-            updateSQL.append(getFilterSQL(_container, user, specimens));
+            updateSQL.append(getFilterSQL(_container, user, vials));
             return new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateSQL);
         }
 
@@ -395,28 +395,28 @@ public class RequestabilityManager
             return new SQLFragment("Available = ?", type == MarkType.AVAILABLE ? Boolean.TRUE : Boolean.FALSE);
         }
 
-        protected SQLFragment getGlobalUniqueIdInSQL(List<Specimen> specimens)
+        protected SQLFragment getGlobalUniqueIdInSQL(List<Vial> vials)
         {
             SQLFragment sql = new SQLFragment();
-            if (specimens != null && specimens.size() > 0)
+            if (vials != null && vials.size() > 0)
             {
                 sql.append("GlobalUniqueId ");
-                sql.append(getSpecimenGlobalUniqueIdSet(specimens));
+                sql.append(getSpecimenGlobalUniqueIdSet(vials));
             }
             return sql;
         }
 
-        protected SQLFragment getSpecimenGlobalUniqueIdSet(List<Specimen> specimens)
+        protected SQLFragment getSpecimenGlobalUniqueIdSet(List<Vial> vials)
         {
-            List<String> specimenIDs = new ArrayList<>(specimens.size());
-            for (Specimen specimen : specimens)
+            List<String> specimenIDs = new ArrayList<>(vials.size());
+            for (Vial vial : vials)
             {
-                specimenIDs.add(specimen.getGlobalUniqueId());
+                specimenIDs.add(vial.getGlobalUniqueId());
             }
             return StudySchema.getInstance().getSqlDialect().appendInClauseSql(new SQLFragment(), specimenIDs);
         }
 
-        protected abstract SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException;
+        protected abstract SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException;
 
         public MarkType getMarkType()
         {
@@ -502,7 +502,7 @@ public class RequestabilityManager
                     _markRequestable;
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException
         {
             SimpleFilter viewFilter = new SimpleFilter();
             if (_viewName != null)
@@ -519,11 +519,11 @@ public class RequestabilityManager
                     throw new InvalidRuleException("Could not find view " + _viewName + " on query " + _queryName + " in schema " + _schemaName + ".");
             }
 
-            if (specimens != null && specimens.size() > 0)
+            if (vials != null && vials.size() > 0)
             {
                 Set<String> globalUniqueIds = new HashSet<>();
-                for (Specimen specimen : specimens)
-                    globalUniqueIds.add(specimen.getGlobalUniqueId());
+                for (Vial vial : vials)
+                    globalUniqueIds.add(vial.getGlobalUniqueId());
                 viewFilter.addCondition(new SimpleFilter.InClause(FieldKey.fromParts("GlobalUniqueId"), globalUniqueIds));
            }
 
@@ -568,11 +568,11 @@ public class RequestabilityManager
             super(container);
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException
         {
             SQLFragment sql = new SQLFragment("AtRepository = ?", Boolean.FALSE);
-            if (specimens != null && specimens.size() > 0)
-                sql.append(" AND ").append(getGlobalUniqueIdInSQL(specimens));
+            if (vials != null && vials.size() > 0)
+                sql.append(" AND ").append(getGlobalUniqueIdInSQL(vials));
             return sql;
         }
 
@@ -608,11 +608,11 @@ public class RequestabilityManager
             return RuleType.ADMIN_OVERRIDE;
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException
         {
             SQLFragment sql = new SQLFragment("Requestable IS NOT NULL");
-            if (specimens != null && specimens.size() > 0)
-                sql.append(" AND ").append(getGlobalUniqueIdInSQL(specimens));
+            if (vials != null && vials.size() > 0)
+                sql.append(" AND ").append(getGlobalUniqueIdInSQL(vials));
             return sql;
         }
 
@@ -630,11 +630,11 @@ public class RequestabilityManager
             super(container);
         }
 
-        public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException
         {
             SQLFragment sql = new SQLFragment("LockedInRequest = ?", Boolean.TRUE);
-            if (specimens != null && specimens.size() > 0)
-                sql.append(" AND ").append(getGlobalUniqueIdInSQL(specimens));
+            if (vials != null && vials.size() > 0)
+                sql.append(" AND ").append(getGlobalUniqueIdInSQL(vials));
             return sql;
         }
 
@@ -659,15 +659,15 @@ public class RequestabilityManager
         }
 
         @Override
-        public SQLFragment getFilterSQL(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
+        public SQLFragment getFilterSQL(Container container, User user, List<Vial> vials) throws InvalidRuleException
         {
             TableInfo tableInfoVial = StudySchema.getInstance().getTableInfoVial(_container);
             if (null == tableInfoVial)
                 throw new IllegalStateException("Expected Vial table to exist.");
 
             SQLFragment sql = new SQLFragment();
-            if (specimens != null && specimens.size() > 0)
-                sql.append(getGlobalUniqueIdInSQL(specimens)).append(" AND ");
+            if (vials != null && vials.size() > 0)
+                sql.append(getGlobalUniqueIdInSQL(vials)).append(" AND ");
 
             sql.append(" RowId IN (SELECT SV.RowId FROM ").append(tableInfoVial.getSelectName()).append(" SV")
                 .append(" LEFT OUTER JOIN (SELECT Container, SampleRequestId, SpecimenGlobalUniqueId FROM ")
@@ -682,8 +682,8 @@ public class RequestabilityManager
                 .append(" WHERE SRS.Container = ? AND SRST.FinalState = ?");
             sql.add(container.getId());
             sql.add(false);
-            if (specimens != null && specimens.size() > 0)
-                sql.append(" AND SpecimenGlobalUniqueId ").append(getSpecimenGlobalUniqueIdSet(specimens));
+            if (vials != null && vials.size() > 0)
+                sql.append(" AND SpecimenGlobalUniqueId ").append(getSpecimenGlobalUniqueIdSet(vials));
 
             sql.append(")");
             return sql;
@@ -749,7 +749,7 @@ public class RequestabilityManager
         saveRules(container, user, rules);
     }
 
-    private void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger, List<Specimen> specimens) throws InvalidRuleException
+    private void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger, List<Vial> vials) throws InvalidRuleException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         assert schema.getScope().isTransactionActive() : "Requestability should always be updated within a transaction wrapping the addition/removal of vials.";
@@ -769,15 +769,15 @@ public class RequestabilityManager
                      .append(" SET Available = ?, AvailabilityReason = ? ");
             updateSQL.add(Boolean.TRUE);
             updateSQL.add(null);
-            if (specimens != null && specimens.size() > 0)
+            if (vials != null && vials.size() > 0)
             {
                 updateSQL.append("WHERE RowId IN (");
                 String sep = "";
-                for (Specimen specimen : specimens)
+                for (Vial vial : vials)
                 {
                     updateSQL.append(sep).append("?");
                     sep = ", ";
-                    updateSQL.add(specimen.getRowId());
+                    updateSQL.add(vial.getRowId());
                 }
                 updateSQL.append(")");
             }
@@ -792,7 +792,7 @@ public class RequestabilityManager
             String action = rule.getMarkType().getLabel().toLowerCase();
             if (logger != null)
                 logger.info("\tMarking vials " + action + " based on " + rule.getName());
-            int updatedCount = rule.updateRequestability(user, specimens);
+            int updatedCount = rule.updateRequestability(user, vials);
             if (logger != null)
                 logger.info("\t" + updatedCount + " vials marked " + action + ".");
         }
@@ -802,9 +802,9 @@ public class RequestabilityManager
 
     }
 
-    public void updateRequestability(Container container, User user, List<Specimen> specimens) throws InvalidRuleException
+    public void updateRequestability(Container container, User user, List<Vial> vials) throws InvalidRuleException
     {
-        updateRequestability(container, user, true, null, specimens);
+        updateRequestability(container, user, true, null, vials);
     }
 
     public void updateRequestability(Container container, User user, boolean resetToAvailable, Logger logger) throws InvalidRuleException
@@ -812,11 +812,11 @@ public class RequestabilityManager
         updateRequestability(container, user, resetToAvailable, logger, null);
     }
 
-    public static String makeSpecimenUnavailableMessage(Specimen specimen, @Nullable String additionalText)
+    public static String makeSpecimenUnavailableMessage(Vial vial, @Nullable String additionalText)
     {
         String message = String.format("Specimen %s%s%s",
-                specimen.getGlobalUniqueId(),
-                null != specimen.getAvailabilityReason() ? specimen.getAvailabilityReason().replaceFirst("This vial", "") : " is not available.",
+                vial.getGlobalUniqueId(),
+                null != vial.getAvailabilityReason() ? vial.getAvailabilityReason().replaceFirst("This vial", "") : " is not available.",
                 null != additionalText ? " " + additionalText : "");
         return message;
     }

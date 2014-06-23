@@ -16,11 +16,11 @@
 
 package org.labkey.study.requirements;
 
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.SampleRequest;
-import org.labkey.study.model.SampleRequestRequirement;
-import org.labkey.study.model.Specimen;
+import org.labkey.study.model.SpecimenRequest;
+import org.labkey.study.model.SpecimenRequestRequirement;
+import org.labkey.study.model.Vial;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -37,23 +37,23 @@ public enum SpecimenRequestRequirementType implements RequirementType
 {
     ORIGINATING_SITE
             {
-                public List<SampleRequestRequirement> generateRequirements(SampleRequest owner, SampleRequestRequirement defaultRequirement)
+                public List<SpecimenRequestRequirement> generateRequirements(SpecimenRequest owner, SpecimenRequestRequirement defaultRequirement)
                 {
-                    List<SampleRequestRequirement> requirements = new ArrayList<>();
-                    List<Specimen> specimens = owner.getSpecimens();
-                    if (specimens != null && specimens.size() > 0)
+                    List<SpecimenRequestRequirement> requirements = new ArrayList<>();
+                    List<Vial> vials = owner.getVials();
+                    if (vials != null && vials.size() > 0)
                     {
                         // get a list of all providing and originating sites:
                         Set<Integer> originatingLocationIds = new HashSet<>();
-                        for (Specimen specimen : specimens)
+                        for (Vial vial : vials)
                         {
-                            LocationImpl originatingLocation = SampleManager.getInstance().getOriginatingLocation(specimen);
+                            LocationImpl originatingLocation = SpecimenManager.getInstance().getOriginatingLocation(vial);
                             if (originatingLocation != null)
                                 originatingLocationIds.add(originatingLocation.getRowId());
                         }
                         for (Integer locationId : originatingLocationIds)
                         {
-                            SampleRequestRequirement requirement = defaultRequirement.createMutable();
+                            SpecimenRequestRequirement requirement = defaultRequirement.createMutable();
                             requirement.setSiteId(locationId);
                             requirement.setRequestId(owner.getRowId());
                             requirements.add(requirement);
@@ -64,23 +64,23 @@ public enum SpecimenRequestRequirementType implements RequirementType
             },
     PROVIDING_SITE
             {
-                public List<SampleRequestRequirement> generateRequirements(SampleRequest owner, SampleRequestRequirement defaultRequirement)
+                public List<SpecimenRequestRequirement> generateRequirements(SpecimenRequest owner, SpecimenRequestRequirement defaultRequirement)
                 {
-                    List<SampleRequestRequirement> requirements = new ArrayList<>();
-                    List<Specimen> specimens = owner.getSpecimens();
-                    if (specimens != null && specimens.size() > 0)
+                    List<SpecimenRequestRequirement> requirements = new ArrayList<>();
+                    List<Vial> vials = owner.getVials();
+                    if (vials != null && vials.size() > 0)
                     {
                         // get a list of all providing and originating sites:
                         Set<Integer> providerLocationIds = new HashSet<>();
-                        for (Specimen specimen : specimens)
+                        for (Vial vial : vials)
                         {
-                            LocationImpl providingLocation = SampleManager.getInstance().getCurrentLocation(specimen);
+                            LocationImpl providingLocation = SpecimenManager.getInstance().getCurrentLocation(vial);
                             if (providingLocation != null)
                                 providerLocationIds.add(providingLocation.getRowId());
                         }
                         for (Integer locationId : providerLocationIds)
                         {
-                            SampleRequestRequirement requirement = defaultRequirement.createMutable();
+                            SpecimenRequestRequirement requirement = defaultRequirement.createMutable();
                             requirement.setRequestId(owner.getRowId());
                             requirement.setSiteId(locationId);
                             requirements.add(requirement);
@@ -91,7 +91,7 @@ public enum SpecimenRequestRequirementType implements RequirementType
             },
     RECEIVING_SITE
             {
-                public List<SampleRequestRequirement> generateRequirements(SampleRequest owner, SampleRequestRequirement defaultRequirement)
+                public List<SpecimenRequestRequirement> generateRequirements(SpecimenRequest owner, SpecimenRequestRequirement defaultRequirement)
                 {
                     if (owner.getDestinationSiteId() != null)
                     {
@@ -105,12 +105,12 @@ public enum SpecimenRequestRequirementType implements RequirementType
             },
     NON_SITE_BASED
             {
-                public List<SampleRequestRequirement> generateRequirements(SampleRequest owner, SampleRequestRequirement defaultRequirement)
+                public List<SpecimenRequestRequirement> generateRequirements(SpecimenRequest owner, SpecimenRequestRequirement defaultRequirement)
                 {
                     defaultRequirement.setRequestId(owner.getRowId());
                     return Collections.singletonList(defaultRequirement);
                 }
             };
 
-    abstract public List<SampleRequestRequirement> generateRequirements(SampleRequest owner, SampleRequestRequirement defaultRequirement);
+    abstract public List<SpecimenRequestRequirement> generateRequirements(SpecimenRequest owner, SpecimenRequestRequirement defaultRequirement);
 }

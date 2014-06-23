@@ -16,8 +16,8 @@
 package org.labkey.study.samples.report;
 
 import org.labkey.api.util.DemoMode;
-import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.SimpleFilter;
@@ -35,7 +35,7 @@ import java.sql.SQLException;
  * User: brittp
  * Created: Jan 14, 2008 9:44:25 AM
  */
-public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.SummaryByVisitType>
+public class SpecimenTypeVisitReport extends SpecimenVisitReport<SpecimenManager.SummaryByVisitType>
 {
     public SpecimenTypeVisitReport(String titlePrefix, List<VisitImpl> visits, SimpleFilter filter, SpecimenVisitReportParameters parameters)
     {
@@ -46,11 +46,11 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
     {
         try
         {
-            SampleManager.SpecimenTypeLevel level = getTypeLevelEnum();
-            SampleManager.SummaryByVisitType[] countSummary =
-                    SampleManager.getInstance().getSpecimenSummaryByVisitType(_container, getUser(), _filter, isViewPtidList(), level, getBaseCustomView());
+            SpecimenManager.SpecimenTypeLevel level = getTypeLevelEnum();
+            SpecimenManager.SummaryByVisitType[] countSummary =
+                    SpecimenManager.getInstance().getSpecimenSummaryByVisitType(_container, getUser(), _filter, isViewPtidList(), level, getBaseCustomView());
             Map<String, Row> rows = new TreeMap<>();
-            for (SampleManager.SummaryByVisitType count : countSummary)
+            for (SpecimenManager.SummaryByVisitType count : countSummary)
             {
                 String key = count.getPrimaryType() + "/" +
                         (count.getDerivative() != null ? count.getDerivative() : "All") + "/" +
@@ -74,7 +74,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
     }
 
     DecimalFormat format = new DecimalFormat("0.00");
-    private String getCellSummaryText(SampleManager.SummaryByVisitType summary)
+    private String getCellSummaryText(SpecimenManager.SummaryByVisitType summary)
     {
         StringBuilder summaryString = new StringBuilder();
         if (isViewVialCount())
@@ -95,7 +95,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         return summaryString.toString();
     }
 
-    protected String[] getCellExcelText(VisitImpl visit, SampleManager.SummaryByVisitType summary)
+    protected String[] getCellExcelText(VisitImpl visit, SpecimenManager.SummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return new String[] {};
@@ -114,7 +114,7 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         return strArray;
     }
 
-    protected String getCellHtml(VisitImpl visit, SampleManager.SummaryByVisitType summary)
+    protected String getCellHtml(VisitImpl visit, SpecimenManager.SummaryByVisitType summary)
     {
         if (summary == null || summary.getVialCount() == null)
             return "&nbsp;";
@@ -123,10 +123,10 @@ public class SpecimenTypeVisitReport extends SpecimenVisitReport<SampleManager.S
         link = updateURLFilterParameter(link, "SpecimenDetail.Visit/SequenceNumMin", visit.getSequenceNumMin());
 
         link = updateURLFilterParameter(link, "SpecimenDetail.PrimaryType/Description", summary.getPrimaryType());
-        SampleManager.SpecimenTypeLevel level = getTypeLevelEnum();
-        if (level == SampleManager.SpecimenTypeLevel.Derivative || level == SampleManager.SpecimenTypeLevel.Additive)
+        SpecimenManager.SpecimenTypeLevel level = getTypeLevelEnum();
+        if (level == SpecimenManager.SpecimenTypeLevel.Derivative || level == SpecimenManager.SpecimenTypeLevel.Additive)
             link = updateURLFilterParameter(link, "SpecimenDetail.DerivativeType/Description", summary.getDerivative());
-        if (level == SampleManager.SpecimenTypeLevel.Additive)
+        if (level == SpecimenManager.SpecimenTypeLevel.Additive)
             link = updateURLFilterParameter(link, "SpecimenDetail.AdditiveType/Description", summary.getAdditive());
 
         String linkHtml = link.getLocalURIString();

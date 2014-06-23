@@ -33,13 +33,13 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.importer.CreateChildStudyPipelineJob;
 import org.labkey.study.model.ChildStudyDefinition;
-import org.labkey.study.model.SampleRequest;
+import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.Specimen;
+import org.labkey.study.model.Vial;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
@@ -147,11 +147,11 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
             // TODO: Hack! We want specimen studies to be published for now... wizard should post this
             form.setPublish(true);
             form.setIncludeSpecimens(true);
-            SampleManager sm = SampleManager.getInstance();
+            SpecimenManager sm = SpecimenManager.getInstance();
 
             if (null != form.getRequestId())
             {
-                SampleRequest request = sm.getRequest(sourceContainer, form.getRequestId());
+                SpecimenRequest request = sm.getRequest(sourceContainer, form.getRequestId());
 
                 if (null == request)
                 {
@@ -159,30 +159,30 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
                 }
                 else
                 {
-                    List<Specimen> specimens = request.getSpecimens();
+                    List<Vial> vials = request.getVials();
 
-                    if (0 == specimens.size())
+                    if (0 == vials.size())
                         errors.reject(SpringActionController.ERROR_MSG, "Specimen request is empty");
                     else
-                        form.setSpecimens(specimens);
+                        form.setVials(vials);
                 }
             }
             else
             {
                 String[] specimenIds = form.getSpecimenIds();
-                ArrayList<Specimen> list = new ArrayList<>(specimenIds.length);
+                ArrayList<Vial> list = new ArrayList<>(specimenIds.length);
                 User user = getUser();
                 for (String specimenId : specimenIds)
                 {
-                    Specimen specimen = sm.getSpecimen(sourceContainer, user, specimenId);
+                    Vial vial = sm.getVial(sourceContainer, user, specimenId);
 
-                    if (null == specimen)
+                    if (null == vial)
                         LOG.error("Specimen ID " + specimenId + " not found!!");
                     else
-                        list.add(specimen);
+                        list.add(vial);
                 }
 
-                form.setSpecimens(list);
+                form.setVials(list);
             }
         }
     }

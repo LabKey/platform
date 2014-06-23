@@ -22,7 +22,7 @@ import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.VisitImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.CohortFilter;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.query.SpecimenQueryView;
@@ -384,7 +384,7 @@ public abstract class SpecimenVisitReport<CELLDATA extends SpecimenReportCellDat
         return _parameters.getBaseCustomViewName();
     }
 
-    protected SampleManager.SpecimenTypeLevel getTypeLevelEnum()
+    protected SpecimenManager.SpecimenTypeLevel getTypeLevelEnum()
     {
         return _parameters.getTypeLevelEnum();
     }

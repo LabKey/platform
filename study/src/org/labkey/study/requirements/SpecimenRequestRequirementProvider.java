@@ -27,11 +27,11 @@ import java.util.List;
  * Date: Jun 4, 2007
  * Time: 4:29:27 PM
  */
-public class SpecimenRequestRequirementProvider extends DefaultRequirementProvider<SampleRequestRequirement, SampleRequestActor>
+public class SpecimenRequestRequirementProvider extends DefaultRequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor>
 {
     public SpecimenRequestRequirementProvider()
     {
-        super(SampleRequestRequirement.class, SampleRequestActor.class);
+        super(SpecimenRequestRequirement.class, SpecimenRequestActor.class);
     }
 
     public RequirementType[] getRequirementTypes()
@@ -44,7 +44,7 @@ public class SpecimenRequestRequirementProvider extends DefaultRequirementProvid
         return "OwnerEntityId";
     }
 
-    protected Object getPrimaryKeyValue(SampleRequestRequirement requirement)
+    protected Object getPrimaryKeyValue(SpecimenRequestRequirement requirement)
     {
         return requirement.getRowId();
     }
@@ -64,13 +64,13 @@ public class SpecimenRequestRequirementProvider extends DefaultRequirementProvid
         return StudySchema.getInstance().getTableInfoSampleRequestRequirement();
     }
 
-    protected SampleRequestRequirement createMutable(SampleRequestRequirement requirement)
+    protected SpecimenRequestRequirement createMutable(SpecimenRequestRequirement requirement)
     {
         return requirement.createMutable();
     }
 
-    protected List<SampleRequestRequirement> generateRequirementsFromDefault(RequirementOwner owner, SampleRequestRequirement defaultRequirement, RequirementType type)
+    protected List<SpecimenRequestRequirement> generateRequirementsFromDefault(RequirementOwner owner, SpecimenRequestRequirement defaultRequirement, RequirementType type)
     {
-        return ((SpecimenRequestRequirementType) type).generateRequirements((SampleRequest) owner, defaultRequirement);
+        return ((SpecimenRequestRequirementType) type).generateRequirements((SpecimenRequest) owner, defaultRequirement);
     }
 }

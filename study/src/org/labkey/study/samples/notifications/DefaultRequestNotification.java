@@ -22,11 +22,11 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.ByteArrayAttachmentFile;
 import org.labkey.api.view.ViewContext;
-import org.labkey.study.SampleManager;
-import org.labkey.study.model.SampleRequest;
-import org.labkey.study.model.SampleRequestEvent;
-import org.labkey.study.model.SampleRequestRequirement;
-import org.labkey.study.model.Specimen;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.model.SpecimenRequest;
+import org.labkey.study.model.SpecimenRequestEvent;
+import org.labkey.study.model.SpecimenRequestRequirement;
+import org.labkey.study.model.Vial;
 import org.labkey.study.query.SpecimenQueryView;
 import org.labkey.study.samples.settings.RequestNotificationSettings;
 
@@ -43,31 +43,31 @@ import java.util.List;
 public class DefaultRequestNotification
 {
     protected List<? extends NotificationRecipientSet> _recipients;
-    protected SampleRequest _request;
+    protected SpecimenRequest _request;
     protected String _eventSummary;
-    protected SampleRequestRequirement _sampleRequestRequirement;
+    protected SpecimenRequestRequirement _specimenRequestRequirement;
     protected String _comments;
-    protected SampleRequestEvent _event;
+    protected SpecimenRequestEvent _event;
 
-    public DefaultRequestNotification(SampleRequest request, List<? extends NotificationRecipientSet> recipients, String eventSummary,
-                                      SampleRequestEvent event, String comments, SampleRequestRequirement sampleRequestRequirement,
+    public DefaultRequestNotification(SpecimenRequest request, List<? extends NotificationRecipientSet> recipients, String eventSummary,
+                                      SpecimenRequestEvent event, String comments, SpecimenRequestRequirement specimenRequestRequirement,
                                       ViewContext context) throws Exception
     {
         _request = request;
         _recipients = recipients;
         _eventSummary = eventSummary;
         _comments = comments;
-        _sampleRequestRequirement = sampleRequestRequirement;
+        _specimenRequestRequirement = specimenRequestRequirement;
         _event = event;
         addSpecimenListFileIfNeeded(context);
     }
 
     public final String getSpecimenListHTML(ViewContext context) throws SQLException, IOException
     {
-        List<Specimen> specimens = getSpecimenList();
-        if (specimens != null && specimens.size() > 0)
+        List<Vial> vials = getSpecimenList();
+        if (vials != null && vials.size() > 0)
         {
-            SpecimenQueryView view = SpecimenQueryView.createView(context, specimens, SpecimenQueryView.ViewType.VIALS_EMAIL);
+            SpecimenQueryView view = SpecimenQueryView.createView(context, vials, SpecimenQueryView.ViewType.VIALS_EMAIL);
             view.setDisableLowVialIndicators(true);
             return view.getSimpleHtmlTable();
         }
@@ -76,15 +76,15 @@ public class DefaultRequestNotification
 
     private void addSpecimenListFileIfNeeded(ViewContext context) throws Exception
     {
-        RequestNotificationSettings settings = SampleManager.getInstance().getRequestNotificationSettings(_request.getContainer());
+        RequestNotificationSettings settings = SpecimenManager.getInstance().getRequestNotificationSettings(_request.getContainer());
         if (RequestNotificationSettings.SpecimensAttachmentEnum.ExcelAttachment == settings.getSpecimensAttachmentEnum() ||
             RequestNotificationSettings.SpecimensAttachmentEnum.TextAttachment == settings.getSpecimensAttachmentEnum())
         {
             ByteArrayAttachmentFile specimenListFile = null;
-            List<Specimen> specimens = getSpecimenList();
-            if (specimens != null && specimens.size() > 0)
+            List<Vial> vials = getSpecimenList();
+            if (vials != null && vials.size() > 0)
             {
-                SpecimenQueryView view = SpecimenQueryView.createView(context, specimens, SpecimenQueryView.ViewType.VIALS_EMAIL);
+                SpecimenQueryView view = SpecimenQueryView.createView(context, vials, SpecimenQueryView.ViewType.VIALS_EMAIL);
                 view.setDisableLowVialIndicators(true);
                 if (RequestNotificationSettings.SpecimensAttachmentEnum.ExcelAttachment == settings.getSpecimensAttachmentEnum())
                     specimenListFile = view.exportToExcelFile();
@@ -100,9 +100,9 @@ public class DefaultRequestNotification
         }
     }
 
-    protected List<Specimen> getSpecimenList()
+    protected List<Vial> getSpecimenList()
     {
-        return _request.getSpecimens();
+        return _request.getVials();
     }
 
     public @NotNull List<Attachment> getAttachments()
@@ -115,9 +115,9 @@ public class DefaultRequestNotification
         return _comments;
     }
 
-    public SampleRequestRequirement getRequirement()
+    public SpecimenRequestRequirement getRequirement()
     {
-        return _sampleRequestRequirement;
+        return _specimenRequestRequirement;
     }
 
     final public List<? extends NotificationRecipientSet> getRecipients()
@@ -125,7 +125,7 @@ public class DefaultRequestNotification
         return _recipients;
     }
 
-    final public SampleRequest getSampleRequest()
+    final public SpecimenRequest getSampleRequest()
     {
         return _request;
     }

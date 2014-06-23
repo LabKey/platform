@@ -40,10 +40,10 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.study.Study;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.UnauthorizedException;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.EditableSpecimenImporter;
-import org.labkey.study.model.Specimen;
+import org.labkey.study.model.Vial;
 import org.labkey.study.model.SpecimenEvent;
 import org.labkey.study.model.StudyManager;
 
@@ -95,27 +95,27 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.DELETE, true, errors, extraScriptContext);
 
         List<Long> rowIds = new ArrayList<>(keys.size());
-        for (int i = 0; i < keys.size(); i++)
+        for (Map<String, Object> key : keys)
         {
-            Object rowId = keys.get(i).get("rowid");
+            Object rowId = key.get("rowid");
             if (null != rowId)
-                rowIds.add(Long.class == rowId.getClass() ? (Long)rowId : (Integer)rowId);
+                rowIds.add(Long.class == rowId.getClass() ? (Long) rowId : (Integer) rowId);
             else
                 throw new IllegalArgumentException("RowId not found for a row.");
         }
-        List<Specimen> specimens = SampleManager.getInstance().getSpecimens(container, user, rowIds);
-        if (specimens.size() != keys.size())
+        List<Vial> vials = SpecimenManager.getInstance().getVials(container, user, rowIds);
+        if (vials.size() != keys.size())
             throw new IllegalStateException("Specimens should be same size as rows.");
 
         List<Map<String, Object>> rows = new ArrayList<>(1);
         try
         {
-            for (Specimen specimen : specimens)
-                checkDeletability(container, specimen);
+            for (Vial vial : vials)
+                checkDeletability(container, vial);
 
-            for (Specimen specimen : specimens)
-                SampleManager.getInstance().deleteSpecimen(specimen, false);
-            SampleManager.getInstance().clearCaches(container);
+            for (Vial vial : vials)
+                SpecimenManager.getInstance().deleteSpecimen(vial, false);
+            SpecimenManager.getInstance().clearCaches(container);
 
             // Force recalculation of requestability and specimen table
             EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
@@ -144,13 +144,13 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, ValidationException, SQLException
     {
         long rowId = keyFromMap(oldRow);
-        Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, rowId);
+        Vial vial = SpecimenManager.getInstance().getVial(container, user, rowId);
 
-        if (null == specimen)
+        if (null == vial)
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
 
-        checkDeletability(container, specimen);
-        SampleManager.getInstance().deleteSpecimen(specimen, true);
+        checkDeletability(container, vial);
+        SpecimenManager.getInstance().deleteSpecimen(vial, true);
         List<Map<String, Object>> rows = new ArrayList<>(1);
 
         try
@@ -330,14 +330,14 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
             rowIds.add(rowId);
         }
-        List<Specimen> specimens = SampleManager.getInstance().getSpecimens(container, user, rowIds);
-        if (specimens.size() != rows.size())
+        List<Vial> vials = SpecimenManager.getInstance().getVials(container, user, rowIds);
+        if (vials.size() != rows.size())
             throw new IllegalStateException("Specimens should be same size as rows.");
 
         try
         {
-            for (Specimen specimen : specimens)
-                checkEditability(container, specimen);
+            for (Vial vial : vials)
+                checkEditability(container, vial);
         }
         catch (ValidationException e)
         {
@@ -351,12 +351,12 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
-            Specimen specimen = specimens.get(i);
-            Map<String, Object> rowMap = prepareRowMap(container, row, specimen, importer);
+            Vial vial = vials.get(i);
+            Map<String, Object> rowMap = prepareRowMap(container, row, vial, importer);
             newRows.add(rowMap);
 
             Map<String,Object> keys = new HashMap<>();
-            keys.put("rowId", specimen.getRowId());
+            keys.put("rowId", vial.getRowId());
             newKeys.add(keys);
         }
 
@@ -388,13 +388,13 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
     {
         long rowId = oldRow != null ? keyFromMap(oldRow) : keyFromMap(row);
-        Specimen specimen = SampleManager.getInstance().getSpecimen(container, user, rowId);
-        if (specimen == null)
+        Vial vial = SpecimenManager.getInstance().getVial(container, user, rowId);
+        if (vial == null)
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
 
-        checkEditability(container, specimen);
+        checkEditability(container, vial);
         EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
-        Map<String, Object> rowMap = prepareRowMap(container, row, specimen, importer);
+        Map<String, Object> rowMap = prepareRowMap(container, row, vial, importer);
 
         // TODO: this is a hack to best deal with Requestable being Null until a better fix can be accomplished
         if (null == oldRow || null == oldRow.get("requestable"))
@@ -418,7 +418,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
 
         // The rowId will not have changed
         Map<String,Object> keys = new HashMap<>();
-        keys.put("rowId", specimen.getRowId());
+        keys.put("rowId", vial.getRowId());
         try
         {
             return getRow(user, container, keys);
@@ -447,19 +447,19 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         return rowLong;
     }
 
-    private Map<String, Object> prepareRowMap(Container container, Map<String, Object> row, Specimen specimen,
+    private Map<String, Object> prepareRowMap(Container container, Map<String, Object> row, Vial vial,
                                               EditableSpecimenImporter importer)
     {
         // Get last event so that our input considers all fields that were set;
         // Then overwrite whatever is coming from the form
-        Map<String, Object> rowMap = getLastEventMap(container, specimen);
+        Map<String, Object> rowMap = getLastEventMap(container, vial);
         for (Map.Entry<String, Object> entry : row.entrySet())
         {
             String columnName = importer.getMappedColumnName(entry.getKey());
             rowMap.put(columnName, entry.getValue());
         }
 
-        rowMap.put("globaluniqueid", specimen.getGlobalUniqueId());
+        rowMap.put("globaluniqueid", vial.getGlobalUniqueId());
         Long externalId = (Long)rowMap.get("ExternalId");
         externalId += 1;
         rowMap.put("ExternalId", externalId);
@@ -473,7 +473,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         importer.process(rows, merge, _logger);
     }
 
-    private void checkEditability(Container container, Specimen specimen) throws ValidationException
+    private void checkEditability(Container container, Vial vial) throws ValidationException
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(FinalState) FROM " + StudySchema.getInstance().getTableInfoSampleRequestStatus() +
                 " WHERE FinalState = " + StudySchema.getInstance().getSqlDialect().getBooleanFALSE());
@@ -481,7 +481,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
                 .append("SELECT StatusId FROM " + StudySchema.getInstance().getTableInfoSampleRequest() + " WHERE RowId IN (")
                 .append("SELECT SampleRequestId FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
         sql.add(container.getId());
-        sql.append(" AND SpecimenGlobalUniqueId = ?").add(specimen.getGlobalUniqueId());
+        sql.append(" AND SpecimenGlobalUniqueId = ?").add(vial.getGlobalUniqueId());
         sql.append(")) GROUP BY FinalState");
 
         ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
@@ -491,11 +491,11 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new ValidationException("Specimen may not be edited when it's in a non-final request.");
     }
 
-    private void checkDeletability(Container container, Specimen specimen) throws ValidationException
+    private void checkDeletability(Container container, Vial vial) throws ValidationException
     {
         SQLFragment sql = new SQLFragment("SELECT COUNT(*) FROM " + StudySchema.getInstance().getTableInfoSampleRequestSpecimen() + " WHERE Container = ? ");
         sql.add(container.getId());
-        sql.append(" AND SpecimenGlobalUniqueId = ?").add(specimen.getGlobalUniqueId());
+        sql.append(" AND SpecimenGlobalUniqueId = ?").add(vial.getGlobalUniqueId());
 
         ArrayList<Integer> counts = new SqlSelector(getQueryTable().getSchema(), sql).getArrayList(Integer.class);
         if (counts.size() > 1)
@@ -504,10 +504,10 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new ValidationException("Specimen may not be deleted because it has been used in a request.");
     }
 
-    private static Map<String, Object> getLastEventMap(Container container, Specimen specimen)
+    private static Map<String, Object> getLastEventMap(Container container, Vial vial)
     {
-        List<Specimen> specimens = Collections.singletonList(specimen);
-        SpecimenEvent specimenEvent = SampleManager.getInstance().getLastEvent(SampleManager.getInstance().getSpecimenEvents(specimens, false));
+        List<Vial> vials = Collections.singletonList(vial);
+        SpecimenEvent specimenEvent = SpecimenManager.getInstance().getLastEvent(SpecimenManager.getInstance().getSpecimenEvents(vials, false));
         if (null == specimenEvent)
             throw new IllegalStateException("Expected at least one event for specimen.");
         TableInfo tableInfoSpecimenEvent = StudySchema.getInstance().getTableInfoSpecimenEvent(container);

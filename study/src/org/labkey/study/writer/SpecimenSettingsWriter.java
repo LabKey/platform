@@ -20,13 +20,13 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.security.xml.GroupType;
-import org.labkey.study.SampleManager;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.SpecimenManager;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.importer.RequestabilityManager;
 import org.labkey.study.model.LocationImpl;
-import org.labkey.study.model.SampleRequestActor;
-import org.labkey.study.model.SampleRequestRequirement;
-import org.labkey.study.model.SampleRequestStatus;
+import org.labkey.study.model.SpecimenRequestActor;
+import org.labkey.study.model.SpecimenRequestRequirement;
+import org.labkey.study.model.SpecimenRequestStatus;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.samples.settings.DisplaySettings;
 import org.labkey.study.samples.settings.RepositorySettings;
@@ -132,10 +132,10 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     private void writeRequestStatuses(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
     {
         SpecimenSettingsType.RequestStatuses xmlRequestStatuses = null;
-        List<SampleRequestStatus> statuses = study.getSampleRequestStatuses(ctx.getUser());
+        List<SpecimenRequestStatus> statuses = study.getSampleRequestStatuses(ctx.getUser());
         if (statuses.size() > 0)
         {
-            for (SampleRequestStatus status : statuses)
+            for (SpecimenRequestStatus status : statuses)
             {
                 if (!status.isSystemStatus()) // don't export system statuses
                 {
@@ -147,7 +147,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
                 }
             }
         }
-        StatusSettings statusSettings = SampleManager.getInstance().getStatusSettings(study.getContainer());
+        StatusSettings statusSettings = SpecimenManager.getInstance().getStatusSettings(study.getContainer());
         if (!statusSettings.isUseShoppingCart()) // default is to use shopping cart
         {
             if (xmlRequestStatuses == null) xmlRequestStatuses = specimenSettingsType.addNewRequestStatuses();
@@ -157,11 +157,11 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
 
     private void writeActorsAndGroups(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
     {
-        SampleRequestActor[] actors = study.getSampleRequestActors();
+        SpecimenRequestActor[] actors = study.getSampleRequestActors();
         if (actors != null && actors.length > 0)
         {
             SpecimenSettingsType.RequestActors xmlRequestActors = specimenSettingsType.addNewRequestActors();
-            for (SampleRequestActor actor : actors)
+            for (SpecimenRequestActor actor : actors)
             {
                 SpecimenSettingsType.RequestActors.Actor xmlActor = xmlRequestActors.addNewActor();
                 xmlActor.setLabel(actor.getLabel());
@@ -199,40 +199,40 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
         {
             xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
             DefaultRequirementsType xmlOrigLabReq = xmlDefRequirements.addNewOriginatingLab();
-            for (SampleRequestRequirement req : defRequirments.getOriginatorRequirements())
+            for (SpecimenRequestRequirement req : defRequirments.getOriginatorRequirements())
                 writeDefaultRequirement(xmlOrigLabReq, req);
         }
         if (defRequirments.getProviderRequirements().length > 0)
         {
             if (xmlDefRequirements == null) xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
             DefaultRequirementsType xmlProviderReq = xmlDefRequirements.addNewProvidingLab();
-            for (SampleRequestRequirement req : defRequirments.getProviderRequirements())
+            for (SpecimenRequestRequirement req : defRequirments.getProviderRequirements())
                 writeDefaultRequirement(xmlProviderReq, req);
         }
         if (defRequirments.getReceiverRequirements().length > 0)
         {
             if (xmlDefRequirements == null) xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
             DefaultRequirementsType xmlReceiverReq = xmlDefRequirements.addNewReceivingLab();
-            for (SampleRequestRequirement req : defRequirments.getReceiverRequirements())
+            for (SpecimenRequestRequirement req : defRequirments.getReceiverRequirements())
                 writeDefaultRequirement(xmlReceiverReq, req);
         }
         if (defRequirments.getGeneralRequirements().length > 0)
         {
             if (xmlDefRequirements == null) xmlDefRequirements = specimenSettingsType.addNewDefaultRequirements();
             DefaultRequirementsType xmlGeneralReq = xmlDefRequirements.addNewGeneral();
-            for (SampleRequestRequirement req : defRequirments.getGeneralRequirements())
+            for (SpecimenRequestRequirement req : defRequirments.getGeneralRequirements())
                 writeDefaultRequirement(xmlGeneralReq, req);
         }
     }
 
-    private void writeDefaultRequirement(DefaultRequirementsType xmlReqType, SampleRequestRequirement req)
+    private void writeDefaultRequirement(DefaultRequirementsType xmlReqType, SpecimenRequestRequirement req)
     {
         DefaultRequirementType xmlReq = xmlReqType.addNewRequirement();
         xmlReq.setActor(req.getActor().getLabel());
         xmlReq.setDescription(req.getDescription());
     }
 
-    private void writeActorGroup(SampleRequestActor actor, @Nullable LocationImpl location, GroupType xmlGroupType)
+    private void writeActorGroup(SpecimenRequestActor actor, @Nullable LocationImpl location, GroupType xmlGroupType)
     {
         // Note: these actor groups only currently have Users (no groups within groups)
         GroupManager.exportGroupMembers(actor.getGroup(location), Collections.<Group>emptyList(), Arrays.asList(actor.getMembers(location)), xmlGroupType);
@@ -245,7 +245,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     private void writeDisplaySettings(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
     {
         ctx.getLogger().info("Exporting specimen display settings");
-        DisplaySettings settings = SampleManager.getInstance().getDisplaySettings(ctx.getContainer());
+        DisplaySettings settings = SpecimenManager.getInstance().getDisplaySettings(ctx.getContainer());
 
         SpecimenSettingsType.DisplaySettings xmlSettings = specimenSettingsType.addNewDisplaySettings();
 
@@ -263,12 +263,12 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     private void writeRequestForm(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx) throws SQLException
     {
         ctx.getLogger().info("Exporting specimen request forms");
-        SampleManager.SpecimenRequestInput[] inputs = SampleManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer());
+        SpecimenManager.SpecimenRequestInput[] inputs = SpecimenManager.getInstance().getNewSpecimenRequestInputs(ctx.getContainer());
 
         if (inputs != null && inputs.length > 0)
         {
             SpecimenSettingsType.RequestForms forms = specimenSettingsType.addNewRequestForms();
-            for (SampleManager.SpecimenRequestInput input : inputs)
+            for (SpecimenManager.SpecimenRequestInput input : inputs)
             {
                 SpecimenSettingsType.RequestForms.Form requestForm = forms.addNewForm();
 
@@ -287,7 +287,7 @@ public class SpecimenSettingsWriter extends AbstractSpecimenWriter
     private void writeNotifications(SpecimenSettingsType specimenSettingsType, StudyImpl study, StudyExportContext ctx)
     {
         ctx.getLogger().info("Exporting specimen notification settings");
-        RequestNotificationSettings notifications = SampleManager.getInstance().getRequestNotificationSettings(ctx.getContainer());
+        RequestNotificationSettings notifications = SpecimenManager.getInstance().getRequestNotificationSettings(ctx.getContainer());
         SpecimenSettingsType.Notifications xmlNotificatons = specimenSettingsType.addNewNotifications();
 
         if (notifications.getReplyTo() != null)

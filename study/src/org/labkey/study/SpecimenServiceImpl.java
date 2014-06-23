@@ -36,13 +36,12 @@ import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.FileType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewBackgroundInfo;
-import org.labkey.study.controllers.samples.AutoCompleteAction;
+import org.labkey.study.controllers.specimen.AutoCompleteAction;
 import org.labkey.study.importer.SimpleSpecimenImporter;
-import org.labkey.study.model.Specimen;
+import org.labkey.study.model.Vial;
 import org.labkey.study.pipeline.SpecimenReloadJob;
 
 import java.io.IOException;
@@ -154,7 +153,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
 
     public ParticipantVisit getSampleInfo(Container studyContainer, User user, String sampleId) throws SQLException
     {
-        Specimen match = SampleManager.getInstance().getSpecimen(studyContainer, user, sampleId);
+        Vial match = SpecimenManager.getInstance().getVial(studyContainer, user, sampleId);
         if (match != null)
             return new StudyParticipantVisit(studyContainer, sampleId, match.getPtid(), match.getVisitValue(), match.getDrawTimestamp());
         else
@@ -165,11 +164,11 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != date)
         {
-            List<Specimen> matches = SampleManager.getInstance().getSpecimens(studyContainer, user, participantId, date);
+            List<Vial> matches = SpecimenManager.getInstance().getVials(studyContainer, user, participantId, date);
             if (matches.size() > 0)
             {
                 Set<ParticipantVisit> result = new HashSet<>();
-                for (Specimen match : matches)
+                for (Vial match : matches)
                 {
                     result.add(new StudyParticipantVisit(studyContainer, match.getGlobalUniqueId(), participantId, match.getVisitValue(), match.getDrawTimestamp()));
                 }
@@ -184,11 +183,11 @@ public class SpecimenServiceImpl implements SpecimenService.Service
     {
         if (null != studyContainer && null != StringUtils.trimToNull(participantId) && null != visit)
         {
-            List<Specimen> matches = SampleManager.getInstance().getSpecimens(studyContainer, user, participantId, visit);
+            List<Vial> matches = SpecimenManager.getInstance().getVials(studyContainer, user, participantId, visit);
             if (matches.size() > 0)
             {
                 Set<ParticipantVisit> result = new HashSet<>();
-                for (Specimen match : matches)
+                for (Vial match : matches)
                 {
                     result.add(new StudyParticipantVisit(studyContainer, match.getGlobalUniqueId(), participantId, match.getVisitValue(), match.getDrawTimestamp()));
                 }

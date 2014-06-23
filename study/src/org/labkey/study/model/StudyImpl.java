@@ -64,7 +64,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.study.DataspaceStudyFolderType;
-import org.labkey.study.SampleManager;
+import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.samples.settings.RepositorySettings;
@@ -253,16 +253,16 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return StudyManager.getInstance().getSharedProperties(this);
     }
 
-    public SampleRequestActor[] getSampleRequestActors()
+    public SpecimenRequestActor[] getSampleRequestActors()
     {
-        return SampleManager.getInstance().getRequirementsProvider().getActors(getContainer());
+        return SpecimenManager.getInstance().getRequirementsProvider().getActors(getContainer());
     }
 
     public Set<Integer> getSampleRequestActorsInUse()
     {
-        Collection<SampleRequestActor> actors = SampleManager.getInstance().getRequirementsProvider().getActorsInUse(getContainer());
+        Collection<SpecimenRequestActor> actors = SpecimenManager.getInstance().getRequirementsProvider().getActorsInUse(getContainer());
         Set<Integer> ids = new HashSet<>();
-        for (SampleRequestActor actor : actors)
+        for (SpecimenRequestActor actor : actors)
             ids.add(actor.getRowId());
         return ids;
     }
@@ -319,19 +319,19 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), user);
     }
 
-    public List<SampleRequestStatus> getSampleRequestStatuses(User user)
+    public List<SpecimenRequestStatus> getSampleRequestStatuses(User user)
     {
-        return SampleManager.getInstance().getRequestStatuses(getContainer(), user);
+        return SpecimenManager.getInstance().getRequestStatuses(getContainer(), user);
     }
 
     public Set<Integer> getSampleRequestStatusesInUse()
     {
-        return SampleManager.getInstance().getRequestStatusIdsInUse(getContainer());
+        return SpecimenManager.getInstance().getRequestStatusIdsInUse(getContainer());
     }
 
     public RepositorySettings getRepositorySettings()
     {
-        return SampleManager.getInstance().getRepositorySettings(getContainer());
+        return SpecimenManager.getInstance().getRepositorySettings(getContainer());
     }
 
     public Object getPrimaryKey()

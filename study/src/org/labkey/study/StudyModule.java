@@ -40,7 +40,6 @@ import org.labkey.api.exp.property.PlateBasedAssaySampleSetDomainKind;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
-import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.digest.ReportContentDigestProvider;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
@@ -109,8 +108,8 @@ import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.plate.PlateController;
 import org.labkey.study.controllers.reports.ReportsController;
-import org.labkey.study.controllers.samples.SpecimenApiController;
-import org.labkey.study.controllers.samples.SpecimenController;
+import org.labkey.study.controllers.specimen.SpecimenApiController;
+import org.labkey.study.controllers.specimen.SpecimenController;
 import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
@@ -168,8 +167,8 @@ import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.reports.WindowsCommandLineSplitter;
-import org.labkey.study.samples.SampleSearchWebPart;
-import org.labkey.study.samples.SamplesWebPart;
+import org.labkey.study.samples.SpecimenSearchWebPart;
+import org.labkey.study.samples.SpecimenWebPart;
 import org.labkey.study.samples.SpecimenCommentAuditProvider;
 import org.labkey.study.samples.SpecimenCommentAuditViewFactory;
 import org.labkey.study.security.permissions.ManageStudyPermission;
@@ -189,7 +188,7 @@ import org.labkey.study.view.StudyToolsWebPartFactory;
 import org.labkey.study.view.StudyViewLoader;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
-import org.labkey.study.view.samples.SpecimenRequestNotificationEmailTemplate;
+import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
 import org.labkey.study.view.studydesign.ImmunizationScheduleWebpartFactory;
 import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetWriter;
@@ -603,7 +602,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         public SamplesWebPartFactory(String position)
         {
-            super("Specimens", position, SamplesWebPart.class);
+            super("Specimens", position, SpecimenWebPart.class);
             addLegacyNames("Specimen Browse (Experimental)");
         }
 
@@ -616,7 +615,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             StudyImpl study = StudyManager.getInstance().getStudy(portalCtx.getContainer());
             if (null == study)
                 return new HtmlView("Specimens", "This folder does not contain a study.");
-            return new SamplesWebPart(webPart.getLocation().equals(HttpView.BODY), study);
+            return new SpecimenWebPart(webPart.getLocation().equals(HttpView.BODY), study);
         }
     }
 
@@ -624,7 +623,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         public SampleSearchWebPartFactory(String position)
         {
-            super("Specimen Search", position, SampleSearchWebPart.class);
+            super("Specimen Search", position, SpecimenSearchWebPart.class);
             addLegacyNames("Specimen Search (Experimental)");
         }
 
@@ -636,7 +635,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
                 return new HtmlView("Specimens", "This folder does not contain a study.");
-            return new SampleSearchWebPart(true);
+            return new SpecimenSearchWebPart(true);
         }
     }
 

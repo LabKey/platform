@@ -20,7 +20,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.util.PageFlowUtil;
-import org.labkey.study.controllers.samples.SpecimenUtils;
+import org.labkey.study.controllers.specimen.SpecimenUtils;
 
 import java.io.Writer;
 import java.io.IOException;
