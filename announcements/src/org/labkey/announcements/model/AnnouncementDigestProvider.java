@@ -133,8 +133,8 @@ public class AnnouncementDigestProvider implements MessageDigest.Provider
     {
         ActionURL boardURL = AnnouncementsController.getBeginURL(c);
 
-        // Hack! Mock up a ViewContext with the recipient as the user, so embedded webparts get rendered with that
-        // user's permissions, etc. Push it to the stack so the renderer sees it and pop it in finally below.
+        // Hack! Push a ViewContext with the recipient as the user, so embedded webparts get rendered with that
+        // user's permissions, etc.
         // TODO: push the context through or come up with a cleaner solution.
         try (ViewContext.StackResetter resetter = ViewContext.pushMockViewContext(recipient, c, boardURL))
         {

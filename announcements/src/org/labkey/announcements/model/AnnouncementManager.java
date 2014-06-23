@@ -62,7 +62,6 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
@@ -414,15 +413,10 @@ public class AnnouncementManager
         m.setSubject(StringUtils.trimToEmpty(isResponse ? "RE: " + parent.getTitle() : a.getTitle()));
         HttpServletRequest request = AppProps.getInstance().createMockRequest();
 
-        int stackSize = HttpView.getStackSize();
-
-        try
+        // Hack! Push a ViewContext with the recipient as the user, so embedded webparts get rendered with that
+        // user's permissions, etc.
+        try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(recipient, c, threadURL))
         {
-            // Hack! Mock up a ViewContext with the recipient as the user, so embedded webparts get rendered with that
-            // user's permissions, etc. Push it to the stack so the renderer sees it and pop it in finally below.
-            // TODO: push the context through or come up with a cleaner solution.
-            ViewContext context = ViewContext.getMockViewContext(recipient, c, threadURL, true);
-
             EmailNotificationPage page = createEmailNotificationTemplate("emailNotificationPlain.jsp", false, c, recipient, settings, perm, parent, a, removeURL, currentRendererType, reason);
             JspView view = new JspView(page);
             view.setFrame(WebPartView.FrameType.NOT_HTML);
@@ -438,10 +432,6 @@ public class AnnouncementManager
         catch (Exception e)
         {
             throw new MessagingException(e.getMessage(), e);
-        }
-        finally
-        {
-            HttpView.resetStackSize(stackSize);
         }
     }
 
