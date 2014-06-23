@@ -2260,6 +2260,12 @@ table.labkey-manage-default-reqs
 
 /* Wiki */
 
+div.labkey-wiki
+{
+    word-wrap: break-word;
+    word-break: break-all;
+}
+
 div.labkey-wiki h1
 {
     font-size: 2em;
@@ -2553,6 +2559,8 @@ div.clear:after, div.bd:after {
 .labkey-force-word-break
 {
     word-wrap: break-word;
+    /* NOTE: note sure how this is used yet but the word-break might be necessary too! */
+    /*word-break: break-all;*/
 }
 
 
