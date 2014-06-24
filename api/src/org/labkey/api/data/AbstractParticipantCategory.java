@@ -189,7 +189,7 @@ abstract public class AbstractParticipantCategory<T> extends Entity implements P
             setEntityId(copy.getEntityId());
         if (getCreatedBy() == 0)
             setCreatedBy(copy.getCreatedBy());
-        if (getCreated() == null)
+        if (getCreated() == null || getCreated().getTime() == 0)
             setCreated(copy.getCreated());
         if (getContainerId() == null)
             setContainer(copy.getContainerId());
