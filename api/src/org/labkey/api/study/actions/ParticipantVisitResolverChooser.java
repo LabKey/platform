@@ -145,6 +145,10 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
         }
     }
 
+    /**
+     * Rather than a boolean to render subselectors for the resolver type, there are cases where
+     * some, but not all, of the resolver's subselection options are to be displayed.
+     */
     public static enum RenderSubSelectors
     {
         ALL,

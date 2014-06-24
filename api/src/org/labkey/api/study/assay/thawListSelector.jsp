@@ -119,6 +119,7 @@
     });
 
     // Register so that we can force ExtJS to size the panel correctly when it becomes visible
+    //noinspection JSUnresolvedFunction
     addParticipantVisitResolverSelectionChangeListener(function()
     {
         thawListQueryPickerPanel.doLayout();

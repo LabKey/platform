@@ -78,7 +78,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         }
         catch (ConversionException e)
         {
-           throw new ThawListResolverException("Conversion exception resolving thaw list entry for specimenId: " + specimenID);
+           throw new ThawListResolverException("Conversion exception converting to " + col.getJavaObjectClass().getSimpleName() + " resolving thaw list entry for specimenId: " + specimenID);
         }
 
         TableSelector selector = new TableSelector(_tableInfo, new SimpleFilter(pkNames.get(0), convertedID), null);
