@@ -16,7 +16,9 @@
 
 package org.labkey.issue.query;
 
+import com.drew.lang.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
@@ -24,6 +26,8 @@ import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.MultiValuedDisplayColumn;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.MultiValuedLookupColumn;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.issues.IssuesSchema;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.DetailsURL;
@@ -33,6 +37,8 @@ import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.RowIdForeignKey;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserIdRenderer;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
@@ -42,12 +48,14 @@ import org.labkey.issue.model.IssueManager.CustomColumn;
 import org.labkey.issue.model.IssueManager.CustomColumnConfiguration;
 import org.labkey.issue.model.IssueManager.EntryTypeNames;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.io.Writer;
 
 public class IssuesTable extends FilteredTable<IssuesQuerySchema>
 {
@@ -97,6 +105,7 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
 
         ColumnInfo folder = new AliasedColumn(this, "Folder", _rootTable.getColumn("container"));
         folder.setHidden(true);
+        ContainerForeignKey.initColumn(folder, _userSchema);
         addColumn(folder);
 
         addColumn(new AliasedColumn(this, getCustomCaption("Type", ccc), _rootTable.getColumn("Type")));
@@ -184,7 +193,16 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
         addColumn(closedBy);
 
         addWrapColumn(_rootTable.getColumn("Closed"));
-        addWrapColumn(_rootTable.getColumn("NotifyList"));
+
+        ColumnInfo notifyList = addWrapColumn(_rootTable.getColumn("NotifyList"));
+        notifyList.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new NotifyListDisplayColumn(colInfo, _userSchema.getUser());
+            }
+        });
 
         // add any custom columns that weren't added above
         for (CustomColumn cc : ccc.getCustomColumns(_userSchema.getUser()))
@@ -247,3 +265,50 @@ class URLTitleDisplayColumnFactory implements DisplayColumnFactory
     }
 }
 
+class NotifyListDisplayColumn extends DataColumn
+{
+    private static User _user;
+    private static final String _delim = ", ";
+
+    public NotifyListDisplayColumn(ColumnInfo col, User curUser)
+    {
+        super(col);
+        _user = curUser;
+    }
+
+    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+    {
+        Object o = getValue(ctx);
+        if (o != null)
+        {
+            String val = o.toString();
+            String[] parts = val.split(";");
+            User notifyUser = null;
+            int i, len = parts.length;
+
+            for(i=0;  notifyUser == null && i < len; i++)
+                notifyUser = parseUser(parts[i]);
+
+            if (notifyUser != null)
+            {
+                out.write(notifyUser.getDisplayName(_user));
+
+                for (; i < len; i++)
+                {
+                    notifyUser = parseUser(parts[i]);
+                    if (notifyUser != null)
+                        out.write(String.format("%s%s", _delim, notifyUser.getDisplayName(_user)));
+                }
+            }
+        }
+    }
+
+    @Nullable
+    public User parseUser(String part)
+    {
+        part = StringUtils.trimToNull(part);
+        if (part != null)
+            return UserManager.getUser(Integer.parseInt(StringUtils.trimToNull(part)));
+        return null;
+    }
+}
