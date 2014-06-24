@@ -303,7 +303,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
 
             List<Map<String, Object>> fileData = convertPropertyNamesToURIs(rawData, dataDomain);
 
-            insertRowData(data, user, container, dataDomain, fileData, provider.createProtocolSchema(user, container, protocol, null).createDataTable());
+            insertRowData(data, user, container, run, protocol, provider, dataDomain, fileData, provider.createProtocolSchema(user, container, protocol, null).createDataTable());
 
             if (shouldAddInputMaterials())
             {
@@ -329,7 +329,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
     }
 
     /** Insert the data into the database.  Transaction is active. */
-    protected void insertRowData(ExpData data, User user, Container container, Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo)
+    protected void insertRowData(ExpData data, User user, Container container, ExpRun run, ExpProtocol protocol, AssayProvider provider, Domain dataDomain, List<Map<String, Object>> fileData, TableInfo tableInfo)
             throws SQLException, ValidationException
     {
         if (tableInfo instanceof UpdateableTableInfo)

@@ -7942,6 +7942,7 @@ internal/src/org/labkey/api/assay/nab/view/runNotes.jsp -text
 internal/src/org/labkey/api/assay/nab/view/runProperties.jsp -text
 internal/src/org/labkey/api/assay/nab/view/sampleDilutions.jsp -text
 internal/src/org/labkey/api/assay/nab/view/sampleProperties.jsp -text
+internal/src/org/labkey/api/assay/viability/ViabilityService.java -text
 internal/src/org/labkey/api/attachments/ImageServlet.java -text
 internal/src/org/labkey/api/data/ButtonBarLineBreak.java -text
 internal/src/org/labkey/api/data/DataSourceSessionFactory.archive -text

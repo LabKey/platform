@@ -638,6 +638,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return ExperimentService.get().insertSimpleProtocol(protocol, user);
     }
 
+    @Nullable
     public Pair<ExpProtocol.AssayDomainTypes, DomainProperty> findTargetStudyProperty(ExpProtocol protocol)
     {
         DomainProperty targetStudyDP;

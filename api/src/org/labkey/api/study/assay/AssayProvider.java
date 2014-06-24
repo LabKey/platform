@@ -114,6 +114,7 @@ public interface AssayProvider extends Handler<ExpProtocol>
      */
     HttpView getDataDescriptionView(AssayRunUploadForm form);
 
+    @Nullable
     Pair<ExpProtocol.AssayDomainTypes, DomainProperty> findTargetStudyProperty(ExpProtocol protocol);
 
     Container getAssociatedStudyContainer(ExpProtocol protocol, Object dataId);
