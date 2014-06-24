@@ -85,7 +85,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
             }
             catch (Exception e)
             {
-                throw (IOException)new IOException().initCause(e);
+                throw new IOException(e);
             }
         }
         else

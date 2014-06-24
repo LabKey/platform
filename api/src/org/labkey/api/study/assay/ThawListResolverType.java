@@ -316,10 +316,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
     }
 
     /**
-     * Determine if the submitted form is using a thaw list, and if so, validate the list existence, permissions,
-     * and columns.
-     * @param form
-     * @param errors
+     * Validate the list existence, permissions, and columns.
      */
     public static void validationHelper(ViewForm form, Errors errors)
     {
@@ -353,10 +350,6 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
 
     /**
      * Validate the existence, permissions, and columns of a thaw list.
-     * @param request
-     * @param c
-     * @param u
-     * @return
      */
     private static String validateThawList(HttpServletRequest request, Container c, User u)
     {
