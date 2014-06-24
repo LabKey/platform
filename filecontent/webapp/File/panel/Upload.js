@@ -39,6 +39,16 @@ Ext4.define('File.panel.Upload', {
         this.callParent();
     },
 
+    // not sure if these is needed at all anymore. Looks like this logic may have been around
+    // just to check if the unload is possible (we now mask the webpart, so no longer need unload event)
+    isBusy : function() {
+        return this.busy;
+    },
+
+    setBusy : function(busy) {
+        this.busy = busy;
+    },
+
     // From FileSystem.js
     /*getPrefixUrl: function() {
         var prefix = '';
@@ -182,9 +192,9 @@ Ext4.define('File.panel.Upload', {
                 });
 
                 this.on('sending', function (file, xhr, formData) {
-                    if (!this.uploadPanel.ownerCt.isBusy()) {
-                        this.uploadPanel.ownerCt.setBusy(true);
-                        this.uploadPanel.ownerCt.setDisabled(true);
+                    if (!this.uploadPanel.isBusy()) {
+                        this.uploadPanel.setBusy(true);
+                        this.uploadPanel.ownerCt.el.up("table").mask();
                         this.uploadPanel.statusText.setText('Uploading ' + file.name + '...');
                     }
                     // shouldn't we show some kind of message here? (else case)
@@ -263,13 +273,13 @@ Ext4.define('File.panel.Upload', {
 
                 this.on('canceled', function (file) {
                     this.uploadPanel.statusText.setText('Canceled upload of ' + file.name);
-                    this.uploadPanel.ownerCt.setBusy(false);
-                    this.uploadPanel.ownerCt.setDisabled(false);
+                    this.uploadPanel.setBusy(false);
+                    this.uploadPanel.ownerCt.el.up("table").unmask();
                 });
 
                 this.on('queuecomplete', function () {
-                    this.uploadPanel.ownerCt.setBusy(false);
-                    this.uploadPanel.ownerCt.setDisabled(false);
+                    this.uploadPanel.setBusy(false);
+                    this.uploadPanel.ownerCt.el.up("table").unmask();
 
                     var errorFiles = [];
                     var fileRecords = [];
@@ -633,7 +643,6 @@ Ext4.define('File.panel.Upload', {
             height: 25,
             border: false,
             autoRender : true,
-            //hidden: true,
             style: 'background-color: transparent; -moz-border-radius: 5px; -webkit-border-radius: 5px; -o-border-radius: 5px; -ms-border-radius: 5px; -khtml-border-radius: 5px; border-radius: 5px;'
         });
 

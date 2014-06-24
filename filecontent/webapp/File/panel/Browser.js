@@ -32,8 +32,6 @@ Ext4.define('File.panel.Browser', {
      */
     dateRenderer : Ext4.util.Format.dateRenderer(LABKEY.extDefaultDateTimeFormat || "Y-m-d H:i:s"),
 
-    maskOnDisabled: true,
-
     /**
      * Size renderer used in the details panel.
      * @cfg {Ext4.util.Format.fileSize} fileSize
@@ -43,7 +41,7 @@ Ext4.define('File.panel.Browser', {
 
         // Details panel renders a template without a record.
         if ((record && !record.get("collection")) || value) {
-            render = Ext4.util.Format.fileSize(value);
+            render = Ext4.util.Format.fileSize(value)
 
             // If larger than 1k, include the total bytes
             if (value > 1024) {
@@ -371,30 +369,12 @@ Ext4.define('File.panel.Browser', {
         if (this.showToolbar)
             this.initializeToolbar();
 
-        // NOTE: this has been broken sense the refactor of logic into upload.js (Aaron: attempted to fix it -- ended up a black hole)
-        //window.onbeforeunload = LABKEY.beforeunload(this.beforeUnload, this, 'an operation is still pending, please wait until it is complete.');
-
         // Attach listeners
         this.on('folderchange', this.onFolderChange, this);
         //Ext4.Ajax.timeout = 60000;
         File.panel.Browser._toggleActions(this.fileSystem, this.actions, []);
         this.callParent();
 
-    },
-
-    /*beforeUnload : function() {
-        if (this.isBusy()) {
-            return 'an operation is still pending, please wait until it is complete.';
-        }
-    },*/
-
-    // this is needed so that we can set the busyness of the element but the busyness of the element is currently used for jack all
-    isBusy : function() {
-        return this.busy;
-    },
-
-    setBusy : function(busy) {
-        this.busy = busy;
     },
 
     createActions : function() {
