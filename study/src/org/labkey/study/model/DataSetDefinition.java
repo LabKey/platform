@@ -25,6 +25,10 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.ScrollableDataIterator;
+import org.labkey.api.cache.BlockingCache;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -151,7 +155,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private Integer _cohortId;
     private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
     private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
-    private Date _modified;
     private String _type = DataSet.TYPE_STANDARD;
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
@@ -268,6 +271,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             return this;
         assert isShared();
         DataSetDefinition sub = this.createMutable();
+        assert sub != this;
         sub._definitionContainer = sub.getContainer();
         sub.setContainer(substudy.getContainer());
         sub.lock();
@@ -286,6 +290,11 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         assert null != _isShared;
         return _isShared;
+    }
+
+    private boolean isInherited()
+    {
+        return isShared() && null != _definitionContainer && !_definitionContainer.equals(getContainer());
     }
 
 
@@ -436,16 +445,51 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         _dataSetId = dataSetId;
     }
 
+
+    /**
+     *
+     * We do not want to invalidate caches everytime some one updates a dataset row
+     * So don't store modified in this bean.
+     *
+     * Instead cache modified dates separately
+     *
+     * @return
+     */
+
+    static CacheLoader<String,Date> modifiedDatesLoader = new CacheLoader<String,Date>()
+    {
+        @Override
+        public Date load(String key, @Nullable Object argument)
+        {
+            StudySchema ss = StudySchema.getInstance();
+            SQLFragment sql = new SQLFragment("SELECT modified FROM " + ss.getTableInfoDataSet() + " WHERE entityid=?",key);
+            Date modified = new SqlSelector(ss.getScope(),sql).getObject(Date.class);
+            return modified;
+        }
+    };
+    static Cache<String,Date> modifiedDates = new BlockingCache<>(
+            new DatabaseCache(StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "dataset modified cache"),
+            modifiedDatesLoader);
+
+
     @Override
     public Date getModified()
     {
-        return _modified;
+        return getModified(this);
     }
 
-    public void setModified(Date modified)
+    public static Date getModified(DataSetDefinition def)
     {
-        verifyMutability();
-        _modified = modified;
+        Date modified = modifiedDates.get(def.getEntityId());
+        return modified;
+    }
+
+    public static void updateModified(DataSetDefinition def, Date modified)
+    {
+        StudySchema ss = StudySchema.getInstance();
+        SQLFragment sql = new SQLFragment("UPDATE " + ss.getTableInfoDataSet() + " SET modified=? WHERE entityid=?", modified, def.getEntityId());
+        new SqlExecutor(ss.getScope()).execute(sql);
+        modifiedDates.remove(def.getEntityId());
     }
 
     public String getTypeURI()
@@ -643,15 +687,25 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     TableInfo _storageTable = null;
     
-
-    /** I think the caching semantics of the dataset are such that I can cache the StorageTableInfo in a member */
     @Transient
     public TableInfo getStorageTableInfo() throws UnauthorizedException
     {
-        if (null == _storageTable)
+        if (null != _storageTable)
+            return _storageTable;
+
+        if (isInherited())
+        {
+            StudyImpl shared = getDefinitionStudy();
+            DataSetDefinition ds = shared.getDataSet(getDataSetId());
+            _storageTable = null == ds ? null : ds.getStorageTableInfo();
+        }
+        else
+        {
             _storageTable = loadStorageTableInfo();
+        }
         return _storageTable;
     }
+
 
     /**
      * Deletes rows without auditing
@@ -733,9 +787,9 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public StudyImpl getDefinitionStudy()
     {
-        if (null == _definitionContainer || _definitionContainer.equals(getContainer()))
-            return getStudy();
-        return StudyManager.getInstance().getStudy(_definitionContainer);
+        if (isInherited())
+            return StudyManager.getInstance().getStudy(_definitionContainer);
+        return getStudy();
     }
 
 
@@ -1001,6 +1055,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (!getDefinitionContainer().getId().equals(getContainer().getId()))
             throw new IllegalStateException("Can't save dataset in this folder...");
         StudyManager.getInstance().updateDataSetDefinition(user, this);
+        modifiedDates.remove(getEntityId());
     }
 
 
@@ -1495,6 +1550,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 return null;
             if (null != _domain)
                 return _domain;
+        }
+
+        if (isInherited())
+        {
+            StudyImpl shared = getDefinitionStudy();
+            DataSetDefinition ds = shared.getDataSet(getDataSetId());
+            return null == ds ? null : ds.getDomain();
         }
 
         Domain d=null;

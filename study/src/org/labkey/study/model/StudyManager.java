@@ -338,19 +338,11 @@ public class StudyManager
             }
         }, CohortImpl.class);
 
-        TableInfoGetter dataSetGetter = new TableInfoGetter()
-        {
-            public TableInfo getTableInfo()
-            {
-                return StudySchema.getInstance().getTableInfoDataSet();
-            }
-        };
-
         /* Whenever we explicitly invalidate a dataset, unmaterialize it as well
          * this is probably a little overkill, e.g. name change doesn't need to unmaterialize
          * however, this is the best choke point
          */
-        _datasetHelper = new DatasetHelper(dataSetGetter);
+        _datasetHelper = new DatasetHelper();
 
         // Cache of PropertyDescriptors found in the Shared container for datasets in the given study Container.
         // The shared properties cache will be cleared when the _datasetHelper cache is cleared.
@@ -395,11 +387,42 @@ public class StudyManager
         Table.update(user, StudySchema.getInstance().getTableInfoStudySnapshot(), map, snapshot.getRowId());
     }
 
-    private class DatasetHelper extends QueryHelper<DataSetDefinition>
+    private class DatasetHelper
     {
-        private DatasetHelper(TableInfoGetter tableGetter)
+        // NOTE: We really don't want to have multiple instances of DataSetDefinition's in-memory, only return the
+        // datasets that are cached under container.containerId/ds.entityId
+
+        private QueryHelper<DataSetDefinition> helper = new QueryHelper<DataSetDefinition>(
+                new TableInfoGetter()
+                {
+                    public TableInfo getTableInfo()
+                    {
+                        return StudySchema.getInstance().getTableInfoDataSet();
+                    }
+                },
+                DataSetDefinition.class)
         {
-            super(tableGetter, DataSetDefinition.class);
+            @Override
+            public void clearCache(Container c)
+            {
+                super.clearCache(c);
+            }
+
+            @Override
+            public void clearCache(DataSetDefinition obj)
+            {
+                super.clearCache(obj);
+            }
+        };
+
+
+        private DatasetHelper()
+        {
+        }
+
+        public TableInfo getTableInfo()
+        {
+            return StudySchema.getInstance().getTableInfoDataSet();
         }
 
         private void clearProperties(DataSetDefinition def)
@@ -407,11 +430,76 @@ public class StudyManager
             StudyManager.this._sharedProperties.remove(def.getContainer());
         }
 
-        @Override
         public void clearCache(DataSetDefinition def)
         {
-            super.clearCache(def);
+            helper.clearCache(def);
             clearProperties(def);
+        }
+
+        public DataSetDefinition create(User user, DataSetDefinition obj)
+        {
+            return helper.create(user, obj);
+        }
+
+        public DataSetDefinition update(User user, DataSetDefinition obj, Object... pk)
+        {
+            return helper.update(user, obj, pk);
+        }
+
+        public List<DataSetDefinition> get(Container c)
+        {
+            return toSharedInstance(helper.get(c));
+        }
+
+        public List<DataSetDefinition> get(Container c, SimpleFilter filter)
+        {
+            return toSharedInstance(helper.get(c, filter));
+        }
+
+        public List<DataSetDefinition> get(Container c, @Nullable SimpleFilter filterArg, @Nullable String sortString)
+        {
+            return toSharedInstance(helper.get(c, filterArg, sortString));
+        }
+
+        public DataSetDefinition get(Container c, int rowId)
+        {
+            return toSharedInstance(helper.get(c, rowId, "DataSetId"));
+        }
+
+        private List<DataSetDefinition> toSharedInstance(List<DataSetDefinition> in)
+        {
+            TableInfo t = getTableInfo();
+            ArrayList<DataSetDefinition> ret = new ArrayList<>(in.size());
+            for (DataSetDefinition dsIn : in)
+            {
+                DataSetDefinition dsRet = (DataSetDefinition) StudyCache.getCached(t, dsIn.getContainer(), dsIn.getEntityId());
+                if (null == dsRet)
+                {
+                    dsRet = dsIn;
+                    StudyCache.cache(t, dsIn.getContainer(), dsIn.getEntityId(), dsIn);
+                }
+                ret.add(dsRet);
+            }
+            return ret;
+        }
+
+        private DataSetDefinition toSharedInstance(DataSetDefinition dsIn)
+        {
+            if (null == dsIn)
+                return null;
+            TableInfo t = getTableInfo();
+            DataSetDefinition dsRet = (DataSetDefinition) StudyCache.getCached(t, dsIn.getContainer(), dsIn.getEntityId());
+            if (null == dsRet)
+            {
+                dsRet = dsIn;
+                StudyCache.cache(t, dsIn.getContainer(), dsIn.getEntityId(), dsIn);
+            }
+            return dsRet;
+        }
+
+        public void clearCache(Container c)
+        {
+            helper.clearCache(c);
         }
     }
 
@@ -2077,14 +2165,14 @@ public class StudyManager
     @Nullable
     public DataSetDefinition getDataSetDefinition(Study s, int id)
     {
-        DataSetDefinition ds = _datasetHelper.get(s.getContainer(), id, "DataSetId");
+        DataSetDefinition ds = _datasetHelper.get(s.getContainer(), id);
         // update old rows w/o entityid
         if (null != ds && null == ds.getEntityId())
         {
             ds.setEntityId(GUID.makeGUID());
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute("UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL", ds.getEntityId(), ds.getContainer().getId(), ds.getDataSetId());
             _datasetHelper.clearCache(ds);
-            ds = _datasetHelper.get(s.getContainer(), id, "DataSetId");
+            ds = _datasetHelper.get(s.getContainer(), id);
             // calling updateDataSetDefinition() during load (getDatasetDefinition()) may cause recursion problems
             //updateDataSetDefinition(null, ds);
         }
@@ -2242,6 +2330,8 @@ public class StudyManager
     {
         if (null == def)
             return;
+
+        _log.debug("Uncaching dataset: " + def.getName(), new Throwable());
 
         _datasetHelper.clearCache(def);
         String uri = def.getTypeURI();
@@ -3751,14 +3841,9 @@ public class StudyManager
         @Override
         public void run()
         {
-            DataSetDefinition def = _def.createMutable();
-            // TODO
-            if (def.isShared())
-                return;
-            def.setModified(new Date());
-            def.save(_user);
+            DataSetDefinition.updateModified(_def, new Date());
             if (_fireNotification)
-                fireDatasetChanged(def);
+                fireDatasetChanged(_def);
         }
 
         @Override
