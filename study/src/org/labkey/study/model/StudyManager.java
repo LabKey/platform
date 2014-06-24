@@ -1708,7 +1708,7 @@ public class StudyManager
         QCState newState = Table.insert(user, StudySchema.getInstance().getTableInfoQCState(), state);
         // switching from zero to more than zero QC states affects the columns in our materialized datasets
         // (adding a QC State column), so we unmaterialize them here:
-        if (preInsertStates == null || preInsertStates.isEmpty())
+        if (preInsertStates.isEmpty())
             clearCaches(state.getContainer(), true);
         return newState;
     }
@@ -1739,7 +1739,7 @@ public class StudyManager
         QCState defaultQCState = null;
         if (defaultQcStateId != null)
             defaultQCState = StudyManager.getInstance().getQCStateForRowId(
-                study.getContainer(), defaultQcStateId.intValue());
+                study.getContainer(), defaultQcStateId);
         return defaultQCState;
     }
 
@@ -3819,9 +3819,9 @@ public class StudyManager
     {
         private final @NotNull User _user;
         private final @NotNull DataSetDefinition _def;
-        private final @NotNull boolean _fireNotification;
+        private final boolean _fireNotification;
 
-        private DataSetModifiedRunnable(@NotNull DataSetDefinition def, @NotNull User user, @NotNull boolean fireNotification)
+        private DataSetModifiedRunnable(@NotNull DataSetDefinition def, @NotNull User user, boolean fireNotification)
         {
             _def = def;
             _user = user;

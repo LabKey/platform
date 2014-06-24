@@ -75,6 +75,7 @@ public class ValidateQueryAction extends ApiAction<ValidateQueryAction.ValidateQ
 
     public ApiResponse execute(ValidateQueryForm form, BindException errors) throws Exception
     {
+        // TODO: Shouldn't this try/catch(SQLException & BadSqlGrammarException)? Similar to #20861
         QueryManager.get().validateQuery(table, form.isIncludeAllColumns());
 
         //if we got here, the query is OK

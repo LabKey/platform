@@ -209,6 +209,7 @@ import org.labkey.remoteapi.query.SelectRowsCommand;
 import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -5818,28 +5819,43 @@ public class QueryController extends SpringActionController
         public ApiResponse execute(QueryForm form, BindException errors) throws Exception
         {
             UserSchema schema = form.getSchema();
+
+            if (null == schema)
+            {
+                errors.reject(ERROR_MSG, "could not resolve schema: " + form.getSchemaName());
+                return null;
+            }
+
             TableInfo table = schema.getTable(form.getQueryName());
+
             if (null == table)
             {
                 errors.reject(ERROR_MSG, "could not resolve table: " + form.getQueryName());
                 return null;
             }
-            else
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+
+            try
             {
-                ApiSimpleResponse response = new ApiSimpleResponse();
-
                 QueryManager.get().validateQuery(table, true);
-
-                SchemaKey schemaKey = SchemaKey.fromString(form.getSchemaName());
-                Set<String> queryErrors = QueryManager.get().validateQueryMetadata(schemaKey, form.getQueryName(), getUser(), getContainer());
-                queryErrors.addAll(QueryManager.get().validateQueryViews(schemaKey, form.getQueryName(), getUser(), getContainer()));
-
-                for (String e : queryErrors)
-                {
-                    errors.reject(ERROR_MSG, e);
-                }
+            }
+            catch (SQLException | BadSqlGrammarException e)
+            {
+                // Don't send these to mothershipe; see #20861
+                errors.reject(ERROR_MSG, e.getMessage());
                 return response;
             }
+
+            SchemaKey schemaKey = SchemaKey.fromString(form.getSchemaName());
+            Set<String> queryErrors = QueryManager.get().validateQueryMetadata(schemaKey, form.getQueryName(), getUser(), getContainer());
+            queryErrors.addAll(QueryManager.get().validateQueryViews(schemaKey, form.getQueryName(), getUser(), getContainer()));
+
+            for (String e : queryErrors)
+            {
+                errors.reject(ERROR_MSG, e);
+            }
+            return response;
         }
     }
 

@@ -27,6 +27,7 @@ import org.apache.lucene.document.StoredField;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.FieldInfo;
+import org.apache.lucene.index.IndexFormatTooNewException;
 import org.apache.lucene.index.IndexFormatTooOldException;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
@@ -154,7 +155,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             _indexManager = WritableIndexManagerImpl.get(indexDir, getAnalyzer());
             setConfigurationError(null);  // Clear out any previous error
         }
-        catch (IndexFormatTooOldException e)    // Misnomer... this is thrown when format is too recent as well
+        catch (IndexFormatTooOldException | IndexFormatTooNewException e)    // Lucene used to throw "TooOld" in this case; now throws "TooNew"... either way, suppress mothership logging
         {
             MinorConfigurationException mce = new MinorConfigurationException(
                 "Index format is not supported; the configured index directory may have been created by a more recent version of LabKey Server", e);
