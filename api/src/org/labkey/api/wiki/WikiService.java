@@ -36,6 +36,9 @@ public interface WikiService
     /** Name of the table exposed with the list of renderer types */
     public static final String RENDERER_TYPE_TABLE_NAME = "RendererType";
 
+    public static final String WIKI_PREFIX = "<div class=\"labkey-wiki\">";
+    public static final String WIKI_SUFFIX = "</div>";
+
     public WebPartView getView(Container c, String name, boolean renderContentOnly);
     public WebPartView getHistoryView(Container c, String name);
 
