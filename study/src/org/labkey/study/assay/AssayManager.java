@@ -426,6 +426,7 @@ public class AssayManager implements AssayService.Interface
         }
     }
 
+    @Nullable
     public ExpExperiment findBatch(ExpRun run)
     {
         int protocolId = run.getProtocol().getRowId();
