@@ -1112,9 +1112,11 @@ public class SecurityManager
         // NOTE: we can almost do this with SecurityPolicy objects, but we don't have any SecurableResource objects
         // NOTE: handy, so we'd have to rework the API/caching a bit
 
+        FieldKey resourceId = new FieldKey(null,"resourceid");
         for (String id : resources)
         {
-            if (0 == new TableSelector(core.getTableInfoRoleAssignments(),Table.ALL_COLUMNS,new SimpleFilter(),null).getRowCount())
+            SimpleFilter f = new SimpleFilter(resourceId, id);
+            if (!new TableSelector(core.getTableInfoRoleAssignments(),f,null).exists())
             {
                 SQLFragment insert = new SQLFragment("INSERT INTO " + core.getTableInfoRoleAssignments() + " (resourceid,userid,role) VALUES (?,-3,'org.labkey.api.security.roles.NoPermissionsRole')",id);
                 new SqlExecutor(core.getSchema()).execute(insert);
