@@ -18,10 +18,14 @@
 
 <%@ page import="org.labkey.api.data.Container"%>
 <%@ page import="org.labkey.api.security.User"%>
+<%@ page import="org.labkey.api.security.permissions.InsertPermission"%>
 <%@ page import="org.labkey.api.util.PageFlowUtil"%>
+<%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
-<%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.api.view.ViewContext"%>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.wiki.WikiService" %>
 <%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.IssuePage" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
@@ -35,8 +39,9 @@
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.util.Arrays" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.regex.Matcher" %>
+<%@ page import="java.util.regex.Pattern" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -57,6 +62,11 @@
     final String issueId = Integer.toString(issue.getIssueId());
     final boolean hasUpdatePerms = bean.getHasUpdatePermissions();
     IssueManager.EntryTypeNames names = IssueManager.getEntryTypeNames(c);
+
+    // Create Issue from a Ticket
+    Container relatedIssueContainer = IssueManager.getRelatedIssuesList(c);
+    ActionURL insertURL = relatedIssueContainer == null ? null : new ActionURL(InsertAction.class, relatedIssueContainer);
+    boolean showRelatedIssuesButton = relatedIssueContainer == null ? false : relatedIssueContainer.hasPermission(user, InsertPermission.class);
 %>
 <% if (!bean.isPrint())
 {
@@ -97,6 +107,12 @@
     }
     %><td><%= textLink("print", context.cloneActionURL().replaceParameter("_print", "1"))%></td>
     <td><%= textLink("email prefs", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId))%></td>
+    <%
+    if (showRelatedIssuesButton)
+    {
+        %><td><%= textLink("create related issue", "javascript:document.forms.CreateIssue.submit()") %></td><%
+    }
+    %>
     <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>
     </tr></table>
 </form><%
@@ -167,6 +183,7 @@
         %><input type="hidden" name="callbackURL" value="<%=bean.getCallbackURL()%>"/><%
     }
 
+    StringBuilder commentText = new StringBuilder();
     for (Issue.Comment comment : issue.getComments())
     {
         %><hr><table width="100%"><tr><td align="left"><b>
@@ -176,5 +193,23 @@
         </b></td></tr></table>
         <%=comment.getComment()%>
         <%=bean.renderAttachments(context, comment)%><%
+
+        // Extract the string value from the last comment entry
+        Pattern pattern = Pattern.compile("(?s)(" + WikiService.WIKI_PREFIX + ")(.*?)(" + WikiService.WIKI_SUFFIX + ")");
+        Matcher matcher = pattern.matcher(comment.getComment());
+        if (matcher.find()) // add the contexts if we find it
+            commentText.append(matcher.group(2));
+        commentText.append("\n\n");
     }
+    String commentTextStr = commentText.toString().replaceAll("<br>", "");
 %>
+
+<form method="POST" id="CreateIssue" action="<%=insertURL%>">
+    <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/>
+    <input type="hidden" name="body" value="<%=h(commentTextStr)%>"/>
+    <input type="hidden" name="title" value="<%=h(issue.getTitle())%>"/>
+    <input type="hidden" name="skipPost" value="true"/>
+    <input type="hidden" name="assignedTo" value="<%=issue.getAssignedTo()%>"/>
+    <input type="hidden" name="priority" tabindex="2" value="<%=issue.getPriority()%>"/>
+    <input type="hidden" name="related" value="<%=issue.getIssueId()%>"/>
+</form>

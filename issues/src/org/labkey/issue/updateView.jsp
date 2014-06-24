@@ -268,7 +268,7 @@
         <%
             for (ColumnType type : extraOptions)
             {
-                %><tr><td class="labkey-form-label"><%=text(bean.getLabel(type, true))%></td><td><%=text(bean.writeSelect(type, 1))%></td></tr><%
+                    %><tr><td class="labkey-form-label"><%=text(bean.getLabel(type, true))%></td><td><%=text(bean.writeSelect(type, 1))%></td></tr><%
             }
         %>
         <tr><td class="labkey-form-label"><%=bean.getLabel("Comment", bean.isInsert())%></td>

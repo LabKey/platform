@@ -883,7 +883,7 @@ public class WikiManager implements WikiService
     @Override
     public String getFormattedHtml(WikiRendererType rendererType, String source, @Nullable String attachPrefix, @Nullable Collection<? extends Attachment> attachments)
     {
-        return "<div class=\"labkey-wiki\">" + getRenderer(rendererType, attachPrefix, attachments).format(source).getHtml() + "</div>";
+        return WIKI_PREFIX + getRenderer(rendererType, attachPrefix, attachments).format(source).getHtml() + WIKI_SUFFIX;
     }
 
     @Override

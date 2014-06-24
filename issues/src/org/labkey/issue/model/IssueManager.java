@@ -137,6 +137,9 @@ public class IssueManager
     private static final String CAT_DEFAULT_MOVE_TO_LIST = "issueDefaultMoveToList";
     private static final String PROP_DEFAULT_MOVE_TO_CONTAINER = "issueDefaultMoveToContainer";
 
+    private static final String CAT_DEFAULT_RELATED_ISSUES_LIST = "issueRelatedIssuesList";
+    private static final String PROP_DEFAULT_RELATED_ISSUES_LIST = "issueRelatedIssuesList";
+
     private static final String CAT_COMMENT_SORT = "issueCommentSort";
     public static final String PICK_LIST_NAME = "pickListColumns";
 
@@ -744,6 +747,28 @@ public class IssueManager
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_MOVE_TO_LIST, true);
         props.put(PROP_DEFAULT_MOVE_TO_CONTAINER, propsValue);
         PropertyManager.saveProperties(props);
+    }
+
+    public static void saveRelatedIssuesList(Container c, @Nullable String relatedIssuesList)
+    {
+        String propsValue = null;
+        if (relatedIssuesList != null)
+        {
+            propsValue = relatedIssuesList;
+        }
+
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_RELATED_ISSUES_LIST, true);
+        props.put(PROP_DEFAULT_RELATED_ISSUES_LIST, propsValue);
+        PropertyManager.saveProperties(props);
+    }
+
+    public static @Nullable Container getRelatedIssuesList(Container c)
+    {
+        Map<String, String> props = PropertyManager.getProperties(c, CAT_DEFAULT_RELATED_ISSUES_LIST);
+        String containerStr = props.get(PROP_DEFAULT_RELATED_ISSUES_LIST);
+        Container container = containerStr == null ? null : ContainerManager.getForPath(containerStr);
+
+        return container;
     }
 
     public static Sort.SortDirection getCommentSortDirection(Container c)

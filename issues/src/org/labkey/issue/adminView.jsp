@@ -167,7 +167,7 @@
                 </td>
                 <td valign="top" align="right">
                     <table>
-                        <tr><td colspan="2">Set move to container:</td></tr>
+                        <tr><td colspan="2">Set move to folder:</td></tr>
                         <tr>
                             <td>
                                 <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="NoMoveToContainer"<%=checked(null == bean.moveToContainers)%> />
@@ -214,6 +214,17 @@
                                 </select>
                             </td>
                         </tr>
+                    </table>
+                </td>
+                <td>
+                    <table>
+                        <td>Folder of related issues list</td>
+                        <td><input type="text" name="relatedIssuesList"
+                                   <%
+                                       Container related = IssueManager.getRelatedIssuesList(c);
+                                       String relatedStr = related == null ? "" : related.getPath();
+                                   %>
+                                   value="<%=h(relatedStr)%>" size="20"/></td>
                     </table>
                 </td>
             </tr>

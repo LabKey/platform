@@ -508,6 +508,9 @@ public class IssuesController extends SpringActionController
                 setNewIssueDefaults(_issue);
             }
 
+            if (form.getPriority() != null)
+                _issue.setPriority(Integer.parseInt(form.getPriority()));
+
             IssuePage page = new IssuePage(getContainer(), getUser());
             JspView v = new JspView<>("/org/labkey/issue/updateView.jsp", page);
 
@@ -1784,6 +1787,8 @@ public class IssuesController extends SpringActionController
         private HString _entrySingularName;
         private HString _entryPluralName;
 
+        private String _relatedIssuesList;
+
         public String getDirection()
         {
             return _direction;
@@ -1876,6 +1881,16 @@ public class IssuesController extends SpringActionController
 
         public void setRequiredFields(HString[] requiredFields){_requiredFields = requiredFields;}
         public HString[] getRequiredFields(){return _requiredFields;}
+
+        public String getRelatedIssuesList()
+        {
+            return _relatedIssuesList;
+        }
+
+        public void setRelatedIssuesList(String relatedIssuesList)
+        {
+            _relatedIssuesList = relatedIssuesList;
+        }
     }
 
     @RequiresPermissionClass(AdminPermission.class)
@@ -1976,6 +1991,13 @@ public class IssuesController extends SpringActionController
                 errors.reject("moveToContainer", "Invalid move to setting!");
             }
 
+            if (form.getRelatedIssuesList() != null)
+            {
+                Container related = ContainerManager.getForPath(form.getRelatedIssuesList());
+                if (related == null)
+                    errors.reject("Related Issues List", "Invalid folder path for folder of related issues list.");
+            }
+
             if (form.getEntrySingularName() == null || form.getEntrySingularName().trimToEmpty().length() == 0)
                 errors.reject(ConfigureIssuesForm.ParamNames.entrySingularName.name(), "You must specify a value for the entry type singular name!");
             if (form.getEntryPluralName()== null || form.getEntryPluralName().trimToEmpty().length() == 0)
@@ -2044,6 +2066,7 @@ public class IssuesController extends SpringActionController
             IssueManager.saveCommentSortDirection(getContainer(), _direction);
             IssueManager.saveDefaultAssignedToUser(getContainer(), _user);
             IssueManager.saveMoveDestinationContainers(getContainer(), _moveToContainers);
+            IssueManager.saveRelatedIssuesList(getContainer(), form.getRelatedIssuesList());
 
             CustomColumnConfiguration nccc = new CustomColumnConfiguration(getViewContext());
             IssueManager.saveCustomColumnConfiguration(getContainer(), nccc);
@@ -2851,6 +2874,11 @@ public class IssuesController extends SpringActionController
         public String getBody()
         {
             return _stringValues.get("body");
+        }
+
+        public String getPriority()
+        {
+            return _stringValues.get("priority");
         }
 
         /**

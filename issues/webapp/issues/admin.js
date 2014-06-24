@@ -77,7 +77,7 @@ Ext4.onReady( function() {
     var label = Ext4.create('Ext.Component', {
         tpl: new Ext4.XTemplate('<span>{text:htmlEncode}</span>'),
         data: {
-            text: 'Specific Container'
+            text: 'Specific Folder'
         }
     });
 

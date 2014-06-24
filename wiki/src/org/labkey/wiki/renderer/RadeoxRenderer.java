@@ -786,7 +786,7 @@ public class RadeoxRenderer extends BaseRenderEngine implements WikiRenderEngine
         private void test(String wiki, String html)
         {
             assertEquals(html, _r.format(wiki).getHtml());
-            assertEquals("<div class=\"labkey-wiki\">" + html + "</div>", _ws.getFormattedHtml(WikiRendererType.RADEOX, wiki));
+            assertEquals(WikiService.WIKI_PREFIX + html + WikiService.WIKI_SUFFIX, _ws.getFormattedHtml(WikiRendererType.RADEOX, wiki));
         }
 
         @Test

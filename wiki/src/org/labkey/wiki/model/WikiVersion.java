@@ -23,6 +23,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.wiki.WikiRenderer;
 import org.labkey.api.wiki.WikiRendererType;
+import org.labkey.api.wiki.WikiService;
 import org.labkey.wiki.WikiContentCache;
 import org.labkey.wiki.WikiManager;
 
@@ -122,7 +123,7 @@ public class WikiVersion
     // TODO: WikiVersion should know its wiki & container
     public String getHtml(Container c, Wiki wiki)
     {
-        return "<div class=\"labkey-wiki\">" + getHtmlForConvert(c, wiki) + "</div>";
+        return WikiService.WIKI_PREFIX + getHtmlForConvert(c, wiki) + WikiService.WIKI_SUFFIX;
     }
 
     public String getHtmlForConvert(Container c, Wiki wiki)
