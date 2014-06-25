@@ -252,9 +252,9 @@ class QueryTracker
         out.print("</td><td style=\"padding-left:10;\">");
         out.print("SQL");
         out.print("</td>");
-        out.print("<td>");
-        out.print("SQL&nbsp;With&nbsp;Parameters");
-        out.print("</td>");
+//        out.print("<td>");
+//        out.print("SQL&nbsp;With&nbsp;Parameters");
+//        out.print("</td>");
         out.println("</tr>");
     }
 
@@ -290,9 +290,9 @@ class QueryTracker
         }
 
         out.print(tab);
-        out.print("SQL");
-        out.print(tab);
-        out.print("SQL With Parameters\n");
+        out.print("SQL\n");
+//        out.print(tab);
+//        out.print("SQL With Parameters\n");
     }
 
     public void renderRow(PrintWriter out, String className, QueryProfiler.ActionURLFactory factory)
@@ -306,7 +306,7 @@ class QueryTracker
         ActionURL url = factory.getActionURL(getSql());
         out.println("<td valign=top align=right><a href=\"" + PageFlowUtil.filter(url.getLocalURIString()) + "\">" + Formats.commaf0.format(getStackTraceCount()) + "</a></td>");
         out.println("<td style=\"padding-left:10;\">" + PageFlowUtil.filter(getSql(), true) + "</td>");
-        out.println("<td style=\"padding-left:10;\">" + PageFlowUtil.filter(getSqlAndParameters(), true) + "</td>");
+//        out.println("<td style=\"padding-left:10;\">" + PageFlowUtil.filter(getSqlAndParameters(), true) + "</td>");
         out.println("</tr>");
     }
 
@@ -324,7 +324,7 @@ class QueryTracker
         }
 
         out.print(tab + getSql().trim().replaceAll("(\\s)+", " "));
-        out.print(tab + getSqlAndParameters().trim().replaceAll("(\\s)+", " "));
+//        out.print(tab + getSqlAndParameters().trim().replaceAll("(\\s)+", " "));
         out.print('\n');
     }
 }
