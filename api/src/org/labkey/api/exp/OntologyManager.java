@@ -409,12 +409,20 @@ public class OntologyManager
                     }
                     else
                     {
-                        // TODO does validateProperty handle MvFieldWrapper?
                         if (null != pd)
                         {
-                            if (!validateProperty(validatorMap.get(propertyURI), pd, new ObjectProperty(lsid, c, pd, value), errors, validatorCache))
+                            try
                             {
-                                throw new ValidationException(errors);
+                                // Use an ObjectProperty to unwrap MvFieldWrapper, do type conversion, etc
+                                ObjectProperty objectProperty = new ObjectProperty(lsid, c, pd, value);
+                                if (!validateProperty(validatorMap.get(propertyURI), pd, objectProperty, errors, validatorCache))
+                                {
+                                    throw new ValidationException(errors);
+                                }
+                            }
+                            catch (ConversionException e)
+                            {
+                                throw new ValidationException("Could not convert value '" + value + "' for field '" + pd.getName() + "'", pd.getName());
                             }
                         }
                     }
