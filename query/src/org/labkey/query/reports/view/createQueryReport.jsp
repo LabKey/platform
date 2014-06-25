@@ -249,7 +249,6 @@
 
         var viewCombo  = Ext4.create('Ext.form.field.ComboBox',{
             fieldLabel: 'View',
-            name: 'view',
             id: viewId,
             name: 'selectedViewName',
             allowBlank: true,
@@ -278,7 +277,6 @@
             },
             items: [schemaCombo, queryCombo, viewCombo]
         });
-
 
         Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
             renderTo    : 'queryReportForm',

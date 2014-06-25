@@ -1429,7 +1429,9 @@ Ext4.define('File.panel.Browser', {
                             boxLabel: label,
                             name: 'importAction',
                             inputValue: action.getId(),
-                            width : '100%'
+                            width : '100%',
+                            validateOnChange: false,
+                            validateOnBlur: false
                         });
 
                         if (enabled) {
@@ -1451,6 +1453,7 @@ Ext4.define('File.panel.Browser', {
                     disabled: !pa.getEnabled(),
                     disabledCls: 'import-provider',
                     bodyStyle: 'margin-bottom: 4px;',
+                    validateOnChange: false,
                     listeners : {
                         render: function(rg) {
                             this.setFormFieldTooltip(rg, rg.paEnabled ? 'info.png' : 'warning-icon-alt.png');
