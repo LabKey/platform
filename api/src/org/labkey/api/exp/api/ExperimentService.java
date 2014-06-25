@@ -17,6 +17,7 @@
 package org.labkey.api.exp.api;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -110,6 +111,9 @@ public class ExperimentService
         List<? extends ExpData> getExpDatas(int... rowid);
         List<? extends ExpData> getExpDatas(Collection<Integer> rowid);
         List<? extends ExpData> getExpDatas(Container container, @Nullable DataType type, @Nullable String name);
+        @NotNull
+        List<? extends ExpData> getExpDatasUnderPath(@NotNull File path, @Nullable Container c);
+
         /**
          * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
          */
@@ -263,8 +267,6 @@ public class ExperimentService
 
         /** Kicks off an asynchronous move - a PipelineJob is submitted to the queue to perform the move */
         void moveRuns(ViewBackgroundInfo targetInfo, Container sourceContainer, List<ExpRun> runs) throws IOException;
-
-        public List<? extends ExpData> getChildren(File file, Container c);
 
         public ExpProtocol insertSimpleProtocol(ExpProtocol baseProtocol, User user) throws ExperimentException;
 

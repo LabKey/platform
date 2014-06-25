@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.Identifiable;
 import org.labkey.api.exp.Lsid;
@@ -39,6 +40,7 @@ public interface ExpObject extends Identifiable, Comparable<ExpObject>
     void setLSID(Lsid lsid);
     String getLSIDNamespacePrefix();
     void setName(String name);
+    @Nullable
     URLHelper detailsURL();
     Container getContainer();
     void setContainer(Container container);
