@@ -970,17 +970,27 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         List<String> statements = new ArrayList<>();
         for (Map.Entry<String, String> oldToNew : change.getColumnRenames().entrySet())
         {
-            statements.add(String.format("EXEC sp_rename '%s','%s','COLUMN'",
-                    makeTableIdentifier(change) + ".\"" + oldToNew.getKey() + "\"", oldToNew.getValue()));
+            String oldName = oldToNew.getKey();
+            String newName = oldToNew.getValue();
+            if (!oldName.equals(newName))
+            {
+                statements.add(String.format("EXEC sp_rename '%s','%s','COLUMN'",
+                        makeTableIdentifier(change) + ".\"" + oldName + "\"", newName));
+            }
         }
 
         for (Map.Entry<PropertyStorageSpec.Index, PropertyStorageSpec.Index> oldToNew : change.getIndexRenames().entrySet())
         {
             PropertyStorageSpec.Index oldIndex = oldToNew.getKey();
             PropertyStorageSpec.Index newIndex = oldToNew.getValue();
-            statements.add(String.format("EXEC sp_rename '%s','%s','INDEX'",
-                    makeTableIdentifier(change) + "." + nameIndex(change.getTableName(), oldIndex.columnNames),
-                    nameIndex(change.getTableName(), newIndex.columnNames)));
+            String oldName = nameIndex(change.getTableName(), oldIndex.columnNames);
+            String newName = nameIndex(change.getTableName(), newIndex.columnNames);
+            if (!oldName.equals(newName))
+            {
+                statements.add(String.format("EXEC sp_rename '%s','%s','INDEX'",
+                        makeTableIdentifier(change) + "." + oldName,
+                        newName));
+            }
         }
 
         return statements;

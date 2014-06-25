@@ -994,20 +994,30 @@ public class PostgreSql84Dialect extends SqlDialect
         List<String> statements = new ArrayList<>();
         for (Map.Entry<String, String> oldToNew : change.getColumnRenames().entrySet())
         {
-            statements.add(String.format("ALTER TABLE %s.%s RENAME COLUMN %s TO %s",
-                    change.getSchemaName(), change.getTableName(),
-                    makePropertyIdentifier(oldToNew.getKey()),
-                    makePropertyIdentifier(oldToNew.getValue())));
+            String oldIdentifier = makePropertyIdentifier(oldToNew.getKey());
+            String newIdentifier = makePropertyIdentifier(oldToNew.getValue());
+            if (!oldIdentifier.equals(newIdentifier))
+            {
+                statements.add(String.format("ALTER TABLE %s.%s RENAME COLUMN %s TO %s",
+                        change.getSchemaName(), change.getTableName(),
+                        oldIdentifier,
+                        newIdentifier));
+            }
         }
 
         for (Map.Entry<PropertyStorageSpec.Index, PropertyStorageSpec.Index> oldToNew : change.getIndexRenames().entrySet())
         {
             PropertyStorageSpec.Index oldIndex = oldToNew.getKey();
             PropertyStorageSpec.Index newIndex = oldToNew.getValue();
-            statements.add(String.format("ALTER INDEX %s.%s RENAME TO %s",
-                    change.getSchemaName(),
-                    nameIndex(change.getTableName(), oldIndex.columnNames),
-                    nameIndex(change.getTableName(), newIndex.columnNames)));
+            String oldName = nameIndex(change.getTableName(), oldIndex.columnNames);
+            String newName = nameIndex(change.getTableName(), newIndex.columnNames);
+            if (!oldName.equals(newName))
+            {
+                statements.add(String.format("ALTER INDEX %s.%s RENAME TO %s",
+                        change.getSchemaName(),
+                        oldName,
+                        newName));
+            }
         }
 
         return statements;
