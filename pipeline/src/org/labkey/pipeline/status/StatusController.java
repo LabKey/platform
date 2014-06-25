@@ -728,6 +728,7 @@ public class StatusController extends SpringActionController
         }
     }
 
+    // DeletePermission will be checked in PipelineStatusManager.deleteStatus()
     @RequiresPermissionClass(ReadPermission.class)
     public class DeleteStatusAction extends FormViewAction<ConfirmDeleteStatusForm>
     {

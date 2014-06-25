@@ -16,6 +16,7 @@
 
 package org.labkey.experiment.api;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.exp.ExperimentDataHandler;
@@ -65,9 +66,14 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
         super(data);
     }
 
+    @Nullable
     public URLHelper detailsURL()
     {
-        return getDataType().getDetailsURL(this);
+        DataType dataType = getDataType();
+        if (dataType == null)
+            return null;
+
+        return dataType.getDetailsURL(this);
     }
 
     public List<ExpProtocolApplicationImpl> getTargetApplications()

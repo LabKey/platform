@@ -32,6 +32,12 @@
 <%@ page import="org.labkey.api.data.DataRegionSelection" %>
 <%@ page import="org.labkey.api.data.DataRegion" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.api.util.NetworkDrive" %>
+<%@ page import="java.io.File" %>
+<%@ page import="org.labkey.api.pipeline.PipelineService" %>
+<%@ page import="org.labkey.api.pipeline.PipeRoot" %>
+<%@ page import="org.labkey.api.exp.api.ExpData" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -42,7 +48,7 @@
     }
 %>
 <%!
-    public String renderStatusFile(PipelineStatusFileImpl file, Set<ExpRun> allRuns)
+    public String renderStatusFile(PipeRoot root, PipelineStatusFileImpl file, Set<ExpRun> allRuns)
     {
         StringBuilder sb = new StringBuilder();
         sb.append("<li style='padding-bottom:0.5em;'>");
@@ -50,6 +56,20 @@
         Container c = file.lookupContainer();
         ActionURL detailsURL = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(c, file.getRowId());
         sb.append("<span>job: <a href='").append(h(detailsURL)).append("'>").append(h(file.getDescription())).append("</a></span>");
+
+        // Directory that will be deleted if they aren't any usages
+        File statusFile = new File(file.getFilePath());
+        File analysisDir = statusFile.getParentFile();
+        if (root != null && root.isUnderRoot(analysisDir) && NetworkDrive.exists(analysisDir))
+        {
+            String relativePath = root.relativePath(analysisDir);
+            if (relativePath != null)
+            {
+                sb.append("<br>");
+                sb.append("&nbsp;&nbsp;");
+                sb.append("<span>Analysis directory '").append(h(relativePath)).append("' will be deleted if no runs or datas are in the directory.");
+            }
+        }
 
         // Get any associated experiment runs
         List<? extends ExpRun> runs = ExperimentService.get().getExpRunsForJobId(file.getRowId());
@@ -64,6 +84,30 @@
             allRuns.addAll(runs);
         }
 
+        /*
+        // Check if any datas exist under the analysis directory that are not owned by the runs already listed
+        List<? extends ExpData> datas = ExperimentService.get().getExpDatasUnderPath(analysisDir, null);
+        if (!datas.isEmpty())
+        {
+            for (ExpData data : datas)
+            {
+                // Skip datas created by runs already listed.  They will be deleted if the run is deleted.
+                if (runs.contains(data.getRun()))
+                    continue;
+
+                sb.append("<br>");
+                sb.append("&nbsp;&nbsp;");
+                sb.append("<span class='exp-data'>data: ");
+                URLHelper url = data.detailsURL();
+                if (url != null)
+                    sb.append("<a href='").append(h(url)).append("'>").append(h(data.getName())).append("</a>");
+                else
+                    sb.append(h(data.getName()));
+                sb.append("</span>");
+            }
+        }
+        */
+
         // Recurse into child jobs
         List<PipelineStatusFileImpl> children = PipelineStatusManager.getSplitStatusFiles(file.getJobId(), null);
         if (children.size() > 0)
@@ -71,7 +115,7 @@
             sb.append("<ul>");
             for (PipelineStatusFileImpl child : children)
             {
-                sb.append(renderStatusFile(child, allRuns));
+                sb.append(renderStatusFile(root, child, allRuns));
             }
             sb.append("</ul>");
         }
@@ -82,7 +126,12 @@
 %>
 <%
     ConfirmDeleteStatusForm form = (ConfirmDeleteStatusForm)HttpView.currentModel();
+
+    PipeRoot root = PipelineService.get().findPipelineRoot(getContainer());
+
     int[] rowIds = form.getRowIds();
+    if (rowIds == null)
+        rowIds = new int[0];
     List<PipelineStatusFileImpl> files = PipelineStatusManager.getStatusFiles(rowIds);
 
     Set<ExpRun> allRuns = new LinkedHashSet<>();
@@ -91,7 +140,7 @@
 
 <ul>
 <% for (PipelineStatusFileImpl file : files) { %>
-    <%=text(renderStatusFile(file, allRuns))%>
+    <%=text(renderStatusFile(root, file, allRuns))%>
 <% } %>
 </ul>
 

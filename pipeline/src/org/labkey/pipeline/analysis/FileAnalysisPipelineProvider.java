@@ -17,12 +17,14 @@ package org.labkey.pipeline.analysis;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipelineActionConfig;
 import org.labkey.api.pipeline.PipelineDirectory;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
 import org.labkey.api.pipeline.file.AbstractFileAnalysisProvider;
 import org.labkey.api.pipeline.file.FileAnalysisTaskPipeline;
@@ -114,7 +116,8 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
         // Delete the protocol analysis directory and it's contents if it is no longer used
         File statusFile = new File(sf.getFilePath());
         File analysisDir = statusFile.getParentFile();
-        if (NetworkDrive.exists(analysisDir))
+        PipeRoot root = PipelineService.get().findPipelineRoot(sf.lookupContainer());
+        if (root != null && root.isUnderRoot(analysisDir) && NetworkDrive.exists(analysisDir))
         {
             boolean unused = true;
 
@@ -127,19 +130,11 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
 
             if (unused)
             {
-                // Check if any runs have ExpData inputs/outputs that reference files in this directory
-                File[] files = analysisDir.listFiles();
-                if (files != null)
+                // Check if any datas exist under the analysis directory
+                List<? extends ExpData> children = ExperimentService.get().getExpDatasUnderPath(analysisDir, null);
+                if (!children.isEmpty())
                 {
-                    for (File file : files)
-                    {
-                        ExpRun run = ExperimentService.get().getCreatingRun(file, null);
-                        if (run != null)
-                        {
-                            unused = false;
-                            break;
-                        }
-                    }
+                    unused = false;
                 }
             }
 

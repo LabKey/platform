@@ -21,6 +21,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.fhcrc.cpas.exp.xml.SimpleTypeNames;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
@@ -3064,13 +3065,19 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public List<ExpDataImpl> getChildren(File file, Container c)
+    @NotNull
+    public List<ExpDataImpl> getExpDatasUnderPath(@NotNull File path, @Nullable Container c)
     {
-        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        String prefix = file.toURI().toString() + "/";
+        SimpleFilter filter = new SimpleFilter();
+        if (c != null)
+            filter.addCondition(FieldKey.fromParts("Container"), c);
+
+        String prefix = path.toURI().toString();
+        if (!prefix.endsWith("/"))
+            prefix = prefix + "/";
 
         filter.addCondition(FieldKey.fromParts("datafileurl"), prefix, CompareType.STARTS_WITH);
-        filter.addCondition(FieldKey.fromParts("datafileurl"), file.toURI().toString(), CompareType.NEQ);
+        filter.addCondition(FieldKey.fromParts("datafileurl"), path.toURI().toString(), CompareType.NEQ);
         return ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filter, null).getArrayList(Data.class));
     }
 
