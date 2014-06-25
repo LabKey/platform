@@ -157,7 +157,7 @@
                     id="notifyUsersOnError"
                     url="<%=completeUserUrl%>" rows="5" cols="60"
                     value="<%=notifyUsersOnError%>"/>
-        <tr style="display:<%=displayError%>"><td></td><td width="350"><%=getTitle(PipelineEmailPreferences.PREF_ESCALATION_USERS, c, "Escalation Users<br/><i>Email addresses entered here will appear in a view accesible from pipeline job details. Additional email messages can be sent from this view regarding a job failure.</i>")%></td></tr>
+        <tr style="display:<%=displayError%>"><td></td><td width="350"><%=getTitle(PipelineEmailPreferences.PREF_ESCALATION_USERS, c, "Escalation Users<br/><i>Email addresses entered here will appear in a view accessible from pipeline job details. Additional email messages can be sent from this view regarding a job failure.</i>")%></td></tr>
         <tr style="display:<%=displayError%>"><td></td><td>
             <labkey:autoCompleteTextArea
                     name="escalationUsers"
