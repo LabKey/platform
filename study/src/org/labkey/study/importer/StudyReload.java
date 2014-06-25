@@ -86,10 +86,14 @@ public class StudyReload
 
     static
     {
-        RELOAD_THREAD.start();
-
         ContextListener.addShutdownListener(new ShutdownListener()
         {
+            @Override
+            public String getName()
+            {
+                return RELOAD_THREAD.getName();
+            }
+
             public void shutdownPre(ServletContextEvent servletContextEvent)
             {
                 RELOAD_THREAD.interrupt();
@@ -99,6 +103,8 @@ public class StudyReload
             {
             }
         });
+
+        RELOAD_THREAD.start();
     }
 
     public enum ReloadInterval

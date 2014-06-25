@@ -6096,10 +6096,18 @@ public class DavController extends SpringActionController
     {
         return new ShutdownListener()
         {
+            @Override
+            public String getName()
+            {
+                return "Temp file deletion";
+            }
+
+            @Override
             public void shutdownPre(ServletContextEvent servletContextEvent)
             {
             }
 
+            @Override
             public void shutdownStarted(ServletContextEvent servletContextEvent)
             {
                 for (Object path : _tempFiles.toArray())

@@ -842,6 +842,12 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
     }
 
 
+    @Override
+    public String getName()
+    {
+        return "Search service";
+    }
+
     public void shutdownPre(ServletContextEvent servletContextEvent)
     {
         _shuttingDown = true;

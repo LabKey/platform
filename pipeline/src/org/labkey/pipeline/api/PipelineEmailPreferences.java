@@ -374,10 +374,10 @@ public class PipelineEmailPreferences
 
     private static class EmailNotifyTask extends TimerTask implements ShutdownListener
     {
-        private Container _c;
-        private int _interval;
+        private final Container _c;
+        private final int _interval;
         /** notification task for success or failure of jobs */
-        private boolean _isSuccessNotification;
+        private final boolean _isSuccessNotification;
 
         public EmailNotifyTask(Container c, int interval, boolean isSuccessNotification)
         {
@@ -388,7 +388,8 @@ public class PipelineEmailPreferences
 
         public void run()
         {
-            try {
+            try
+            {
                 Date min = PipelineEmailPreferences.get().getLastSuccessful(_c, _isSuccessNotification);
                 if (min == null)
                 {
@@ -425,6 +426,12 @@ public class PipelineEmailPreferences
                 _log.error("Unable to send pipeline email notification", e);
                 //ExceptionUtil.logExceptionToMothership(request, e);
             }
+        }
+
+        @Override
+        public String getName()
+        {
+            return "Pipeline email notification timer";
         }
 
         public void shutdownPre(ServletContextEvent servletContextEvent)

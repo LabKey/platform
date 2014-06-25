@@ -31,6 +31,12 @@ public class EPipelineContextListener implements StartupListener, ShutdownListen
 {
     private static MuleListenerHelper _muleListenerHelper;
 
+    @Override
+    public String getName()
+    {
+        return "EPipeline";
+    }
+
     public void moduleStartupComplete(ServletContext servletContext)
     {
         // The Enterprise Pipeline is currently the only thing that uses Mule,

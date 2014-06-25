@@ -93,8 +93,14 @@ public class FileContentModule extends DefaultModule
         // initialize message digests
         ShortMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.SHORT_DIGEST));
         DailyMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.DAILY_DIGEST));
-        ContextListener.addStartupListener("Short Message Digest", new StartupListener()
+        ContextListener.addStartupListener(new StartupListener()
         {
+            @Override
+            public String getName()
+            {
+                return "Short Message Digest";
+            }
+
             @Override
             public void moduleStartupComplete(ServletContext servletContext)
             {

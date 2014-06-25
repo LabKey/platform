@@ -602,6 +602,13 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
         // Export action stats on graceful shutdown
         ContextListener.addShutdownListener(new ShutdownListener() {
+            @Override
+            public String getName()
+            {
+                return "Action stats export";
+            }
+
+            @Override
             public void shutdownPre(ServletContextEvent servletContextEvent)
             {
                 Logger logger = Logger.getLogger(ActionsTsvWriter.class);

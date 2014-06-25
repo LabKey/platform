@@ -120,7 +120,13 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
     private AuditLogImpl()
     {
-        ContextListener.addStartupListener("AuditLog", this);
+        ContextListener.addStartupListener(this);
+    }
+
+    @Override
+    public String getName()
+    {
+        return "Audit Log";
     }
 
     public void moduleStartupComplete(ServletContext servletContext)

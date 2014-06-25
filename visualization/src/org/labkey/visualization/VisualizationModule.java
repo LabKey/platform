@@ -32,7 +32,6 @@ import org.labkey.visualization.report.VisualizationUIProvider;
 import javax.servlet.ServletContext;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
 
 public class VisualizationModule extends DefaultModule
@@ -81,8 +80,14 @@ public class VisualizationModule extends DefaultModule
     public void afterUpdate(final ModuleContext moduleContext) {
         if (!moduleContext.isNewInstall() && moduleContext.getOriginalVersion() < 13.31)
         {
-            ContextListener.addStartupListener("Visualization: upgrade saved json for Generic Charts", new StartupListener()
+            ContextListener.addStartupListener(new StartupListener()
             {
+                @Override
+                public String getName()
+                {
+                    return "Visualization: upgrade saved json for Generic Charts";
+                }
+
                 @Override
                 public void moduleStartupComplete(ServletContext servletContext)
                 {

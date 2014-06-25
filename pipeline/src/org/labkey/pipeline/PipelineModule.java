@@ -194,14 +194,20 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         if (PipelineService.get().isEnterprisePipeline())
         {
             EPipelineContextListener listener = new EPipelineContextListener();
-            ContextListener.addStartupListener("EPipeline", listener);
+            ContextListener.addStartupListener(listener);
             ContextListener.addShutdownListener(listener);
         }
 
         // Issue 19407. Need to delay restarting jobs until after all modules have started up, or we
         // may try to restart a job whose pipeline hasn't yet been registered
-        ContextListener.addStartupListener("PipelineJobRestarter", new StartupListener()
+        ContextListener.addStartupListener(new StartupListener()
         {
+            @Override
+            public String getName()
+            {
+                return "PipelineJobRestarter";
+            }
+
             @Override
             public void moduleStartupComplete(ServletContext servletContext)
             {

@@ -119,6 +119,12 @@ public class ServerManager
         ContextListener.addShutdownListener(new ShutdownListener()
         {
             @Override
+            public String getName()
+            {
+                return "OLAP server manager";
+            }
+
+            @Override
             public void shutdownPre(ServletContextEvent servletContextEvent)
             {
                 _servers.clear();

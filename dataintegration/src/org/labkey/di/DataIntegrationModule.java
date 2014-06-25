@@ -98,7 +98,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
         PipelineService.get().registerPipelineProvider(new ETLPipelineProvider(this));
 
         ContainerManager.addContainerListener(this);
-        ContextListener.addStartupListener("Data Integration", this);
+        ContextListener.addStartupListener(this);
         ContextListener.addShutdownListener(this);
 
         DataIntegrationQuerySchema.register(this);

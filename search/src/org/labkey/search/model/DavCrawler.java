@@ -169,6 +169,12 @@ public class DavCrawler implements ShutdownListener
     }
 
 
+    @Override
+    public String getName()
+    {
+        return "DAV crawler";
+    }
+
     public void shutdownPre(ServletContextEvent servletContextEvent)
     {
         _shuttingDown = true;

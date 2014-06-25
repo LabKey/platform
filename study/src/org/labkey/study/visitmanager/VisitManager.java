@@ -733,6 +733,12 @@ public abstract class VisitManager
     private static class ParticipantPurgeContextListener implements ShutdownListener
     {
         @Override
+        public String getName()
+        {
+            return "Participant purge timer";
+        }
+
+        @Override
         public void shutdownPre(ServletContextEvent servletContextEvent) {}
 
         @Override

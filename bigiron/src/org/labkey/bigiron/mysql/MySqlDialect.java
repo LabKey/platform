@@ -16,7 +16,6 @@
 package org.labkey.bigiron.mysql;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
@@ -44,8 +43,6 @@ import java.util.Set;
  */
 public class MySqlDialect extends SimpleSqlDialect
 {
-    private static final Logger _log = Logger.getLogger(MySqlDialect.class);
-
     @Override
     protected @NotNull Set<String> getReservedWords()
     {
