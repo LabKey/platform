@@ -18,6 +18,7 @@ package org.labkey.api.data.queryprofiler;
 
 import org.apache.commons.collections15.map.ReferenceMap;
 import org.apache.log4j.Appender;
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.RollingFileAppender;
 import org.jetbrains.annotations.Nullable;
@@ -31,15 +32,18 @@ import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Formats;
+import org.labkey.api.util.LogPrintWriter;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.api.view.WebPartView;
 
 import javax.servlet.ServletContextEvent;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
@@ -60,7 +64,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class QueryProfiler
 {
     private static final Logger LOG = Logger.getLogger(QueryProfiler.class);
-
     private static final QueryProfiler INSTANCE = new QueryProfiler();
 
     private final BlockingQueue<Query> _queue = new LinkedBlockingQueue<>(1000);
@@ -147,7 +150,7 @@ public class QueryProfiler
             }
         }));
 
-        // Not displayed, but gives new queries some time to get above one of the other thresholds.  Without this,
+        // Not displayed, but gives new queries some time to get above one of the other thresholds. Without this,
         // the first N unique queries would dominate the statistics.
         getTrackerSets().add(new QueryTrackerSet("First", "first invocation time", true, false, new QueryTrackerComparator()
         {
@@ -163,22 +166,11 @@ public class QueryProfiler
         }));
 
         initializeCounters();
-        final QueryProfilerThread thread = new QueryProfilerThread();
+        QueryProfilerThread thread = new QueryProfilerThread();
+        // It's a daemon thread, but shutdown listener ensures orderly shutdown and logs query stats at shutdown
+        ContextListener.addShutdownListener(thread);
+
         thread.start();
-
-        // It's a daemon thread, but add a shutdown listener so we don't leave it running if the webapp is redeployed
-        ContextListener.addShutdownListener(new ShutdownListener()
-        {
-            @Override
-            public void shutdownPre(ServletContextEvent servletContextEvent)
-            {
-                thread.interrupt();
-            }
-
-            @Override
-            public void shutdownStarted(ServletContextEvent servletContextEvent) {}
-        });
-
     }
 
     public void addListener(DatabaseQueryListener listener)
@@ -248,119 +240,143 @@ public class QueryProfiler
         }
     }
 
+    private class ReportView extends WebPartView
+    {
+        private final String _statName;
+        private final String _buttonHTML;
+        private final ActionURLFactory _captionURLFactory;
+        private final ActionURLFactory _stackTraceURLFactory;
+
+        private ReportView(String statName, String buttonHTML, ActionURLFactory captionURLFactory, ActionURLFactory stackTraceURLFactory)
+        {
+            _statName = statName;
+            _buttonHTML = buttonHTML;
+            _captionURLFactory = captionURLFactory;
+            _stackTraceURLFactory = stackTraceURLFactory;
+        }
+
+        @Override
+        protected void renderView(Object model, PrintWriter out)
+        {
+            for (QueryTrackerSet set : getTrackerSets())
+            {
+                if (set.getCaption().equals(_statName))
+                {
+                    out.println("\n<table>");
+
+                    // Don't update anything while we're rendering the report or vice versa
+                    synchronized (_lock)
+                    {
+                        int requests = ViewServlet.getRequestCount() - _requestCountAtLastReset;
+
+                        out.println("  <tr><td>" + _buttonHTML + "</td></tr>");
+
+                        out.println("  <tr><td style=\"border-top:1px solid\" colspan=5 align=center>Queries Executed Within HTTP Requests</td></tr>");
+                        out.println("  <tr><td>Query Count:</td><td align=\"right\">" + Formats.commaf0.format(_requestQueryCount) + "</td>");
+                        out.println("<td width=10>&nbsp;</td>");
+                        out.println("<td>Query Time:</td><td align=\"right\">" + Formats.commaf0.format(_requestQueryTime) + "</td>");
+                        out.println("</tr>\n  <tr>");
+                        out.println("<td>Queries per Request:</td><td align=\"right\">" + Formats.f1.format((double) _requestQueryCount / requests) + "</td>");
+                        out.println("<td width=10>&nbsp;</td>");
+                        out.println("<td>Query Time per Request:</td><td align=\"right\">" + Formats.f1.format((double) _requestQueryTime / requests) + "</td>");
+                        out.println("</tr>\n  <tr>");
+                        out.println("<td>" + (_hasBeenReset ? "Request Count Since Last Reset" : "Request Count") + ":</td><td align=\"right\">" + Formats.commaf0.format(requests) + "</td></tr>");
+                        out.println("  <tr><td style=\"border-top:1px solid\" colspan=5>&nbsp;</td></tr>");
+
+                        out.println("  <tr><td style=\"border-top:1px solid\" colspan=5 align=center>Queries Executed Within Background Threads</td></tr>");
+                        out.println("  <tr><td>Query Count:</td><td align=\"right\">" + Formats.commaf0.format(_backgroundQueryCount) + "</td>");
+                        out.println("<td width=10>&nbsp;</td>");
+                        out.println("<td>Query Time:</td><td align=\"right\">" + Formats.commaf0.format(_backgroundQueryTime) + "</td>");
+                        out.println("</tr>");
+                        out.println("  <tr><td style=\"border-top:1px solid\" colspan=5>&nbsp;</td></tr>");
+                        out.println("  <tr><td colspan=5>&nbsp;</td></tr>");
+
+                        out.println("  <tr><td>Total Unique Queries");
+
+                        if (_uniqueQueryCountEstimate > QueryTrackerSet.STANDARD_LIMIT)
+                            out.println(" (Estimate)");
+
+                        out.println(":</td><td align=\"right\">" + Formats.commaf0.format(_uniqueQueryCountEstimate) + "</td>");
+                        out.println("<td width=10>&nbsp;</td>");
+
+                        RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
+                        if (runtimeBean != null)
+                        {
+                            long upTime = runtimeBean.getUptime() - _upTimeAtLastReset;
+                            upTime = upTime - (upTime % 1000);
+                            out.println("<td>" + (_hasBeenReset ? "Elapsed Time Since Last Reset" : "Server Uptime") + ":</td><td align=\"right\">" + DateUtil.formatDuration(upTime) + "</td>");
+                        }
+                        out.println("</tr>");
+                        out.println("</table><br><br>");
+
+                        out.println("<table>");
+                        out.println("  <tr><td>Unique queries with the " + set.getDescription() + " (top " + Formats.commaf0.format(set.size()) + "):</td></tr>");
+                        out.println("</table><br>");
+
+                        out.println("<table cellspacing=0 cellpadding=3>");
+                        QueryTracker.renderRowHeader(out, set, _captionURLFactory);
+
+                        int row = 0;
+
+                        for (QueryTracker tracker : set)
+                            tracker.renderRow(out, (0 == (++row) % 2) ? "labkey-alternate-row" : "labkey-row", _stackTraceURLFactory);
+
+                        out.println("</table>");
+                    }
+
+                    return;
+                }
+            }
+
+            out.println("<font class=\"labkey-error\">Error: Query statistic \"" + PageFlowUtil.filter(_statName) + "\" does not exist</font>");
+        }
+    }
+
     public HttpView getReportView(String statName, String buttonHTML, ActionURLFactory captionURLFactory, ActionURLFactory stackTraceURLFactory)
     {
-        for (QueryTrackerSet set : getTrackerSets())
+        return new ReportView(statName, buttonHTML, captionURLFactory, stackTraceURLFactory);
+    }
+
+    public HttpView getStackTraceView(final int hashCode, final ActionURLFactory executeFactory)
+    {
+        return new WebPartView()
         {
-            if (set.getCaption().equals(statName))
+            @Override
+            protected void renderView(Object model, PrintWriter out) throws Exception
             {
-                StringBuilder sb = new StringBuilder();
-
-                sb.append("\n<table>\n");
-
-                StringBuilder rows = new StringBuilder();
-
                 // Don't update anything while we're rendering the report or vice versa
                 synchronized (_lock)
                 {
-                    int requests = ViewServlet.getRequestCount() - _requestCountAtLastReset;
+                    QueryTracker tracker = findTracker(hashCode);
 
-                    sb.append("  <tr><td>").append(buttonHTML).append("</td></tr>\n");
-
-                    sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5 align=center>Queries Executed Within HTTP Requests</td></tr>\n");
-                    sb.append("  <tr><td>Query Count:</td><td align=\"right\">").append(Formats.commaf0.format(_requestQueryCount)).append("</td>");
-                    sb.append("<td width=10>&nbsp;</td>");
-                    sb.append("<td>Query Time:</td><td align=\"right\">").append(Formats.commaf0.format(_requestQueryTime)).append("</td>");
-                    sb.append("</tr>\n  <tr>");
-                    sb.append("<td>Queries per Request:</td><td align=\"right\">").append(Formats.f1.format((double) _requestQueryCount / requests)).append("</td>");
-                    sb.append("<td width=10>&nbsp;</td>");
-                    sb.append("<td>Query Time per Request:</td><td align=\"right\">").append(Formats.f1.format((double) _requestQueryTime / requests)).append("</td>");
-                    sb.append("</tr>\n  <tr>");
-                    sb.append("<td>").append(_hasBeenReset ? "Request Count Since Last Reset" : "Request Count").append(":</td><td align=\"right\">").append(Formats.commaf0.format(requests)).append("</td></tr>\n");
-                    sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5>&nbsp;</td></tr>\n");
-
-                    sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5 align=center>Queries Executed Within Background Threads</td></tr>\n");
-                    sb.append("  <tr><td>Query Count:</td><td align=\"right\">").append(Formats.commaf0.format(_backgroundQueryCount)).append("</td>");
-                    sb.append("<td width=10>&nbsp;</td>");
-                    sb.append("<td>Query Time:</td><td align=\"right\">").append(Formats.commaf0.format(_backgroundQueryTime)).append("</td>");
-                    sb.append("</tr>\n");
-                    sb.append("  <tr><td style=\"border-top:1px solid\" colspan=5>&nbsp;</td></tr>\n");
-                    sb.append("  <tr><td colspan=5>&nbsp;</td></tr>\n");
-
-                    sb.append("  <tr><td>Total Unique Queries");
-
-                    if (_uniqueQueryCountEstimate > QueryTrackerSet.STANDARD_LIMIT)
-                        sb.append(" (Estimate)");
-
-                    sb.append(":</td><td align=\"right\">").append(Formats.commaf0.format(_uniqueQueryCountEstimate)).append("</td>");
-                    sb.append("<td width=10>&nbsp;</td>");
-
-                    RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
-                    if (runtimeBean != null)
+                    if (null == tracker)
                     {
-                        long upTime = runtimeBean.getUptime() - _upTimeAtLastReset;
-                        upTime = upTime - (upTime % 1000);
-                        sb.append("<td>").append(_hasBeenReset ? "Elapsed Time Since Last Reset" : "Server Uptime").append(":</td><td align=\"right\">").append(DateUtil.formatDuration(upTime)).append("</td>");
+                        out.print("<font class=\"labkey-error\">Error: That query no longer exists</font>");
+                        return;
                     }
-                    sb.append("</tr>\n");
-                    sb.append("</table><br><br>\n");
 
-                    sb.append("<table>\n");
-                    sb.append("  <tr><td>").append("Unique queries with the ").append(set.getDescription()).append(" (top ").append(Formats.commaf0.format(set.size())).append("):</td></tr>\n");
-                    sb.append("</table><br>\n");
+                    out.println("<table>\n");
+                    out.println("  <tr>\n    <td><b>SQL</b></td>\n    <td style=\"padding-left: 20px;\"><b>SQL&nbsp;With&nbsp;Parameters</b></td>\n  </tr>\n");
+                    out.println("  <tr>\n");
+                    out.println("    <td>" + PageFlowUtil.filter(tracker.getSql(), true) + "</td>\n");
+                    out.println("    <td style=\"padding-left: 20px;\">" + PageFlowUtil.filter(tracker.getSqlAndParameters(), true) + "</td>\n");
+                    out.println("  </tr>\n");
+                    out.println("</table>\n<br>\n");
 
-                    int row = 0;
-                    for (QueryTracker tracker : set)
-                        tracker.insertRow(rows, (0 == (++row) % 2) ? "labkey-alternate-row" : "labkey-row", stackTraceURLFactory);
+                    if (tracker.canShowExecutionPlan())
+                    {
+                        out.println("<table>\n  <tr><td>");
+                        ActionURL url = executeFactory.getActionURL(tracker.getSql());
+                        out.println(PageFlowUtil.textLink("Show Execution Plan", url));
+                        out.println("  </td></tr></table>\n<br>\n");
+                    }
+
+                    out.println("<table>\n");
+                    tracker.renderStackTraces(out);
+                    out.println("</table>\n");
                 }
-
-                sb.append("<table cellspacing=0 cellpadding=3>\n");
-                QueryTracker.appendRowHeader(sb, set, captionURLFactory);
-                sb.append(rows);
-                sb.append("</table>\n");
-
-                return new HtmlView(sb.toString());
             }
-        }
-
-        return new HtmlView("<font class=\"labkey-error\">Error: Query statistic \"" + PageFlowUtil.filter(statName) + "\" does not exist</font>");
-    }
-
-
-    public HttpView getStackTraceView(int hashCode, ActionURLFactory executeFactory)
-    {
-        // Don't update anything while we're rendering the report or vice versa
-        synchronized (_lock)
-        {
-            QueryTracker tracker = findTracker(hashCode);
-
-            if (null == tracker)
-                return new HtmlView("<font class=\"labkey-error\">Error: That query no longer exists</font>");
-
-            StringBuilder sb = new StringBuilder();
-
-            sb.append("<table>\n");
-            sb.append("  <tr>\n    <td><b>SQL</b></td>\n    <td style=\"padding-left: 20px;\"><b>SQL&nbsp;With&nbsp;Parameters</b></td>\n  </tr>\n");
-            sb.append("  <tr>\n");
-            sb.append("    <td>").append(PageFlowUtil.filter(tracker.getSql(), true)).append("</td>\n");
-            sb.append("    <td style=\"padding-left: 20px;\">").append(PageFlowUtil.filter(tracker.getSqlAndParameters(), true)).append("</td>\n");
-            sb.append("  </tr>\n");
-            sb.append("</table>\n<br>\n");
-
-            if (tracker.canShowExecutionPlan())
-            {
-                sb.append("<table>\n  <tr><td>");
-                ActionURL url = executeFactory.getActionURL(tracker.getSql());
-                sb.append(PageFlowUtil.textLink("Show Execution Plan", url));
-                sb.append("  </td></tr></table>\n<br>\n");
-            }
-
-            sb.append("<table>\n");
-            tracker.appendStackTraces(sb);
-            sb.append("</table>\n");
-
-            return new HtmlView(sb.toString());
-        }
+        };
     }
 
 
@@ -451,17 +467,12 @@ public class QueryProfiler
                 }
             };
 
-            StringBuilder rows = new StringBuilder();
-
             // Don't update anything while we're rendering the report or vice versa
             synchronized (getInstance()._lock)
             {
                 for (QueryTrackerSet set : getInstance().getTrackerSets())
                     if (set.shouldDisplay())
                         export.addAll(set);
-
-                for (QueryTracker tracker : export)
-                    tracker.exportRow(rows);
 
                 long upTime = 0;
                 RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
@@ -477,7 +488,9 @@ public class QueryProfiler
                 _pw.printf("#Background Threads - query count: %,d, query time (ms): %,d\n", getInstance()._backgroundQueryCount, getInstance()._backgroundQueryTime);
 
                 QueryTracker.exportRowHeader(_pw);
-                _pw.println(rows);
+
+                for (QueryTracker tracker : export)
+                    tracker.exportRow(_pw);
             }
         }
     }
@@ -488,7 +501,6 @@ public class QueryProfiler
         {
             setDaemon(true);
             setName(QueryProfilerThread.class.getSimpleName());
-            ContextListener.addShutdownListener(this);
         }
 
         @Override
@@ -575,18 +587,14 @@ public class QueryProfiler
                 else
                     LOG.warn("Could not rollover the query stats tsv file--there was no appender named QUERY_STATS, or it is not a RollingFileAppender.");
 
-                StringBuilder buf = new StringBuilder();
-
-                try
+                try (PrintWriter logWriter = new LogPrintWriter(logger, Level.INFO))
                 {
-                    shutdownWriter.write(buf);
+                    shutdownWriter.write(logWriter);
                 }
                 catch (IOException e)
                 {
                     LOG.error("Exception writing query stats", e);
                 }
-
-                logger.info(buf.toString());
             }
         }
     }
@@ -615,5 +623,4 @@ public class QueryProfiler
     {
         ActionURL getActionURL(String name);
     }
-
 }

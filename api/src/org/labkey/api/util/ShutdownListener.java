@@ -26,6 +26,11 @@ import javax.servlet.ServletContextEvent;
 public interface ShutdownListener
 {
     /**
+     * @return Friendly name used for logging shutdown progress
+     */
+    String getName();
+
+    /**
      * called first, should be used only for non-blocking operations (set _shuttingDown=true, interrupt threads)
      * also possible to launch an async shutdown task here!
      */

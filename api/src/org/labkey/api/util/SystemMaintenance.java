@@ -270,6 +270,12 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
         return _appender.getStatus(offset); 
     }
 
+    @Override
+    public String getName()
+    {
+        return "System Maintenance";
+    }
+
     public void shutdownPre(ServletContextEvent servletContextEvent)
     {
         

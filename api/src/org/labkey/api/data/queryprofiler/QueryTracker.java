@@ -46,15 +46,13 @@ import java.util.zip.DataFormatException;
 */
 class QueryTracker
 {
-    private final @Nullable
-    DbScope _scope;
+    private final @Nullable DbScope _scope;
     private final String _sql;
     private final boolean _validSql;
     private final long _firstInvocation;
     private final Map<ByteArrayHashKey, AtomicInteger> _stackTraces = new ReferenceMap<>(ReferenceMap.SOFT, ReferenceMap.HARD, true); // Not sure about purgeValues
 
-    private @Nullable
-    List<Object> _parameters = null;  // Keep parameters from the longest running query
+    private @Nullable List<Object> _parameters = null;  // Keep parameters from the longest running query
 
     private long _count = 0;
     private long _max = 0;
@@ -161,7 +159,7 @@ class QueryTracker
         return _stackTraces.size();
     }
 
-    public void appendStackTraces(StringBuilder sb)
+    public void renderStackTraces(PrintWriter out)
     {
         // Descending order by occurrences (the value)
         Set<Pair<String, AtomicInteger>> set = new TreeSet<>(new Comparator<Pair<String, AtomicInteger>>() {
@@ -208,7 +206,7 @@ class QueryTracker
             }
         }
 
-        sb.append("<tr><td>").append("<b>Count</b>").append("</td><td style=\"padding-left:10;\">").append("<b>Traces</b>").append("</td></tr>\n");
+        out.println("<tr><td><b>Count</b></td><td style=\"padding-left:10;\"><b>Traces</b></td></tr>\n");
 
         int alt = 0;
         String[] classes = new String[]{"labkey-alternate-row", "labkey-row"};
@@ -219,7 +217,7 @@ class QueryTracker
             String formattedStackTrace = formattedCommonPrefix + PageFlowUtil.filter(stackTrace.substring(commonLength), true);
             int count = entry.getValue().get();
 
-            sb.append("<tr class=\"").append(classes[alt]).append("\"><td valign=top align=right>").append(count).append("</td><td style=\"padding-left:10;\">").append(formattedStackTrace).append("</td></tr>\n");
+            out.println("<tr class=\"" + classes[alt] + "\"><td valign=top align=right>" + count + "</td><td style=\"padding-left:10;\">" + formattedStackTrace + "</td></tr>\n");
             alt = 1 - alt;
         }
     }
@@ -241,43 +239,43 @@ class QueryTracker
         return _sql.hashCode();
     }
 
-    public static void appendRowHeader(StringBuilder sb, QueryTrackerSet currentSet, QueryProfiler.ActionURLFactory factory)
+    public static void renderRowHeader(PrintWriter out, QueryTrackerSet currentSet, QueryProfiler.ActionURLFactory factory)
     {
-        sb.append("  <tr>");
+        out.print("  <tr>");
 
         for (QueryTrackerSet set : QueryProfiler.getInstance().getTrackerSets())
             if (set.shouldDisplay())
-                appendColumnHeader(set.getCaption(), set == currentSet, sb, factory);
+                renderColumnHeader(set.getCaption(), set == currentSet, out, factory);
 
-        sb.append("<td>");
-        sb.append("Traces");
-        sb.append("</td><td style=\"padding-left:10;\">");
-        sb.append("SQL");
-        sb.append("</td>");
-        sb.append("<td>");
-        sb.append("SQL&nbsp;With&nbsp;Parameters");
-        sb.append("</td>");
-        sb.append("</tr>\n");
+        out.print("<td>");
+        out.print("Traces");
+        out.print("</td><td style=\"padding-left:10;\">");
+        out.print("SQL");
+        out.print("</td>");
+        out.print("<td>");
+        out.print("SQL&nbsp;With&nbsp;Parameters");
+        out.print("</td>");
+        out.println("</tr>");
     }
 
-    private static void appendColumnHeader(String name, boolean highlight, StringBuilder sb, QueryProfiler.ActionURLFactory factory)
+    private static void renderColumnHeader(String name, boolean highlight, PrintWriter out, QueryProfiler.ActionURLFactory factory)
     {
-        sb.append("<td><a href=\"");
-        sb.append(PageFlowUtil.filter(factory.getActionURL(name)));
-        sb.append("\">");
+        out.print("<td><a href=\"");
+        out.print(PageFlowUtil.filter(factory.getActionURL(name)));
+        out.print("\">");
 
         if (highlight)
-            sb.append("<b>");
+            out.print("<b>");
 
-        sb.append(name);
+        out.print(name);
 
         if (highlight)
-            sb.append("</b>");
+            out.print("</b>");
 
-        sb.append("</a></td>");
+        out.print("</a></td>");
     }
 
-    public static void exportRowHeader(PrintWriter pw)
+    public static void exportRowHeader(PrintWriter out)
     {
         String tab = "";
 
@@ -285,51 +283,48 @@ class QueryTracker
         {
             if (set.shouldDisplay())
             {
-                pw.print(tab);
-                pw.print(set.getCaption());
+                out.print(tab);
+                out.print(set.getCaption());
                 tab = "\t";
             }
         }
 
-        pw.print(tab);
-        pw.println("SQL");
-        pw.print(tab);
-        pw.println("SQL With Parameters");
+        out.print(tab);
+        out.print("SQL");
+        out.print(tab);
+        out.print("SQL With Parameters\n");
     }
 
-    public void insertRow(StringBuilder sb, String className, QueryProfiler.ActionURLFactory factory)
+    public void renderRow(PrintWriter out, String className, QueryProfiler.ActionURLFactory factory)
     {
-        StringBuilder row = new StringBuilder();
-        row.append("  <tr class=\"").append(className).append("\">");
+        out.println("  <tr class=\"" + className + "\">");
 
         for (QueryTrackerSet set : QueryProfiler.getInstance().getTrackerSets())
             if (set.shouldDisplay())
-                row.append("<td valign=top align=right>").append(((QueryTrackerComparator) set.comparator()).getFormattedPrimaryStatistic(this)).append("</td>");
+                out.println("<td valign=top align=right>" + ((QueryTrackerComparator) set.comparator()).getFormattedPrimaryStatistic(this) + "</td>");
 
         ActionURL url = factory.getActionURL(getSql());
-        row.append("<td valign=top align=right><a href=\"").append(PageFlowUtil.filter(url.getLocalURIString())).append("\">").append(Formats.commaf0.format(getStackTraceCount())).append("</a></td>");
-        row.append("<td style=\"padding-left:10;\">").append(PageFlowUtil.filter(getSql(), true)).append("</td>");
-        row.append("<td style=\"padding-left:10;\">").append(PageFlowUtil.filter(getSqlAndParameters(), true)).append("</td>");
-        row.append("</tr>\n");
-        sb.insert(0, row);
+        out.println("<td valign=top align=right><a href=\"" + PageFlowUtil.filter(url.getLocalURIString()) + "\">" + Formats.commaf0.format(getStackTraceCount()) + "</a></td>");
+        out.println("<td style=\"padding-left:10;\">" + PageFlowUtil.filter(getSql(), true) + "</td>");
+        out.println("<td style=\"padding-left:10;\">" + PageFlowUtil.filter(getSqlAndParameters(), true) + "</td>");
+        out.println("</tr>");
     }
 
-    public void exportRow(StringBuilder sb)
+    public void exportRow(PrintWriter out)
     {
-        StringBuilder row = new StringBuilder();
         String tab = "";
 
         for (QueryTrackerSet set : QueryProfiler.getInstance().getTrackerSets())
         {
             if (set.shouldDisplay())
             {
-                row.append(tab).append((((QueryTrackerComparator)set.comparator()).getFormattedPrimaryStatistic(this)));
+                out.print(tab + (((QueryTrackerComparator) set.comparator()).getFormattedPrimaryStatistic(this)));
                 tab = "\t";
             }
         }
 
-        row.append(tab).append(getSql().trim().replaceAll("(\\s)+", " "));
-        row.append(tab).append(getSqlAndParameters().trim().replaceAll("(\\s)+", " ")).append("\n");
-        sb.insert(0, row);
+        out.print(tab + getSql().trim().replaceAll("(\\s)+", " "));
+        out.print(tab + getSqlAndParameters().trim().replaceAll("(\\s)+", " "));
+        out.print('\n');
     }
 }

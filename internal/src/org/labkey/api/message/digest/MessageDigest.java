@@ -153,6 +153,12 @@ public abstract class MessageDigest
             }
         }
 
+        @Override
+        public String getName()
+        {
+            return "Message digest timer task";
+        }
+
         public void shutdownPre(ServletContextEvent servletContextEvent)
         {
             ContextListener.removeShutdownListener(_digest._timerTask);

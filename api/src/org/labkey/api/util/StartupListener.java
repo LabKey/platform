@@ -24,5 +24,6 @@ import javax.servlet.ServletContext;
  */
 public interface StartupListener
 {
+    String getName();
     void moduleStartupComplete(ServletContext servletContext);
 }

@@ -136,7 +136,7 @@ public class ModuleResourceCaches
             if (null != dirResource && dirResource.isCollection())
             {
                 // At construction time, we register an empty listener on the directory. Each cache associated with the
-                // directory will add it's listener via addListener()
+                // directory will add its listener via addListener()
                 StandardModuleResourceListener emptyListener = new StandardModuleResourceListener();
                 _moduleListeners.put(module, emptyListener);
 

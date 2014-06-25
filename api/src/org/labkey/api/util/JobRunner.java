@@ -65,6 +65,12 @@ public class JobRunner implements Executor
         _executor.setThreadFactory(new JobThreadFactory(priority));
         ContextListener.addShutdownListener(new ShutdownListener()
         {
+            @Override
+            public String getName()
+            {
+                return "Job Runner";
+            }
+
             public void shutdownPre(ServletContextEvent servletContextEvent)
             {
                 _executor.shutdown();

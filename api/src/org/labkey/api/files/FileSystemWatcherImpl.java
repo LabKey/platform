@@ -155,7 +155,6 @@ public class FileSystemWatcherImpl implements FileSystemWatcher
         @Override
         public void shutdownPre(ServletContextEvent servletContextEvent)
         {
-            LOG.info(_name + " has been told to shutdown");
             _continue = false;
             close();
         }
