@@ -44,9 +44,14 @@ Ext.define('LABKEY.app.view.Selection', {
                     var el = Ext.get(closes[c]);
                     var recordId = el.getAttribute('data-id');
 
+                    var childEl = {};
+                    if (closes[c].children.length > 0)
+                        childEl = Ext.get(closes[c].children[0]);
+
                     if (recordId) {
                         var rec = v.getStore().getById(recordId);
                         el.recid = recordId;
+                        childEl.recid = recordId;
 
                         if (rec.get('isPlot') === true || LABKEY.app.view.Selection.supportMemberClose) {
                             var members = rec.get('members');
@@ -54,6 +59,7 @@ Ext.define('LABKEY.app.view.Selection', {
                                 // listen for each member
                                 var memberIdx = el.getAttribute('member-index');
                                 el.memberIndex = memberIdx;
+                                childEl.memberIndex = memberIdx;
                             }
                         }
 
