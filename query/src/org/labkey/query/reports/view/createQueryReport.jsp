@@ -152,19 +152,16 @@
         var viewId = Ext4.id();
 
         queryStore.on('rawload', function(){
-            var queryCombo = Ext4.getCmp(queryId);
             if (queryCombo) {
                 queryCombo.setDisabled(false);
-                queryCombo.getEl().unmask();
+                querySchemaPanel.getEl().unmask();
             }
         });
 
         viewStore.on('rawload', function(){
-            var viewCombo = Ext4.getCmp(viewId);
-
             if (viewCombo) {
                 viewCombo.setDisabled(false);
-                viewCombo.getEl().unmask();
+                querySchemaPanel.getEl().unmask();
             }
         });
 
@@ -180,13 +177,11 @@
             listeners: {
                 change: function(cmp, newValue){
                     this.schemaName = newValue;
-                    var viewCombo = Ext4.getCmp(viewId);
-                    var queryCombo = Ext4.getCmp(queryId);
 
                     if (queryCombo) {
                         queryCombo.clearValue();
                         queryCombo.setDisabled(true);
-                        queryCombo.getEl().mask('loading...');
+                        querySchemaPanel.getEl().mask('loading...');
                     }
 
                     if (viewCombo) {
@@ -232,7 +227,7 @@
                     }
 
                     if(this.queryName != null){
-                        Ext4.getCmp(viewId).getEl().mask("loading...");
+                        querySchemaPanel.getEl().mask("loading...");
                         Ext4.Ajax.request({
                             url: LABKEY.ActionURL.buildURL('query', 'getQueryViews'),
                             params: {
@@ -275,6 +270,16 @@
             }
         });
 
+        var querySchemaPanel = Ext4.create('Ext.panel.Panel', {
+            frame: false,
+            border: false,
+            bodyStyle: {
+                background: 'transparent'
+            },
+            items: [schemaCombo, queryCombo, viewCombo]
+        });
+
+
         Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
             renderTo    : 'queryReportForm',
             url : LABKEY.ActionURL.buildURL('reports', 'createQueryReport', null, {returnUrl: getReturnUrl()}),
@@ -286,7 +291,7 @@
             width           : 575,
             fieldDefaults: {
                 width : 500,
-                labelWidth : 125,
+                labelWidth : 120,
                 msgTarget : 'side'
             },
             visibleFields   : {
@@ -299,7 +304,7 @@
                 description : true,
                 shared      : true
             },
-            extraItems : [schemaCombo, queryCombo, viewCombo, {xtype: 'hiddenfield', name: 'srcURL'}],
+            extraItems : [querySchemaPanel, {xtype: 'hiddenfield', name: 'srcURL'}],
             dockedItems: [{
                 xtype: 'toolbar',
                 dock: 'bottom',
