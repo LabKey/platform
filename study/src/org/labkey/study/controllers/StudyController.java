@@ -205,7 +205,6 @@ import org.labkey.study.visitmanager.VisitManager;
 import org.labkey.study.visitmanager.VisitManager.VisitStatistic;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
-import org.springframework.validation.ObjectError;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.Controller;
 import org.xml.sax.SAXException;
@@ -3882,23 +3881,9 @@ public class StudyController extends BaseStudyController
         public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
         {
             Container c = getContainer();
-
             File studyFile = form.getValidatedSingleFile(c);
 
-            @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-            BindException errors = new NullSafeBindException(c, "import");
-
-            boolean success = importStudy(getViewContext(), errors, studyFile, studyFile.getName());
-
-            if (success && !errors.hasErrors())
-            {
-                return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
-            }
-            else
-            {
-                ObjectError firstError = (ObjectError)errors.getAllErrors().get(0);
-                throw new ImportException(firstError.getDefaultMessage());
-            }
+            return new ActionURL(StartPipelineImportAction.class, getContainer()).addParameter("studyFile", studyFile.getAbsolutePath());
         }
 
         @Override
@@ -3916,8 +3901,74 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    /**
+     * Landing page for ImportStudyFromPipelineAction
+     */
+    public class StartPipelineImportAction extends FormViewAction<StartStudyImportForm>
+    {
+        @Override
+        public void validateCommand(StartStudyImportForm target, Errors errors)
+        {
+        }
 
-    public static boolean importStudy(ViewContext context, BindException errors, File studyFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException, InvalidFileException
+        @Override
+        public ModelAndView getView(StartStudyImportForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/startPipelineImport.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(StartStudyImportForm form, BindException errors) throws Exception
+        {
+            File studyFile = new File(form.getStudyFile());
+
+            if (studyFile.exists())
+                return importStudy(getViewContext(), errors, studyFile, studyFile.getName(), form);
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(StartStudyImportForm pipelinePathForm)
+        {
+            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Import Study from Pipeline");
+        }
+    }
+
+    public static class StartStudyImportForm
+    {
+        private String _studyFile;
+        private boolean _validateQueries;
+
+        public String getStudyFile()
+        {
+            return _studyFile;
+        }
+
+        public void setStudyFile(String studyFile)
+        {
+            _studyFile = studyFile;
+        }
+
+        public boolean isValidateQueries()
+        {
+            return _validateQueries;
+        }
+
+        public void setValidateQueries(boolean validateQueries)
+        {
+            _validateQueries = validateQueries;
+        }
+    }
+
+    public static boolean importStudy(ViewContext context, BindException errors, File studyFile, String originalFilename,
+                                      StartStudyImportForm form) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException, InvalidFileException
     {
         Container c = context.getContainer();
         PipeRoot pipelineRoot = StudyReload.getPipelineRoot(c);
@@ -3982,6 +4033,7 @@ public class StudyController extends BaseStudyController
         try
         {
             ImportOptions options = new ImportOptions(c.getId(), user.getUserId());
+            options.setSkipQueryValidation(!form.isValidateQueries());
             PipelineService.get().queueJob(new StudyImportJob(c, user, url, studyXml, originalFilename, errors, pipelineRoot, options));
         }
         catch (PipelineValidationException e)

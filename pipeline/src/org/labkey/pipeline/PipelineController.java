@@ -1222,23 +1222,9 @@ public class PipelineController extends SpringActionController
         public ActionURL getRedirectURL(PipelinePathForm form) throws Exception
         {
             Container c = getContainer();
-
             File folderFile = form.getValidatedSingleFile(c);
 
-            @SuppressWarnings({"ThrowableInstanceNeverThrown"})
-            BindException errors = new NullSafeBindException(c, "import");
-
-            boolean success = importFolder(getViewContext(), errors, folderFile, folderFile.getName());
-
-            if (success && !errors.hasErrors())
-            {
-                return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(c);
-            }
-            else
-            {
-                ObjectError firstError = (ObjectError)errors.getAllErrors().get(0);
-                throw new ImportException(firstError.getDefaultMessage());
-            }
+            return new ActionURL(StartFolderImportAction.class, getContainer()).addParameter("folderFile", folderFile.getAbsolutePath());
         }
 
         @Override
@@ -1256,7 +1242,75 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    public static boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException, PipelineValidationException
+    @RequiresPermissionClass(AdminPermission.class)
+    /**
+     * Landing page for ImportFolderFromPipelineAction
+     */
+    public class StartFolderImportAction extends FormViewAction<StartFolderImportForm>
+    {
+        @Override
+        public void validateCommand(StartFolderImportForm target, Errors errors)
+        {
+        }
+
+        @Override
+        public ModelAndView getView(StartFolderImportForm form, boolean reshow, BindException errors) throws Exception
+        {
+            return new JspView<>("/org/labkey/study/view/startPipelineImport.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(StartFolderImportForm form, BindException errors) throws Exception
+        {
+            File folderFile = new File(form.getFolderFile());
+
+            if (folderFile.exists())
+                return importFolder(getViewContext(), errors, folderFile, folderFile.getName(), form);
+
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(StartFolderImportForm form)
+        {
+            return PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlBegin(getContainer());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Import Folder from Pipeline");
+        }
+    }
+
+    public static class StartFolderImportForm
+    {
+        private String _folderFile;
+        private boolean _validateQueries;
+
+        public String getFolderFile()
+        {
+            return _folderFile;
+        }
+
+        public void setFolderFile(String folderFile)
+        {
+            _folderFile = folderFile;
+        }
+
+        public boolean isValidateQueries()
+        {
+            return _validateQueries;
+        }
+
+        public void setValidateQueries(boolean validateQueries)
+        {
+            _validateQueries = validateQueries;
+        }
+    }
+
+    public static boolean importFolder(ViewContext context, BindException errors, File folderFile, String originalFilename,
+                                       StartFolderImportForm form) throws ServletException, SQLException, IOException, ParserConfigurationException, SAXException, XmlException, PipelineValidationException
     {
         Container c = context.getContainer();
         if (!PipelineService.get().hasValidPipelineRoot(c))
@@ -1305,6 +1359,8 @@ public class PipelineController extends SpringActionController
         // this is called when a folder is imported through the pipeline, since there is no ui for controlling query validation
         // (or any other import options), we just pass through a vanilla ImportOptions object.
         ImportOptions options = new ImportOptions(c.getId(), user.getUserId());
+        options.setSkipQueryValidation(!form.isValidateQueries());
+
         PipelineService.get().queueJob(new FolderImportJob(c, user, url, folderXml, originalFilename, pipelineRoot, options));
 
         return !errors.hasErrors();

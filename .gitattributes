@@ -1988,6 +1988,7 @@ pipeline/src/org/labkey/pipeline/importer/FolderImportJob.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportProvider.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderImportTask.java -text
 pipeline/src/org/labkey/pipeline/importer/FolderJobSupport.java -text
+pipeline/src/org/labkey/pipeline/importer/startFolderImport.jsp -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineContextListener.java -text
 pipeline/src/org/labkey/pipeline/mule/EPipelineQueueImpl.java -text
 pipeline/src/org/labkey/pipeline/mule/GlobusJobWrapper.java -text
@@ -3916,6 +3917,7 @@ study/src/org/labkey/study/view/specimen/updateComments.jsp -text
 study/src/org/labkey/study/view/specimen/uploadSimpleSpecimens.jsp -text
 study/src/org/labkey/study/view/specimen/viewRequestsHeader.jsp -text
 study/src/org/labkey/study/view/specimen/webPart.jsp -text
+study/src/org/labkey/study/view/startPipelineImport.jsp -text
 study/src/org/labkey/study/view/studyList.jsp -text
 study/src/org/labkey/study/view/studyListWide.jsp -text
 study/src/org/labkey/study/view/studySchedule.jsp -text
