@@ -119,9 +119,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             throw new RuntimeException(x);
         }
 
-        verifyList(definition);
-        int listId = definition.getListId();
-        return getList(listId);
+        return verifyList(definition);
     }
 
     //
@@ -129,10 +127,11 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
     // If we can't get the table then something went wrong and we need to delete the
     // list.  Otherwise we'll have a list that can't be edited, updated, or deleted.
     //
-    private void verifyList(ListDefinition def) throws ListImportException
+    private GWTList verifyList(ListDefinition def) throws ListImportException
     {
         try
         {
+            // verify underlying table was created correctly (could throw illegal state exception)
             ListTable table = new ListTable(new ListQuerySchema(getUser(), getContainer()), def);
         }
         catch (IllegalStateException e)
@@ -147,6 +146,8 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             // rethrow so the client knows that something went wrong
             throw new ListImportException(e.getMessage());
         }
+
+        return getList(def.getListId());
     }
 
 
@@ -307,13 +308,14 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             {
                 // issue 19202 - check for null value exceptions in case provided file data not contain the column
                 // and return a better error message
+                String message = x.getMessage();
                 if (x.isNullValueException())
                 {
-                    throw new ListImportException("The provided data does not contain the specified '"
-                            + def.getKeyName() + "' field or contains null key values.");
+                    message = "The provided data does not contain the specified '" +
+                            def.getKeyName() + "' field or contains null key values.";
                 }
 
-                throw x;
+                throw new ListImportException(message);
             }
             if (errors != null && !errors.isEmpty())
             {
