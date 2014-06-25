@@ -17,11 +17,11 @@
 package org.labkey.api.exp.property;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -89,6 +89,10 @@ public class DomainEditorServiceBase extends BaseRemoteService
         try
         {
             Container c = getContainer(containerId);
+            if (c == null)
+            {
+                return Collections.emptyList();
+            }
             Set<SchemaKey> schemaPaths = DefaultSchema.get(getUser(), c).getUserSchemaPaths(false);
 
             List<String> names = new ArrayList<>();
@@ -111,12 +115,16 @@ public class DomainEditorServiceBase extends BaseRemoteService
     {
         try
         {
+            Map<String, GWTPropertyDescriptor> availableQueries = new HashMap<>();  //  GWT: TreeMap does not work
             Container c = getContainer(containerId);
+            if (c == null)
+            {
+                return availableQueries;
+            }
             UserSchema schema = QueryService.get().getUserSchema(getUser(), c, schemaName);
             if (schema == null)
-                return null;
-            
-            Map<String, GWTPropertyDescriptor> availableQueries = new HashMap<>();  //  GWT: TreeMap does not work
+                return availableQueries;
+
             for (String name : schema.getTableAndQueryNames(false))
             {
                 TableInfo table;
@@ -157,6 +165,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
     }
 
 
+    @Nullable
     private Container getContainer(String containerId)
     {
         Container container = null;
@@ -170,11 +179,7 @@ public class DomainEditorServiceBase extends BaseRemoteService
                 container = ContainerManager.getForPath(containerId);
         }
 
-        if (container == null)
-        {
-            throw new IllegalArgumentException(containerId);
-        }
-        else if (!container.hasPermission(getUser(), ReadPermission.class))
+        if (container != null && !container.hasPermission(getUser(), ReadPermission.class))
         {
             throw new UnauthorizedException();
         }
