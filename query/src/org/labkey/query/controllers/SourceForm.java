@@ -18,7 +18,6 @@ package org.labkey.query.controllers;
 
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.SchemaKey;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewForm;
 
@@ -48,7 +47,7 @@ public class SourceForm extends ViewForm
     {
         if (null == schemaName)
             return null;
-        return SchemaKey.decode(schemaName);
+        return SchemaKey.fromString(schemaName);
     }
 
     public void setSchemaName(String schemaName)
