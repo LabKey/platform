@@ -1448,7 +1448,7 @@ public class Query
 
 			try
 			{
-				CachedResultSet rs = (CachedResultSet)QueryService.get().select(schema, sql, true);
+				CachedResultSet rs = (CachedResultSet)QueryService.get().select(schema, sql, true, true);
 				assertNotNull(sql, rs);
 				return rs;
 			}

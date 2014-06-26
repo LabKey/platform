@@ -15,6 +15,8 @@
  */
 package org.labkey.query.jdbc;
 
+import org.apache.log4j.Logger;
+import org.labkey.api.data.CachedResultSet;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.ResultSetUtil;
@@ -35,6 +37,7 @@ public class QueryStatement implements Statement
     final QueryConnection _conn;
     boolean _closed = false;
     ResultSet _rs = null;
+    static Logger _log = Logger.getLogger(QueryStatement.class);
 
     QueryStatement(QueryConnection conn)
     {
@@ -53,7 +56,19 @@ public class QueryStatement implements Statement
     public ResultSet executeQuery(String s) throws SQLException
     {
         QuerySchema schema = _conn.getQuerySchema();
-        _rs = QueryService.get().select(schema, s, true);
+
+        boolean cached = false;
+        if (_log.isTraceEnabled())
+            cached = true;
+
+        _rs = QueryService.get().select(schema, s, true, cached);
+
+        if (_log.isTraceEnabled() && _rs instanceof CachedResultSet)
+        {
+            ResultSetUtil.logData(_rs);
+            _rs.beforeFirst();
+        }
+
         return _rs;
     }
 

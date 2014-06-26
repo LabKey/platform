@@ -1572,7 +1572,7 @@ public class QueryServiceImpl extends QueryService
 
 
     @Override
-    public ResultSet select(@NotNull QuerySchema schema, String sql, boolean strictColumnList) throws SQLException
+    public ResultSet select(@NotNull QuerySchema schema, String sql, boolean strictColumnList, boolean cached) throws SQLException
 	{
 		Query q = new Query(schema);
         q.setStrictColumnList(strictColumnList);
@@ -1588,7 +1588,7 @@ public class QueryServiceImpl extends QueryService
 
         SQLFragment sqlf = getSelectSQL(table, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
-		return new SqlSelector(table.getSchema(), sqlf).getResultSet();
+		return new SqlSelector(table.getSchema(), sqlf).getResultSet(cached);
 	}
 
 
