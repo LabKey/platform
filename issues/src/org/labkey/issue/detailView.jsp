@@ -184,6 +184,7 @@
     }
 
     StringBuilder commentText = new StringBuilder();
+    boolean hasAttachements = false;
     for (Issue.Comment comment : issue.getComments())
     {
         %><hr><table width="100%"><tr><td align="left"><b>
@@ -194,13 +195,20 @@
         <%=comment.getComment()%>
         <%=bean.renderAttachments(context, comment)%><%
 
+        // Determine if the comment has attachements
+        hasAttachements = hasAttachements ? true : !bean.renderAttachments(context, comment).isEmpty();
+
         // Extract the string value from the last comment entry
         Pattern pattern = Pattern.compile("(?s)(" + WikiService.WIKI_PREFIX + ")(.*?)(" + WikiService.WIKI_SUFFIX + ")");
         Matcher matcher = pattern.matcher(comment.getComment());
-        if (matcher.find()) // add the contexts if we find it
+        if (matcher.find() && !matcher.group(2).isEmpty()) // add the contexts if we find it
+        {
             commentText.append(matcher.group(2));
-        commentText.append("\n\n");
+            commentText.append("\n\n");
+        }
     }
+    if (hasAttachements)
+        commentText.append("** The related issue has attachements.");
     String commentTextStr = commentText.toString().replaceAll("<br>", "");
 %>
 
