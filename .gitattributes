@@ -643,6 +643,7 @@ api/src/org/labkey/api/exp/list/ListDefinition.java -text
 api/src/org/labkey/api/exp/list/ListImportProgress.java -text
 api/src/org/labkey/api/exp/list/ListItem.java -text
 api/src/org/labkey/api/exp/list/ListService.java -text
+api/src/org/labkey/api/exp/list/ListUrls.java -text
 api/src/org/labkey/api/exp/pipeline/ExpGeneratorId.java -text
 api/src/org/labkey/api/exp/pipeline/XarGeneratorFactorySettings.java -text
 api/src/org/labkey/api/exp/pipeline/XarGeneratorId.java -text

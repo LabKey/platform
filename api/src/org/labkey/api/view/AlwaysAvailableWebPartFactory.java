@@ -32,6 +32,11 @@ public abstract class AlwaysAvailableWebPartFactory extends BaseWebPartFactory
         super(name, defaultLocation, isEditable, showCustomizeOnInsert);
     }
 
+    public AlwaysAvailableWebPartFactory(String name, @Nullable String defaultLocation)
+    {
+        super(name, defaultLocation);
+    }
+
     public AlwaysAvailableWebPartFactory(String name)
     {
         super(name);
