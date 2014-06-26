@@ -262,7 +262,7 @@ Ext4.define('File.panel.Browser', {
                         File.panel.Browser._pipelineConfigurationCache[containerPath] = response;
 
                         for (var c=0; c < callbacks.length; c++) {
-                            Ext4.isFunction(callbacks[c].fn) ? callbacks[c].fn.call(callbacks[c].fn.scope || this, response) : undefined
+                            Ext4.isFunction(callbacks[c].fn) ? callbacks[c].fn.call(callbacks[c].fn.scope || this, response) : undefined;
                         }
 
                         Ext4.isFunction(cb) ? cb.call(scope, response) : undefined;
@@ -282,12 +282,9 @@ Ext4.define('File.panel.Browser', {
         _pipelineConfigurationCache : {},
 
         _toggleActions : function(fileSystem, actions, selection) {
-
-            for (var key in actions) {
-                if (actions.hasOwnProperty(key)) {
-                    actions[key].updateEnabled(fileSystem, selection);
-                }
-            }
+            Ext4.iterate(actions, function(key, action) {
+                action.updateEnabled(fileSystem, selection);
+            });
         }
 
     },
@@ -616,19 +613,15 @@ Ext4.define('File.panel.Browser', {
     },
 
     initializeActions : function() {
-        var action, a;
-        for (a in this.actions) {
-            if (this.actions.hasOwnProperty(a)) {
-                action = this.actions[a];
-                if (action && action.isAction) {
-                    action.initialConfig.prevText = action.initialConfig.text;
-                    action.initialConfig.prevIconCls = action.initialConfig.iconCls;
+        Ext4.iterate(this.actions, function(key, action) {
+            if (action && action.isAction) {
+                action.initialConfig.prevText = action.initialConfig.text;
+                action.initialConfig.prevIconCls = action.initialConfig.iconCls;
 
-                    action.setText(action.initialConfig.hideText ? undefined : action.initialConfig.hardText);
-                    action.setIconCls(action.initialConfig.hideIcon ? undefined : action.initialConfig.hardIconCls);
-                }
+                action.setText(action.initialConfig.hideText ? undefined : action.initialConfig.hardText);
+                action.setIconCls(action.initialConfig.hideIcon ? undefined : action.initialConfig.hardIconCls);
             }
-        }
+        });
     },
 
     initializeToolbar : function() {
@@ -716,9 +709,7 @@ Ext4.define('File.panel.Browser', {
                     if (actionConfig.hideText && actionConfig.hideIcon)
                         continue;
 
-                    var action = this.adjustAction(actionConfig);
-
-                    buttons.push(action);
+                    buttons.push(this.adjustAction(actionConfig));
                 }
             }
         }
@@ -734,28 +725,32 @@ Ext4.define('File.panel.Browser', {
         }
 
         this.linkIdMap = {};
-        if (actionButtons) {
-            for (i=0; i < actionButtons.length; i++) {
-                if (actionButtons[i].links[0].display === 'toolbar') {
+
+        if (Ext4.isArray(actionButtons)) {
+            var link;
+            Ext4.each(actionButtons, function(button) {
+                link = button.links[0];
+
+                if (link.display === 'toolbar') {
 
                     //
                     // Store an id lookup for the component id of this button
                     // based on it's provider id
                     //
                     var id = Ext4.id();
-                    this.linkIdMap[actionButtons[i].links[0].id] = id;
+                    this.linkIdMap[link.id] = id;
 
-                    var action = Ext4.create('File.panel.Action', {
-                        id : id,
-                        itemId : actionButtons[i].links[0].id,
-                        text : actionButtons[i].links[0].label,
+                    action = Ext4.create('File.panel.Action', {
+                        id: id,
+                        providerItemId: link.id,
+                        text: link.label,
+                        disabled: true,
                         handler: this.executeToolbarAction,
-                        scope : this,
-                        disabled : true
+                        scope: this
                     });
                     buttons.push(action);
                 }
-            }
+            }, this);
         }
 
         this.addDocked({xtype: 'toolbar', itemId: 'actionToolbar', dock: 'top', items: buttons, enableOverflow : true});
@@ -794,10 +789,12 @@ Ext4.define('File.panel.Browser', {
     },
 
     executeToolbarAction : function(item, e) {
-        var action = this.actionMap[item.itemId];
+        if (Ext4.isString(item.providerItemId)) {
+            var action = this.actionMap[item.providerItemId];
 
-        if (action) {
-            this.executeImportAction(action);
+            if (action) {
+                this.executeImportAction(action);
+            }
         }
     },
 
@@ -1015,49 +1012,62 @@ Ext4.define('File.panel.Browser', {
             columns : ['Name', 'Flag/Comment', 'Run', 'Data File URL'].concat(extraColumnNames),
             requiredVersion : '9.1',
             success : function(resp) {
-                this.setFileObjects(resp.rows);
-                var i, r, propName, rec, idx;
-
-                for (i = 0; i < resp.rows.length; i++)
-                {
-                    // use the record 'Id' to lookup the fileStore record because it includes the relative path and file/folder name
-                    var dataFileUrl = Ext4.Object.fromQueryString("url=" + resp.rows[i].DataFileUrl.value);
-                    var strStartIndex = dataFileUrl.url.indexOf(this.getBaseURL());
-                    var recId = dataFileUrl.url.substring(strStartIndex);
-                    idx = this.getFileStore().findExact('id', recId);
-
-                    if (idx >= 0)
-                    {
-                        rec = this.getFileStore().getAt(idx);
-                        propName = this.fileProps[rec.get('id')];
-                        if (!propName) {
-                            propName = {};
-                        }
-
-                        var values = {};
-                        for (r = 0; r < extraColumnNames.length; r++) {
-                            var value = Ext4.util.Format.htmlEncode(resp.rows[i][extraColumnNames[r]].value);
-                            if (resp.rows[i][extraColumnNames[r]].displayValue)
-                                value = Ext4.util.Format.htmlEncode(resp.rows[i][extraColumnNames[r]].displayValue);
-                            if (resp.rows[i][extraColumnNames[r]].url)
-                                value = "<a href='" + resp.rows[i][extraColumnNames[r]].url + "'>" + value + "</a>";
-
-                            values[extraColumnNames[r]] = value;
-
-                            propName[extraColumnNames[r]] = resp.rows[i][extraColumnNames[r]].value;
-                        }
-                        rec.set(values);
-
-                        propName.rowId = resp.rows[i]['RowId'].value;
-                        propName.name = resp.rows[i]['Name'].value;
-                        this.fileProps[rec.get('id')] = propName;
-                    }
-                }
+                this.processCustomFileProperies(resp.rows, extraColumnNames);
             },
             scope : this
         };
 
         LABKEY.Query.selectRows(config);
+    },
+
+    processCustomFileProperies : function(rows, extraColumnNames) {
+        this.setFileObjects(rows);
+        var propName, rec, recId, idx,
+                baseUrl = this.getBaseURL(), dataFileUrl, values, value, cell,
+                strStartIndex, fileStore = this.getFileStore();
+
+        Ext4.each(rows, function(row) {
+            // use the record 'Id' to lookup the fileStore record because it includes the relative path and file/folder name
+            dataFileUrl = Ext4.Object.fromQueryString('url=' + row.DataFileUrl.value).url;
+            strStartIndex = dataFileUrl.indexOf(baseUrl);
+            recId = dataFileUrl.substring(strStartIndex);
+            idx = fileStore.findExact('id', recId);
+
+            if (idx >= 0) {
+                rec = fileStore.getAt(idx);
+                recId = rec.get('id');
+                propName = this.fileProps[recId];
+                if (!propName) {
+                    propName = {};
+                }
+
+                values = {};
+                Ext4.each(extraColumnNames, function(columnName) {
+
+                    cell = row[columnName];
+
+                    if (cell.displayValue) {
+                        value = Ext4.htmlEncode(cell.displayValue);
+                    }
+                    else {
+                        value = Ext4.htmlEncode(cell.value);
+                    }
+
+                    if (cell.url) {
+                        value = "<a href='" + cell.url + "'>" + value + "</a>";
+                    }
+
+                    values[columnName] = value;
+                    propName[columnName] = cell.value;
+
+                }, this);
+                rec.set(values);
+
+                propName.rowId = row['RowId'].value;
+                propName.name = row['Name'].value;
+                this.fileProps[recId] = propName;
+            }
+        }, this);
     },
 
     updateGridProxy : function() {
@@ -1382,8 +1392,8 @@ Ext4.define('File.panel.Browser', {
         // Build up an array of actions which are grouped by Provider
         // These are then handed to a form to be rendered
         //
-        var ag, pa, alreadyChecked = false,
-            provider, action, actions = [], items = [],
+        var pa, alreadyChecked = false, radios,
+            provider, actions = [],
             actionMap = {}, hasAdmin = false, link, label, enabled;
 
         //
@@ -1395,85 +1405,82 @@ Ext4.define('File.panel.Browser', {
         //
         // Iterator over the action providers building the set of radios
         //
-        for (ag in this.actionProviders) {
+        Ext4.iterate(this.actionProviders, function(ag, provider) {
+            pa = provider.actions[0];
+            radios = [];
 
-            if (this.actionProviders.hasOwnProperty(ag)) {
-                provider = this.actionProviders[ag];
-                pa = provider.actions[0];
+            Ext4.each(provider.actions, function(action) {
 
-                var radios = [];
+                link = action.getLink();
+                enabled = action.getEnabled();
 
-                for (var i=0; i < provider.actions.length; i++) {
-                    action = provider.actions[i];
-                    link = action.getLink();
-                    enabled = action.getEnabled();
+                if (link.href && (link.enabled || this.adminUser)) {
+                    label = link.text;
 
-                    if (link.href && (link.enabled || this.adminUser)) {
-                        label = link.text;
+                    //
+                    // Administrators always see all actions
+                    //
+                    if (!link.enabled && this.adminUser) {
+                        label = label.concat(' <span class="labkey-error">*</span>');
+                        hasAdmin = true;
+                    }
 
-                        //
-                        // Administrators always see all actions
-                        //
-                        if (!link.enabled && this.adminUser) {
-                            label = label.concat(' <span class="labkey-error">*</span>');
-                            hasAdmin = true;
-                        }
+                    actionMap[action.getId()] = action;
 
-                        actionMap[action.getId()] = action;
+                    radios.push({
+                        xtype: 'radio',
+                        checked: enabled && !alreadyChecked,
+                        disabled: !enabled,
+                        labelSeparator: '',
+                        boxLabel: label,
+                        name: 'importAction',
+                        inputValue: action.getId(),
+                        width : '100%',
+                        validateOnChange: false,
+                        validateOnBlur: false
+                    });
 
-                        radios.push({
-                            xtype: 'radio',
-                            checked: enabled && !alreadyChecked,
-                            disabled: !enabled,
-                            labelSeparator: '',
-                            boxLabel: label,
-                            name: 'importAction',
-                            inputValue: action.getId(),
-                            width : '100%',
-                            validateOnChange: false,
-                            validateOnBlur: false
-                        });
-
-                        if (enabled) {
-                            alreadyChecked = true;
-                        }
+                    if (enabled) {
+                        alreadyChecked = true;
                     }
                 }
 
-                actions.push({
-                    xtype: 'radiogroup',
-                    fieldLabel: provider.label + '<br>' + pa.getShortMessage(),
-                    tooltip: pa.getLongMessage(),
-                    minHeight: 40,
-                    columns: 1,
-                    labelSeparator: '',
-                    items: radios,
-                    labelWidth: 275,
-                    paEnabled: pa.getEnabled(),
-                    disabled: !pa.getEnabled(),
-                    disabledCls: 'import-provider',
-                    bodyStyle: 'margin-bottom: 4px;',
-                    validateOnChange: false,
-                    listeners : {
-                        render: function(rg) {
-                            this.setFormFieldTooltip(rg, rg.paEnabled ? 'info.png' : 'warning-icon-alt.png');
-                        },
-                        scope: this
-                    }
-                });
-            }
-        }
+            }, this);
+
+            actions.push({
+                xtype: 'radiogroup',
+                fieldLabel: provider.label + '<br>' + pa.getShortMessage(),
+                tooltip: pa.getLongMessage(),
+                minHeight: 40,
+                columns: 1,
+                labelSeparator: '',
+                items: radios,
+                labelWidth: 275,
+                paEnabled: pa.getEnabled(),
+                disabled: !pa.getEnabled(),
+                disabledCls: 'import-provider',
+                bodyStyle: 'margin-bottom: 4px;',
+                validateOnChange: false,
+                listeners : {
+                    render: function(rg) {
+                        this.setFormFieldTooltip(rg, rg.paEnabled ? 'info.png' : 'warning-icon-alt.png');
+                    },
+                    scope: this
+                }
+            });
+
+        }, this);
 
         var actionPanelId = Ext4.id();
 
-        items.push({
+        var items = [{
             xtype: 'form',
             id: actionPanelId,
             bodyStyle: 'padding: 10px;',
             labelAlign: 'left',
             itemCls: 'x-check-group',
             items: actions
-        });
+        }];
 
         if (hasAdmin) {
             items.push({
@@ -1682,32 +1689,20 @@ Ext4.define('File.panel.Browser', {
             //
             // Update any action buttons that have been activated
             //
-            var btn, providerId, action;
+            var btn, disable;
 
-            for (providerId in this.actionMap) {
+            Ext4.iterate(this.actionMap, function(providerId, action) {
+                btn = Ext4.getCmp(this.linkIdMap[providerId]);
 
-                if (this.actionMap.hasOwnProperty(providerId)) {
-
-                    btn = Ext4.getCmp(this.linkIdMap[providerId]);
-
-                    if (btn) {
-
-                        action = this.actionMap[providerId];
-
-                        //
-                        // Check if the action button supports multiple selection
-                        //
-                        if (selections.length == 0 || (!action.supportsMultiSelect() && selections.length > 1)) {
-                            btn.setDisabled(true);
-                            continue;
-                        }
-
-                        var files = this.actionMap[providerId].getFiles();
-
-                        btn.setDisabled(false);
-                    }
+                //
+                // Check if the action button supports multiple selection
+                //
+                if (btn) {
+                    disable = selections.length == 0 || (!action.supportsMultiSelect() && selections.length > 1);
+                    btn.setDisabled(disable);
                 }
-            }
+
+            }, this);
         }
 
         if (this.showDetails) {
