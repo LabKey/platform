@@ -41,6 +41,7 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements ExpData
@@ -176,7 +177,7 @@ public class ExpDataImpl extends AbstractProtocolOutputImpl<Data> implements Exp
 
     public void delete(User user)
     {
-        ExperimentServiceImpl.get().deleteDataByRowIds(getContainer(), getRowId());
+        ExperimentServiceImpl.get().deleteDataByRowIds(getContainer(), Collections.singleton(getRowId()));
     }
     
     public String getMimeType()

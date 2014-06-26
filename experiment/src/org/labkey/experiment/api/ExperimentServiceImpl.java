@@ -16,7 +16,6 @@
 
 package org.labkey.experiment.api;
 
-import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -29,6 +28,7 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.defaults.DefaultValueService;
 import org.labkey.api.exp.AbstractParameter;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -1245,7 +1245,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public List<Material> getRunInputMaterial(String runLSID)
     {
-        final String sql = "SELECT * FROM " + getTinfoExperimentRunMaterialInputs() + " Where RunLSID = ?";
+        final String sql = "SELECT * FROM " + getTinfoExperimentRunMaterialInputs() + " WHERE RunLSID = ?";
         Map<String, Object>[] maps = new SqlSelector(getExpSchema(), new SQLFragment(sql, runLSID)).getMapArray();
         Map<String, List<Material>> material = getRunInputMaterial(maps);
         List<Material> result = material.get(runLSID);
@@ -1384,6 +1384,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return new Lsid(generateLSID(container, ExpSampleSet.class, sourceName));
     }
 
+    // TODO: @NotNull Collection<Integer> selectedRunIds
     public void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds)
     {
         if (selectedRunIds == null || selectedRunIds.length == 0)
@@ -1592,7 +1593,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
             executor.execute("DELETE FROM exp.Protocol WHERE RowId IN (" + protocolIds + ")");
 
-            sql = new SQLFragment("SELECT RowId FROM exp.Protocol Where RowId NOT IN (SELECT ParentProtocolId from exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?");
+            sql = new SQLFragment("SELECT RowId FROM exp.Protocol WHERE RowId NOT IN (SELECT ParentProtocolId FROM exp.ProtocolAction UNION SELECT ChildProtocolId FROM exp.ProtocolAction) AND Container = ?");
             sql.add(c.getId());
             int[] orphanedProtocolIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql).getArray(Integer.class));
             deleteProtocolByRowIds(c, user, orphanedProtocolIds);
@@ -1613,71 +1614,64 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void deleteMaterialByRowIds(User user, Container container, int... selectedMaterialIds)
+    public void deleteMaterialByRowIds(User user, Container container, Collection<Integer> selectedMaterialIds)
     {
-        if (selectedMaterialIds.length == 0)
+        if (selectedMaterialIds.isEmpty())
             return;
 
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
+            SQLFragment sql = new SQLFragment("SELECT * FROM exp.Material WHERE RowId ");
+            getExpSchema().getSqlDialect().appendInClauseSql(sql, selectedMaterialIds);
+
+            List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
+
+            for (ExpMaterial material : materials)
+            {
+                if (!material.getContainer().hasPermission(user, DeletePermission.class))
+                {
+                    throw new UnauthorizedException();
+                }
+            }
+
+            // Notify that a delete is about to happen
+            for (ExperimentMaterialListener materialListener : _materialListeners)
+            {
+                materialListener.beforeDelete(materials);
+            }
+
+            for (ExpMaterial material : materials)
+            {
+                // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
+                List<ExpRunImpl> runArray = getRunsUsingMaterials(material.getRowId());
+                for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
+                {
+                    Container runContainer = run.getContainer();
+                    if (!runContainer.hasPermission(user, DeletePermission.class))
+                        throw new UnauthorizedException();
+
+                    deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
+                }
+
+                OntologyManager.deleteOntologyObjects(container, material.getLSID());
+            }
+
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
-            for (int from = 0, to; from < selectedMaterialIds.length; from = to)
+            SQLFragment materialInputSQL = new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId ");
+            getExpSchema().getSqlDialect().appendInClauseSql(materialInputSQL, selectedMaterialIds);
+            executor.execute(materialInputSQL);
+            SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE RowId ");
+            getExpSchema().getSqlDialect().appendInClauseSql(materialSQL, selectedMaterialIds);
+            executor.execute(materialSQL);
+
+            // Remove from search index
+            SearchService ss = ServiceRegistry.get(SearchService.class);
+            if (null != ss)
             {
-                to = from + 1000;
-                if (to > selectedMaterialIds.length)
-                    to = selectedMaterialIds.length;
-
-                SQLFragment sql = new SQLFragment("SELECT * FROM exp.Material WHERE RowId ");
-                getExpSchema().getSqlDialect().appendInClauseSql(sql, Arrays.asList(ArrayUtils.toObject(selectedMaterialIds)));
-
-                List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(new SqlSelector(getExpSchema(), sql).getArrayList(Material.class));
-
                 for (ExpMaterial material : materials)
                 {
-                    if (!material.getContainer().hasPermission(user, DeletePermission.class))
-                    {
-                        throw new UnauthorizedException();
-                    }
-                }
-
-                // Notify that a delete is about to happen
-                for (ExperimentMaterialListener materialListener : _materialListeners)
-                {
-                    materialListener.beforeDelete(materials);
-                }
-
-                for (ExpMaterial material : materials)
-                {
-                    // Delete any runs using the material if the ProtocolImplementation allows deleting the run when an input is deleted.
-                    List<ExpRunImpl> runArray = getRunsUsingMaterials(material.getRowId());
-                    for (ExpRun run : ExperimentService.get().runsDeletedWithInput(runArray))
-                    {
-                        Container runContainer = run.getContainer();
-                        if (!runContainer.hasPermission(user, DeletePermission.class))
-                            throw new UnauthorizedException();
-
-                        deleteExperimentRunsByRowIds(run.getContainer(), user, run.getRowId());
-                    }
-
-                    OntologyManager.deleteOntologyObjects(container, material.getLSID());
-                }
-
-                SQLFragment materialInputSQL = new SQLFragment("DELETE FROM exp.MaterialInput WHERE MaterialId ");
-                getExpSchema().getSqlDialect().appendInClauseSql(materialInputSQL, Arrays.asList(ArrayUtils.toObject(selectedMaterialIds)));
-                executor.execute(materialInputSQL);
-                SQLFragment materialSQL = new SQLFragment("DELETE FROM exp.Material WHERE RowId ");
-                getExpSchema().getSqlDialect().appendInClauseSql(materialSQL, Arrays.asList(ArrayUtils.toObject(selectedMaterialIds)));
-                executor.execute(materialSQL);
-
-                // Remove from search index
-                SearchService ss = ServiceRegistry.get(SearchService.class);
-                if (null != ss)
-                {
-                    for (ExpMaterial material : materials)
-                    {
-                        ss.deleteResource(material.getDocumentId());
-                    }
+                    ss.deleteResource(material.getDocumentId());
                 }
             }
 
@@ -1685,39 +1679,36 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
-    public void deleteDataByRowIds(Container container, int... selectedDataIds)
+    public void deleteDataByRowIds(Container container, Collection<Integer> selectedDataIds)
     {
-        if (selectedDataIds.length == 0)
+        if (selectedDataIds.isEmpty())
             return;
 
         try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
         {
+            SimpleFilter rowIdFilter = new SimpleFilter().addInClause(FieldKey.fromParts("RowId"), selectedDataIds);
+            List<Data> datas = new TableSelector(getTinfoData(), rowIdFilter, null).getArrayList(Data.class);
+
+            beforeDeleteData(ExpDataImpl.fromDatas(datas));
+            for (Data data : datas)
+            {
+                if (!data.getContainer().equals(container))
+                {
+                    throw new SQLException("Attemping to delete a Data from another container");
+                }
+                OntologyManager.deleteOntologyObjects(container, data.getLSID());
+            }
+
+            SqlDialect dialect = getExpSchema().getSqlDialect();
             SqlExecutor executor = new SqlExecutor(getExpSchema());
 
-            for (int from = 0, to; from < selectedDataIds.length; from = to)
-            {
-                to = from + 1000;
-                if (to > selectedDataIds.length)
-                    to = selectedDataIds.length;
+            SQLFragment dataInputSQL = new SQLFragment("DELETE FROM exp.DataInput WHERE DataId ");
+            dialect.appendInClauseSql(dataInputSQL, selectedDataIds);
+            executor.execute(dataInputSQL);
 
-                String dataIds = StringUtils.join(new ArrayIterator(selectedDataIds, from, to), ", ");
-                String sql = "SELECT * FROM exp.Data WHERE RowId IN (" + dataIds + ");";
-                
-                List<Data> datas = new SqlSelector(getExpSchema(), sql).getArrayList(Data.class);
-
-                beforeDeleteData(ExpDataImpl.fromDatas(datas));
-                for (Data data : datas)
-                {
-                    if (!data.getContainer().equals(container))
-                    {
-                        throw new SQLException("Attemping to delete a Data from another container");
-                    }
-                    OntologyManager.deleteOntologyObjects(container, data.getLSID());
-                }
-
-                executor.execute("DELETE FROM exp.DataInput WHERE DataId IN (" + dataIds + ");");
-                executor.execute("DELETE FROM exp.Data WHERE RowId IN (" + dataIds + ");");
-            }
+            SQLFragment dataSQL = new SQLFragment("DELETE FROM exp.Data WHERE RowId ");
+            dialect.appendInClauseSql(dataSQL, selectedDataIds);
+            executor.execute(dataSQL);
 
             transaction.commit();
         }
@@ -1732,13 +1723,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         if (null == c)
             return;
 
-        String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ? ;";
+        String sql = "SELECT RowId FROM " + getTinfoExperimentRun() + " WHERE Container = ?";
         int[] runIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
         List<ExpExperimentImpl> exps = getExperiments(c, user, false, true, true);
         List<ExpSampleSetImpl> sampleSets = getSampleSets(c, user, false);
 
-        sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ? ;";
+        sql = "SELECT RowId FROM " + getTinfoProtocol() + " WHERE Container = ?";
         int[] protIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
 
         try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction())
@@ -1779,12 +1770,12 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             // we get this list now so that it doesn't include all of the run-scoped Materials that were
             // deleted already
             sql = "SELECT RowId FROM exp.Material WHERE Container = ? ;";
-            int[] matIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
+            Collection<Integer> matIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
             deleteMaterialByRowIds(user, c, matIds);
 
             // same drill for data objects
-            sql = "SELECT RowId FROM exp.Data WHERE Container = ? ;";
-            int[] dataIds = ArrayUtils.toPrimitive(new SqlSelector(getExpSchema(), sql, c).getArray(Integer.class));
+            sql = "SELECT RowId FROM exp.Data WHERE Container = ?";
+            Collection<Integer> dataIds = new SqlSelector(getExpSchema(), sql, c).getCollection(Integer.class);
             deleteDataByRowIds(c, dataIds);
 
             transaction.commit();
@@ -2006,7 +1997,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         {
             // Delete all Materials from the SampleSet
             SimpleFilter materialFilter = new SimpleFilter(FieldKey.fromParts("CpasType"), source.getLSID());
-            int[] materialIds = ArrayUtils.toPrimitive(new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Collections.singleton("RowId"), materialFilter, null).getArray(Integer.class));
+            Collection<Integer> materialIds = new TableSelector(ExperimentServiceImpl.get().getTinfoMaterial(), Collections.singleton("RowId"), materialFilter, null).getCollection(Integer.class);
             deleteMaterialByRowIds(user, c, materialIds);
 
             //Delete everything the ontology knows about this

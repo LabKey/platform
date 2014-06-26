@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -246,11 +247,11 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
-        int[] ids = new int[keys.size()];
+        List<Integer> ids = new LinkedList<>();
         List<Map<String, Object>> result = new ArrayList<>(keys.size());
-        for (int i = 0; i < keys.size(); i++)
+
+        for (Map<String, Object> k : keys)
         {
-            Map<String, Object> k = keys.get(i);
             Integer rowId = getMaterialRowId(k);
             Map<String, Object> map = getMaterialMap(rowId, getMaterialLsid(k));
             if (map == null)
@@ -261,7 +262,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
             if (rowId == null)
                 throw new QueryUpdateServiceException("RowID is required to delete a Sample Set Material");
 
-            ids[i] = rowId.intValue();
+            ids.add(rowId);
             result.add(map);
         }
 
