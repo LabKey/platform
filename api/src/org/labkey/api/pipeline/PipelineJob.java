@@ -593,7 +593,7 @@ abstract public class PipelineJob extends Job implements Serializable
             // waiting, then it should not be put on the queue.
             return !isSplitWaiting();
         }
-        // Initialize status for non-task pipline jobs.
+        // Initialize status for non-task pipeline jobs.
         else if (_logFile != null)
         {
             setStatus(initialState);
@@ -1634,7 +1634,7 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             try
             {
-                error("Uncaught exception in PiplineJob: " + this.toString(), throwable);
+                error("Uncaught exception in PipelineJob: " + this.toString(), throwable);
             }
             catch (Exception ignored) {}
         }
