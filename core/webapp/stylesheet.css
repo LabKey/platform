@@ -413,6 +413,8 @@ table.labkey-button-bar
                     turn enables relative positioning of our menu button arrow gif. */
 }
 
+td .labkey-menu-button,
+td .labkey-menu-button:visited,
 .labkey-button-bar .labkey-menu-button,
 .labkey-button-bar .labkey-menu-button:visited {
     background: url(./_images/arrow_down.png) right no-repeat !important;
@@ -449,6 +451,8 @@ table.labkey-button-bar
 	-ms-filter: "progid:DXImageTransform.Microsoft.gradient(GradientType=0, startColorstr=#ffffff, endColorstr=#e5e5e5)";
 }
 
+td .labkey-menu-button,
+td .labkey-menu-button:hover,
 .labkey-button-bar .labkey-menu-button:hover {
     background: #fff url(./_images/arrow_down.png) right no-repeat !important;
     /* For WebKit (Safari, Google Chrome etc) */
@@ -603,6 +607,7 @@ img.labkey-mv-indicator
 
 a.labkey-button,
 a.labkey-button:visited,
+td .labkey-menu-button,
 span.labkey-button {
     padding: 3px 5px;
 	margin-right: 5px;
