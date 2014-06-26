@@ -44,7 +44,7 @@ import java.util.TreeSet;
 
 /**
  * Child schema asociated with a particular assay provider. Typical implementations will expose separate child
- * schemas for each of their assay designs that are in scope. Shared value lists may also be directly exposed a
+ * schemas for each of their assay designs that are in scope. Shared value lists may also be directly exposed as
  * separate queries.
  *
  * User: kevink

@@ -70,6 +70,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 import org.springframework.validation.BindException;
@@ -105,11 +106,23 @@ public abstract class AssayProtocolSchema extends AssaySchema
     private final ExpProtocol _protocol;
     private final AssayProvider _provider;
 
+    @Deprecated
     public AssayProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
-        super(SchemaKey.fromParts(AssaySchema.NAME, AssayService.get().getProvider(protocol).getResourceName(), protocol.getName()), descr(protocol), user, container, ExperimentService.get().getSchema(), targetStudy);
+        this(user, container, AssayService.get().getProvider(protocol), protocol, targetStudy);
+    }
+
+    public AssayProtocolSchema(User user, Container container, @NotNull AssayProvider provider, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
+    {
+        super(SchemaKey.fromParts(AssaySchema.NAME, provider.getResourceName(), protocol.getName()), descr(protocol), user, container, ExperimentService.get().getSchema(), targetStudy);
+
+        if (protocol == null)
+            throw new NotFoundException("Assay protocol not found");
         _protocol = protocol;
-        _provider = AssayService.get().getProvider(protocol);
+
+        if (provider == null)
+            throw new NotFoundException("Assay provider for assay protocol '" + protocol.getName() + "' not found");
+        _provider = provider;
     }
 
     private static String descr(ExpProtocol protocol)
