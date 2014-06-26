@@ -722,8 +722,8 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     private static class SnapshotUpdateTask extends TimerTask
     {
-        private QuerySnapshotDefinition _def;
-        private boolean _suppressVisitManagerRecalc;
+        private final QuerySnapshotDefinition _def;
+        private final boolean _suppressVisitManagerRecalc;
 
         public SnapshotUpdateTask(QuerySnapshotDefinition def, boolean suppressVisitManagerRecalc)
         {
