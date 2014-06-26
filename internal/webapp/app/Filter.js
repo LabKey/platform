@@ -12,7 +12,6 @@ Ext.define('LABKEY.app.model.Filter', {
         {name : 'level'},
         {name : 'members', defaultValue: []},
         {name : 'operator'},
-        {name : 'isGroup', type: 'boolean', defaultValue: false},
         {name : 'isGrid', type: 'boolean', defaultValue: false}, // TODO: rename to isSql
         {name : 'isPlot', type: 'boolean', defaultValue: false},
         {name : 'ranges', defaultValue: []},
@@ -522,7 +521,7 @@ Ext.define('LABKEY.app.model.Filter', {
 
     /**
      * Complex comparator that says two filters are equal if and only if they match on the following:
-     * - isGroup, isGrid, isPlot, hierarchy, member length, and member set (member order insensitive)
+     * - isGrid, isPlot, hierarchy, member length, and member set (member order insensitive)
      * @param f - Filter to compare this object against.
      */
     isEqual : function(f) {
@@ -532,7 +531,7 @@ Ext.define('LABKEY.app.model.Filter', {
             var d = this.data;
             var fd = f.data;
 
-            eq = (d.isGroup == fd.isGroup) && (d.isGrid == fd.isGrid) &&
+            eq = (d.isGrid == fd.isGrid) &&
                     (d.isPlot == fd.isPlot) && (d.hierarchy == fd.hierarchy) &&
                     (d.members.length == fd.members.length) && (d.operator == fd.operator);
 
@@ -579,10 +578,6 @@ Ext.define('LABKEY.app.model.Filter', {
      */
     getShortFilter : function(displayText) {
         return LABKEY.app.model.Filter.getShortFilter(displayText);
-    },
-
-    isGroup : function() {
-        return false;
     },
 
     getValue : function(key) {

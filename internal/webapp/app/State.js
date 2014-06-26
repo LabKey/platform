@@ -339,21 +339,10 @@ Ext.define('LABKEY.app.controller.State', {
 
         for (var f=0; f < this.filters.length; f++) {
             var data = Ext.clone(this.filters[f].data);
-            if (this.filters[f].isGroup()) {
-                // Connector.model.FilterGroup
-                var _f = this.filters[f].get('filters');
-                for (var i=0; i < _f.length; i++) {
-                    data.filters[i] = _f[i].data;
-                }
-            }
             flatFilters.push(data);
         }
 
         return flatFilters;
-    },
-
-    getFilterGroupModelName : function() {
-        console.error('Failed to get filter group model name.');
     },
 
     getFilterModelName : function() {
@@ -363,7 +352,6 @@ Ext.define('LABKEY.app.controller.State', {
     _getFilterSet : function(filters) {
 
         var newFilters = [],
-                grpClass = this.getFilterGroupModelName(),
                 filterClass = this.getFilterModelName();
 
         for (var s=0; s < filters.length; s++) {
@@ -371,29 +359,8 @@ Ext.define('LABKEY.app.controller.State', {
 
             // decipher object structure
             if (!f.$className) {
-                if (f.filters) {
-                    // -- Filter Group
-                    var subfilters = [];
-                    for (var i=0; i < f.filters.length; i++) {
-                        subfilters.push(Ext.create(filterClass, f.filters[i]));
-                    }
-                    f.filters = subfilters;
-
-                    newFilters.push(Ext.create(grpClass, f));
-                }
-                else if (f.data) {
-                    if (f.data.filters) {
-                        var subfilters = [];
-                        for (var i=0; i < f.data.filters.length; i++) {
-                            subfilters.push(Ext.create(filterClass, f.data.filters[i].data));
-                        }
-                        f.data.filters = subfilters;
-
-                        newFilters.push(Ext.create(grpClass, f.data));
-                    }
-                    else {
-                        newFilters.push(Ext.create(filterClass, f.data));
-                    }
+                if (f.data) {
+                    newFilters.push(Ext.create(filterClass, f.data));
                 }
                 else {
                     newFilters.push(Ext.create(filterClass, f));
@@ -401,11 +368,6 @@ Ext.define('LABKEY.app.controller.State', {
             }
             else if (f.$className == filterClass) {
                 newFilters.push(f);
-            }
-            else if (f.$className == grpClass) {
-                var grp = f;
-                grp.set('filters', this._getFilterSet(grp.get('filters')));
-                newFilters.push(grp);
             }
         }
         return newFilters;
@@ -477,7 +439,7 @@ Ext.define('LABKEY.app.controller.State', {
             else {
 
                 // Check if removing group/grid
-                if (target[t].isGroup() || target[t].isGrid() || target[t].isPlot())
+                if (target[t].isGrid() || target[t].isPlot())
                     continue;
 
                 // Found the targeted filter to be removed
@@ -551,27 +513,7 @@ Ext.define('LABKEY.app.controller.State', {
     requestFilterUpdate : function(skipState, opChange, silent) {
         var olapFilters = [], ff;
         for (var f=0; f < this.filters.length; f++) {
-
-            if (this.filters[f].isGroup()) {
-                var grpFilters = this.filters[f].get('filters');
-                for (var g=0; g < grpFilters.length; g++) {
-                    if (grpFilters[g].isGroup && grpFilters[g].isGroup()) {
-                        var _g = grpFilters[g].get('filters');
-                        // have a subgroup
-                        for (var i=0; i < _g.length; i++) {
-                            ff = _g[i].data ? _g[i].data : _g[i];
-                            olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(ff, this.subjectName));
-                        }
-                    }
-                    else {
-                        ff = grpFilters[g].data ? grpFilters[g].data : grpFilters[g];
-                        olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(ff, this.subjectName));
-                    }
-                }
-            }
-            else {
-                olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(this.filters[f].data, this.subjectName));
-            }
+            olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(this.filters[f].data, this.subjectName));
         }
 
         var proceed = true;
@@ -605,17 +547,7 @@ Ext.define('LABKEY.app.controller.State', {
 
         var flatSelections = [];
         for (var f=0; f < this.selections.length; f++) {
-
-            if (this.selections[f].isGroup()) {
-
-                for (var s=0; s < this.selections[f].data.filters.length; s++) {
-                    flatSelections.push(this.selections[f].data.filters[s]);
-                }
-            }
-            else {
-                flatSelections.push(this.selections[f].data);
-            }
-
+            flatSelections.push(this.selections[f].data);
         }
 
         return flatSelections;
@@ -660,18 +592,15 @@ Ext.define('LABKEY.app.controller.State', {
 
                 for (var i=0; i < oldFilters.length; i++) {
 
-                    if (!oldFilters[i].isGroup() && !opFilters[n].isGroup()) {
-
-                        if (oldFilters[i].getHierarchy() == opFilters[n].getHierarchy()) {
-                            var op = opFilters[n].data;
-                            if (!LABKEY.app.model.Filter.dynamicOperatorTypes) {
-                                op = LABKEY.app.model.Filter.lookupOperator(op);
-                            }
-                            else {
-                                op = op.operator;
-                            }
-                            oldFilters[i].set('operator', op);
+                    if (oldFilters[i].getHierarchy() == opFilters[n].getHierarchy()) {
+                        var op = opFilters[n].data;
+                        if (!LABKEY.app.model.Filter.dynamicOperatorTypes) {
+                            op = LABKEY.app.model.Filter.lookupOperator(op);
                         }
+                        else {
+                            op = op.operator;
+                        }
+                        oldFilters[i].set('operator', op);
                     }
                 }
             }
@@ -681,8 +610,7 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     shouldMergeFilters : function(oldFilter, newFilter) {
-        return (oldFilter.data.hierarchy == newFilter.data.hierarchy &&
-                oldFilter.data.isGroup == newFilter.data.isGroup);
+        return (oldFilter.data.hierarchy == newFilter.data.hierarchy);
     },
 
     handleMergeRangeFilters : function(oldFilter, newFilter) {
@@ -722,12 +650,7 @@ Ext.define('LABKEY.app.controller.State', {
         for (var s=0; s < newFilters.length; s++) {
             found = false;
             for (var f=0; f < oldFilters.length; f++) {
-                if (Ext.isFunction(newFilters[s].isGroup) && newFilters[s].isGroup()) {
-                    if (oldFilters[f].isGroup() && oldFilters[f].get('name') == newFilters[s].get('name')) {
-                        found = true;
-                    }
-                }
-                else if (newFilters[s].isEqual(oldFilters[f])) {
+                if (newFilters[s].isEqual(oldFilters[f])) {
                     found = true;
                 }
             }
