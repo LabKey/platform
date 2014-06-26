@@ -37,6 +37,7 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Formats;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
@@ -904,6 +905,14 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
                 }
                 catch (Throwable x)
                 {
+                    try
+                    {
+                        ExceptionUtil.logExceptionToMothership(null, x);
+                    }
+                    catch (Throwable t)
+                    {
+                        /* */
+                    }
                     _log.error("Error running " + (null != i ? i._id : ""), x);
                 }
                 finally
