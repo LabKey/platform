@@ -98,7 +98,7 @@ public class StudyUnionTableInfo extends VirtualTable
             sqlf.append(unionAll);
             sqlf.append("SELECT CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ") AS dataset, " + def.getDataSetId() + " AS datasetid");
 
-            String visitPropertyName = def.getVisitDatePropertyName();
+            String visitPropertyName = def.getVisitDateColumnName();
             ColumnInfo visitColumn = null == visitPropertyName ? null : ti.getColumn(visitPropertyName);
             if (null != visitPropertyName && (null == visitColumn || visitColumn.getJdbcType() != JdbcType.TIMESTAMP))
                 Logger.getLogger(StudySchema.class).info("Could not find visit column of correct type '" + visitPropertyName + "' in dataset '" + def.getName() + "'");
