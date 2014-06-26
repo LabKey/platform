@@ -15,8 +15,13 @@
  */
 package org.labkey.study.importer;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.StudyManager;
@@ -71,7 +76,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
 
                     StudyQuerySchema.TablePackage personnelTablePackage = schema.getTablePackage(ctx, projectSchema, StudyQuerySchema.PERSONNEL_TABLE_NAME);
                     importTableData(ctx, vf, personnelTablePackage, _personnelTableMapBuilder,
-                            new PreserveExistingProjectData(ctx.getUser(), personnelTablePackage.getTableInfo(), "Label", "RowId", _personnelIdMap));
+                            new PersonnelTableTransform(ctx.getUser(), personnelTablePackage.getTableInfo(), "Label", "RowId", _personnelIdMap));
 
                     transaction.commit();
                 }
@@ -81,6 +86,62 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
             }
             else
                 throw new ImportException("Unable to open the folder at : " + dirType.getDir());
+        }
+    }
+
+    private class PersonnelTableTransform extends PreserveExistingProjectData
+    {
+        public PersonnelTableTransform(User user, TableInfo table, String fieldName, @Nullable String keyName, @Nullable Map<Object, Object> keyMap)
+        {
+            super(user, table, fieldName, keyName, keyMap);
+        }
+
+        @Override
+        public List<Map<String, Object>> transform(StudyImportContext ctx, List<Map<String, Object>> origRows) throws ImportException
+        {
+            initializeData();
+            List<Map<String, Object>> newRows = new ArrayList<>();
+
+            for (Map<String, Object> row : origRows)
+            {
+                Map<String, Object> currentRow = new CaseInsensitiveHashMap<>();
+                currentRow.putAll(row);
+
+                if (currentRow.containsKey(_fieldName))
+                {
+                    String fieldNameValue = currentRow.get(_fieldName).toString();
+                    if (!_existingValues.containsKey(fieldNameValue))
+                    {
+                        // try to line up the userId field with an existing user with the same exported display name
+                        if (currentRow.containsKey("userId") && currentRow.containsKey("userId.displayName"))
+                        {
+                            Object displayName = currentRow.get("userId.displayName");
+                            if (null != displayName)
+                            {
+                                User user = UserManager.getUserByDisplayName(displayName.toString());
+                                if (user != null)
+                                {
+                                    currentRow.put("userId", user.getUserId());
+                                    currentRow.remove("userId.displayName");
+                                    newRows.add(currentRow);
+                                }
+                                else
+                                    // consider: just don't add the userid field, but add the personnel record
+                                    ctx.getLogger().warn("No user found matching the display name : " + displayName);
+                            }
+                            else
+                                ctx.getLogger().warn("Null display name was found.");
+                        }
+                    }
+                    else if (null != _keyMap)
+                    {
+                        Object key = currentRow.get(_keyName);
+                        if (null != key)
+                            _keyMap.put(key, _existingValues.get(fieldNameValue));
+                    }
+                }
+            }
+            return newRows;
         }
     }
 }

@@ -15,12 +15,19 @@
  */
 package org.labkey.study.writer;
 
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -44,6 +51,23 @@ public class StudyPropertiesWriter extends DefaultStudyDesignWriter
         writeTableInfos(ctx, dir, studyTableNames, schema, projectSchema, SCHEMA_FILENAME);
 
         studyTableNames.add(StudyQuerySchema.OBJECTIVE_TABLE_NAME);
+        studyTableNames.remove(StudyQuerySchema.PERSONNEL_TABLE_NAME);
         writeTableData(ctx, dir, studyTableNames, schema, projectSchema, null);
+        writePersonnelData(ctx, dir);
+    }
+
+    private void writePersonnelData(StudyExportContext ctx, VirtualFile vf) throws Exception
+    {
+        StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
+        TableInfo tableInfo = schema.getTable(StudyQuerySchema.PERSONNEL_TABLE_NAME);
+
+        List<FieldKey> fields = new ArrayList<>();
+        fields.addAll(tableInfo.getDefaultVisibleColumns());
+
+        // we want to include the user display name so we can resolve during import
+        fields.add(FieldKey.fromParts("userId", "displayName"));
+
+        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fields);
+        writeTableData(ctx, vf, tableInfo, new ArrayList<>(columns.values()), null);
     }
 }

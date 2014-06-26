@@ -383,12 +383,12 @@ public class DefaultStudyDesignImporter
      */
     protected class PreserveExistingProjectData implements TransformHelper
     {
-        private User _user;
-        private TableInfo _tableInfo;
-        private String _fieldName;          // field to match on
-        private String _keyName;            // key field name
-        private Map<String, Object> _existingValues;
-        private Map _keyMap;
+        protected User _user;
+        protected TableInfo _tableInfo;
+        protected String _fieldName;          // field to match on
+        protected String _keyName;            // key field name
+        protected Map<String, Object> _existingValues;
+        protected Map _keyMap;
 
         public PreserveExistingProjectData(User user, TableInfo table, String fieldName, @Nullable String keyName, @Nullable Map<Object, Object> keyMap)
         {
@@ -399,7 +399,7 @@ public class DefaultStudyDesignImporter
             _keyMap = keyMap;
         }
 
-        private void initializeData()
+        protected void initializeData()
         {
             if (_existingValues == null)
             {
