@@ -113,7 +113,12 @@ LABKEY.Ajax = new function ()
                 failureCB = config.failure;
             }
 
-            xhr = new XMLHttpRequest();
+            // issue 20849 : IE errors when setting timeout after object created
+            if (config.hasOwnProperty('timeout') && config.timeout !== null)
+                xhr = new XMLHttpRequest({timeout: config.timeout});
+            else
+                xhr = new XMLHttpRequest();
+
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4) {
                     if (xhr.status === 200) {
@@ -134,7 +139,6 @@ LABKEY.Ajax = new function ()
             };
 
             if (config.hasOwnProperty('timeout') && config.timeout !== null) {
-                xhr.timeout = config.timeout;
                 xhr.ontimeout = function() {
                     if (failureCB) {
                         failureCB.call(scope, xhr, config);

@@ -132,7 +132,7 @@ Ext.onReady(function () {
     if (exportButtonEl.addEventListener)
         exportButtonEl.addEventListener('click', doTsvExport, false);
     else if (exportButtonEl.attachEvent)
-        exportButtonEl.addEventListener('onclick', doTsvExport);
+        exportButtonEl.attachEvent('onclick', doTsvExport);
 
     Ext.ComponentMgr.onAvailable(<%=PageFlowUtil.jsString(model.getDataRegionName())%>, function (dr) {
         dr.on('selectchange', function (dr, selectedCount) {

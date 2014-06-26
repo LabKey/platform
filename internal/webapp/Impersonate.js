@@ -137,7 +137,7 @@ Ext4.define('LABKEY.Security.ImpersonateUser', {
             return;
 
         var userId = this.userCombo.getValue();
-        Ext4.Ajax.request({
+        LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('user', 'impersonateUser'),
             method: 'POST',
             params: {
@@ -259,7 +259,7 @@ Ext4.define('LABKEY.Security.ImpersonateGroup', {
             return;
 
         var groupId = this.groupCombo.getValue();
-        Ext4.Ajax.request({
+        LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('user', 'impersonateGroup'),
             method: 'POST',
             params: {
@@ -409,7 +409,7 @@ Ext4.define('LABKEY.Security.ImpersonateRoles', {
         for (var i = 0; i < selected.length; i++)
             roleNames.push(selected[i].data.roleName);
 
-        Ext4.Ajax.request({
+        LABKEY.Ajax.request({
             url: LABKEY.ActionURL.buildURL('user', 'impersonateRoles'),
             method: 'POST',
             params: {
