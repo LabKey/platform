@@ -167,7 +167,7 @@ public class CBCAssayProvider extends AbstractTsvAssayProvider
     @Override
     public AssayProtocolSchema createProtocolSchema(User user, Container container, @NotNull ExpProtocol protocol, @Nullable Container targetStudy)
     {
-        return new CBCProtocolSchema(user, container, protocol, targetStudy);
+        return new CBCProtocolSchema(user, container, this, protocol, targetStudy);
     }
 
     @Override
