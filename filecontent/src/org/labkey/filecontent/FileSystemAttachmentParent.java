@@ -182,8 +182,10 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
                     File attachmentFile = new File(parentDir, name);
                     if (attachmentFile.exists())
                     {
-                        FileContentServiceImpl.moveToDeleted(attachmentFile);
-                        FileContentServiceImpl.logFileAction(parentDir, name, FileContentServiceImpl.FileAction.DELETE, user);
+                        if (attachmentFile.delete())
+                        {
+                            FileContentServiceImpl.logFileAction(parentDir, name, FileContentServiceImpl.FileAction.DELETE, user);
+                        }
                     }
                 }
                 else                        // delete the entire folder (and subfolders)
@@ -195,9 +197,11 @@ public class FileSystemAttachmentParent implements AttachmentDirectory
                         {
                             if (!attachmentFile.isDirectory() && !attachmentFile.getName().startsWith(".") && attachmentFile.exists())
                             {
-                                FileContentServiceImpl.moveToDeleted(attachmentFile);
-                                FileContentServiceImpl.logFileAction(parentDir, attachmentFile.getName(), FileContentServiceImpl.FileAction.DELETE, user);
-                                AttachmentService.get().addAuditEvent(user, this, attachmentFile.getName(), "The attachment: " + attachmentFile.getName() + " was deleted");
+                                if (attachmentFile.delete())
+                                {
+                                    FileContentServiceImpl.logFileAction(parentDir, attachmentFile.getName(), FileContentServiceImpl.FileAction.DELETE, user);
+                                    AttachmentService.get().addAuditEvent(user, this, attachmentFile.getName(), "The attachment: " + attachmentFile.getName() + " was deleted");
+                                }
                             }
                         }
                     }
