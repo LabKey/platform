@@ -29,6 +29,7 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Wrapper;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -607,20 +608,28 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         assert _lock.isHeldByCurrentThread();
 
+        if (isInherited())
+        {
+            StudyImpl shared = getDefinitionStudy();
+            DataSetDefinition ds = shared.getDataSet(getDataSetId());
+            return null == ds ? null : ds.ensureDomain();
+        }
+
         if (null == getTypeURI())
             throw new IllegalStateException();
+
         Domain d = getDomain();
-        if (null == d)
+        if (null != d)
+            return d;
+
+        _domain = PropertyService.get().createDomain(getContainer(), getTypeURI(), getName());
+        try
         {
-            _domain = PropertyService.get().createDomain(getContainer(), getTypeURI(), getName());
-            try
-            {
-                _domain.save(null);
-            }
-            catch (ChangePropertyDescriptorException x)
-            {
-                throw new RuntimeException(x);
-            }
+            _domain.save(null);
+        }
+        catch (ChangePropertyDescriptorException x)
+        {
+            throw new RuntimeException(x);
         }
         return _domain;
     }
@@ -685,25 +694,52 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    TableInfo _storageTable = null;
-    
+    /**** UNDONE  *****
+     *
+     * This is a terrible hack, this should go away ASAP, we should be relying on DbSchema for this
+     * caching
+     *
+     *****************/
+
+    static final CacheLoader<String,TableInfo> tableInfoCacheLoader = new CacheLoader<String,TableInfo>()
+    {
+        @Override
+        public TableInfo load(String key, @Nullable Object argument)
+        {
+            return ((DataSetDefinition)argument).loadStorageTableInfo();
+        }
+    };
+    static final Cache<String,TableInfo> storageTableInfos = new BlockingCache<String,TableInfo>(
+            new DatabaseCache<Wrapper<TableInfo>>(
+                StudySchema.getInstance().getScope(),
+                CacheManager.UNLIMITED, CacheManager.DAY, "dataset tableinfos"),
+            tableInfoCacheLoader
+            );
+
     @Transient
     public TableInfo getStorageTableInfo() throws UnauthorizedException
     {
-        if (null != _storageTable)
-            return _storageTable;
-
         if (isInherited())
         {
             StudyImpl shared = getDefinitionStudy();
             DataSetDefinition ds = shared.getDataSet(getDataSetId());
-            _storageTable = null == ds ? null : ds.getStorageTableInfo();
+            return null == ds ? null : ds.getStorageTableInfo();
         }
         else
         {
-            _storageTable = loadStorageTableInfo();
+            if (null == getTypeURI())
+                return null;
+            return storageTableInfos.get(getTypeURI(), this, null);
         }
-        return _storageTable;
+    }
+
+
+    // for use by DatasetDomainKind
+    public void invalidateStorageTableInfo()
+    {
+        if (null == getTypeURI())
+            return;
+        storageTableInfos.remove(getTypeURI());
     }
 
 
@@ -1544,19 +1580,19 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     @Transient
     public Domain getDomain()
     {
+        if (isInherited())
+        {
+            StudyImpl shared = getDefinitionStudy();
+            DataSetDefinition ds = shared.getDataSet(getDataSetId());
+            return null == ds ? null : ds.getDomain();
+        }
+
         synchronized (this)
         {
             if (null == getTypeURI())
                 return null;
             if (null != _domain)
                 return _domain;
-        }
-
-        if (isInherited())
-        {
-            StudyImpl shared = getDefinitionStudy();
-            DataSetDefinition ds = shared.getDataSet(getDataSetId());
-            return null == ds ? null : ds.getDomain();
         }
 
         Domain d=null;

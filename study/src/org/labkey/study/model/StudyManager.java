@@ -411,7 +411,7 @@ public class StudyManager
             @Override
             public void clearCache(DataSetDefinition obj)
             {
-                super.clearCache(obj);
+                super.clearCache(obj.getContainer());
             }
         };
 
@@ -430,9 +430,14 @@ public class StudyManager
             StudyManager.this._sharedProperties.remove(def.getContainer());
         }
 
+        public void clearCache(Container c)
+        {
+            helper.clearCache(c);
+        }
+
         public void clearCache(DataSetDefinition def)
         {
-            helper.clearCache(def);
+            helper.clearCache(def.getContainer());
             clearProperties(def);
         }
 
@@ -495,11 +500,6 @@ public class StudyManager
                 StudyCache.cache(t, dsIn.getContainer(), dsIn.getEntityId(), dsIn);
             }
             return dsRet;
-        }
-
-        public void clearCache(Container c)
-        {
-            helper.clearCache(c);
         }
     }
 
@@ -702,7 +702,6 @@ public class StudyManager
 
             // make sure we reload domain and tableinfo
             dataSetDefinition._domain = null;
-            dataSetDefinition._storageTable = null;
 
             Domain domain = dataSetDefinition.getDomain();
 
@@ -4290,11 +4289,9 @@ public class StudyManager
         @Override
         public void categoryUpdated(User user, ViewCategory category) throws Exception
         {
-            for (DataSetDefinition def : getDatasetsForCategory(category))
-            {
-                _instance._datasetHelper.clearCache(def);
-                _instance._datasetHelper.clearCache(def.getContainer());
-            }
+            Container c = ContainerManager.getForId(category.getContainerId());
+            if (null != c)
+                _instance._datasetHelper.clearCache(c);
         }
 
         private List<DataSetDefinition> getDatasetsForCategory(ViewCategory category)

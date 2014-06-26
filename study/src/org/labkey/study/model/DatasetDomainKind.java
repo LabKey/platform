@@ -230,7 +230,12 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     public void invalidate(Domain domain)
     {
         super.invalidate(domain);
-        StudyManager.getInstance().uncache(getDatasetDefinition(domain.getTypeURI()));
+        DataSetDefinition d = getDatasetDefinition(domain.getTypeURI());
+        if (null != d)
+        {
+            StudyManager.getInstance().uncache(getDatasetDefinition(domain.getTypeURI()));
+            d.invalidateStorageTableInfo();
+        }
     }
 
     @Override
