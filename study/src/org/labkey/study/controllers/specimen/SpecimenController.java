@@ -5330,13 +5330,7 @@ public class SpecimenController extends BaseStudyController
             }
             RequestabilityManager.getInstance().saveRules(getContainer(), getUser(), rules);
 
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    return Collections.<String, Object>singletonMap("savedCount", rules.size());
-                }
-            };
+            return new ApiSimpleResponse(Collections.<String, Object>singletonMap("savedCount", rules.size()));
         }
     }
 

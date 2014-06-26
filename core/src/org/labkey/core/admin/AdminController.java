@@ -6073,14 +6073,7 @@ public class AdminController extends SpringActionController
                 properties.put("error", "Requested tab does not exist.");
             }
 
-            return new ApiResponse()
-            {
-                @Override
-                public Map<String, ?> getProperties()
-                {
-                    return properties;
-                }
-            };
+            return new ApiSimpleResponse(properties);
         }
     }
 

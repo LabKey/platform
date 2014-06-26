@@ -844,7 +844,7 @@ public class FileContentController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class FileContentSummaryAction extends FileTreeNodeAction
     {
-        public ApiResponse execute(NodeForm form, BindException errors) throws Exception
+        public Set<Map<String, Object>> getChildren(NodeForm form, BindException errors) throws Exception
         {
             Container c = ContainerManager.getForId(form.getNode());
             if (c == null)
@@ -916,7 +916,7 @@ public class FileContentController extends SpringActionController
 
                 children.add(node);
             }
-            return new ApiSimpleResponse("children", children);
+            return children;
         }
     }
 
@@ -928,7 +928,7 @@ public class FileContentController extends SpringActionController
     {
         private static final String NODE_LABEL = "file web part";
 
-        public ApiResponse execute(NodeForm form, BindException errors) throws Exception
+        protected Set<Map<String, Object>> getChildren(NodeForm form, BindException errors) throws Exception
         {
             Container c = ContainerManager.getForId(form.getNode());
             if (c == null)
@@ -977,7 +977,7 @@ public class FileContentController extends SpringActionController
 
                 children.add(node);
             }
-            return new ApiSimpleResponse("children", children);
+            return children;
         }
 
         private boolean containsFileWebPart(Container c)
@@ -991,6 +991,14 @@ public class FileContentController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public abstract class FileTreeNodeAction extends ApiAction<NodeForm>
     {
+        protected abstract Set<Map<String, Object>> getChildren(NodeForm form, BindException errors) throws Exception;
+
+        @Override
+        public final Object execute(NodeForm nodeForm, BindException errors) throws Exception
+        {
+            return new ApiSimpleResponse(Collections.singletonMap("children", getChildren(nodeForm, errors)));
+        }
+
         @Override
         public ApiResponseWriter createResponseWriter() throws IOException
         {
@@ -1000,7 +1008,7 @@ public class FileContentController extends SpringActionController
                 public void write(ApiResponse response) throws IOException
                 {
                     // need to write out the json in a form that the ext tree loader expects
-                    Map<String, ?> props = response.getProperties();
+                    Map<String, ?> props = ((ApiSimpleResponse)response).getProperties();
                     if (props.containsKey("children"))
                     {
                         JSONArray json = new JSONArray((Collection<Object>)props.get("children"));

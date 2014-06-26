@@ -762,13 +762,7 @@ public class ProjectController extends SpringActionController
             partList.add(webPartProperties);
         }
 
-        return new ApiResponse()
-        {
-            public Map<String, ?> getProperties()
-            {
-                return properties;
-            }
-        };
+        return new ApiSimpleResponse(properties);
     }
 
     private boolean handleDeleteWebPart(Container c, String pageId, int index)

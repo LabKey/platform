@@ -208,15 +208,9 @@ public class SpecimenApiController extends BaseStudyController
                 if (location.isRepository())
                     repositories.add(getLocation(location));
             }
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    Map<String, Object> result = new HashMap<>();
-                    result.put("repositories", repositories);
-                    return result;
-                }
-            };
+            Map<String, Object> result = new HashMap<>();
+            result.put("repositories", repositories);
+            return new ApiSimpleResponse(result);
         }
     }
 
@@ -249,13 +243,7 @@ public class SpecimenApiController extends BaseStudyController
             else
                 response.put("requests", Collections.emptyList());
 
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    return response;
-                }
-            };
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -268,13 +256,7 @@ public class SpecimenApiController extends BaseStudyController
             SpecimenRequest request = getRequest(getUser(), getContainer(), requestIdForm.getRequestId(), false, false);
             final Map<String, Object> response = new HashMap<>();
             response.put("request", request != null ? getRequestResponse(getViewContext(), request) : null);
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    return response;
-                }
-            };
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -322,13 +304,7 @@ public class SpecimenApiController extends BaseStudyController
             for (Integer locationId : preferredLocations)
                 locations.add(getLocation(getContainer(), locationId));
             response.put("locations", locations);
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    return response;
-                }
-            };
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -349,13 +325,7 @@ public class SpecimenApiController extends BaseStudyController
             else
                 vialList = Collections.emptyList();
             response.put("vials", vialList);
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    return response;
-                }
-            };
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -465,13 +435,7 @@ public class SpecimenApiController extends BaseStudyController
 
             }
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    return response;
-                }
-            };
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -541,13 +505,7 @@ public class SpecimenApiController extends BaseStudyController
                 }
             }
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    return response;
-                }
-            };
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -576,13 +534,7 @@ public class SpecimenApiController extends BaseStudyController
                 }
             }
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    return response;
-                }
-            };
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -605,13 +557,7 @@ public class SpecimenApiController extends BaseStudyController
             }
 
             final Map<String, Object> response = getRequestResponse(getViewContext(), request);
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    return response;
-                }
-            };
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -658,13 +604,7 @@ public class SpecimenApiController extends BaseStudyController
             buildTypeSummary(additiveTypes, summary.getAdditives());
             response.put("additiveTypes", additiveTypes);
 
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    return response;
-                }
-            };
+            return new ApiSimpleResponse(response);
         }
     }
 
@@ -716,13 +656,7 @@ public class SpecimenApiController extends BaseStudyController
             }
             response.put("groupings", groupingsJSON);
 
-            return new ApiResponse()
-            {
-                public Map<String, ?> getProperties()
-                {
-                    return response;
-                }
-            };
+            return new ApiSimpleResponse(response);
         }
     }
 }
