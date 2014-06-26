@@ -113,25 +113,23 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                     if (!_existingValues.containsKey(fieldNameValue))
                     {
                         // try to line up the userId field with an existing user with the same exported display name
+                        currentRow.put("userId", null);
                         if (currentRow.containsKey("userId") && currentRow.containsKey("userId.displayName"))
                         {
                             Object displayName = currentRow.get("userId.displayName");
                             if (null != displayName)
                             {
                                 User user = UserManager.getUserByDisplayName(displayName.toString());
+                                currentRow.remove("userId.displayName");
                                 if (user != null)
-                                {
                                     currentRow.put("userId", user.getUserId());
-                                    currentRow.remove("userId.displayName");
-                                    newRows.add(currentRow);
-                                }
                                 else
-                                    // consider: just don't add the userid field, but add the personnel record
                                     ctx.getLogger().warn("No user found matching the display name : " + displayName);
                             }
                             else
                                 ctx.getLogger().warn("Null display name was found.");
                         }
+                        newRows.add(currentRow);
                     }
                     else if (null != _keyMap)
                     {
