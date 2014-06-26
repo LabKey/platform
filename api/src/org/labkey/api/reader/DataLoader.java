@@ -574,6 +574,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         fld = fields[i];
                         if (fld instanceof String && StringUtils.containsOnly(((String) fld), ' '))
                             fld = "";
+                        else if (fld == null)
+                            fld = "";
                     }
                     try
                     {
