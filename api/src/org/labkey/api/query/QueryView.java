@@ -679,12 +679,26 @@ public class QueryView extends WebPartView<Object>
             String newKey = newPrefix + suffix;
             for (String value : source.getParameters(key))
             {
+                boolean isQueryParam = false;
+                try
+                {
+                    Enum.valueOf(QueryParam.class, suffix);
+                    isQueryParam = true;
+                }
+                catch (Exception ignore) { }
+
                 if (suffix.equals("sort"))
                 {
                     // Prepend source sort parameter before target's existing sort
-                    String targetSort = target.getParameter(newKey);
+                    String targetSort = target.getParameter(key);
                     if (targetSort != null && targetSort.length() > 0)
                         value = value + "," + targetSort;
+                    target.replaceParameter(newKey, value);
+                }
+                else if (isQueryParam)
+                {
+                    // Issue 20779: Error: Query 'Containers,Containers' in schema 'core' doesn't exist
+                    // Only a single value is accepted for query parameters -- overwrite the existing parameter so we don't have duplicate parameters.
                     target.replaceParameter(newKey, value);
                 }
                 else
