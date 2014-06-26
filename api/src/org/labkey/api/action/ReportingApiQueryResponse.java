@@ -22,6 +22,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -57,7 +58,7 @@ public class ReportingApiQueryResponse extends ExtendedApiQueryResponse
         super.render(writer);
     }
 
-    protected void writeInitialMetaData(ApiResponseWriter writer) throws Exception
+    protected void writeInitialMetaData(ApiResponseWriter writer) throws IOException
     {
         writer.writeProperty("schemaName", _schemaPath);
         writer.writeProperty("queryName", _queryName);

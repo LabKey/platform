@@ -20,6 +20,7 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
 import org.labkey.api.data.ObjectFactory;
 
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -191,5 +192,11 @@ public class ApiSimpleResponse implements ApiResponse, Map<String,Object>
     public void putAll(@NotNull Map map)
     {
         _json.putAll(map);
+    }
+
+    @Override
+    public void render(ApiResponseWriter writer) throws IOException
+    {
+        writer.writeObject(getProperties());
     }
 }

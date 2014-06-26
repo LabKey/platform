@@ -16,11 +16,11 @@
 
 package org.labkey.api.study.assay;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExperimentService;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.study.ParticipantVisit;
-import org.labkey.api.data.Container;
 import org.labkey.api.util.DateUtil;
 
 import java.util.Date;
@@ -40,7 +40,7 @@ public class ParticipantVisitImpl implements ParticipantVisit
     private Container _studyContainer;
     private ExpMaterial _material;
     private Date _date;
-//    private static final Object CREATE_MATERIAL_SYNC_OBJ = new Object();
+//    private static final ReadWriteLock CREATE_MATERIAL_LOCK = new ReentrantReadWriteLock();
 
     /** Used for completely unspecified participant visit information */
     public ParticipantVisitImpl(Container runContainer)

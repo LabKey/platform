@@ -54,9 +54,14 @@ public class MockHttpResponseWithRealPassthrough extends MockHttpServletResponse
     {
         if (_writer == null)
         {
-            _writer = new SizeLimitingPrintWriter(super.getWriter());
+            _writer = new SizeLimitingPrintWriter(getUnderlyingWriter());
         }
         return _writer;
+    }
+
+    protected PrintWriter getUnderlyingWriter() throws UnsupportedEncodingException
+    {
+        return super.getWriter();
     }
 
     /** Special subclass to signal this specific condition */

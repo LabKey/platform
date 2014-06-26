@@ -165,31 +165,24 @@ public abstract class ApiResponseWriter
 
     protected void write(ApiResponse response) throws IOException
     {
-        if (response instanceof ApiStreamResponse)
+        try
         {
-            try
-            {
-                ((ApiStreamResponse) response).render(this);
-            }
-            catch (Exception e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-                Logger.getLogger(ApiResponseWriter.class).warn("ApiResponseWriter exception: ", e);
-
-                //at this point, we can't guarantee a legitimate
-                //JSON response, and we need to write the exception
-                //back so the client can tell something went wrong
-                if (null != getResponse())
-                {
-                    if (!getResponse().isCommitted())
-                        getResponse().reset();
-                }
-                write(e);
-            }
+            response.render(this);
         }
-        else
+        catch (Exception e)
         {
-            writeObject(response.getProperties());
+            ExceptionUtil.logExceptionToMothership(null, e);
+            Logger.getLogger(ApiResponseWriter.class).warn("ApiResponseWriter exception: ", e);
+
+            //at this point, we can't guarantee a legitimate
+            //JSON response, and we need to write the exception
+            //back so the client can tell something went wrong
+            if (null != getResponse())
+            {
+                if (!getResponse().isCommitted())
+                    getResponse().reset();
+            }
+            write(e);
         }
     }
 

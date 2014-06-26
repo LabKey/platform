@@ -38,6 +38,7 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -53,7 +54,7 @@ import java.util.Set;
  * Date: Feb 13, 2008
  * Time: 3:21:08 PM
  */
-public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
+public class ApiQueryResponse implements ApiResponse
 {
     private static final String URL_COL_PREFIX = "_labkeyurl_";
     private TableInfo _tinfo = null;
@@ -152,10 +153,8 @@ public class ApiQueryResponse implements ApiResponse, ApiStreamResponse
 
     /**
      * This initial set of metaData will always be serialized even if a SQLException is thrown when executing the query.
-     * @param writer
-     * @throws Exception
      */
-    protected void writeInitialMetaData(ApiResponseWriter writer) throws Exception
+    protected void writeInitialMetaData(ApiResponseWriter writer) throws IOException
     {
         writer.writeProperty("schemaName", _schemaName);
         writer.writeProperty("queryName", _queryName);

@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
-import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.User;
@@ -39,7 +39,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -86,15 +85,15 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     {
         Container container = getViewContext().getContainer();
         User user = getViewContext().getUser();
-        HttpServletRequest request = getViewContext().getRequest();
+        final HttpServletRequest request = getViewContext().getRequest();
 
-        LinkedHashSet<ClientDependency> dependencies = getClientDependencies();
-        LinkedHashSet<String> includes = new LinkedHashSet<>();
-        LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
+        final LinkedHashSet<ClientDependency> dependencies = getClientDependencies();
+        final LinkedHashSet<String> includes = new LinkedHashSet<>();
+        final LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
         PageFlowUtil.getJavaScriptFiles(container, user, dependencies, includes, implicitIncludes);
 
-        LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
-        LinkedHashSet<String> implicitCssScripts = new LinkedHashSet<>();
+        final LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
+        final LinkedHashSet<String> implicitCssScripts = new LinkedHashSet<>();
         for (ClientDependency d : dependencies)
         {
             cssScripts.addAll(d.getCssPaths(container, user, AppProps.getInstance().isDevMode()));
@@ -104,33 +103,38 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         }
 
         getViewContext().getResponse().setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
-        MockHttpServletResponse mr = new MockHttpResponseWithRealPassthrough(getViewContext().getResponse());
-        mr.setCharacterEncoding("UTF-8");
-        try
-        {
-            render(request, mr);
-        }
-        catch (MockHttpResponseWithRealPassthrough.SizeLimitExceededException e)
-        {
-            LOG.warn("Failed in renderToApiResponse() - " + e.getMessage() + " for URL " + getViewContext().getActionURL());
-            throw e;
-        }
 
-        if (mr.getStatus() != HttpServletResponse.SC_OK)
+        return new ApiResponse()
         {
-            render(request, getViewContext().getResponse());
-            return null;
-        }
+            @Override
+            public void render(ApiResponseWriter writer) throws Exception
+            {
+                MockHttpServletResponse mr = new MockHttpResponseWithRealPassthrough(getViewContext().getResponse());
+                mr.setCharacterEncoding("UTF-8");
+                try
+                {
+                    WebPartView.this.render(request, mr);
+                }
+                catch (MockHttpResponseWithRealPassthrough.SizeLimitExceededException e)
+                {
+                    LOG.warn("Failed in renderToApiResponse() - " + e.getMessage() + " for URL " + getViewContext().getActionURL());
+                    throw e;
+                }
 
-        Map<String, Object> resultProperties = new HashMap<>();
-        resultProperties.put("html", mr.getContentAsString());
-        resultProperties.put("requiredJsScripts", includes);
-        resultProperties.put("implicitJsIncludes", implicitIncludes);
-        resultProperties.put("requiredCssScripts", cssScripts);
-        resultProperties.put("implicitCssIncludes", implicitCssScripts);
-        resultProperties.put("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
-
-        return new ApiSimpleResponse(resultProperties);
+                if (mr.getStatus() != HttpServletResponse.SC_OK)
+                {
+                    WebPartView.this.render(request, getViewContext().getResponse());
+                }
+                writer.startResponse();
+                writer.writeProperty("html", mr.getContentAsString());
+                writer.writeProperty("requiredJsScripts", includes);
+                writer.writeProperty("implicitJsIncludes", implicitIncludes);
+                writer.writeProperty("requiredCssScripts", cssScripts);
+                writer.writeProperty("implicitCssIncludes", implicitCssScripts);
+                writer.writeProperty("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
+                writer.endResponse();
+            }
+        };
     }
 
     public static enum FrameType

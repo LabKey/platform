@@ -21,13 +21,11 @@ api/src/org/labkey/api/action/Action.java -text
 api/src/org/labkey/api/action/ActionType.java -text
 api/src/org/labkey/api/action/AjaxAction.java -text
 api/src/org/labkey/api/action/ApiAction.java -text
-api/src/org/labkey/api/action/ApiBeanResponse.java -text
 api/src/org/labkey/api/action/ApiJsonWriter.java -text
 api/src/org/labkey/api/action/ApiQueryResponse.java -text
 api/src/org/labkey/api/action/ApiResponse.java -text
 api/src/org/labkey/api/action/ApiResponseWriter.java -text
 api/src/org/labkey/api/action/ApiSimpleResponse.java -text
-api/src/org/labkey/api/action/ApiStreamResponse.java -text
 api/src/org/labkey/api/action/ApiUsageException.java -text
 api/src/org/labkey/api/action/ApiVersion.java -text
 api/src/org/labkey/api/action/ApiXmlWriter.java -text

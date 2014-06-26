@@ -15,8 +15,6 @@
  */
 package org.labkey.api.action;
 
-import java.util.Map;
-
 /**
  * Interface for API Responses.
  *
@@ -26,5 +24,5 @@ import java.util.Map;
  */
 public interface ApiResponse
 {
-    public Map<String, ?> getProperties();
+    public void render(ApiResponseWriter writer) throws Exception;
 }

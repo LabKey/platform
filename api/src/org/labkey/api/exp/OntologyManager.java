@@ -1268,12 +1268,6 @@ public class OntologyManager
         }
     }
 
-    public static void ensurePropertyDescriptors(Collection<PropertyDescriptor> pds) throws SQLException
-    {
-        for (PropertyDescriptor pd : pds)
-            ensurePropertyDescriptor(pd);
-    }
-
     private static PropertyDescriptor ensurePropertyDescriptor(String propertyURI, String dataTypeURI, String name, Container container) throws SQLException
 	{
         PropertyDescriptor pdNew = new PropertyDescriptor(propertyURI, dataTypeURI, name, container);
