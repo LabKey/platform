@@ -16,14 +16,13 @@
 package org.labkey.study.view;
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilter;
-import org.labkey.api.query.QuerySchema;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
-import org.labkey.api.query.QueryWebPart;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.view.*;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 
 /**
  * User: Mark Igra
@@ -36,13 +35,13 @@ public class StudyListWebPartFactory extends BaseWebPartFactory
 
     public StudyListWebPartFactory()
     {
-       super("Study List", "menubar", true, false);
+       super("Study List", LOCATION_MENUBAR, true, false);
     }
 
     @Override
     public boolean isAvailable(Container c, String location)
     {
-        return location.equals("menubar") || location.equals(HttpView.BODY);
+        return location.equals(WebPartFactory.LOCATION_MENUBAR) || location.equals(HttpView.BODY);
     }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception

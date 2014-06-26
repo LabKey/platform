@@ -58,6 +58,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListItem;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.list.ListUrls;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainAuditProvider;
 import org.labkey.api.exp.property.DomainProperty;
@@ -148,6 +149,22 @@ public class ListController extends SpringActionController
     private NavTree appendRootNavTrail(NavTree root)
     {
         return appendRootNavTrail(root, getContainer(), getUser());
+    }
+
+    public static class ListUrlsImpl implements ListUrls
+    {
+        @Override
+        public ActionURL getManageListsURL(Container c)
+        {
+            return new ActionURL(ListController.BeginAction.class, c);
+        }
+
+        @Override
+        public ActionURL getCreateListURL(Container c)
+        {
+            return new ActionURL(EditListDefinitionAction.class, c);
+        }
+
     }
 
 

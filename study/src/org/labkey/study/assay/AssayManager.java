@@ -63,6 +63,7 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
@@ -72,6 +73,7 @@ import org.labkey.api.webdav.WebdavResource;
 import org.labkey.study.assay.query.AssayListPortalView;
 import org.labkey.study.assay.query.AssayListQueryView;
 import org.labkey.study.assay.query.AssaySchemaImpl;
+import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.model.StudyManager;
 import org.labkey.study.view.StudyGWTView;
 import org.springframework.validation.BindException;
@@ -262,7 +264,20 @@ public class AssayManager implements AssayService.Interface
 
         VBox vbox = new VBox();
         if (portalView)
+        {
             vbox.setFrame(WebPartView.FrameType.PORTAL);
+
+            NavTree menu = new NavTree();
+            if (context.getContainer().hasPermission(context.getUser(), DesignAssayPermission.class))
+            {
+                ActionURL insertURL = new ActionURL(AssayController.ChooseAssayTypeAction.class, context.getContainer());
+                insertURL.addParameter(ActionURL.Param.returnUrl, context.getActionURL().getLocalURIString());
+                menu.addChild("New Assay Design", insertURL);
+            }
+            menu.addChild("Manage Assays", new ActionURL(AssayController.BeginAction.class, context.getContainer()));
+            vbox.setNavMenu(menu);
+        }
+
         vbox.addView(new JspView("/org/labkey/study/assay/view/assaySetup.jsp"));
         vbox.addView(queryView);
         return vbox;

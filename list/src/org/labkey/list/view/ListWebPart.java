@@ -16,39 +16,96 @@
 
 package org.labkey.list.view;
 
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.exp.list.ListUrls;
+import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.list.controllers.ListController;
 
 import java.io.PrintWriter;
+import java.util.Map;
+import java.util.TreeSet;
 
 public class ListWebPart extends WebPartView<ViewContext>
 {
-    public static final BaseWebPartFactory FACTORY = new AlwaysAvailableWebPartFactory("Lists")
+    public static final BaseWebPartFactory FACTORY = new BaseWebPartFactory("Lists")
     {
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
         {
-            return new ListWebPart(portalCtx);
+            boolean narrow = webPart.getLocation().equals(WebPartFactory.LOCATION_RIGHT);
+            return new ListWebPart(narrow, portalCtx);
+        }
+
+        @Override
+        public boolean isAvailable(Container c, String location)
+        {
+            return location.equals(HttpView.BODY) || location.equals(WebPartFactory.LOCATION_RIGHT);
         }
     };
 
-    public ListWebPart(ViewContext portalCtx)
+    private final boolean _narrow;
+
+    public ListWebPart(boolean narrow, ViewContext portalCtx)
     {
         super(new ViewContext(portalCtx));
+        _narrow = narrow;
+
         setTitle("Lists");
+
         if (getModelBean().hasPermission(UpdatePermission.class))
         {
             setTitleHref(ListController.getBeginURL(getViewContext().getContainer()));
+        }
+
+        if (portalCtx.hasPermission(DesignListPermission.class))
+        {
+            NavTree menu = new NavTree("");
+            menu.addChild("Create New List", PageFlowUtil.urlProvider(ListUrls.class).getCreateListURL(portalCtx.getContainer()).addReturnURL(getContextURLHelper()));
+            menu.addChild("Manage Lists", PageFlowUtil.urlProvider(ListUrls.class).getManageListsURL(portalCtx.getContainer()));
+            setNavMenu(menu);
         }
     }
 
     protected void renderView(ViewContext model, PrintWriter out) throws Exception
     {
-        include(new JspView<Object>(this.getClass(), "begin.jsp", model));
+        if (_narrow)
+            renderNarrowView(model, out);
+        else
+            include(new JspView<Object>(this.getClass(), "begin.jsp", model));
+    }
+
+    private void renderNarrowView(ViewContext model, PrintWriter out)
+    {
+        Map<String, ListDefinition> lists = ListService.get().getLists(model.getContainer());
+        out.write("<table>");
+        if (lists.isEmpty())
+        {
+            out.write("<tr><td>There are no user-defined lists in this folder.</td></tr>");
+        }
+        else
+        {
+            for (ListDefinition list : new TreeSet<>(lists.values()))
+            {
+                out.write("<tr><td><a href=\"");
+                out.write(PageFlowUtil.filter(list.urlShowData()));
+                out.write("\">");
+                out.write(PageFlowUtil.filter(list.getName()));
+                out.write("</a></td></tr>");
+            }
+        }
+        out.write("</table>");
+        if (model.getContainer().hasPermission(model.getUser(), DesignListPermission.class))
+            out.write(PageFlowUtil.textLink("manage lists", ListController.getBeginURL(model.getContainer())));
     }
 }
