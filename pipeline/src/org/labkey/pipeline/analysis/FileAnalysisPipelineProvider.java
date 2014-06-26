@@ -79,7 +79,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
             return;
 
         // Unless showing all actions or including actions from disabled modules,
-        // only include piplines from active modules in the current container.
+        // only include pipelines from active modules in the current container.
         Container c = context.getContainer();
         if (includeAll || isShowActionsIfModuleInactive())
             c = null;

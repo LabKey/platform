@@ -219,14 +219,14 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
 
             new VisitImporter().process(ctx, vf, errors);
             if (errors.hasErrors())
-                throwFirstErrorAsPiplineJobException(errors);
+                throwFirstErrorAsPipelineJobException(errors);
 
             new TreatmentDataImporter().process(ctx, vf, errors);
             new AssayScheduleImporter().process(ctx, vf, errors);
 
             new DatasetDefinitionImporter().process(ctx, vf, errors);
             if (errors.hasErrors())
-                throwFirstErrorAsPiplineJobException(errors);
+                throwFirstErrorAsPipelineJobException(errors);
 
             if (hasSpecimenSchemasToImport)
             {
@@ -235,7 +235,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
                 {
                     new SpecimenSchemaImporter().process(ctx, specimenDir, errors);
                     if (errors.hasErrors())
-                        throwFirstErrorAsPiplineJobException(errors);
+                        throwFirstErrorAsPipelineJobException(errors);
                 }
             }
         }
@@ -255,7 +255,7 @@ public class StudyImportInitialTask extends PipelineJob.Task<StudyImportInitialT
         }
     }
 
-    private static void throwFirstErrorAsPiplineJobException(BindException errors) throws PipelineJobException
+    private static void throwFirstErrorAsPipelineJobException(BindException errors) throws PipelineJobException
     {
         ObjectError firstError = (ObjectError)errors.getAllErrors().get(0);
         throw new PipelineJobException("ERROR: " + firstError.getDefaultMessage());

@@ -46,7 +46,7 @@ import java.io.File;
  */
 
 // Allows some sharing of code between snapshot/ancillary study publication and specimen refresh
-public abstract class AbstractStudyPiplineJob extends PipelineJob
+public abstract class AbstractStudyPipelineJob extends PipelineJob
 {
     protected transient Container _dstContainer;
     protected transient StudyImpl _sourceStudy;
@@ -54,7 +54,7 @@ public abstract class AbstractStudyPiplineJob extends PipelineJob
     // TODO: This is legacy error handling that we should remove
     protected final BindException _errors;
 
-    public AbstractStudyPiplineJob(Container c, User user, ActionURL url, PipeRoot root)
+    public AbstractStudyPipelineJob(Container c, User user, ActionURL url, PipeRoot root)
     {
         super(null, new ViewBackgroundInfo(c, user, url), root);
 

@@ -41,7 +41,7 @@ import java.util.Set;
  * Date: 9/27/12
  * Time: 10:17 PM
  */
-public class SpecimenRefreshPipelineJob extends AbstractStudyPiplineJob
+public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
 {
     private final SnapshotSettings _settings;
 

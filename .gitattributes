@@ -3451,7 +3451,7 @@ study/src/org/labkey/study/designer/XMLSerializer.java -text
 study/src/org/labkey/study/designer/view/CreateRepositoryWizard.jsp -text
 study/src/org/labkey/study/designer/view/StudyDesignsWebPart.java -text
 study/src/org/labkey/study/designer/view/studyDesignSummary.jsp -text
-study/src/org/labkey/study/importer/AbstractStudyPiplineJob.java -text
+study/src/org/labkey/study/importer/AbstractStudyPipelineJob.java -text
 study/src/org/labkey/study/importer/AssayScheduleImporter.java -text
 study/src/org/labkey/study/importer/CohortImporter.java -text
 study/src/org/labkey/study/importer/CreateChildStudyPipelineJob.java -text

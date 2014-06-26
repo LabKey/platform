@@ -305,7 +305,7 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
      *
      * <pre>
      *     "a.foo"         => "<module>/pipeline/tasks/<task-name>/a.foo"
-     *     "pipline/a.foo" => "<module>/pipeline/a.foo"
+     *     "pipeline/a.foo" => "<module>/pipeline/a.foo"
      *     "query/a.foo"   => not allowed
      * </pre>
      */

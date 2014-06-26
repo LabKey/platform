@@ -81,7 +81,7 @@ import java.util.Set;
 * Date: 9/27/12
 * Time: 9:52 PM
 */
-public class CreateChildStudyPipelineJob extends AbstractStudyPiplineJob
+public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 {
     private ChildStudyDefinition _form;
     private boolean _destFolderCreated;

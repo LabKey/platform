@@ -226,6 +226,7 @@ public abstract class BaseWikiView extends JspView<Object>
                         ",showAttachments: " + wiki.isShowAttachments() +
                         ",shouldIndex: " + wiki.isShouldIndex() +
                         ",webPartId:" + _webPartId +
+                        ",updateContentURL: " + PageFlowUtil.jsString(updateContentURL.toString()) +
                 "});");
                 addCustomMenu(edit);
             }
