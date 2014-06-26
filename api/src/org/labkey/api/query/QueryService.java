@@ -182,11 +182,11 @@ abstract public class QueryService
 
 	public ResultSet select(QuerySchema schema, String sql) throws SQLException
     {
-        return select(schema, sql, false);
+        return select(schema, sql, false, true);
     }
 
     /* strictColumnList requires that query not add any addition columns to the query result */
-    abstract public ResultSet select(QuerySchema schema, String sql, boolean strictColumnList) throws SQLException;
+    abstract public ResultSet select(QuerySchema schema, String sql, boolean strictColumnList, boolean cached) throws SQLException;
 
     public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
     {
