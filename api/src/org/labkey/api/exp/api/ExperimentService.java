@@ -329,10 +329,14 @@ public class ExperimentService
         public ExpRun importRun(PipelineJob job, XarSource source) throws SQLException, PipelineJobException, ValidationException;
 
         /**
-         * Provides access to an object that should be locked before inserting experiment runs, protocols, etc.
+         * Provides access to an object that should be locked before inserting protocols. Locking when doing
+         * experiment run insertion has turned out to be problematic and deadlock prone. It's more pragmatic to have
+         * the occassional import fail with a SQLException due to duplicate insertions compared with deadlocking the
+         * whole server.
+         *
          * @return lock object on which to synchronize
          */
-        public Lock getImportLock();
+        public Lock getProtocolImportLock();
 
         HttpView createRunExportView(Container container, String defaultFilenamePrefix);
         HttpView createFileExportView(Container container, String defaultFilenamePrefix);
