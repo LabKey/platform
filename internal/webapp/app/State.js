@@ -511,21 +511,23 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     requestFilterUpdate : function(skipState, opChange, silent) {
-        var olapFilters = [], ff;
-        for (var f=0; f < this.filters.length; f++) {
-            olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(this.filters[f].data, this.subjectName));
-        }
 
-        var proceed = true;
-        for (f=0; f < olapFilters.length; f++) {
-            if (olapFilters[f].arguments.length == 0) {
-                alert('EMPTY ARGUMENTS ON FILTER');
-                proceed = false;
+        this.onMDXReady(function(mdx) {
+
+            var olapFilters = [], getOlap = LABKEY.app.model.Filter.getOlapFilter;
+            for (var f=0; f < this.filters.length; f++) {
+                olapFilters.push(getOlap(mdx, this.filters[f].data, this.subjectName));
             }
-        }
 
-        if (proceed) {
-            this.onMDXReady(function(mdx){
+            var proceed = true;
+            for (f=0; f < olapFilters.length; f++) {
+                if (olapFilters[f].arguments.length == 0) {
+                    alert('EMPTY ARGUMENTS ON FILTER');
+                    proceed = false;
+                }
+            }
+
+            if (proceed) {
                 mdx.setNamedFilter('statefilter', olapFilters);
                 if (!skipState) {
                     this.updateState();
@@ -534,8 +536,9 @@ Ext.define('LABKEY.app.controller.State', {
                 if (!silent) {
                     this.fireEvent('filterchange', this.filters);
                 }
-            }, this);
-        }
+            }
+
+        }, this);
     },
 
     getSelections : function(flat) {
@@ -688,15 +691,15 @@ Ext.define('LABKEY.app.controller.State', {
 
     requestSelectionUpdate : function(skipState, opChange) {
 
-        var sels = [];
+        this.onMDXReady(function(mdx) {
 
-        for (var s=0; s < this.selections.length; s++) {
+            var sels = [];
 
-            // construct the query
-            sels.push(this.selections[s].getOlapFilter(this.subjectName));
-        }
+            for (var s=0; s < this.selections.length; s++) {
+                // construct the query
+                sels.push(this.selections[s].getOlapFilter(mdx, this.subjectName));
+            }
 
-        this.onMDXReady(function(mdx){
             mdx.setNamedFilter('stateSelectionFilter', sels);
 
             if (!skipState)
@@ -716,27 +719,26 @@ Ext.define('LABKEY.app.controller.State', {
 
     addPrivateSelection : function(selection, name) {
 
-        var filters = [];
-        if (Ext.isArray(selection))
-        {
-            var newSelectors = [];
-            for (var s=0; s < selection.length; s++) {
-
-                if (!selection[s].$className)
-                    newSelectors.push(Ext.create(this.getFilterModelName(), selection[s]));
-                else if (selection[s].$className && selection[s].$className == this.getFilterModelName())
-                    newSelectors.push(selection[s]);
-            }
-
-            this.privatefilters[name] = newSelectors;
-
-            for (s=0; s < newSelectors.length; s++) {
-                filters.push(newSelectors[s].getOlapFilter(this.subjectName))
-            }
-        }
-
-        var me = this;
         this.onMDXReady(function(mdx){
+
+            var filters = [];
+            if (Ext.isArray(selection))
+            {
+                var newSelectors = [];
+                for (var s=0; s < selection.length; s++) {
+
+                    if (!selection[s].$className)
+                        newSelectors.push(Ext.create(this.getFilterModelName(), selection[s]));
+                    else if (selection[s].$className && selection[s].$className == this.getFilterModelName())
+                        newSelectors.push(selection[s]);
+                }
+
+                this.privatefilters[name] = newSelectors;
+
+                for (s=0; s < newSelectors.length; s++) {
+                    filters.push(newSelectors[s].getOlapFilter(mdx, this.subjectName));
+                }
+            }
 
             if (Ext.isArray(selection))
             {
@@ -744,12 +746,13 @@ Ext.define('LABKEY.app.controller.State', {
             }
             else
             {
+                // TODO: This is wrong for when working with perspectives
                 mdx.setNamedFilter(name, [{
                     hierarchy : this.subjectName,
                     membersQuery : selection
                 }]);
             }
-            me.fireEvent('privateselectionchange', mdx._filter[name], name);
+            this.fireEvent('privateselectionchange', mdx._filter[name], name);
 
         }, this);
     },

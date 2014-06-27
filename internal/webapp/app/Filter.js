@@ -11,6 +11,7 @@ Ext.define('LABKEY.app.model.Filter', {
         {name : 'hierarchy'},
         {name : 'level'},
         {name : 'members', defaultValue: []},
+        {name : 'perspective'},
         {name : 'operator'},
         {name : 'isGrid', type: 'boolean', defaultValue: false}, // TODO: rename to isSql
         {name : 'isPlot', type: 'boolean', defaultValue: false},
@@ -339,38 +340,60 @@ Ext.define('LABKEY.app.model.Filter', {
             return 'Unknown';
         },
 
-        getOlapFilter : function(data, subjectName) {
+        getOlapFilter : function(mdx, data, subjectName) {
+            if (!Ext.isFunction(mdx.getDimension)) {
+                console.error('must provide mdx to getOlapFilter');
+            }
             var filter = {
                 operator : LABKEY.app.model.Filter.lookupOperator(data),
                 arguments: []
             };
 
-            if (data.hierarchy == subjectName) {
+            if (data.perspective) {
 
-                filter.arguments.push({
-                    hierarchy : subjectName,
-                    members  : data.members
+                filter.perspective = data.perspective;
+
+                Ext.each(data.members, function(member) {
+                    filter.arguments.push({
+                        level: mdx.perspectives[data.perspective].level,
+                        membersQuery: {
+                            hierarchy: data.hierarchy,
+                            members: [member]
+                        }
+                    });
                 });
-                return filter;
             }
+            else {
+                if (data.hierarchy == subjectName) {
 
-            for (var m=0; m < data.members.length; m++) {
-                filter.arguments.push({
-                    hierarchy : subjectName,
-                    membersQuery : {
-                        hierarchy : data.hierarchy,
-                        members   : [data.members[m]]
-                    }
-                });
+                    filter.arguments.push({
+                        hierarchy : subjectName,
+                        members  : data.members
+                    });
+                    return filter;
+                }
+
+                for (var m=0; m < data.members.length; m++) {
+                    filter.arguments.push({
+                        hierarchy : subjectName,
+                        membersQuery : {
+                            hierarchy : data.hierarchy,
+                            members   : [data.members[m]]
+                        }
+                    });
+                }
             }
 
             return filter;
         },
 
-        getOlapFilters : function(datas, subjectName) {
+        getOlapFilters : function(mdx, datas, subjectName) {
+            if (!Ext.isFunction(mdx.getDimension)) {
+                console.error('must provide mdx to getOlapFilter');
+            }
             var olapFilters = [];
             for (var i = 0; i < datas.length; i++) {
-                olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(datas[i], subjectName));
+                olapFilters.push(LABKEY.app.model.Filter.getOlapFilter(mdx, datas[i], subjectName));
             }
             return olapFilters;
         },
@@ -485,8 +508,8 @@ Ext.define('LABKEY.app.model.Filter', {
         }
     },
 
-    getOlapFilter : function(subjectName) {
-        return LABKEY.app.model.Filter.getOlapFilter(this.data, subjectName);
+    getOlapFilter : function(mdx, subjectName) {
+        return LABKEY.app.model.Filter.getOlapFilter(mdx, this.data, subjectName);
     },
 
     getHierarchy : function() {

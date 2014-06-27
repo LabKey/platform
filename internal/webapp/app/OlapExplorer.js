@@ -48,6 +48,8 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
     // subject ids as bars.
     subjectName : '',
 
+    perspective: undefined,
+
     KEYED_LOAD: false,
 
     constructor : function(config) {
@@ -97,6 +99,8 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
 
     loadDimension : function(selections) {
         var hierarchies = this.dim.getHierarchies();
+        var distinctLevel = this.dim.distinctLevel;
+
         if (hierarchies.length > 0) {
             var hierarchy = hierarchies[this.hIndex];
             var uniqueName = hierarchy.getUniqueName();
@@ -105,24 +109,35 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 // Asks for Total Count
                 this.olapProvider.onMDXReady(function(mdx) {
                     me.mdx = mdx;
-                    mdx.query({
+
+                    var queryConfig = {
                         onRows: [{hierarchy: uniqueName, members:'members'}],
                         showEmpty: me.showEmpty,
                         success: function(qr) {
                             me.totals[uniqueName] = me.processMaxCount.call(me, qr);
-                            me.requestDimension(hierarchy, selections);
+                            me.requestDimension(hierarchy, selections, distinctLevel);
                         }
-                    });
+                    };
+
+                    if (Ext.isString(this.perspective)) {
+                        queryConfig.perspective = this.perspective;
+                    }
+
+                    if (Ext.isDefined(distinctLevel)) {
+                        queryConfig.countDistinctLevel = distinctLevel;
+                    }
+
+                    mdx.query(queryConfig);
 
                 }, this);
             }
             else {
-                me.requestDimension(hierarchy, selections);
+                me.requestDimension(hierarchy, selections, distinctLevel);
             }
         }
     },
 
-    requestDimension : function(hierarchy, selections) {
+    requestDimension : function(hierarchy, selections, distinctLevel) {
         // Asks for the Gray area
         this.flight++;
         var hasSelection = Ext.isArray(selections) && selections.length > 0;
@@ -151,10 +166,13 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 }
             };
 
-            mdx.query({
-                onRows : [{hierarchy: hierarchy.getUniqueName(), members:'members'}],
-                useNamedFilters : ['statefilter'],
-                showEmpty : me.showEmpty,
+            var queryConfig = {
+                onRows : [{
+                    hierarchy: hierarchy.getUniqueName(),
+                    members: 'members'
+                }],
+                useNamedFilters: ['statefilter'],
+                showEmpty: me.showEmpty,
                 qFlight: this.flight,
                 success: function(qr, _mdx, x) {
                     if (this.flight === x.qFlight) {
@@ -163,7 +181,18 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                     }
                 },
                 scope: this
-            });
+            };
+
+            if (Ext.isString(this.perspective)) {
+                queryConfig.perspective = this.perspective;
+            }
+
+            if (Ext.isDefined(distinctLevel)) {
+                queryConfig.countDistinctLevel = distinctLevel;
+            }
+
+            mdx.query(queryConfig);
+
             if (hasSelection) {
                 me.requestSelection(this.mflight, function(qr, _mdx, x) {
                     if (this.mflight === x.mflight) {
@@ -346,7 +375,8 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
     },
 
     requestSelection : function(mflight, callback, scope) {
-        this.mdx.query({
+
+        var queryConfig = {
             onRows : [{
                 hierarchy: this.dim.getHierarchies()[this.hIndex].getUniqueName(),
                 members: 'members'
@@ -356,7 +386,17 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             showEmpty: this.showEmpty,
             success: callback,
             scope : scope
-        });
+        };
+
+        if (Ext.isString(this.perspective)) {
+            queryConfig.perspective = this.perspective;
+        }
+
+        if (Ext.isDefined(this.dim.distinctLevel)) {
+            queryConfig.countDistinctLevel = this.dim.distinctLevel;
+        }
+
+        this.mdx.query(queryConfig);
     },
 
     loadSelection : function() {
@@ -724,7 +764,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
 
     selectionChange : function(sel, isPrivate) {
         this.selections = sel;
-        if (this.dimension) {
+        if (this.dimension && this.store.KEYED_LOAD === true) {
             Ext.defer(function() {
                 if (sel.length > 0) {
                     this.selection();
@@ -736,9 +776,6 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
                     this.store.clearSelection();
                 }
             }, 150, this);
-        }
-        else {
-            console.warn('Dimension must be loaded before selection change');
         }
     },
 
