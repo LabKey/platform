@@ -231,7 +231,7 @@ public class XarReader extends AbstractXarImporter
 
     private void loadDoc(boolean deleteExistingRuns) throws ExperimentException
     {
-        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getImportLock()))
+        try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
         {
             ExperimentArchiveType.ExperimentRuns experimentRuns = _experimentArchive.getExperimentRuns();
             // Start by clearing out existing things that we're going to be importing
@@ -279,9 +279,13 @@ public class XarReader extends AbstractXarImporter
 
             if (protocolDefs != null)
             {
-                for (ProtocolBaseType p : protocolDefs.getProtocolArray())
+                try (DbScope.Transaction protocolTransaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
                 {
-                    loadProtocol(p);
+                    for (ProtocolBaseType p : protocolDefs.getProtocolArray())
+                    {
+                        loadProtocol(p);
+                    }
+                    protocolTransaction.commit();
                 }
                 getLog().debug("Protocol import complete");
             }

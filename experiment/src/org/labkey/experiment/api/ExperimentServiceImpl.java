@@ -173,7 +173,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return run == null ? null : new ExpRunImpl(run);
     }
 
-    public ReentrantLock getImportLock()
+    public ReentrantLock getProtocolImportLock()
     {
         return XAR_IMPORT_LOCK;
     }
@@ -2522,7 +2522,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
         try
         {
-            try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction(ExperimentService.get().getImportLock()))
+            try (DbScope.Transaction transaction = getExpSchema().getScope().ensureTransaction())
             {
                 if (run.getContainer() == null)
                 {
@@ -3074,7 +3074,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
 
     public ExpProtocol insertSimpleProtocol(ExpProtocol wrappedProtocol, User user) throws ExperimentException
     {
-        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(ExperimentService.get().getImportLock()))
+        try (DbScope.Transaction transaction = getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
         {
             if (ExperimentService.get().getExpProtocol(wrappedProtocol.getLSID()) != null)
             {

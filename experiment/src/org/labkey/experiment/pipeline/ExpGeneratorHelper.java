@@ -43,7 +43,6 @@ import org.labkey.experiment.api.ExperimentServiceImpl;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -211,7 +210,7 @@ public class ExpGeneratorHelper
             }
 
             ExpProtocol parentProtocol;
-            try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getImportLock()))
+            try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
             {
                 // Build up the sequence of steps for this pipeline definition, which gets turned into a protocol
                 for (TaskId taskId : job.getTaskPipeline().getTaskProgression())
@@ -242,7 +241,7 @@ public class ExpGeneratorHelper
             }
 
             // Break the protocol insertion and run insertion into two separate transactions
-            try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getImportLock()))
+            try (DbScope.Transaction transaction = ExperimentService.get().getSchema().getScope().ensureTransaction())
             {
                 run = insertRun(job, actionSet.getActions(), source, runOutputsWithRoles, runInputsWithRoles, parentProtocol);
 

@@ -1188,7 +1188,7 @@ public class SqlParser
             case NOT: case AND: case OR: case LIKE: case NOT_LIKE: case IN: case NOT_IN:
             case BIT_AND: case BIT_OR: case BIT_XOR: case UNARY_PLUS:
                 Operator op = Operator.ofTokenType(type);
-				assert op != null;
+				assert op != null : "No Operation found for type " + type + ". If you are on a development system, you may need to rebuild";
                 if (op == null)
 				{
 					_parseErrors.add(new QueryParseException("Unexpected token '" + node.getText() + "'", null, node.getLine(), node.getCharPositionInLine()));
