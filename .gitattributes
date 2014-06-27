@@ -2519,10 +2519,10 @@ query/src/org/labkey/query/persist/QuerySnapshotDef.java -text
 query/src/org/labkey/query/reports/AttachmentReport.java -text
 query/src/org/labkey/query/reports/BaseRedirectReport.java -text
 query/src/org/labkey/query/reports/LinkReport.java -text
-query/src/org/labkey/query/reports/ReportContentDigestProviderImpl.java -text
+query/src/org/labkey/query/reports/ReportAndDatasetChangeDigestProviderImpl.java -text
 query/src/org/labkey/query/reports/ReportImporter.java -text
+query/src/org/labkey/query/reports/ReportNotificationInfoProvider.java -text
 query/src/org/labkey/query/reports/ReportQueryChangeListener.java -text
-query/src/org/labkey/query/reports/ReportReportInfoProvider.java -text
 query/src/org/labkey/query/reports/ReportServiceImpl.java -text
 query/src/org/labkey/query/reports/ReportWebdavProvider.java -text
 query/src/org/labkey/query/reports/ReportWriter.java -text
@@ -2559,6 +2559,7 @@ query/src/org/labkey/query/reports/pdf.png -text
 query/src/org/labkey/query/reports/presentation.png -text
 query/src/org/labkey/query/reports/spreadsheet.png -text
 query/src/org/labkey/query/reports/unknown.png -text
+query/src/org/labkey/query/reports/view/ReportAndDatasetChangeDigestEmailTemplate.java -text
 query/src/org/labkey/query/reports/view/ReportUIProvider.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPart.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPartConfig.java -text
@@ -2569,9 +2570,8 @@ query/src/org/labkey/query/reports/view/dataViews.jsp -text
 query/src/org/labkey/query/reports/view/linkReport.jsp -text
 query/src/org/labkey/query/reports/view/manageNotifications.jsp -text
 query/src/org/labkey/query/reports/view/rReportTabHeader.jsp -text
+query/src/org/labkey/query/reports/view/reportAndDatasetChangeDigestNotify.txt -text
 query/src/org/labkey/query/reports/view/reportDetails.jsp -text
-query/src/org/labkey/query/reports/view/reportDigestNotify.jsp -text
-query/src/org/labkey/query/reports/view/reportDigestNotifyPlain.jsp -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
 query/src/org/labkey/query/reports/web.png -text
 query/src/org/labkey/query/reports/wordprocessing.png -text
@@ -3435,7 +3435,7 @@ study/src/org/labkey/study/controllers/specimen/SpecimenServiceImpl.java -text
 study/src/org/labkey/study/controllers/specimen/SpecimenUtils.java -text
 study/src/org/labkey/study/dataset/DatasetAuditProvider.java -text
 study/src/org/labkey/study/dataset/DatasetAuditViewFactory.java -text
-study/src/org/labkey/study/dataset/DatasetReportInfoProvider.java -text
+study/src/org/labkey/study/dataset/DatasetNotificationInfoProvider.java -text
 study/src/org/labkey/study/dataset/DatasetSnapshotProvider.java -text
 study/src/org/labkey/study/dataset/DatasetViewProvider.java -text
 study/src/org/labkey/study/dataset/SnapshotDependency.java -text

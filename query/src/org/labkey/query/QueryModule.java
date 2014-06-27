@@ -24,8 +24,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.message.digest.DailyMessageDigest;
-import org.labkey.api.message.digest.ReportContentDigestProvider;
+import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
@@ -57,6 +56,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.query.audit.QueryAuditProvider;
@@ -70,9 +70,9 @@ import org.labkey.query.olap.MemberSet;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
-import org.labkey.query.reports.ReportContentDigestProviderImpl;
+import org.labkey.query.reports.ReportAndDatasetChangeDigestProviderImpl;
+import org.labkey.query.reports.ReportNotificationInfoProvider;
 import org.labkey.query.reports.ReportImporter;
-import org.labkey.query.reports.ReportReportInfoProvider;
 import org.labkey.query.reports.ReportServiceImpl;
 import org.labkey.query.reports.ReportWriter;
 import org.labkey.query.reports.ReportsController;
@@ -82,6 +82,7 @@ import org.labkey.query.reports.chart.TimeSeriesRenderer;
 import org.labkey.query.reports.chart.XYChartRenderer;
 import org.labkey.query.reports.getdata.AggregateQueryDataTransform;
 import org.labkey.query.reports.getdata.FilterClauseBuilder;
+import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 import org.labkey.query.reports.view.ReportUIProvider;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.Query;
@@ -105,7 +106,7 @@ public class QueryModule extends DefaultModule
         QueryServiceImpl i = new QueryServiceImpl();
         QueryService.set(i);
         QueryDriver.register();
-        ReportContentDigestProvider.set(new ReportContentDigestProviderImpl());
+        ReportAndDatasetChangeDigestProvider.set(new ReportAndDatasetChangeDigestProviderImpl());
     }
 
     public String getName()
@@ -153,6 +154,7 @@ public class QueryModule extends DefaultModule
         ReportService.get().registerReport(new JavaScriptReport());
         ReportService.get().registerReport(new AttachmentReport());
         ReportService.get().registerReport(new LinkReport());
+        EmailTemplateService.get().registerTemplate(ReportAndDatasetChangeDigestEmailTemplate.class);
 
         QueryView.register(new RExportScriptFactory());
         QueryView.register(new JavaScriptExportScriptFactory());
@@ -217,7 +219,7 @@ public class QueryModule extends DefaultModule
         AuditLogService.registerAuditType(new QueryAuditProvider());
         AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
 
-        ReportContentDigestProvider.get().addReportInfoProvider(new ReportReportInfoProvider());
+        ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());
     }
 
     @Override

@@ -6,8 +6,8 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.ReportInfoProvider;
-import org.labkey.api.reports.model.ReportInfo;
+import org.labkey.api.query.NotificationInfoProvider;
+import org.labkey.api.reports.model.NotificationInfo;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.study.DatasetDB;
 import org.labkey.study.StudySchema;
@@ -19,14 +19,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class DatasetReportInfoProvider extends ReportInfoProvider
+public class DatasetNotificationInfoProvider extends NotificationInfoProvider
 {
     @Override
-    public Map<String, Map<Integer, List<ReportInfo>>> getReportInfoMap(Date modifiedRangeStart, Date modifiedRangeEnd)
+    public Map<String, Map<Integer, List<NotificationInfo>>> getNotificationInfoMap(Date modifiedRangeStart, Date modifiedRangeEnd)
     {
-        if (null == _reportInfoMap)
+        if (null == _notificationInfoMap)
         {
-            final Map<String, Map<Integer, List<ReportInfo>>> reportInfoMap = new HashMap<>();
+            final Map<String, Map<Integer, List<NotificationInfo>>> notificationInfoMap = new HashMap<>();
             TableInfo reportTableInfo = StudySchema.getInstance().getTableInfoDataSet();
             SimpleFilter filter = new SimpleFilter();
             filter.addBetween(FieldKey.fromString("Modified"), modifiedRangeStart, modifiedRangeEnd);
@@ -38,18 +38,18 @@ public class DatasetReportInfoProvider extends ReportInfoProvider
                 public void exec(DatasetDB report) throws SQLException
                 {
                     String containerId = report.getContainer();
-                    if (!reportInfoMap.containsKey(containerId))
-                        reportInfoMap.put(containerId, new HashMap<Integer, List<ReportInfo>>());
-                    Map<Integer, List<ReportInfo>> subMap = reportInfoMap.get(containerId);
+                    if (!notificationInfoMap.containsKey(containerId))
+                        notificationInfoMap.put(containerId, new HashMap<Integer, List<NotificationInfo>>());
+                    Map<Integer, List<NotificationInfo>> subMap = notificationInfoMap.get(containerId);
                     int categoryId = null != report.getCategoryId() ? report.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID;
                     if (!subMap.containsKey(categoryId))
-                        subMap.put(categoryId, new ArrayList<ReportInfo>());
-                    subMap.get(categoryId).add(new ReportInfo(report));
+                        subMap.put(categoryId, new ArrayList<NotificationInfo>());
+                    subMap.get(categoryId).add(new NotificationInfo(report));
                 }
             }, DatasetDB.class);
-            _reportInfoMap = reportInfoMap;
+            _notificationInfoMap = notificationInfoMap;
         }
-        return _reportInfoMap;
+        return _notificationInfoMap;
     }
 }
 

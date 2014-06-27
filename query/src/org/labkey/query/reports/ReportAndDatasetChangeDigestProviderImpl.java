@@ -2,23 +2,22 @@ package org.labkey.query.reports;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.message.digest.ReportContentDigestProvider;
+import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
 import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
-import org.labkey.api.query.ReportInfoProvider;
+import org.labkey.api.query.NotificationInfoProvider;
 import org.labkey.api.reports.ReportContentEmailManager;
-import org.labkey.api.reports.model.ReportInfo;
+import org.labkey.api.reports.model.NotificationInfo;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.view.JspView;
+import org.labkey.api.util.emailTemplate.EmailTemplateService;
+import org.labkey.query.reports.view.ReportAndDatasetChangeDigestEmailTemplate;
 
-import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -31,18 +30,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class ReportContentDigestProviderImpl extends ReportContentDigestProvider
+public class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDatasetChangeDigestProvider
 {
-    private Set<ReportInfoProvider> _reportInfoProviders = new HashSet<>();
+    private Set<NotificationInfoProvider> _notificationInfoProviders = new HashSet<>();
 
-    public ReportContentDigestProviderImpl()
+    public ReportAndDatasetChangeDigestProviderImpl()
     {
     }
 
     @Override
-    public void addReportInfoProvider(ReportInfoProvider provider)
+    public void addNotificationInfoProvider(NotificationInfoProvider provider)
     {
-        _reportInfoProviders.add(provider);
+        _notificationInfoProviders.add(provider);
     }
 
     @Override
@@ -50,10 +49,10 @@ public class ReportContentDigestProviderImpl extends ReportContentDigestProvider
     {
 
         List<Container> containers = new ArrayList<>();
-        for (ReportInfoProvider provider : _reportInfoProviders)
+        for (NotificationInfoProvider provider : _notificationInfoProviders)
         {
-            provider.clearReportInfoMap();
-            Map<String, Map<Integer, List<ReportInfo>>> reportInfoMap = provider.getReportInfoMap(start, end);
+            provider.clearNotificationInfoMap();
+            Map<String, Map<Integer, List<NotificationInfo>>> reportInfoMap = provider.getNotificationInfoMap(start, end);
             for (String containerId : reportInfoMap.keySet())
             {
                 Container container = ContainerManager.getForId(containerId);
@@ -67,23 +66,23 @@ public class ReportContentDigestProviderImpl extends ReportContentDigestProvider
     @Override
     public void sendDigest(Container container, Date min, Date max) throws Exception
     {
-        Map<Integer, List<ReportInfo>> reportInfosByCategory = null;
-        for (ReportInfoProvider provider : _reportInfoProviders)
+        Map<Integer, List<NotificationInfo>> reportInfosByCategory = null;
+        for (NotificationInfoProvider provider : _notificationInfoProviders)
         {
-            Map<Integer, List<ReportInfo>> reportInfosForContainer = provider.getReportInfoMap(min, max).get(container.getId()); // could be null
+            Map<Integer, List<NotificationInfo>> reportInfosForContainer = provider.getNotificationInfoMap(min, max).get(container.getId()); // could be null
             if (null == reportInfosByCategory)
                 reportInfosByCategory = reportInfosForContainer;
             else if (null != reportInfosForContainer)
             {
-                for (Map.Entry<Integer, List<ReportInfo>> categoryEntry : reportInfosForContainer.entrySet())
+                for (Map.Entry<Integer, List<NotificationInfo>> categoryEntry : reportInfosForContainer.entrySet())
                 {
                     if (!reportInfosByCategory.containsKey(categoryEntry.getKey()))
-                        reportInfosByCategory.put(categoryEntry.getKey(), new ArrayList<ReportInfo>());
+                        reportInfosByCategory.put(categoryEntry.getKey(), new ArrayList<NotificationInfo>());
                     reportInfosByCategory.get(categoryEntry.getKey()).addAll(categoryEntry.getValue());
                 }
             }
 
-            provider.clearReportInfoMap();
+            provider.clearNotificationInfoMap();
         }
 
         if (null == reportInfosByCategory)
@@ -95,8 +94,6 @@ public class ReportContentDigestProviderImpl extends ReportContentDigestProvider
             if (!categoriesByUser.isEmpty())
             {
                 EmailService.I emailService = EmailService.get();
-                HttpServletRequest request = AppProps.getInstance().createMockRequest();
-                String subject = "Report/Dataset Change Notification";
                 List<EmailMessage> messages = new ArrayList<>();
 
                 for (Map.Entry<Integer, Set<Integer>> userEntry : categoriesByUser.entrySet())
@@ -104,12 +101,12 @@ public class ReportContentDigestProviderImpl extends ReportContentDigestProvider
                     User user = UserManager.getUser(userEntry.getKey());
                     if (null != user)
                     {
-                        Map<Integer, List<ReportInfo>> reportsForUserInitial = new HashMap<>();
+                        Map<Integer, List<NotificationInfo>> reportsForUserInitial = new HashMap<>();
                         for (Integer category : userEntry.getValue())
                         {
                             if (null != category)
                             {
-                                List<ReportInfo> reportsForCategory = reportInfosByCategory.get(category);
+                                List<NotificationInfo> reportsForCategory = reportInfosByCategory.get(category);
                                 if (null != reportsForCategory)
                                     reportsForUserInitial.put(category, reportsForCategory);
                             }
@@ -119,29 +116,20 @@ public class ReportContentDigestProviderImpl extends ReportContentDigestProvider
                         {
                             // Make email
                             Map<Integer, ViewCategory> viewCategoryMap = getViewCategoryMap(container, user);
-                            Map<ViewCategory, List<ReportInfo>> reportsForUser = new LinkedHashMap<>();
+                            Map<ViewCategory, List<NotificationInfo>> reportsForUser = new LinkedHashMap<>();
                             List<ViewCategory> viewCategories = getSortedViewCategories(viewCategoryMap);
                             for (ViewCategory viewCategory : viewCategories)
                                 if (reportsForUserInitial.containsKey(viewCategory.getRowId()))
-                                    reportsForUser.put(viewCategory, sortReportInfoList(reportsForUserInitial.get(viewCategory.getRowId())));
+                                    reportsForUser.put(viewCategory, sortNotificationInfoList(reportsForUserInitial.get(viewCategory.getRowId())));
 
-                            ReportDigestForm form = new ReportDigestForm(user, container, reportsForUser);
-                            EmailMessage msg = emailService.createMessage(LookAndFeelProperties.getInstance(container).getSystemEmailAddress(),
-                                    new String[]{user.getEmail()}, subject);
-
-                            msg.addContent(EmailMessage.contentType.HTML, request,
-                                    new JspView<>("/org/labkey/query/reports/view/reportDigestNotify.jsp", form));
-                            msg.addContent(EmailMessage.contentType.PLAIN, request,
-                                    new JspView<>("/org/labkey/query/reports/view/reportDigestNotifyPlain.jsp", form));
-
-                            messages.add(msg);
+                            ReportAndDatasetDigestForm form = new ReportAndDatasetDigestForm(user, container, reportsForUser);
+                            messages.add(createDigestMessage(emailService, form));
                         }
                     }
                 }
 
                 if (!messages.isEmpty())
                     emailService.sendMessage(messages.toArray(new EmailMessage[messages.size()]), null, container);
-
             }
         }
         catch (Exception e)
@@ -151,13 +139,25 @@ public class ReportContentDigestProviderImpl extends ReportContentDigestProvider
         }
     }
 
-    public static class ReportDigestForm
+    private EmailMessage createDigestMessage(EmailService.I ems, ReportAndDatasetDigestForm form) throws Exception
     {
-        Map<ViewCategory, List<ReportInfo>> _reports;
+        ReportAndDatasetChangeDigestEmailTemplate template = EmailTemplateService.get().getEmailTemplate(ReportAndDatasetChangeDigestEmailTemplate.class);
+        template.init(form.getContainer(), form.getReports());
+
+        EmailMessage msg = ems.createMessage(LookAndFeelProperties.getInstance(form.getContainer()).getSystemEmailAddress(),
+                new String[]{form.getUser().getEmail()}, template.renderSubject(form.getContainer()));
+        msg.addContent(EmailMessage.contentType.HTML, template.renderBody(form.getContainer()));
+
+        return msg;
+    }
+
+    public static class ReportAndDatasetDigestForm
+    {
+        Map<ViewCategory, List<NotificationInfo>> _reports;
         User _user;
         Container _container;
 
-        public ReportDigestForm(User user, Container container, Map<ViewCategory, List<ReportInfo>> reports)
+        public ReportAndDatasetDigestForm(User user, Container container, Map<ViewCategory, List<NotificationInfo>> reports)
         {
             _user = user;
             _container = container;
@@ -166,7 +166,7 @@ public class ReportContentDigestProviderImpl extends ReportContentDigestProvider
             _reports = reports;
         }
 
-        public Map<ViewCategory, List<ReportInfo>> getReports()
+        public Map<ViewCategory, List<NotificationInfo>> getReports()
         {
             return _reports;
         }
@@ -205,13 +205,13 @@ public class ReportContentDigestProviderImpl extends ReportContentDigestProvider
         return sortedViewCategories;
     }
 
-    private List<ReportInfo> sortReportInfoList(List<ReportInfo> reportInfos)
+    private List<NotificationInfo> sortNotificationInfoList(List<NotificationInfo> notificationInfos)
     {
         // It's ok to sort in place
-        Collections.sort(reportInfos, new Comparator<ReportInfo>()
+        Collections.sort(notificationInfos, new Comparator<NotificationInfo>()
         {
             @Override
-            public int compare(ReportInfo o1, ReportInfo o2)
+            public int compare(NotificationInfo o1, NotificationInfo o2)
             {
                 int ret = o1.getDisplayOrder() - o2.getDisplayOrder();
                 if (0 == ret)
@@ -219,6 +219,6 @@ public class ReportContentDigestProviderImpl extends ReportContentDigestProvider
                 return ret;
             }
         });
-        return reportInfos;
+        return notificationInfos;
     }
 }

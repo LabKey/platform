@@ -7,8 +7,8 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.ReportInfoProvider;
-import org.labkey.api.reports.model.ReportInfo;
+import org.labkey.api.query.NotificationInfoProvider;
+import org.labkey.api.reports.model.NotificationInfo;
 import org.labkey.api.reports.report.ReportDB;
 
 import java.sql.SQLException;
@@ -18,14 +18,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ReportReportInfoProvider extends ReportInfoProvider
+public class ReportNotificationInfoProvider extends NotificationInfoProvider
 {
     @Override
-    public Map<String, Map<Integer, List<ReportInfo>>> getReportInfoMap(Date modifiedRangeStart, Date modifiedRangeEnd)
+    public Map<String, Map<Integer, List<NotificationInfo>>> getNotificationInfoMap(Date modifiedRangeStart, Date modifiedRangeEnd)
     {
-        if (null == _reportInfoMap)
+        if (null == _notificationInfoMap)
         {
-            final Map<String, Map<Integer, List<ReportInfo>>> reportInfoMap = new HashMap<>();
+            final Map<String, Map<Integer, List<NotificationInfo>>> reportInfoMap = new HashMap<>();
             TableInfo reportTableInfo = CoreSchema.getInstance().getTableInfoReport();
             SimpleFilter filter = new SimpleFilter();
             filter.addBetween(FieldKey.fromString("Modified"), modifiedRangeStart, modifiedRangeEnd);
@@ -38,22 +38,22 @@ public class ReportReportInfoProvider extends ReportInfoProvider
                 {
                     String containerId = report.getContainerId();
                     if (!reportInfoMap.containsKey(containerId))
-                        reportInfoMap.put(containerId, new HashMap<Integer, List<ReportInfo>>());
-                    Map<Integer, List<ReportInfo>> subMap = reportInfoMap.get(containerId);
-                    ReportInfo reportInfo = new ReportInfo(report);
-                    if (null != reportInfo.getContainer() && !reportInfo.isHidden() && reportInfo.isShared())
+                        reportInfoMap.put(containerId, new HashMap<Integer, List<NotificationInfo>>());
+                    Map<Integer, List<NotificationInfo>> subMap = reportInfoMap.get(containerId);
+                    NotificationInfo notificationInfo = new NotificationInfo(report);
+                    if (null != notificationInfo.getContainer() && !notificationInfo.isHidden() && notificationInfo.isShared())
                     {
                         // Don't include hidden reports (or if container was deleted)
-                        int categoryId = reportInfo.getCategoryId();
+                        int categoryId = notificationInfo.getCategoryId();
                         if (!subMap.containsKey(categoryId))
-                            subMap.put(categoryId, new ArrayList<ReportInfo>());
-                        subMap.get(categoryId).add(reportInfo);
+                            subMap.put(categoryId, new ArrayList<NotificationInfo>());
+                        subMap.get(categoryId).add(notificationInfo);
                     }
                 }
             }, ReportDB.class);
-            _reportInfoMap = reportInfoMap;
+            _notificationInfoMap = reportInfoMap;
         }
-        return _reportInfoMap;
+        return _notificationInfoMap;
     }
 }
 
