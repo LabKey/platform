@@ -283,32 +283,44 @@ class NotifyListDisplayColumn extends DataColumn
         {
             String val = o.toString();
             String[] parts = val.split(";");
-            User notifyUser = null;
+            String notifyUser = null;
             int i, len = parts.length;
 
             for(i=0;  notifyUser == null && i < len; i++)
-                notifyUser = parseUser(parts[i]);
+                notifyUser = parseUserDisplayName(parts[i]);
 
             if (notifyUser != null)
             {
-                out.write(notifyUser.getDisplayName(_user));
+                out.write(notifyUser);
 
                 for (; i < len; i++)
                 {
-                    notifyUser = parseUser(parts[i]);
+                    notifyUser = parseUserDisplayName(parts[i]);
                     if (notifyUser != null)
-                        out.write(String.format("%s%s", _delim, notifyUser.getDisplayName(_user)));
+                        out.write(String.format("%s%s", _delim, notifyUser));
                 }
             }
         }
     }
 
     @Nullable
-    public User parseUser(String part)
+    public String parseUserDisplayName(String part)
     {
         part = StringUtils.trimToNull(part);
         if (part != null)
-            return UserManager.getUser(Integer.parseInt(StringUtils.trimToNull(part)));
+        {
+            // Issue 20914
+            // NOTE: this doesn't address the bad data in the backend just displaying it
+            // TODO: consider update script for fixing this issue...
+            try
+            {
+                return UserManager.getUser(Integer.parseInt(part)).getDisplayName(_user);
+            }
+            catch (NumberFormatException e)
+            {
+                return part;
+            }
+        }
         return null;
     }
 }
