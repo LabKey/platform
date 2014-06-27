@@ -75,7 +75,7 @@ public abstract class EmailTemplate
                 {
                     return sourceValue;
                 }
-                return PageFlowUtil.filter(sourceValue, true, true);
+                return PageFlowUtil.filter(sourceValue, true, false);
             }
         };
 

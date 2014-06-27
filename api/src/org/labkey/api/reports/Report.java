@@ -100,6 +100,7 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
      */
     void beforeDelete(ContainerUser context);
 
+    // TODO: This should take Container, @Nullable ActionURL instead of a full ViewContext to behave for background threads
     ActionURL getRunReportURL(ViewContext context);
 
     /**

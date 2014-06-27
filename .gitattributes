@@ -970,6 +970,7 @@ api/src/org/labkey/api/query/LookupForeignKey.java -text
 api/src/org/labkey/api/query/MetadataException.java -text
 api/src/org/labkey/api/query/MetadataParseException.java -text
 api/src/org/labkey/api/query/MetadataParseWarning.java -text
+api/src/org/labkey/api/query/NotificationInfoProvider.java -text
 api/src/org/labkey/api/query/OlapSchemaInfo.java -text
 api/src/org/labkey/api/query/PdLookupForeignKey.java -text
 api/src/org/labkey/api/query/PerlExportScriptFactory.java -text
@@ -1006,7 +1007,6 @@ api/src/org/labkey/api/query/Queryable.java -text
 api/src/org/labkey/api/query/RExportScriptFactory.java -text
 api/src/org/labkey/api/query/RExportScriptModel.java -text
 api/src/org/labkey/api/query/ReportDataRegion.java -text
-api/src/org/labkey/api/query/ReportInfoProvider.java -text
 api/src/org/labkey/api/query/RowIdForeignKey.java -text
 api/src/org/labkey/api/query/RowIdQueryUpdateService.java -text
 api/src/org/labkey/api/query/SchemaKey.java -text
@@ -1080,7 +1080,7 @@ api/src/org/labkey/api/reports/chart/ChartRenderer.java -text
 api/src/org/labkey/api/reports/chart/ChartRendererFactory.java -text
 api/src/org/labkey/api/reports/chart/RenderInfo.java -text
 api/src/org/labkey/api/reports/model/DataViewEditForm.java -text
-api/src/org/labkey/api/reports/model/ReportInfo.java -text
+api/src/org/labkey/api/reports/model/NotificationInfo.java -text
 api/src/org/labkey/api/reports/model/ReportPropsManager.java -text
 api/src/org/labkey/api/reports/model/ViewCategory.java -text
 api/src/org/labkey/api/reports/model/ViewCategoryListener.java -text
@@ -7977,7 +7977,7 @@ internal/src/org/labkey/api/ldk/table/CustomPermissionsTable.java -text
 internal/src/org/labkey/api/message/digest/DailyMessageDigest.java -text
 internal/src/org/labkey/api/message/digest/MessageDigest.java -text
 internal/src/org/labkey/api/message/digest/PeriodicMessageDigest.java -text
-internal/src/org/labkey/api/message/digest/ReportContentDigestProvider.java -text
+internal/src/org/labkey/api/message/digest/ReportAndDatasetChangeDigestProvider.java -text
 internal/src/org/labkey/api/message/settings/AbstractConfigTypeProvider.java -text
 internal/src/org/labkey/api/message/settings/MessageConfigService.java -text
 internal/src/org/labkey/api/pipeline/AbstractSpecimenTransformTask.java -text

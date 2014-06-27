@@ -11,7 +11,7 @@ import org.labkey.api.study.DatasetDB;
 
 import java.util.Date;
 
-public class ReportInfo
+public class NotificationInfo
 {
     private final String _name;
     private final Date _modified;
@@ -25,7 +25,7 @@ public class ReportInfo
     private final boolean _hidden;
     private final boolean _shared;
 
-    public ReportInfo(ReportDB reportDB)
+    public NotificationInfo(ReportDB reportDB)
     {
         try
         {
@@ -74,7 +74,7 @@ public class ReportInfo
         }
     }
 
-    public ReportInfo(DatasetDB dataset)
+    public NotificationInfo(DatasetDB dataset)
     {
         _name = dataset.getName();
         _type = "Dataset";

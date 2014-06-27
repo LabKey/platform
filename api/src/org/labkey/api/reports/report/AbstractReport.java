@@ -115,6 +115,7 @@ public abstract class AbstractReport implements Report
         _descriptor = descriptor;
     }
 
+    @Override
     public ActionURL getRunReportURL(ViewContext context)
     {
         return ReportUtil.getRunReportURL(context, this);
