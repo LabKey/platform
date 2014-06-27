@@ -16,6 +16,7 @@
 package org.labkey.wiki.query;
 
 import org.labkey.api.announcements.CommSchema;
+import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.EnumTableInfo;
@@ -90,6 +91,7 @@ public class WikiSchema extends UserSchema
         {
             TableInfo dbTable = CommSchema.getInstance().getSchema().getTable(name);
             SimpleUserSchema.SimpleTable<WikiSchema> table = new SimpleUserSchema.SimpleTable<>(this, dbTable);
+            table.setDeleteURL(AbstractTableInfo.LINK_DISABLER);
             table.init();
 
             // Change default sort to newest->oldest

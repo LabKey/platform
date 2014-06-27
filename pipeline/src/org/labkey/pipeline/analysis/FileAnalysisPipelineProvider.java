@@ -37,6 +37,7 @@ import org.labkey.api.security.permissions.InsertPermission;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -128,13 +129,21 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
                 unused = false;
             }
 
+            List<? extends ExpData> children = Collections.emptyList();
             if (unused)
             {
-                // Check if any datas exist under the analysis directory
-                List<? extends ExpData> children = ExperimentService.get().getExpDatasUnderPath(analysisDir, null);
+                // Check for any datas used by an run under the analysis directory
+                children = ExperimentService.get().getExpDatasUnderPath(analysisDir, null);
                 if (!children.isEmpty())
                 {
-                    unused = false;
+                    for (ExpData data : children)
+                    {
+                        if (data.getRun() != null)
+                        {
+                            unused = false;
+                            break;
+                        }
+                    }
                 }
             }
 
@@ -143,9 +152,17 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
             if (unused)
             {
                 if (FileUtil.moveToDeleted(analysisDir))
+                {
                     Logger.getLogger(FileAnalysisPipelineProvider.class).info(String.format("Job '%s' analysis directory no longer referenced by any runs and was moved to .deleted: %s", sf.getInfo(), analysisDir));
+
+                    // Delete any ExpData remains
+                    for (ExpData data : children)
+                        data.delete(null);
+                }
                 else
+                {
                     Logger.getLogger(FileAnalysisPipelineProvider.class).warn(String.format("Failed to move job '%s' analysis directory to .deleted: %s", sf.getDescription(), analysisDir));
+                }
             }
         }
     }
