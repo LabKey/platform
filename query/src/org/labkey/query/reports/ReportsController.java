@@ -128,6 +128,7 @@ import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
@@ -3769,10 +3770,10 @@ public class ReportsController extends SpringActionController
     @RequiresSiteAdmin
     public class SendDailyDigest extends SimpleRedirectAction
     {
+
         @Override
         public URLHelper getRedirectURL(Object o) throws Exception
         {
-            // Normally, daily digest stops at previous midnight; override to include all messages through now
             DailyMessageDigest messageDigest = new DailyMessageDigest() {
                 @Override
                 protected Date getEndRange(Date current, Date last)
@@ -3780,13 +3781,34 @@ public class ReportsController extends SpringActionController
                     return current;
                 }
             };
-            messageDigest.addProvider(ReportAndDatasetChangeDigestProvider.get());
-            messageDigest.sendMessageDigest();
+            digestThread.start();
 
             return new ActionURL(ManageViewsAction.class, getContainer());
-
         }
+
+        // Spawn a new thread so the digest creation doesn't have the Spring Action context available.
+        Thread digestThread = new Thread() {
+            @Override
+            public void run()
+            {
+                // Normally, daily digest stops at previous midnight; override to include all messages through now
+                DailyMessageDigest messageDigest = new DailyMessageDigest() {
+                    @Override
+                    protected Date getEndRange(Date current, Date last)
+                    {
+                        return current;
+                    }
+                };
+                messageDigest.addProvider(ReportAndDatasetChangeDigestProvider.get());
+                try
+                {
+                    messageDigest.sendMessageDigest();
+                }
+                catch (Exception e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
+            }
+        };
     }
-
-
 }
