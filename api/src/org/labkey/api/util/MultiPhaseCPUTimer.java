@@ -189,10 +189,10 @@ public class MultiPhaseCPUTimer<K extends Enum<K>>
             _closed = true;
         }
 
-        public String getTimings(Order order, String deliminator)
+        public String getTimings(String prefix, Order order, String deliminator)
         {
             Format df = Formats.f2;
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new StringBuilder(prefix);
             Map<String, Double> map = getMap(order);
 
             for (Map.Entry<String, Double> phase : map.entrySet())
