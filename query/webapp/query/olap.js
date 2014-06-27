@@ -46,7 +46,7 @@ LABKEY.query.olap._private = new function() {
     var executeMdx = function(config)
     {
         if (!config.configId)
-            console.error("no configId specified");
+            console.error("OLAP: no configId specified");
 
         var container = config.container || LABKEY.ActionURL.getContainer();
         config._cacheKey = container + ":" + config.query;
@@ -62,22 +62,21 @@ LABKEY.query.olap._private = new function() {
             return;
         }
 
-        return Ext4.Ajax.request(
-                {
-                    url : LABKEY.ActionURL.buildURL("olap", "executeMdx", config.containerPath),
-                    method : 'POST',
-                    success: function(r){postProcessExecuteMdx(r,config);},
-                    failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
-                    jsonData : { query:config.query, configId:config.configId, schemaName:config.schemaName },
-                    headers : { 'Content-Type' : 'application/json' }
-                });
+        return Ext4.Ajax.request({
+            url : LABKEY.ActionURL.buildURL("olap", "executeMdx", config.containerPath),
+            method : 'POST',
+            success: function(r){postProcessExecuteMdx(r,config);},
+            failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
+            jsonData : { query:config.query, configId:config.configId, schemaName:config.schemaName },
+            headers : { 'Content-Type' : 'application/json' }
+        });
     };
 
 
     var executeJson = function(config)
     {
         if (!config.configId)
-            console.error("no configId specified");
+            console.error("OLAP: no configId specified");
 
         var container = config.container || LABKEY.ActionURL.getContainer();
         var str = JSON.stringify(config.query);
@@ -493,32 +492,46 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
      */
     deferLoad: false,
 
+    /**
+     * By default cubes will not attempt to use perspecitves nor will they expect that they are supplied
+     * at runtime (via applyContext). If perspectives are enabled, then the cube creator is responsible
+     * for initializing the perspectives available.
+     */
+    usePerspectives: false,
+
+    applyContext: undefined,
+
+    dimensions: [],
+
+    dimensionMap: {},
+
+    hierarchyMap: {}, // names may not be unique use getByUniqueName
+
+    levelMap: {}, // names may not be unique use getByUniqueName
+
+    uniqueNameMap: {},
+
+    _isReady: false,
+
     constructor : function(config)
     {
         this.mixins.observable.constructor.call(this, config);
-
-        Ext4.apply(this, config);
-
         this.initConfig = config;  // this is handed to the user in onReady
-        this._isReady = false;
-        this.dimensions = [];
-        this.dimensionMap = {};
-        this.hierarchyMap = {};    // names may not be unique use getByUniqueName
-        this.levelMap = {};        // names may not be unique use getByUniqueName
-        this.uniqueNameMap = {};
 
         this.callParent([config]);
 
         this.addEvents('membersLoaded', 'onready');
 
-        // Support getting a callback when the cube is ready
-//        if (Ext4.isFunction(this.initConfig.success)) {
-//            this.onReady(this.initConfig.success, this.initConfig.scope || this);
-//        }
-
         if (!this.deferLoad)
         {
             this.load();
+        }
+    },
+
+    raiseError : function(msg, fatal) {
+        console.error('OLAP:', msg);
+        if (fatal !== false) {
+            this._isReady = false;
         }
     },
 
@@ -543,11 +556,19 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
         if (Ext4.isFunction(this.applyContext)) {
             this.mdx = this.applyContext.call(this, this.mdx);
             if (!this.mdx) {
-                console.error('Failed to apply application context.');
+                this.raiseError('Failed to apply application context.');
+            }
+            else if (this.usePerspectives === true && !Ext.isObject(this.mdx.perspectives)) {
+                this.raiseError('Failed to provide \'perspectives\' configurations. Provide a definition of \'perspectives\' or disable \'usePerspectives\'.');
             }
         }
+        else if (this.usePerspectives === true) {
+            this.raiseError('Failed to provide \'persepectives\'. Provide an \'applyContext\' function to set the \'perspectives\' appropriately.');
+        }
 
-        this.fireEvent('onready', this.getMDX());
+        if (this._isReady === true) {
+            this.fireEvent('onready', this.getMDX());
+        }
     },
 
     load : function()
@@ -614,11 +635,11 @@ LABKEY.query.olap.CubeManager = new function()
 
         if (!c)
         {
-            console.error('A cube configuration must be supplied to LABKEY.query.olap.Cube.getCube()');
+            console.error('OLAP: A cube configuration must be supplied to LABKEY.query.olap.Cube.getCube()');
         }
         else if (!c.name)
         {
-            console.error('A cube \'name\' must be supplied to LABKEY.query.olap.Cube.getCube() configuration');
+            console.error('OLAP: A cube \'name\' must be supplied to LABKEY.query.olap.Cube.getCube() configuration');
         }
 
         var cube;
@@ -735,9 +756,7 @@ Ext4.define('LABKEY.query.olap.MDX', {
             c.filter = c.filter.concat(filter);
         }
 
-        var mdx = this;
-        var query = this._generateMdx(c);
-        return query;
+        return this._generateMdx(c);
     },
 
 
@@ -798,14 +817,52 @@ Ext4.define('LABKEY.query.olap.MDX', {
         var copy = Ext4.apply({},config,{filter:[], useNamedFilters:[]});
         copy.filter = copy.filter ? copy.filter.slice() : [];
         var namedFilters = copy.useNamedFilters || [];
-        for (var f=0 ; f<namedFilters.length ; f++)
+        for (var f=0; f < namedFilters.length; f++)
         {
-            var filter = this._filter[namedFilters[f]];
-            if (!filter)
+            var filters = this._filter[namedFilters[f]];
+
+            if (!filters)
                 continue;
-            if (!Ext4.isArray(filter))
-                filter = [filter];
-            copy.filter = copy.filter.concat(filter);
+
+            if (!Ext4.isArray(filters))
+                filters = [filters];
+
+            if (this._cube.usePerspectives === true && filters.length > 0) {
+                var _default = this._cube.mdx.defaultPerspective;
+                if (!copy.perspective) {
+                    console.warn('Query generated without providing perspective. Using default perspective: \'' + _default + '\'');
+                    copy.perspective = _default;
+                }
+                var perspectiveFilters = [];
+
+                Ext.each(filters, function(filter) {
+
+                    if (!filter.perspective) {
+                        console.warn('Filter generated/saved without providing perspective. Using default perspective: \'' + _default + '\'');
+                        filter.perspective = _default;
+                    }
+
+                    if (filter.perspective !== copy.perspective) {
+
+                        // generate a wrapped filter
+                        var wrapped = {
+                            operator: 'INTERSECT',
+                            arguments: [{
+                                level: this._cube.mdx.perspectives[copy.perspective].level,
+                                membersQuery: filter
+                            }]
+                        };
+                        perspectiveFilters.push(wrapped);
+                    }
+                    else {
+                        perspectiveFilters.push(filter);
+                    }
+                }, this);
+
+                filters = perspectiveFilters;
+            }
+
+            copy.filter = copy.filter.concat(filters);
         }
 //        console.debug(JSON.stringify({showEmpty:copy.showEmpty, onRows:copy.onRows, onCols:copy.onCols, filter:copy.filter}));
         return this._queryJava(copy);
