@@ -446,29 +446,25 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     // Removes list from indices.
     public void deleteRelatedListData(User user, Container container)
     {
+        // Delete related list data in all the rows
+        List<String> listItemEntityIds = new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId")).getArrayList(String.class);
+        int size = listItemEntityIds.size();
+
         int increment = 1000;
         int index = 0;
         int offset = increment;
 
-        // Delete all the rows
-        Map<String, Object>[] rows = new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId"), null, null).getMapArray();
-        int size = rows.length;
-
-        Set<String> entityIds;
-        List<AttachmentParent> attachmentParents;
-        String eid;
-
         while (index < size)
         {
             // Build up set of entityIds and AttachmentParents
-            entityIds = new HashSet<>();
-            attachmentParents = new ArrayList<>();
+            Set<String> entityIds = new HashSet<>();
+            List<AttachmentParent> attachmentParents = new ArrayList<>();
 
             int start = index;
             int end = Math.min(offset, size);
             for (int i = start; i < end; i++)
             {
-                eid = (String) rows[i].get("entityId"); // LQUS.ID property
+                String eid = listItemEntityIds.get(i); // LQUS.ID property
                 if (null != eid)
                 {
                     entityIds.add(eid);
