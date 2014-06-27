@@ -1210,7 +1210,7 @@ public class SpecimenImporter
             SpecimenManager.getInstance().clearCaches(_container);
 
             TIMER.releaseInvocationTimer(_iTimer);
-            info(_iTimer.getTimings(Order.HighToLow, "|"));
+            info(_iTimer.getTimings("Timings for each phase of this import are listed below", Order.HighToLow, "|"));
         }
     }
 

@@ -66,6 +66,7 @@ public class FileSystemSpecimenImportFile implements SpecimenImportFile
     {
         Reader reader = new InputStreamReader(getInputStream());
         TabLoader loader = new TabLoader(reader, true, null, true);   // Close on complete
+        loader.setInferTypes(false);
 
         Filter<Map<String, Object>> filter = getStrategy().getImportFilter();
 
