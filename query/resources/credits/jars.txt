@@ -1,6 +1,6 @@
 {table}
 Filename|Component|Version|Source|License|LabKey Dev|Purpose
-antlr-3.3.jar|ANTLR|3.3|{link:ANTLR|http://www.antlr.org/}|{link:BSD|http://www.antlr.org/license.html}|mbellew|Query language parsing
+antlr-3.5.2.jar|ANTLR|3.5.2|{link:ANTLR|http://www.antlr.org/}|{link:BSD|http://www.antlr.org/license.html}|mbellew|Query language parsing
 commons-math-1.0.jar|Commons Math|1.0|{link:Apache|http://commons.apache.org/math/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Part of Mondrian distribution
 commons-vfs-1.0.jar|Commons Virtual File System|1.0|{link:Apache|http://jakarta.apache.org/commons/beanutils/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Part of Mondrian distribution
 eigenbase-properties.jar|Mondrian|3.5.0|{link:Pentaho|http://mondrian.pentaho.com/}|{link:Eclipse Public License - v 1.0|http://www.eclipse.org/legal/epl-v10.html}|matthewb|Part of Mondrian distribution

@@ -2306,7 +2306,7 @@ query/gwtsrc/org/labkey/query/metadata/client/TablePropertiesEditor.java -text
 query/gwtsrc/org/labkey/query/metadata/client/WrappedColumnItem.java -text
 query/gwtsrc/org/labkey/reports/designer/ChartDesigner.gwt.xml -text
 query/gwtsrc/org/labkey/reports/designer/client/ChartDesigner.java -text
-query/lib/antlr-3.3.jar -text
+query/lib/antlr-3.5.2.jar -text
 query/lib/commons-math-1.0.jar -text
 query/lib/commons-vfs-1.0.jar -text
 query/lib/eigenbase-properties.jar -text

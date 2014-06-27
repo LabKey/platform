@@ -16,7 +16,6 @@
 
 package org.labkey.query.sql;
 
-import antlr.TokenStreamRecognitionException;
 import org.antlr.runtime.ANTLRStringStream;
 import org.antlr.runtime.CommonToken;
 import org.antlr.runtime.CommonTokenStream;
@@ -453,10 +452,10 @@ public class SqlParser
         {
             return (QueryParseException) e;
         }
-        else if (e instanceof TokenStreamRecognitionException)
-        {
-            e = ((TokenStreamRecognitionException) e).recog;
-        }
+//        else if (e instanceof TokenStreamRecognitionException)
+//        {
+//            e = ((TokenStreamRecognitionException) e).recog;
+//        }
         else if (e instanceof RecognitionException)
         {
             RecognitionException re = (RecognitionException)e;

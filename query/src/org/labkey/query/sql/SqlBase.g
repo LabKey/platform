@@ -254,7 +254,7 @@ deleteStatement
 	;
 
 optionalFromTokenFromClause!
-	: (FROM)? f=path (a=(AS? identifier))?
+	: (FROM)? f=path (AS? a=identifier)?
 	    -> ^(FROM $f $a)
 	;
 
@@ -402,7 +402,7 @@ selectedPropertiesList
 
 
 selectedProperty
-	: e=aliasedSelectExpression^ (annotations!)? { ((SupportsAnnotations)e.tree).setAnnotations(getAnnotations()); }
+	: e=aliasedSelectExpression^ (annotations!)? { ((SupportsAnnotations)e.getTree()).setAnnotations(getAnnotations()); }
 	| starAtom
 	;
 
@@ -433,7 +433,7 @@ annotations
 
 
 annotation
-    :   (label=ANNOTATION_LABEL ('=' value=constant)? {addAnnotation(label.getText(),null==value?null:value.tree);})!
+    :   (label=ANNOTATION_LABEL ('=' value=constant)? {addAnnotation(label.getText(),null==value?null:value.getTree());})!
     ;
 
 
@@ -501,9 +501,9 @@ bitwiseOrExpression
 equalityExpression
 	: relationalExpression (
 		( EQ^
-		| is=IS^ (NOT!  { $is.tree.getToken().setType(IS_NOT); } )?
+		| is=IS^ (NOT!  { $is.setType(IS_NOT); } )?
 		| NE^
-		| ne=SQL_NE^ { $ne.tree.getToken().setType(NE); }
+		| ne=SQL_NE^ { $ne.setType(NE); }
 		)
       relationalExpression)?
 	;
@@ -521,18 +521,18 @@ relationalExpression
 			// Represent the optional NOT prefix using the token type by
 			// testing 'n' and setting the token type accordingly.
 			(i=IN^ {
-					$i.tree.getToken().setType( ($n == null) ? IN : NOT_IN);
-					$i.tree.getToken().setText( ($n == null) ? "in" : "not in");
+					$i.setType( ($n == null) ? IN : NOT_IN);
+					$i.setText( ($n == null) ? "in" : "not in");
 				}
 				inList)
 			| (b=BETWEEN^ {
-					$b.tree.getToken().setType( ($n == null) ? BETWEEN : NOT_BETWEEN);
-					$b.tree.getToken().setText( ($n == null) ? "between" : "not between");
+					$b.setType( ($n == null) ? BETWEEN : NOT_BETWEEN);
+					$b.setText( ($n == null) ? "between" : "not between");
 				}
 				betweenList )
 			| (l=LIKE^ {
-					$l.tree.getToken().setType( ($n == null) ? LIKE : NOT_LIKE);
-					$l.tree.getToken().setText( ($n == null) ? "like" : "not like");
+					$l.setType( ($n == null) ? LIKE : NOT_LIKE);
+					$l.setText( ($n == null) ? "like" : "not like");
 				}
 				valueExpression likeEscape)
             )
@@ -571,8 +571,8 @@ multiplyExpression
 	
 // level 1 - unary minus, unary plus, not
 unaryExpression
-	: (m=MINUS^ {$m.tree.getToken().setType(UNARY_MINUS);}) unaryExpression
-	| (p=PLUS^ {$p.tree.getToken().setType(UNARY_PLUS);}) unaryExpression
+	: (m=MINUS^ {$m.setType(UNARY_MINUS);}) unaryExpression
+	| (p=PLUS^ {$p.setType(UNARY_PLUS);}) unaryExpression
 	| caseExpression                                                           
 	| quantifiedExpression
 	| atom
@@ -580,7 +580,7 @@ unaryExpression
 	
 caseExpression
 	: CASE^ (whenClause)+ (elseClause)? END! 
-	| (c=CASE^ { $c.tree.getToken().setType(CASE2); }) unaryExpression (altWhenClause)+ (elseClause)? END!
+	| (c=CASE^ { $c.setType(CASE2); }) unaryExpression (altWhenClause)+ (elseClause)? END!
 	;
 	
 whenClause
@@ -627,13 +627,13 @@ primaryExpression
 // the method looks ahead to find keywords after DOT and turns them into identifiers.
 identPrimary
 	: dottedIdentifier
-        ( options { greedy=true; } : op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE! )?
+        ( options { greedy=true; } : op=OPEN^ {$op.setType(METHOD_CALL);} exprList CLOSE! )?
     | escapeFn
 	| aggregate
 	| cast
 // UNDONE: figure out the weakKeywords thing
-	| l=LEFT  {$l.tree.getToken().setType(IDENT);} op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE!
-	| r=RIGHT {$r.tree.getToken().setType(IDENT);} op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE!
+	| l=LEFT  {$l.setType(IDENT);} op=OPEN^ {$op.setType(METHOD_CALL);} exprList CLOSE!
+	| r=RIGHT {$r.setType(IDENT);} op=OPEN^ {$op.setType(METHOD_CALL);} exprList CLOSE!
 	| IFDEFINED^ OPEN! dottedIdentifier CLOSE!
 	;
 
@@ -644,15 +644,14 @@ dottedIdentifier
 
 
 escapeFn
-    : '{fn'! identifier op=OPEN^ {$op.tree.getToken().setType(METHOD_CALL);} exprList CLOSE! '}'!
+    : '{fn'! identifier op=OPEN^ {$op.setType(METHOD_CALL);} exprList CLOSE! '}'!
     ;
 
 
 aggregate
-    @after {$aggregate.tree.getToken().setType(AGGREGATE);}
-	: (( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ | STDERR^ ) OPEN! expr=(additiveExpression) CLOSE!)
-	| (COUNT^ OPEN! d=DISTINCT? expr=(additiveExpression | starAtom) CLOSE!)
-	| (GROUP_CONCAT^ OPEN! d=DISTINCT? expr=(additiveExpression) (COMMA! primaryExpression)? CLOSE!)
+	: (a=( SUM^ | AVG^ | MAX^ | MIN^ | STDDEV^ | STDERR^ ) {$a.setType(AGGREGATE);} OPEN! (additiveExpression) CLOSE!)
+	| (a=COUNT^ {$a.setType(AGGREGATE);} OPEN! d=DISTINCT? (additiveExpression | starAtom) CLOSE!)
+	| (a=GROUP_CONCAT^ {$a.setType(AGGREGATE);} OPEN! d=DISTINCT? (additiveExpression) (COMMA! primaryExpression)? CLOSE!)
 	;
 
 

@@ -24,7 +24,7 @@
 
     <target name="sql" depends="query_init">
         <java classname="org.antlr.Tool">
-            <classpath path="${moduleDir}/lib/antlr-3.3.jar"/>
+            <classpath path="${moduleDir}/lib/antlr-3.5.2.jar"/>
             <arg value="-o"/>
             <arg value="${moduleAdditionalSrcPath}/org/labkey/query/sql/antlr"/>
             <arg value="${moduleDir}/src/org/labkey/query/sql/SqlBase.g" />
