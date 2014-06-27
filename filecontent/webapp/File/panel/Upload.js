@@ -128,7 +128,12 @@ Ext4.define('File.panel.Upload', {
             accept: function (file, done) {
                 // Filter out folder drag-drop on unsupported browsers (Firefox)
                 // See: https://github.com/enyo/dropzone/issues/528
-                if (!file.type && file.fullPath == undefined) {
+                if (Ext4.isSafari &&  !file.type)
+                {
+                    done("Looks like you are using Safari. Drag-and drop upload of folders and some filetypes is not supported. Consider the upload panel, using Google Chrome, or an external WebDAV Client.");
+                    return;
+                }
+                if ( (file.size == 0 && file.fullPath == undefined)) {
                     done("Drag-and-drop upload of folders is not supported by your browser. Please consider using Google Chrome or an external WebDAV client.");
                     return;
                 }
