@@ -984,7 +984,7 @@ public class QueryServiceImpl extends QueryService
         for (ColumnInfo column : columns)
             columnMap.put(column.getFieldKey(), column);
 
-        ArrayList<ColumnInfo> ret = null;
+        ArrayList<ColumnInfo> ret = new ArrayList<>(columns);
 
         if (filter != null)
         {
@@ -992,12 +992,7 @@ public class QueryServiceImpl extends QueryService
             {
                 ColumnInfo col = resolveFieldKey(fieldKey, table, columnMap, unresolvedColumns, manager);
                 if (col != null)
-                {
-                    if (null == ret)
-                        ret = new ArrayList<>(columns);
-
                     ret.add(col);
-                }
             }
         }
 
@@ -1034,16 +1029,22 @@ public class QueryServiceImpl extends QueryService
                     sort.deleteSortColumn(field);
             }
         }
-        assert null == ret || ret.size() > 0;
-        return null == ret ? columns : ret;
+        return ret;
     }
+
 
     private ArrayList<ColumnInfo> resolveSortColumns(ColumnInfo col, TableInfo table, Map<FieldKey,ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager, Collection<ColumnInfo> columns, ArrayList<ColumnInfo> ret, boolean addSortKeysOnly)
     {
-        if (col.getSortFieldKeys() != null)
+        if (col.getSortFieldKeys() != null || null != col.getMvColumnName())
         {
             List<ColumnInfo> toAdd = new ArrayList<>();
-            for (FieldKey key : col.getSortFieldKeys())
+            List<FieldKey> sortFieldKeys = new ArrayList<>();
+            if (null != col.getSortFieldKeys())
+                sortFieldKeys.addAll(col.getSortFieldKeys());
+            if (null != col.getMvColumnName())
+                sortFieldKeys.add(col.getMvColumnName());
+
+            for (FieldKey key : sortFieldKeys)
             {
                 ColumnInfo sortCol = resolveFieldKey(FieldKey.fromParts(col.getFieldKey().getParent(), key), col.getParentTable(), columnMap, null, manager);
                 if (sortCol != null)
@@ -1062,27 +1063,17 @@ public class QueryServiceImpl extends QueryService
                 }
             }
 
-            if (toAdd.size() > 0)
-            {
-                if (null == ret)
-                    ret = new ArrayList<>(columns);
-
-                ret.addAll(toAdd);
-            }
+            ret.addAll(toAdd);
         }
         else
         {
             if (!addSortKeysOnly)
-            {
-                if (null == ret)
-                    ret = new ArrayList<>(columns);
-
                 ret.add(col);
-            }
         }
 
         return ret;
     }
+
 
     private ColumnInfo resolveFieldKey(FieldKey fieldKey, TableInfo table, Map<FieldKey,ColumnInfo> columnMap, Set<FieldKey> unresolvedColumns, AliasManager manager)
     {
@@ -1119,6 +1110,7 @@ public class QueryServiceImpl extends QueryService
 
         return null;
     }
+
 
     public Map<String, UserSchema> getExternalSchemas(User user, Container c)
     {
