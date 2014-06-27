@@ -13,6 +13,10 @@
         if (!config.save)
             throw new Error("save callback required");
 
+        if (config.hasOwnProperty('updateContentURL')) {
+            this.updateContentURL = config.updateContentURL;
+        }
+
         if (this.id)
         {
             this.id = config.id;
@@ -77,7 +81,13 @@
                 "<div id='" + msgboxId + "' class='labkey-dataregion-msgbox' style='display:none;'></div>" +
                 "<p>" +
                 "<a class='labkey-button' name='save'><span>Save</span></a>" +
-                "<a class='labkey-button' name='cancel'><span>Cancel</span></a>" +
+                "<a class='labkey-button' name='cancel'><span>Cancel</span></a>";
+
+        if (this.updateContentURL) {
+            html = html + "<a style='margin-left: 25px' class='labkey-button' name='advanced' href='"+ this.updateContentURL + "'><span>Advanced Editor</span></a>";
+        }
+
+        html = html + "</p>" +
                 "</div>";
         this.dom.innerHTML = html;
 
