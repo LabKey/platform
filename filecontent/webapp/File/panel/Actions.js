@@ -25,6 +25,14 @@ Ext4.define('File.panel.Action', {
         }
     },
 
+    constructor : function(config) {
+
+        if (config.itemId)
+            config.cls = config.itemId + "Btn";
+
+        this.callParent([config]);
+    },
+
     updateEnabled : function (fileSystem, selection) {
         var actionType = this.initialConfig.actionType;
         var actionItemType = this.initialConfig.actionItemType;

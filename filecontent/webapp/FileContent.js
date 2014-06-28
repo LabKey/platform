@@ -112,6 +112,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
         var actions = LABKEY.FilesWebPartPanel.superclass.createActions.call(this);
 
         actions.importData = new Ext.Action({
+            cls: 'importDataBtn',
             text: 'Import Data',
             listeners: {click:function(button, event) {this.onImportData(button);}, scope:this},
             iconCls: 'iconDBCommit',
@@ -120,6 +121,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
         });
 
         actions.customize = new Ext.Action({
+            cls: 'customizeBtn',
             text: 'Admin',
             iconCls: 'iconConfigure',
             disabledClass:'x-button-disabled',
@@ -129,6 +131,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
         });
 
         actions.editFileProps = new Ext.Action({
+            cls: 'editFilePropsBtn',
             text: 'Edit Properties',
             iconCls: 'iconEditFileProps',
             disabledClass:'x-button-disabled',
@@ -138,6 +141,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
         });
 
         actions.emailPreferences = new Ext.Action({
+            cls: 'emailPreferencesBtn',
             text: 'Email Preferences',
             iconCls: 'iconEmailSettings',
             disabledClass:'x-button-disabled',
@@ -147,6 +151,7 @@ LABKEY.FilesWebPartPanel = Ext.extend(LABKEY.ext.FileBrowser, {
         });
 
         actions.auditLog = new Ext.Action({
+            cls: 'auditLogBtn',
             text: 'Audit History',
             iconCls: 'iconAuditLog',
             disabledClass:'x-button-disabled',
