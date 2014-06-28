@@ -349,7 +349,7 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
         // get the attachment file to go along with this report from the report dir root
         if (root != null)
         {
-            VirtualFile reportDir = root.getDir(getSerializedReportName());
+            VirtualFile reportDir = root.getDir(getDeserializedReportName(root));
             String attachment = getAttachmentFile(reportDir);
             deserializeAttachment(user, root, attachment);
             super.afterSave(container, user, root);

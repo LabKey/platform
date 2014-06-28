@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -897,7 +898,13 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
             // reset any report identifier, we want to treat an imported report as a new
             // report instance
             if (report != null)
+            {
+                // befor resetting the report identifier, remember the serialized value
+                String serializedReportId = report.getDescriptor().getProperty(ReportDescriptor.Prop.reportId);
+                report.getDescriptor().setProperty(ReportDescriptor.Prop.serializedReportId, serializedReportId);
+
                 report.getDescriptor().setReportId(new DbReportIdentifier(-1));
+            }
 
             return report;
         }
@@ -944,7 +951,18 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
             {
                 if (StringUtils.equalsIgnoreCase(existingReport.getDescriptor().getReportName(), descriptor.getReportName()))
                 {
-                    deleteReport(new DefaultContainerUser(ctx.getContainer(), ctx.getUser()), existingReport);
+                    boolean shouldDelete = true;
+                    if (ctx instanceof FolderImportContext)
+                    {
+                        // Don't delete reports we just added.  This can happen if the reportKey is not unique and
+                        // we have two or more reports with the same name.  This also works in the reload case since
+                        // existing reports will not have the same report ids as the newly imported/created ones.
+                        if (((FolderImportContext)ctx).isImportedReport(existingReport.getDescriptor()))
+                            shouldDelete = false;
+                    }
+
+                    if (shouldDelete)
+                        deleteReport(new DefaultContainerUser(ctx.getContainer(), ctx.getUser()), existingReport);
                 }
             }
 
@@ -953,7 +971,19 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
 
             // re-load the report to get the updated property information (i.e container, etc.)
             report = ReportService.get().getReport(rowId);
+
+            // copy over the serialized report id
+            report.getDescriptor().setProperty(ReportDescriptor.Prop.serializedReportId,
+                    descriptor.getProperty(ReportDescriptor.Prop.serializedReportId));
+
             report.afterSave(ctx.getContainer(), ctx.getUser(), root);
+
+            if (ctx instanceof FolderImportContext)
+            {
+                // remember that we imported this report so we don't try to delete it if
+                // we are importing another report with the same reportKey and name.
+                ((FolderImportContext)ctx).addImportedReport(report.getDescriptor());
+            }
         }
         return report;
     }
