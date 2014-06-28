@@ -27,12 +27,14 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.Filter;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
@@ -882,55 +884,36 @@ public class ParticipantGroupManager
         if (!def.isNew())
         {
             String cacheKey = getCacheKey(def);
-            ParticipantGroup[] groups = GROUP_CACHE.get(cacheKey, def, new CacheLoader<String, ParticipantGroup[]>()
+            ParticipantGroup[] participantGroups = GROUP_CACHE.get(cacheKey, def, new CacheLoader<String, ParticipantGroup[]>()
             {
                 @Override
                 public ParticipantGroup[] load(String key, @Nullable Object argument)
                 {
                     final ParticipantCategoryImpl def = (ParticipantCategoryImpl)argument;
+                    final List<ParticipantGroup> groups = new ArrayList<>();
 
-                    SQLFragment sql = new SQLFragment("SELECT * FROM (");
-
-                    // TODO, refactor this so that we initialize the participantGroup bean using a select on rowId from the participantGroupTable
-                    sql.append("SELECT pg.label, pg.rowId, pg.filters, pg.description, pg.created, pg.createdBy, pg.modified, pg.modifiedBy FROM ");
-                    sql.append(StudySchema.getInstance().getTableInfoParticipantCategory(), "pc");
-                    sql.append(" JOIN ").append(getTableInfoParticipantGroup(), "pg").append(" ON pc.rowId = pg.categoryId WHERE pg.categoryId = ?) jr ");
-                    sql.append(" JOIN ").append(getTableInfoParticipantGroupMap(), "gm").append(" ON jr.rowId = gm.groupId");
-                    sql.append(" ORDER BY gm.groupId, gm.ParticipantId;");
-                    sql.add(def.getRowId());
-
-                    final Map<Integer, ParticipantGroup> groupMap = new HashMap<>();
-
-                    new SqlSelector(StudySchema.getInstance().getSchema(), sql).forEach(new Selector.ForEachBlock<ParticipantGroupMap>()
+                    Filter filter = new SimpleFilter(FieldKey.fromParts("categoryId"), def.getRowId());
+                    new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroup(), filter, new Sort("rowId")).forEach(new Selector.ForEachBlock<ParticipantGroup>()
                     {
                         @Override
-                        public void exec(ParticipantGroupMap pg) throws SQLException
+                        public void exec(ParticipantGroup group) throws SQLException
                         {
-                            if (!groupMap.containsKey(pg.getGroupId()))
-                            {
-                                ParticipantGroup group = new ParticipantGroup();
-                                group.setCategoryId(def.getRowId());
-                                group.setCategoryLabel(def.getLabel());
-                                group.setLabel(pg.getLabel());
-                                group.setContainer(c.getId()); //For dataspace participant container may not be group container
-                                group.setRowId(pg.getRowId());
-                                group.setFilters(pg.getFilters());
-                                group.setDescription(pg.getDescription());
-                                group.setModified(pg.getModified());
-                                group.setModifiedBy(pg.getModifiedBy());
-                                group.setCreated(pg.getCreated());
-                                group.setCreatedBy(pg.getCreatedBy());
+                            // get the participants assigned to this group
+                            Filter filter = new SimpleFilter(FieldKey.fromParts("groupId"), group.getRowId());
+                            Set<String> participants = new HashSet<>();
+                            participants.addAll((new TableSelector(StudySchema.getInstance().getTableInfoParticipantGroupMap(), Collections.singleton("participantId"), filter, new Sort("participantId")).getArrayList(String.class)));
 
-                                groupMap.put(pg.getGroupId(), group);
-                            }
-                            groupMap.get(pg.getGroupId()).addParticipantId(pg.getParticipantId());
+                            group.setParticipantSet(participants);
+                            group.setCategoryLabel(def.getLabel());
+                            groups.add(group);
                         }
-                    }, ParticipantGroupMap.class);
-                    return groupMap.values().toArray(new ParticipantGroup[groupMap.size()]);
+                    }, ParticipantGroup.class);
+
+                    return groups.toArray(new ParticipantGroup[groups.size()]);
                 }
             });
 
-            return groups;
+            return participantGroups;
         }
         return new ParticipantGroup[0];
     }
