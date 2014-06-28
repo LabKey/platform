@@ -1516,8 +1516,8 @@ public class SimpleFilter implements Filter
             FieldKey fieldKey = FieldKey.fromParts("Foo");
 
             // Empty parameter list
-            assertEquals(new Pair<>("query.Foo~in", null), new InClause(fieldKey, Collections.emptySet()).toURLParam("query."));
-            assertEquals(new Pair<>("query.Foo~notin", null), new InClause(fieldKey, Collections.emptySet(), true, true).toURLParam("query."));
+            assertEquals(new Pair<>("query.Foo~in", (String)null), new InClause(fieldKey, Collections.emptySet()).toURLParam("query."));
+            assertEquals(new Pair<>("query.Foo~notin", (String)null), new InClause(fieldKey, Collections.emptySet(), true, true).toURLParam("query."));
 
             // Non-null parameters only
             assertEquals(new Pair<>("query.Foo~in", "1;2;3"), new InClause(fieldKey, Arrays.asList(1, 2, 3)).toURLParam("query."));
@@ -1555,6 +1555,8 @@ public class SimpleFilter implements Filter
             assertEquals("Parameter values didn't match for IN clause", new HashSet<>(Arrays.asList(expectedValues)), new HashSet<>(Arrays.asList(clause._paramVals)));
         }
 
+        private static final int IN_CLAUSE_SIZE = 5000;
+
         @Test
         public void testLargeInClause() throws Exception
         {
@@ -1564,15 +1566,15 @@ public class SimpleFilter implements Filter
             testActiveUsersInClause(1, Collections.singleton(user.getUserId()));
             testActiveUsersInClause(1, Collections.singleton(user));
 
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("UserId"), IN_CLAUSE_SIZE, CompareType.LT);
+            int expected = (int)new TableSelector(CoreSchema.getInstance().getTableInfoActiveUsers(), filter, null).getRowCount();
+
             Collection<Integer> ids = new LinkedList<>();
-            for (int i = 0; i < 2000; i++)
-                ids.add(user.getUserId());
+            for (int i = 0; i < IN_CLAUSE_SIZE; i++)
+                ids.add(i);
 
-            testActiveUsersInClause(1, ids);
-
-            testActiveUsersInClause(1, ids, ids);
-            testActiveUsersInClause(1, ids, ids, ids);
-            testActiveUsersInClause(1, ids, ids, ids, ids);
+            testActiveUsersInClause(expected, ids);
+            testActiveUsersInClause(expected, ids, ids);
         }
 
         private void testActiveUsersInClause(int expectedSize, Collection... users)
