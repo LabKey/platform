@@ -377,14 +377,20 @@ public class DateUtil
                     i++;
                 if (i == limit)
                     throw new ConversionException("Could not parse timezone specification: " + s.substring(start-1));
-                String spec = s.substring(start,i);
-                Object dp = resolveDatePart(spec);
-                if (dp instanceof TimeZone)
-                    tz = (TimeZone)dp;
-                else if (dp instanceof TZ)
-                    tzoffset = ((TZ)dp).tzoffset;
-                else
-                    throw new ConversionException("Could not parse timezone specification: " + spec);
+
+                // Parse the text inside parentheses if time zone hasn't been specified yet, otherwise ignore it. See #20932.
+                if (null == tz && -1 == tzoffset)
+                {
+                    String spec = s.substring(start, i);
+                    Object dp = resolveDatePart(spec);
+                    if (dp instanceof TimeZone)
+                        tz = (TimeZone) dp;
+                    else if (dp instanceof TZ)
+                        tzoffset = ((TZ) dp).tzoffset;
+                    else
+                        throw new ConversionException("Could not parse timezone specification: " + spec);
+                }
+
                 i++;
                 continue;
             }
@@ -1474,9 +1480,15 @@ Parse:
             long utcOffset = TimeZone.getDefault().getOffset(datetimeUTC);
             assertEquals(datetimeLocal + utcOffset, datetimeUTC);
             assertEquals(datetimeUTC, parseDateTime("Sat Feb 03 04:05:06 GMT-0000 2001"));
-            assertEquals(datetimeUTC+TimeUnit.HOURS.toMillis(1), parseDateTime("Sat Feb 03 04:05:06 GMT-1 2001"));
-            assertEquals(datetimeUTC+TimeUnit.HOURS.toMillis(1), parseDateTime("Sat Feb 03 04:05:06 GMT-0100 2001"));
-            assertEquals(datetimeUTC-TimeUnit.MINUTES.toMillis(270), parseDateTime("Sat Feb 03 04:05:06 GMT+0430 2001"));
+
+            // Recent JavaScript display formats, see #20932
+            assertEquals(datetimeUTC + TimeUnit.HOURS.toMillis(7), parseDateTime("Sat Feb 03 2001 04:05:06 GMT-0700"));
+            assertEquals(datetimeUTC + TimeUnit.HOURS.toMillis(7), parseDateTime("Sat Feb 03 2001 04:05:06 GMT-0700 (PDT)"));
+            assertEquals(datetimeUTC + TimeUnit.HOURS.toMillis(7), parseDateTime("Sat Feb 03 2001 04:05:06 GMT-0700 (Pacific Daylight Time)"));
+
+            assertEquals(datetimeUTC + TimeUnit.HOURS.toMillis(1), parseDateTime("Sat Feb 03 04:05:06 GMT-1 2001"));
+            assertEquals(datetimeUTC + TimeUnit.HOURS.toMillis(1), parseDateTime("Sat Feb 03 04:05:06 GMT-0100 2001"));
+            assertEquals(datetimeUTC - TimeUnit.MINUTES.toMillis(270), parseDateTime("Sat Feb 03 04:05:06 GMT+0430 2001"));
 
             // check that parseDateTimeUS handles ISO
             assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03 04:05:06", DateTimeOption.DateTime, true));
