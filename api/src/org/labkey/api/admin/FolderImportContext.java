@@ -17,6 +17,8 @@ package org.labkey.api.admin;
 
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.data.Container;
+import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
@@ -25,6 +27,7 @@ import org.labkey.folder.xml.FolderDocument;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 
 /**
  * User: cnathe
@@ -33,6 +36,7 @@ import java.io.IOException;
 public class FolderImportContext extends AbstractFolderContext
 {
     private File _folderXml;
+    HashSet<String> _importedReports = new HashSet<>();
 
     /** Required for xstream serialization on Java 7 */
     @SuppressWarnings({"UnusedDeclaration"})
@@ -129,5 +133,15 @@ public class FolderImportContext extends AbstractFolderContext
         {
             return null;
         }
+    }
+
+    public boolean isImportedReport(ReportDescriptor d)
+    {
+        return _importedReports.contains(ReportUtil.getSerializeName(d));
+    }
+
+    public void addImportedReport(ReportDescriptor d)
+    {
+        _importedReports.add(ReportUtil.getSerializeName(d));
     }
 }

@@ -356,8 +356,19 @@ public abstract class AbstractReport implements Report
 
     protected String getSerializedReportName()
     {
-        ReportDescriptor descriptor = getDescriptor();
-        return FileUtil.makeLegalName(descriptor.getReportName());
+        return FileUtil.makeLegalName(ReportUtil.getSerializeName(getDescriptor()));
+    }
+
+    // return a directory name composed of the report name and id but fall back
+    // to just the report name if it doesn't exist to support older exported folder formats
+    protected String getDeserializedReportName(VirtualFile parentDir)
+    {
+        String dirName = FileUtil.makeLegalName(ReportUtil.getDeserializeName(getDescriptor()));
+        File f = new File(parentDir.getLocation(), dirName);
+        if (f.exists() && f.isDirectory())
+            return dirName;
+
+        return FileUtil.makeLegalName(ReportUtil.getDeserializeName(getDescriptor(), true));
     }
 
     protected void serializeThumbnail(VirtualFile dir, ReportThumbnail thumbnail) throws IOException
@@ -401,9 +412,9 @@ public abstract class AbstractReport implements Report
 
     protected void deserializeAttachment(User user, VirtualFile root, String attachment)
     {
-        VirtualFile reportDir = root.getDir(getSerializedReportName());
         if (attachment != null)
         {
+            VirtualFile reportDir = root.getDir(getDeserializedReportName(root));
             try
             {
                 InputStream is = reportDir.getInputStream(attachment);

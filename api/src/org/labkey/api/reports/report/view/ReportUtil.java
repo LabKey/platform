@@ -452,6 +452,44 @@ public class ReportUtil
         return true;
     }
 
+    public static String getSerializeName(ReportDescriptor d)
+    {
+        // When exporting, the serialized name is composed of the report name
+        // and report id - this enables us to export reports that have the same
+        // name into different directories (where attachments and thumbnails are stored
+        // per report)
+        String reportId = d.getProperty(ReportDescriptor.Prop.reportId);
+        return makeNameId(d.getReportName(), reportId);
+    }
+
+    public static String getDeserializeName(ReportDescriptor d, boolean isLegacy)
+    {
+        // When importing, we save off the report id that was serialized into a temporary
+        // property (serializeReportId).  We have to use the serialized id and not the current
+        // report id to match the name of the directory that was created for each report at export
+        // time.  If we are importing a folder that wasn't exported with the
+        // new naming scheme, then we revert to just returning the name of the report (isLegacy == true)
+        String reportId = null;
+        if (!isLegacy)
+            reportId = d.getProperty(ReportDescriptor.Prop.serializedReportId);
+
+        return makeNameId(d.getReportName(), reportId);
+    }
+
+    public static String getDeserializeName(ReportDescriptor d)
+    {
+        return getDeserializeName(d, false);
+    }
+
+
+    private static String makeNameId(String name, String id)
+    {
+        if (id != null)
+            return name + "_" + id;
+
+        return name;
+    }
+
     public static String getQueryLabelByName(User user, Container container, String schema, String query)
     {
         if (schema != null && query != null)

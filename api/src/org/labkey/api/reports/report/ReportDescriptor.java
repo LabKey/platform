@@ -116,6 +116,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         status,         // same
         json,
         modified,
+        serializedReportId
     }
 
     public ReportDescriptor()
@@ -512,7 +513,8 @@ public class ReportDescriptor extends Entity implements SecurableResource
 
     protected boolean shouldSerialize(String propName)
     {
-        if (Prop.returnUrl.name().equals(propName))
+        if (Prop.returnUrl.name().equals(propName) ||
+            Prop.serializedReportId.name().equals(propName))
             return false;
 
         return true;
