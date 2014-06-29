@@ -79,7 +79,7 @@ public class AssayScheduleImporter extends DefaultStudyDesignImporter implements
                     for (String studyDesignTableName : studyDesignTableNames)
                     {
                         StudyQuerySchema.TablePackage tablePackage = schema.getTablePackage(ctx, projectSchema, studyDesignTableName);
-                        importTableData(ctx, vf, tablePackage, null, new PreserveExistingProjectData(ctx.getUser(), tablePackage.getTableInfo(), "Name", null, null));
+                        importTableData(ctx, vf, tablePackage, null, new PreserveExistingProjectData(ctx.getUser(), tablePackage.getTableInfo(), "Name", null, null, true));
                     }
 
                     // assay specimen table

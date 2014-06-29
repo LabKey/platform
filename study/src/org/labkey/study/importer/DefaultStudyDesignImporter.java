@@ -389,14 +389,22 @@ public class DefaultStudyDesignImporter
         protected String _keyName;            // key field name
         protected Map<String, Object> _existingValues;
         protected Map _keyMap;
+        protected boolean _verifyDuplicateFieldKeys;
 
         public PreserveExistingProjectData(User user, TableInfo table, String fieldName, @Nullable String keyName, @Nullable Map<Object, Object> keyMap)
+        {
+            this(user, table, fieldName, keyName, keyMap, false);
+        }
+
+        public PreserveExistingProjectData(User user, TableInfo table, String fieldName, @Nullable String keyName, @Nullable Map<Object, Object> keyMap,
+                                           boolean verifyDuplicateFieldKeys)
         {
             _user = user;
             _tableInfo = table;
             _fieldName = fieldName;
             _keyName = keyName;
             _keyMap = keyMap;
+            _verifyDuplicateFieldKeys = verifyDuplicateFieldKeys;
         }
 
         protected void initializeData()
@@ -439,6 +447,7 @@ public class DefaultStudyDesignImporter
         {
             initializeData();
             List<Map<String, Object>> newRows = new ArrayList<>();
+            Set<String> keys = new HashSet<>();
 
             for (Map<String, Object> row : origRows)
             {
@@ -449,7 +458,15 @@ public class DefaultStudyDesignImporter
                 {
                     String fieldNameValue = currentRow.get(_fieldName).toString();
                     if (!_existingValues.containsKey(fieldNameValue))
-                        newRows.add(currentRow);
+                    {
+                        // make sure there are no duplicate keys
+                        if (!keys.contains(fieldNameValue))
+                        {
+                            newRows.add(currentRow);
+                            if (_verifyDuplicateFieldKeys)
+                                keys.add(fieldNameValue);
+                        }
+                    }
                     else if (null != _keyMap)
                     {
                         Object key = currentRow.get(_keyName);
