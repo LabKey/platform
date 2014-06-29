@@ -528,8 +528,10 @@ public class Table
         {
             String trim = sql.getSQL().trim();
 
+            // Treat a ConstraintException during INSERT/UPDATE as a WARNING. Treat all other SQLExceptions as an ERROR.
             if (RuntimeSQLException.isConstraintException(e) && (StringUtils.startsWithIgnoreCase(trim, "INSERT") || StringUtils.startsWithIgnoreCase(trim, "UPDATE")))
             {
+                // Log this ConstraintException if log Level is WARN (the default) or lower. Skip logging for callers that request just ERRORs.
                 if (Level.WARN.isGreaterOrEqual(logLevel))
                 {
                     _log.warn("SQL Exception", e);
@@ -538,6 +540,7 @@ public class Table
             }
             else
             {
+                // Log this SQLException if log level is ERROR or lower.
                 if (Level.ERROR.isGreaterOrEqual(logLevel))
                 {
                     _log.error("SQL Exception", e);
