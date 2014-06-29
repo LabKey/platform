@@ -25,14 +25,12 @@ Ext4.define('Security.panel.PolicyEditor', {
         }
     },
 
+    autoScroll: true,
+
+    firstRender: true,
+
     initComponent: function()
     {
-        Ext4.apply(this, {
-            autoScroll: true
-        });
-
-        this.firstRender = true;
-
         this.callParent(arguments);
 
         if (this.resourceId)
@@ -381,7 +379,7 @@ Ext4.define('Security.panel.PolicyEditor', {
                     var child = document.createElement('div');
                     child.setAttribute('class', 'x4-btn-default-small');
                     dom.appendChild(child);
-                    b.getRenderTemplate().append(child, {
+                    b.renderTpl.append(child, {
                         text : b.getText(),
                         id   : 'dragbtn',
                         baseCls : 'x4-btn',
@@ -455,14 +453,14 @@ Ext4.define('Security.panel.PolicyEditor', {
     },
 
     // expects button to have roleId and groupId attribute
-    Button_onClose : function(btn,event)
+    Button_onClose : function(btn)
     {
         btn.closing = true;
         if (!this.getInheritCheckboxValue())
             this.removeRoleAssignment(btn.groupId, btn.roleId);
     },
 
-    Button_onClick : function(btn,event)
+    Button_onClick : function(btn)
     {
         if (btn.closing)
         {
@@ -471,19 +469,17 @@ Ext4.define('Security.panel.PolicyEditor', {
         }
 
         var id = btn.groupId;
-        var policy = this.getPolicy();
-        // is this a user or a group
         var principal = this.cache.getPrincipal(id);
-        // can edit?
         var canEdit = !principal.Container && this.isSiteAdmin || principal.Container && this.isProjectAdmin;
-        var w = Ext4.create('Security.window.UserInfoPopup', {
+
+        Ext4.create('Security.window.UserInfoPopup', {
             userId : id,
             cache  : this.cache,
-            policy : policy,
+            policy : this.getPolicy(),
             modal  : true,
-            canEdit: canEdit
+            canEdit: canEdit,
+            autoShow: true
         });
-        w.show();
     },
 
     // expects combo to have roleId attribute
@@ -554,24 +550,16 @@ Ext4.define('Security.panel.PolicyEditor', {
     },
 
     _addButton : function(group, role, hideButton) {
-        if (typeof group != 'object')
-            group = this.cache.getPrincipal(group);
-        var groupName = group.Name;
-        var groupId = group.UserId;
-        var roleId = role;
-        var roleName = '';
-        if (typeof role == 'object')
-        {
-            roleId = role.uniqueName;
-            roleName = role.name;
-        }
-//        roleId = roleId.replace(/\./g, '_');
 
+        if (!Ext4.isObject(group))
+            group = this.cache.getPrincipal(group);
+
+        var ids = this.getGroupRole(group, role);
         var buttonArea = this.down('#roles');
-        buttonArea = buttonArea.child('panel[itemId="'+roleId.replace(/\./g, '_')+'"]');
+        buttonArea = buttonArea.child('panel[itemId="' + ids.roleId.replace(/\./g, '_') + '"]');
         buttonArea = buttonArea.down('#buttonArea');
-        var btnId = (roleId+'$'+groupId).replace(/\./g, "_");
-        var button = buttonArea.down('labkey-closebutton[itemId="'+btnId+'"]');
+        var btnId = (ids.roleId + '$' + ids.groupId).replace(/\./g, "_");
+        var button = buttonArea.down('button[itemId="'+btnId+'"]');
 
         //button already exists...
         if (button){
@@ -582,14 +570,16 @@ Ext4.define('Security.panel.PolicyEditor', {
         // really add the button
         var tooltip = (group.Type == 'u' ? 'User: ' : group.Container ? 'Group: ' : 'Site group: ') + group.Name;
         button = buttonArea.add({
-            xtype : 'labkey-closebutton',
+            xtype : 'button',
+            cls: 'dragbutton',
+            handleMouseEvents: false,
             iconCls   : 'closeicon',
             iconAlign : 'right',
             margin  : '2 5 5 0',
-            text    : groupName,
+            text    : group.Name,
             itemId  : btnId,
-            groupId : groupId,
-            roleId  : roleId,
+            groupId : ids.groupId,
+            roleId  : ids.roleId,
             tooltip : tooltip,
             hidden : hideButton || false,
             hideMode : hideButton ? 'visibility' : 'display',
@@ -606,26 +596,10 @@ Ext4.define('Security.panel.PolicyEditor', {
         return button;
     },
 
-    highlightGroup : function(groupId)
-    {
-        var btns = this.getButtonsForGroup(groupId);
-        for (var i ; i<btns.length ; i++)
-            btns[i].el.frame();
-    },
-
-    getButtonsForGroup : function(groupId)
-    {
-        var btns = [];
-        this.items.each(function(item){
-            if (item.buttonSelector && item.groupId == groupId) btns.push(item)
-        });
-        return btns;
-    },
-
     removeButton : function(groupId, roleId, animate)
     {
         var buttonArea = this.down('#roles');
-        buttonArea = buttonArea.child('panel[itemId="'+roleId.replace(/\./g, '_')+'"]');
+        buttonArea = buttonArea.child('panel[itemId="' + roleId.replace(/\./g, '_') + '"]');
         buttonArea = buttonArea.down('#buttonArea');
         var safeRoleId = roleId.replace(/\./g, "_");
         var button = buttonArea.getComponent(safeRoleId+ '$' + groupId);
@@ -638,13 +612,8 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     addRoleAssignment : function(group, role, animEl)
     {
-        var groupId = group;
-        if (typeof group == "object")
-            groupId = group.UserId;
-        var roleId = role;
-        if (typeof role == "object")
-            roleId = role.uniqueName;
-        this.policy.addRoleAssignment(groupId, roleId);
+        var ids = this.getGroupRole(group, role);
+        this.policy.addRoleAssignment(ids.groupId, ids.roleId);
 
         var b = this.addButton(group,role,true,animEl);
         if (b && b.getEl()) {
@@ -654,17 +623,24 @@ Ext4.define('Security.panel.PolicyEditor', {
 
     removeRoleAssignment : function(group, role)
     {
-        var groupId = group;
-        if (typeof group == "object")
-            groupId = group.UserId;
-        var roleId = role;
-        if (typeof role == "object")
-            roleId= role.uniqueName;
-        this.policy.removeRoleAssignment(groupId,roleId);
-        this.removeButton(groupId, roleId, true);
+        var ids = this.getGroupRole(group, role);
+        this.policy.removeRoleAssignment(ids.groupId, ids.roleId);
+        this.removeButton(ids.groupId, ids.roleId, true);
     },
 
+    getGroupRole : function(group, role) {
 
+        var groupId = group;
+        if (Ext4.isObject(group)) {
+            groupId = group.UserId;
+        }
+        var roleId = role;
+        if (Ext4.isObject(role)) {
+            roleId = role.uniqueName;
+        }
+
+        return { groupId: groupId, roleId: roleId };
+    },
 
     /*
      * SAVE
@@ -760,29 +736,5 @@ Ext4.define('Security.panel.PolicyEditor', {
 
         Ext4.MessageBox.alert("Error", (json.exception || response.statusText || 'save failed'));
         this.enable();
-    }
-});
-
-Ext4.define('Security.button.Close', {
-
-    extend : 'Ext.button.Button',
-
-    alias : 'widget.labkey-closebutton',
-
-    cls : 'dragbutton',
-
-    renderTpl: [
-        '<em id="{id}-btnWrap">',
-            '<div id="{id}-btnEl" type="{type}" class="{btnCls}" role="button">',
-                '<span id="{id}-btnInnerEl" class="{baseCls}-inner" style="{innerSpanStyle}">',
-                    '{text}',
-                '</span>',
-                '<span id="{id}-btnIconEl" style="position: absolute; background-repeat: no-repeat; top: 2px; right: 2px;" class="{baseCls}-icon {iconCls}"<tpl if="iconUrl"> style="background-image:url({iconUrl})"</tpl>></span>',
-            '</div>',
-        '</em>'
-    ],
-
-    getRenderTemplate : function() {
-        return this.renderTpl;
     }
 });
