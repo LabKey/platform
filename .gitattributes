@@ -4,6 +4,7 @@ announcements/resources/schemas/comm.xml -text
 announcements/resources/schemas/dbscripts/postgresql/comm-0.00-12.10.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-12.10-12.20.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-13.30-14.10.sql -text
+announcements/resources/schemas/dbscripts/postgresql/comm-14.10-14.20.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-14.11-14.12.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-14.12-14.13.sql -text
 announcements/resources/schemas/dbscripts/postgresql/comm-create.sql -text
@@ -53,6 +54,7 @@ announcements/resources/schemas/dbscripts/postgresql/obsolete/cpas-0.00-0.59.sql
 announcements/resources/schemas/dbscripts/sqlserver/comm-0.00-12.10.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-12.10-12.20.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-13.30-14.10.sql -text
+announcements/resources/schemas/dbscripts/sqlserver/comm-14.10-14.20.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-14.11-14.12.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-14.12-14.13.sql -text
 announcements/resources/schemas/dbscripts/sqlserver/comm-create.sql -text
@@ -987,6 +989,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-13.10-13.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-13.30-14.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-13.31-13.32.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-14.10-14.11.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-14.10-14.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/postgresql/obsolete/deleteOrphans.sql -text
@@ -1131,6 +1134,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-13.10-13.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-13.30-14.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-13.31-13.32.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-14.10-14.11.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-14.10-14.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/obsolete/deleteOrphans.sql -text
@@ -1461,6 +1465,7 @@ filecontent/module.properties -text
 filecontent/resources/credits/scripts.txt -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-0.00-12.10.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-14.10-14.11.sql -text
+filecontent/resources/schemas/dbscripts/postgresql/filecontent-14.10-14.20.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/filecontent-14.11-14.12.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/obsolete/filecontent-0.00-10.10.sql -text
 filecontent/resources/schemas/dbscripts/postgresql/obsolete/filecontent-11.30-11.31.sql -text
@@ -1469,6 +1474,7 @@ filecontent/resources/schemas/dbscripts/postgresql/obsolete/filecontent-9.30-10.
 filecontent/resources/schemas/dbscripts/postgresql/obsolete/filecontent-9.31-9.32.sql -text
 filecontent/resources/schemas/dbscripts/sqlserver/filecontent-0.00-12.10.sql -text
 filecontent/resources/schemas/dbscripts/sqlserver/filecontent-14.10-14.11.sql -text
+filecontent/resources/schemas/dbscripts/sqlserver/filecontent-14.10-14.20.sql -text
 filecontent/resources/schemas/dbscripts/sqlserver/filecontent-14.11-14.12.sql -text
 filecontent/resources/schemas/dbscripts/sqlserver/obsolete/filecontent-0.00-10.10.sql -text
 filecontent/resources/schemas/dbscripts/sqlserver/obsolete/filecontent-11.30-11.31.sql -text
@@ -1541,6 +1547,7 @@ issues/module.properties -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-12.30-13.10.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-14.10-14.11.sql -text
+issues/resources/schemas/dbscripts/postgresql/issues-14.10-14.20.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-14.11-14.12.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-0.60.sql -text
 issues/resources/schemas/dbscripts/postgresql/obsolete/issues-0.00-1.00.sql -text
@@ -1571,6 +1578,7 @@ issues/resources/schemas/dbscripts/postgresql/obsolete/issues-9.30-9.31.sql -tex
 issues/resources/schemas/dbscripts/sqlserver/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-12.30-13.10.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-14.10-14.11.sql -text
+issues/resources/schemas/dbscripts/sqlserver/issues-14.10-14.20.sql -text
 issues/resources/schemas/dbscripts/sqlserver/issues-14.11-14.12.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 issues/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.70.sql -text
@@ -1882,6 +1890,7 @@ pipeline/resources/schemas/dbscripts/postgresql/obsolete/pipeline-9.30-10.10.sql
 pipeline/resources/schemas/dbscripts/postgresql/obsolete/pipeline-9.30-9.31.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-0.00-10.30.sql -text
 pipeline/resources/schemas/dbscripts/postgresql/pipeline-14.10-14.11.sql -text
+pipeline/resources/schemas/dbscripts/postgresql/pipeline-14.10-14.20.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.58.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.00-0.64.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/cpas-0.63-0.64.sql -text
@@ -1929,6 +1938,7 @@ pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-9.30-10.10.sql 
 pipeline/resources/schemas/dbscripts/sqlserver/obsolete/pipeline-9.30-9.31.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-0.00-10.30.sql -text
 pipeline/resources/schemas/dbscripts/sqlserver/pipeline-14.10-14.11.sql -text
+pipeline/resources/schemas/dbscripts/sqlserver/pipeline-14.10-14.20.sql -text
 pipeline/schemas/pipelineTasks.xsd -text
 pipeline/src/org/labkey/pipeline/AbstractPipelineStartup.java -text
 pipeline/src/org/labkey/pipeline/PipelineCommandTestCase.java -text
@@ -3099,6 +3109,7 @@ study/resources/schemas/dbscripts/postgresql/study-13.40-13.41.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.41-13.42.sql -text
 study/resources/schemas/dbscripts/postgresql/study-13.42-13.43.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.10-14.11.sql -text
+study/resources/schemas/dbscripts/postgresql/study-14.10-14.20.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.11-14.12.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.12-14.13.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.13-14.14.sql -text
@@ -3333,6 +3344,7 @@ study/resources/schemas/dbscripts/sqlserver/study-13.40-13.41.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.41-13.42.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-13.42-13.43.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.10-14.11.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-14.10-14.20.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.11-14.12.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.12-14.13.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.13-14.14.sql -text
