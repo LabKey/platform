@@ -609,6 +609,22 @@ public class ReportsController extends SpringActionController
                     if (rexe.isDirectory())
                         errors.rejectValue("exePath", ERROR_MSG, "Please specify the entire path to the program, not just the directory (e.g., 'c:/Program Files/R/R-2.7.1/bin/R.exe)");
                 }
+                else
+                {
+                    // see if we had any bind errors (currently only filled in from the remote path mapper)
+                    if (def.getPathMap() != null )
+                    {
+                        ValidationException validationException = def.getPathMap().getValidationErrors();
+                        if (validationException != null && validationException.hasErrors())
+                        {
+                            List<ValidationError> validationErrors = validationException.getErrors();
+                            for (ValidationError v : validationErrors)
+                            {
+                                errors.rejectValue("pathMap", ERROR_MSG, v.getMessage());
+                            }
+                        }
+                    }
+                }
             }
         }
 

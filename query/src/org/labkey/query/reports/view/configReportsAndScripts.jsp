@@ -626,12 +626,36 @@
             url: LABKEY.ActionURL.buildURL("reports", "scriptEnginesSave"),
             method: 'POST',
             jsonData: values,
-            success: function(){
-                win.close();
-                grid.store.load();
+            success: function(resp, opt){
+                var o = Ext.decode(resp.responseText);
+                if (o.success)
+                {
+                    win.close();
+                    grid.store.load();
+                }
+                else
+                    handleAjaxError(o.errors, win);
             },
             failure: function(form, action){handleError(win, action);}
         })
+    }
+
+    function handleAjaxError(errors, win)
+    {
+        if (errors)
+        {
+            var errorText = "<font color='red'>";
+            for (var p in errors)
+            {
+                if (errors.hasOwnProperty(p))
+                {
+                    errorText += errors[p] + '\n';
+                }
+            }
+
+            errorText += "</font>";
+            win.getBottomToolbar().get(0).setText(errorText);
+        }
     }
 
     function handleError(win, action)
