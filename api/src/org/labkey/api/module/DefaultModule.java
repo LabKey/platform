@@ -188,7 +188,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         preloadReports();
     }
 
-    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<Resource>(new Comparator<Resource>(){
+    Set<Resource> _reportFiles = Collections.synchronizedSet(new TreeSet<>(new Comparator<Resource>(){
         @Override
         public int compare(Resource o, Resource o1)
         {
