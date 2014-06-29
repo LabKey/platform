@@ -111,9 +111,8 @@ public class RuntimeSQLException extends RuntimeException implements Serializabl
     public static boolean isConstraintException(SQLException x)
     {
         String sqlState = x.getSQLState();
-        if (null == sqlState || !sqlState.startsWith("23"))
-            return false;
-        return sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503");
+        return null != sqlState && (sqlState.equals("23000") || sqlState.equals("23505") || sqlState.equals("23503") ||
+         /* TODO: Remove this... OptimisticConflictException gets created with SQLState 25000, which seems wrong (should be 23000?) */ sqlState.equals("25000"));
     }
 
     public boolean isNullValueException() { return isNullValueException(getSQLException()); }

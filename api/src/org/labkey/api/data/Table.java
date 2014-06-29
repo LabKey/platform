@@ -523,10 +523,8 @@ public class Table
         if (sql == null)
         {
             _log.error("SQL Exception, no SQL query text available", e);
-            return;
         }
-
-        if (null != sql)
+        else
         {
             String trim = sql.getSQL().trim();
 
@@ -538,12 +536,14 @@ public class Table
                     _logQuery(Level.WARN, sql, conn);
                 }
             }
-        }
-
-        if (Level.ERROR.isGreaterOrEqual(logLevel))
-        {
-            _log.error("SQL Exception", e);
-            _logQuery(Level.ERROR, sql, conn);
+            else
+            {
+                if (Level.ERROR.isGreaterOrEqual(logLevel))
+                {
+                    _log.error("SQL Exception", e);
+                    _logQuery(Level.ERROR, sql, conn);
+                }
+            }
         }
     }
 
