@@ -21,6 +21,8 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.query.PropertyValidationError;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.FileUtil;
 
 import java.io.File;
@@ -52,9 +54,15 @@ public class PathMapperImpl implements PathMapper
     private Map<String, String> _pathMap = new LinkedHashMap<>();
     private boolean _remoteIgnoreCase;
     private boolean _localIgnoreCase;
+    private ValidationException _validationErrors;
 
     public PathMapperImpl()
     {
+    }
+
+    public PathMapperImpl(ValidationException ve)
+    {
+        _validationErrors = ve;
     }
 
     public PathMapperImpl(Map<String, String> pathMap)
@@ -97,6 +105,11 @@ public class PathMapperImpl implements PathMapper
     public void setLocalIgnoreCase(boolean localIgnoreCase)
     {
         _localIgnoreCase = localIgnoreCase;
+    }
+
+    public ValidationException getValidationErrors()
+    {
+        return _validationErrors;
     }
 
     /**
@@ -227,7 +240,23 @@ public class PathMapperImpl implements PathMapper
 
     public static PathMapperImpl fromJSON(JSONObject json)
     {
+        return fromJSON(json, false);
+    }
+
+    // Do not throw if we are binding properties of a form so that we can return
+    // validation errors to the client
+    private static void handleError(String prop, String message, ValidationException errors)
+    {
+        if (null == errors)
+            throw new RuntimeException(message);
+
+        errors.addError(new PropertyValidationError(message, prop));
+    }
+
+    public static PathMapperImpl fromJSON(JSONObject json, boolean trackValidationErrors)
+    {
         JSONArray jsonPaths = (JSONArray)json.get("paths");
+        ValidationException errors = trackValidationErrors ? new ValidationException() : null;
 
         Map<String, String> map = new LinkedHashMap<>();
         for (Map<String, Object> pairs : jsonPaths.toMapList())
@@ -237,16 +266,26 @@ public class PathMapperImpl implements PathMapper
 
             // CONSIDER: CustomApiForm.bindProperties() should accept an Errors object or allow throwing BindException
             if (localURI == null)
-                throw new RuntimeException("Local URI must not be empty");
+            {
+                handleError("localURI", "Local URI must not be empty", errors);
+                return new PathMapperImpl(errors);
+            }
 
             if (remoteURI == null)
-                throw new RuntimeException("Remote URI must not be empty");
+            {
+                handleError("remoteURI", "Remote URI must not be empty", errors);
+                return new PathMapperImpl(errors);
+            }
 
             // Convert path to URI and validate paths are absolute
             // for local files, resolve. -  which strips .. and . from the path so that
             // we can compare apples to apples (c:/bar/./foo versus c:/bar/foo)
-            localURI = toURI(localURI, true);
-            remoteURI = toURI(remoteURI);
+            localURI = toURI(localURI, true, errors);
+            if (localURI == null)
+                return new PathMapperImpl(errors);
+            remoteURI = toURI(remoteURI, false, errors);
+            if (remoteURI == null)
+                return new PathMapperImpl(errors);
 
             if (!localURI.endsWith("/"))
                 localURI = localURI.concat("/");
@@ -265,15 +304,23 @@ public class PathMapperImpl implements PathMapper
 
     private static String toURI(String path)
     {
-        return toURI(path, false);
+        return toURI(path, false, null);
     }
     private static String toURI(String path, boolean resolve)
+    {
+        return toURI(path, resolve, null);
+    }
+
+    private static String toURI(String path, boolean resolve, ValidationException errors)
     {
         if (!path.startsWith("file:"))
         {
             File f = new File(path);
             if (!f.isAbsolute())
-                throw new RuntimeException("File URI '" + path + "' must be an absolute path");
+            {
+                handleError(path, "File URI '" + path + "' must be an absolute path", errors);
+                return null;
+            }
 
             if (resolve)
                 f = FileUtil.getAbsoluteCaseSensitiveFile(f);
@@ -286,7 +333,11 @@ public class PathMapperImpl implements PathMapper
         {
             uri = new URI(path);
             if (!uri.isAbsolute())
-                throw new RuntimeException("File URI '" + path + "' must be an absolute path");
+            {
+                handleError(path, "File URI '" + path + "' must be an absolute path", errors);
+                return null;
+
+            }
 
             if (resolve)
                 uri = FileUtil.getAbsoluteCaseSensitiveFile(new File(uri)).toURI();
@@ -295,7 +346,8 @@ public class PathMapperImpl implements PathMapper
         }
         catch (URISyntaxException e)
         {
-            throw new RuntimeException("File URI '" + path + "' syntax error: " + e.getMessage());
+            handleError(path, "File URI '" + path + "' syntax error: " + e.getMessage(), errors);
+            return null;
         }
     }
 

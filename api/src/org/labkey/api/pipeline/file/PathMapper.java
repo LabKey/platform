@@ -15,6 +15,8 @@
  */
 package org.labkey.api.pipeline.file;
 
+import org.labkey.api.query.ValidationException;
+
 import java.util.Map;
 
 /**
@@ -29,4 +31,6 @@ public interface PathMapper
     String remoteToLocal(String remoteURI);
 
     String localToRemote(String localURI);
+
+    ValidationException getValidationErrors();
 }

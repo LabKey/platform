@@ -595,7 +595,7 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
             // Handle pathMap
             JSONObject jsonPathMap = (JSONObject)props.get("pathMap");
             if (jsonPathMap != null)
-                _pathMap = PathMapperImpl.fromJSON(jsonPathMap);
+                _pathMap = PathMapperImpl.fromJSON(jsonPathMap, true /*trackValidationErrors*/);
         }
 
     }
