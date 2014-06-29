@@ -286,11 +286,14 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    private ActionURL getConsolidateScriptsURL(double fromVersion, double toVersion)
+    private ActionURL getConsolidateScriptsURL(double fromVersion, double toVersion, boolean includeSingleScripts)
     {
         ActionURL url = new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot());
         url.addParameter("fromVersion", Double.toString(fromVersion));
         url.addParameter("toVersion", Double.toString(toVersion));
+
+        if (includeSingleScripts)
+            url.addParameter("includeSingleScripts", true);
 
         return url;
     }
@@ -376,7 +379,7 @@ public class SqlScriptController extends SpringActionController
 
                 html.append("<br>\n");
 
-                ActionURL consolidateURL = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), fromVersion, toVersion);
+                ActionURL consolidateURL = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), fromVersion, toVersion, includeSingleScripts);
                 html.append("<a class='labkey-button' href=\"").append(consolidateURL.getEncodedLocalURIString()).append("\"><span>").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" to ").append(filename).append("</span></a><br><br>\n"); //RE_CHECK
             }
 
@@ -434,16 +437,18 @@ public class SqlScriptController extends SpringActionController
             {
                 SqlScript firstScript = consolidator.getScripts().get(0);
                 File scriptDir = ((FileSqlScriptProvider)firstScript.getProvider()).getScriptDirectory(firstScript.getSchema().getSqlDialect());
+                File moduleDir = scriptDir.getParentFile().getParentFile().getParentFile().getParentFile();
 
-                // TODO: Detect and skip git modules
+                if (!new File(moduleDir, ".git").isDirectory())
+                {
+                    String firstFilename = firstScript.getDescription();
 
-                String firstFilename = firstScript.getDescription();
+                    String consolidatedFilename = consolidator.getFilename();
 
-                String consolidatedFilename = consolidator.getFilename();
-
-                out.write("cd " + scriptDir + "\n");
-                out.write("svn copy " + firstFilename + " " + consolidatedFilename + "\n");
-                out.write("del " + consolidatedFilename + "\n\n");
+                    out.write("cd " + scriptDir + "\n");
+                    out.write("svn copy " + firstFilename + " " + consolidatedFilename + "\n");
+                    out.write("del " + consolidatedFilename + "\n\n");
+                }
             }
         }
     }
@@ -609,13 +614,17 @@ public class SqlScriptController extends SpringActionController
     }
 
 
-    private ActionURL getConsolidateSchemaURL(String moduleName, String schemaName, double fromVersion, double toVersion)
+    private ActionURL getConsolidateSchemaURL(String moduleName, String schemaName, double fromVersion, double toVersion, boolean includeSingleScripts)
     {
         ActionURL url = new ActionURL(ConsolidateSchemaAction.class, ContainerManager.getRoot());
         url.addParameter("module", moduleName);
         url.addParameter("schema", schemaName);
         url.addParameter("fromVersion", ModuleContext.formatVersion(fromVersion));
         url.addParameter("toVersion", ModuleContext.formatVersion(toVersion));
+
+        if (includeSingleScripts)
+            url.addParameter("includeSingleScripts", true);
+
         return url;
     }
 
@@ -656,7 +665,7 @@ public class SqlScriptController extends SpringActionController
 
         public ActionURL getSuccessURL(ConsolidateForm form)
         {
-            return getConsolidateScriptsURL(form.getFromVersion(), form.getToVersion());
+            return getConsolidateScriptsURL(form.getFromVersion(), form.getToVersion(), form.getIncludeSingleScripts());
         }
 
         public NavTree appendNavTrail(NavTree root)

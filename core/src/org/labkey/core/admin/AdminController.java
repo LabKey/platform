@@ -5415,19 +5415,27 @@ public class AdminController extends SpringActionController
             Collection<ModuleContext> knownModules = ml.getAllModuleContexts();
             knownModules.removeAll(unknownModules);
 
+            Set<Double> ignoreSet = form.getIgnoreSet();
             String link = "";
 
             // Option to filter out all modules whose version matches the core version or 0.00, which can be helpful during
             // the end-of-release consolidation process. Show the link only in dev mode.
             if (AppProps.getInstance().isDevMode())
             {
-                String coreVersion = ModuleLoader.getInstance().getCoreModule().getFormattedVersion();
-                ActionURL url = new ActionURL(AdminController.ModulesAction.class, ContainerManager.getRoot());
-                url.addParameter("ignore", "0.00," + coreVersion);
-                link = PageFlowUtil.textLink("Click here to ignore 0.00 and " + coreVersion, url);
+                if (ignoreSet.isEmpty())
+                {
+                    String coreVersion = ModuleLoader.getInstance().getCoreModule().getFormattedVersion();
+                    ActionURL url = new ActionURL(AdminController.ModulesAction.class, ContainerManager.getRoot());
+                    url.addParameter("ignore", "0.00," + coreVersion);
+                    link = PageFlowUtil.textLink("Click here to ignore 0.00 and " + coreVersion, url);
+                }
+                else
+                {
+                    link = "(Currently ignoring " + ignoreSet.toString() + ")";
+                }
             }
 
-            HttpView known = new ModulesView(knownModules, "Known", PageFlowUtil.filter("Each of these modules is installed and has a valid module file. ") + link, null, form.getIgnoreSet());
+            HttpView known = new ModulesView(knownModules, "Known", PageFlowUtil.filter("Each of these modules is installed and has a valid module file. ") + link, null, ignoreSet);
             HttpView unknown = new ModulesView(unknownModules, "Unknown",
                 PageFlowUtil.filter((1 == unknownModules.size() ? "This module" : "Each of these modules") + " has been installed on this server " +
                 "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
