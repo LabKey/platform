@@ -68,7 +68,7 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
 
     public ReportAndDatasetChangeDigestEmailTemplate()
     {
-        super("Report change digest", DEFAULT_SUBJECT, loadBody(), "Daily digest of report and dataset changes", ContentType.HTML);
+        super("Report/dataset change (digest)", DEFAULT_SUBJECT, loadBody(), "Daily digest of report and dataset changes", ContentType.HTML);
 
         _replacements.add(new ReplacementParam<String>("folderUrl", String.class, "URL to folder")
         {
