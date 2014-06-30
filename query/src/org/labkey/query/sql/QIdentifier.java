@@ -86,7 +86,7 @@ public class QIdentifier extends QFieldKey
         if (str.length() < 2)
             throw new IllegalArgumentException();
         if (!str.startsWith("\"") || !str.endsWith("\""))
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Expected " + str + " to be surrounded by double quotes");
         str = str.substring(1, str.length() - 1);
         str = StringUtils.replace(str, "\"\"", "\"");
         return str;
