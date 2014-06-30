@@ -50,6 +50,12 @@ public class SchemaTableInfoCache
         _blockingCache.remove(key);
     }
 
+    void remove(@NotNull String schemaName, @NotNull String tableName, @NotNull DbSchemaType type)
+    {
+        String key = getCacheKey(schemaName, tableName, type);
+        _blockingCache.remove(key);
+    }
+
     void removeAllTables(@NotNull String schemaName, DbSchemaType type)
     {
         final String prefix = type.getCacheKey(schemaName);
@@ -63,6 +69,10 @@ public class SchemaTableInfoCache
         return schema.getType().getCacheKey(schema.getName()) + "|" + tableName.toLowerCase();
     }
 
+    private String getCacheKey(@NotNull String schemaName, @NotNull String tableName, @NotNull DbSchemaType type)
+    {
+        return type.getCacheKey(schemaName) + "|" + tableName.toLowerCase();
+    }
 
     private static class SchemaTableLoader implements CacheLoader<String, SchemaTableInfo>
     {

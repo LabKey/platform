@@ -159,13 +159,13 @@ abstract public class DomainKind implements Handler<String>
         String schemaName = getStorageSchemaName();
         if (null == schemaName)
             return;
-        DbSchema schema = getScope().getSchema(schemaName, getSchemaType());
+
         String storageTableName = domain.getStorageTableName();
 
         if (null != storageTableName)
-            schema.getScope().invalidateTable(schema, storageTableName);
+            getScope().invalidateTable(schemaName, storageTableName, getSchemaType());
         else
-            schema.getScope().invalidateSchema(schemaName, schema.getType());
+            getScope().invalidateSchema(schemaName, getSchemaType());
     }
 
     /**

@@ -624,7 +624,9 @@ public class DbScope
         LOG.info("Loading DbSchema \"" + getDisplayName() + "." + schemaName + "\" (" + type.name() + ")");
 
         DbSchema schema = DbSchema.createFromMetaData(this, schemaName, type);
-
+        // Consider:  Logging the cases where loadSchema is called in a transaction, because this causes a JDBC call that is vulnerable to deadlocking
+        // if (schema.getScope().isTransactionActive())
+        //        LOG.info("Loading IN TRAN");
         if (type.applyXmlMetaData())
             applyMetaDataXML(schema, schemaName);
 
@@ -753,6 +755,8 @@ public class DbScope
     }
 
     // Invalidates a single table in this schema
+    // to avoid calls to getSchema in transactions, use the string-based invalidateTable method below
+    @Deprecated
     public void invalidateTable(DbSchema schema, @NotNull String table)
     {
         _tableCache.remove(schema, table);
@@ -762,6 +766,13 @@ public class DbScope
         // meta data XML. If this is too heavyweight, we could instead cache and invalidate the list of table names separate
         // from the DbSchema.
         _schemaCache.remove(schema.getName(), schema.getType());
+    }
+
+    public void invalidateTable(String schemaName, String tableName, DbSchemaType type)
+    {
+        _tableCache.remove(schemaName, tableName, type);
+
+        _schemaCache.remove(schemaName, type);
     }
 
 
