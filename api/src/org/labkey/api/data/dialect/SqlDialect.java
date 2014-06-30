@@ -239,6 +239,7 @@ public abstract class SqlDialect
         _sqlTypeIntMap.put(Types.ARRAY, "ARRAY");
         _sqlTypeIntMap.put(Types.BIGINT, "BIGINT");
         _sqlTypeIntMap.put(Types.BLOB, "BLOB");
+        _sqlTypeIntMap.put(Types.CHAR, "CHAR");
         _sqlTypeIntMap.put(Types.CLOB, "CLOB");
         _sqlTypeIntMap.put(Types.DATALINK, "DATALINK");
         _sqlTypeIntMap.put(Types.DATE, "DATE");
@@ -254,8 +255,10 @@ public abstract class SqlDialect
         _sqlTypeIntMap.put(Types.SMALLINT, "SMALLINT");
         _sqlTypeIntMap.put(Types.STRUCT, "STRUCT");
         _sqlTypeIntMap.put(Types.TIME, "TIME");
+        _sqlTypeIntMap.put(Types.TIMESTAMP, "TIMESTAMP");
         _sqlTypeIntMap.put(Types.TINYINT, "TINYINT");
         _sqlTypeIntMap.put(Types.VARBINARY, "VARBINARY");
+        _sqlTypeIntMap.put(Types.VARCHAR, "VARCHAR");
 
         addSqlTypeInts(_sqlTypeIntMap);
     }
