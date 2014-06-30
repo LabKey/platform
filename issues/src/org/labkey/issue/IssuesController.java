@@ -1260,23 +1260,35 @@ public class IssuesController extends SpringActionController
 
     private void validateNotifyList(IssuesForm form, Errors errors)
     {
-        String[] rawEmails = StringUtils.split(StringUtils.trimToEmpty(form.getNotifyList()), ";\n");
-        List<String> invalidEmails = new ArrayList<>();
-        SecurityManager.normalizeEmails(rawEmails, invalidEmails);
-
-        for (String rawEmail : invalidEmails)
+        User user;
+        for (String username : StringUtils.split(StringUtils.trimToEmpty(form.getNotifyList()), ";\n"))
         {
-            rawEmail = rawEmail.trim();
+            // NOTE: this "username" should be a user id but may be a psuedo-username (an assumed user which has default domain appended)
+            //       or in the other special case this is an e-mail address
+            username = username.trim();
 
             // Ignore lines of all whitespace, otherwise show an error.
-            if (!"".equals(rawEmail))
+            if (!"".equals(username))
             {
-                // try to resolve by display names as well
-                User user = UserManager.getUserByDisplayName(rawEmail);
-                if (user == null)
+                user = UserManager.getUserByDisplayName(username);
+                if (user != null)
+                    continue;
+                // Trying to generate user object from the "name" will not be enough if the username is for the default domain
+                // TODO: most of this logic can be reduced when we change the Schema and fix the typing of these fields. (making announcments and issues consistent)
+                try {
+                    user = UserManager.getUser( new ValidEmail(username) );
+                }
+                catch (ValidEmail.InvalidEmailException e)
                 {
-                    String message = "Failed to add user " + rawEmail + ": Invalid email address";
-                    errors.rejectValue("notifyList","Error",new Object[] {message}, message);
+                    // do nothing?
+                }
+                finally
+                {
+                    if (user == null)
+                    {
+                        String message = "Failed to add user " + username + ": Invalid user display name";
+                        errors.rejectValue("notifyList", ERROR_MSG, message);
+                    }
                 }
             }
         }

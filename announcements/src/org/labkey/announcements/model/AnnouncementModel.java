@@ -337,13 +337,9 @@ public class AnnouncementModel extends AttachmentParentEntity implements Seriali
         if (_memberListDisplay == null)
         {
             _memberListDisplay = new ArrayList<>();
-            boolean seeEmailAddresses = SecurityManager.canSeeEmailAddresses(c, currentUser);
             for (Integer userId : getMemberListIds())
             {
-                if (seeEmailAddresses)
-                    _memberListDisplay.add(UserManager.getUser(userId).getEmail());
-                else
-                    _memberListDisplay.add(UserManager.getUser(userId).getDisplayName(currentUser));
+                _memberListDisplay.add(UserManager.getUser(userId).getDisplayName(currentUser));
             }
         }
         return _memberListDisplay;
