@@ -17,6 +17,7 @@
 package org.labkey.study;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
@@ -32,6 +33,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.study.ParticipantVisit;
+import org.labkey.api.study.SpecimenChangeListener;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.SpecimenTransform;
@@ -67,6 +69,7 @@ public class SpecimenServiceImpl implements SpecimenService.Service
 {
     private final List<SpecimenImportStrategyFactory> _importStrategyFactories = new CopyOnWriteArrayList<>();
     private final Map<String, SpecimenTransform> _specimenTransformMap = new ConcurrentHashMap<>();
+    private final List<SpecimenChangeListener> _changeListeners = new CopyOnWriteArrayList<>();
 
     private class StudyParticipantVisit implements ParticipantVisit
     {
@@ -323,5 +326,17 @@ public class SpecimenServiceImpl implements SpecimenService.Service
         job.setExternalImportConfig(transform.getExternalImportConfig(container, user));
 
         return job;
+    }
+
+    @Override
+    public void registerSpecimenChangeListener(SpecimenChangeListener listener)
+    {
+        _changeListeners.add(listener);
+    }
+
+    public void fireSpecimensChanged(Container c, User user, Logger logger)
+    {
+        for (SpecimenChangeListener l : _changeListeners)
+            l.specimensChanged(c, user, logger);
     }
 }

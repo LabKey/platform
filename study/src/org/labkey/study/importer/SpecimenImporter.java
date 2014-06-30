@@ -58,6 +58,7 @@ import org.labkey.api.util.TestContext;
 import org.labkey.api.util.TimeOnlyDate;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.SpecimenManager;
+import org.labkey.study.SpecimenServiceImpl;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.LocationImpl;
@@ -110,7 +111,7 @@ public class SpecimenImporter
         CalculateLocation, GetLastEvent, DetermineUpdateVial, SetUpdateParameters, HandleComments, UpdateVials, UpdateComments,
         UpdateSpecimenProcessingInfo, UpdateRequestability, UpdateVialCounts, ResyncStudy, SetLastSpecimenLoad, DropTempTable,
         UpdateAllStatistics, CommitTransaction, ClearCaches, PopulateMaterials, PopulateSpecimens, PopulateVials, PopulateSpecimenEvents,
-        PopulateTempTable, PopulateLabs, SpecimenTypes, DeleteOldData, PrepareQcComments}
+        PopulateTempTable, PopulateLabs, SpecimenTypes, DeleteOldData, PrepareQcComments, NotifyChanged}
 
     private static MultiPhaseCPUTimer<ImportPhases> TIMER = new MultiPhaseCPUTimer<>(ImportPhases.class, ImportPhases.values());
 
@@ -1199,6 +1200,10 @@ public class SpecimenImporter
 
             _iTimer.setPhase(ImportPhases.UpdateAllStatistics);
             updateAllStatistics();
+
+            // notify listeners that specimens have changed in this container
+            _iTimer.setPhase(ImportPhases.NotifyChanged);
+            ((SpecimenServiceImpl) SpecimenService.get()).fireSpecimensChanged(_container, _user, _logger);
 
             _iTimer.setPhase(ImportPhases.CommitTransaction);
             transaction.commit();
