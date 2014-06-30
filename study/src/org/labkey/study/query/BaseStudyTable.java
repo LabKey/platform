@@ -34,6 +34,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DomainProperty;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
@@ -566,6 +567,10 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
                 sql.append("' '");
             sql.append(")");
             setValueSQL(sql);
+
+            // Address issue #20328. Seems like this should be set automatically, since we're essentially wrapping a column that
+            // we know shouldn't be faceted (based on inputType, e.g.), but that information isn't getting propagated.
+            setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
         }
 
         private void appendCommentCaseSQL(StringBuilder sb, String... fields)
