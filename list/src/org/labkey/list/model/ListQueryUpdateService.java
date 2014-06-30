@@ -269,6 +269,14 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return count;
     }
 
+    @Override
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    {
+        List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, extraScriptContext);
+        if (result.size() > 0)
+            ListManager.get().indexList(_list);
+        return result;
+    }
 
     @Override
     protected Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow) throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException
