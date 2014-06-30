@@ -73,8 +73,8 @@ import org.labkey.api.data.ContainerManager.ContainerParent;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.data.TableXmlUtils;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.files.FileContentService;
@@ -6493,20 +6493,34 @@ public class AdminController extends SpringActionController
     // API for reporting client-side exceptions.
     // UNDONE: Throttle by IP to avoid DOS from buggy clients.
     @RequiresNoPermission
-    public class LogMothershipErrorAction extends SimpleViewAction<ExceptionForm>
+    public class LogClientExceptionAction extends SimpleViewAction<ExceptionForm>
     {
         @Override
         public ModelAndView getView(ExceptionForm exceptionForm, BindException errors) throws Exception
         {
-            ExceptionUtil.logClientExceptionToMothership(
-                    exceptionForm.getStackTrace(),
-                    exceptionForm.getExceptionMessage(),
-                    exceptionForm.getBrowser(),
-                    null,
-                    exceptionForm.getRequestURL(),
-                    exceptionForm.getReferrerURL(),
-                    exceptionForm.getUsername()
-            );
+            if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP))
+            {
+                ExceptionUtil.logClientExceptionToMothership(
+                        exceptionForm.getStackTrace(),
+                        exceptionForm.getExceptionMessage(),
+                        exceptionForm.getBrowser(),
+                        null,
+                        exceptionForm.getRequestURL(),
+                        exceptionForm.getReferrerURL(),
+                        exceptionForm.getUsername()
+                );
+            }
+            else if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER))
+            {
+                LOG.error("Client exception detected:\n" +
+                        exceptionForm.getRequestURL() + "\n" +
+                        exceptionForm.getReferrerURL() + "\n" +
+                        exceptionForm.getBrowser() + "\n" +
+                        exceptionForm.getUsername() + "\n" +
+                        exceptionForm.getStackTrace()
+                );
+            }
+
             return null;
         }
 

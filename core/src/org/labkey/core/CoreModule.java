@@ -95,27 +95,7 @@ import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.thumbnail.ThumbnailService;
-import org.labkey.api.util.Compress;
-import org.labkey.api.util.ContextListener;
-import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.ExtUtil;
-import org.labkey.api.util.FileType;
-import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.HString;
-import org.labkey.api.util.HelpTopic;
-import org.labkey.api.util.MemTracker;
-import org.labkey.api.util.MimeMap;
-import org.labkey.api.util.NumberUtilsLabKey;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.util.Path;
-import org.labkey.api.util.ResultSetUtil;
-import org.labkey.api.util.ShutdownListener;
-import org.labkey.api.util.StringExpressionFactory;
-import org.labkey.api.util.StringUtilsLabKey;
-import org.labkey.api.util.SystemMaintenance;
-import org.labkey.api.util.TidyUtil;
-import org.labkey.api.util.UsageReportingLevel;
+import org.labkey.api.util.*;
 import org.labkey.api.util.emailTemplate.EmailTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
@@ -689,8 +669,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 "Use container relative URLs of the form /labkey/container/controller-action instead of the current /labkey/controller/container/action URLs.",
                 false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP,
-                "Client-side Exception Logging",
+                "Client-side Exception Logging To Mothership",
                 "Report unhandled JavaScript exceptions to mothership.",
+                false);
+        AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER,
+                "Client-side Exception Logging To Server",
+                "Report unhandled JavaScript exceptions to the server log.",
                 false);
         AdminConsole.addExperimentalFeatureFlag(AppProps.EXPERIMENTAL_RSERVE_REPORTING,
                 "Rserve Reports",
