@@ -22,7 +22,6 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
-import org.labkey.api.util.FileType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 
@@ -89,6 +88,8 @@ public class SpecimenService
         SpecimenTransform getSpecimenTransform(String name);
 
         PipelineJob createSpecimenReloadJob(Container container, User user, SpecimenTransform transform, @Nullable ActionURL url) throws SQLException, IOException, ValidationException;
+
+        void registerSpecimenChangeListener(SpecimenChangeListener listener);
     }
 
     public static void register(Service serviceImpl)

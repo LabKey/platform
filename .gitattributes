@@ -1317,6 +1317,7 @@ api/src/org/labkey/api/study/Product.java -text
 api/src/org/labkey/api/study/ProductAntigen.java -text
 api/src/org/labkey/api/study/PropertySet.java -text
 api/src/org/labkey/api/study/SamplesUrls.java -text
+api/src/org/labkey/api/study/SpecimenChangeListener.java -text
 api/src/org/labkey/api/study/SpecimenImportStrategy.java -text
 api/src/org/labkey/api/study/SpecimenImportStrategyFactory.java -text
 api/src/org/labkey/api/study/SpecimenService.java -text
