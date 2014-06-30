@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.apache.log4j.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
@@ -27,6 +28,7 @@ import org.labkey.api.data.BaseSelector.StatementHandler;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
+import org.springframework.dao.DataIntegrityViolationException;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -78,6 +80,8 @@ public class DbSequenceManager
     }
 
 
+    // TODO: @NotNull Integer seems silly... just make the parameter an int
+
     public static DbSequence get(Container c, String name, @NotNull Integer id)
     {
         return new DbSequence(c, ensure(c, name, id));
@@ -89,7 +93,7 @@ public class DbSequenceManager
         Integer rowId = getRowId(c, name, id);
 
         if (null != rowId)
-            return rowId.intValue();
+            return rowId;
         else
             return create(c, name, id);
     }
@@ -125,7 +129,21 @@ public class DbSequenceManager
 
         tinfo.getSqlDialect().appendSelectAutoIncrement(insertSql, "RowId");
 
-        return executeAndReturnInteger(tinfo, insertSql);
+        try
+        {
+            // Don't bother logging constraint violations
+            return executeAndReturnInteger(tinfo, insertSql, Level.ERROR);
+        }
+        catch (DataIntegrityViolationException e)
+        {
+            // Race condition... another thread already created the DbSequence, so just return the existing RowId.
+            Integer rowId = getRowId(c, name, id);
+
+            if (null == rowId)
+                throw new IllegalStateException("Can't create DbSequence");
+            else
+                return rowId;
+        }
     }
 
 
@@ -207,7 +225,7 @@ public class DbSequenceManager
         // Add locking appropriate to this dialect
         addLocks(tinfo, sql);
 
-        return multiline ? executeMultipleStatementsAndReturnInteger(tinfo, sql) : executeAndReturnInteger(tinfo, sql);
+        return multiline ? executeMultipleStatementsAndReturnInteger(tinfo, sql) : executeAndReturnInteger(tinfo, sql, Level.WARN);
     }
 
 
@@ -300,13 +318,15 @@ public class DbSequenceManager
 
 
     // Executes in a separate connection that does NOT participate in the current transaction
-    private static int executeAndReturnInteger(TableInfo tinfo, SQLFragment sql)
+    private static int executeAndReturnInteger(TableInfo tinfo, SQLFragment sql, Level level)
     {
         DbScope scope = tinfo.getSchema().getScope();
 
         try (Connection conn = scope.getPooledConnection())
         {
-            return new SqlExecutor(scope, conn).executeWithResults(sql, INTEGER_RETURNING_RESULTSET_HANDLER);
+            SqlExecutor executor = new SqlExecutor(scope, conn);
+            executor.setLogLevel(level);
+            return executor.executeWithResults(sql, INTEGER_RETURNING_RESULTSET_HANDLER);
         }
         catch (SQLException e)
         {
@@ -386,7 +406,7 @@ public class DbSequenceManager
         }
 
         @Test
-        public void multiThreadStressTest() throws InterruptedException
+        public void multiThreadIncrementStressTest() throws InterruptedException
         {
             final int threads = 5;
             final int n = 1000;
@@ -418,6 +438,43 @@ public class DbSequenceManager
                 assertTrue(values.contains(i + 1));
 
             assertTrue("Less than 100 iterations per second: " + perSecond, perSecond > 100);   // A very low bar
+        }
+
+        @Test
+        // Simple test that create() responds gracefully if the sequence already exists. See #19673.
+        public void createTest() throws Throwable
+        {
+            final String name = "org.labkey.api.data.DbSequence.Test/" + GUID.makeGUID();
+
+            int rowId = DbSequenceManager.create(JunitUtil.getTestContainer(), name, 0);
+            assertEquals(rowId, DbSequenceManager.create(JunitUtil.getTestContainer(), name, 0));
+        }
+
+        @Test
+        // More real world test for #19673. Multiple threads should be able to ensure() the sequence without issues.
+        public void multiThreadCreateTest() throws Throwable
+        {
+            final Set<Throwable> failures = new ConcurrentHashSet<>();
+            final int threads = 5;
+            final String name = "org.labkey.api.data.DbSequence.Test/" + GUID.makeGUID();
+
+            JunitUtil.createRace(new Runnable(){
+                @Override
+                public void run()
+                {
+                    try
+                    {
+                        DbSequenceManager.ensure(JunitUtil.getTestContainer(), name, 0);
+                    }
+                    catch (Throwable t)
+                    {
+                        failures.add(t);
+                    }
+                }
+            }, threads, threads).awaitTermination(1, TimeUnit.MINUTES);
+
+            if (!failures.isEmpty())
+                throw failures.iterator().next();
         }
 
         @After
