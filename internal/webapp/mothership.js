@@ -236,7 +236,7 @@ LABKEY.Mothership = (function () {
         var url;
         var o;
         if (_mothership || (LABKEY.user && LABKEY.user.isGuest)) {
-            url = LABKEY.contextPath + '/admin/logMothershipError.api';
+            url = LABKEY.contextPath + '/admin/logClientException.api';
             o = {
                 username: LABKEY.user ? LABKEY.user.email : "Unknown",
                 //site: window.location.host,

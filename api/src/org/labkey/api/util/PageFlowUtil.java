@@ -41,17 +41,11 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.files.FileContentService;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.ResourceURL;
@@ -1783,7 +1777,7 @@ public class PageFlowUtil
         sb.append("    <script src=\"").append(contextPath).append("/labkey.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
-        if (AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) &&
+        if ((AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER)) &&
             AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE)
         {
             sb.append("    <script src=\"").append(contextPath).append("/stacktrace-0.6.0.js").append("\" type=\"text/javascript\"></script>\n");
