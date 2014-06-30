@@ -126,14 +126,10 @@ Ext4.define('File.panel.Upload', {
             },
 
             accept: function (file, done) {
+                // NOTE: this only covers the case that the error message is from the server-side
                 // Filter out folder drag-drop on unsupported browsers (Firefox)
                 // See: https://github.com/enyo/dropzone/issues/528
-                if (Ext4.isSafari &&  !file.type)
-                {
-                    done("Looks like you are using Safari. Drag-and drop upload of folders and some filetypes is not supported. Consider the upload panel, using Google Chrome, or an external WebDAV Client.");
-                    return;
-                }
-                if ( (file.size == 0 && file.fullPath == undefined)) {
+                if ( (!file.type && file.size == 0 && file.fullPath == undefined)) {
                     done("Drag-and-drop upload of folders is not supported by your browser. Please consider using Google Chrome or an external WebDAV client.");
                     return;
                 }
@@ -269,6 +265,11 @@ Ext4.define('File.panel.Upload', {
                 });
 
                 this.on('error', function (file, message, xhr) {
+                    if (message == "Server responded with 0 code.")
+                        message = "Drag-and-drop upload of folders is not supported by your browser. Please consider using Google Chrome or an external WebDAV client.";
+                    else if (message.startsWith("/_webdav/home/@files/"))
+                        message = "You do not have privileges to this directory. Verify that you are signed in appropriately.";
+
                     this.uploadPanel.statusText.setText('Error uploading ' + file.name + (message ? (': ' + message) : ''));
                     this.uploadPanel.showErrorMsg('Error', message);
                 });
