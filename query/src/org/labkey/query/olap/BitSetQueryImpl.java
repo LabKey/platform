@@ -897,14 +897,11 @@ public class BitSetQueryImpl
 
         for (Result r : results)
         {
-            if (!(r instanceof MemberSetResult))
-                throw new IllegalStateException();
-
-            Level l = ((MemberSetResult)r).getLevel();
+            Level l = r.getLevel();
 
             if (null == l || op == OP.CROSSJOIN)
             {
-                cr.results.add((MemberSetResult)r);
+                cr.results.add(r);
             }
             else if (!map.containsKey(l.getUniqueName()))
             {
@@ -913,7 +910,7 @@ public class BitSetQueryImpl
             else
             {
                 Collection<Member> a = map.get(l.getUniqueName()).getCollection();
-                Collection<Member> b = ((MemberSetResult) r).getCollection();
+                Collection<Member> b = r.getCollection();
                 MemberSet set = MemberSet.intersect(a,b);
                 map.put(l.getUniqueName(), new MemberSetResult(set));
             }
