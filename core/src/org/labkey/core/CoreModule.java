@@ -220,18 +220,20 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         SqlDialectManager.register(new PostgreSqlDialectFactory());
     }
 
-    @Override
-    public String getName()
-    {
-        return CORE_MODULE_NAME;
-    }
-
-    @Override
-    public double getVersion()
-    {
-        return 14.20;
-    }
-
+//    NOTE: CoreModule name & version are now updated in module.properties. See #18923.
+//
+//    @Override
+//    public String getName()
+//    {
+//        return CORE_MODULE_NAME;
+//    }
+//
+//    @Override
+//    public double getVersion()
+//    {
+//        return xx.xx;
+//    }
+//
     @Override
     public int compareTo(@NotNull Module m)
     {
@@ -547,7 +549,6 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         {
             ExceptionUtil.logExceptionToMothership(null, t);
         }
-
     }
 
 
