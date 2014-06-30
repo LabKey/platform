@@ -344,7 +344,7 @@ public class PathMapperImpl implements PathMapper
 
             return uri.toString();
         }
-        catch (URISyntaxException e)
+        catch (URISyntaxException | IllegalArgumentException e)
         {
             handleError(path, "File URI '" + path + "' syntax error: " + e.getMessage(), errors);
             return null;
