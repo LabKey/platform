@@ -1106,6 +1106,24 @@ public class BitSetQueryImpl
         }
 
 
+        String queryCrossjoin(Level from, Level to)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append(
+                    "SELECT\n" +
+                            "  [Measures].DefaultMember ON COLUMNS,\n" +
+                            "  NON EMPTY CROSSJOIN(");
+            sb.append(from.getUniqueName()).append(".members");
+            sb.append(",");
+            sb.append(to.getUniqueName()).append(".members");
+            sb.append(") ON ROWS\n");
+//            sb.append(from.getUniqueName()).append(".members,");
+//            sb.append(to.getUniqueName()).append(".members ON ROWS\n");
+            sb.append("FROM ").append(cube.getUniqueName());
+            return sb.toString();
+        }
+
+
         String queryIsNotEmpty(Level from, Member m)
         {
             StringBuilder sb = new StringBuilder();
@@ -1231,10 +1249,20 @@ public class BitSetQueryImpl
                 return;
 
             CaseInsensitiveHashMap<MemberSet> sets = new CaseInsensitiveHashMap<>();
-            for (Member sub : inner.getCollection())
+            Collection<Member> innerCollection = inner.getCollection();
+            for (Member sub : innerCollection)
                 sets.put(sub.getUniqueName(), new MemberSet());
 
-            String queryXjoin = queryCrossjoin(outerLevel, inner);
+            String queryXjoin;
+            if (innerCollection.size() < 20 || null == inner.getLevel())
+            {
+                queryXjoin=queryCrossjoin(outerLevel, inner);
+            }
+            else
+            {
+                queryXjoin = queryCrossjoin(outerLevel, inner.getLevel());
+            }
+
             try (CellSet cs = execute(queryXjoin))
             {
                 List<Position> rowPositions = cs.getAxes().get(1).getPositions();
@@ -1249,15 +1277,15 @@ public class BitSetQueryImpl
                         assert same(outerMember.getLevel(), outerLevel);
                         MemberSet s = sets.get(sub.getUniqueName());
                         if (null == s)
-                            _log.warn("Unexpected member in cellset result: " + sub.getUniqueName());
-                        else
                         {
-                            Member m = getCubeMember(outerMember);
-                            if (null == m)
-                                _log.warn("Unexpected member in cellset result: " + outerMember.getUniqueName());
-                            else
-                                s.add(getCubeMember(outerMember));
+                            s = new MemberSet();
+                            sets.put(sub.getUniqueName(),s);
                         }
+                        Member m = getCubeMember(outerMember);
+                        if (null == m)
+                            _log.warn("Unexpected member in cellset result: " + outerMember.getUniqueName());
+                        else
+                            s.add(m);
                     }
                 }
             }
