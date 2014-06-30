@@ -53,6 +53,7 @@ import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Dimension;
+import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Schema;
 import org.springframework.validation.BindException;
 
@@ -319,7 +320,10 @@ public class ServerManager
                     try
                     {
                         Map<String, Object> map = new HashMap<>();
-                        map.put("hierarchy", h.getUniqueName());
+
+                        Level l = h.getLevels().get(h.getLevels().size()-1);
+                        map.put("level", l.getUniqueName());
+                        //map.put("hierarchy", h.getUniqueName());
                         map.put("members", "members");
                         jsonOnRows.put(0, map);
 
