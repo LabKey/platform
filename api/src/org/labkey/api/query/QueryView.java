@@ -2667,7 +2667,9 @@ public class QueryView extends WebPartView<Object>
             if (ti == null)
             {
                 List<QueryException> errors = new ArrayList<>();
-                ti = getQueryDef().getTable(errors, true);
+                QueryDefinition queryDef = getQueryDef();
+                if (queryDef != null)
+                    ti = queryDef.getTable(errors, true);
             }
 
             if (ti != null)
