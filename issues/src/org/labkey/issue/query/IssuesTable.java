@@ -267,8 +267,8 @@ class URLTitleDisplayColumnFactory implements DisplayColumnFactory
 
 class NotifyListDisplayColumn extends DataColumn
 {
-    private static User _user;
-    private static final String _delim = ", ";
+    private User _user;
+    private static final String DELIM = ", ";
 
     public NotifyListDisplayColumn(ColumnInfo col, User curUser)
     {
@@ -281,25 +281,16 @@ class NotifyListDisplayColumn extends DataColumn
         Object o = getValue(ctx);
         if (o != null)
         {
-            String val = o.toString();
-            String[] parts = val.split(";");
-            String notifyUser = null;
-            int i, len = parts.length;
+            List<String> usernames = new ArrayList<>();
 
-            for(i=0;  notifyUser == null && i < len; i++)
-                notifyUser = parseUserDisplayName(parts[i]);
-
-            if (notifyUser != null)
+            for (String notifyUser : o.toString().split(";"))
             {
-                out.write(notifyUser);
-
-                for (; i < len; i++)
-                {
-                    notifyUser = parseUserDisplayName(parts[i]);
-                    if (notifyUser != null)
-                        out.write(String.format("%s%s", _delim, notifyUser));
-                }
+                notifyUser = parseUserDisplayName(notifyUser);
+                if (notifyUser != null)
+                    usernames.add(notifyUser);
             }
+
+            out.write(StringUtils.join(usernames, DELIM));
         }
     }
 
