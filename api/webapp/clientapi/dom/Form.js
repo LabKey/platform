@@ -38,7 +38,7 @@
 
 &lt;script type="text/javascript"&gt;
     var _form;
-    Ext.onReady(function(){
+    Ext4.onReady(function(){
         //create a new LABKEY.Form to track the dirty state of the form above.
         //if the user tries to navigate away while the form is dirty, it will warn the user
         //and provide an option to stay on the page.
