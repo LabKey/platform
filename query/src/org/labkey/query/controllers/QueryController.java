@@ -644,10 +644,9 @@ public class QueryController extends SpringActionController
     }
 
     /**
-     * ensureQueryExists throws NotFound if the query/table does not exist.
-     * Does not guarantee that the query is syntactically correct, or can execute.
+     * ensureQueryParams throws NotFound if the query/table parameters aren't present - nothing more.
      */
-    protected void ensureQueryExists(QueryForm form)
+    protected void ensureQueryParams(QueryForm form)
     {
         if (form.getSchema() == null)
         {
@@ -658,6 +657,16 @@ public class QueryController extends SpringActionController
         {
             throw new NotFoundException("Query not specified");
         }
+    }
+
+    /**
+     * ensureQueryExists throws NotFound if the query/table does not exist.
+     * Does not guarantee that the query is syntactically correct, or can execute.
+     * This check can be expensive.
+     */
+    protected void ensureQueryExists(QueryForm form)
+    {
+        ensureQueryParams(form);
 
         if (!queryExists(form))
         {
@@ -1285,6 +1294,7 @@ public class QueryController extends SpringActionController
         {
             // ensureQueryExists() is ridiculously expensive, let's handle the errors lazily in this case
             // TODO investigate removing other calls to ensureQueryExists()
+            ensureQueryParams(form);
             _form = form;
 
             QueryView queryView = QueryView.create(form, errors);
