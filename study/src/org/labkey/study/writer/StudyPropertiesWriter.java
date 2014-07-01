@@ -25,6 +25,7 @@ import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -61,13 +62,13 @@ public class StudyPropertiesWriter extends DefaultStudyDesignWriter
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
         TableInfo tableInfo = schema.getTable(StudyQuerySchema.PERSONNEL_TABLE_NAME);
 
-        List<FieldKey> fields = new ArrayList<>();
-        fields.addAll(tableInfo.getDefaultVisibleColumns());
-
         // we want to include the user display name so we can resolve during import
-        fields.add(FieldKey.fromParts("userId", "displayName"));
+        FieldKey fieldKey = FieldKey.fromParts("userId", "displayName");
 
-        Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(tableInfo, fields);
-        writeTableData(ctx, vf, tableInfo, new ArrayList<>(columns.values()), null);
+        Map<FieldKey, ColumnInfo> extraColumns = QueryService.get().getColumns(tableInfo, Collections.singletonList(fieldKey));
+        List<ColumnInfo> columns = getDefaultColumns(ctx, tableInfo);
+        columns.add(extraColumns.get(fieldKey));
+
+        writeTableData(ctx, vf, tableInfo, columns, null);
     }
 }
