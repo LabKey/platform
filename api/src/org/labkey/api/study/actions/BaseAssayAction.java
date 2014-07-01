@@ -81,7 +81,7 @@ public abstract class BaseAssayAction<T extends ProtocolIdForm> extends SimpleVi
      */
     protected List<Integer> getCheckboxIds()
     {
-        Set<String> idStrings =  DataRegionSelection.getSelected(getViewContext(), null, false, false);
+        Set<String> idStrings =  DataRegionSelection.getSelected(getViewContext(), null, true, false);
 
         DataRegionSelection.clearAll(getViewContext(), null);
         DataRegionSelection.setSelected(getViewContext(), null, idStrings, true);
