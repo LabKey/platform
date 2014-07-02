@@ -1864,8 +1864,37 @@ public class PageFlowUtil
         if (errors.size() > 0 || (null != scriptWarnings && scriptWarnings.size() > 0))
             throw new IllegalArgumentException("empty errors collection expected");
 
-        if (StringUtils.trimToEmpty(html).length() == 0)
+        String trimmedHtml = StringUtils.trimToEmpty(html);
+
+        // AARON: shouldn't re perseve the whitespace here and return html?
+        if (trimmedHtml.length() == 0)
             return "";
+
+        // NOTE: if tidy gets a string that is empty after taking out comments it chokes.
+        boolean stateChange, commentStarted = false;
+        int i;
+        for (i = 0; i < trimmedHtml.length(); i++)
+        {
+            if (!commentStarted)
+            {
+                stateChange = (trimmedHtml.substring(i, i + 4).equals("<!--"));
+                if (stateChange == true)
+                {
+                    commentStarted = true;
+                    i += 4;
+                }
+                // break because we have a break in our comments
+                else
+                    break;
+            }
+            else if (trimmedHtml.substring(i,i+3).equals("-->"))
+            {
+                commentStarted = false;
+                i += 3;
+            }
+        }
+        if (commentStarted || trimmedHtml.endsWith("-->"))
+            return html;
 
         // UNDONE: use convertHtmlToDocument() instead of tidy() to avoid double parsing
         String xml = TidyUtil.tidyHTML(html, true, errors);
