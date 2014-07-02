@@ -422,7 +422,7 @@ public class IssuePage implements DataRegionSelection.DataSelectionKeyForm
     public String writeDate(Date d)
     {
         if (null == d) return "";
-        return DateUtil.formatDate(_c, d);
+        return DateUtil.formatDateTime(_c, d);
     }
 
     public String renderAttachments(ViewContext context, AttachmentParent parent)
