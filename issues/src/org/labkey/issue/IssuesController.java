@@ -1511,12 +1511,21 @@ public class IssuesController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             Collection<Map<String, Object>> responseContainers = new LinkedList<>();
-            for (Container container : IssueManager.getMoveDestinationContainers(getContainer()))
+            List<Container> containers = IssueManager.getMoveDestinationContainers(getContainer());
+            try
             {
-                Map<String, Object> map = new HashMap<>();
-                map.put("containerId", container.getId());
-                map.put("containerPath", container.getPath());
-                responseContainers.add(map);
+                for (Container container : containers)
+                {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("containerId", container.getId());
+                    map.put("containerPath", container.getPath());
+                    responseContainers.add(map);
+                }
+            }
+            catch (NullPointerException e)
+            {
+                // this exception shouldn't be happening as the only time the js createMoveIssueWindow is called is when bean.hasMoveDestinations()
+                ExceptionUtil.logExceptionToMothership(null, e);
             }
 
             response.put("containers", responseContainers);
