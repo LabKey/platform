@@ -265,25 +265,13 @@ Ext4.define('File.panel.Upload', {
                 });
 
                 this.on('error', function (file, message, xhr) {
-                    var title = 'Error';
-                    if(xhr.readyState == 4)
-                    {
-                        // here we should be able to provide a more meaningful message
-                        if (xhr.status == 0 && xhr.statusText == "" && xhr.responseText == "" )
-                        {
-                            title = "Not Supported";
-                            message = "Drag-and-drop upload of folders is not supported by your browser. Please consider using Google Chrome or an external WebDAV client.";
-                        }
-                        else if (xhr.status == 200)
-                        {
-                            title = "Unauthorized";
-                            message = "You do not have privileges to this directory. Verify that you are signed in appropriately.";
-                        }
-                    }
+                    if (message == "Server responded with 0 code.")
+                        message = "Drag-and-drop upload of folders is not supported by your browser. Please consider using Google Chrome or an external WebDAV client.";
+                    else if (message.startsWith("/_webdav/home/@files/"))
+                        message = "You do not have privileges to this directory. Verify that you are signed in appropriately.";
 
-                    file.status = Dropzone.ERROR;
                     this.uploadPanel.statusText.setText('Error uploading ' + file.name + (message ? (': ' + message) : ''));
-                    this.uploadPanel.showErrorMsg(title, message);
+                    this.uploadPanel.showErrorMsg('Error', message);
                 });
 
                 this.on('complete', function (file) {
@@ -554,7 +542,7 @@ Ext4.define('File.panel.Upload', {
             var i = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
             var name = path.substring(i+1);
             if (name.length == 0) {
-                this.uploadPanel.showErrorMsg('Error', 'No file selected. Please choose one or more files to upload.');
+                Ext4.Msg.alert('Error', 'No file selected. Please choose one or more files to upload.');
                 return;
             }
 
