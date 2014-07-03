@@ -83,8 +83,7 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
     @BeforeClass
     public static void doSetup() throws Exception
     {
-        StudyProtocolDesignerTest initTest = new StudyProtocolDesignerTest();
-        initTest.doCleanup(false);
+        StudyProtocolDesignerTest initTest = (StudyProtocolDesignerTest)getCurrentTest();
 
         initTest._containerHelper.createProject(initTest.getProjectName(), null);
         initTest.importFolderFromZip(FOLDER_ARCHIVE);
@@ -97,8 +96,6 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
         portalHelper.addWebPart("Vaccine Design");
         portalHelper.addWebPart("Immunization Schedule");
         portalHelper.addWebPart("Assay Schedule");
-
-        currentTest = initTest;
     }
 
     @Before
