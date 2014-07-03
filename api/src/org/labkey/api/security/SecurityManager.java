@@ -1246,8 +1246,7 @@ public class SecurityManager
     // Internal only; used by junit test
     static void addMemberWithoutValidation(Group group, UserPrincipal principal)
     {
-        SqlExecutor executor = new SqlExecutor(core.getSchema());
-        executor.setLogLevel(Level.ERROR);   // Don't log warnings (e.g., constraint violations)
+        SqlExecutor executor = new SqlExecutor(core.getSchema()).setLogLevel(Level.ERROR);   // Don't log warnings (e.g., constraint violations)
 
         try
         {

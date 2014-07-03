@@ -16,7 +16,6 @@
 package org.labkey.api.data;
 
 import org.apache.log4j.Level;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.After;
 import org.junit.Assert;
@@ -80,15 +79,13 @@ public class DbSequenceManager
     }
 
 
-    // TODO: @NotNull Integer seems silly... just make the parameter an int
-
-    public static DbSequence get(Container c, String name, @NotNull Integer id)
+    public static DbSequence get(Container c, String name, int id)
     {
         return new DbSequence(c, ensure(c, name, id));
     }
 
 
-    private static int ensure(Container c, String name, @NotNull Integer id)
+    private static int ensure(Container c, String name, int id)
     {
         Integer rowId = getRowId(c, name, id);
 
@@ -99,7 +96,7 @@ public class DbSequenceManager
     }
 
 
-    private static @Nullable Integer getRowId(Container c, String name, @NotNull Integer id)
+    private static @Nullable Integer getRowId(Container c, String name, int id)
     {
         TableInfo tinfo = getTableInfo();
         SQLFragment getRowIdSql = new SQLFragment("SELECT RowId FROM ").append(tinfo.getSelectName());
@@ -115,7 +112,7 @@ public class DbSequenceManager
 
 
     // Always initializes to 0; use ensureMinimumValue() to set a higher starting point
-    private static int create(Container c, String name, @NotNull Integer id)
+    private static int create(Container c, String name, int id)
     {
         TableInfo tinfo = getTableInfo();
 
@@ -157,7 +154,7 @@ public class DbSequenceManager
     // Useful for cases where multiple sequences are needed in a single folder, e.g., a sequence that generates row keys
     // for a list or dataset. Like the other DbSequence operations, the delete executes outside of the current thread
     // transaction; best practice is to commit the full object delete and then (on success) delete the associated sequence.
-    public static void delete(Container c, String name, @NotNull Integer id)
+    public static void delete(Container c, String name, int id)
     {
         Integer rowId = getRowId(c, name, id);
 
@@ -324,9 +321,7 @@ public class DbSequenceManager
 
         try (Connection conn = scope.getPooledConnection())
         {
-            SqlExecutor executor = new SqlExecutor(scope, conn);
-            executor.setLogLevel(level);
-            return executor.executeWithResults(sql, INTEGER_RETURNING_RESULTSET_HANDLER);
+            return new SqlExecutor(scope, conn).setLogLevel(level).executeWithResults(sql, INTEGER_RETURNING_RESULTSET_HANDLER);
         }
         catch (SQLException e)
         {

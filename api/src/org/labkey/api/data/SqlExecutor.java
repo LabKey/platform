@@ -34,7 +34,7 @@ import java.util.List;
  * Date: 10/25/11
  * Time: 11:27 PM
  */
-public class SqlExecutor extends JdbcCommand
+public class SqlExecutor extends JdbcCommand<SqlExecutor>
 {
     private static final NormalStatementExecutor NORMAL_EXECUTOR = new NormalStatementExecutor();
 
@@ -53,6 +53,12 @@ public class SqlExecutor extends JdbcCommand
     public SqlExecutor(@NotNull DbSchema schema)
     {
         this(schema.getScope());
+    }
+
+    @Override
+    protected SqlExecutor getThis()
+    {
+        return this;
     }
 
     public int execute(CharSequence sql, Object... params)

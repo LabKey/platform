@@ -31,11 +31,14 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR extends ExecutingSelector<FACTORY, SELECTOR>> extends BaseSelector implements Selector
+public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR extends ExecutingSelector<FACTORY, SELECTOR>> extends BaseSelector<SELECTOR> implements Selector
 {
     protected int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
     protected @Nullable Map<String, Object> _namedParameters = null;
+
+    private @Nullable AsyncQueryRequest _asyncRequest = null;
+    private @Nullable StackTraceElement[] _loggingStacktrace = null;
 
     // SQL factory used for the duration of a single query execution. This allows reuse of instances, since query-specific
     // optimizations won't mutate the ExecutingSelector's externally set state.
@@ -57,8 +60,8 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
         return new ExecutingResultSetFactory(getSqlFactory(false));
     }
 
-    // SELECTOR and getThis() make it easier to chain setMaxRows() and setOffset() while returning the correct selector type from subclasses
-    abstract protected SELECTOR getThis();
+//    // SELECTOR and getThis() make it easier to chain setMaxRows() and setOffset() while returning the correct selector type from subclasses
+//    abstract protected SELECTOR getThis();
 
     public SELECTOR setMaxRows(int maxRows)
     {
@@ -97,7 +100,7 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
                 public TableResultSet handle(ResultSet rs, Connection conn) throws SQLException
                 {
                     // We're handing back a ResultSet, so cache the meta data
-                    return CachedResultSets.create(rs, true, _maxRows, getLoggingStacktrace());
+                    return CachedResultSets.create(rs, true, _maxRows, _loggingStacktrace);
                 }
             });
         }
@@ -199,6 +202,20 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
         });
     }
 
+
+    protected void setAsyncRequest(@Nullable AsyncQueryRequest asyncRequest)
+    {
+        _asyncRequest = asyncRequest;
+
+        if (null != asyncRequest)
+            _loggingStacktrace = asyncRequest.getCreationStackTrace();
+    }
+
+    @Nullable
+    private AsyncQueryRequest getAsyncRequest()
+    {
+        return _asyncRequest;
+    }
 
     // Wraps the underlying factory's SQL with a SELECT COUNT(*) query
     private static class RowCountSqlFactory extends BaseSqlFactory

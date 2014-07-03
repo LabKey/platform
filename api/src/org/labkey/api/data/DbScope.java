@@ -540,7 +540,7 @@ public class DbScope
     }
 
 
-    Integer spidUnknown = -1;
+    private final int spidUnknown = -1;
 
     protected Connection _getConnection(@Nullable Logger log) throws SQLException
     {
@@ -1449,8 +1449,7 @@ public class DbScope
                 try
                 {
                     conn = scope.getConnection();
-                    SqlExecutor executor = new SqlExecutor(scope, conn);
-                    executor.setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
+                    SqlExecutor executor = new SqlExecutor(scope, conn).setLogLevel(Level.OFF);  // We're about to generate a lot of SQLExceptions
                     dialect.testDialectKeywords(executor);
                     dialect.testKeywordCandidates(executor);
                 }

@@ -40,7 +40,7 @@ import java.util.Map;
 // A partial, base implementation of Selector. This class manipulates result sets but doesn't generate them. Subclasses
 // include ExecutingSelector (which executes SQL to generate a result set) and ResultSetSelector, which takes an externally
 // generated ResultSet (e.g., from JDBC metadata calls) and allows Selector operations on it.
-public abstract class BaseSelector extends JdbcCommand implements Selector
+public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCommand<SELECTOR> implements Selector
 {
     protected BaseSelector(@NotNull DbScope scope, @Nullable Connection conn)
     {

@@ -28,8 +28,7 @@ public class LegacySqlExecutor
 
     public LegacySqlExecutor(DbSchema schema)
     {
-        _executor = new SqlExecutor(schema);
-        _executor.setExceptionFramework(ExceptionFramework.JDBC);
+        _executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
     }
 
     public int execute(SQLFragment sql) throws SQLException

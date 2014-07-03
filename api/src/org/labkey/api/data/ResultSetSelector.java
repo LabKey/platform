@@ -27,7 +27,7 @@ import java.sql.SQLException;
  * Date: 12/18/12
  * Time: 10:02 PM
  */
-public class ResultSetSelector extends BaseSelector
+public class ResultSetSelector extends BaseSelector<ResultSetSelector>
 {
     private final ResultSet _rs;
     private CompletionAction _completionAction = CompletionAction.Nothing;  // Default assumption is that caller closes the ResultSet (e.g., using try-with-resources)
@@ -46,6 +46,12 @@ public class ResultSetSelector extends BaseSelector
     public ResultSetSelector(DbScope scope, ResultSet rs)
     {
         this (scope, rs, null);
+    }
+
+    @Override
+    protected ResultSetSelector getThis()
+    {
+        return this;
     }
 
     // Different semantics... never grab a new connection

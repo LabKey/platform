@@ -29,23 +29,26 @@ import java.sql.SQLException;
  * Date: 10/25/11
  * Time: 11:35 PM
  */
-public abstract class JdbcCommand
+public abstract class JdbcCommand<COMMAND extends JdbcCommand>
 {
     private static final Logger LOG = Logger.getLogger(JdbcCommand.class);
 
     private final @NotNull DbScope _scope;
     private final @Nullable Connection _conn;
+
     private ExceptionFramework _exceptionFramework = ExceptionFramework.Spring;
     private Level _logLevel = Level.WARN;  // Log all warnings and errors by default
     private Logger _log = LOG;   // Passed to getConnection(), can be customized via setLogger()
-    private @Nullable AsyncQueryRequest _asyncRequest = null;
-    private @Nullable StackTraceElement[] _loggingStacktrace = null;
 
     protected JdbcCommand(@NotNull DbScope scope, @Nullable Connection conn)
     {
         _scope = scope;
         _conn = conn;
     }
+
+    // COMMAND and getThis() make it easier to chain setLogLevel(), setLogger(), setExceptionFramework(), and subclass methods
+    // while returning the correct selector type from subclasses
+    abstract protected COMMAND getThis();
 
     public Connection getConnection() throws SQLException
     {
@@ -69,9 +72,10 @@ public abstract class JdbcCommand
         return _scope;
     }
 
-    public void setExceptionFramework(ExceptionFramework exceptionFramework)   // TODO: Chaining?
+    public COMMAND setExceptionFramework(ExceptionFramework exceptionFramework)
     {
         _exceptionFramework = exceptionFramework;
+        return getThis();
     }
 
     public ExceptionFramework getExceptionFramework()
@@ -84,39 +88,15 @@ public abstract class JdbcCommand
         return _logLevel;
     }
 
-    public void setLogLevel(Level logLevel)    // TODO: Chaining?
+    public COMMAND setLogLevel(Level logLevel)
     {
         _logLevel = logLevel;
+        return getThis();
     }
 
-    public void setLogger(@NotNull Logger log)    // TODO: Chaining?
+    public COMMAND setLogger(@NotNull Logger log)
     {
         _log = log;
-    }
-
-    // TODO: Make this protected and/or remove... external callers should call setDetectClientAbort(@Nullable Response)
-    public void setAsyncRequest(@Nullable AsyncQueryRequest asyncRequest)
-    {
-        _asyncRequest = asyncRequest;
-
-        if (null != asyncRequest)
-            _loggingStacktrace = asyncRequest.getCreationStackTrace();
-    }
-
-    @Nullable
-    protected AsyncQueryRequest getAsyncRequest()
-    {
-        return _asyncRequest;
-    }
-
-    public void setLoggingStacktrace(@Nullable StackTraceElement[] loggingStacktrace)
-    {
-        _loggingStacktrace = loggingStacktrace;
-    }
-
-    @Nullable
-    protected StackTraceElement[] getLoggingStacktrace()
-    {
-        return _loggingStacktrace;
+        return getThis();
     }
 }
