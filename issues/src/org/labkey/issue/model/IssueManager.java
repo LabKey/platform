@@ -719,16 +719,15 @@ public class IssueManager
         PropertyManager.saveProperties(props);
     }
 
-    public static @Nullable List<Container> getMoveDestinationContainers(Container c)
+    public static List<Container> getMoveDestinationContainers(Container c)
     {
         Map<String, String> props = PropertyManager.getProperties(c, CAT_DEFAULT_MOVE_TO_LIST);
         String propsValue = props.get(PROP_DEFAULT_MOVE_TO_CONTAINER);
-        if (null == propsValue)
-            return null;
-
         List<Container> containers = new LinkedList<>();
-        for (String containerId : StringUtils.split(propsValue, ';'))
-            containers.add( ContainerManager.getForId(containerId));
+
+        if (propsValue != null)
+            for (String containerId : StringUtils.split(propsValue, ';'))
+                containers.add( ContainerManager.getForId(containerId));
 
         return containers;
     }
