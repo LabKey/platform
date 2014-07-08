@@ -70,6 +70,5 @@ public class PopupUserView extends PopupMenuView
         setNavTree(tree);
         setAlign(PopupMenu.Align.RIGHT);
         setButtonStyle(PopupMenu.ButtonStyle.TEXT);
-        setExtVersion("Ext4");
     }
 }

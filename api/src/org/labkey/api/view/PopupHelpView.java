@@ -47,6 +47,5 @@ public class PopupHelpView extends PopupMenuView
         setNavTree(menu);
         setAlign(PopupMenu.Align.RIGHT);
         setButtonStyle(PopupMenu.ButtonStyle.TEXT);
-        setExtVersion("Ext4");
     }
 }

@@ -156,7 +156,6 @@ public class PopupAdminView extends PopupMenuView
         setNavTree(navTree);
         setAlign(PopupMenu.Align.RIGHT);
         setButtonStyle(PopupMenu.ButtonStyle.TEXT);
-        setExtVersion("Ext4");
     }
 
     private void addModulesToMenu(ViewContext context, SortedSet<Module> modules, Module defaultModule, NavTree menu)

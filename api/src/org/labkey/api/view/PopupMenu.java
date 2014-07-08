@@ -37,7 +37,6 @@ public class PopupMenu extends DisplayElement
     private ButtonStyle _buttonStyle = ButtonStyle.MENUBUTTON;
     private String _imageId = "";
     private String _offset = "-1";
-    private String _extVersion = "Ext4";
     
     public PopupMenu()
     {
@@ -79,16 +78,6 @@ public class PopupMenu extends DisplayElement
     public String getImageId()
     {
         return _imageId;
-    }
-
-    public String getExtVersion()
-    {
-        return _extVersion;
-    }
-
-    public void setExtVerison(String extVerison)
-    {
-        _extVersion = extVerison;
     }
 
     public void render(RenderContext ctx, Writer out) throws IOException
