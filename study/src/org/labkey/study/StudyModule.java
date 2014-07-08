@@ -41,6 +41,8 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
+import org.labkey.api.module.DefaultFolderType;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleResourceLoader;
@@ -520,11 +522,28 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     private void registerFolderTypes()
     {
-        ModuleLoader.getInstance().registerFolderType(this, new StudyFolderType(this));
+        ModuleLoader.getInstance().registerFolderType(this, new StudyFolderType(this, getActiveModulesForStudyFolder()));
         ModuleLoader.getInstance().registerFolderType(this, new AssayFolderType(this));
+        ModuleLoader.getInstance().registerFolderType(this, new DataspaceStudyFolderType(this, getActiveModulesForDataspaceFolder()));
+    }
 
-        if (null != ModuleLoader.getInstance().getModule("Experiment"))
-            ModuleLoader.getInstance().registerFolderType(this, new DataspaceStudyFolderType(this));
+    private Set<Module> getActiveModulesForStudyFolder()
+    {
+        Set<Module> active = DefaultFolderType.getDefaultModuleSet();
+        active.add(this);
+        Set<String> dependencies = getModuleDependenciesAsSet();
+        for (String moduleName : dependencies)
+            active.add(ModuleLoader.getInstance().getModule(moduleName));
+        return active;
+    }
+
+    private Set<Module> getActiveModulesForDataspaceFolder()
+    {
+        Set<Module> active = getActiveModulesForStudyFolder();
+        Module cds = ModuleLoader.getInstance().getModule("CDS");
+        if (null != cds)
+            active.add(cds);
+        return active;
     }
 
     private static class ReportsWebPartFactory extends BaseWebPartFactory

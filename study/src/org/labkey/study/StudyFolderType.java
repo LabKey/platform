@@ -50,21 +50,20 @@ public class StudyFolderType extends MultiPortalFolderType
             new StudyFolderTabs.ManagePage("Manage")
         );
 
-    StudyFolderType(StudyModule module)
+    StudyFolderType(StudyModule module, Set<Module> activeModules)
     {
         this(NAME,
                 "Manage human and animal studies involving long-term observations at distributed sites. " +
                         "Use specimen repository for samples. Design and manage specialized assays. " +
                         "Analyze, visualize and share results.",
-                module);
+                module, activeModules);
     }
 
-    StudyFolderType(String name, String description, StudyModule module)
+    StudyFolderType(String name, String description, StudyModule module, Set<Module> activeModules)
     {
         super(name, description, null,
                 Arrays.asList(StudyModule.manageStudyPartFactory.createWebPart()),
-                getActiveModulesForOwnedFolder(module), module);
-
+                activeModules, module);
     }
 
     @NotNull
@@ -97,19 +96,4 @@ public class StudyFolderType extends MultiPortalFolderType
     {
         return PAGES;
     }
-    
-    private static Set<Module> _activeModulesForOwnedFolder = null;
-    private synchronized static Set<Module> getActiveModulesForOwnedFolder(StudyModule module)
-    {
-        if (null != _activeModulesForOwnedFolder)
-            return _activeModulesForOwnedFolder;
-
-        Set<Module> active = getDefaultModuleSet();
-        active.add(module);
-        Set<String> dependencies = module.getModuleDependenciesAsSet();
-        for (String moduleName : dependencies)
-            active.add(ModuleLoader.getInstance().getModule(moduleName));
-       _activeModulesForOwnedFolder = active;
-        return active;
     }
-}

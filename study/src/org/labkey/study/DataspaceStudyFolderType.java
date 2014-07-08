@@ -17,24 +17,24 @@ package org.labkey.study;
 
 
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.module.Module;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 
-import java.sql.SQLException;
+import java.util.Set;
 
 public class DataspaceStudyFolderType extends StudyFolderType
 {
     public static final String NAME = StudyService.DATASPACE_FOLDERTYPE_NAME;
 
-    DataspaceStudyFolderType(StudyModule module)
+    DataspaceStudyFolderType(StudyModule module, Set<Module> activeModules)
     {
         super(NAME,
                 "Work with all shared studies within the project.",
-                module);
+                module, activeModules);
     }
 
     @Override
