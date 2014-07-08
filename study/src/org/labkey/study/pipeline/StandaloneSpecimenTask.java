@@ -18,8 +18,6 @@ package org.labkey.study.pipeline;
 
 import org.labkey.api.pipeline.PipelineJob;
 
-import java.io.File;
-
 /*
 * User: adam
 * Date: Sep 1, 2009
