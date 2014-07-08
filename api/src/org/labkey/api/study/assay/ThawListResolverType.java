@@ -57,6 +57,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -78,7 +79,7 @@ public class ThawListResolverType extends AssayFileWriter implements Participant
     public static final String THAW_LIST_LIST_SCHEMA_NAME_INPUT_NAME = "ThawListList-SchemaName";
     public static final String THAW_LIST_LIST_QUERY_NAME_INPUT_NAME = "ThawListList-QueryName";
     public static final String INDEX_COLUMN_NAME = "Index";
-    public static final Set<String> REQUIRED_COLUMNS = new CaseInsensitiveHashSet(Arrays.asList(
+    public static final Set<String> REQUIRED_COLUMNS = new HashSet(Arrays.asList(
             AbstractAssayProvider.SPECIMENID_PROPERTY_NAME,
             AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME,
             AbstractAssayProvider.VISITID_PROPERTY_NAME,

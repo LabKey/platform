@@ -17,6 +17,7 @@
 package org.labkey.api.assay.dilution;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.OntologyManager;
@@ -37,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -88,10 +90,11 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
                 throw new NotFoundException(getProvider().getResourceName() + " run input " + scope + " could not be found for run " + getReRunId() + ".");
             Map<String, Object> values = OntologyManager.getProperties(getContainer(), selected.getLSID());
             Map<DomainProperty, Object> ret = new HashMap<>();
+            Set<String> requiredColumns = new CaseInsensitiveHashSet(ThawListResolverType.REQUIRED_COLUMNS);
             for (DomainProperty property : domain.getProperties())
             {
                 // 20047 On reimport with a thaw list, don't use the previously resolved LastEntered values for specimenIds. Users should reinput the Thaw List index values.
-                if (!didImportUseThawList(reRun) || !ThawListResolverType.REQUIRED_COLUMNS.contains((property.getName())))
+                if (!didImportUseThawList(reRun) || !requiredColumns.contains((property.getName())))
                     ret.put(property, values.get(property.getPropertyURI()));
             }
             return ret;

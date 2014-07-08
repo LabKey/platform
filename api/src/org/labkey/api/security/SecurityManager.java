@@ -1132,6 +1132,8 @@ public class SecurityManager
         GroupCache.uncache(groupId);
         Container c = ContainerManager.getForId(group.getContainer());
         ProjectAndSiteGroupsCache.uncache(c);
+        // 20329 SecurityPolicy cache still has the role assignments for deleted groups.
+        SecurityPolicyManager.notifyPolicyChanges(resources);
     }
 
 

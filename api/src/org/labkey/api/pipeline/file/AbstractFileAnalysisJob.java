@@ -358,7 +358,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
         StringBuilder description = new StringBuilder(dataName);
         if (baseName != null && !baseName.equals(dataName) &&
-                !(AbstractFileAnalysisProtocol.LEGACY_JOINED_BASENAME.equals(baseName) || joinedBaseName.equals(baseName)))   // For cluster
+                !(AbstractFileAnalysisProtocol.LEGACY_JOINED_BASENAME.equals(baseName) || baseName.equals(joinedBaseName)))   // For cluster
         {
             if (description.length() > 0)
                 description.append("/");

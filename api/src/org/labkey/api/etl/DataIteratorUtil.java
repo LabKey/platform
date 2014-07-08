@@ -130,6 +130,12 @@ public class DataIteratorUtil
                     if (!targetAliasesMap.containsKey(alias))
                         targetAliasesMap.put(alias, col);
             }
+
+            // Issue 21015: Dataset snapshot over flow assay dataset doesn't pick up stat column values
+            // TSVColumnWriter.ColumnHeaderType.queryColumnName format is a FieldKey display value from the column name. Blech.
+            String tsvQueryColumnName = FieldKey.fromString(name).toDisplayString();
+            if (!targetAliasesMap.containsKey(tsvQueryColumnName))
+                targetAliasesMap.put(tsvQueryColumnName, col);
         }
         return targetAliasesMap;
     }

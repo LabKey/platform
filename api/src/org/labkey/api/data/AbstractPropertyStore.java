@@ -24,7 +24,6 @@ import org.labkey.api.security.User;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * User: adam
@@ -34,7 +33,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public abstract class AbstractPropertyStore implements PropertyStore
 {
     private static final PropertySchema _prop = PropertySchema.getInstance();
-    private static final ReentrantReadWriteLock LOCK = new ReentrantReadWriteLock();
 
     private final PropertyCache _cache;
 
@@ -56,13 +54,8 @@ public abstract class AbstractPropertyStore implements PropertyStore
     public Map<String, String> getProperties(User user, Container container, String category)
     {
         validateStore();
-        Map<String, String> map;
 
-        try (DbScope.Transaction transaction = _prop.getSchema().getScope().ensureTransaction(LOCK.readLock()))
-        {
-            map = _cache.getProperties(user, container, category);
-            transaction.commit();
-        }
+        Map<String, String> map = _cache.getProperties(user, container, category);
 
         return null != map ? map : NULL_MAP;
     }
@@ -85,66 +78,70 @@ public abstract class AbstractPropertyStore implements PropertyStore
     public PropertyMap getWritableProperties(User user, Container container, String category, boolean create)
     {
         validateStore();
+        String containerId = container.getId().intern();
 
-        try (DbScope.Transaction transaction = _prop.getSchema().getScope().ensureTransaction(LOCK.readLock()))
+        try (DbScope.Transaction transaction = _prop.getSchema().getScope().ensureTransaction())
         {
-            ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
-            String setSelectName = setColumn.getSelectName();   // Keyword in some dialects
-
-            SQLFragment sql = new SQLFragment("SELECT " + setSelectName + ", Encryption FROM " + _prop.getTableInfoPropertySets() +
-                " WHERE UserId = ? AND ObjectId = ? AND Category = ?", user, container, category);
-
-            Map<String, Object> map = new SqlSelector(_prop.getSchema(), sql).getMap();
-            boolean newSet = (null == map);
-            PropertyEncryption propertyEncryption;
-
-            if (newSet)
+            synchronized (containerId)
             {
-                if (!create)
+                ColumnInfo setColumn = _prop.getTableInfoProperties().getColumn("Set");
+                String setSelectName = setColumn.getSelectName();   // Keyword in some dialects
+
+                SQLFragment sql = new SQLFragment("SELECT " + setSelectName + ", Encryption FROM " + _prop.getTableInfoPropertySets() +
+                    " WHERE UserId = ? AND ObjectId = ? AND Category = ?", user, container, category);
+
+                Map<String, Object> map = new SqlSelector(_prop.getSchema(), sql).getMap();
+                boolean newSet = (null == map);
+                PropertyEncryption propertyEncryption;
+
+                if (newSet)
                 {
-                    transaction.commit();
-                    return null;
+                    if (!create)
+                    {
+                        transaction.commit();
+                        return null;
+                    }
+                    propertyEncryption = getPreferredPropertyEncryption();
+                    Map<String, Object> insertMap = new HashMap<>();
+                    insertMap.put("UserId", user);
+                    insertMap.put("ObjectId", container);
+                    insertMap.put("Category", category);
+                    insertMap.put("Encryption", propertyEncryption.getSerializedName());
+                    map = Table.insert(user, _prop.getTableInfoPropertySets(), insertMap);
                 }
-                propertyEncryption = getPreferredPropertyEncryption();
-                Map<String, Object> insertMap = new HashMap<>();
-                insertMap.put("UserId", user);
-                insertMap.put("ObjectId", container);
-                insertMap.put("Category", category);
-                insertMap.put("Encryption", propertyEncryption.getSerializedName());
-                map = Table.insert(user, _prop.getTableInfoPropertySets(), insertMap);
+                else
+                {
+                    String encryptionName = (String) map.get("Encryption");
+                    propertyEncryption = PropertyEncryption.getBySerializedName(encryptionName);
+
+                    if (null == propertyEncryption)
+                        throw new IllegalStateException("Unknown encryption name: " + encryptionName);
+                }
+
+                // map should always contain the set number, whether brand new or old
+                int set = (Integer)map.get("Set");
+                PropertyMap m = new PropertyMap(set, user.getUserId(), containerId, category, propertyEncryption);
+
+                validatePropertyMap(m);
+
+                if (newSet)
+                {
+                    // A brand new set, but we might have previously cached a NULL marker and/or another thread might
+                    // try to create this same set before we save.
+                    _cache.remove(m);
+                }
+                else
+                {
+                    // Map-filling query needed only for existing property set
+                    Filter filter = new SimpleFilter(setColumn.getFieldKey(), set);
+                    TableInfo tinfo = _prop.getTableInfoProperties();
+                    TableSelector selector = new TableSelector(tinfo, tinfo.getColumns("Name", "Value"), filter, null);
+                    fillValueMap(selector, m);
+                }
+
+                transaction.commit();
+                return m;
             }
-            else
-            {
-                String encryptionName = (String) map.get("Encryption");
-                propertyEncryption = PropertyEncryption.getBySerializedName(encryptionName);
-
-                if (null == propertyEncryption)
-                    throw new IllegalStateException("Unknown encryption name: " + encryptionName);
-            }
-
-            // map should always contain the set number, whether brand new or old
-            int set = (Integer)map.get("Set");
-            PropertyMap m = new PropertyMap(set, user.getUserId(), container.getId(), category, propertyEncryption);
-
-            validatePropertyMap(m);
-
-            if (newSet)
-            {
-                // A brand new set, but we might have previously cached a NULL marker and/or another thread might
-                // try to create this same set before we save.
-                _cache.remove(m);
-            }
-            else
-            {
-                // Map-filling query needed only for existing property set
-                Filter filter = new SimpleFilter(setColumn.getFieldKey(), set);
-                TableInfo tinfo = _prop.getTableInfoProperties();
-                TableSelector selector = new TableSelector(tinfo, tinfo.getColumns("Name", "Value"), filter, null);
-                fillValueMap(selector, m);
-            }
-
-            transaction.commit();
-            return m;
         }
     }
 
@@ -172,33 +169,39 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
         validatePropertyMap(props);
 
-        try (DbScope.Transaction transaction = _prop.getSchema().getScope().ensureTransaction(LOCK.writeLock()))
+        // Stored procedure property_saveValue is not thread-safe, so we synchronize the saving of each property set to
+        // avoid attempting to modify the same property from two threads.  Use unique key + set id to avoid locking on a
+        // shared interned string object.
+        String lockString = "PropertyManager.Set=" + props.getSet();
+
+        synchronized(lockString.intern())
         {
-            // delete removed properties
-            if (null != props.removedKeys)
+            try
             {
-                for (Object removedKey : props.removedKeys)
+                // delete removed properties
+                if (null != props.removedKeys)
                 {
-                    String name = toNullString(removedKey);
-                    saveValue(props, name, null);
+                    for (Object removedKey : props.removedKeys)
+                    {
+                        String name = toNullString(removedKey);
+                        saveValue(props, name, null);
+                    }
+                }
+
+                // set properties
+                // we're not tracking modified or not, so set them all
+                for (Object entry : props.entrySet())
+                {
+                    Map.Entry e = (Map.Entry) entry;
+                    String name = toNullString(e.getKey());
+                    String value = toNullString(e.getValue());
+                    saveValue(props, name, value);
                 }
             }
-
-            // set properties
-            // we're not tracking modified or not, so set them all
-            for (Object entry : props.entrySet())
+            finally
             {
-                Map.Entry e = (Map.Entry) entry;
-                String name = toNullString(e.getKey());
-                String value = toNullString(e.getValue());
-                saveValue(props, name, value);
+                _cache.remove(props);
             }
-
-            transaction.commit();
-        }
-        finally
-        {
-            _cache.remove(props);
         }
     }
 
@@ -210,8 +213,6 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
     private void saveValue(PropertyMap props, String name, String value)
     {
-        assert LOCK.isWriteLockedByCurrentThread() && _prop.getSchema().getScope().isTransactionActive();
-
         if (null == name)
             return;
 
@@ -226,28 +227,18 @@ public abstract class AbstractPropertyStore implements PropertyStore
     {
         String setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
         SQLFragment deleteProps = new SQLFragment("DELETE FROM " + _prop.getTableInfoProperties().getSelectName() +
-                " WHERE " + setSelectName + " IN " +
+                " WHERE " + setSelectName +  " IN " +
                 "(SELECT " + setSelectName + " FROM " + _prop.getTableInfoPropertySets().getSelectName() + " WHERE ObjectId = ? AND ", c);
         appendWhereFilter(deleteProps);
         deleteProps.append(")");
+        new SqlExecutor(_prop.getSchema()).execute(deleteProps);
 
         SQLFragment deleteSets = new SQLFragment("DELETE FROM " + _prop.getTableInfoPropertySets() + " WHERE ObjectId = ? AND ");
         deleteSets.add(c);
         appendWhereFilter(deleteSets);
+        new SqlExecutor(_prop.getSchema()).execute(deleteSets);
 
-        SqlExecutor executor = new SqlExecutor(_prop.getSchema());
-
-        try (DbScope.Transaction transaction = _prop.getSchema().getScope().ensureTransaction(LOCK.writeLock()))
-        {
-            executor.execute(deleteProps);
-            executor.execute(deleteSets);
-
-            transaction.commit();
-        }
-        finally
-        {
-            _cache.removeAll(c);
-        }
+        _cache.removeAll(c);
     }
 
 
@@ -263,40 +254,42 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
     public void deletePropertySet(User user, Container container, String category)
     {
-        String setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
-
-        SQLFragment deleteProps = new SQLFragment();
-        deleteProps.append("DELETE FROM ").append(_prop.getTableInfoProperties().getSelectName());
-        deleteProps.append(" WHERE ").append(setSelectName).append(" IN ");
-        deleteProps.append("(SELECT ").append(setSelectName).append(" FROM ").append(_prop.getTableInfoPropertySets(), "ps");
-        deleteProps.append(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
-        deleteProps.add(user.getUserId());
-        deleteProps.add(container.getId());
-        deleteProps.add(category);
-
-        appendWhereFilter(deleteProps);
-
-        deleteProps.append(")");
-
-        SQLFragment deleteSets = new SQLFragment("DELETE FROM " + _prop.getTableInfoPropertySets() + " WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
-        deleteSets.add(user);
-        deleteSets.add(container);
-        deleteSets.add(category);
-
-        appendWhereFilter(deleteSets);
-
-        SqlExecutor sqlx = new SqlExecutor(_prop.getSchema());
-
-        try (DbScope.Transaction transaction = _prop.getSchema().getScope().ensureTransaction(LOCK.writeLock()))
+        String containerId = container.getId().intern();
+        try (DbScope.Transaction transaction = _prop.getSchema().getScope().ensureTransaction())
         {
-            sqlx.execute(deleteProps);
-            sqlx.execute(deleteSets);
+            synchronized (containerId)
+            {
+                String setSelectName = _prop.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
 
+                SQLFragment deleteProps = new SQLFragment();
+                deleteProps.append("DELETE FROM ").append(_prop.getTableInfoProperties().getSelectName());
+                deleteProps.append(" WHERE ").append(setSelectName).append(" IN ");
+                deleteProps.append("(SELECT ").append(setSelectName).append(" FROM ").append(_prop.getTableInfoPropertySets(), "ps");
+                deleteProps.append(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
+                deleteProps.add(user.getUserId());
+                deleteProps.add(container.getId());
+                deleteProps.add(category);
+
+                appendWhereFilter(deleteProps);
+
+                deleteProps.append(")");
+
+                SqlExecutor sqlx = new SqlExecutor(_prop.getSchema());
+                sqlx.execute(deleteProps);
+
+                SQLFragment deleteSets = new SQLFragment("DELETE FROM " + _prop.getTableInfoPropertySets() + " WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
+                deleteSets.add(user);
+                deleteSets.add(container);
+                deleteSets.add(category);
+
+                appendWhereFilter(deleteSets);
+
+                new SqlExecutor(_prop.getSchema()).execute(deleteSets);
+
+                _cache.remove(container, user, category);
+
+            }
             transaction.commit();
-        }
-        finally
-        {
-            _cache.remove(container, user, category);
         }
     }
 

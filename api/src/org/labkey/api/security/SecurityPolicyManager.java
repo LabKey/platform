@@ -149,6 +149,14 @@ public class SecurityPolicyManager
         ContainerManager.notifyContainerChange(objectID);
     }
 
+    public static void notifyPolicyChanges(List<String> objectIDs)
+    {
+        for (String objectID : objectIDs)
+        {
+            notifyPolicyChange(objectID);
+        }
+    }
+
     public static void deletePolicy(@NotNull SecurableResource resource)
     {
         try (DbScope.Transaction transaction = core.getSchema().getScope().ensureTransaction())

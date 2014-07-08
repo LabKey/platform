@@ -353,34 +353,44 @@ Ext.define('LABKEY.app.model.Filter', {
 
                 filter.perspective = data.perspective;
 
-                Ext.each(data.members, function(member) {
+                //
+                // The target hierarchy is
+                //
+                if (data.hierarchy == subjectName) {
                     filter.arguments.push({
-                        level: mdx.perspectives[data.perspective].level,
-                        membersQuery: {
-                            hierarchy: data.hierarchy,
-                            members: [member]
-                        }
+                        hierarchy: subjectName,
+                        members: data.members
                     });
-                });
+                }
+                else {
+                    Ext.each(data.members, function(member) {
+                        filter.arguments.push({
+                            level: mdx.perspectives[data.perspective].level,
+                            membersQuery: {
+                                hierarchy: data.hierarchy,
+                                members: [member]
+                            }
+                        });
+                    });
+                }
             }
             else {
                 if (data.hierarchy == subjectName) {
-
                     filter.arguments.push({
                         hierarchy : subjectName,
                         members  : data.members
                     });
-                    return filter;
                 }
-
-                for (var m=0; m < data.members.length; m++) {
-                    filter.arguments.push({
-                        hierarchy : subjectName,
-                        membersQuery : {
-                            hierarchy : data.hierarchy,
-                            members   : [data.members[m]]
-                        }
-                    });
+                else {
+                    for (var m=0; m < data.members.length; m++) {
+                        filter.arguments.push({
+                            hierarchy : subjectName,
+                            membersQuery : {
+                                hierarchy : data.hierarchy,
+                                members   : [data.members[m]]
+                            }
+                        });
+                    }
                 }
             }
 

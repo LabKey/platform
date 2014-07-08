@@ -37,7 +37,7 @@ import java.util.Map;
  */
 public class TSVMapWriter extends TSVWriter
 {
-    private Iterable<String> _columns;
+    protected Iterable<String> _columns;
     private Iterable<Map<String, Object>> _rows;
 
     /**
