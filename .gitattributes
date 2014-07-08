@@ -2768,6 +2768,7 @@ search/src/org/labkey/search/model/DocumentConversionServiceImpl.java -text
 search/src/org/labkey/search/model/ExternalAnalyzer.java -text
 search/src/org/labkey/search/model/ExternalIndexManager.java -text
 search/src/org/labkey/search/model/ExternalIndexProperties.java -text
+search/src/org/labkey/search/model/IndexInspector.java -text
 search/src/org/labkey/search/model/IndexManager.java -text
 search/src/org/labkey/search/model/IndexManagerClosedException.java -text
 search/src/org/labkey/search/model/LuceneSearchServiceImpl.java -text
@@ -2796,6 +2797,7 @@ search/src/org/labkey/search/view/DefaultSearchResultTemplate.java -text
 search/src/org/labkey/search/view/SearchWebPart.java -text
 search/src/org/labkey/search/view/SearchWebPartFactory.java -text
 search/src/org/labkey/search/view/customizeSearchWebPart.jsp -text
+search/src/org/labkey/search/view/exportContents.jsp -text
 search/src/org/labkey/search/view/externalIndex.jsp -text
 search/src/org/labkey/search/view/externalIndexPermissions.jsp -text
 search/src/org/labkey/search/view/indexerAdmin.jsp -text

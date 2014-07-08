@@ -162,7 +162,11 @@ public class CustomViewImpl extends CustomViewInfoImpl implements CustomView
 
     public void setColumns(List<FieldKey> columns)
     {
-        edit().setColumns(StringUtils.join(columns.iterator(), "&"));
+        List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> list = new ArrayList<>(columns.size());
+        for (FieldKey column : columns)
+            list.add(Pair.of(column, Collections.<ColumnProperty, String>emptyMap()));
+
+        edit().setColumns(encodeProperties(list));
     }
 
     public boolean hasColumnList()

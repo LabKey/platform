@@ -259,10 +259,4 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
 
         return new DataSetTableImpl(schema, dsd);
     }
-
-    @Override
-    public boolean hasPropertiesIncludeBaseProperties()
-    {
-        return false;
-    }
 }

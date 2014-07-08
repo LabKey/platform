@@ -215,6 +215,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
             }
 
             ExcelLoader loader = new ExcelLoader(input, true);
+            loader.setInferTypes(false);
             List<Map<String, Object>> inputRows = loader.load();
             List<Map<String, Object>> outputRows = transformRows(inputRows);
 

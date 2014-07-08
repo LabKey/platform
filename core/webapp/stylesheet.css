@@ -907,7 +907,6 @@ span.labkey-help-pop-up
 }
 
 .auth-form-body {
-    width: 350px;
     margin-top: 15px;
     font-family: Arial, sans-serif;
 }
@@ -923,6 +922,7 @@ span.labkey-help-pop-up
 
 .auth-form-body input[type="text"],
 .auth-form-body input[type="password"] {
+    width: 350px;
     border: 1px solid #A0A0A0;
     vertical-align: middle;
     padding: 7px 8px;
@@ -2264,13 +2264,6 @@ table.labkey-manage-default-reqs
 
 
 /* Wiki */
-
-div.labkey-wiki
-{
-    word-wrap: break-word;
-    word-break: break-all;
-}
-
 div.labkey-wiki h1
 {
     font-size: 2em;

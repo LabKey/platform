@@ -493,7 +493,7 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
     deferLoad: false,
 
     /**
-     * By default cubes will not attempt to use perspecitves nor will they expect that they are supplied
+     * By default cubes will not attempt to use perspectives nor will they expect that they are supplied
      * at runtime (via applyContext). If perspectives are enabled, then the cube creator is responsible
      * for initializing the perspectives available.
      */

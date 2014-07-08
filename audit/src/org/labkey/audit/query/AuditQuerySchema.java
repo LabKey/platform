@@ -32,7 +32,9 @@ import org.labkey.audit.AuditSchema;
 import org.labkey.audit.model.LogManager;
 import org.springframework.validation.BindException;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -44,7 +46,6 @@ public class AuditQuerySchema extends UserSchema
     public static final String SCHEMA_NAME = "auditLog";
     public static final String SCHEMA_DESCR = "Contains data about audit log events.";
     public static final String AUDIT_TABLE_NAME = "audit";
-    private static Set<String> _tables = new HashSet<>();
 
     static public void register(Module module)
     {
@@ -70,26 +71,26 @@ public class AuditQuerySchema extends UserSchema
 
     public Set<String> getTableNames()
     {
-        if (_tables.isEmpty())
+        LinkedHashSet<String> tables = new LinkedHashSet<>();
+
+        // once migration is complete, we will not show the union query (although exsiting queries over it will continue to work)
+        if (!AuditLogService.get().isMigrateComplete())
+            tables.add(AUDIT_TABLE_NAME);
+
+        // old method of acquiring table names
+        for (AuditLogService.AuditViewFactory factory : AuditLogService.get().getAuditViewFactories())
         {
-            // once migration is complete, we will not show the union query (although exsiting queries over it will continue to work)
-            if (!AuditLogService.get().isMigrateComplete())
-                _tables.add(AUDIT_TABLE_NAME);
-
-            // old method of acquiring table names
-            for (AuditLogService.AuditViewFactory factory : AuditLogService.get().getAuditViewFactories())
-            {
-                _tables.add(factory.getEventType());
-            }
-
-            // new audit table names
-            for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
-            {
-                if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(provider.getEventName()))
-                    _tables.add(provider.getEventName());
-            }
+            tables.add(factory.getEventType());
         }
-        return _tables;
+
+        // new audit table names
+        for (AuditTypeProvider provider : AuditLogService.get().getAuditProviders())
+        {
+            if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(provider.getEventName()))
+                tables.add(provider.getEventName());
+        }
+
+        return Collections.unmodifiableSet(tables);
     }
 
     public TableInfo createTable(String name)

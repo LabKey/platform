@@ -70,6 +70,7 @@ import org.labkey.api.webdav.WebdavService;
 import org.labkey.search.model.AbstractSearchService;
 import org.labkey.search.model.ExternalAnalyzer;
 import org.labkey.search.model.ExternalIndexProperties;
+import org.labkey.search.model.IndexInspector;
 import org.labkey.search.model.LuceneSearchServiceImpl;
 import org.labkey.search.model.SearchPropertyManager;
 import org.springframework.validation.BindException;
@@ -241,7 +242,17 @@ public class SearchController extends SpringActionController
     @AdminConsoleAction
     public class AdminAction extends FormViewAction<AdminForm>
     {
-        int _msgid = 0;
+        @SuppressWarnings("UnusedDeclaration")
+        public AdminAction()
+        {
+        }
+
+        public AdminAction(PageConfig pageConfig)
+        {
+            setPageConfig(pageConfig);
+        }
+
+        private int _msgid = 0;
         
         public void validateCommand(AdminForm target, Errors errors)
         {
@@ -344,8 +355,55 @@ public class SearchController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             setHelpTopic(new HelpTopic("searchAdmin"));
-            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Full-Text Search Configuration", null);
+            PageFlowUtil.urlProvider(AdminUrls.class).appendAdminNavTrail(root, "Full-Text Search Configuration", new ActionURL(AdminAction.class, ContainerManager.getRoot()));
             return root;
+        }
+    }
+
+
+    @AdminConsoleAction
+    public class IndexContentsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/search/view/exportContents.jsp");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            NavTree admin = new AdminAction(getPageConfig()).appendNavTrail(root);
+            admin.addChild("Index Contents");
+
+            return admin;
+        }
+    }
+
+
+    public static class ExportForm
+    {
+        private String _format = "Text";
+
+        public String getFormat()
+        {
+            return _format;
+        }
+
+        public void setFormat(String format)
+        {
+            _format = format;
+        }
+    }
+
+
+    @AdminConsoleAction
+    public class ExportIndexContentsAction extends ExportAction<ExportForm>
+    {
+        @Override
+        public void export(ExportForm form, HttpServletResponse response, BindException errors) throws Exception
+        {
+            new IndexInspector().export(response, form.getFormat());
         }
     }
 

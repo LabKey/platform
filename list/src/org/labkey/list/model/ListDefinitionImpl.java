@@ -449,7 +449,7 @@ public class ListDefinitionImpl implements ListDefinition
 
     public ListItem getListItemForEntityId(String entityId, User user)
     {
-        return getListItem(new SimpleFilter(FieldKey.fromParts("EntityId"), entityId), user);
+        return getListItem(new SimpleFilter(FieldKey.fromParts("EntityId"), entityId), user, getContainer());
     }
 
     private ListItem getListItem(SimpleFilter filter, User user, Container c)
