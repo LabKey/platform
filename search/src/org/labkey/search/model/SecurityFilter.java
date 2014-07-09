@@ -55,7 +55,7 @@ class SecurityFilter extends Filter
     private final User _user;
     private final HashMap<String, Container> _containerIds;
     private final HashMap<String, Boolean> _securableResourceIds = new HashMap<>();
-    private MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> _iTimer;
+    private final MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> _iTimer;
 
     SecurityFilter(User user, Container searchRoot, Container currentContainer, boolean recursive, MultiPhaseCPUTimer.InvocationTimer<SearchService.SEARCH_PHASE> iTimer)
     {
@@ -107,9 +107,7 @@ class SecurityFilter extends Filter
                 containerDocValues.get(i, bytesRef);
                 String containerId = StringUtils.trimToNull(bytesRef.utf8ToString());
 
-                assert null != containerId; // Shouldn't happen... TODO: remove null check below in 14.1
-
-                if (null == containerId || !_containerIds.containsKey(containerId))
+                if (!_containerIds.containsKey(containerId))
                     continue;
 
                 // Can be null, if no documents have a resource ID (e.g., shortly after bootstrap)
@@ -149,8 +147,8 @@ class SecurityFilter extends Filter
 
     static class _SecurableResource implements SecurableResource
     {
-        final String _id;
-        final Container _container;
+        private final String _id;
+        private final Container _container;
         
         _SecurableResource(String resourceId, Container c)
         {
