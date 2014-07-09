@@ -323,11 +323,19 @@ public class ServerManager
 
                         Level l = h.getLevels().get(h.getLevels().size()-1);
                         map.put("level", l.getUniqueName());
-                        //map.put("hierarchy", h.getUniqueName());
                         map.put("members", "members");
                         jsonOnRows.put(0, map);
 
                         execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
+
+                        // 20975: Ensure we touch specimen queries
+                        map.remove("level");
+                        map.put("hierarchy", h.getUniqueName());
+                        jsonOnRows.put(0, map);
+
+                        jsonQuery.put("countDistinctLevel", "[Specimen].[Specimen]");
+                        execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
+                        jsonQuery.remove("countDistinctLevel");
                     }
                     catch (Exception ignore) {}
                 }

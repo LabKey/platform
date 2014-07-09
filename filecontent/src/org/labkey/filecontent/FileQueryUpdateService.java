@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Filter;
+import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -40,6 +41,7 @@ import org.labkey.api.query.AbstractQueryUpdateService;
 import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.search.SearchService;
@@ -74,13 +76,13 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
 {
     private static final Logger _log = Logger.getLogger(FileQueryUpdateService.class);
     private Container _container;
-    private Set<String> _columns;
+    private Set<FieldKey> _columns;
     private Domain _domain;
 
     public static final String KEY_COL_ID = "id";
     public static final String KEY_COL_DAV = "davUrl";
     public static final String KEY_COL_FILE = "filePath";
-    public static final String COL_COMMENT = "Flag/Comment";
+    public static final FieldKey COL_COMMENT = FieldKey.fromParts(ExpDataTable.Column.Flag.name(), "Comment");
 
 
     public FileQueryUpdateService(TableInfo queryTable, Container container)
@@ -93,68 +95,71 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
     protected Map<String, Object> getRow(User user, Container container, Map<String, Object> keys) throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         Filter filter = getQueryFilter(container, keys);
-        Set<String> queryColumns = getQueryColumns(container);
+        Set<FieldKey> queryColumns = getQueryColumns(container);
 
-        Map<String, Object>[] rows = new TableSelector(getQueryTable(), queryColumns, filter, null).getMapArray();
         Map<String, Object> rowMap = new HashMap<>();
-
-        if (rows.length > 0)
+        Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getQueryTable(), queryColumns);
+        try (Results results = new TableSelector(getQueryTable(), cols.values(), filter, null).getResults())
         {
-            Map<String, Object> selectMap = rows[0];
-
-            if (rows.length > 1)
-                _log.error("More than one row returned for data file: " + filter.toSQLString(getQueryTable().getSqlDialect()));
-
-            Domain domain = getFileProperties(container);
-
-            if (domain != null)
+            if (results.next())
             {
-                for (DomainProperty prop : domain.getProperties())
+                Map<FieldKey, Object> fieldKeyRowMap = results.getFieldKeyRowMap();
+
+                Domain domain = getFileProperties(container);
+                if (domain != null)
                 {
-                    Object o = selectMap.get(prop.getName());
-                    String urlValue = getUrlValue(prop, selectMap);
-
-                    if (o != null)
+                    for (DomainProperty prop : domain.getProperties())
                     {
-                        try
-                        {
-                            String fmt = DomainUtil.getFormattedDefaultValue(user, prop, o);
-                            
-                            if (!rowMap.containsKey(prop.getName() + "_displayValue"))
-                                rowMap.put(prop.getName() + "_displayValue", fmt);
+                        FieldKey fieldKey = new FieldKey(null, prop.getName());
+                        Object o = fieldKeyRowMap.get(fieldKey);
+                        String urlValue = getUrlValue(cols.get(fieldKey), fieldKeyRowMap);
 
-                            if (o instanceof Date)
-                                rowMap.put(prop.getName(), fmt);
-                            else
-                                rowMap.put(prop.getName(), o);
-
-                            if (urlValue != null)
-                                rowMap.put(FileSystemResource.URL_COL_PREFIX + prop.getName(), urlValue);
-                        }
-                        catch (Exception e)
+                        if (o != null)
                         {
-                            throw new QueryUpdateServiceException(e);
+                            try
+                            {
+                                String fmt = DomainUtil.getFormattedDefaultValue(user, prop, o);
+
+                                if (!rowMap.containsKey(prop.getName() + "_displayValue"))
+                                    rowMap.put(prop.getName() + "_displayValue", fmt);
+
+                                if (o instanceof Date)
+                                    rowMap.put(prop.getName(), fmt);
+                                else
+                                    rowMap.put(prop.getName(), o);
+
+                                if (urlValue != null)
+                                    rowMap.put(FileSystemResource.URL_COL_PREFIX + prop.getName(), urlValue);
+                            }
+                            catch (Exception e)
+                            {
+                                throw new QueryUpdateServiceException(e);
+                            }
                         }
                     }
                 }
-            }
 
-            // gather any other standard columns for this QUS 
-            for (String colName : queryColumns)
-            {
-                if (!rowMap.containsKey(colName))
+                // gather any other standard columns for this QUS
+                for (FieldKey fieldKey : queryColumns)
                 {
-                    rowMap.put(colName, selectMap.get(colName));
+                    String name = fieldKey.toString();
+                    if (!rowMap.containsKey(name))
+                    {
+                        rowMap.put(name, fieldKeyRowMap.get(fieldKey));
+                    }
                 }
+
+                if (results.next())
+                    _log.error("More than one row returned for data file: " + filter.toSQLString(getQueryTable().getSqlDialect()));
             }
         }
+
         return rowMap;
     }
 
-    private String getUrlValue(DomainProperty prop, Map<String, Object> selectMap)
+    private String getUrlValue(ColumnInfo col, Map<FieldKey, Object> selectMap)
     {
         String urlValue = null;
-        ColumnInfo col = getQueryTable().getColumn(prop.getName());
 
         if (col != null && col.getDisplayColumnFactory() != null)
         {
@@ -199,21 +204,21 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
         return filter;
     }
 
-    private Set<String> getQueryColumns(Container c)
+    private Set<FieldKey> getQueryColumns(Container c)
     {
         if (_columns == null)
         {
             _columns = new HashSet<>();
 
-            _columns.add(ExpDataTable.Column.Flag.name());
+            _columns.add(new FieldKey(null, ExpDataTable.Column.Flag.name()));
             _columns.add(COL_COMMENT);
-            _columns.add(ExpDataTable.Column.DataFileUrl.name());
+            _columns.add(new FieldKey(null, ExpDataTable.Column.DataFileUrl.name()));
 
             Domain domain = getFileProperties(c);
             if (domain != null)
             {
                 for (DomainProperty prop : domain.getProperties())
-                    _columns.add(prop.getName());
+                    _columns.add(new FieldKey(null, prop.getName()));
             }
         }
         return _columns;
@@ -255,7 +260,9 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             try
             {
                 Filter filter = getQueryFilter(container, row);
-                Map<String, Object>[] rows = new TableSelector(getQueryTable(), getQueryColumns(container), filter, null).getMapArray();
+                Set<FieldKey> queryColumns = getQueryColumns(container);
+                Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getQueryTable(), queryColumns);
+                Map<String, Object>[] rows = new TableSelector(getQueryTable(), cols.values(), filter, null).getMapArray();
 
                 if (rows.length > 0)
                 {
@@ -314,9 +321,9 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
             }
 
             // Get the Flag/Comment field
-            if (row.containsKey(COL_COMMENT))
+            if (row.containsKey(COL_COMMENT.toString()))
             {
-                Object comment = row.get(COL_COMMENT);
+                Object comment = row.get(COL_COMMENT.toString());
                 if (comment instanceof String)
                     data.setComment(user, (String)comment);
                 else

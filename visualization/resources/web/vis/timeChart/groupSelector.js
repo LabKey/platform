@@ -153,8 +153,10 @@ Ext4.define('LABKEY.vis.GroupSelector', {
         function compareGroups(a, b) {
             if (a.type == 'cohort' && b.type == 'participantGroup') { return -1; }
             if (a.type == 'participantGroup' && b.type == 'cohort') { return 1; }
-            if (a.id < b.id) { return -1; }
-            if (a.id > b.id) { return 1; }
+            if (a.type == 'cohort' && a.label < b.label) { return -1; }  // issue 20992
+            if (a.type == 'cohort' && a.label > b.label) { return 1; }
+            if (a.type == 'participantGroup' && a.id < b.id) { return -1; }
+            if (a.type == 'participantGroup' && a.id > b.id) { return 1; }
             return 0;
         }
         groups.sort(compareGroups);

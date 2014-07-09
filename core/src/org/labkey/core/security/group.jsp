@@ -134,7 +134,7 @@ if (!bean.group.isDevelopers())
 {
 %>
     <br/>
-    <%if (!bean.group.isSystemGroup()){%><%= button("Rename Group").href(buildURL(SecurityApiActions.RenameGroupAction.class)).attributes("id=" + bean.group.getUserId()) %><%}%>
+    <%if (!bean.group.isSystemGroup()){%><%= button("Rename Group").href(buildURL(SecurityApiActions.RenameGroupAction.class, "id=" + bean.group.getUserId())) %><%}%>
     <%= button("View Permissions").href(urlProvider(SecurityUrls.class).getGroupPermissionURL(c, bean.group.getUserId())) %>
 <%
 }

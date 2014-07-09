@@ -180,7 +180,19 @@ public class IssuesTable extends FilteredTable<IssuesQuerySchema>
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                DataColumn dataColumn = new DataColumn(colInfo);
+                DataColumn dataColumn = new DataColumn(colInfo) {
+                    @Override
+                    public boolean isSortable()
+                    {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isFilterable()
+                    {
+                        return false;
+                    }
+                };
                 dataColumn.setURLTitle(new StringExpressionFactory.FieldKeyStringExpression("Issue ${Related/IssueId}: ${Related/Title:htmlEncode}", false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.NullResult));
 
                 MultiValuedDisplayColumn displayColumn = new MultiValuedDisplayColumn(dataColumn, true);

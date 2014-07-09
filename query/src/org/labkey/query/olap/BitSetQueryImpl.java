@@ -1161,20 +1161,36 @@ public class BitSetQueryImpl
                 set = resultsCacheGet(query);
                 if (null == set)
                 {
-                    try (CellSet cs = execute(query))
+                    if (null != outer.level)
                     {
+                        populateCache(outer.getLevel(), sub);
                         set = new MemberSet();
-                        List<Position> rowPositions = cs.getAxes().get(1).getPositions();
-                        for (int row=0 ; row<rowPositions.size() ; row++)
+                        for (Member m : sub.getCollection())
                         {
-                            Position p = rowPositions.get(row);
-                            Member m = p.getMembers().get(0);
-                            double value = cs.getCell(row).getDoubleValue();
-                            if (0 != value)
-                                set.add(getCubeMember(m));
+                            MemberSet inner = membersQuery(outer.level, m);
+                            set.addAll(inner);
                         }
+                        if (query.length() < 2000)
+                            resultsCachePut(query, set);
                     }
-                    resultsCachePut(query, set);
+                    else
+                    {
+                        // non-optimized case
+                        try (CellSet cs = execute(query))
+                        {
+                            set = new MemberSet();
+                            List<Position> rowPositions = cs.getAxes().get(1).getPositions();
+                            for (int row=0 ; row<rowPositions.size() ; row++)
+                            {
+                                Position p = rowPositions.get(row);
+                                Member m = p.getMembers().get(0);
+                                double value = cs.getCell(row).getDoubleValue();
+                                if (0 != value)
+                                    set.add(getCubeMember(m));
+                            }
+                        }
+                        resultsCachePut(query, set);
+                    }
                 }
             }
 
@@ -1232,7 +1248,6 @@ public class BitSetQueryImpl
 
             // We cache by individual members, but we don't necessaryily want to load the cache one set at a time
             // we could find just the members that are not yet cached, but I'm just going to check if ANY are missing
-            Hierarchy h = null;
             for (Member sub : inner.getCollection())
             {
                 if (same(sub.getHierarchy(), outerLevel.getHierarchy()))
@@ -1253,13 +1268,21 @@ public class BitSetQueryImpl
             for (Member sub : innerCollection)
                 sets.put(sub.getUniqueName(), new MemberSet());
 
+            boolean isLongList = false;
+            if (inner instanceof MemberSetResult)
+            {
+                MemberSetResult msr = (MemberSetResult)inner;
+                if (msr.members != null && msr.members.size() > 20)
+                    isLongList = true;
+            }
             String queryXjoin;
-            if (innerCollection.size() < 20 || null == inner.getLevel())
+            if (!isLongList || null == inner.getLevel())
             {
                 queryXjoin=queryCrossjoin(outerLevel, inner);
             }
             else
             {
+                // just cache for all members of the level
                 queryXjoin = queryCrossjoin(outerLevel, inner.getLevel());
             }
 
