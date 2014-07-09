@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyManager;
@@ -34,6 +35,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: klum
@@ -43,6 +45,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
 {
     protected static final String AGGREGATE_DELIM = "::";
     protected static final String TYPE_DELIM = "-";
+    protected Set<String> _wrappedColumnNames = new CaseInsensitiveHashSet();
 
     protected static String getNormalName(String name)
     {
@@ -209,6 +212,10 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
             }
             i += 1;
         }
+
+        // issue 21022 : duplicate primary or derivative type names results in duplicate wrapped column names
+        ensureUniqueWrappedName(name);
+        _wrappedColumnNames.add(name.toString());
         ColumnInfo colInfo = new AliasedColumn(this, name.toString(), col);       // make lower case
         colInfo.setLabel(label.toString());
         if (descriptionFormat != null)
@@ -216,7 +223,16 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
 
         return addColumn(colInfo);
     }
-    
+
+    private void ensureUniqueWrappedName(StringBuilder name)
+    {
+        int i = 1;
+        while (_wrappedColumnNames.contains(name.toString()))
+        {
+            name.append("_").append(i++);
+        }
+    }
+
     /**
      * Returns a map of primary type ids to labels
      */
