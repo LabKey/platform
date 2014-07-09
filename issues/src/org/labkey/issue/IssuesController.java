@@ -382,7 +382,7 @@ public class IssuesController extends SpringActionController
             //pass user's update perms to jsp page to determine whether to show notify list
             page.setUserHasUpdatePermissions(hasUpdatePermission(getUser(), _issue));
             page.setUserHasAdminPermissions(hasAdminPermission(getUser(), _issue));
-            page.setMoveDestinations(null != IssueManager.getMoveDestinationContainers(getContainer()) ? true : false);
+            page.setMoveDestinations(IssueManager.getMoveDestinationContainers(getContainer()).size() != 0 ? true : false);
             page.setRequiredFields(IssueManager.getRequiredIssueFields(getContainer()));
 
             return new JspView<>("/org/labkey/issue/detailView.jsp", page);

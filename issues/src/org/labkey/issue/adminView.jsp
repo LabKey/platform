@@ -170,13 +170,13 @@
                         <tr><td colspan="2">Set move to folder:</td></tr>
                         <tr>
                             <td>
-                                <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="NoMoveToContainer"<%=checked(null == bean.moveToContainers)%> />
+                                <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="NoMoveToContainer"<%=checked(bean.moveToContainers.size() == 0)%> />
                             </td>
                             <td>None</td>
                         </tr>
                         <tr>
                             <td>
-                                <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="SpecificMoveToContainer"<%=checked(null != bean.moveToContainers)%> />
+                                <input onchange="toggleMoveToContainerSelect()" type="radio" name="moveToContainer" value="SpecificMoveToContainer"<%=checked(bean.moveToContainers.size() > 0)%> />
                             </td>
                             <td>
                                 <div class="moveToContainerCheckCombo"></div>
