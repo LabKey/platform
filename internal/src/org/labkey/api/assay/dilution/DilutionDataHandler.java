@@ -189,12 +189,12 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         }
     }
 
-    protected void throwParseError(File dataFile, String msg) throws ExperimentException
+    protected ExperimentException createParseError(File dataFile, String msg) throws ExperimentException
     {
-        throwParseError(dataFile, msg, null);
+        return createParseError(dataFile, msg, null);
     }
 
-    protected void throwParseError(File dataFile, String msg, @Nullable Exception cause) throws ExperimentException
+    protected ExperimentException createParseError(File dataFile, String msg, @Nullable Exception cause) throws ExperimentException
     {
         StringBuilder fullMessage = new StringBuilder("There was an error parsing ");
         fullMessage.append(dataFile.getName()).append(".\n");
@@ -208,9 +208,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             fullMessage.append("\n");
         }
         if (cause != null)
-            throw new ExperimentException(fullMessage.toString(), cause);
+            return new ExperimentException(fullMessage.toString(), cause);
         else
-            throw new ExperimentException(fullMessage.toString());
+            return new ExperimentException(fullMessage.toString());
     }
 
     protected abstract String getPreferredDataFileExtension();
