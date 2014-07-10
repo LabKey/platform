@@ -58,11 +58,17 @@ public class RunDataSetContextualRoles implements HasContextualRoles
     @Nullable
     public Set<Role> getContextualRoles(ViewContext context)
     {
+        // skip the check if the user has ReadPermission to the container
+        Container container = context.getContainer();
+        User user = context.getUser();
+        if (container.hasPermission(user, ReadPermission.class))
+            return null;
+
         String rowIdStr = context.getRequest().getParameter("rowId");
         if (rowIdStr != null)
         {
             int runRowId = NumberUtils.toInt(rowIdStr);
-            return RunDataSetContextualRoles.getContextualRolesForRun(context.getContainer(), context.getUser(), runRowId);
+            return RunDataSetContextualRoles.getContextualRolesForRun(container, user, runRowId);
         }
         return null;
     }
@@ -84,17 +90,14 @@ public class RunDataSetContextualRoles implements HasContextualRoles
         if (run == null)
             return null;
 
-        return getContextualRolesForRun(container, user, run);
+        return getContextualRolesForRun(container, user, run, FieldKey.fromParts("runid"));
     }
 
+    /** caller should have already checked that the user does not have ReadPermission to the container */
     @Nullable
-    public static Set<Role> getContextualRolesForRun(Container container, User user, ExpRun run)
+    public static Set<Role> getContextualRolesForRun(Container container, User user, ExpRun run, FieldKey runIdFieldKey)
     {
         if (container == null || user == null)
-            return null;
-
-        // skip the check if the user has ReadPermission to the container
-        if (container.hasPermission(user, ReadPermission.class))
             return null;
 
         ExpProtocol protocol = run.getProtocol();
@@ -126,7 +129,7 @@ public class RunDataSetContextualRoles implements HasContextualRoles
         if (datasetColumnNames.size() == 0)
             return null;
 
-        Map<String, Object>[] results = new TableSelector(resultsTable, datasetColumnNames, new SimpleFilter(FieldKey.fromParts("runid"), run.getRowId()), null).getMapArray();
+        Map<String, Object>[] results = new TableSelector(resultsTable, datasetColumnNames, new SimpleFilter(runIdFieldKey, run.getRowId()), null).getMapArray();
 
         if (results.length == 0)
             return null;
