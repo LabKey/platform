@@ -36,7 +36,6 @@ import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.MvUtil;
-import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.message.settings.MessageConfigService;
@@ -79,7 +78,6 @@ import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartView;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
@@ -1211,7 +1209,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             VBox defaultsView = new VBox();
             defaultsView.setTitle("Default Settings");
             defaultsView.setFrame(FrameType.PORTAL);
-            defaultsView.addView(new HtmlView("You can this folder's default settings for email notifications here."));
+            defaultsView.addView(new HtmlView("You can change this folder's default settings for email notifications here."));
             PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
             for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.getInstance().getConfigTypes())
             {
