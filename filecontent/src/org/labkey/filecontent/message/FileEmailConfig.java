@@ -16,17 +16,17 @@
 package org.labkey.filecontent.message;
 
 import org.apache.commons.lang3.math.NumberUtils;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.files.FileContentDefaultEmailPref;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.util.ReturnURLString;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.filecontent.FileContentController;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -37,7 +37,7 @@ import java.util.Set;
  * Date: Jan 19, 2011
  * Time: 3:01:52 PM
  */
-public class FileEmailConfig extends AbstractConfigTypeProvider implements MessageConfigService.ConfigTypeProvider
+public class FileEmailConfig extends AbstractConfigTypeProvider
 {
     public static final String TYPE = "files";
     public static int NO_EMAIL = 512;
@@ -58,17 +58,16 @@ public class FileEmailConfig extends AbstractConfigTypeProvider implements Messa
     }
 
     @Override
-    public HttpView createConfigPanel(ViewContext context, MessageConfigService.PanelInfo info) throws Exception
+    protected int getDefaultEmailOption(Container c)
     {
-        EmailConfigForm form = new EmailConfigForm();
+        String pref = EmailService.get().getDefaultEmailPref(c, new FileContentDefaultEmailPref());
+        return NumberUtils.toInt(pref);
+    }
 
-        String pref = EmailService.get().getDefaultEmailPref(context.getContainer(), new FileContentDefaultEmailPref());
-
-        form.setDataRegionSelectionKey(info.getDataRegionSelectionKey());
-        form.setReturnUrl(new ReturnURLString(info.getReturnUrl().getLocalURIString()));
-        form.setDefaultEmailOption(NumberUtils.toInt(pref));
-
-        return new JspView<>("/org/labkey/filecontent/view/fileNotifySettings.jsp", form);
+    @Override
+    protected ActionURL getSetDefaultPrefURL(Container c)
+    {
+        return new ActionURL(FileContentController.SetDefaultEmailPrefAction.class, c);
     }
 
     @Override
@@ -83,43 +82,6 @@ public class FileEmailConfig extends AbstractConfigTypeProvider implements Messa
     @Override
     public boolean handlePost(ViewContext context, BindException errors) throws Exception
     {
-        return false;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public static class EmailConfigForm  extends ReturnUrlForm
-    {
-        int _defaultEmailOption;
-        int _individualEmailOption;
-        String _dataRegionSelectionKey;
-
-        public int getDefaultEmailOption()
-        {
-            return _defaultEmailOption;
-        }
-
-        public void setDefaultEmailOption(int defaultEmailOption)
-        {
-            _defaultEmailOption = defaultEmailOption;
-        }
-
-        public int getIndividualEmailOption()
-        {
-            return _individualEmailOption;
-        }
-
-        public void setIndividualEmailOption(int individualEmailOption)
-        {
-            _individualEmailOption = individualEmailOption;
-        }
-
-        public String getDataRegionSelectionKey()
-        {
-            return _dataRegionSelectionKey;
-        }
-
-        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
-        {
-            _dataRegionSelectionKey = dataRegionSelectionKey;
-        }
+        return false;
     }
 }

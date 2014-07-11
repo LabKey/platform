@@ -160,7 +160,6 @@ announcements/src/org/labkey/announcements/query/RSSFeedsTable.java -text
 announcements/src/org/labkey/announcements/respond.jsp -text
 announcements/src/org/labkey/announcements/rss.jsp -text
 announcements/src/org/labkey/announcements/update.jsp -text
-announcements/src/org/labkey/announcements/view/announcementNotifySettings.jsp -text
 audit/module.properties -text
 audit/resources/schemas/dbscripts/postgresql/audit-0.00-12.10.sql -text
 audit/resources/schemas/dbscripts/postgresql/audit-12.20-12.30.sql -text
@@ -744,6 +743,7 @@ core/src/org/labkey/core/admin/view/filesProjectSettings.jsp -text
 core/src/org/labkey/core/admin/view/filesProjectSettingsSummary.jsp -text
 core/src/org/labkey/core/admin/view/filesSiteSettings.jsp -text
 core/src/org/labkey/core/admin/view/folderSettingsHeader.jsp -text
+core/src/org/labkey/core/admin/view/notifySettings.jsp -text
 core/src/org/labkey/core/admin/webTheme.jsp -text
 core/src/org/labkey/core/admin/writer/FolderSerializationRegistryImpl.java -text
 core/src/org/labkey/core/admin/writer/FolderTypeWriterFactory.java -text
@@ -1500,7 +1500,6 @@ filecontent/src/org/labkey/filecontent/view/configure.jsp -text
 filecontent/src/org/labkey/filecontent/view/configureEmail.jsp -text
 filecontent/src/org/labkey/filecontent/view/fileDigestNotify.jsp -text
 filecontent/src/org/labkey/filecontent/view/fileDigestNotifyPlain.jsp -text
-filecontent/src/org/labkey/filecontent/view/fileNotifySettings.jsp -text
 filecontent/src/org/labkey/filecontent/view/files.jsp -text
 filecontent/src/org/labkey/filecontent/view/iframe.jsp -text
 filecontent/webapp/ActionsAdmin.js -text

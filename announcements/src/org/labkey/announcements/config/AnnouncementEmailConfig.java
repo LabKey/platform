@@ -16,15 +16,17 @@
 package org.labkey.announcements.config;
 
 import org.apache.commons.lang3.math.NumberUtils;
+import org.labkey.announcements.AnnouncementsController;
 import org.labkey.announcements.model.AnnouncementManager;
-import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
@@ -33,7 +35,7 @@ import org.springframework.validation.Errors;
 
 import java.util.Set;
 
-public class AnnouncementEmailConfig extends AbstractConfigTypeProvider implements MessageConfigService.ConfigTypeProvider 
+public class AnnouncementEmailConfig extends AbstractConfigTypeProvider
 {
     public static final String TYPE = "messages";
 
@@ -50,16 +52,15 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider implemen
     }
 
     @Override
-    public HttpView createConfigPanel(ViewContext context, MessageConfigService.PanelInfo info) throws Exception
+    protected ActionURL getSetDefaultPrefURL(Container c)
     {
-        EmailConfigForm form = new EmailConfigForm();
+        return new ActionURL(AnnouncementsController.SetEmailDefault.class, c);
+    }
 
-        form.setDefaultEmailOption(AnnouncementManager.getDefaultEmailOption(context.getContainer()));
-        form.setEmailOptions(AnnouncementManager.getEmailOptions());
-        form.setDataRegionSelectionKey(info.getDataRegionSelectionKey());
-        form.setReturnUrl(new ReturnURLString(info.getReturnUrl().getLocalURIString()));
-
-        return new JspView<>("/org/labkey/announcements/view/announcementNotifySettings.jsp", form);
+    @Override
+    protected int getDefaultEmailOption(Container c)
+    {
+        return AnnouncementManager.getDefaultEmailOption(c);
     }
 
     @Override
@@ -98,67 +99,4 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider implemen
         return false;
     }
 
-    public static class EmailConfigForm extends ReturnUrlForm
-    {
-        int _defaultEmailOption;
-        int _individualEmailOption;
-        MessageConfigService.NotificationOption[] _emailOptions;
-        String _dataRegionSelectionKey;
-        String _type;
-
-        public int getDefaultEmailOption()
-        {
-            return _defaultEmailOption;
-        }
-
-        public void setDefaultEmailOption(int defaultEmailOption)
-        {
-            _defaultEmailOption = defaultEmailOption;
-        }
-
-        public MessageConfigService.NotificationOption[] getEmailOptions()
-        {
-            return _emailOptions;
-        }
-
-        public void setEmailOptions(MessageConfigService.NotificationOption[] emailOptions)
-        {
-            _emailOptions = emailOptions;
-        }
-
-        public int getIndividualEmailOption()
-        {
-            return _individualEmailOption;
-        }
-
-        public void setIndividualEmailOption(int individualEmailOption)
-        {
-            _individualEmailOption = individualEmailOption;
-        }
-
-        public String getDataRegionSelectionKey()
-        {
-            return _dataRegionSelectionKey;
-        }
-
-        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
-        {
-            _dataRegionSelectionKey = dataRegionSelectionKey;
-        }
-
-        public String getType()
-        {
-            return _type;
-        }
-
-        public void setType(String type)
-        {
-            _type = type;
-        }
-
-        public MessageConfigService.ConfigTypeProvider getProvider()
-        {
-            return MessageConfigService.getInstance().getConfigType(_type);
-        }
-    }
 }

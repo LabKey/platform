@@ -20,15 +20,6 @@
 
 <labkey:errors/>
 
-<table>
-    <tr><td class="labkey-announcement-title"><span>Email Notification Settings</span></td></tr>
-    <tr><td class="labkey-title-area-line"></td></tr>
-    <tr><td>The list below contains all users with READ access to this folder who are able to receive notifications
-        by email for message boards and file content events. A user's current message or file notification setting is
-        visible in the appropriately named column.<br/><br/>
-
-        Administrators can change the default settings or bulk edit users' settings by clicking on the 'Settings' button
-        to expose the configuration panels for each notification type. Bulk edit affects only the users who are selected
-        with the record check boxes.
-    </td></tr>
-</table>
+<script type="text/javascript">
+    Ext4.QuickTips.init();
+</script>

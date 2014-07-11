@@ -34,6 +34,7 @@ import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.MenuButton;
 import org.labkey.api.data.MvUtil;
 import org.labkey.api.data.PanelButton;
 import org.labkey.api.data.RenderContext;
@@ -1181,20 +1182,13 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 {
                     try
                     {
-                        // add the provider configuration views to the admin panel button
-                        PanelButton adminButton = new PanelButton("Update Settings", getDataRegionName());
-                        PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
+                        // add the provider configuration menu items to the admin panel button
+                        MenuButton adminButton = new MenuButton("Update User Settings");
+                        adminButton.setRequiresSelection(true);
                         for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.getInstance().getConfigTypes())
-                        {
-                            VBox view = new VBox();
+                            adminButton.addMenuItem("For " + StringUtils.capitalize(provider.getName()), null, "userSettings_"+provider.getName()+"(LABKEY.DataRegions.Users.getSelectionCount())" );
 
-                            view.addView(new HtmlView("<input type=\"hidden\" name=\"provider\" value=\"" + provider.getType() + "\">"));
-                            view.addView(provider.createConfigPanel(getViewContext(), config));
-
-                            adminButton.addSubPanel(provider.getName(), view);
-                        }
                         bar.add(adminButton);
-
                         super.populateButtonBar(dataView, bar);
                     }
                     catch (Exception e)
@@ -1207,15 +1201,33 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             queryView.setShowBorders(true);
             queryView.setShowDetailsColumn(false);
             queryView.setShowRecordSelectors(true);
-            queryView.setFrame(WebPartView.FrameType.NONE);
+            queryView.setFrame(FrameType.NONE);
             queryView.disableContainerFilterSelection();
             queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
 
             VBox view = new VBox();
 
             view.addView(new JspView<Object>("/org/labkey/core/admin/view/folderSettingsHeader.jsp", Object.class, _errors));
-            view.addView(queryView);
-
+            VBox defaultsView = new VBox();
+            defaultsView.setTitle("Default Settings");
+            defaultsView.setFrame(FrameType.PORTAL);
+            defaultsView.addView(new HtmlView("You can this folder's default settings for email notifications here."));
+            PanelConfig config = new PanelConfig(getViewContext().getActionURL().clone(), key);
+            for (MessageConfigService.ConfigTypeProvider provider : MessageConfigService.getInstance().getConfigTypes())
+            {
+                defaultsView.addView(new JspView<>("/org/labkey/core/admin/view/notifySettings.jsp", provider.createConfigForm(getViewContext(), config)));
+            }
+            view.addView(defaultsView);
+            VBox usersView = new VBox();
+            usersView.setTitle("User Settings");
+            usersView.setFrame(FrameType.PORTAL);
+            usersView.addView(new HtmlView("The list below contains all users with READ access to this folder who are able to receive notifications\n" +
+                    "        by email for message boards and file content events. A user's current message or file notification setting is\n" +
+                    "        visible in the appropriately named column.<br/><br/>\n" +
+                    "\n" +
+                    "        To bulk edit individual settings: select one or more users, click the 'Update User Settings' menu, and select the notification type."));
+            usersView.addView(queryView);
+            view.addView(usersView);
             return view;
         }
     }

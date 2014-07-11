@@ -22,7 +22,6 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.announcements.config.AnnouncementEmailConfig;
 import org.labkey.announcements.model.AnnouncementDigestProvider;
 import org.labkey.announcements.model.AnnouncementManager;
 import org.labkey.announcements.model.AnnouncementModel;
@@ -66,6 +65,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.digest.DailyMessageDigest;
+import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
@@ -89,6 +89,7 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.study.assay.AbstractParticipantVisitResolver;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -1593,10 +1594,10 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class SetEmailDefault extends ApiAction<AnnouncementEmailConfig.EmailConfigForm>
+    public class SetEmailDefault extends ApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
-        public ApiResponse execute(AnnouncementEmailConfig.EmailConfigForm form, BindException errors) throws Exception
+        public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors) throws Exception
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
 
@@ -1621,10 +1622,10 @@ public class AnnouncementsController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class SetBulkEmailOptions extends ApiAction<AnnouncementEmailConfig.EmailConfigForm>
+    public class SetBulkEmailOptions extends ApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
-        public ApiResponse execute(AnnouncementEmailConfig.EmailConfigForm form, BindException errors) throws Exception
+        public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors) throws Exception
         {
             Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, true);
             ApiSimpleResponse resp = new ApiSimpleResponse();

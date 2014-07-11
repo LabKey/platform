@@ -65,6 +65,7 @@ import org.labkey.api.files.MissingRootDirectoryException;
 import org.labkey.api.files.UnsetRootDirectoryException;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.gwt.server.BaseRemoteService;
+import org.labkey.api.message.settings.AbstractConfigTypeProvider;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.pipeline.PipeRoot;
@@ -1442,20 +1443,20 @@ public class FileContentController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class SetDefaultEmailPrefAction extends MutatingApiAction<EmailPrefForm>
+    public class SetDefaultEmailPrefAction extends MutatingApiAction<AbstractConfigTypeProvider.EmailConfigFormImpl>
     {
         @Override
-        public ApiResponse execute(EmailPrefForm form, BindException errors) throws Exception
+        public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors) throws Exception
         {
             ApiSimpleResponse response =  new ApiSimpleResponse();
             StringBuilder message = new StringBuilder("The current default has been updated to: ");
 
             //save the default settings
-            EmailService.get().setDefaultEmailPref(getContainer(), new FileContentDefaultEmailPref(), String.valueOf(form.getEmailPref()));
+            EmailService.get().setDefaultEmailPref(getContainer(), new FileContentDefaultEmailPref(), String.valueOf(form.getDefaultEmailOption()));
 
             for (MessageConfigService.NotificationOption option : MessageConfigService.getInstance().getConfigType(FileEmailConfig.TYPE).getOptions())
             {
-                if (option.getEmailOptionId() == form.getEmailPref())
+                if (option.getEmailOptionId() == form.getDefaultEmailOption())
                 {
                     message.append(option.getEmailOption());
                     break;
