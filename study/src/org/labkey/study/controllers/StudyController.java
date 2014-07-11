@@ -4296,6 +4296,9 @@ public class StudyController extends BaseStudyController
                 data.cohort = def.getCohortId();
                 data.visible = def.isShowByDefault();
                 data.status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
+                TableInfo t = def.getTableInfo(getViewContext().getUser());
+                boolean exists = new TableSelector(t).exists();
+                data.empty = !exists;
                 bean.put(def.getDataSetId(), data);
             }
 
@@ -4426,6 +4429,7 @@ public class StudyController extends BaseStudyController
         public Integer cohort; // null for none
         public String status;
         public boolean visible;
+        public boolean empty;
         public ViewCategory viewCategory;
     }
 

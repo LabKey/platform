@@ -43,6 +43,7 @@
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getUser());
     JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
     Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
+    ArrayList<Integer> emptyDatasets = new ArrayList<>();
 
     String storeId = "dataset-visibility-category-store";
     ObjectMapper jsonMapper = new ObjectMapper();
@@ -89,12 +90,15 @@
             <th align="left">Cohort</th>
             <th align="left">Status</th>
             <th align="left">Visible</th>
+            <th>&nbsp;</th>
         </tr>
     <%
         for (Map.Entry<Integer, StudyController.DatasetVisibilityData> entry : bean.entrySet())
         {
             int id = entry.getKey().intValue();
             StudyController.DatasetVisibilityData data = entry.getValue();
+            if (data.empty)
+                emptyDatasets.add(id);
     %>
         <tr>
             <td><%= id %></td>
@@ -146,6 +150,7 @@
                 <input type="checkbox" name="visible"<%=checked(data.visible)%> value="<%= id %>">
                 <input type="hidden" name="ids" value="<%= id %>">
             </td>
+            <td><%= text(data.empty ? "empty" : "&nbsp;") %></td>
         </tr>
     <%
         }
@@ -154,6 +159,9 @@
     <%= button("Save").submit(true) %>&nbsp;
     <%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %>&nbsp;
     <%= button("Manage Categories").href("javascript:void(0);").onClick("onManageCategories()") %>
+    <% if (!emptyDatasets.isEmpty()) { %>
+    <%= button("Hide empty datasets").href("javascript:void(0);").onClick("onHideEmptyDatasets()") %>
+    <% } %>
 </form>
 <%
     }
@@ -161,8 +169,8 @@
 
 <script type="text/javascript">
 
-    function onManageCategories() {
-
+    function onManageCategories()
+    {
         Ext4.onReady(function(){
             var window = LABKEY.study.DataViewUtil.getManageCategoriesDialog();
 
@@ -177,8 +185,32 @@
         });
     }
 
-    Ext4.onReady(function() {
 
+    function onHideEmptyDatasets()
+    {
+        var emptyDatasets =
+        {
+            <%
+            String comma="";
+            for (int id:emptyDatasets)
+            {
+                %><%=text(comma)%>"<%=id%>":true<%
+                comma = ",";
+            }
+            %>
+        };
+        var checkboxes = Ext.select("INPUT[name=visible]").elements;
+        for (var i=0 ; i<checkboxes.length ; i++)
+        {
+            var checkbox = checkboxes[i];
+            if (emptyDatasets[checkbox.value])
+                checkbox.checked = false;
+        }
+    }
+
+
+    Ext4.onReady(function()
+    {
         var datasetInfo = <%=text(jsonMapper.writeValueAsString(datasetInfo))%>;
         var store = LABKEY.study.DataViewUtil.getViewCategoriesStore({storeId : '<%=h(storeId)%>'});
 

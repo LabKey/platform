@@ -161,8 +161,8 @@
         <td><%=h(viewCategory != null ? viewCategory.getLabel() : null) %>&nbsp;</td>
         <td><%=h(def.getType())%>&nbsp;</td>
         <td><%=h(cohort != null ? cohort.getLabel() : "All")%></td>
-        <td><%=text(def.isShowByDefault() ? "" : "false")%></td>
-        <td><%=text(def.isDemographicData() ? "true" : "")%></td>
+        <td><%=text(def.isShowByDefault() ? "" : "hidden")%></td>
+        <td><%=text(def.isDemographicData() ? "demographic" : "")%></td>
         <td><%=h(def.getKeyTypeDescription())%></td>
         <td><%=h(def.getAssayProtocol() != null ? def.getAssayProtocol().getName() : "")%></td>
     </tr><%
