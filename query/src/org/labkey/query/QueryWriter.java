@@ -67,9 +67,10 @@ public class QueryWriter extends BaseFolderWriter
 
             for (QueryDefinition query : queries)
             {
-                PrintWriter sql = queriesDir.getPrintWriter(query.getName() + FILE_EXTENSION);
-                sql.println(query.getSql());
-                sql.close();
+                try (PrintWriter pw = queriesDir.getPrintWriter(query.getName() + FILE_EXTENSION))
+                {
+                    pw.println(query.getSql());
+                }
 
                 QueryDocument qDoc = QueryDocument.Factory.newInstance();
                 QueryType queryXml = qDoc.addNewQuery();

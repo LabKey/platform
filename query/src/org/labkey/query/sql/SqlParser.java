@@ -359,16 +359,15 @@ public class SqlParser
     }
 
 
-
-
 	private boolean dump(QNode node)
 	{
 		if (null != node && _log.isDebugEnabled())
 		{
 			StringWriter sw = new StringWriter();
-			PrintWriter pw = new PrintWriter(sw);
-			node.dump(pw);
-			pw.close();
+			try (PrintWriter pw = new PrintWriter(sw))
+            {
+                node.dump(pw);
+            }
 			_log.debug(sw.toString());
 		}
 		return true;

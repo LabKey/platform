@@ -420,18 +420,17 @@ public class SqlScriptController extends SpringActionController
         @Override
         public void export(ConsolidateForm form, HttpServletResponse response, BindException errors) throws Exception
         {
-            response.setContentType("text/plain");
-            PrintWriter out = response.getWriter();
-
             double fromVersion = form.getFromVersion();
             double toVersion = form.getToVersion();
             boolean includeSingleScripts = form.getIncludeSingleScripts();
 
             List<ScriptConsolidator> consolidators = getConsolidators(fromVersion, toVersion, includeSingleScripts);
 
-            out.write(":: This command line script primes each script directory for upcoming script consolidations. Using svn copy\n");
-            out.write(":: ensures that the SVN history and creation date of the first script is preserved in the consolidated script.\n");
-            out.write(":: The file is then deleted, because the consolidate action will recreate it and provide the actual content.\n\n");
+            StringBuilder sb = new StringBuilder();
+
+            sb.append(":: This command line script primes each script directory for upcoming script consolidations. Using svn copy\n");
+            sb.append(":: ensures that the SVN history and creation date of the first script is preserved in the consolidated script.\n");
+            sb.append(":: The file is then deleted, because the consolidate action will recreate it and provide the actual content.\n\n");
 
             for (ScriptConsolidator consolidator : consolidators)
             {
@@ -445,11 +444,13 @@ public class SqlScriptController extends SpringActionController
 
                     String consolidatedFilename = consolidator.getFilename();
 
-                    out.write("cd " + scriptDir + "\n");
-                    out.write("svn copy " + firstFilename + " " + consolidatedFilename + "\n");
-                    out.write("del " + consolidatedFilename + "\n\n");
+                    sb.append("cd ").append(scriptDir).append("\n");
+                    sb.append("svn copy ").append(firstFilename).append(" ").append(consolidatedFilename).append("\n");
+                    sb.append("del ").append(consolidatedFilename).append("\n\n");
                 }
             }
+
+            sendPlainText(sb.toString());
         }
     }
 

@@ -599,30 +599,14 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
     static void logFileAction(File directory, String fileName, FileAction action, User user)
     {
-        FileWriter fw = null;
-        try
+        try (FileWriter fw = new FileWriter(new File(directory, UPLOAD_LOG), true))
         {
-            fw = new FileWriter(new File(directory, UPLOAD_LOG), true);
-            fw.write(action.toString()  + "\t" + fileName + "\t" + new Date() + "\t" + (user == null ? "(unknown)" : user.getEmail()) + "\n");
+            fw.write(action.toString() + "\t" + fileName + "\t" + new Date() + "\t" + (user == null ? "(unknown)" : user.getEmail()) + "\n");
         }
         catch (Exception x)
         {
             //Just log it.
             _log.error(x);
-        }
-        finally
-        {
-            if (null != fw)
-            {
-                try
-                {
-                    fw.close();
-                }
-                catch (Exception x)
-                {
-
-                }
-            }
         }
     }
 

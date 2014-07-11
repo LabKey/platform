@@ -144,7 +144,6 @@ public class ExperimentRunGraph
 
         try
         {
-
             if (!AppProps.getInstance().isDevMode() && imageFile.exists() && mapFile.exists())
             {
                 success = true;
@@ -169,29 +168,28 @@ public class ExperimentRunGraph
             testDotPath();
 
             ActionURL url = ctx.getActionURL();
-            PrintWriter out = null;
             Integer focusId = null;
             String typeCode = focusType;
 
-            try
+            if (null != focus && focus.length() > 0)
             {
-                if (null != focus && focus.length() > 0)
+                if (!Character.isDigit(focus.charAt(0)))
                 {
-                    if (!Character.isDigit(focus.charAt(0)))
-                    {
-                        typeCode = focus.substring(0, 1);
-                        focus = focus.substring(1);
-                    }
-                    try
-                    {
-                        focusId = Integer.parseInt(focus);
-                        run.trimRunTree(focusId, typeCode);
-                    }
-                    catch (NumberFormatException e) {}
+                    typeCode = focus.substring(0, 1);
+                    focus = focus.substring(1);
                 }
+                try
+                {
+                    focusId = Integer.parseInt(focus);
+                    run.trimRunTree(focusId, typeCode);
+                }
+                catch (NumberFormatException e) {}
+            }
 
-                StringWriter writer = new StringWriter();
-                out = new PrintWriter(writer);
+            StringWriter writer = new StringWriter();
+
+            try (PrintWriter out = new PrintWriter(writer))
+            {
                 GraphCtrlProps ctrlProps = analyzeGraph(run);
 
                 DotGraph dg = new DotGraph(out, url, ctrlProps.fUseSmallFonts);
@@ -218,45 +216,31 @@ public class ExperimentRunGraph
                     }
                 }
                 dg.dispose();
-                out.close();
-                out = null;
-                String dotInput = writer.getBuffer().toString();
-                DotRunner runner = new DotRunner(getFolderDirectory(run.getContainer()), dotInput);
-                runner.addCmapOutput(mapFile);
-                runner.addPngOutput(imageFile);
-                runner.execute();
-
-                mapFile.deleteOnExit();
-                imageFile.deleteOnExit();
-
-                FileOutputStream fOut = null;
-                try
-                {
-                    BufferedImage originalImage = ImageIO.read(imageFile);
-
-                    // Write it back out to disk
-                    fOut = new FileOutputStream(imageFile);
-                    double scale = ImageUtil.resizeImage(originalImage, fOut, .85, 6, BufferedImage.TYPE_INT_RGB);
-
-                    // Need to rewrite the image map to change the coordinates according to the scaling factor
-                    resizeImageMap(mapFile, scale);
-
-                    fOut.close();
-                }
-                finally
-                {
-                    if (fOut != null) { try { fOut.close(); } catch (IOException e) {} }
-                }
-
-                // Start the procedure of downgrade our lock from write to read so that the caller can use the files 
-                readLock.lock();
-                return new RunGraphFiles(mapFile, imageFile, readLock);
             }
-            finally
+
+            String dotInput = writer.getBuffer().toString();
+            DotRunner runner = new DotRunner(getFolderDirectory(run.getContainer()), dotInput);
+            runner.addCmapOutput(mapFile);
+            runner.addPngOutput(imageFile);
+            runner.execute();
+
+            mapFile.deleteOnExit();
+            imageFile.deleteOnExit();
+
+            BufferedImage originalImage = ImageIO.read(imageFile);
+
+            try (FileOutputStream fOut = new FileOutputStream(imageFile))
             {
-                if (null != out)
-                    out.close();
+                // Write it back out to disk
+                double scale = ImageUtil.resizeImage(originalImage, fOut, .85, 6, BufferedImage.TYPE_INT_RGB);
+
+                // Need to rewrite the image map to change the coordinates according to the scaling factor
+                resizeImageMap(mapFile, scale);
             }
+
+            // Start the procedure of downgrade our lock from write to read so that the caller can use the files
+            readLock.lock();
+            return new RunGraphFiles(mapFile, imageFile, readLock);
         }
         finally
         {
@@ -270,14 +254,13 @@ public class ExperimentRunGraph
     private static void resizeImageMap(File mapFile, double finalScale) throws IOException
     {
         StringBuilder sb = new StringBuilder();
-        FileInputStream fIn = null;
-        try
+
+        try (FileInputStream fIn = new FileInputStream(mapFile))
         {
             // Read in the original file, line by line
-            fIn = new FileInputStream(mapFile);
             BufferedReader reader = new BufferedReader(new InputStreamReader(fIn));
             String line;
-            while((line = reader.readLine()) != null)
+            while ((line = reader.readLine()) != null)
             {
                 int coordsIndex = line.indexOf("coords=\"");
                 if (coordsIndex != -1)
@@ -296,7 +279,7 @@ public class ExperimentRunGraph
                         {
                             newLine.append(separator);
                             separator = ",";
-                            newLine.append((int)(Integer.parseInt(coord.trim()) * finalScale));
+                            newLine.append((int) (Integer.parseInt(coord.trim()) * finalScale));
                         }
                         newLine.append(line.substring(closeIndex));
                         line = newLine.toString();
@@ -306,23 +289,13 @@ public class ExperimentRunGraph
                 sb.append("\n");
             }
         }
-        finally
-        {
-            if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
-        }
 
         // Write the file back to the disk
-        FileOutputStream mapOut = null;
-        try
+        try (FileOutputStream mapOut = new FileOutputStream(mapFile))
         {
-            mapOut = new FileOutputStream(mapFile);
             OutputStreamWriter mapWriter = new OutputStreamWriter(mapOut);
             mapWriter.write(sb.toString());
             mapWriter.flush();
-        }
-        finally
-        {
-            if (mapOut != null) { try { mapOut.close(); } catch (IOException e) {} }
         }
     }
 

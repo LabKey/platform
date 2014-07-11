@@ -61,9 +61,10 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, ImportCo
         schemaXml.setLabelColumn(LABEL_COLUMN);
         schemaXml.setTypeIdColumn(TYPE_ID_COLUMN);
 
-        PrintWriter writer = vf.getPrintWriter(schemaFilename);
-        writeDatasetSchema(ctx, definitions, writer);
-        writer.close();
+        try (PrintWriter writer = vf.getPrintWriter(schemaFilename))
+        {
+            writeDatasetSchema(ctx, definitions, writer);
+        }
     }
 
     public void writeDatasetSchema(ImportContext<StudyDocument.Study> ctx, List<DataSetDefinition> definitions, PrintWriter writer)

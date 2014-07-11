@@ -60,6 +60,7 @@ public class StudyViewsWriter implements InternalStudyWriter
 
         // export a custom participant page if present
         CustomParticipantView customParticipantView = StudyManager.getInstance().getCustomParticipantView(study);
+
         if (customParticipantView != null && !customParticipantView.isModuleParticipantView())
         {
             ViewsDocument.Views.ParticipantView participantView = views.addNewParticipantView();
@@ -67,10 +68,12 @@ public class StudyViewsWriter implements InternalStudyWriter
             participantView.setFile(DEFAULT_PARTICIPANT_VIEW_FILE);
             participantView.setActive(customParticipantView.isActive());
 
-            PrintWriter pw = vf.getPrintWriter(DEFAULT_PARTICIPANT_VIEW_FILE);
-            pw.write(customParticipantView.getBody());
-            pw.close();
+            try (PrintWriter pw = vf.getPrintWriter(DEFAULT_PARTICIPANT_VIEW_FILE))
+            {
+                pw.write(customParticipantView.getBody());
+            }
         }
+
         vf.saveXmlBean(DEFAULT_SETTINGS_FILE, doc);
     }
 }

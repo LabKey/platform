@@ -80,7 +80,6 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.sql.Date;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -536,13 +535,7 @@ public class SearchController extends SpringActionController
             else
             {
                 // Plain text response for scripts
-                HttpServletResponse response = getViewContext().getResponse();
-                response.setContentType("text/plain");
-                PrintWriter out = response.getWriter();
-                out.print(message);
-                out.close();
-                response.flushBuffer();
-
+                sendPlainText(message);
                 return null;
             }
         }

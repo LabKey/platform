@@ -3430,7 +3430,8 @@ public class ReportsController extends SpringActionController
                 response.put("success", true);
                 return response;
             }
-            catch (Exception e) {
+            catch (Exception e)
+            {
                 response.put("success", false);
                 response.put("message", e.getMessage());
             }

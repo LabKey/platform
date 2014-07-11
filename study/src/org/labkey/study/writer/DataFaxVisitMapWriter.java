@@ -51,9 +51,7 @@ public class DataFaxVisitMapWriter implements Writer<StudyImpl, StudyExportConte
         StudyDocument.Study.Visits visitsXml = studyXml.addNewVisits();
         visitsXml.setFile(FILENAME);
 
-        PrintWriter out = vf.getPrintWriter(FILENAME);
-
-        try
+        try (PrintWriter out = vf.getPrintWriter(FILENAME))
         {
             NumberFormat df = new DecimalFormat("#.#####");
 
@@ -79,7 +77,7 @@ public class DataFaxVisitMapWriter implements Writer<StudyImpl, StudyExportConte
                 if (null != v.getLabel())
                     out.print(v.getLabel());
 
-                // TODO: out.print(v.getVisitDateDatasetId()) 
+                // TODO: out.print(v.getVisitDateDatasetId())
 
                 out.print("|||||");
 
@@ -112,11 +110,6 @@ public class DataFaxVisitMapWriter implements Writer<StudyImpl, StudyExportConte
 
                 out.println("||");
             }
-        }
-        finally
-        {
-            if (null != out)
-                out.close();
         }
     }
 }

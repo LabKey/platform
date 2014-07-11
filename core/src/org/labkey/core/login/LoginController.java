@@ -1564,22 +1564,23 @@ public class LoginController extends SpringActionController
 
             HttpServletResponse response = getViewContext().getResponse();
             response.setContentType("text/xml");
-            PrintWriter out = response.getWriter();
 
-            if (null != user)
+            try (PrintWriter out = response.getWriter())
             {
-                out.print("<TokenAuthentication success=\"true\" ");
-                out.print("token=\"" + form.getLabkeyToken() + "\" ");
-                out.print("email=\"" + user.getEmail() + "\" ");
-                out.print("permissions=\"" + getContainer().getPolicy().getPermsAsOldBitMask(user) + "\"/>");
-            }
-            else
-            {
-                out.print("<TokenAuthentication success=\"false\" ");
-                out.print("message=\"" + message + "\"/>");
+                if (null != user)
+                {
+                    out.print("<TokenAuthentication success=\"true\" ");
+                    out.print("token=\"" + form.getLabkeyToken() + "\" ");
+                    out.print("email=\"" + user.getEmail() + "\" ");
+                    out.print("permissions=\"" + getContainer().getPolicy().getPermsAsOldBitMask(user) + "\"/>");
+                }
+                else
+                {
+                    out.print("<TokenAuthentication success=\"false\" ");
+                    out.print("message=\"" + message + "\"/>");
+                }
             }
 
-            out.close();
             response.flushBuffer();
 
             return null;

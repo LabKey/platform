@@ -154,8 +154,9 @@ public class DatasetWriter implements InternalStudyWriter
         String datasetFilename = vf.makeLegalName(study.getShortName() + ".dataset");
         definitionXml.setFile(datasetFilename);
 
-        PrintWriter writer = vf.getPrintWriter(datasetFilename);
-        writer.println("# default group can be used to avoid repeating definitions for each dataset\n" +
+        try (PrintWriter writer = vf.getPrintWriter(datasetFilename))
+        {
+            writer.println("# default group can be used to avoid repeating definitions for each dataset\n" +
                 "#\n" +
                 "# action=[REPLACE,APPEND,DELETE] (default:REPLACE)\n" +
                 "# deleteAfterImport=[TRUE|FALSE] (default:FALSE)\n" +
@@ -174,7 +175,7 @@ public class DatasetWriter implements InternalStudyWriter
                 "\n" +
                 "default.filePattern=dataset(\\\\d*).tsv\n" +
                 "default.importAllMatches=TRUE");
-        writer.close();
+        }
 
         StudyQuerySchema schema = StudyQuerySchema.createSchema(StudyManager.getInstance().getStudy(ctx.getContainer()), ctx.getUser(), true);
 

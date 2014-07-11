@@ -1195,18 +1195,21 @@ public class IssueManager
         public FileStream getFileStream(User user) throws IOException
         {
             String title = String.valueOf(_properties.get("title"));
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            Writer out = new OutputStreamWriter(bos);
-            out.write("<html><head><title>");
-            out.write(PageFlowUtil.filter(title));
-            out.write("</title></head><body>");
-            out.write(PageFlowUtil.filter(title));
-            out.write("\n");
-            for (Issue.Comment c : _comments)
-                if (null != c.getComment())
-                    out.write(c.getComment());
-            out.close();
-            return new FileStream.ByteArrayFileStream(bos.toByteArray());
+
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); Writer out = new OutputStreamWriter(bos))
+            {
+
+                out.write("<html><head><title>");
+                out.write(PageFlowUtil.filter(title));
+                out.write("</title></head><body>");
+                out.write(PageFlowUtil.filter(title));
+                out.write("\n");
+                for (Issue.Comment c : _comments)
+                    if (null != c.getComment())
+                        out.write(c.getComment());
+
+                return new FileStream.ByteArrayFileStream(bos.toByteArray());
+            }
         }
         
         public InputStream getInputStream(User user) throws IOException

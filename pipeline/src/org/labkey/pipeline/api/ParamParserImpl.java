@@ -374,19 +374,12 @@ public class ParamParserImpl implements ParamParser
 
     public void writeFromMap(Map<String, String> params, File fileDest) throws IOException
     {
-        BufferedWriter inputWriter = null;
-        try
+        try (BufferedWriter inputWriter = new BufferedWriter(new FileWriter(fileDest)))
         {
-            inputWriter = new BufferedWriter(new FileWriter(fileDest));
             String xml = getXMLFromMap(params);
             _log.debug("Writing " + params.size() + " parameters (" + fileDest + "):");
             _log.debug(xml);
             inputWriter.write(xml);
-        }
-        finally
-        {
-            if (inputWriter != null)
-                inputWriter.close();
         }
     }
 }

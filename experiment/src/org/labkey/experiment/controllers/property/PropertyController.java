@@ -293,41 +293,38 @@ public class PropertyController extends SpringActionController
             response.reset();
             response.setContentType("text/html");
 
-            OutputStream out = response.getOutputStream();
-
-            OutputStreamWriter writer = new OutputStreamWriter(out);
-
-            String data;
-
-            try
+            try (OutputStream out = response.getOutputStream(); OutputStreamWriter writer = new OutputStreamWriter(out))
             {
-                if ("file".equals(inferForm.getSource()))
+                String data;
+
+                try
                 {
-                    data = getDataFromFile(writer);
-                    if (data == null)
-                        return; // We'll already have written out the error
+                    if ("file".equals(inferForm.getSource()))
+                    {
+                        data = getDataFromFile(writer);
+                        if (data == null)
+                            return; // We'll already have written out the error
+                    }
+                    else // tsv
+                    {
+                        TabLoader dataLoader = new TabLoader(inferForm.getTsvText(), true);
+                        data = getData(dataLoader);
+                    }
+
+                    writer.write("Success:");
+                    data = data.replaceAll("\r|\n", "<br>");
+                    data = data.replaceAll("\t", "<tab>");
+                    writer.write(data);
+                    writer.flush();
                 }
-                else // tsv
+                catch (Exception e)
                 {
-                    TabLoader dataLoader = new TabLoader(inferForm.getTsvText(), true);
-                    data = getData(dataLoader);
+                    error(writer, e.getMessage());
                 }
-                writer.write("Success:");
-                data = data.replaceAll("\r|\n", "<br>");
-                data = data.replaceAll("\t", "<tab>");
-                writer.write(data);
-                writer.flush();
-            }
-            catch (Exception e)
-            {
-                error(writer, e.getMessage());
-            }
-            finally
-            {
-                IOUtils.closeQuietly(writer);
             }
         }
 
+        // Note: caller must close writer
         private String getDataFromFile(Writer writer) throws IOException
         {
             HttpServletRequest basicRequest = getViewContext().getRequest();
@@ -356,28 +353,29 @@ public class PropertyController extends SpringActionController
 
             File tempFile = File.createTempFile(prefix, suffix);
             tempFile.deleteOnExit();
-            InputStream input = file.getInputStream();
-            OutputStream output = new FileOutputStream(tempFile);
-            DataLoader dataLoader = null;
+
             try
             {
-                byte[] buffer = new byte[1024];
-                int len;
-                while ((len = input.read(buffer)) > 0)
-                    output.write(buffer, 0, len);
-
-                output.flush();
-                output.close();
-                input.close();
-
-                dataLoader = getDataLoader(tempFile);
-                if (dataLoader == null)
+                try (InputStream input = file.getInputStream(); OutputStream output = new FileOutputStream(tempFile))
                 {
-                    error(writer, UNRECOGNIZED_FILE_TYPE_ERROR);
-                    return null;
+                    byte[] buffer = new byte[1024];
+                    int len;
+                    while ((len = input.read(buffer)) > 0)
+                        output.write(buffer, 0, len);
+
+                    output.flush();
                 }
 
-                return getData(dataLoader);
+                try (DataLoader dataLoader = getDataLoader(tempFile))
+                {
+                    if (dataLoader == null)
+                    {
+                        error(writer, UNRECOGNIZED_FILE_TYPE_ERROR);
+                        return null;
+                    }
+
+                    return getData(dataLoader);
+                }
             }
             catch (ExcelFormatException efe)
             {
@@ -393,8 +391,6 @@ public class PropertyController extends SpringActionController
             finally
             {
                 tempFile.delete();
-                if (dataLoader != null)
-                    dataLoader.close();
             }
         }
 
@@ -419,7 +415,6 @@ public class PropertyController extends SpringActionController
         {
             writer.write(message);
             writer.flush();
-            writer.close();
         }
 
         private String getStringValue(Object o)

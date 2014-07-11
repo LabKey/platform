@@ -333,13 +333,8 @@ public class ExternalReport extends AbstractReport
                     "Must be on server path. (PATH=" + env.get("PATH") + ")", eio);
         }
 
-        BufferedReader procReader = null;
-        FileWriter writer = null;
-        try
+        try (FileWriter writer = new FileWriter(outFile); BufferedReader procReader = new BufferedReader(new InputStreamReader(proc.getInputStream())))
         {
-            writer = new FileWriter(outFile);
-            procReader = new BufferedReader(
-                    new InputStreamReader(proc.getInputStream()));
             String line;
             while ((line = procReader.readLine()) != null)
             {
@@ -351,31 +346,6 @@ public class ExternalReport extends AbstractReport
         {
             throw new RuntimeException("Failed writing output for process in '" + pb.directory().getPath() + "'.", eio);
         }
-        finally
-        {
-            if (procReader != null)
-            {
-                try
-                {
-                    procReader.close();
-                }
-                catch (IOException eio)
-                {
-                    _log.error("unexpected error", eio);
-                }
-            }
-            if (writer != null)
-            {
-                try
-                {
-                    writer.close();
-                }
-                catch (IOException eio)
-                {
-                    _log.error("unexpected error", eio);
-                }
-            }
-        }
 
         try
         {
@@ -385,7 +355,6 @@ public class ExternalReport extends AbstractReport
         {
             throw new RuntimeException("Interrupted process for '" + pb.command() + " in " + pb.directory() + "'.", ei);
         }
-
     }
 
 

@@ -128,7 +128,7 @@ public class IndexInspector
                     map.put("UniqueId", uniqueIds[0]);
                     map.put("Body Terms", termCountPerDoc[i]);
 
-                    writeRow(_columns, map);
+                    writeRow(map);
                 }
             }
             catch (IOException e)

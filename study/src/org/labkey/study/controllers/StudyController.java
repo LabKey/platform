@@ -6435,13 +6435,7 @@ public class StudyController extends BaseStudyController
             else
             {
                 // Plain text response for scripts
-                HttpServletResponse response = getViewContext().getResponse();
-                response.setContentType("text/plain");
-                PrintWriter out = response.getWriter();
-                out.print(message);
-                out.close();
-                response.flushBuffer();
-
+                sendPlainText(message);
                 return null;
             }
         }
