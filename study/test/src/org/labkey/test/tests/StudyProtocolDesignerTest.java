@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverMultipleTest;
 import org.labkey.test.Locator;
+import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
 import org.labkey.test.categories.Study;
 import org.labkey.test.pages.studydesigncontroller.ManageAssayScheduleTester;
@@ -44,11 +45,11 @@ import static org.junit.Assert.*;
 @Category({DailyB.class, Study.class})
 public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
 {
-    private static final File STUDY_ARCHIVE = new File(getSampledataPath(), "study/CohortStudy.zip");
+    private static final File STUDY_ARCHIVE = new File(TestFileUtils.getSampledataPath(), "study/CohortStudy.zip");
     // Cohorts: defined in study archive
     private static final String[] COHORTS = {"Positive", "Negative"};
 
-    private static final File FOLDER_ARCHIVE = new File(getSampledataPath(), "FolderExport/ProtocolLookup.folder.zip");
+    private static final File FOLDER_ARCHIVE = new File(TestFileUtils.getSampledataPath(), "FolderExport/ProtocolLookup.folder.zip");
     // lookups: defined in folder archive
     private static final String[] IMMUNOGEN_TYPES = {"Canarypox", "Fowlpox", "Subunit Protein"};
     private static final String[] GENES = {"Env", "Gag"};

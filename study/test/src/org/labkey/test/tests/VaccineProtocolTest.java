@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
+import org.labkey.test.TestFileUtils;
 import org.labkey.test.TestTimeoutException;
 import org.labkey.test.categories.DailyA;
 import org.labkey.test.categories.Study;
@@ -295,7 +296,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         clickProject(projectName);
         portalHelper.addWebPart("Assay List");
 
-        _assayHelper.uploadXarFileAsAssayDesign(getSampledataPath() + "/studyextra/TestAssay1.xar", 1);
+        _assayHelper.uploadXarFileAsAssayDesign(TestFileUtils.getSampledataPath() + "/studyextra/TestAssay1.xar", 1);
         goToProjectHome();
 
     } //defineAssay()
@@ -314,7 +315,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
     } //getTargetStudyOptionText()
 
     protected static final String TEST_RUN1_COMMENTS = "First comments";
-    protected static final File TEST_RUN1_DATA1 = new File(getSampledataPath(), "studyextra/TestAssayRun1.tsv");
+    protected static final File TEST_RUN1_DATA1 = new File(TestFileUtils.getSampledataPath(), "studyextra/TestAssayRun1.tsv");
 
     protected void uploadRun()
     {
@@ -331,7 +332,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         setFormElement(Locator.name("name"), TEST_RUN1);
         setFormElement(Locator.name("comments"), TEST_RUN1_COMMENTS);
         click(Locator.xpath("//input[@value='textAreaDataProvider']"));
-        setFormElement(Locator.id("TextAreaDataCollector.textArea"), getFileContents(TEST_RUN1_DATA1));
+        setFormElement(Locator.id("TextAreaDataCollector.textArea"), TestFileUtils.getFileContents(TEST_RUN1_DATA1));
         clickButton("Save and Finish");
         // reenable the following lines when we've moved to strict type checking of the incoming file.  For now, we're
         // flexible and only error if required columns are missing.
