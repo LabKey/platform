@@ -195,7 +195,12 @@ Ext4.define('File.panel.Upload', {
                 this.on('sending', function (file, xhr, formData) {
                     if (!this.uploadPanel.isBusy()) {
                         this.uploadPanel.setBusy(true);
-                        this.uploadPanel.ownerCt.el.up("table").mask();
+
+                        this.parentToMask = this.uploadPanel.ownerCt.el.up("table");
+                        if (!this.parentToMask)
+                            this.parentToMask = this.uploadPanel.ownerCt.el;
+                        this.parentToMask.mask();
+
                         this.uploadPanel.statusText.setText('Uploading ' + file.name + '...');
                     }
                     // shouldn't we show some kind of message here? (else case)
@@ -277,7 +282,8 @@ Ext4.define('File.panel.Upload', {
 
                 this.on('error', function (file, message, xhr) {
                     var title = 'Error';
-                    if(xhr.readyState == 4)
+                    // NOTE: we do not get a xhr response from labkey/_webdav
+                    if(xhr != undefined && xhr.readyState == 4)
                     {
                         // here we should be able to provide a more meaningful message
                         if (xhr.status == 0 && xhr.statusText == "" && xhr.responseText == "" )
@@ -303,12 +309,14 @@ Ext4.define('File.panel.Upload', {
                 this.on('canceled', function (file) {
                     this.uploadPanel.statusText.setText('Canceled upload of ' + file.name);
                     this.uploadPanel.setBusy(false);
-                    this.uploadPanel.ownerCt.el.up("table").unmask();
+                    if (this.parentToMask)
+                        this.parentToMask.unmask();
                 });
 
                 this.on('queuecomplete', function () {
                     this.uploadPanel.setBusy(false);
-                    this.uploadPanel.ownerCt.el.up("table").unmask();
+                    if (this.parentToMask)
+                        this.parentToMask.unmask();
 
                     var errorFiles = [];
                     var fileRecords = [];

@@ -763,6 +763,11 @@ public class StudyServiceImpl implements StudyService.Service
                 StudyQuerySchema schema = schemaDefault;
                 if (null != s)
                     schema = StudyQuerySchema.createSchema((StudyImpl)s, user, false);
+                else
+                {
+                    if (null == StudySchema.getInstance().getTableInfoVialIfExists(c))
+                        continue;
+                }
                 VialTable t = new VialTable(schema);
                 t.setPublic(false);
                 tables.add(t);
