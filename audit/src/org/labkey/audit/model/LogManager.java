@@ -75,7 +75,7 @@ public class LogManager
 
     public TableInfo getTinfoAuditLog()
     {
-        return getSchema().getTable("AuditLog");
+        return getSchema().getTable("auditlog");
     }
 
     public <K extends AuditTypeEvent> AuditLogEvent insertEvent(User user, AuditLogEvent event)

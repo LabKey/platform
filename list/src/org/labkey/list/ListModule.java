@@ -150,13 +150,6 @@ public class ListModule extends DefaultModule
 
     @NotNull
     @Override
-    public Set<String> getSchemaNames()
-    {
-        return PageFlowUtil.set(ListSchema.getInstance().getSchemaName());
-    }
-
-    @NotNull
-    @Override
     public Collection<String> getProvisionedSchemaNames()
     {
         return PageFlowUtil.set(ListSchema.getInstance().getSchemaName());
