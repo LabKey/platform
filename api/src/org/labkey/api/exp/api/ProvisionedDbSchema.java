@@ -22,16 +22,16 @@ import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainKind;
 
-import java.util.Map;
+import java.util.Collection;
 
 /**
  * Created by klum on 2/23/14.
  */
 public class ProvisionedDbSchema extends DbSchema
 {
-    public ProvisionedDbSchema(String name, DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames)
+    public ProvisionedDbSchema(String name, DbSchemaType type, DbScope scope)
     {
-        super(name, type, scope, metaDataTableNames);
+        super(name, type, scope, null);
     }
 
     @Override
@@ -46,5 +46,17 @@ public class ProvisionedDbSchema extends DbSchema
 
             StorageProvisioner.fixupProvisionedDomain(ti, kind, domain, ti.getName());
         }
+    }
+
+    @Override
+    protected String getMetaDataName(String tableName)
+    {
+        return tableName;
+    }
+
+    @Override
+    public Collection<String> getTableNames()
+    {
+        throw new IllegalStateException("Should not be requesting table names from provisioned schema \"" + getName() + "\"");
     }
 }

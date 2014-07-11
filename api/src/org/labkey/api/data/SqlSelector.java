@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.Connection;
 import java.util.List;
 
-public class SqlSelector extends ExecutingSelector<SqlSelector.SimpleSqlFactory, SqlSelector>
+public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFactory, SqlSelector>
 {
     private final SQLFragment _sql;
 

@@ -162,34 +162,19 @@ public class DbSchema
 
     public static @NotNull DbSchema createFromMetaData(DbScope scope, String requestedSchemaName, DbSchemaType type) throws SQLException
     {
-        Map<String, String> metaDataTableNames = new CaseInsensitiveHashMap<>();
+        Map<String, String> schemaNameMap = SchemaNameCache.get().getSchemaNameMap(scope);
+        String metaDataName = schemaNameMap.get(requestedSchemaName);
 
-        String metaDataName = loadTableNames(scope, requestedSchemaName, metaDataTableNames);
+        // TODO: mark this schema as not in the database
+        if (null == metaDataName)
+            return new DbSchema(requestedSchemaName, type, scope, new HashMap<String, String>());
 
-        // If we found no tables and this is a case-sensitive database (e.g., PostgreSQL), then the caller
-        // may be using the wrong casing; query all schemas and try to find a match. See #12210.
-        if (metaDataTableNames.isEmpty() && scope.getSqlDialect().isCaseSensitive())
-        {
-            for (String name : scope.getSchemaNames())
-            {
-                // If we find this exact name then it really is a zero-table schema... continue on
-                if (name.equals(requestedSchemaName))
-                    break;
-
-                // If we find a different casing, then use that version of the name and reload table meta data
-                if (name.equalsIgnoreCase(requestedSchemaName))
-                {
-                    _log.warn("Could not find requested schema \"" + requestedSchemaName + "\"; resolving to schema \"" + name + "\"");
-                    metaDataName = loadTableNames(scope, name, metaDataTableNames);
-                    break;  // Stop at the first one... we don't support multiple schemas with the same name but different casing
-                }
-            }
-        }
+        Map<String, String> metaDataTableNames = type.shouldLoadTables() ? loadTableNames(scope, metaDataName) : null;
 
         if ("labkey".equals(metaDataName))
             return new LabKeyDbSchema(type, scope, metaDataTableNames);
         else if (type == DbSchemaType.Provisioned)
-            return new ProvisionedDbSchema(metaDataName, type, scope, metaDataTableNames);
+            return new ProvisionedDbSchema(metaDataName, type, scope);
         else
             return new DbSchema(metaDataName, type, scope, metaDataTableNames);
     }
@@ -228,18 +213,28 @@ public class DbSchema
     }
 
 
-    // Populates metaDataTableNames map with a list of table names from the requested schema. Returns the canonical name of this schema, according to the database.
-    private static String loadTableNames(DbScope scope, String schemaName, final Map<String, String> metaDataTableNames) throws SQLException
+    /**
+     * Queries JDBC meta data to retrieve the list of tables in this shcmea. Returns a case-insensitive map of table
+     * names to canonical (meta data) names.
+     *
+     * Note: Do not call this unless you really know what you're doing! You should probably be calling DbSchema.getTables()
+     * instead, to ensure you get the cached version.
+     */
+    public static Map<String, String> loadTableNames(DbScope scope, String schemaName) throws SQLException
     {
+        final Map<String, String> metaDataTableNameMap = new CaseInsensitiveHashMap<>();
+
         TableMetaDataLoader loader = new TableMetaDataLoader(scope, schemaName, "%") {
             @Override
             protected void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException
             {
-                metaDataTableNames.put(name, name);
+                metaDataTableNameMap.put(name, name);
             }
         };
 
-        return loader.load();
+        loader.load();
+
+        return metaDataTableNameMap;
     }
 
 
@@ -250,24 +245,23 @@ public class DbSchema
     private static abstract class TableMetaDataLoader
     {
         private final String _tableNamePattern;
-        private final String _requestedSchemaName;
+        private final String _metaDataSchemaName;
         private final DbScope _scope;
 
-        private TableMetaDataLoader(DbScope scope, String requestedSchemaName, String tableNamePattern)
+        private TableMetaDataLoader(DbScope scope, String metaDataSchemaName, String tableNamePattern)
         {
             _tableNamePattern = tableNamePattern;
-            _requestedSchemaName = requestedSchemaName;
+            _metaDataSchemaName = metaDataSchemaName;
             _scope = scope;
         }
 
         protected abstract void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException;
 
-        String load() throws SQLException
+        void load() throws SQLException
         {
             SqlDialect dialect = _scope.getSqlDialect();
             String dbName = _scope.getDatabaseName();
 
-            String metaDataSchemaName = null;
             Connection conn = null;
 
             try
@@ -278,21 +272,12 @@ public class DbSchema
                 String[] types = dialect.getTableTypes();
 
                 try (ResultSet rs = dialect.treatCatalogsAsSchemas() ?
-                        dbmd.getTables(_requestedSchemaName, null, _tableNamePattern, types) :
-                        dbmd.getTables(dbName, _requestedSchemaName, _tableNamePattern, types))
+                        dbmd.getTables(_metaDataSchemaName, null, _tableNamePattern, types) :
+                        dbmd.getTables(dbName, _metaDataSchemaName, _tableNamePattern, types))
                 {
                     while (rs.next())
                     {
                         String tableName = rs.getString("TABLE_NAME").trim();
-
-                        if (null == metaDataSchemaName)
-                        {
-                            // Get the canonical name for this schema... which may not match the requested name
-                            if (dialect.treatCatalogsAsSchemas())
-                                metaDataSchemaName = rs.getString("TABLE_CAT").trim();
-                            else
-                                metaDataSchemaName = rs.getString("TABLE_SCHEM").trim();
-                        }
 
                         // Ignore system tables
                         if (dialect.isSystemTable(tableName))
@@ -308,7 +293,7 @@ public class DbSchema
             }
             catch (SQLException e)
             {
-                _log.error("Exception loading schema \"" + _requestedSchemaName + "\" from database metadata", e);
+                _log.error("Exception loading schema \"" + _metaDataSchemaName + "\" from database metadata", e);
                 throw e;
             }
             finally
@@ -323,48 +308,53 @@ public class DbSchema
                     _log.error("DbSchema.createFromMetaData()", x);
                 }
             }
-
-            return null != metaDataSchemaName ? metaDataSchemaName : _requestedSchemaName;
         }
+    }
+
+
+    protected String getMetaDataName(String tableName)
+    {
+        return _metaDataTableNames.get(tableName);
     }
 
 
     @Nullable <OptionType extends DbScope.SchemaTableOptions> SchemaTableInfo loadTable(String tableName, OptionType options) throws SQLException
     {
-    // When querying table metadata we must use the name from the database
-    String metaDataTableName = _metaDataTableNames.get(tableName);
+        // When querying table metadata we must use the name from the database
+        String metaDataTableName = getMetaDataName(tableName);
 
-    // Didn't find a hard table with that name... maybe it's a query. See #12822
-    if (null == metaDataTableName)
-        return null;
+        // Didn't find a hard table with that name... maybe it's a query. See #12822
+        if (null == metaDataTableName)
+            return null;
 
-    SchemaTableInfo ti = createTableFromDatabaseMetaData(metaDataTableName);
-    TableType xmlTable = _tableXmlMap.get(tableName);
+        SchemaTableInfo ti = createTableFromDatabaseMetaData(metaDataTableName);
+        TableType xmlTable = _tableXmlMap.get(tableName);
 
-    if (null != xmlTable)
-    {
-        if (null == ti)
+        if (null != xmlTable)
         {
-            ti = new SchemaTableInfo(this, DatabaseTableType.NOT_IN_DB, xmlTable.getTableName());
+            if (null == ti)
+            {
+                ti = new SchemaTableInfo(this, DatabaseTableType.NOT_IN_DB, xmlTable.getTableName());
+            }
+
+            try
+            {
+                ti.loadTablePropertiesFromXml(xmlTable);
+            }
+            catch (IllegalArgumentException e)
+            {
+                _log.error("Malformed XML in " + ti.getSchema() + "." + xmlTable.getTableName(), e);
+            }
         }
 
-        try
+        if (null != ti)
         {
-            ti.loadTablePropertiesFromXml(xmlTable);
+            afterLoadTable(ti, options);
+            ti.setLocked(true);
         }
-        catch (IllegalArgumentException e)
-        {
-            _log.error("Malformed XML in " + ti.getSchema() + "." + xmlTable.getTableName(), e);
-        }
+
+        return ti;
     }
-
-    if (null != ti)
-    {
-        afterLoadTable(ti, options);
-        ti.setLocked(true);
-    }
-    return ti;
-}
 
     /**
      * Perform any post processing on the table specific to the schema type, implementations can override this method
@@ -701,7 +691,7 @@ public class DbSchema
                 assertTrue("Did not find inserted record.", rs.next());
             }
 
-            try (DbScope.Transaction transaction = testSchema.getScope().beginTransaction())
+            try (DbScope.Transaction ignored = testSchema.getScope().beginTransaction())
             {
                 m.put("IntNotNull", 1);
                 m = Table.update(ctx.getUser(), testTable, m, rowId);

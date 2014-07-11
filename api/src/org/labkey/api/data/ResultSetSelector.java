@@ -15,7 +15,6 @@
  */
 package org.labkey.api.data;
 
-import org.apache.commons.lang3.mutable.MutableLong;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -27,14 +26,14 @@ import java.sql.SQLException;
  * Date: 12/18/12
  * Time: 10:02 PM
  */
-public class ResultSetSelector extends BaseSelector<ResultSetSelector>
+public class ResultSetSelector extends NonSqlExecutingSelector<ResultSetSelector>
 {
     private final ResultSet _rs;
     private CompletionAction _completionAction = CompletionAction.Nothing;  // Default assumption is that caller closes the ResultSet (e.g., using try-with-resources)
 
     /*
         Note: By default, this class does not close the passed in ResultSet; caller must either close the ResultSet
-        themselves or call setCompletionAction(Closed).
+        themselves or call setCompletionAction(Close).
     */
 
     public ResultSetSelector(DbScope scope, ResultSet rs, @Nullable Connection conn)
@@ -45,7 +44,7 @@ public class ResultSetSelector extends BaseSelector<ResultSetSelector>
 
     public ResultSetSelector(DbScope scope, ResultSet rs)
     {
-        this (scope, rs, null);
+        this(scope, rs, null);
     }
 
     @Override
@@ -89,36 +88,6 @@ public class ResultSetSelector extends BaseSelector<ResultSetSelector>
     public TableResultSet getResultSet()
     {
         return new ResultSetImpl(_rs);
-    }
-
-    @Override
-    public long getRowCount()
-    {
-        final MutableLong count = new MutableLong();
-
-        forEach(new ForEachBlock<ResultSet>()
-        {
-            @Override
-            public void exec(ResultSet rs) throws SQLException
-            {
-                count.increment();
-            }
-        });
-
-        return count.getValue();
-    }
-
-    @Override
-    public boolean exists()
-    {
-        return handleResultSet(getStandardResultSetFactory(), new ResultSetHandler<Boolean>()
-        {
-            @Override
-            public Boolean handle(ResultSet rs, Connection conn) throws SQLException
-            {
-                return rs.next();
-            }
-        });
     }
 
     @Override

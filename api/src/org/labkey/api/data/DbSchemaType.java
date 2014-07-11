@@ -29,10 +29,10 @@ import java.util.LinkedList;
 public enum DbSchemaType
 {
     // TODO: Create Uncached type?  Might make sense for non-external schema usages of Bare
-    Module("module", CacheManager.YEAR, true),
-    Provisioned("provisioned", CacheManager.YEAR, false),
-    Bare("bare", CacheManager.HOUR, false),
-    All("", 0, false)
+    Module("module", CacheManager.YEAR, true, true),
+    Provisioned("provisioned", CacheManager.YEAR, false, false),
+    Bare("bare", CacheManager.HOUR, false, true),
+    All("", 0, false, false)
     {
         @Override
         protected long getCacheTimeToLive()
@@ -41,7 +41,7 @@ public enum DbSchemaType
         }
     },
     // This is a marker type that tells DbScope to infer the actual DbSchemaType, for the (very rare) case when the caller doesn't know
-    Unknown("", 0, false)
+    Unknown("", 0, false, false)
     {
         @Override
         protected long getCacheTimeToLive()
@@ -53,6 +53,7 @@ public enum DbSchemaType
     private final String _cacheKeyPostFix;  // Postfix makes it easy for All type to remove all versions of a schema from the cache
     private final long _cacheTimeToLive;
     private final boolean _applyXmlMetaData;
+    private final boolean _loadTables;
 
     private static final Collection<DbSchemaType> XML_META_DATA_TYPES;
 
@@ -70,11 +71,12 @@ public enum DbSchemaType
         XML_META_DATA_TYPES = Collections.unmodifiableCollection(metaDataTypes);
     }
 
-    DbSchemaType(String cacheKeyPostFix, long cacheTimeToLive, boolean applyXmlMetaData)
+    DbSchemaType(String cacheKeyPostFix, long cacheTimeToLive, boolean applyXmlMetaData, boolean loadTables)
     {
         _cacheKeyPostFix = cacheKeyPostFix;
         _cacheTimeToLive = cacheTimeToLive;
         _applyXmlMetaData = applyXmlMetaData;
+        _loadTables = loadTables;
     }
 
     String getCacheKey(String schemaName)
@@ -95,5 +97,10 @@ public enum DbSchemaType
     static Collection<DbSchemaType> getXmlMetaDataTypes()
     {
         return XML_META_DATA_TYPES;
+    }
+
+    public boolean shouldLoadTables()
+    {
+        return _loadTables;
     }
 }

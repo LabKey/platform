@@ -50,7 +50,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -540,7 +539,7 @@ public class DbScope
     }
 
 
-    private final int spidUnknown = -1;
+    private static final int spidUnknown = -1;
 
     protected Connection _getConnection(@Nullable Logger log) throws SQLException
     {
@@ -692,44 +691,10 @@ public class DbScope
         return _tableCache.get(options);
     }
 
-    // Query the JDBC metadata for a list of all schemas in this database. Not used in the common case, but useful
-    // for testing and as a last resort when a requested schema can't be found.
+    // Collection of schema names in this scope, in no particular order.
     public Collection<String> getSchemaNames() throws SQLException
     {
-        Connection conn = null;
-
-        try
-        {
-            conn = getConnection();
-            DatabaseMetaData dbmd = conn.getMetaData();
-
-            try (ResultSet rs = getSchemaNameResultSet(dbmd))
-            {
-                final Collection<String> schemaNames = new LinkedList<>();
-
-                new ResultSetSelector(this, rs).forEach(new Selector.ForEachBlock<ResultSet>()
-                {
-                    @Override
-                    public void exec(ResultSet rs) throws SQLException
-                    {
-                        schemaNames.add(rs.getString(1).trim());
-                    }
-                });
-
-                return schemaNames;
-            }
-        }
-        finally
-        {
-            if (null != conn && !isTransactionActive())
-                conn.close();
-        }
-    }
-
-
-    private ResultSet getSchemaNameResultSet(DatabaseMetaData dbmd) throws SQLException
-    {
-        return getSqlDialect().treatCatalogsAsSchemas() ? dbmd.getCatalogs() : dbmd.getSchemas();
+        return SchemaNameCache.get().getSchemaNameMap(this).values();
     }
 
 

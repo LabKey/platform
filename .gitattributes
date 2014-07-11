@@ -269,7 +269,6 @@ api/src/org/labkey/api/data/Entity.java -text
 api/src/org/labkey/api/data/EnumConverter.java -text
 api/src/org/labkey/api/data/EnumTableInfo.java -text
 api/src/org/labkey/api/data/ExceptionFramework.java -text
-api/src/org/labkey/api/data/ExecutingSelector.java -text
 api/src/org/labkey/api/data/ExpDataFileConverter.java -text
 api/src/org/labkey/api/data/ExportWriter.java -text
 api/src/org/labkey/api/data/ExternalSchemaCustomizer.java -text
@@ -291,6 +290,7 @@ api/src/org/labkey/api/data/InputColumn.java -text
 api/src/org/labkey/api/data/JavaScriptDisplayColumn.java -text
 api/src/org/labkey/api/data/JavaScriptDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/JdbcCommand.java -text
+api/src/org/labkey/api/data/JdbcMetaDataSelector.java -text
 api/src/org/labkey/api/data/JdbcType.java -text
 api/src/org/labkey/api/data/JsonTest.java -text
 api/src/org/labkey/api/data/JsonWriter.java -text
@@ -312,6 +312,7 @@ api/src/org/labkey/api/data/MvUtil.java -text
 api/src/org/labkey/api/data/NestableDataRegion.java -text
 api/src/org/labkey/api/data/NestableQueryView.java -text
 api/src/org/labkey/api/data/NestedRenderContext.java -text
+api/src/org/labkey/api/data/NonSqlExecutingSelector.java -text
 api/src/org/labkey/api/data/NormalPropertyStore.java -text
 api/src/org/labkey/api/data/NullColumnInfo.java -text
 api/src/org/labkey/api/data/OORDisplayColumnFactory.java -text
@@ -345,6 +346,7 @@ api/src/org/labkey/api/data/RuntimeSQLException.java -text
 api/src/org/labkey/api/data/SQLFragment.java -text
 api/src/org/labkey/api/data/SQLGenerationException.java -text
 api/src/org/labkey/api/data/SchemaColumnMetaData.java -text
+api/src/org/labkey/api/data/SchemaNameCache.java -text
 api/src/org/labkey/api/data/SchemaTableInfoCache.java -text
 api/src/org/labkey/api/data/SchemaXmlCacheHandler.java -text
 api/src/org/labkey/api/data/Selector.java -text
@@ -352,6 +354,7 @@ api/src/org/labkey/api/data/ShowRows.java -text
 api/src/org/labkey/api/data/ShowRowsConverter.java -text
 api/src/org/labkey/api/data/SimpleFilter.java -text
 api/src/org/labkey/api/data/SqlColumn.java -text
+api/src/org/labkey/api/data/SqlExecutingSelector.java -text
 api/src/org/labkey/api/data/SqlExecutor.java -text
 api/src/org/labkey/api/data/SqlFactory.java -text
 api/src/org/labkey/api/data/SqlScriptExecutor.java -text

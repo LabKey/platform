@@ -31,7 +31,7 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
 
-public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR extends ExecutingSelector<FACTORY, SELECTOR>> extends BaseSelector<SELECTOR> implements Selector
+public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR extends SqlExecutingSelector<FACTORY, SELECTOR>> extends BaseSelector<SELECTOR>
 {
     protected int _maxRows = Table.ALL_ROWS;
     protected long _offset = Table.NO_OFFSET;
@@ -44,12 +44,12 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
     // optimizations won't mutate the ExecutingSelector's externally set state.
     abstract protected FACTORY getSqlFactory(boolean isResultSet);
 
-    protected ExecutingSelector(DbScope scope)
+    protected SqlExecutingSelector(DbScope scope)
     {
         this(scope, null);
     }
 
-    protected ExecutingSelector(DbScope scope, Connection conn)
+    protected SqlExecutingSelector(DbScope scope, Connection conn)
     {
         super(scope, conn);
     }
@@ -59,9 +59,6 @@ public abstract class ExecutingSelector<FACTORY extends SqlFactory, SELECTOR ext
     {
         return new ExecutingResultSetFactory(getSqlFactory(false));
     }
-
-//    // SELECTOR and getThis() make it easier to chain setMaxRows() and setOffset() while returning the correct selector type from subclasses
-//    abstract protected SELECTOR getThis();
 
     public SELECTOR setMaxRows(int maxRows)
     {

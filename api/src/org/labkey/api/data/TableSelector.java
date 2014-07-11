@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-public class TableSelector extends ExecutingSelector<TableSelector.TableSqlFactory, TableSelector>
+public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFactory, TableSelector>
 {
     public static final Set<String> ALL_COLUMNS = Collections.unmodifiableSet(Collections.<String>emptySet());
 

@@ -812,9 +812,19 @@ public class StorageProvisioner
             }
             for (Path schemaName : schemaNames)
             {
-                DbSchema schema = DbSchema.get(schemaName.getName(), DbSchemaType.Unknown);
+                DbSchema schema = DbSchema.get(schemaName.getName(), DbSchemaType.Provisioned);
+                Collection<String> tableNames = null;
 
-                for (String name : schema.getTableNames())
+                try
+                {
+                    tableNames = DbSchema.loadTableNames(schema.getScope(), schema.getName()).values();
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+
+                for (String name : tableNames)
                 {
                     if (!nonProvisionedTableMap.get(schemaName).contains(name.toLowerCase()))
                         provisionedTables.add(schemaName.append(name));
