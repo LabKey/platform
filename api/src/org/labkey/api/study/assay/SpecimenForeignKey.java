@@ -16,6 +16,7 @@
 package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -210,6 +211,8 @@ public class SpecimenForeignKey extends LookupForeignKey
         }
 
         TableInfo vialTableInfo = getVialTableInfo();
+        if (null == vialTableInfo)
+            return null;
         FilteredTable ft = new FilteredTable<AssaySchema>(vialTableInfo, _schema)
         {
             @NotNull
@@ -228,6 +231,7 @@ public class SpecimenForeignKey extends LookupForeignKey
     }
 
 
+    @Nullable
     private TableInfo getVialTableInfo()
     {
         _initAssayColumns();
@@ -293,19 +297,27 @@ public class SpecimenForeignKey extends LookupForeignKey
         }
         else if (displayFieldName.equalsIgnoreCase("specimen"))
         {
-            ColumnInfo lookupColumn = getVialTableInfo().getColumn(displayFieldName);
-            ColumnInfo specimenCol = new SpecimenLookupColumn(foreignKey, displayFieldKey, lookupColumn, false);
-            specimenCol.setFk(new _SpecimenUnionForeignKey());
-            return specimenCol;
+            TableInfo vialTableInfo = getVialTableInfo();
+            if (null != vialTableInfo)
+            {
+                ColumnInfo lookupColumn = vialTableInfo.getColumn(displayFieldName);
+                ColumnInfo specimenCol = new SpecimenLookupColumn(foreignKey, displayFieldKey, lookupColumn, false);
+                specimenCol.setFk(new _SpecimenUnionForeignKey());
+                return specimenCol;
+            }
         }
         else
         {
-            ColumnInfo lookupColumn = getVialTableInfo().getColumn(displayFieldName);
-            if (null != lookupColumn)
-                return new SpecimenLookupColumn(foreignKey, displayFieldKey, lookupColumn, false);
-            lookupColumn = getSpecimenTableInfo().getColumn(displayFieldName);
-            if (null != lookupColumn)
-                return new SpecimenLookupColumn(foreignKey, displayFieldKey, lookupColumn, true);
+            TableInfo vialTableInfo = getVialTableInfo();
+            if (null != vialTableInfo)
+            {
+                ColumnInfo lookupColumn = vialTableInfo.getColumn(displayFieldName);
+                if (null != lookupColumn)
+                    return new SpecimenLookupColumn(foreignKey, displayFieldKey, lookupColumn, false);
+                lookupColumn = getSpecimenTableInfo().getColumn(displayFieldName);
+                if (null != lookupColumn)
+                    return new SpecimenLookupColumn(foreignKey, displayFieldKey, lookupColumn, true);
+            }
         }
         return null;
     }
@@ -331,6 +343,10 @@ public class SpecimenForeignKey extends LookupForeignKey
         // Do a complicated join if we can identify a target study so that we choose the right specimen
         if (_assayTargetStudyCol != null || targetStudy != null)
         {
+            TableInfo vialTableInfo = getVialTableInfo();
+            if (null == vialTableInfo)
+                return null;
+
             SQLFragment sql = new SQLFragment();
             sql.appendComment("<" + this.getClass().getName() + ".declareJoins(" + parentAlias + ")" + ">", dialect);
             sql.append(" LEFT OUTER JOIN (");
@@ -385,7 +401,6 @@ public class SpecimenForeignKey extends LookupForeignKey
                 sep = " AND ";
             }
 
-            TableInfo vialTableInfo = getVialTableInfo();
             sql.append("\n\tLEFT OUTER JOIN ");
             sql.append(vialTableInfo.getFromSQL(vialSubqueryAlias));
             sql.append(" ON " + vialSubqueryAlias + ".GlobalUniqueId = ");
