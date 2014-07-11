@@ -15,8 +15,12 @@
  */
 package org.labkey.api.message.settings;
 
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
+import org.labkey.api.util.ReturnURLString;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 
 /**
  * User: klum
@@ -53,5 +57,101 @@ public abstract class AbstractConfigTypeProvider implements MessageConfigService
     public MessageConfigService.NotificationOption[] getOptions()
     {
         return MessageConfigService.getInstance().getOptions(this);
+    }
+
+    @Override
+    public MessageConfigService.EmailConfigForm createConfigForm(ViewContext context, MessageConfigService.PanelInfo info) throws Exception
+    {
+        MessageConfigService.EmailConfigForm form = new EmailConfigFormImpl();
+        form.setType(getType());
+
+        form.setDefaultEmailOption(getDefaultEmailOption(context.getContainer()));
+        form.setSetDefaultPrefURL(getSetDefaultPrefURL(context.getContainer()));
+
+        form.setDataRegionSelectionKey(info.getDataRegionSelectionKey());
+        form.setReturnUrl(new ReturnURLString(info.getReturnUrl().getLocalURIString()));
+
+        return form;
+    }
+
+    abstract public String getType();
+
+    abstract protected int getDefaultEmailOption(Container c);
+
+    abstract protected ActionURL getSetDefaultPrefURL(Container c);
+
+    public static class EmailConfigFormImpl extends ReturnUrlForm implements MessageConfigService.EmailConfigForm
+    {
+        int _defaultEmailOption;
+        int _individualEmailOption;
+        String _dataRegionSelectionKey;
+        String _type;
+        ActionURL _setDefaultPrefURL;
+
+        @Override
+        public int getDefaultEmailOption()
+        {
+            return _defaultEmailOption;
+        }
+
+        @Override
+        public void setDefaultEmailOption(int defaultEmailOption)
+        {
+            _defaultEmailOption = defaultEmailOption;
+        }
+
+        @Override
+        public int getIndividualEmailOption()
+        {
+            return _individualEmailOption;
+        }
+
+        @Override
+        public void setIndividualEmailOption(int individualEmailOption)
+        {
+            _individualEmailOption = individualEmailOption;
+        }
+
+        @Override
+        public String getDataRegionSelectionKey()
+        {
+            return _dataRegionSelectionKey;
+        }
+
+        @Override
+        public void setDataRegionSelectionKey(String dataRegionSelectionKey)
+        {
+            _dataRegionSelectionKey = dataRegionSelectionKey;
+        }
+
+        @Override
+        public String getType()
+        {
+            return _type;
+        }
+
+        @Override
+        public void setType(String type)
+        {
+            _type = type;
+        }
+
+        @Override
+        public ActionURL getSetDefaultPrefURL()
+        {
+            return _setDefaultPrefURL;
+        }
+
+        @Override
+        public void setSetDefaultPrefURL(ActionURL setDefaultPrefURL)
+        {
+            _setDefaultPrefURL = setDefaultPrefURL;
+        }
+
+        @Override
+        public MessageConfigService.ConfigTypeProvider getProvider()
+        {
+            return MessageConfigService.getInstance().getConfigType(_type);
+        }
     }
 }

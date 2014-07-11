@@ -18,8 +18,8 @@ package org.labkey.api.message.settings;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -90,7 +90,7 @@ public class MessageConfigService
          */
         public String getName();
 
-        public HttpView createConfigPanel(ViewContext context, PanelInfo info) throws Exception;
+        public EmailConfigForm createConfigForm(ViewContext context, PanelInfo info) throws Exception;
 
         public void validateCommand(ViewContext context, Errors errors);
 
@@ -103,6 +103,40 @@ public class MessageConfigService
          */
         public boolean handlePost(ViewContext context, BindException errors) throws Exception;
     }
+
+    /**
+     * Define interface for folder administration of default and bulk user settings
+     */
+    public interface EmailConfigForm
+    {
+        int getDefaultEmailOption();
+
+        void setDefaultEmailOption(int defaultEmailOption);
+
+        int getIndividualEmailOption();
+
+        void setIndividualEmailOption(int individualEmailOption);
+
+        String getDataRegionSelectionKey();
+
+        void setDataRegionSelectionKey(String dataRegionSelectionKey);
+
+        String getType();
+
+        void setType(String type);
+
+        ActionURL getSetDefaultPrefURL();
+
+        void setSetDefaultPrefURL(ActionURL setDefaultPrefURL);
+
+        ConfigTypeProvider getProvider();
+
+        void setReturnUrl(ReturnURLString returnUrl);
+
+        ReturnURLString getReturnUrl();
+    }
+
+
 
     /**
      * Defines a preference setting for a user
