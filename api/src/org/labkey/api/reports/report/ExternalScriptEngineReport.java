@@ -32,7 +32,6 @@ import org.labkey.api.reports.report.r.ParamReplacementSvc;
 import org.labkey.api.reports.report.r.view.ConsoleOutput;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.RunReportView;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -282,9 +281,11 @@ public class ExternalScriptEngineReport extends ScriptEngineReport implements At
         if (null != output)
         {
             File console = new File(getReportDir(), CONSOLE_OUTPUT);
-            PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(console)));
-            pw.write(output.toString());
-            pw.close();
+
+            try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(console))))
+            {
+                pw.write(output.toString());
+            }
 
             ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
             param.setName("console");

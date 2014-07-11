@@ -121,13 +121,14 @@ public class InternalScriptEngineReport extends ScriptEngineReport
                 if (output != null || consoleString != null)
                 {
                     File console = new File(getReportDir(), CONSOLE_OUTPUT);
-                    PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(console)));
 
-                    if (output != null)
-                        pw.write(output.toString());
-                    if (consoleString != null)
-                        pw.write(consoleOut.toString());
-                    pw.close();
+                    try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(console))))
+                    {
+                        if (output != null)
+                            pw.write(output.toString());
+                        if (consoleString != null)
+                            pw.write(consoleOut.toString());
+                    }
 
                     ParamReplacement param = ParamReplacementSvc.get().getHandlerInstance(ConsoleOutput.ID);
                     param.setName("console");

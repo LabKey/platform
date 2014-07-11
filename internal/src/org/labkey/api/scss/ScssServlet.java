@@ -45,7 +45,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -209,11 +208,8 @@ public class ScssServlet extends HttpServlet
                     "Must be on server path. (PATH=" + env.get("PATH") + ")", eio);
         }
 
-        BufferedReader procReader = null;
-        FileWriter writer = null;
-        try
+        try (BufferedReader procReader = new BufferedReader(new InputStreamReader(proc.getInputStream())))
         {
-            procReader = new BufferedReader(new InputStreamReader(proc.getInputStream()));
             String line;
             while ((line = procReader.readLine()) != null)
                 info("SASS compile: " + line);
@@ -222,19 +218,10 @@ public class ScssServlet extends HttpServlet
         {
             throw new RuntimeException("Failed writing output for process in '" + pb.directory().getPath() + "'.", eio);
         }
-        finally
-        {
-            if (procReader != null)
-                try {procReader.close();} catch(IOException ignored) {}
-
-            if (writer != null)
-                try {writer.close();} catch(IOException ignored) {}
-        }
 
         try
         {
-            int code = proc.waitFor();
-            return code;
+            return proc.waitFor();
         }
         catch (InterruptedException ei)
         {

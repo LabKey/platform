@@ -684,17 +684,10 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         {
             // for script based reports, write the script portion to a separate file to facilitate script modifications
             String scriptFileName = getSerializedScriptFileName();
-            PrintWriter writer = null;
 
-            try
+            try (PrintWriter writer = directory.getPrintWriter(scriptFileName))
             {
-                writer = directory.getPrintWriter(scriptFileName);
                 writer.write(descriptor.getProperty(ScriptReportDescriptor.Prop.script));
-            }
-            finally
-            {
-                if (writer != null)
-                    writer.close();
             }
 
             super.serializeToFolder(ctx, directory);

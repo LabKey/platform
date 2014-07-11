@@ -220,22 +220,25 @@ public class MothershipReport implements Runnable
         connection.setInstanceFollowRedirects(false);
         connection.setDoOutput(true);
         connection.setDoInput(true);
-        PrintWriter out = new PrintWriter(connection.getOutputStream(), true);
-        boolean first = true;
-        for (Map.Entry<String, String> entry : _params.entrySet())
+
+        try (PrintWriter out = new PrintWriter(connection.getOutputStream(), true))
         {
-            String value = entry.getValue();
-            if (value != null)
+            boolean first = true;
+            for (Map.Entry<String, String> entry : _params.entrySet())
             {
-                if (!first)
+                String value = entry.getValue();
+                if (value != null)
                 {
-                    out.print("&");
+                    if (!first)
+                    {
+                        out.print("&");
+                    }
+                    first = false;
+                    out.println(entry.getKey() + "=" + URLEncoder.encode(value));
                 }
-                first = false;
-                out.println(entry.getKey() + "=" + URLEncoder.encode(value));
             }
         }
-        out.close();
+
         connection.connect();
         return connection;
     }

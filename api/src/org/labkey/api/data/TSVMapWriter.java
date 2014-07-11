@@ -21,7 +21,6 @@ import com.google.common.collect.Iterables;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,29 +36,28 @@ import java.util.Map;
  */
 public class TSVMapWriter extends TSVWriter
 {
-    protected Iterable<String> _columns;
-    private Iterable<Map<String, Object>> _rows;
+    private final Iterable<String> _columns;
+    private final Iterable<Map<String, Object>> _rows;
 
     /**
      * Columns will be written in order of the first row's keySet() iteration.
-     * @param rows
+     * @param rows The data rows
      */
+    // TODO: This could be very expensive, since it creates the Iterator and then throws it away. Not a problem for
+    // collections, but could be for Iterators that have large upfront cost. Consider a MarkableIterator or similar.
     public TSVMapWriter(Iterable<Map<String, Object>> rows)
     {
         _rows = rows;
 
         Iterator<Map<String, Object>> it = _rows.iterator();
-        if (it.hasNext())
-        {
-            Map<String, Object> firstRow = it.next();
-            if (firstRow != null)
-                _columns = firstRow.keySet();
-        }
+        Map<String, Object> firstRow;
+
+        _columns = (it.hasNext() && null != (firstRow = it.next())) ? firstRow.keySet() : null;
     }
 
     /**
      * Columns will be written in order of the columns collection.
-     * @param rows
+     * @param rows The data rows
      */
     public TSVMapWriter(Iterable<String> columns, Iterable<Map<String, Object>> rows)
     {
@@ -84,13 +82,13 @@ public class TSVMapWriter extends TSVWriter
     {
         for (Map<String, Object> row : _rows)
         {
-            writeRow(_columns, row);
+            writeRow(row);
         }
     }
 
-    protected void writeRow(Iterable<String> columns, final Map<String, Object> row)
+    protected void writeRow(final Map<String, Object> row)
     {
-        Iterable<String> values = Iterables.transform(columns, new Function<String, String>()
+        Iterable<String> values = Iterables.transform(_columns, new Function<String, String>()
         {
             @Override
             public String apply(String col)

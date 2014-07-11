@@ -166,10 +166,8 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
                 parser.setInputParameter(entry.getKey(), entry.getValue());
         }
 
-        BufferedWriter writer = null;
-        try
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file)))
         {
-            writer = new BufferedWriter(new FileWriter(file));
             xml = parser.getXML();
             if (xml == null)
                 throw new IOException("Error writing input XML.");
@@ -179,20 +177,6 @@ public abstract class AbstractFileAnalysisProtocol<JOB extends AbstractFileAnaly
         {
             _log.error("Error writing input XML.", eio);
             throw eio;
-        }
-        finally
-        {
-            if (writer != null)
-            {
-                try
-                {
-                    writer.close();
-                }
-                catch (IOException eio)
-                {
-                    _log.error("Error writing input XML.", eio);
-                }
-            }
         }
     }
 

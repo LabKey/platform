@@ -290,7 +290,6 @@ public class TSVWriter extends TextWriter
     {
     }
 
-    // CONSIDER: make abstract
     protected void writeBody()
     {
     }

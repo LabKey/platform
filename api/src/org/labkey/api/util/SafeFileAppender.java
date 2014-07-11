@@ -48,10 +48,8 @@ public class SafeFileAppender extends AppenderSkeleton
 
     public void append(LoggingEvent loggingEvent)
     {
-        BufferedWriter writer = null;
-        try
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(_file, true)))
         {
-            writer = new BufferedWriter(new FileWriter(_file, true));
             writer.write(getLayout().format(loggingEvent));
             String[] exceptionStrings = loggingEvent.getThrowableStrRep();
             if (exceptionStrings != null)
@@ -70,17 +68,6 @@ public class SafeFileAppender extends AppenderSkeleton
                 append(loggingEvent);
             else
                 _log.error("Failed appending to file.", e);
-        }
-        finally
-        {
-            if (writer != null)
-            {
-                try
-                {
-                    writer.close();
-                }
-                catch (IOException ignored) {}
-            }
         }
     }
 

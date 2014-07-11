@@ -710,9 +710,12 @@ public class TabLoader extends DataLoader
         {
             File f = File.createTempFile("junit", ext);
             f.deleteOnExit();
-            Writer w = new FileWriter(f);
-            w.write(data);
-            w.close();
+
+            try (Writer w = new FileWriter(f))
+            {
+                w.write(data);
+            }
+
             return f;
         }
 

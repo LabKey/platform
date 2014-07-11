@@ -407,11 +407,9 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
 
                     String includedScript = processScript(engine, context, rScript, inputData, outputSubst, inputParameters);
 
-                    try
+                    try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(rScriptFile))))
                     {
-                        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(rScriptFile)));
                         pw.write(includedScript);
-                        pw.close();
                     }
                     catch(IOException e)
                     {

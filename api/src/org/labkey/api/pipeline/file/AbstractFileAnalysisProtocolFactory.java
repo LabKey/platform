@@ -281,33 +281,16 @@ abstract public class AbstractFileAnalysisProtocolFactory<T extends AbstractFile
         }
 
         File fileDefault = getDefaultParametersFile(root);
+        fileDefault.getParentFile().mkdirs();
 
-        BufferedWriter writer = null;
-        try
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileDefault)))
         {
-            fileDefault.getParentFile().mkdirs();
-            writer = new BufferedWriter(new FileWriter(fileDefault));
             writer.write(xml, 0, xml.length());
         }
         catch (IOException eio)
         {
             _log.error("Error writing default parameters file.", eio);
             throw eio;
-        }
-        finally
-        {
-            if (writer != null)
-            {
-                try
-                {
-                    writer.close();
-                }
-                catch (IOException eio)
-                {
-                    _log.error("Error writing default parameters file.", eio);
-                    throw eio;
-                }
-            }
         }
     }
 

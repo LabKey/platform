@@ -101,16 +101,15 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     {
         File runProps = new File(scriptDir, VALIDATION_RUN_INFO_FILE);
         _filesToIgnore.add(runProps);
-        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps)));
 
-        // Hack to get TSV values to be properly quoted if they include tabs
-        TSVWriter writer = createTSVWriter();
-
-        try
+        try(PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps))))
         {
             // serialize the batch and run properties to a tsv
             Map<DomainProperty, String> mergedProps = new HashMap<>(runProperties);
             mergedProps.putAll(batchProperties);
+
+            // Hack to get TSV values to be properly quoted if they include tabs
+            TSVWriter writer = createTSVWriter();
             writeRunProperties(context, mergedProps, scriptDir, pw, writer);
 
             // add the run data entries
@@ -144,10 +143,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             _filesToIgnore.add(transformedRunPropsFile);
 
             return new Pair<>(runProps, dataFiles);
-        }
-        finally
-        {
-            pw.close();
         }
     }
 
@@ -437,12 +432,11 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
     {
         final int SAMPLE_DATA_ROWS = 5;
         File runProps = new File(scriptDir, VALIDATION_RUN_INFO_FILE);
-        PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps)));
 
         // Hack to get TSV values to be properly quoted if they include tabs
         TSVWriter writer = createTSVWriter();
 
-        try
+        try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(runProps))))
         {
             AssayRunUploadContext<? extends AssayProvider> context = new SampleRunUploadContext(protocol, viewContext);
 
@@ -456,7 +450,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             if (runDataDomain != null)
             {
                 List<? extends DomainProperty> properties = runDataDomain.getProperties();
-                for (int i=0; i < SAMPLE_DATA_ROWS; i++)
+                for (int i = 0; i < SAMPLE_DATA_ROWS; i++)
                 {
                     Map<String, Object> row = new HashMap<>();
                     for (DomainProperty prop : properties)
@@ -488,10 +482,6 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
             pw.append(Props.errorsFile.name());
             pw.append('\t');
             pw.println(errorFile.getAbsolutePath());
-        }
-        finally
-        {
-            pw.close();
         }
     }
 

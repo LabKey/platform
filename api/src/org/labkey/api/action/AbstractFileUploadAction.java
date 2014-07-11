@@ -91,86 +91,81 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         response.reset();
         response.setContentType("text/html");
 
-        OutputStream out = response.getOutputStream();
-        OutputStreamWriter writer = new OutputStreamWriter(out);
-
-        if (form.getFileName() == null)
+        try (OutputStream out = response.getOutputStream(); OutputStreamWriter writer = new OutputStreamWriter(out))
         {
-            error(writer, "No fileName parameter values included", HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        if (form.getFileContent() == null)
-        {
-            error(writer, "No fileContent parameter values included", HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-
-        if (form.getFileName().length != form.getFileContent().length)
-        {
-            error(writer, "Must include the same number of fileName and fileContent parameter values", HttpServletResponse.SC_BAD_REQUEST);
-            return;
-        }
-        
-        HttpServletRequest basicRequest = getViewContext().getRequest();
-
-        // Parameter name (String) -> File on disk/original file name Pair
-        Map<String, Pair<File, String>> savedFiles = new HashMap<>();
-
-        if (basicRequest instanceof MultipartHttpServletRequest)
-        {
-            MultipartHttpServletRequest request = (MultipartHttpServletRequest)basicRequest;
-
-            //noinspection unchecked
-            Iterator<String> nameIterator = request.getFileNames();
-            while (nameIterator.hasNext())
+            if (form.getFileName() == null)
             {
-                String formElementName = nameIterator.next();
-                MultipartFile file = request.getFile(formElementName);
-                String filename = file.getOriginalFilename();
-                InputStream input = file.getInputStream();
-                if (!file.isEmpty())
+                error(writer, "No fileName parameter values included", HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            if (form.getFileContent() == null)
+            {
+                error(writer, "No fileContent parameter values included", HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            if (form.getFileName().length != form.getFileContent().length)
+            {
+                error(writer, "Must include the same number of fileName and fileContent parameter values", HttpServletResponse.SC_BAD_REQUEST);
+                return;
+            }
+
+            HttpServletRequest basicRequest = getViewContext().getRequest();
+
+            // Parameter name (String) -> File on disk/original file name Pair
+            Map<String, Pair<File, String>> savedFiles = new HashMap<>();
+
+            if (basicRequest instanceof MultipartHttpServletRequest)
+            {
+                MultipartHttpServletRequest request = (MultipartHttpServletRequest) basicRequest;
+
+                //noinspection unchecked
+                Iterator<String> nameIterator = request.getFileNames();
+                while (nameIterator.hasNext())
                 {
-                    try
+                    String formElementName = nameIterator.next();
+                    MultipartFile file = request.getFile(formElementName);
+                    String filename = file.getOriginalFilename();
+
+                    try (InputStream input = file.getInputStream())
                     {
-                        File f = handleFile(filename, input, writer);
-                        if (f == null)
+                        if (!file.isEmpty())
                         {
-                            return;
+                            File f = handleFile(filename, input, writer);
+                            if (f == null)
+                            {
+                                return;
+                            }
+                            savedFiles.put(formElementName, new Pair<>(f, filename));
                         }
-                        savedFiles.put(formElementName, new Pair<>(f, filename));
-                    }
-                    finally
-                    {
-                        if (input != null) { try { input.close(); } catch (IOException ignored) {} }
                     }
                 }
             }
-        }
 
-        for (int i = 0; i < form.getFileName().length; i++)
-        {
-            String filename = form.getFileName()[i];
-            String content = form.getFileContent()[i];
-            if (content != null)
+            for (int i = 0; i < form.getFileName().length; i++)
             {
-                File f = handleFile(filename, new ByteArrayInputStream(content.getBytes()), writer);
-                if (f != null)
+                String filename = form.getFileName()[i];
+                String content = form.getFileContent()[i];
+                if (content != null)
                 {
-                    savedFiles.put("FileContent" + (i == 0 ? "" : (i + 1)), new Pair<>(f, filename));
+                    File f = handleFile(filename, new ByteArrayInputStream(content.getBytes()), writer);
+                    if (f != null)
+                    {
+                        savedFiles.put("FileContent" + (i == 0 ? "" : (i + 1)), new Pair<>(f, filename));
+                    }
                 }
             }
-        }
 
-        try
-        {
-            writer.write(getResponse(savedFiles, form));
-            writer.flush();
-            writer.close();
-        }
-        catch (UploadException e)
-        {
-            error(writer, "Must include the same number of fileName and fileContent parameter values", HttpServletResponse.SC_BAD_REQUEST);
+            try
+            {
+                writer.write(getResponse(savedFiles, form));
+                writer.flush();
+            }
+            catch (UploadException e)
+            {
+                error(writer, "Must include the same number of fileName and fileContent parameter values", HttpServletResponse.SC_BAD_REQUEST);
+            }
         }
     }
 
@@ -247,6 +242,5 @@ public abstract class AbstractFileUploadAction<FORM extends AbstractFileUploadAc
         getViewContext().getResponse().setStatus(statusCode);
         writer.write(PageFlowUtil.jsString(message));
         writer.flush();
-        writer.close();
     }
 }

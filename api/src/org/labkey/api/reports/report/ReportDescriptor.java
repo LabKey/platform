@@ -550,9 +550,8 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public String serialize(Container c) throws IOException
     {
         ReportDescriptorDocument doc = getDescriptorDocument(c);
-        StringWriter writer = new StringWriter();
 
-        try
+        try (StringWriter writer = new StringWriter())
         {
             XmlBeansUtil.validateXmlDocument(doc);
             doc.save(writer, XmlBeansUtil.getDefaultSaveOptions());
@@ -562,10 +561,6 @@ public class ReportDescriptor extends Entity implements SecurableResource
         {
             // This is likely a code problem -- propagate it up so we log to mothership
             throw new RuntimeException(e);
-        }
-        finally
-        {
-            writer.close();
         }
     }
 

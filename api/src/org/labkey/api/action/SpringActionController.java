@@ -69,6 +69,8 @@ import org.springframework.web.servlet.view.RedirectView;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -481,6 +483,21 @@ public abstract class SpringActionController implements Controller, HasViewConte
 
         ModelAndView render = template == null ? mv : template;
         render.getView().render(render.getModel(), context.getRequest(), context.getResponse());
+    }
+
+
+    // Send plain text back to browser; useful for script responses, e.g.
+    protected void sendPlainText(String message) throws IOException
+    {
+        HttpServletResponse response = getViewContext().getResponse();
+        response.setContentType("text/plain");
+
+        try (PrintWriter out = response.getWriter())
+        {
+            out.print(message);
+        }
+
+        response.flushBuffer();
     }
 
 

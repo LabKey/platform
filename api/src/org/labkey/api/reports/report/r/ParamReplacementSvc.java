@@ -221,7 +221,7 @@ public class ParamReplacementSvc
             if (param != null)
             {
                 File resultFile = param.convertSubstitution(parentDirectory);
-                String resultFileName = null;
+                String resultFileName;
 
                 if (!StringUtils.isEmpty(remoteParentDirectoryPath))
                 {
@@ -279,32 +279,25 @@ public class ParamReplacementSvc
 
     public void toFile(List<ParamReplacement> outputSubst, File file) throws Exception
      {
-         BufferedWriter bw = null;
-         try {
-             bw = new BufferedWriter(new FileWriter(file));
+         try (BufferedWriter bw = new BufferedWriter(new FileWriter(file)))
+         {
              for (ParamReplacement output : outputSubst)
              {
                  if (output.getName() != null && output.getFile() != null)
-                    bw.write(output.getId() + '\t' + output.getName() + '\t' + output.getFile().getAbsolutePath() + '\t' +
-                            PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n');
+                     bw.write(output.getId() + '\t' + output.getName() + '\t' + output.getFile().getAbsolutePath() + '\t' +
+                             PageFlowUtil.toQueryString(output.getProperties().entrySet()) + '\n');
              }
-         }
-         finally
-         {
-             if (bw != null)
-                 try {bw.close();} catch (IOException ioe) {}
          }
      }
 
      public List<ParamReplacement> fromFile(File file) throws Exception
      {
-         BufferedReader br = null;
-         List<ParamReplacement> outputSubst = new ArrayList();
+         List<ParamReplacement> outputSubst = new ArrayList<>();
 
-         try {
-             if (file.exists())
+         if (file.exists())
+         {
+             try (BufferedReader br = new BufferedReader(new FileReader(file)))
              {
-                 br = new BufferedReader(new FileReader(file));
                  String l;
                  while ((l = br.readLine()) != null)
                  {
@@ -312,6 +305,7 @@ public class ParamReplacementSvc
                      if (parts.length == 4)
                      {
                          ParamReplacement handler = getHandlerInstance(parts[0]);
+
                          if (handler != null)
                          {
                              handler.setName(parts[1]);
@@ -324,11 +318,7 @@ public class ParamReplacementSvc
                  }
              }
          }
-         finally
-         {
-             if (br != null)
-                 try {br.close();} catch(IOException ioe) {}
-         }
+
          return outputSubst;
      }
 }

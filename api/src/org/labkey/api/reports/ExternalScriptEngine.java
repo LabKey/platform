@@ -329,7 +329,8 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
         bindings.put(REWRITTEN_SCRIPT_FILE, scriptFile);
 
-        try {
+        try
+        {
             if (!isBinaryScript)
             {
                 // process any replacements specified in the script context
@@ -340,9 +341,11 @@ public class ExternalScriptEngine extends AbstractScriptEngine
                         script = ParamReplacementSvc.get().processInputReplacement(script, param.getKey(), param.getValue());
                     }
                 }
-                PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(scriptFile)));
-                pw.write(script);
-                pw.close();
+
+                try (PrintWriter pw = new PrintWriter(new BufferedWriter(new FileWriter(scriptFile))))
+                {
+                    pw.write(script);
+                }
             }
         }
         catch(Exception e)
