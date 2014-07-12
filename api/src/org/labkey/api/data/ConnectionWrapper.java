@@ -20,9 +20,11 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.StatementWrapper;
+import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.ViewServlet;
 
 import java.sql.Array;
 import java.sql.Blob;
@@ -529,8 +531,7 @@ public class ConnectionWrapper implements java.sql.Connection
     }
 
     
-    // The following methods are "implemented" to allow compiling and running on JDK/JRE 7.0 while still supporting
-    // JDK/JRE 7.0.  If/when we require JDK/JRE 7.0, these methods should be properly implemented.
+    // TODO: now that we require JDK/JRE 7.0, these methods should be properly implemented.
 
     public void setSchema(String schema) throws SQLException
     {
@@ -564,6 +565,16 @@ public class ConnectionWrapper implements java.sql.Connection
         DatabaseMetaDataWrapper(DatabaseMetaData md)
         {
             _md = md;
+        }
+
+        private void log(String methodName, String message, long start)
+        {
+            long duration = System.currentTimeMillis() - start;
+
+            if (getLogger().isDebugEnabled())
+                getLogger().debug(message + " " + DateUtil.formatDuration(duration));
+
+            QueryProfiler.getInstance().track(null, "DatabaseMetaData." + methodName, null, duration, Thread.currentThread().getStackTrace(), ViewServlet.isRequestThread());
         }
 
         @Override
@@ -1356,22 +1367,19 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public boolean supportsTransactionIsolationLevel(int level)
-                throws SQLException
+        public boolean supportsTransactionIsolationLevel(int level) throws SQLException
         {
             return _md.supportsTransactionIsolationLevel(level);
         }
 
         @Override
-        public boolean supportsDataDefinitionAndDataManipulationTransactions()
-                throws SQLException
+        public boolean supportsDataDefinitionAndDataManipulationTransactions() throws SQLException
         {
             return _md.supportsDataDefinitionAndDataManipulationTransactions();
         }
 
         @Override
-        public boolean supportsDataManipulationTransactionsOnly()
-                throws SQLException
+        public boolean supportsDataManipulationTransactionsOnly() throws SQLException
         {
             return _md.supportsDataManipulationTransactionsOnly();
         }
@@ -1391,109 +1399,113 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern)
-                throws SQLException
+        public ResultSet getProcedures(String catalog, String schemaPattern, String procedureNamePattern) throws SQLException
         {
             return _md.getProcedures(catalog, schemaPattern, procedureNamePattern);
         }
 
         @Override
-        public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern)
-                throws SQLException
+        public ResultSet getProcedureColumns(String catalog, String schemaPattern, String procedureNamePattern, String columnNamePattern) throws SQLException
         {
             return _md.getProcedureColumns(catalog, schemaPattern, procedureNamePattern, columnNamePattern);
         }
 
         @Override
-        public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types)
-                throws SQLException
+        public ResultSet getTables(String catalog, String schemaPattern, String tableNamePattern, String[] types) throws SQLException
         {
             long start = System.currentTimeMillis();
             ResultSet ret = _md.getTables(catalog, schemaPattern, tableNamePattern, types);
-            long duration = System.currentTimeMillis() - start;
-            if (getLogger().isDebugEnabled())
-                getLogger().debug("getTables("+catalog+","+schemaPattern+","+tableNamePattern+") " + DateUtil.formatDuration(duration));
+            log("getTables()", "getTables(" + catalog + ", " + schemaPattern + ", " + tableNamePattern + ")", start);
+
             return ret;
         }
 
         @Override
-        public ResultSet getSchemas()
-                throws SQLException
-        {
-            return _md.getSchemas();
-        }
-
-        @Override
-        public ResultSet getCatalogs()
-                throws SQLException
-        {
-            return _md.getCatalogs();
-        }
-
-        @Override
-        public ResultSet getTableTypes()
-                throws SQLException
-        {
-            return _md.getTableTypes();
-        }
-
-        @Override
-        public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern)
-                throws SQLException
+        public ResultSet getSchemas() throws SQLException
         {
             long start = System.currentTimeMillis();
-            ResultSet ret =  _md.getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern);
-            long duration = System.currentTimeMillis() - start;
-            if (getLogger().isDebugEnabled())
-                getLogger().debug("getColumns(" + catalog + "," + schemaPattern + "," + tableNamePattern + "," + columnNamePattern + ") " + DateUtil.formatDuration(duration));
+            ResultSet ret = _md.getSchemas();
+            log("getSchemas()", "getSchemas()", start);
+
             return ret;
         }
 
         @Override
-        public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern)
-                throws SQLException
+        public ResultSet getCatalogs() throws SQLException
+        {
+            long start = System.currentTimeMillis();
+            ResultSet ret = _md.getCatalogs();
+            log("getCatalogs()", "getCatalogs()", start);
+
+            return ret;
+        }
+
+        @Override
+        public ResultSet getTableTypes() throws SQLException
+        {
+            long start = System.currentTimeMillis();
+            ResultSet ret =  _md.getTableTypes();
+            log("getTableTypes()", "getTableTypes()", start);
+
+            return ret;
+        }
+
+        @Override
+        public ResultSet getColumns(String catalog, String schemaPattern, String tableNamePattern, String columnNamePattern) throws SQLException
+        {
+            long start = System.currentTimeMillis();
+            ResultSet ret = _md.getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern);
+            log("getColumns()", "getColumns(" + catalog + "," + schemaPattern + "," + tableNamePattern + "," + columnNamePattern + ")", start);
+
+            return ret;
+        }
+
+        @Override
+        public ResultSet getColumnPrivileges(String catalog, String schema, String table, String columnNamePattern) throws SQLException
         {
             return _md.getColumnPrivileges(catalog, schema, table, columnNamePattern);
         }
 
         @Override
-        public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern)
-                throws SQLException
+        public ResultSet getTablePrivileges(String catalog, String schemaPattern, String tableNamePattern) throws SQLException
         {
             return _md.getTablePrivileges(catalog, schemaPattern, tableNamePattern);
         }
 
         @Override
-        public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable)
-                throws SQLException
+        public ResultSet getBestRowIdentifier(String catalog, String schema, String table, int scope, boolean nullable) throws SQLException
         {
             return _md.getBestRowIdentifier(catalog, schema, table, scope, nullable);
         }
 
         @Override
-        public ResultSet getVersionColumns(String catalog, String schema, String table)
-                throws SQLException
+        public ResultSet getVersionColumns(String catalog, String schema, String table) throws SQLException
         {
             return _md.getVersionColumns(catalog, schema, table);
         }
 
         @Override
-        public ResultSet getPrimaryKeys(String catalog, String schema, String table)
-                throws SQLException
+        public ResultSet getPrimaryKeys(String catalog, String schema, String table) throws SQLException
         {
-            return _md.getPrimaryKeys(catalog, schema, table);
+            long start = System.currentTimeMillis();
+            ResultSet ret = _md.getPrimaryKeys(catalog, schema, table);
+            log("getPrimaryKeys()", "getPrimaryKeys(" + catalog + ", " + schema + ", " + table + ")", start);
+
+            return ret;
         }
 
         @Override
-        public ResultSet getImportedKeys(String catalog, String schema, String table)
-                throws SQLException
+        public ResultSet getImportedKeys(String catalog, String schema, String table) throws SQLException
         {
-            return _md.getImportedKeys(catalog, schema, table);
+            long start = System.currentTimeMillis();
+            ResultSet ret = _md.getImportedKeys(catalog, schema, table);
+            log("getImportedKeys()", "getImportedKeys(" + catalog + ", " + schema + ", " + table + ")", start);
+
+            return ret;
         }
 
         @Override
-        public ResultSet getExportedKeys(String catalog, String schema, String table)
-                throws SQLException
+        public ResultSet getExportedKeys(String catalog, String schema, String table) throws SQLException
         {
             return _md.getExportedKeys(catalog, schema, table);
         }
@@ -1513,8 +1525,7 @@ public class ConnectionWrapper implements java.sql.Connection
         }
 
         @Override
-        public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate)
-                throws SQLException
+        public ResultSet getIndexInfo(String catalog, String schema, String table, boolean unique, boolean approximate) throws SQLException
         {
             return _md.getIndexInfo(catalog, schema, table, unique, approximate);
         }

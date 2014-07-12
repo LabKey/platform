@@ -22,6 +22,8 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.cache.DbCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
+import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ProvisionedDbSchema;
 import org.labkey.api.module.Module;
@@ -226,7 +228,7 @@ public class DbSchema
 
         TableMetaDataLoader loader = new TableMetaDataLoader(scope, schemaName, "%") {
             @Override
-            protected void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException
+            protected void handleTable(String name, ResultSet rs) throws SQLException
             {
                 metaDataTableNameMap.put(name, name);
             }
@@ -255,46 +257,36 @@ public class DbSchema
             _scope = scope;
         }
 
-        protected abstract void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException;
+        protected abstract void handleTable(String name, ResultSet rs) throws SQLException;
 
         void load() throws SQLException
         {
-            SqlDialect dialect = _scope.getSqlDialect();
-            String dbName = _scope.getDatabaseName();
-
             Connection conn = null;
 
             try
             {
                 conn = _scope.getConnection();
-                DatabaseMetaData dbmd = conn.getMetaData();
+                final SqlDialect dialect = _scope.getSqlDialect();
 
-                String[] types = dialect.getTableTypes();
+                Selector selector = new JdbcMetaDataSelector(_scope, conn, new TableMetaDataResultSetFactory());
 
-                try (ResultSet rs = dialect.treatCatalogsAsSchemas() ?
-                        dbmd.getTables(_metaDataSchemaName, null, _tableNamePattern, types) :
-                        dbmd.getTables(dbName, _metaDataSchemaName, _tableNamePattern, types))
-                {
-                    while (rs.next())
+                selector.forEach(new ForEachBlock<ResultSet>(){
+                    @Override
+                    public void exec(ResultSet rs) throws SQLException
                     {
                         String tableName = rs.getString("TABLE_NAME").trim();
 
                         // Ignore system tables
                         if (dialect.isSystemTable(tableName))
-                            continue;
+                            return;
 
                         // skip if it looks like one of our temp table names: name$<32hexchars>
                         if (tableName.length() > 33 && tableName.charAt(tableName.length() - 33) == '$')
-                            continue;
+                            return;
 
-                        handleTable(tableName, rs, dbmd);
+                        handleTable(tableName, rs);
                     }
-                }
-            }
-            catch (SQLException e)
-            {
-                _log.error("Exception loading schema \"" + _metaDataSchemaName + "\" from database metadata", e);
-                throw e;
+                });
             }
             finally
             {
@@ -307,6 +299,22 @@ public class DbSchema
                 {
                     _log.error("DbSchema.createFromMetaData()", x);
                 }
+            }
+        }
+
+
+        private class TableMetaDataResultSetFactory implements JdbcMetaDataResultSetFactory
+        {
+            @Override
+            public ResultSet getResultSet(DbScope scope, DatabaseMetaData dbmd) throws SQLException
+            {
+                String dbName = scope.getDatabaseName();
+                SqlDialect dialect = scope.getSqlDialect();
+                String[] types = dialect.getTableTypes();
+
+                return scope.getSqlDialect().treatCatalogsAsSchemas() ?
+                                        dbmd.getTables(_metaDataSchemaName, null, _tableNamePattern, types) :
+                                        dbmd.getTables(dbName, _metaDataSchemaName, _tableNamePattern, types);
             }
         }
     }
@@ -390,7 +398,7 @@ public class DbSchema
         }
 
         @Override
-        protected void handleTable(String name, ResultSet rs, DatabaseMetaData dbmd) throws SQLException
+        protected void handleTable(String name, ResultSet rs) throws SQLException
         {
             assert _tableName.equalsIgnoreCase(name);
             String typeName = rs.getString("TABLE_TYPE");
@@ -983,7 +991,7 @@ public class DbSchema
             final Set<Module> modulesOfOrphans = new HashSet<>();
 
             new SqlSelector(coreSchema, "SELECT TableName, OrphanedContainer, ModuleName FROM " + tempTableName
-                    + " WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName").forEach(new Selector.ForEachBlock<ResultSet>()
+                    + " WHERE OrphanedContainer IS NOT NULL GROUP BY TableName, OrphanedContainer, ModuleName").forEach(new ForEachBlock<ResultSet>()
             {
                 @Override
                 public void exec(ResultSet rs) throws SQLException
@@ -1019,7 +1027,7 @@ public class DbSchema
         else
         {
             new SqlSelector(coreSchema, " SELECT * FROM " + tempTableName
-                    + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3 ;").forEach(new Selector.ForEachBlock<ResultSet>()
+                    + " WHERE OrphanedContainer IS NOT NULL ORDER BY 1,3 ;").forEach(new ForEachBlock<ResultSet>()
             {
                 @Override
                 public void exec(ResultSet rs) throws SQLException

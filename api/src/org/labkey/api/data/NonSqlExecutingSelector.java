@@ -49,4 +49,11 @@ public abstract class NonSqlExecutingSelector<SELECTOR extends NonSqlExecutingSe
             }
         });
     }
+
+    // Different semantics... never grab a new connection
+    @Override
+    public Connection getConnection() throws SQLException
+    {
+        return null;
+    }
 }

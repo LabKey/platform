@@ -21,7 +21,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.PkMetaDataReader;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.data.xml.ColumnType;
 import org.labkey.data.xml.TableType;
 
@@ -176,24 +175,30 @@ public class SchemaColumnMetaData
         }
     }
 
-    private void loadFromMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName, SchemaTableInfo ti) throws SQLException
+    private void loadFromMetaData(DatabaseMetaData dbmd, final String catalogName, final String schemaName, final SchemaTableInfo ti) throws SQLException
     {
         loadColumnsFromMetaData(dbmd, catalogName, schemaName, ti);
 
-        ResultSet rs;
-
-        if (ti.getSqlDialect().treatCatalogsAsSchemas())
-            rs = dbmd.getPrimaryKeys(schemaName, null, ti.getMetaDataName());
-        else
-            rs = dbmd.getPrimaryKeys(catalogName, schemaName, ti.getMetaDataName());
+        Selector pkSelector = new JdbcMetaDataSelector(ti.getSchema().getScope(), dbmd, new JdbcMetaDataSelector.JdbcMetaDataResultSetFactory()
+        {
+            @Override
+            public ResultSet getResultSet(DbScope scope, DatabaseMetaData dbmd) throws SQLException
+            {
+                if (ti.getSqlDialect().treatCatalogsAsSchemas())
+                    return dbmd.getPrimaryKeys(schemaName, null, ti.getMetaDataName());
+                else
+                    return dbmd.getPrimaryKeys(catalogName, schemaName, ti.getMetaDataName());
+            }
+        });
 
         // Use TreeMap to order columns by keySeq
         Map<Integer, String> pkMap = new TreeMap<>();
-        int columnCount = 0;
-        PkMetaDataReader reader = ti.getSqlDialect().getPkMetaDataReader(rs);
 
-        try
+        try (ResultSet rs = pkSelector.getResultSet())
         {
+            int columnCount = 0;
+            PkMetaDataReader reader = ti.getSqlDialect().getPkMetaDataReader(rs);
+
             while (rs.next())
             {
                 columnCount++;
@@ -210,10 +215,6 @@ public class SchemaColumnMetaData
 
                 pkMap.put(keySeq, colName);
             }
-        }
-        finally
-        {
-            ResultSetUtil.close(rs);
         }
 
         setPkColumnNames(new ArrayList<>(pkMap.values()));

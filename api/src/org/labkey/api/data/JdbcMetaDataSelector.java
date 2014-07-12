@@ -15,11 +15,23 @@ import java.sql.SQLException;
 public class JdbcMetaDataSelector extends NonSqlExecutingSelector<JdbcMetaDataSelector>
 {
     private final ResultSetFactory _factory;
+    private final DatabaseMetaData _dbmd;
 
-    protected JdbcMetaDataSelector(DbScope scope, Connection conn, JdbcMetaDataResultSetFactory factory)
+    private JdbcMetaDataSelector(DbScope scope, Connection conn, DatabaseMetaData dbmd, JdbcMetaDataResultSetFactory factory)
     {
         super(scope, conn);
+        _dbmd = dbmd;
         _factory = new InternalJdbcMetaDataResultSetFactory(factory);
+    }
+
+    protected JdbcMetaDataSelector(DbScope scope, Connection conn, JdbcMetaDataResultSetFactory factory) throws SQLException
+    {
+        this(scope, conn, conn.getMetaData(), factory);
+    }
+
+    protected JdbcMetaDataSelector(DbScope scope, DatabaseMetaData dbmd, JdbcMetaDataResultSetFactory factory)
+    {
+        this(scope, null, dbmd, factory);
     }
 
     @Override
@@ -66,7 +78,7 @@ public class JdbcMetaDataSelector extends NonSqlExecutingSelector<JdbcMetaDataSe
         @Override
         public final ResultSet getResultSet(Connection conn) throws SQLException
         {
-            return _factory.getResultSet(getScope(), conn.getMetaData());
+            return _factory.getResultSet(getScope(), _dbmd);
         }
 
         @Override

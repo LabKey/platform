@@ -53,13 +53,6 @@ public class ResultSetSelector extends NonSqlExecutingSelector<ResultSetSelector
         return this;
     }
 
-    // Different semantics... never grab a new connection
-    @Override
-    public Connection getConnection() throws SQLException
-    {
-        return null;
-    }
-
     @Override
     protected ResultSetFactory getStandardResultSetFactory()
     {

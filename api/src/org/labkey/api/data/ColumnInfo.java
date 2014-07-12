@@ -27,6 +27,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
+import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.IPropertyValidator;
 import org.labkey.api.gwt.client.DefaultScaleType;
@@ -1406,43 +1407,52 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
-    public static Collection<ColumnInfo> createFromDatabaseMetaData(DatabaseMetaData dbmd, String catalogName, String schemaName, SchemaTableInfo parentTable)
+    public static Collection<ColumnInfo> createFromDatabaseMetaData(DatabaseMetaData dbmd, final String catalogName, final String schemaName, final SchemaTableInfo parentTable)
             throws SQLException
     {
          //Use linked hash map to preserve ordering...
         LinkedHashMap<String, ColumnInfo> colMap = new LinkedHashMap<>();
         SqlDialect dialect = parentTable.getSqlDialect();
-        ResultSet rsCols;
+        DbScope scope = parentTable.getSchema().getScope();
 
-        if (dialect.treatCatalogsAsSchemas())
-            rsCols = dbmd.getColumns(schemaName, null, parentTable.getMetaDataName(), null);
-        else
-            rsCols = dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);
-
-        ColumnMetaDataReader reader = dialect.getColumnMetaDataReader(rsCols, parentTable);
-
-        while (rsCols.next())
+        Selector columnSelector = new JdbcMetaDataSelector(scope, dbmd, new JdbcMetaDataResultSetFactory()
         {
-            String metaDataName = reader.getName();
-            ColumnInfo col = new ColumnInfo(metaDataName, parentTable);
-
-            col.metaDataName = metaDataName;
-            col.selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
-            col.sqlTypeName = reader.getSqlTypeName();
-            col.jdbcType = dialect.getJdbcType(reader.getSqlType(), reader.getSqlTypeName());
-            col.isAutoIncrement = reader.isAutoIncrement();
-            col.scale = reader.getScale();
-            col.nullable = reader.isNullable();
-            col.jdbcDefaultValue = reader.getDefault();
-
-            inferMetadata(col);
-
-            // TODO: This is a temporary hack... move to SAS dialect(s)
-            String databaseFormat = reader.getDatabaseFormat();
-
-            if (null != databaseFormat)
+            @Override
+            public ResultSet getResultSet(DbScope scope, DatabaseMetaData dbmd) throws SQLException
             {
-                // Do nothing for now -- not implementing SAS format support at this point
+                if (scope.getSqlDialect().treatCatalogsAsSchemas())
+                    return dbmd.getColumns(schemaName, null, parentTable.getMetaDataName(), null);
+                else
+                    return dbmd.getColumns(catalogName, schemaName, parentTable.getMetaDataName(), null);
+            }
+        });
+
+        try (ResultSet rsCols = columnSelector.getResultSet())
+        {
+            ColumnMetaDataReader reader = dialect.getColumnMetaDataReader(rsCols, parentTable);
+
+            while (rsCols.next())
+            {
+                String metaDataName = reader.getName();
+                ColumnInfo col = new ColumnInfo(metaDataName, parentTable);
+
+                col.metaDataName = metaDataName;
+                col.selectName = dialect.getSelectNameFromMetaDataName(metaDataName);
+                col.sqlTypeName = reader.getSqlTypeName();
+                col.jdbcType = dialect.getJdbcType(reader.getSqlType(), reader.getSqlTypeName());
+                col.isAutoIncrement = reader.isAutoIncrement();
+                col.scale = reader.getScale();
+                col.nullable = reader.isNullable();
+                col.jdbcDefaultValue = reader.getDefault();
+
+                inferMetadata(col);
+
+                // TODO: This is a temporary hack... move to SAS dialect(s)
+                String databaseFormat = reader.getDatabaseFormat();
+
+                if (null != databaseFormat)
+                {
+                    // Do nothing for now -- not implementing SAS format support at this point
 /*                if (databaseFormat.startsWith("$"))
                 {
                     _log.info("User-defined format: " + databaseFormat);
@@ -1460,69 +1470,74 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                     }
                 }
 */
+                }
+
+                col.label = reader.getLabel();
+                col.description = reader.getDescription();
+
+                if (nonEditableColNames.contains(col.getPropertyName()))
+                    col.setUserEditable(false);
+
+                colMap.put(col.getName(), col);
             }
-
-            col.label = reader.getLabel();
-            col.description = reader.getDescription();
-
-            if (nonEditableColNames.contains(col.getPropertyName()))
-                col.setUserEditable(false);
-
-            colMap.put(col.getName(), col);
         }
-
-        rsCols.close();
 
         // load keys in two phases
         // 1) combine multi column keys
         // 2) update columns
 
-        ResultSet rsKeys;
+        Selector keySelector = new JdbcMetaDataSelector(scope, dbmd, new JdbcMetaDataResultSetFactory()
+        {
+            @Override
+            public ResultSet getResultSet(DbScope scope, DatabaseMetaData dbmd) throws SQLException
+            {
+                if (parentTable.getSqlDialect().treatCatalogsAsSchemas())
+                    return dbmd.getImportedKeys(schemaName, null, parentTable.getMetaDataName());
+                else
+                    return dbmd.getImportedKeys(catalogName, schemaName, parentTable.getMetaDataName());
+            }
+        });
 
-        if (parentTable.getSqlDialect().treatCatalogsAsSchemas())
-            rsKeys = dbmd.getImportedKeys(schemaName, null, parentTable.getMetaDataName());
-        else
-            rsKeys = dbmd.getImportedKeys(catalogName, schemaName, parentTable.getMetaDataName());
-
-        int iPkTableSchema = findColumn(rsKeys, "PKTABLE_SCHEM");
-        int iPkTableName = findColumn(rsKeys, "PKTABLE_NAME");
-        int iPkColumnName = findColumn(rsKeys, "PKCOLUMN_NAME");
-        int iFkColumnName = findColumn(rsKeys, "FKCOLUMN_NAME");
-        int iKeySequence = findColumn(rsKeys, "KEY_SEQ");
-        int iFkName = findColumn(rsKeys, "FK_NAME");
-        
         List<ImportedKey> importedKeys = new ArrayList<>();
 
-        while (rsKeys.next())
+        try (ResultSet rsKeys = keySelector.getResultSet())
         {
-            String pkOwnerName = rsKeys.getString(iPkTableSchema);
-            String pkTableName = rsKeys.getString(iPkTableName);
-            String pkColumnName = rsKeys.getString(iPkColumnName);
-            String colName = rsKeys.getString(iFkColumnName);
-            int keySequence = rsKeys.getInt(iKeySequence);
-            String fkName = rsKeys.getString(iFkName);
+            int iPkTableSchema = findColumn(rsKeys, "PKTABLE_SCHEM");
+            int iPkTableName = findColumn(rsKeys, "PKTABLE_NAME");
+            int iPkColumnName = findColumn(rsKeys, "PKCOLUMN_NAME");
+            int iFkColumnName = findColumn(rsKeys, "FKCOLUMN_NAME");
+            int iKeySequence = findColumn(rsKeys, "KEY_SEQ");
+            int iFkName = findColumn(rsKeys, "FK_NAME");
 
-            if (keySequence == 1)
+            while (rsKeys.next())
             {
-                ImportedKey key = new ImportedKey();
-                key.fkName = fkName;
-                key.pkOwnerName = pkOwnerName;
-                key.pkTableName = pkTableName;
-                key.pkColumnNames.add(pkColumnName);
-                key.fkColumnNames.add(colName);
-                importedKeys.add(key);
-            }
-            else
-            {
-                assert importedKeys.size() > 0;
-                ImportedKey key = importedKeys.get(importedKeys.size()-1);
-                assert key.fkName.equals(fkName);
-                key.pkColumnNames.add(pkColumnName);
-                key.fkColumnNames.add(colName);
+                String pkOwnerName = rsKeys.getString(iPkTableSchema);
+                String pkTableName = rsKeys.getString(iPkTableName);
+                String pkColumnName = rsKeys.getString(iPkColumnName);
+                String colName = rsKeys.getString(iFkColumnName);
+                int keySequence = rsKeys.getInt(iKeySequence);
+                String fkName = rsKeys.getString(iFkName);
+
+                if (keySequence == 1)
+                {
+                    ImportedKey key = new ImportedKey();
+                    key.fkName = fkName;
+                    key.pkOwnerName = pkOwnerName;
+                    key.pkTableName = pkTableName;
+                    key.pkColumnNames.add(pkColumnName);
+                    key.fkColumnNames.add(colName);
+                    importedKeys.add(key);
+                }
+                else
+                {
+                    assert importedKeys.size() > 0;
+                    ImportedKey key = importedKeys.get(importedKeys.size() - 1);
+                    assert key.fkName.equals(fkName);
+                    key.pkColumnNames.add(pkColumnName);
+                    key.fkColumnNames.add(colName);
+                }
             }
         }
-
-        rsKeys.close();
 
         for (ImportedKey key : importedKeys)
         {
