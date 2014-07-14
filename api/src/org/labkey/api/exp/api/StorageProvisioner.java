@@ -546,7 +546,7 @@ public class StorageProvisioner
         SchemaTableInfo ti;
         if (cache)
         {
-            assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds that are cached must declare a schema type of : DbSchemaType.Provisioned";
+            assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds that are cached must declare a schema type of DbSchemaType.Provisioned";
 
             DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
             ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
@@ -1158,9 +1158,21 @@ public class StorageProvisioner
             super(schema, tableName);
             _domain = domain;
         }
+
         public Domain getDomain()
         {
             return _domain;
+        }
+
+        @Override
+        public void afterLoadTable(SchemaTableInfo ti)
+        {
+            super.afterLoadTable(ti);
+
+            Domain domain = getDomain();
+            DomainKind kind = domain.getDomainKind();
+
+            StorageProvisioner.fixupProvisionedDomain(ti, kind, domain, ti.getName());
         }
     }
 

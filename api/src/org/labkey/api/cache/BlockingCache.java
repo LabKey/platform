@@ -67,6 +67,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
     }
 
 
+    // TODO: Remove or at least rename & change signature? Nobody overloads it any more.
     protected boolean isValid(Wrapper<V> w, K key, Object argument, CacheLoader loader)
     {
         return w.value != UNINITIALIZED;

@@ -4,7 +4,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 
 import java.sql.Connection;
@@ -57,11 +57,11 @@ public class SchemaNameCache
         return _cache.get(scope.getDataSourceName());
     }
 
-    // Query the JDBC metadata for a list of all schemas in this database.
+    // Query the JDBC metadata for all schemas in this database.
     private Map<String, String> loadSchemaNameMap(DbScope scope) throws SQLException
     {
         Connection conn = scope.getConnection();
-        final Map<String, String> schemaNameMap = new CaseInsensitiveHashMap<>();
+        final Map<String, String> schemaNameMap = new CaseInsensitiveTreeMap<>();
 
         try
         {

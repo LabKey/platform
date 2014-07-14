@@ -538,15 +538,19 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Override
     @NotNull
     /**
-     * Returns all of the schemas claimed by the module in {@link:getSchemaNames()}. Override if only a subset
-     * should be tested.
+     * Returns all non-provisioned schemas claimed by the module in {@link:getSchemaNames()}. Override if a different
+     * set of schemas should be tested.
      */
     public Set<DbSchema> getSchemasToTest()
     {
+        Set<String> schemaNames = new LinkedHashSet<>(getSchemaNames());
+        schemaNames.removeAll(getProvisionedSchemaNames());
+
         Set<DbSchema> result = new LinkedHashSet<>();
-        for (String schemaName : getSchemaNames())
+
+        for (String schemaName : schemaNames)
         {
-            DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Unknown);
+            DbSchema schema = DbSchema.get(schemaName, DbSchemaType.Module);
             result.add(schema);
         }
         return result;

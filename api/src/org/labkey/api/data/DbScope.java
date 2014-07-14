@@ -55,6 +55,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -64,6 +65,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.RandomAccess;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.locks.Lock;
@@ -1398,6 +1400,11 @@ public class DbScope
         {
             return _tableName;
         }
+
+        public void afterLoadTable(SchemaTableInfo ti)
+        {
+            ti.afterConstruct();
+        }
     }
 
     // Test dialects that are in-use; only for tests that require connecting to the database.
@@ -1466,13 +1473,13 @@ public class DbScope
         public void testMultiScopeTransaction() throws SQLException
         {
             // Test that a transaction in one scope doesn't affect other scopes. Start a transaction in the labkeyScope
-            // and then SELECT 10 rows from a random table in a random schema in every other datasource.
+            // and then SELECT 10 rows from a random table in a random schema in every datasource.
             List<TableInfo> tablesToTest = new LinkedList<>();
 
             for (DbScope scope : DbScope.getDbScopes())
             {
                 SqlDialect dialect = scope.getSqlDialect();
-                Collection<String> schemaNames = new LinkedList<>();
+                List<String> schemaNames = new ArrayList<>();
 
                 for (String schemaName : scope.getSchemaNames())
                     if (!dialect.isSystemSchema(schemaName))
@@ -1481,31 +1488,29 @@ public class DbScope
                 if (schemaNames.isEmpty())
                     continue;
 
-                DbSchema schema = scope.getSchema(pickRandomElement(schemaNames), DbSchemaType.Unknown);
-                Collection<String> tableNames = schema.getTableNames();
-                List<TableInfo> tables = new ArrayList<>(tableNames.size());
+                String randomSchemaName = pickRandomElement(schemaNames);
+                String qualifiedName = DbSchema.getDisplayName(scope, randomSchemaName);
 
-                for (String name : tableNames)
-                {
-                    TableInfo table = schema.getTable(name);
+                // Calling getSchema() with type Unknown will use Module type by default... we want Bare by default here
+                DbSchemaType type = ModuleLoader.getInstance().getSchemaTypeForSchemaName(qualifiedName);
+                if (null == type)
+                    type = DbSchemaType.Bare;
 
-                    if (null == table)
-                        LOG.error("Table is null: " + schema.getName() + "." + name);
-                    else if (table.getTableType() != DatabaseTableType.NOT_IN_DB)
-                        tables.add(table);
-                }
+                DbSchema schema = scope.getSchema(randomSchemaName, type);
 
-                if (tables.isEmpty())
-                    continue;
+                // For performance reasons, we don't bother loading the table list in Provisioned schemas, so we need special handling to get them here
+                Collection<String> tableNames = DbSchemaType.Provisioned == type ? DbSchema.loadTableNames(scope, randomSchemaName).keySet() : schema.getTableNames();
+                TableInfo tinfo = pickRandomTable(schema, tableNames);
 
-                tablesToTest.add(pickRandomElement(tables));
+                if (null != tinfo)
+                    tablesToTest.add(tinfo);
             }
 
-            DbScope labkeyScope = DbScope.getLabkeyScope();
-
-            try
+            try (Transaction ignored = DbScope.getLabkeyScope().ensureTransaction())
             {
-                labkeyScope.ensureTransaction();
+                // LabKey scope should have an active transaction, and all other scopes should not
+                for (DbScope scope : DbScope.getDbScopes())
+                    Assert.assertEquals(scope.isLabKeyScope(), scope.isTransactionActive());
 
                 for (TableInfo table : tablesToTest)
                 {
@@ -1514,30 +1519,57 @@ public class DbScope
                     selector.getMapCollection();
                 }
             }
-            finally
-            {
-                labkeyScope.closeConnection();
-            }
         }
 
 
-        private <E> E pickRandomElement(Collection<E> collection)
+        private @Nullable TableInfo pickRandomTable(DbSchema schema, Collection<String> tableNames)
         {
-            int size = collection.size();
+            List<String> names = new ArrayList<>(tableNames);
+
+            // Randomize the collection and then return the first legitimate table. Previously, we built a list of
+            // good TableInfos and then picked one at random... but building all those TableInfos could be expensive
+            // in the Provisioned case.
+            Collections.shuffle(names);
+
+            for (String name : names)
+            {
+                TableInfo table = schema.getTable(name);
+
+                if (null == table)
+                    LOG.error("Table is null: " + schema.getName() + "." + name);
+                else if (table.getTableType() != DatabaseTableType.NOT_IN_DB)
+                    return table;
+            }
+
+            return null;
+        }
+
+
+        private <E> E pickRandomElement(List<E> list)
+        {
+            int size = list.size();
             assert size > 0;
 
-            Iterator<E> iter = collection.iterator();
             int i = new Random().nextInt(size);
             E element;
 
-            do
+            if (list instanceof RandomAccess)
             {
-                element = iter.next();
+                return list.get(i);
             }
-            while (i-- > 0);
+            else
+            {
+                Iterator<E> iter = list.iterator();
+                do
+                {
+                    element = iter.next();
+                }
+                while (i-- > 0);
+            }
 
             return element;
         }
+
 
         @Test(expected = IllegalStateException.class)
         public void testExtraCloseException()
