@@ -19,7 +19,6 @@ package org.labkey.audit;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.AuditLogService;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
@@ -87,13 +86,6 @@ public class AuditModule extends DefaultModule
     public Set<String> getProvisionedSchemaNames()
     {
         return Collections.singleton(AuditSchema.SCHEMA_NAME);
-    }
-
-    @NotNull
-    @Override
-    public Set<DbSchema> getSchemasToTest()
-    {
-        return Collections.emptySet();
     }
 
     @Override

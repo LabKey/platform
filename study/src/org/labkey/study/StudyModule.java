@@ -23,7 +23,6 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.EnumConverter;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
@@ -110,9 +109,9 @@ import org.labkey.study.controllers.assay.AssayController;
 import org.labkey.study.controllers.designer.DesignerController;
 import org.labkey.study.controllers.plate.PlateController;
 import org.labkey.study.controllers.reports.ReportsController;
+import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.controllers.specimen.SpecimenApiController;
 import org.labkey.study.controllers.specimen.SpecimenController;
-import org.labkey.study.controllers.security.SecurityController;
 import org.labkey.study.dataset.DatasetAuditProvider;
 import org.labkey.study.dataset.DatasetAuditViewFactory;
 import org.labkey.study.dataset.DatasetNotificationInfoProvider;
@@ -169,20 +168,19 @@ import org.labkey.study.reports.StudyQueryReport;
 import org.labkey.study.reports.StudyRReport;
 import org.labkey.study.reports.StudyReportUIProvider;
 import org.labkey.study.reports.WindowsCommandLineSplitter;
-import org.labkey.study.specimen.SpecimenSearchWebPart;
-import org.labkey.study.specimen.SpecimenWebPart;
-import org.labkey.study.specimen.SpecimenCommentAuditProvider;
-import org.labkey.study.specimen.SpecimenCommentAuditViewFactory;
 import org.labkey.study.security.permissions.ManageStudyPermission;
 import org.labkey.study.security.roles.AssayDesignerRole;
 import org.labkey.study.security.roles.SpecimenCoordinatorRole;
 import org.labkey.study.security.roles.SpecimenRequesterRole;
+import org.labkey.study.specimen.SpecimenCommentAuditProvider;
+import org.labkey.study.specimen.SpecimenCommentAuditViewFactory;
+import org.labkey.study.specimen.SpecimenSearchWebPart;
+import org.labkey.study.specimen.SpecimenWebPart;
 import org.labkey.study.view.AssayBatchesWebPartFactory;
 import org.labkey.study.view.AssayList2WebPartFactory;
 import org.labkey.study.view.AssayListWebPartFactory;
 import org.labkey.study.view.AssayResultsWebPartFactory;
 import org.labkey.study.view.AssayRunsWebPartFactory;
-import org.labkey.study.view.studydesign.AssayScheduleWebpartFactory;
 import org.labkey.study.view.DatasetsWebPartView;
 import org.labkey.study.view.StudyListWebPartFactory;
 import org.labkey.study.view.StudySummaryWebPartFactory;
@@ -191,6 +189,7 @@ import org.labkey.study.view.StudyViewLoader;
 import org.labkey.study.view.SubjectDetailsWebPartFactory;
 import org.labkey.study.view.SubjectsWebPart;
 import org.labkey.study.view.specimen.SpecimenRequestNotificationEmailTemplate;
+import org.labkey.study.view.studydesign.AssayScheduleWebpartFactory;
 import org.labkey.study.view.studydesign.ImmunizationScheduleWebpartFactory;
 import org.labkey.study.view.studydesign.VaccineDesignWebpartFactory;
 import org.labkey.study.writer.DatasetWriter;
@@ -510,14 +509,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public Set<String> getProvisionedSchemaNames()
     {
         return PageFlowUtil.set("studydataset", "assayresult", "studydesign", "specimentables");
-    }
-
-    @Override
-    @NotNull
-    public Set<DbSchema> getSchemasToTest()
-    {
-        // Don't test studydataset, assayresult, studydesign, and specimentables since they're dynamically generated
-        return PageFlowUtil.set(StudySchema.getInstance().getSchema());
     }
 
     private void registerFolderTypes()
