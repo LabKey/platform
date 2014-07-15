@@ -78,6 +78,7 @@ import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.api.writer.FileSystemFile;
 import org.labkey.api.writer.ZipFile;
 import org.labkey.api.writer.ZipUtil;
@@ -1019,6 +1020,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             // Stay on same tab if there are errors
             if (_errors.hasErrors() && null != StringUtils.trimToNull(form.getTabId()))
                 setSelectedTabId(form.getTabId());
+
+            addClientDependency(ClientDependency.fromFilePath("clientapi/ext3"));
         }
 
         public List<NavTree> getTabList()

@@ -26,7 +26,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("ext3")); // LABKEY.ext.Utils.handleTabsInTextArea
+        resources.add(ClientDependency.fromFilePath("clientapi/ext3")); // LABKEY.ext.Utils.handleTabsInTextArea
         resources.add(ClientDependency.fromFilePath("Ext4"));
         return resources;
     }

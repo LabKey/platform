@@ -132,7 +132,7 @@ LABKEY.Timeline = {
         return tl ;
     }
 
-}
+};
 
 /**
  * The following code is adapted from the simile timeline timeline-api.js file.

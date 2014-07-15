@@ -18,26 +18,36 @@
 <%@ page import="org.labkey.timeline.TimelineSettings" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext3"));
+        resources.add(ClientDependency.fromFilePath("timeline.js"));
+        resources.add(ClientDependency.fromFilePath("similetimeline/bundle.js"));
+        resources.add(ClientDependency.fromFilePath("similetimeline/scripts/l10n/en/timeline.js"));
+        resources.add(ClientDependency.fromFilePath("similetimeline/scripts/l10n/en/labellers.js"));
+        return resources;
+    }
+%>
 <%
     JspView<TimelineSettings> me = (JspView<TimelineSettings>) HttpView.currentView();
     TimelineSettings bean = me.getModelBean();
 %>
 <div class="ms-form" style="border:1px solid black;width:100%;height:<%=bean.getPixelHeight()%>px" id="<%=bean.getDivId()%>"></div>
-<script type="text/javascript">LABKEY.requiresClientAPI();</script>
-<script src='<%=getContextPath()%>/timeline.js'></script>
-<script src='<%=getContextPath()%>/similetimeline/bundle.js'></script>
-<script src='<%=getContextPath()%>/similetimeline/scripts/l10n/en/timeline.js'></script>
-<script src='<%=getContextPath()%>/similetimeline/scripts/l10n/en/labellers.js'></script>
 <script type="text/javascript">
     Ext.onReady(function() {
-    var tl = LABKEY.Timeline.create({
-        renderTo:<%=q(bean.getDivId())%>,
-        start:<%=q(bean.getStartField())%>,
-        title:<%=q(bean.getTitleField())%>,
-        description:<%=nq(bean.getDescriptionField())%>,
-        end:<%=nq(bean.getEndField())%>,
-        query:{schemaName:<%=nq(bean.getSchemaName())%>, queryName:<%=nq(bean.getQueryName())%>, viewName:<%=nq(bean.getViewName())%>}})
+        LABKEY.Timeline.create({
+            renderTo:<%=q(bean.getDivId())%>,
+            start:<%=q(bean.getStartField())%>,
+            title:<%=q(bean.getTitleField())%>,
+            description:<%=nq(bean.getDescriptionField())%>,
+            end:<%=nq(bean.getEndField())%>,
+            query:{schemaName:<%=nq(bean.getSchemaName())%>, queryName:<%=nq(bean.getQueryName())%>, viewName:<%=nq(bean.getViewName())%>
+        }});
     });
 </script>
 <%!

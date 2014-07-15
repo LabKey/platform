@@ -16,17 +16,12 @@
  */
 %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.NavTree" %>
-<%@ page import="org.labkey.api.view.PopupMenu" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Map<String, String> props = new HashMap<>();
     props.put("style", "float: left;");
-
-    NavTree tree = new NavTree("First");
-    PopupMenu menu = new PopupMenu(tree);
 %>
 <style type="text/css">
     .labkey-row, .labkey-alternate-row {

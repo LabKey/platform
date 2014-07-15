@@ -15,10 +15,13 @@
  */
 package org.labkey.pipeline;
 
-import org.labkey.api.view.*;
 import org.labkey.api.pipeline.PipelineService;
-import org.labkey.pipeline.status.StatusController;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.pipeline.status.PipelineQueryView;
+import org.labkey.pipeline.status.StatusController;
 
 import java.io.PrintWriter;
 
@@ -35,6 +38,7 @@ public class PipelineWebPart extends WebPartView
     {
         setTitle(getPartName());
         setTitleHref(StatusController.urlShowList(viewContext.getContainer(), false));
+        addClientDependency(ClientDependency.fromFilePath("clientapi/ext3"));
     }
 
     @Override

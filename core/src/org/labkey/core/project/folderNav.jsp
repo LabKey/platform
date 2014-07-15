@@ -133,7 +133,7 @@
 
         // scrollIntoView
         var siv = function(t, ct) {
-            ct = Ext.getDom(ct) || Ext.getBody().dom;
+            ct = Ext4.getDom(ct) || Ext4.getBody().dom;
             var el = t.dom,
                     offsets = t.getOffsetsTo(ct),
                     // el's box
