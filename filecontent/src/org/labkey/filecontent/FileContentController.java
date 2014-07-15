@@ -81,6 +81,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -711,7 +712,7 @@ public class FileContentController extends SpringActionController
    }
 
 
-   @RequiresSiteAdmin
+   @RequiresSiteAdmin @CSRF
    public class AddAttachmentDirectoryAction extends ShowAdminAction
    {
        public static final int MAX_NAME_LENGTH = 80;
@@ -761,7 +762,7 @@ public class FileContentController extends SpringActionController
    }
 
 
-   @RequiresSiteAdmin
+   @RequiresSiteAdmin @CSRF
    public class DeleteAttachmentDirectoryAction extends ShowAdminAction
    {
        public boolean handlePost(FileContentForm form, BindException errors) throws Exception

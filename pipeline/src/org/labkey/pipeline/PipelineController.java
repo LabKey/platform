@@ -158,7 +158,7 @@ public class PipelineController extends SpringActionController
         return url;
     }
 
-    @RequiresSiteAdmin
+    @RequiresSiteAdmin @CSRF
     public class SetupAction extends AbstractSetupAction<SetupForm>
     {
         protected SetupField getFormField()

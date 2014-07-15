@@ -84,7 +84,8 @@ Each file set is an additional directory that stores files accessible to users o
     for (AttachmentDirectory attDir : attachmentDirs)
     {%>
     <form action="deleteAttachmentDirectory.post" method="POST">
-    <table>
+        <labkey:csrf/>
+     <table>
         <tr>
             <td class="labkey-form-label">Name</td>
             <td><%=h(attDir.getLabel())%><input type="hidden" name="fileSetName" value="<%=h(attDir.getLabel())%>"></td>
@@ -101,7 +102,8 @@ Each file set is an additional directory that stores files accessible to users o
 <%  } %>
 
 <form action="addAttachmentDirectory.post" method="POST">
-<table>                                        
+    <labkey:csrf/>
+<table>
     <tr>
         <td class="labkey-form-label">Name</td>
         <td><input name="fileSetName" value="<%=h(form.getFileSetName())%>"></td>

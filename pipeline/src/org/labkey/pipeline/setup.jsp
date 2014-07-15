@@ -99,6 +99,7 @@
 </script>
 
 <form enctype="multipart/form-data" method="POST" action="">
+    <labkey:csrf/>
     <table>
         <tr><td></td></tr>
         <tr><td colspan="10">
