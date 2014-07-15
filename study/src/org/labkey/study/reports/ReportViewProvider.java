@@ -218,6 +218,11 @@ public class ReportViewProvider implements DataViewProvider
 
                     info.setVisible(!descriptor.isHidden());
 
+                    // if a report doesn't have the 'showInDashboard' property set then default to true so that
+                    // reports that used to be shown are still shown.
+                    String showInDashboard = descriptor.getProperty(ReportDescriptor.Prop.showInDashboard);
+                    info.setShowInDashboard(showInDashboard == null || Boolean.valueOf(showInDashboard));
+
                     // This icon is the small icon -- not the same as thumbnail
                     String iconPath;
                     String iconType = (String)ReportPropsManager.get().getPropertyValue(r.getEntityId(), context.getContainer(), "iconType");
