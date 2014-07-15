@@ -564,14 +564,14 @@ public abstract class DisplayColumn extends RenderColumn
         String safeHeaderId = "column-header-" + UniqueID.getServerSessionScopedUID();
         if (hasMenu)
         {
-            out.write(" id='");
+            out.write(" id=\"");
             out.write(PageFlowUtil.filter(safeHeaderId));
-            out.write("'");
+            out.write("\"");
         }
 
-        out.write(" column-name='");
-        out.write(ctx.getCurrentRegion().getName() + ":" + columnName);
-        out.write("'");
+        out.write(" column-name=\"");
+        out.write(PageFlowUtil.filter(ctx.getCurrentRegion().getName() + ":" + columnName));
+        out.write("\"");
 
         out.write(">\n");
         out.write("<div>");
