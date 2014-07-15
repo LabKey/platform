@@ -116,7 +116,8 @@ public class ReportDescriptor extends Entity implements SecurableResource
         status,         // same
         json,
         modified,
-        serializedReportId
+        serializedReportId,
+        showInDashboard // used in Argos (show visible reports in the grid, show in my links if this is true)
     }
 
     public ReportDescriptor()

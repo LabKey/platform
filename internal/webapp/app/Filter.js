@@ -121,6 +121,7 @@ Ext.define('LABKEY.app.model.Filter', {
                     description : group.description,
                     shared : false,
                     type : 'list',
+                    visibility : group.visibility,
                     filters : m.toJSON(group.filters, group.isLive)
                 },
                 headers: {'Content-Type': 'application/json'}
@@ -187,6 +188,7 @@ Ext.define('LABKEY.app.model.Filter', {
                     label : group.label,
                     participantIds : [],
                     description : group.description,
+                    visibility : group.visibility,
                     shared : false,
                     type : 'list',
                     filters : m.toJSON(group.filters, group.isLive)
@@ -208,6 +210,40 @@ Ext.define('LABKEY.app.model.Filter', {
                     }
                 });
             }
+        },
+
+        /**
+         * Updates a participant group's visibility option for non-study backed modules
+         *
+         * @param config, an object which takes the following configuation properties.
+         * @param {Function} [config.success] Function called when the update action is successful
+         * @param {Function} [config.failure] Function called when the update action fails.  If not specified
+         *        then a default function will be provided
+         * @param {Object} [config.group] group definition.  The group object should have the following fields
+         *         rowId - the id of the category.  Assumes a 1:1 mapping between the group and category
+         *         visibility - the enum value of the visibility option, must be one of: {hidden, grid, dashboard)
+         */
+        updateGroupVisibility : function(config) {
+            if (!config)
+                throw "You must specify a config object";
+
+            if (!config.group || !config.success)
+                throw "You must specify group, and success members in the config";
+
+            var group = config.group;
+            var m = LABKEY.app.model.Filter;
+
+            Ext.Ajax.request({
+                url: LABKEY.ActionURL.buildURL('argos', 'updatePatientGroupVisibility'),
+                method: 'POST',
+                success: config.success,
+                failure: config.failure || m.getErrorCallback(),
+                jsonData: {
+                    rowId : group.rowId,
+                    visibility : group.visibility
+                },
+                headers: {'Content-Type': 'application/json'}
+            });
         },
 
         /**

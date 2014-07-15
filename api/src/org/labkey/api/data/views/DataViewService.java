@@ -209,6 +209,7 @@ public class DataViewService
         o.put("category", vc.toJSON(user));
 
         o.put("visible", info.isVisible());
+        o.put("showInDashboard", info.showInDashboard());
         o.put("shared", info.isShared());
         o.put("readOnly", info.isReadOnly());
 

@@ -53,6 +53,7 @@ public interface DataViewInfo
     @Nullable String getQueryName();
 
     boolean isVisible();                // specifies whether this view is hidden
+    boolean showInDashboard();          // an optional visibility level
     boolean isShared();
     boolean isReadOnly();
     @Nullable

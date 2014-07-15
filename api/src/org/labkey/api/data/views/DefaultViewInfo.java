@@ -57,6 +57,7 @@ public class DefaultViewInfo implements DataViewInfo
     private ViewCategory _category;
     private boolean _visible = true;
     private boolean _shared = true;
+    private boolean _showInDashboard;
     private boolean _readOnly;
     private String _access;
     private ActionURL _accessUrl;
@@ -228,6 +229,16 @@ public class DefaultViewInfo implements DataViewInfo
     public boolean isVisible()
     {
         return _visible;
+    }
+
+    public boolean showInDashboard()
+    {
+        return _showInDashboard;
+    }
+
+    public void setShowInDashboard(boolean showInDashboard)
+    {
+        _showInDashboard = showInDashboard;
     }
 
     public void setVisible(boolean visible)
