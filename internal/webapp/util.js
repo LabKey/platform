@@ -52,13 +52,6 @@ function showHelpDiv(elem, titleText, bodyText, width)
     var pos = bd.getScroll();
     var leftScroll = pos.left;
     var topScroll = pos.top;
-// This is the jQuery equivalent
-//    var bd = $(document.body);
-//    var viewportWidth = bd.outerWidth();
-//    var viewportHeight = bd.outerHeight();
-//    var leftScroll = bd.scrollLeft();
-//    var topScroll = bd.scrollTop();
-
     div.style.top = posTop + "px";
     div.style.display = "block";
     div.style.zIndex = "1050";
@@ -190,66 +183,37 @@ function handleTabsInTextArea()
     console.warn('handleTabsInTextArea() has been migrated to LABKEY.ext.Utils.handleTabsInTextArea()');
 }
 
-//_menuMgr = new function() {
-//    var menus = {};
-//
-//    return {
-//        register: function(id, config) {
-//            menus[id] = config;
-//        },
-//        get: function(id) {
-//            return menus[id];
-//        }
-//    };
-//};
-
 function showMenu(parent, menuElementId, align) {
     if (!align)
     {
         align = "tl-bl?";
     }
 
-    var menu, menuCfg, cls = 'labkey-menu-button-active';
-    if (typeof(Ext) != 'undefined') {
-        menu = Ext.menu.MenuMgr.get(menuElementId);
+    var menu, cls = 'labkey-menu-button-active';
+    if (typeof(Ext4) != 'undefined')
+    {
+        menu = Ext4.menu.Manager.get(menuElementId);
 
-//        if (!menu) {
-//            menuCfg = _menuMgr.get(menuElementId);
-//            if (menuCfg) {
-//                menu = new Ext.menu.Menu(menuCfg);
-//            }
-//        }
+        if (menu)
+        {
+            // attach class listeners
+            menu.on('show', function() { Ext4.get(this).addCls(cls); }, parent);
+            menu.on('beforehide', function() { Ext4.get(this).removeCls(cls); }, parent);
 
-        // attach class listeners
-        menu.on('beforeshow', function() { Ext.get(this).addClass(cls); menu.floatParent = this; }, parent);
-        menu.on('beforehide', function() { Ext.get(this).removeClass(cls); menu.floatParent = null; }, parent);
-
-        menu.show(parent, align);
+            menu.show();
+            menu.alignTo(parent, align);
+        }
+        else
+        {
+            console.error('Menu is not available:', menuElementId);
+        }
     }
     else
     {
-        console.error("No menu registered :" + menuElementId);
+        console.warn("No menu registered :" + menuElementId);
     }
-    return menu;
 
-    // TODO: Ext 4 Menus do not escape id's properly, must fix before dependency on Ext 3 can be dropped
-//    if (typeof(Ext4) != 'undefined') {
-//        menu = Ext4.menu.Manager.get(menuElementId);
-//
-//        if (!menu) {
-//            menuCfg = _menuMgr.get(menuElementId);
-//            if (menuCfg) {
-//                menu = Ext4.create('Ext.menu.Menu', menuCfg);
-//            }
-//
-//            // attach class listeners
-//            menu.on('show', function() { Ext4.get(this).addCls(cls); }, parent);
-//            menu.on('beforehide', function() { Ext4.get(this).removeCls(cls); }, parent);
-//        }
-//
-//        menu.show();
-//        menu.alignTo(parent, align);
-//    }
+    return menu;
 }
 
 
@@ -273,25 +237,3 @@ LABKEY.addMarkup(
 '  </table>'+
 '</div>'
 );
-//$(document.body).ready(function() {
-//    $(document.body).append(
-//        '<div id="helpDiv" onMouseOver="mouseEnteredHelpDiv()" onMouseOut="mouseExitedHelpDiv()"' +
-//        '   style="display:none;">'+
-//        '  <table id="helpDivTable">'+
-//        '    <tr class="labkey-wp-header" width="100%">'+
-//        '      <td title="Help" class="labkey-wp-title-left" nowrap>'+
-//        '        <div><span id="helpDivTitle" class="labkey-wp-title">Title</span></div>'+
-//        '      </td>'+
-//        '      <td class="labkey-wp-title-right" align="right" style="border-left:0; padding-bottom: 0;">'+
-//        '      <img alt="close" src="' + LABKEY.imagePath + '/partdelete.png" onclick="hideHelpDiv(true)">'+
-//        '      </td>'+
-//        '     </tr>'+
-//        '    <tr>'+
-//        '      <td colspan=2 style="padding:5px;">'+
-//        '        <span id="helpDivBody">Body</span>'+
-//        '      </td>'+
-//        '    </tr>'+
-//        '  </table>'+
-//        '</div>'
-//    );
-//});

@@ -1,6 +1,6 @@
 /* Apply patches found for Ext 4.2.1 here */
 
-// Set USE_NATIVE_JSON so Ext.decode and Ext.encode use JSON.parse and JSON.stringify instead of eval
+// Set USE_NATIVE_JSON so Ext4.decode and Ext4.encode use JSON.parse and JSON.stringify instead of eval
 Ext4.USE_NATIVE_JSON = true;
 
 // set the default ajax timeout from 30's to 5 minutes
@@ -284,7 +284,7 @@ Ext4.override(Ext4.view.View, {
         elRegion.bottom = elRegion.top + el.dom.clientHeight;
         elRegion.right = elRegion.left + el.dom.clientWidth;
         if (node) {
-            nodeRegion = Ext.fly(node).getRegion();
+            nodeRegion = Ext4.fly(node).getRegion();
             // node is above
             if (nodeRegion.top < elRegion.top) {
                 adjustmentY =nodeRegion.top - elRegion.top;
@@ -306,7 +306,7 @@ Ext4.override(Ext4.view.View, {
             }
 
             // Poke on a tabIndex to make the node focusable.
-            Ext.fly(node).set({
+            Ext4.fly(node).set({
                 tabIndex: -1
             });
 

@@ -28,7 +28,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("ext3"));
+        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
         resources.add(ClientDependency.fromFilePath("FileUploadField.js"));
         return resources;
     }

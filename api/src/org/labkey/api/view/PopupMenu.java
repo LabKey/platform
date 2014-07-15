@@ -18,6 +18,7 @@ package org.labkey.api.view;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.UniqueID;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -37,7 +38,8 @@ public class PopupMenu extends DisplayElement
     private ButtonStyle _buttonStyle = ButtonStyle.MENUBUTTON;
     private String _imageId = "";
     private String _offset = "-1";
-    
+    private String _safeID = "lk-menu-" + UniqueID.getServerSessionScopedUID();
+
     public PopupMenu()
     {
         this(new NavTree());
@@ -80,6 +82,11 @@ public class PopupMenu extends DisplayElement
         return _imageId;
     }
 
+    public String getSafeID()
+    {
+        return _safeID;
+    }
+
     public void render(RenderContext ctx, Writer out) throws IOException
     {
         render(out);
@@ -88,7 +95,7 @@ public class PopupMenu extends DisplayElement
     public void render(Writer out) throws IOException
     {
         renderMenuButton(out);
-        renderMenuScript(out, null);
+        renderMenuScript(out);
     }
 
     public void renderMenuButton(Writer out) throws IOException
@@ -102,7 +109,7 @@ public class PopupMenu extends DisplayElement
             return;
 
         // Issue 11392: DataRegion name escaping in button menus.  Menu id is double-escaped.  Once here, once when rendering.
-        String jsStringFilteredMenuId = PageFlowUtil.qh(getId(dataRegionName));
+        String jsStringFilteredMenuId = PageFlowUtil.qh(_safeID);
 
         if (_buttonStyle == ButtonStyle.TEXTBUTTON)
         {
@@ -133,34 +140,32 @@ public class PopupMenu extends DisplayElement
         }
     }
 
-    public void renderMenuScript(Writer out, String dataRegionName) throws IOException
+    public void renderMenuScript(Writer out) throws IOException
     {
         out.append("<script type=\"text/javascript\">\n");
-        renderExtMenu(out, dataRegionName);
+        renderExtMenu(out);
         out.append("\n</script>");
     }
 
-    private void renderExtMenu(Writer out, String dataRegionName) throws IOException
+    private void renderExtMenu(Writer out) throws IOException
     {
-        // Unfortunately, have to add this back for now. Tests rely on the menus being generated objects and do not
-        // know what dependent element to click on (probably a good thing)
-        out.append("Ext.onReady(function() {\n");
-        out.append(renderUnregScript(getId(dataRegionName)));
-        out.append("        var m = new Ext.menu.Menu(");
-        out.append(renderMenuModel(_navTree.getChildList(), getId(dataRegionName)));
-        out.append("         );});");
+        out.append("if (typeof(Ext4) != 'undefined') { Ext4.onReady(function() {");
+        out.append(renderUnregScript());
+        out.append(" var m = Ext4.create('Ext.menu.Menu',");
+        out.append(renderMenuModel(_navTree.getChildList(), _safeID));
+        out.append("); }); } else { console.error('Unable to render menu. Ext4 is not available.'); }");
     }
 
-    private String renderUnregScript(String id)
+    private String renderUnregScript()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("    var oldMenu = Ext.menu.MenuMgr.get(");
-        sb.append(PageFlowUtil.qh(id));
+        sb.append("    var oldMenu = Ext4.menu.Manager.get(");
+        sb.append(PageFlowUtil.qh(_safeID));
         sb.append(");\n");
         sb.append("    if(oldMenu)\n");
         sb.append("    {\n");
         sb.append("        oldMenu.removeAll();\n");
-        sb.append("        Ext.menu.MenuMgr.unregister(oldMenu);\n");
+        sb.append("        Ext4.menu.Manager.unregister(oldMenu);\n");
         sb.append("    }\n");
         return sb.toString();
     }

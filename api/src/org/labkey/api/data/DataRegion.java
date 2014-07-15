@@ -1500,7 +1500,7 @@ public class DataRegion extends AbstractDataRegion
 
         if (!enabled)
             out.write(" DISABLED");
-        out.write(" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.filterQuote(getName()) + "].selectRow(this);\"");
+        out.write(" onclick=\"LABKEY.DataRegions[" + PageFlowUtil.jsString(getName()) + "].selectRow(this);\"");
         out.write(">");
         renderExtraRecordSelectorContent(ctx, out);
         out.write("</td>");

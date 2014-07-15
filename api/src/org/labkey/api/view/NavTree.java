@@ -541,7 +541,7 @@ public class NavTree implements Collapsible
                 sb.append(" labkey-emphasis");
             sb.append("'");
         }
-        if (StringUtils.isNotEmpty(getId()))
+        if (!asMenu && StringUtils.isNotEmpty(getId()))
             sb.append(",id:").append(PageFlowUtil.qh(getId()));
         if (StringUtils.isNotEmpty(getDescription()))
             sb.append(",tooltip:").append(PageFlowUtil.qh(getDescription()));

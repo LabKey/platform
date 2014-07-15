@@ -26,6 +26,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
+import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.PopupMenu;
@@ -500,8 +501,13 @@ public abstract class DisplayColumn extends RenderColumn
         Sort sort = getSort(ctx);
         Sort.SortField sortField = getSortColumn(sort);
         boolean filtered = isFiltered(ctx);
-        String baseId = ctx.getCurrentRegion().getName() + ":" + (getColumnInfo() != null ? getColumnInfo().getFieldKey() : super.getName());
+        String columnName = (getColumnInfo() != null ? getColumnInfo().getFieldKey() : super.getName()).toString();
+        String baseId = ctx.getCurrentRegion().getName() + ":" + columnName;
         baseId = PageFlowUtil.filter(baseId);
+
+        NavTree navtree = getPopupNavTree(ctx, baseId, sort, filtered);
+        PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.TEXTBUTTON);
+        boolean hasMenu = navtree != null;
 
         out.write("\n<td class='labkey-column-header ");
         out.write(getGridHeaderClass());
@@ -555,9 +561,16 @@ public abstract class DisplayColumn extends RenderColumn
         }
 
         // Issue 11392: id is double html filtered: once for the baseId of the popupmenu and again for rendering into the attribute value.
-        out.write(" id='");
-        String id = baseId + ":header";
-        out.write(PageFlowUtil.filter(id));
+        String safeHeaderId = "column-header-" + UniqueID.getServerSessionScopedUID();
+        if (hasMenu)
+        {
+            out.write(" id='");
+            out.write(PageFlowUtil.filter(safeHeaderId));
+            out.write("'");
+        }
+
+        out.write(" column-name='");
+        out.write(ctx.getCurrentRegion().getName() + ":" + columnName);
         out.write("'");
 
         out.write(">\n");
@@ -570,21 +583,19 @@ public abstract class DisplayColumn extends RenderColumn
 
         out.write("</div>");
 
-        NavTree navtree = getPopupNavTree(ctx, baseId, sort, filtered);
-        if (navtree != null)
+        if (hasMenu)
         {
-            PopupMenu popup = new PopupMenu(navtree, PopupMenu.Align.LEFT, PopupMenu.ButtonStyle.TEXTBUTTON);
-            popup.renderMenuScript(out, null);
+            popup.renderMenuScript(out);
 
             out.write("<script type='text/javascript'>\n");
-            out.write("Ext.onReady(function () {\n");
-            out.write("var header = Ext.get(");
-            out.write(PageFlowUtil.jsString(id));
+            out.write("Ext4.onReady(function () {\n");
+            out.write("var header = Ext4.get(");
+            out.write(PageFlowUtil.jsString(safeHeaderId));
             out.write(");\n");
             out.write("if (header) {\n");
             out.write("  header.on('click', function (evt, el, o) {\n");
             out.write("    showMenu(el, ");
-            out.write(PageFlowUtil.qh(navtree.getId()));
+            out.write(PageFlowUtil.qh(popup.getSafeID()));
             out.write(", null);\n");
             out.write("  });\n");
             out.write("}\n");
@@ -676,7 +687,6 @@ public abstract class DisplayColumn extends RenderColumn
 
                 boolean selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.ASC;
                 NavTree asc = new NavTree("Sort Ascending");
-                asc.setId(baseId + ":asc");
                 asc.setScript(getSortHandler(ctx, Sort.SortDirection.ASC));
                 asc.setSelected(selected);
                 asc.setDisabled(primarySort && selected);
@@ -684,14 +694,12 @@ public abstract class DisplayColumn extends RenderColumn
 
                 selected = sortField != null && sortField.getSortDirection() == Sort.SortDirection.DESC;
                 NavTree desc = new NavTree("Sort Descending");
-                desc.setId(baseId + ":desc");
                 desc.setScript(getSortHandler(ctx, Sort.SortDirection.DESC));
                 desc.setSelected(selected);
                 desc.setDisabled(primarySort && selected);
                 navtree.addChild(desc);
 
                 NavTree clearSort = new NavTree("Clear Sort");
-                clearSort.setId(baseId + ":clear");
                 clearSort.setDisabled(null == sortField || !isRemoveableSort);
                 if(null != sortField)
                     clearSort.setScript(getClearSortScript(ctx));
