@@ -1584,8 +1584,10 @@ public class DataRegion extends AbstractDataRegion
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
             RowMap rowMap = null;
 
+            int rowIndex = 0;
             while (rs.next())
             {
+                rowIndex++;
                 rowMap = factory.getRowMap(rs);
                 ctx.setRow(rowMap);
                 out.write("<table>");
@@ -1601,6 +1603,13 @@ public class DataRegion extends AbstractDataRegion
                 }
 
                 out.write("<tr><td style='font-size:1'>&nbsp;</td></tr>");
+                out.write("</table>");
+            }
+
+            if (rowIndex == 0)
+            {
+                out.write("<table>");
+                renderNoRowsMessage(ctx, out, 1);
                 out.write("</table>");
             }
 
