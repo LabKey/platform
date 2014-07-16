@@ -24,6 +24,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlExecutor;
@@ -33,8 +34,10 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.GUID;
 import org.labkey.api.view.Portal.WebPart;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -91,10 +94,11 @@ public class WebPartCache
         public Map<String, Portal.PortalPage> load(String containerId, Object o)
         {
             DbSchema schema = CoreSchema.getInstance().getSchema();
-            CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>();
+            final CaseInsensitiveHashMap<Portal.PortalPage> pages = new CaseInsensitiveHashMap<>();
 
             SQLFragment selectPages = new SQLFragment("SELECT * FROM " + Portal.getTableInfoPortalPages().getSelectName() + " WHERE Container = ? ORDER BY \"index\"", containerId);
             Collection<Portal.PortalPage> pagesSelect = new SqlSelector(schema, selectPages).getCollection(Portal.PortalPage.class);
+
             for (Portal.PortalPage p : pagesSelect)
             {
                 if (null == p.getEntityId())
@@ -109,16 +113,19 @@ public class WebPartCache
             }
 
             SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), containerId);
-            ArrayList<WebPart> list = new ArrayList<>(new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).getCollection(WebPart.class));
 
-            for (WebPart wp : list)
+            new TableSelector(Portal.getTableInfoPortalWebParts(), filter, new Sort("Index")).forEach(new Selector.ForEachBlock<WebPart>()
             {
-                Portal.PortalPage p = pages.get(wp.getPageId());
-                if (null != p)
-                    p.addWebPart(wp);
-            }
+                @Override
+                public void exec(WebPart wp) throws SQLException
+                {
+                    Portal.PortalPage p = pages.get(wp.getPageId());
+                    if (null != p)
+                        p.addWebPart(wp);
+                }
+            }, WebPart.class);
 
-            return pages;
+            return Collections.unmodifiableMap(pages);
         }
     };
 

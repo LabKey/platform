@@ -11,6 +11,7 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -74,7 +75,7 @@ public class SchemaNameCache
                 }
             });
 
-            return schemaNameMap;
+            return Collections.unmodifiableMap(schemaNameMap);
         }
         finally
         {

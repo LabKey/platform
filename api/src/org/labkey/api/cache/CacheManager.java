@@ -27,6 +27,7 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: adam
@@ -58,16 +59,15 @@ public class CacheManager
     private static final List<TrackingCache> KNOWN_CACHES = new LinkedList<>();
     public static final int UNLIMITED = 0;
 
-    // Collections.Unmodifiable* classes are not public, so grab them this way for validate() below
-    private static final Class UNMODIFIABLE_COLLECTION_CLASS;
-    private static final Class UNMODIFIABLE_MAP_CLASS;
-
-    static
-    {
-        UNMODIFIABLE_COLLECTION_CLASS = Collections.unmodifiableCollection(Collections.emptyList()).getClass();
-        UNMODIFIABLE_MAP_CLASS = Collections.unmodifiableMap(Collections.emptyMap()).getClass();
-    }
-
+    // Collections.Unmodifiable* classes are not public, so grab them statically to use in validate() below
+    private static final Class<? extends Collection> UNMODIFIABLE_COLLECTION_CLASS = Collections.unmodifiableCollection(Collections.emptyList()).getClass();
+    private static final Class<? extends Map> UNMODIFIABLE_MAP_CLASS = Collections.unmodifiableMap(Collections.emptyMap()).getClass();
+    private static final Class<? extends Set> SINGLETON_SET_CLASS = Collections.singleton(null).getClass();
+    private static final Class<? extends List> SINGLETON_LIST_CLASS = Collections.singletonList(null).getClass();
+    private static final Class<? extends Map> SINGLETON_MAP_CLASS = Collections.singletonMap(null, null).getClass();
+    private static final Class<? extends Set> EMPTY_SET_CLASS = Collections.emptySet().getClass();
+    private static final Class<? extends List> EMPTY_LIST_CLASS = Collections.emptyList().getClass();
+    private static final Class<? extends Map> EMPTY_MAP_CLASS = Collections.emptyMap().getClass();
 
     private static <K, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)
     {
@@ -163,17 +163,39 @@ public class CacheManager
     }
 
     // Validate a cached value. For now, just log warnings for arrays and mutable collections.
-    // TODO: Add more exceptions for singleton and empty variants.
     public static <V> void validate(CacheLoader loader, V value)
     {
         if (null == value)
             return;
 
-        if (value instanceof Collection && !(UNMODIFIABLE_COLLECTION_CLASS.isInstance(value)))
-            Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable collection, which could be mutated by callers!");
-        else if (value instanceof Map && !(UNMODIFIABLE_MAP_CLASS.isInstance(value)))
-            Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable map, which could be mutated by callers!");
+        if (value instanceof Collection)
+        {
+            if (!UNMODIFIABLE_COLLECTION_CLASS.isInstance(value))
+            {
+                if (value instanceof Set)
+                {
+                    if (!SINGLETON_SET_CLASS.isInstance(value) && !EMPTY_SET_CLASS.isInstance(value))
+                        Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable set (" + value.getClass() + "), which could be mutated by callers!");
+                }
+                else if (value instanceof List)
+                {
+                    if (!SINGLETON_LIST_CLASS.isInstance(value) && !EMPTY_LIST_CLASS.isInstance(value))
+                        Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable list (" + value.getClass() + "), which could be mutated by callers!");
+                }
+                else
+                {
+                    Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable collection (" + value.getClass() + "), which could be mutated by callers!");
+                }
+            }
+        }
+        else if (value instanceof Map)
+        {
+            if (!UNMODIFIABLE_MAP_CLASS.isInstance(value))
+                Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable map (" + value.getClass() + "), which could be mutated by callers!");
+        }
         else if (value.getClass().isArray())
+        {
             Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned an array, which could be mutated by callers!");
+        }
     }
 }
