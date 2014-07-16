@@ -132,6 +132,7 @@ public class BlockingCache<K, V> implements Cache<K, V>
                 loader = _loader;
             V value = loader.load(key, argument);
             w.setValue(value);
+            CacheManager.validate(loader, value);
             return value;
         }
         finally

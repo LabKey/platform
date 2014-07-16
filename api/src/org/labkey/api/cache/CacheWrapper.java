@@ -115,6 +115,7 @@ class CacheWrapper<K, V> implements TrackingCache<K, V>, CacheMXBean
             else if (null != loader)
             {
                 v = loader.load(key, arg);
+                CacheManager.validate(loader, v);
                 put(key, v);
             }
 

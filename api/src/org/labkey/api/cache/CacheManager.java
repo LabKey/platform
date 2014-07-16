@@ -22,8 +22,11 @@ import org.labkey.api.cache.ehcache.EhCacheProvider;
 import org.labkey.api.mbean.LabKeyManagement;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: adam
@@ -54,6 +57,17 @@ public class CacheManager
     private static final CacheProvider PROVIDER = EhCacheProvider.getInstance();
     private static final List<TrackingCache> KNOWN_CACHES = new LinkedList<>();
     public static final int UNLIMITED = 0;
+
+    // Collections.Unmodifiable* classes are not public, so grab them this way for validate() below
+    private static final Class UNMODIFIABLE_COLLECTION_CLASS;
+    private static final Class UNMODIFIABLE_MAP_CLASS;
+
+    static
+    {
+        UNMODIFIABLE_COLLECTION_CLASS = Collections.unmodifiableCollection(Collections.emptyList()).getClass();
+        UNMODIFIABLE_MAP_CLASS = Collections.unmodifiableMap(Collections.emptyMap()).getClass();
+    }
+
 
     private static <K, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)
     {
@@ -146,5 +160,20 @@ public class CacheManager
     public static void shutdown()
     {
         PROVIDER.shutdown();
+    }
+
+    // Validate a cached value. For now, just log warnings for arrays and mutable collections.
+    // TODO: Add more exceptions for singleton and empty variants.
+    public static <V> void validate(CacheLoader loader, V value)
+    {
+        if (null == value)
+            return;
+
+        if (value instanceof Collection && !(UNMODIFIABLE_COLLECTION_CLASS.isInstance(value)))
+            Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable collection, which could be mutated by callers!");
+        else if (value instanceof Map && !(UNMODIFIABLE_MAP_CLASS.isInstance(value)))
+            Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable map, which could be mutated by callers!");
+        else if (value.getClass().isArray())
+            Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned an array, which could be mutated by callers!");
     }
 }

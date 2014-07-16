@@ -66,6 +66,7 @@ public class TransactionCache<K, V> implements Cache<K, V>
         if (null == v)
         {
             v = loader.load(key, arg);
+            CacheManager.validate(loader, v);
             _hasWritten = true;
             _privateCache.put(key, v);
         }
