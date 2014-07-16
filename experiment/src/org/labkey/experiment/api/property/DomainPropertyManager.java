@@ -71,7 +71,7 @@ public class DomainPropertyManager
             sql.append(" WHERE pd.Container = ?) ORDER BY PropertyId, SortOrder");
             sql.add(containerId);
 
-            return new SqlSelector(getExpSchema(), sql).getArrayList(ConditionalFormatWithPropertyId.class);
+            return Collections.unmodifiableList(new SqlSelector(getExpSchema(), sql).getArrayList(ConditionalFormatWithPropertyId.class));
         }
     });
 
