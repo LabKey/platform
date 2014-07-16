@@ -27,6 +27,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("clientapi/ext3")); // nested query webpart
         resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
         resources.add(ClientDependency.fromFilePath("study/ParticipantGroup.js"));
         return resources;
@@ -58,7 +59,7 @@
 
     Ext4.onReady(function() {
 
-        Ext.override(Ext.menu.Menu, { zIndex : 20000 });
+        Ext4.override(Ext4.menu.Menu, { zIndex : 20000 });
 
         if (!Ext4.ModelManager.isRegistered('ParticipantGroup')) {
             Ext4.define('ParticipantGroup', {

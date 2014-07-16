@@ -55,9 +55,6 @@
     Map<String, Object> assay = AssayController.serializeAssayDefinition(protocol, provider, getContainer(), getUser());
 %>
 <script type="text/javascript">
-    LABKEY.requiresClientAPI();
-</script>
-<script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
 LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;
 <%

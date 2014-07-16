@@ -26,7 +26,18 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.AutoReportListAction" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("sampleRequest.js"));
+        return resources;
+    }
+%>
 <%
     JspView<SpecimenController.SpecimenHeaderBean> me = (JspView<SpecimenController.SpecimenHeaderBean>) HttpView.currentView();
     SpecimenController.SpecimenHeaderBean bean = me.getModelBean();
@@ -36,11 +47,8 @@
     String subjectNounSingle = StudyService.get().getSubjectNounSingular(getContainer());
     String subjectNounPlural = StudyService.get().getSubjectNounPlural(getContainer());
 %>
-<script>LABKEY.requiresScript('util.js');</script>
-<script>LABKEY.requiresClientAPI();</script>
 <script>
     var CREATE_REQUEST_BASE_LINK = '<%= createRequestURL.getLocalURIString() %>';
-    LABKEY.requiresScript('sampleRequest.js');
     <%
     if (bean.getSelectedRequest() != null)
     {

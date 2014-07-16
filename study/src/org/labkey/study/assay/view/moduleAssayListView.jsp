@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.assay.ModuleAssayProvider.AssayPageBean" %>
 <%@ page import="org.json.JSONObject" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.assay.ModuleAssayProvider" %>
 <%@ page import="org.labkey.study.controllers.assay.AssayController" %>
-<%@ page import="org.labkey.api.view.*" %>
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -28,9 +28,6 @@
 
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
 %>
-<script type="text/javascript">
-    LABKEY.requiresClientAPI();
-</script>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
 LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;

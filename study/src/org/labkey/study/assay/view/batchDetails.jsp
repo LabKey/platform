@@ -15,15 +15,15 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.assay.ModuleAssayProvider.BatchDetailsBean" %>
 <%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.study.assay.ModuleAssayProvider" %>
-<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
-<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
+<%@ page import="org.labkey.api.exp.api.ExpExperiment" %>
+<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.assay.ModuleAssayProvider" %>
+<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ModuleAssayProvider.BatchDetailsBean> me = (JspView<ModuleAssayProvider.BatchDetailsBean>) HttpView.currentView();
@@ -35,9 +35,6 @@
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
     JSONObject batchJson = AssayJSONConverter.serializeBatch(batch, provider, protocol, getUser());
 %>
-<script type="text/javascript">
-    LABKEY.requiresClientAPI();
-</script>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
 LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;

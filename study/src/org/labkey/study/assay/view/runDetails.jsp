@@ -15,16 +15,15 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.study.assay.ModuleAssayProvider.RunDetailsBean" %>
 <%@ page import="org.json.JSONObject" %>
-<%@ page import="org.labkey.study.assay.ModuleAssayProvider" %>
-<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
-<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
-<%@ page import="org.labkey.api.view.*" %>
-<%@ page import="org.labkey.api.exp.api.ExpRun" %>
-<%@ page import="org.labkey.study.controllers.assay.actions.AbstractAssayAPIAction" %>
-<%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.exp.api.AssayJSONConverter" %>
+<%@ page import="org.labkey.api.exp.api.ExpProtocol" %>
+<%@ page import="org.labkey.api.exp.api.ExpRun" %>
+<%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.study.assay.ModuleAssayProvider" %>
+<%@ page import="org.labkey.study.controllers.assay.AssayController" %>
+<%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ModuleAssayProvider.RunDetailsBean> me = (JspView<ModuleAssayProvider.RunDetailsBean>) HttpView.currentView();
@@ -36,9 +35,6 @@
     Map<String, Object> assay = AssayController.serializeAssayDefinition(bean.expProtocol, bean.provider, getContainer(), getUser());
     JSONObject runJson = AssayJSONConverter.serializeRun(run, provider, protocol, getUser());
 %>
-<script type="text/javascript">
-    LABKEY.requiresClientAPI();
-</script>
 <script type="text/javascript">
 LABKEY.page = LABKEY.page || {};
 LABKEY.page.assay = <%= new JSONObject(assay).toString(2) %>;

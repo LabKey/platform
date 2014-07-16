@@ -224,6 +224,10 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><input type="checkbox" name="ext3Required"<%=checked(appProps.isExt3Required())%>></td>
 </tr>
 <tr>
+    <td class="labkey-form-label">Require ExtJS v3.x based Client API be loaded on each page</td>
+    <td><input type="checkbox" name="ext3Required"<%=checked(appProps.isExt3Required())%>></td>
+</tr>
+<tr>
     <td>&nbsp;</td>
 </tr>
 

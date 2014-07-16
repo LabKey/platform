@@ -23,14 +23,25 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     WikiController.CustomizeWikiPartView me = (WikiController.CustomizeWikiPartView) HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
     Container currentContainer = getContainer();
 %>
 <script type="text/javascript">
-LABKEY.requiresClientAPI(); //for Ext AJAX object
+
 //store current container id on client
 var currentContainerId = <%=currentContainer==null ? "null" : PageFlowUtil.jsString(currentContainer.getId())%>;
 var m = {};
@@ -60,7 +71,7 @@ function updatePageList()
         o = new Option("loading...", "", true, true);
         select.options[select.options.length] = o;
 
-        Ext.Ajax.request({
+        Ext4.Ajax.request({
             url: LABKEY.ActionURL.buildURL("wiki", "getPages"),
             success: onSuccess,
             failure: onError,
@@ -122,7 +133,7 @@ function disableSubmit()
 function onSuccess(response, config)
 {
     //parse the response text as JSON
-    var json = Ext.util.JSON.decode(response.responseText);
+    var json = Ext4.decode(response.responseText);
     if (null != json)
     {
         //add the page list to the global map so that we don't need to fetch it again
@@ -139,13 +150,13 @@ function onError(response, config)
     {
         //exception thrown within the server
         //parse the response text as JSON
-        var json = Ext.util.JSON.decode(response.responseText);
+        var json = Ext4.decode(response.responseText);
         window.alert("The server experienced the following error: " + json.exception);
     }
     else if (response.status >= 400 && response.status <= 499)
     {
         //invalid container id
-        var json = Ext.util.JSON.decode(response.responseText);
+        var json = Ext4.decode(response.responseText);
         window.alert("The server could not find the selected project or folder: " + json.exception);
     }
     else

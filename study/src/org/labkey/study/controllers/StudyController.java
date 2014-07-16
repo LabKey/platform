@@ -4506,42 +4506,39 @@ public class StudyController extends BaseStudyController
     }
 
     private static final String DEFAULT_PARTICIPANT_VIEW_SOURCE =
-            "<script type=\"text/javascript\">\n" +
-            "   /* Include all headers necessary for client API usage: */\n" +
-            "   LABKEY.requiresClientAPI();\n" +
-            "</script>\n" +
-            "\n" +
             "<div id=\"participantData\">Loading...</div>\n" +
             "\n" +
             "<script type=\"text/javascript\">\n" +
-            "    /* get the participant id from the request URL: this parameter is required. */\n" +
-            "    var participantId = LABKEY.ActionURL.getParameter('participantId');\n" +
-            "    /* get the dataset id from the request URL: this is used to remember expand/collapse\n" +
-            "       state per-dataset.  This parameter is optional; we use -1 if it isn't provided. */\n" +
-            "    var datasetId = LABKEY.ActionURL.getParameter('datasetId');\n" +
-            "    if (!datasetId)\n" +
-            "        datasetId = -1;\n" +
-            "    var dataType = 'ALL';\n" +
-            "    /* Additional options for dataType 'DEMOGRAPHIC' or 'NON_DEMOGRAPHIC'. */" +
+            "    LABKEY.requiresClientAPI(true, function() {\n" +
+            "       /* get the participant id from the request URL: this parameter is required. */\n" +
+            "       var participantId = LABKEY.ActionURL.getParameter('participantId');\n" +
+            "       /* get the dataset id from the request URL: this is used to remember expand/collapse\n" +
+            "           state per-dataset.  This parameter is optional; we use -1 if it isn't provided. */\n" +
+            "       var datasetId = LABKEY.ActionURL.getParameter('datasetId');\n" +
+            "       if (!datasetId)\n" +
+            "           datasetId = -1;\n" +
+            "       var dataType = 'ALL';\n" +
+            "       /* Additional options for dataType 'DEMOGRAPHIC' or 'NON_DEMOGRAPHIC'. */" +
             "\n" +
-            "    var QCState = LABKEY.ActionURL.getParameter('QCState');\n" +
+            "       var QCState = LABKEY.ActionURL.getParameter('QCState');\n" +
             "\n" +
-            "    /* create the participant details webpart: */\n" +
-            "    var participantWebPart = new LABKEY.WebPart({\n" +
-            "    partName: 'Participant Details',\n" +
-            "    renderTo: 'participantData',\n" +
-            "    frame : 'false',\n" +
-            "    partConfig: {\n" +
-            "        participantId: participantId,\n" +
-            "        datasetId: datasetId,\n" +
-            "        dataType: dataType,\n" +
-            "        QCState: QCState,\n" +
-            "        currentUrl: '' + window.location\n" +
-            "        }\n" +
-            "    });\n" +
+            "       /* create the participant details webpart: */\n" +
+            "       var participantWebPart = new LABKEY.WebPart({\n" +
+            "       partName: 'Participant Details',\n" +
+            "       renderTo: 'participantData',\n" +
+            "       frame : 'false',\n" +
+            "       partConfig: {\n" +
+            "           participantId: participantId,\n" +
+            "           datasetId: datasetId,\n" +
+            "           dataType: dataType,\n" +
+            "           QCState: QCState,\n" +
+            "           currentUrl: '' + window.location\n" +
+            "           }\n" +
+            "       });\n" +
             "\n" +
-            "    /* place the webpart into the 'participantData' div: */\n" +
-            "    participantWebPart.render();\n" +
+            "       /* place the webpart into the 'participantData' div: */\n" +
+            "       participantWebPart.render();\n" +
+            "   });\n" +
             "</script>";
 
     public static class CustomizeParticipantViewForm
