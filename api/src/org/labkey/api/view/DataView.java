@@ -17,6 +17,7 @@ package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -30,6 +31,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.template.ClientDependency;
 import org.springframework.validation.Errors;
 
 import javax.servlet.ServletException;
@@ -44,6 +46,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -62,14 +65,23 @@ public abstract class DataView extends WebPartView<RenderContext>
         _dataRegion = dataRegion;
     }
 
-
     public DataView(DataRegion dataRegion, Errors errors)
     {
         _model = new RenderContext(getViewContext(), errors);
         _dataRegion = dataRegion;
     }
 
-    
+    @NotNull
+    @Override
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        resources.addAll(super.getClientDependencies());
+
+        return resources;
+    }
+
     public DataView(@Nullable DataRegion dataRegion, TableViewForm form, Errors errors)
     {
         this(dataRegion, errors);

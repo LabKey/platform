@@ -339,9 +339,14 @@ if (typeof LABKEY == "undefined")
             return ret;
         };
 
-        var requiresClientAPI = function(immediate)
+        var requiresClientAPI = function(immediate, callback, scope)
         {
             if (arguments.length < 1) immediate = true;
+
+            var coreDone = function() {
+                requiresExt3ClientAPI(immediate, callback, scope);
+            };
+
             if (configs.devMode)
             {
                 var scripts = [
@@ -371,16 +376,19 @@ if (typeof LABKEY == "undefined")
                     "clientapi/dom/Portal.js",
                     "clientapi/core/Visualization.js"
                 ];
-                requiresScript(scripts, immediate);
+                requiresScript(scripts, immediate, coreDone);
             }
             else
             {
-                requiresExt4Sandbox(immediate);
-                requiresScript('clientapi.min.js', immediate);
+                requiresExt4Sandbox(immediate, function() {
+                    requiresScript('clientapi.min.js', immediate, coreDone);
+                });
             }
-            requiresExt3ClientAPI(immediate);
         };
 
+        /**
+         * Mimic the results handed down by Ext3.lib.xml
+         */
         var requiresExt3 = function(immediate, callback, scope)
         {
             if (arguments.length < 1) immediate = true;
@@ -389,12 +397,15 @@ if (typeof LABKEY == "undefined")
             requiresCss(configs.extJsRoot + '/resources/css/ext-all.css');
 
             requiresScript([
-                configs.extJsRoot + "/adapter/ext/ext-base.js",
+                configs.extJsRoot + "/adapter/ext/ext-base" + (configs.devMode ?  "-debug.js" : ".js"),
                 configs.extJsRoot + "/ext-all" + (configs.devMode ?  "-debug.js" : ".js"),
                 configs.extJsRoot + "/ext-patches.js"
             ], immediate, callback, scope, true);
         };
 
+        /**
+         * Mimic the results handed down by clientapi/ext3.lib.xml
+         */
         var requiresExt3ClientAPI = function(immediate, callback, scope)
         {
             if (arguments.length < 1) immediate = true;
@@ -408,6 +419,7 @@ if (typeof LABKEY == "undefined")
                     "clientapi/ext3/FieldKey.js",
                     "clientapi/ext3/FileSystem.js",
                     "clientapi/ext3/FormPanel.js",
+                    "clientapi/ext3/FilterDialog.js",
                     "clientapi/ext3/GridView.js",
                     "clientapi/ext3/HoverPopup.js",
                     "clientapi/ext3/LongTextEditor.js",

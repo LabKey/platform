@@ -22,7 +22,18 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
     Portal.WebPart bean = me.getModelBean();
@@ -36,18 +47,16 @@
         content = "";
 %>
 <script type="text/javascript">
-    LABKEY.requiresClientAPI();
-
     function preview()
     {
-        var sourceElem = Ext.get("content");
-        var targetElem = Ext.get("preview");
+        var sourceElem = Ext4.get("content");
+        var targetElem = Ext4.get("preview");
         targetElem.update(sourceElem.getValue(), true);
     }
 
     function reset()
     {
-        var sourceElem = Ext.get("defaultContent");
+        var sourceElem = Ext4.get("defaultContent");
         var contentTextArea = document.getElementById("content");
         contentTextArea.value = sourceElem.getValue();
     }

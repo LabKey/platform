@@ -1729,16 +1729,18 @@ public class PageFlowUtil
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
 
-        if (AppProps.getInstance().isExt3Required())
-            resources.add(ClientDependency.fromFilePath("Ext3.lib.xml"));
+        if (AppProps.getInstance().isExt3APIRequired())
+            resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        else if (AppProps.getInstance().isExt3Required())
+            resources.add(ClientDependency.fromFilePath("Ext3"));
 
         if (coreClientApiOnly)
-            resources.add(ClientDependency.fromFilePath("clientapi_core.lib.xml"));
+            resources.add(ClientDependency.fromFilePath("clientapi_core"));
         else
-            resources.add(ClientDependency.fromFilePath("clientapi.lib.xml"));
+            resources.add(ClientDependency.fromFilePath("clientapi"));
 
         if (!coreClientApiOnly)
-            resources.add(ClientDependency.fromFilePath("internal.lib.xml"));
+            resources.add(ClientDependency.fromFilePath("internal"));
         return resources;
     }
 

@@ -26,18 +26,18 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
 
     initComponent : function() {
 
-        var completionDiv = Ext.id();
-        var completionBodyDiv = Ext.id();
+        var completionDiv = Ext4.id();
+        var completionBodyDiv = Ext4.id();
 
         // the tagConfig includes the input tag specification, also wire up
         // divs for the completion elements
         if (this.tagConfig)
         {
-            this.fieldId = this.tagConfig.id || Ext.id();
+            this.fieldId = this.tagConfig.id || Ext4.id();
             this.tagConfig['id'] = this.fieldId;
 
-            this.html = Ext.DomHelper.createHtml(this.tagConfig);
-            this.html = this.html.concat(Ext.DomHelper.createHtml({
+            this.html = Ext4.DomHelper.createHtml(this.tagConfig);
+            this.html = this.html.concat(Ext4.DomHelper.createHtml({
                 tag : 'div',
                 id  : completionDiv,
                 cls : 'labkey-completion',
@@ -48,7 +48,7 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
         {
             // wire up the completions to an existing input element, the fieldId
             // should identify the input element
-            this.html = Ext.DomHelper.createHtml({
+            this.html = Ext4.DomHelper.createHtml({
                 tag : 'div',
                 id  : completionDiv,
                 cls : 'labkey-completion',
@@ -62,14 +62,14 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
                 var wrapper = this.getEl().up('div.' + Ext4.resetCls);
                 if (wrapper)
                     wrapper.removeCls(Ext4.resetCls);
-                this.completionDiv = Ext.get(completionDiv);
-                this.completionBody = Ext.get(completionBodyDiv);
-                this.completionField = Ext.get(this.fieldId);
+                this.completionDiv = Ext4.get(completionDiv);
+                this.completionBody = Ext4.get(completionBodyDiv);
+                this.completionField = Ext4.get(this.fieldId);
 
-                Ext.EventManager.addListener(this.fieldId, 'keydown', this.onKeyDown, this);
-                Ext.EventManager.addListener(this.fieldId, 'keyup', this.onKeyUp, this);
-                Ext.EventManager.addListener(this.fieldId, 'blur', function(){this.hideCompletionTask.delay(250);}, this);
-                //Ext.EventManager.addListener(this.fieldId, 'change', function(){console.log('onChange');LABKEY.setDirty(true);});
+                Ext4.EventManager.addListener(this.fieldId, 'keydown', this.onKeyDown, this);
+                Ext4.EventManager.addListener(this.fieldId, 'keyup', this.onKeyUp, this);
+                Ext4.EventManager.addListener(this.fieldId, 'blur', function(){this.hideCompletionTask.delay(250);}, this);
+                //Ext4.EventManager.addListener(this.fieldId, 'change', function(){console.log('onChange');LABKEY.setDirty(true);});
 
             }, scope : this}
         };
@@ -143,12 +143,12 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
     {
         var keynum = event.getKey();
 
-        return (keynum == Ext.EventObject.DOWN ||
-                keynum == Ext.EventObject.UP ||
-                keynum == Ext.EventObject.ENTER ||
-                keynum == Ext.EventObject.TAB ||
-                //keynum == Ext.EventObject.BACKSPACE ||
-                keynum == Ext.EventObject.ESC);
+        return (keynum == Ext4.EventObject.DOWN ||
+                keynum == Ext4.EventObject.UP ||
+                keynum == Ext4.EventObject.ENTER ||
+                keynum == Ext4.EventObject.TAB ||
+                //keynum == Ext4.EventObject.BACKSPACE ||
+                keynum == Ext4.EventObject.ESC);
     },
 
     onKeyDown : function(event, cmp)
@@ -161,25 +161,25 @@ Ext4.define('LABKEY.element.AutoCompletionField', {
 
         switch (keynum)
         {
-            case Ext.EventObject.DOWN:
+            case Ext4.EventObject.DOWN:
                 this.changeSelectedOption(true);
                 stopEvent = true;
                 break;
-            case Ext.EventObject.UP:
+            case Ext4.EventObject.UP:
                 this.changeSelectedOption(false);
                 stopEvent = true;
                 break;
-            case Ext.EventObject.ENTER:
-            case Ext.EventObject.TAB:
+            case Ext4.EventObject.ENTER:
+            case Ext4.EventObject.TAB:
                 this.selectOption(-1);
                 stopEvent = true;
                 break;
-            case Ext.EventObject.ESC:
+            case Ext4.EventObject.ESC:
                 this.hideCompletionDiv();
                 stopEvent = true;
                 break;
 /*
-            case Ext.EventObject.BACKSPACE:
+            case Ext4.EventObject.BACKSPACE:
                 this.hideCompletionDiv();
                 break;
 */
