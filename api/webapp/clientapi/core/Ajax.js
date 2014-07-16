@@ -128,7 +128,6 @@ LABKEY.Ajax = new function ()
                             callback.call(scope, config, true, xhr);
                         }
                     } else {
-                        console.log('FAILURE', xhr.status);
                         if (failureCB) {
                             failureCB.call(scope, xhr, config);
                         } else if (callback) {

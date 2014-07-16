@@ -178,7 +178,7 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
             return null;
 
         if (!canReadSchema())
-            throw new UnauthorizedException("Cannot read query " + getSchemaName() + "." + name + " in " + getContainer().getPath());
+            return null; // See #21014
 
         Pair<String,Boolean> key = new Pair<>(name.toLowerCase(), includeExtraMetadata);
         boolean useCache = _cacheTableInfos && !forWrite;
