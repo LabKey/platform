@@ -686,12 +686,18 @@ public class ParticipantGroupManager
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
+            ParticipantGroup curGroup = null;
             if (!group.isNew())
             {
-                ParticipantGroup savedGroup = getParticipantGroupFromGroupRowId(c, user, group.getRowId());
-                deleteGroupParticipants(c, user, savedGroup);
+                curGroup = getParticipantGroupFromGroupRowId(c, user, group.getRowId());
+                deleteGroupParticipants(c, user, curGroup);
             }
             ret = _setParticipantGroup(c, user, group, true);
+
+            // clear the category->group cache if the category has been changed for this group
+            if (curGroup != null && (curGroup.getCategoryId() != group.getCategoryId()))
+                GROUP_CACHE.remove(getCacheKey(curGroup.getCategoryId()));
+
             transaction.commit();
         }
 

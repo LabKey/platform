@@ -6,6 +6,7 @@ import org.apache.lucene.index.AtomicReaderContext;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.DocsEnum;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
@@ -88,16 +89,21 @@ public class IndexInspector
                 for (AtomicReaderContext arc : reader.leaves())
                 {
                     AtomicReader ar = arc.reader();
-                    TermsEnum termsEnum = ar.terms("body").iterator(null);
+                    Terms terms = ar.terms("body");
 
-                    while (null != termsEnum.next())
+                    if (null != terms)
                     {
-                        DocsEnum de = termsEnum.docs(ar.getLiveDocs(), null);
-                        int doc;
+                        TermsEnum termsEnum = terms.iterator(null);
 
-                        while((doc = de.nextDoc()) != DocsEnum.NO_MORE_DOCS)
+                        while (null != termsEnum.next())
                         {
-                            termCountPerDoc[doc]++;
+                            DocsEnum de = termsEnum.docs(ar.getLiveDocs(), null);
+                            int doc;
+
+                            while ((doc = de.nextDoc()) != DocsEnum.NO_MORE_DOCS)
+                            {
+                                termCountPerDoc[doc]++;
+                            }
                         }
                     }
                 }

@@ -84,7 +84,7 @@
                 "<a class='labkey-button' name='cancel'><span>Cancel</span></a>";
 
         if (this.updateContentURL) {
-            html = html + "<a style='margin-left: 25px' class='labkey-button' name='advanced' href='"+ this.updateContentURL + "'><span>Advanced Editor</span></a>";
+            html = html + "<a style='margin-left: 25px' class='labkey-button' name='advanced'><span>Advanced Editor</span></a>";
         }
 
         html = html + "</p>" +
@@ -97,9 +97,11 @@
         var buttons = this.dom.getElementsByClassName("labkey-button");
         var saveBtn = buttons[0];
         var cancelBtn = buttons[1];
+        var advancedBtn = buttons[2];
 
         tinymce.dom.Event.add(saveBtn, 'click', this.onSaveClick, this);
         tinymce.dom.Event.add(cancelBtn, 'click', this.onCancelClick, this);
+        tinymce.dom.Event.add(advancedBtn, 'click', this.onAdvancedClick, this);
 
         // create the editor
         this.ed = new tinymce.Editor(this.editFieldId, {
@@ -222,9 +224,25 @@
             return;
 
         if (this.ed.isDirty()) {
-            // prompt "Are you sure?"
+            if (window.confirm("Cancelling will lose all unsaved changes. Are you sure?")) {
+                this.cancel();
+            }
+        } else {
+            this.cancel();
         }
-        this.cancel();
+    };
+
+    InlineEditor.prototype.onAdvancedClick = function () {
+        if (this.saving)
+            return;
+
+        if (this.ed.isDirty()) {
+            if (window.confirm("Navigating to the advanced editor will lose all unsaved changes. Are you sure?")) {
+                window.location = this.updateContentURL;
+            }
+        } else {
+            window.location = this.updateContentURL;
+        }
     };
 
     InlineEditor.prototype.createOnBeforeUnload = function () {
