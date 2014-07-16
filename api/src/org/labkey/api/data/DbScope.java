@@ -1382,8 +1382,8 @@ public class DbScope
      */
     public static class SchemaTableOptions
     {
-        private DbSchema _schema;
-        private String _tableName;
+        private final DbSchema _schema;
+        private final String _tableName;
 
         public SchemaTableOptions(DbSchema schema, String tableName)
         {

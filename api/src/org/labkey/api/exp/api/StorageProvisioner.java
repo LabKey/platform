@@ -30,6 +30,7 @@ import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.DbScope.*;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.PropertyStorageSpec;
@@ -99,7 +100,7 @@ public class StorageProvisioner
     {
         assert create.start();
 
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             // reselect in a transaction
             DomainDescriptor dd = OntologyManager.getDomainDescriptor(domain.getTypeId(), true);
@@ -202,8 +203,7 @@ public class StorageProvisioner
 
         TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.DropTable);
 
-
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             Connection con = transaction.getConnection();
             execute(scope, con, change);
@@ -297,7 +297,7 @@ public class StorageProvisioner
         DomainKind kind = domain.getDomainKind();
         DbScope scope = kind.getScope();
 
-        // should be in a trasaction with propertydescriptor changes
+        // should be in a transaction with propertydescriptor changes
         assert scope.isTransactionActive();
 
         String tableName = domain.getStorageTableName();
@@ -494,22 +494,9 @@ public class StorageProvisioner
      * @param parentSchema Schema to attach table to, should NOT be the physical db schema of the storage provider
      */
     @NotNull
-    public static SchemaTableInfo createCachedTableInfo(Domain domain, DbSchema parentSchema)
-    {
-        return createTableInfo(domain, parentSchema, null, true);
-    }
-
-    /**
-     * return a TableInfo for this domain, creating if necessary
-     * this method DOES NOT cache
-     *
-     * @param parentSchema Schema to attach table to, should NOT be the physical db schema of the storage provider
-     * @deprecated usages should be migrated to createCachedTableInfo
-     */
-    @NotNull
     public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema)
     {
-        return createTableInfo(domain, parentSchema, null, false);
+        return createTableInfo(domain, parentSchema, null, true, null);
     }
 
     /**
@@ -519,14 +506,14 @@ public class StorageProvisioner
      * @param parentSchema Schema to attach table to, should NOT be the physical db schema of the storage provider
      * @deprecated usages should be migrated to createCachedTableInfo
      */
-    @NotNull
-    public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema, @Nullable String title)
+    @NotNull    // TODO: Migrate specimen schema to use cached TableInfos and delete this
+    public static SchemaTableInfo createUncachedTableInfo(Domain domain, DbSchema parentSchema, @Nullable String title)
     {
-        return createTableInfo(domain, parentSchema, title, false);
+        return createTableInfo(domain, parentSchema, title, false, null);
     }
 
     @NotNull
-    private static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema, @Nullable String title, boolean cache)
+    public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema, @Nullable String title, boolean cache, @Nullable AfterTableLoadRunnable runnable)
     {
         DomainKind kind = domain.getDomainKind();
         if (null == kind)
@@ -546,29 +533,25 @@ public class StorageProvisioner
         SchemaTableInfo ti;
         if (cache)
         {
-            assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds that are cached must declare a schema type of DbSchemaType.Provisioned";
+            assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds must declare a schema type of DbSchemaType.Provisioned";
 
             DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
-            ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
+            ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain, runnable);
 
             ti = schema.getTable(options);
         }
         else
         {
-            // non-cached legacy version
-            ti =  new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"", title);
-            // TODO: could DataSetDefinition use this mechanism for metadata?
+            // non-cached legacy version... only used for specimen tables
+            ti = new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"", title);
+            ti.setMetaDataSchemaName(schemaName);
+
             if (null != kind.getMetaDataSchemaName())
             {
-                ti.setMetaDataSchemaName(schemaName);
                 TableType xmlTable = DbSchema.get(kind.getMetaDataSchemaName()).getTableXmlMap().get(kind.getMetaDataTableName());
                 ti.loadTablePropertiesFromXml(xmlTable, true);
             }
-            else
-            {
-                ti.setMetaDataSchemaName(schemaName);
 
-            }
             fixupProvisionedDomain(ti, kind, domain, tableName);
         }
         return ti;
@@ -587,7 +570,7 @@ public class StorageProvisioner
                 doAdd ? TableChange.ChangeType.AddIndices : TableChange.ChangeType.DropIndices);
         change.setIndexedColumns(kind.getPropertyIndices());
 
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             execute(scope, scope.getConnection(), change);
             transaction.commit();
@@ -682,7 +665,7 @@ public class StorageProvisioner
     {
         DbScope scope = DbSchema.get("core").getScope();
 
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             Connection conn = scope.getConnection();
             Domain domain = PropertyService.get().getDomain(c, domainUri);
@@ -1149,14 +1132,16 @@ public class StorageProvisioner
         }
     }
 
-    public static class ProvisionedSchemaOptions extends DbScope.SchemaTableOptions
+    public static class ProvisionedSchemaOptions extends SchemaTableOptions
     {
-        private Domain _domain;
+        private final Domain _domain;
+        private final @Nullable AfterTableLoadRunnable _runnable;
 
-        public ProvisionedSchemaOptions(DbSchema schema, String tableName, Domain domain)
+        public ProvisionedSchemaOptions(DbSchema schema, String tableName, Domain domain, @Nullable AfterTableLoadRunnable runnable)
         {
             super(schema, tableName);
             _domain = domain;
+            _runnable = runnable;
         }
 
         public Domain getDomain()
@@ -1172,8 +1157,16 @@ public class StorageProvisioner
             Domain domain = getDomain();
             DomainKind kind = domain.getDomainKind();
 
-            StorageProvisioner.fixupProvisionedDomain(ti, kind, domain, ti.getName());
+            fixupProvisionedDomain(ti, kind, domain, ti.getName());
+
+            if (null != _runnable)
+                _runnable.afterLoadTable(ti, domain);
         }
+    }
+
+    public interface AfterTableLoadRunnable
+    {
+        public void afterLoadTable(SchemaTableInfo ti, Domain domain);
     }
 
     @TestTimeout(120)

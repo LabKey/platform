@@ -31,20 +31,6 @@ public class ProvisionedDbSchema extends DbSchema
         super(name, type, scope, null);
     }
 
-//    @Override
-//    protected <OptionType extends DbScope.SchemaTableOptions> void afterLoadTable(SchemaTableInfo ti, OptionType options)
-//    {
-//        super.afterLoadTable(ti, options);
-//        if (options instanceof StorageProvisioner.ProvisionedSchemaOptions)
-//        {
-//            StorageProvisioner.ProvisionedSchemaOptions provisionedOptions = (StorageProvisioner.ProvisionedSchemaOptions)options;
-//            Domain domain = provisionedOptions.getDomain();
-//            DomainKind kind = domain.getDomainKind();
-//
-//            StorageProvisioner.fixupProvisionedDomain(ti, kind, domain, ti.getName());
-//        }
-//    }
-//
     @Override
     protected String getMetaDataName(String tableName)
     {

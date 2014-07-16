@@ -62,8 +62,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     
     public DefaultAuditTypeTable(AuditTypeProvider provider, Domain domain, DbSchema dbSchema, UserSchema schema)
     {
-        super(StorageProvisioner.createCachedTableInfo(domain, dbSchema), schema,
-                ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
+        super(StorageProvisioner.createTableInfo(domain, dbSchema), schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
 
         _provider = provider;
 
@@ -71,10 +70,11 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
         if (_provider.getDescription() != null)
             setDescription(_provider.getDescription());
 
-        this._legacyNameMap = provider.legacyNameMap();
+        _legacyNameMap = provider.legacyNameMap();
 
         // Create a mapping from the real dbTable names to the legacy query table names for QueryUpdateService.
-        this._dbSchemaToColumnMap = new CaseInsensitiveHashMap<>();
+        _dbSchemaToColumnMap = new CaseInsensitiveHashMap<>();
+
         for (FieldKey legacyName : _legacyNameMap.keySet())
         {
             String newName = _legacyNameMap.get(legacyName);
