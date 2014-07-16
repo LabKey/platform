@@ -59,7 +59,7 @@ public class DefaultStudyDesignTable extends FilteredTable<UserSchema>
 
     public DefaultStudyDesignTable(Domain domain, DbSchema dbSchema, UserSchema schema)
     {
-        super(StorageProvisioner.createCachedTableInfo(domain, dbSchema), schema);
+        super(StorageProvisioner.createTableInfo(domain, dbSchema), schema);
 
         _domain = domain;
 

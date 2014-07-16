@@ -133,7 +133,7 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
                     throw new IllegalStateException("Expected domain to be created if it didn't already exist.");
 
                 DomainKind domainKind = domain.getDomainKind();
-                TableInfo tableInfo = StorageProvisioner.createTableInfo(domain, SpecimenTablesProvider.getDbSchema(), domainKind.getKindName());
+                TableInfo tableInfo = StorageProvisioner.createUncachedTableInfo(domain, SpecimenTablesProvider.getDbSchema(), domainKind.getKindName());
                 foreignKey.setTableInfoProvisioned(tableInfo);
             }
         }

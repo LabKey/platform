@@ -565,6 +565,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
+    // Note: This "table" exists only in XML (not the database). It's used to define the standard properties in every dataset.
     public static TableInfo getTemplateTableInfo()
     {
         return StudySchema.getInstance().getSchema().getTable("studydatatemplate");
@@ -648,11 +649,37 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (null == d.getStorageTableName())
                 _domain = null;
 
-            TableInfo ti = StorageProvisioner.createTableInfo(d, StudySchema.getInstance().getSchema());
+            TableInfo ti = StorageProvisioner.createTableInfo(d, StudySchema.getInstance().getSchema(), null, true, RUNNABLE);
 
+//            TableInfo template = getTemplateTableInfo();
+//
+//            for (PropertyStorageSpec pss : d.getDomainKind().getBaseProperties())
+//            {
+//                ColumnInfo c = ti.getColumn(pss.getName());
+//                ColumnInfo tCol = template.getColumn(pss.getName());
+//                // The column may be null if the dataset is being deleted in the background
+//                if (null != tCol && c != null)
+//                {
+//                    c.setExtraAttributesFrom(tCol);
+//
+//                    // When copying a column, the hidden bit is not propagated, so we need to do it manually
+//                    if (tCol.isHidden())
+//                        c.setHidden(true);
+//                }
+//            }
+            t.commit();
+            return ti;
+        }
+    }
+
+
+    private static StorageProvisioner.AfterTableLoadRunnable RUNNABLE = new StorageProvisioner.AfterTableLoadRunnable() {
+        @Override
+        public void afterLoadTable(SchemaTableInfo ti, Domain domain)
+        {
             TableInfo template = getTemplateTableInfo();
 
-            for (PropertyStorageSpec pss : d.getDomainKind().getBaseProperties())
+            for (PropertyStorageSpec pss : domain.getDomainKind().getBaseProperties())
             {
                 ColumnInfo c = ti.getColumn(pss.getName());
                 ColumnInfo tCol = template.getColumn(pss.getName());
@@ -666,10 +693,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         c.setHidden(true);
                 }
             }
-            t.commit();
-            return ti;
         }
-    }
+    };
 
 
     /**

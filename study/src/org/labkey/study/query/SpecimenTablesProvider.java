@@ -200,7 +200,7 @@ public class SpecimenTablesProvider
     private TableInfo createTableInfo(@NotNull Domain domain, SpecimenTablesTemplate template)
     {
         DomainKind domainKind = domain.getDomainKind();
-        return StorageProvisioner.createTableInfo(domain, getDbSchema(), domainKind.getKindName());
+        return StorageProvisioner.createUncachedTableInfo(domain, getDbSchema(), domainKind.getKindName());
     }
 }
 

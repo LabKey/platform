@@ -713,11 +713,9 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         AuditLogTable sourceTable = new AuditLogTable(schema, LogManager.get().getTinfoAuditLog(), provider.getEventName());
         sourceTable.setContainerFilter(ContainerFilter.EVERYTHING);
 
-
         // Get the new audit provisioned table
         DbSchema dbSchema = AuditSchema.getInstance().getSchema();
         SchemaTableInfo targetTable = StorageProvisioner.createTableInfo(domain, dbSchema);
-
 
         // Create list of sourceColumns on sourceTable
         List<FieldKey> sourceFields = new ArrayList<>();
