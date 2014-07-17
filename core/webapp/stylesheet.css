@@ -3187,6 +3187,15 @@ td.labkey-tab, .labkey-tab {
     cursor: pointer;
 }
 
+/* This tab has a bottom border and its text is shaded so it looks like it is back and unselectable */
+td.labkey-tab-inactive {
+    padding: 4px 7px;
+    border:solid 1px #b4b4b4;
+    text-decoration: none;
+    color: #444444;
+    background-color: #f4f4f4;
+}
+
 td.labkey-tab-content, .labkey-tab-content {
 	padding: 4px 7px;
     border-left: solid 1px #b4b4b4;
@@ -3243,6 +3252,21 @@ ul.labkey-tab-strip a
     -moz-box-shadow: 0 -2px 2px #ddd;
     -webkit-box-shadow: 0 -2px 2px #ddd;
     box-shadow: 0 -2px 2px #ddd;
+}
+
+li.labkey-tab-active a
+{
+    background-color : #fff;
+    border-bottom : 1px solid #fff;
+    margin-bottom: -1px;
+    color: #000000;
+    font-weight: bold;
+}
+
+li.labkey-tab-inactive a
+{
+    background-color: #f4f4f4;
+    font-weight: bold;
 }
 
 .labkey-tab-strip-spacer
