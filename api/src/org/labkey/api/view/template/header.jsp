@@ -39,6 +39,7 @@
       return resources;
   }
 %>
+<!-- HEADER -->
 <%
     TemplateHeaderView me = ((TemplateHeaderView) HttpView.currentView());
     TemplateHeaderView.TemplateHeaderBean bean = me.getModelBean();
@@ -160,3 +161,4 @@
     </tr>
 </table>
 <%  } %>
+<!-- /HEADER -->

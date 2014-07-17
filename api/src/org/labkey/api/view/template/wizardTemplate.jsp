@@ -38,7 +38,7 @@
     <%= PageFlowUtil.getStandardIncludes(getViewContext(), pageConfig.getClientDependencies()) %>
 </head>
 
-<body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %>>
+<body<%= null != pageConfig.getFocus() ? " onload=\"document." + pageConfig.getFocus() + ".focus();\"" : "" %> class="labkey-main">
     <table class="labkey-main"><%
 
     if (pageConfig.showHeader() != PageConfig.TrueFalse.False)

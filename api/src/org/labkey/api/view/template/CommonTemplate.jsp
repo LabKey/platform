@@ -31,7 +31,8 @@
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.PrintTemplate" %>
 <%@ page import="java.util.Set" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %><%
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
     String contextPath = request.getContextPath();
@@ -62,139 +63,132 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta http-equiv="X-UA-Compatible" content="IE=Edge" /><%
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <%
         if (bean.getFrameOption() == PageConfig.FrameOption.DENY)
-        { %>
-    <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script><%
-        } %>
+        {
+    %>
+    <script type="text/javascript">if (top != self) top.location.replace(self.location.href);</script>
+    <%
+        }
+    %>
     <title><%=h(bean.getTitle()) %></title>
     <!-- <%=h(url.getURIString())%> -->
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
-<%= bean.getMetaTags(url) %>
-<%= PageFlowUtil.getStandardIncludes(getViewContext(), bean.getClientDependencies()) %><%
-if (null != bean.getRssUrl())
-{
+    <%= bean.getMetaTags(url) %>
+    <%= PageFlowUtil.getStandardIncludes(getViewContext(), bean.getClientDependencies()) %>
+    <%
+        if (null != bean.getRssUrl())
+        {
     %>
-    <link href="<%=bean.getRssUrl().getEncodedLocalURIString()%>" type="application/rss+xml" title="<%=h(bean.getRssTitle())%>" rel="alternate"/><%
-}
-%>
-<% if (bean.getAllowTrackingScript())
-{
-    String script = AnalyticsService.getTrackingScript();
-    if (StringUtils.isNotEmpty(script))
+    <link href="<%=bean.getRssUrl().getEncodedLocalURIString()%>" type="application/rss+xml" title="<%=h(bean.getRssTitle())%>" rel="alternate"/>
+    <%
+        }
+    %>
+    <% if (bean.getAllowTrackingScript())
     {
-        if (user.isSiteAdmin())
-            {%><!-- see <%=new ActionURL("analytics","begin",ContainerManager.getRoot()).getURIString()%> --><%}
-        %><%=script%><%
-    }
-}
-%>
+        String script = AnalyticsService.getTrackingScript();
+        if (StringUtils.isNotEmpty(script))
+        {
+            if (user.isSiteAdmin())
+            {
+    %>      <!-- see <%=new ActionURL("analytics","begin",ContainerManager.getRoot()).getURIString()%> -->
+    <%
+        }
+    %>
+    <%=script%>
+    <%
+            }
+        }
+    %>
 </head>
 
-<body id="bodyElement" onload="<%=h(onLoad)%>" class="<%= text(themeClass) %>">
+<body id="bodyElement" onload="<%=h(onLoad)%>" class="labkey-main <%= text(themeClass) %>">
 <%
-if (null != gwtModules && gwtModules.size() > 0)
-{   //Only include first js file?? %>
-    <iframe id="__gwt_historyFrame" style="width:0;height:0;border:0"></iframe><%
-}
+    if (null != gwtModules && gwtModules.size() > 0)
+    {   //Only include first js file??
 %>
-    <table class="labkey-main <%= text(themeClass) %>" cellpadding="0" cellspacing="0" <% if (isPrint) { %>style="padding: 5px;"<% } %>><%
-
-if (bean.showHeader() != PageConfig.TrueFalse.False)
-{
-%>
-        <tr id="headerpanel" class="labkey-header-panel">
-            <td colspan=3>
-                <!-- HEADER -->
-                <% me.include(me.getView("header"),out); %>
-                <!-- /HEADER -->
-            </td>
-        </tr><%
-    if (null != me.getView("topmenu"))
-    {%>
-        <tr id="topmenu" class="labkey-header-panel">
-            <td colspan=3>
-                <!-- HEADER -->
-                <% me.include(me.getView("topmenu"),out); %>
-                <!-- /HEADER -->
-            </td>
-        </tr><%
-     }%>
-        <tr>
-            <td class="labkey-proj">
-
-                <% if (null != me.getView("appbar"))
-                {%>
-                        <%me.include(me.getView("appbar"), out); %>
-              <%}%>
-                <!--content area-->
-                <table class="labkey-proj">
-<%    if (me.getView("nav") instanceof HttpView && ((HttpView)me.getView("nav")).isVisible())
-          { %>
-        <tr>
-            <td id="navpanel" class="labkey-proj-nav-panel" colspan="2">
+<iframe id="__gwt_historyFrame" style="width:0;height:0;border:0"></iframe>
 <%
-            me.include(me.getView("nav"),out);
+    }
 %>
-            </td>
-        </tr>
-<%        } %>
-<% } %>
-        <tr>
-<%
+<div class="labkey-main <%= text(themeClass) %>" <% if (isPrint) { %>style="padding: 5px;"<% } %>>
+    <%
+        if (bean.showHeader() != PageConfig.TrueFalse.False)
+        {
+            me.include(me.getView("header"),out);
 
-if (null != me.getView("moduleNav"))
-{
-    %><td align=left valign=top class=normal width="200px" height="100%" style="padding:5;"><%
-        me.include(me.getView("moduleNav"), out);
-    %></td><%
-}
+            if (null != me.getView("topmenu"))
+                me.include(me.getView("topmenu"),out);
 
+            if (null != me.getView("appbar"))
+                me.include(me.getView("appbar"), out);
+        }
     %>
+    <!--content area-->
+    <table class="labkey-proj">
+        <tr>
+            <%
+                if (null != me.getView("moduleNav"))
+                {
+            %>
+            <td align=left valign=top class=normal width="200px" height="100%" style="padding:5;">
+                <%
+                    me.include(me.getView("moduleNav"), out);
+                %>
+            </td>
+            <%
+                }
+            %>
             <td id="bodypanel" class="labkey-body-panel" style="min-width:<%=bean.getMinimumWidth()%>px;">
-                <img height=1 width=<%=bean.getMinimumWidth()%> src="<%=getWebappURL("/_.gif")%>"><br>
+                <img height=1 width=<%=bean.getMinimumWidth()%> src="<%=getWebappURL("/_.gif")%>">
+                <br />
                 <!-- BODY -->
                 <% me.include(me.getBody(),out); %>
                 <!-- /BODY -->
-            </td><%
-
-            if (me.getView("right") instanceof HttpView && ((HttpView)me.getView("right")).isVisible())
-				{ %>
+            </td>
+            <%
+                if (me.getView("right") instanceof HttpView && ((HttpView)me.getView("right")).isVisible())
+                {
+            %>
             <!-- RIGHT -->
             <td class="labkey-side-panel" style="min-width:240px;">
                 <img height=1 width=240 src="<%=getWebappURL("_.gif")%>"><br>
                 <% me.include(me.getView(WebPartFactory.LOCATION_RIGHT),out); %>
             </td>
             <!-- /RIGHT -->
-<%				} %>
-        </tr><%
-    if (bean.showHeader() != PageConfig.TrueFalse.False)
-    {  %>
-                </table>
-                <!--/content area-->
-            </td>
-        </tr><%
-    }
-%>
-    </table><%
+            <%
+                }
+            %>
+        </tr>
+    </table>
+    <!--/content area-->
+</div>
+<%
     String anchor = bean.getAnchor();
     if (null == StringUtils.trimToNull(anchor))
         anchor = StringUtils.trimToNull(request.getParameter("_anchor"));
 
     if (null != anchor)
     {
-        %><script type="text/javascript" for="window" event="onload">window.location.href = "#<%=h(anchor)%>"</script><%
+%>
+<script type="text/javascript" for="window" event="onload">window.location.href = "#<%=h(anchor)%>"</script>
+<%
     }
 %>
-    <script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
-    <script type="text/javascript">
+
+<script type="text/javascript">LABKEY.loadScripts(); LABKEY.showNavTrail();</script>
+<script type="text/javascript">
     Ext4.onReady(function(){Ext4.DomHelper.insertHtml("beforeend",document.body,"<input id=seleniumExtReady name=seleniumExtReady type=hidden>");});
-    // $(document.body).ready(function() { $('body').append('<input id="seleniumExtReady" name="seleniumExtReady" type="hidden">'); });
-    </script>
-    <!--<%= h(request.getHeader("User-Agent")) %>--><%
+</script>
+<!--
+<%= h(request.getHeader("User-Agent")) %>-->
+<%
     if (null != request.getAttribute(ViewServlet.REQUEST_STARTTIME))
-    { %>
-    <!--<%= text("time " + (System.currentTimeMillis() - (Long)request.getAttribute(ViewServlet.REQUEST_STARTTIME)) + "ms") %> --><%
+    {
+%>
+<!--<%= text("time " + (System.currentTimeMillis() - (Long)request.getAttribute(ViewServlet.REQUEST_STARTTIME)) + "ms") %> -->
+<%
     }
 
     ActionURL permaLink = getViewContext().cloneActionURL();

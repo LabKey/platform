@@ -61,8 +61,8 @@
 <div class="labkey-app-bar">
     <div class="labkey-folder-header">
         <div class="labkey-folder-title"><a href="<%=h(bean.getHref())%>"><%=h(folderTitle)%></a></div>
-        <div class="button-bar <%=text(isTabEditMode ? "tab-edit-mode-enabled" : "tab-edit-mode-disabled")%>">
-            <ul>
+        <div class="<%=text(isTabEditMode ? "tab-edit-mode-enabled" : "tab-edit-mode-disabled")%>">
+            <ul class="tab-nav">
                 <%
                     for (NavTree navTree : tabs)
                     {
@@ -70,12 +70,12 @@
                         {
                             String classes = "";
                             if (navTree.isSelected())
-                                classes = classes + "labkey-app-bar-tab-active";
+                                classes = classes + "tab-nav-active";
                             else
-                                classes = classes + "labkey-app-bar-tab-inactive";
+                                classes = classes + "tab-nav-inactive";
 
                             if (navTree.isDisabled())
-                                classes = classes + " labkey-app-bar-tab-hidden";
+                                classes = classes + " tab-nav-hidden";
 
                             if (!context.hasPermission(getUser(), AdminPermission.class) || navTree.getChildCount() == 0)
                                 classes = classes + " labkey-no-tab-menu";
@@ -107,11 +107,14 @@
                     if(context.hasPermission(getUser(), AdminPermission.class) && tabContainer.getFolderType() != FolderType.NONE)
                     {
                 %>
-                        <li class="labkey-app-bar-add-tab" id="addTab">
+                        <li class="tab-nav-add" id="addTab">
                             <a href="javascript:LABKEY.Portal.addTab();" title="Add New Tab">+</a>
                         </li>
-                        <li class="labkey-app-bar-edit-tab" id="editTabs">
-                            <a href="javascript:LABKEY.Portal.toggleTabEditMode();" title="Toggle Edit Mode"><img src="<%=getContextPath()%>/_images/pencil2.png" /></a>
+                        <li class="tab-nav-edit" id="editTabs">
+                            <a href="javascript:LABKEY.Portal.toggleTabEditMode();" title="Toggle Edit Mode">
+                                &nbsp;
+                                <span class="tab-nav-edit-img" unselectable="on"></span>
+                            </a>
                         </li>
                 <%
                     }
@@ -121,6 +124,7 @@
         <div style="clear:both;"></div>
     </div>
 </div>
+<div class="labkey-app-bar labkey-app-bar-replicate"></div>
 
 <%
      if (portalTabs != null && portalTabs.size() > 1)
@@ -171,49 +175,28 @@
 
 <script type="text/javascript">
     Ext4.onReady(function() {
-        var setMinWidth = function() {
-            var tabs = Ext4.query('.labkey-app-bar ul li');
-            var folderTitle = Ext4.get(Ext4.query('.labkey-folder-title')[0]);
-            var folderHeader = Ext4.get(Ext4.query('.labkey-folder-header')[0]);
-            var signIn = Ext4.get(Ext4.query('.headermenu')[0]);
-            var appBar = Ext4.query('.labkey-app-bar')[0];
-            var viewportWidth = Ext4.Element.getViewportWidth();
-            var folderHeaderWidth = viewportWidth - appBar.getBoundingClientRect().left - 60; // 60 is for some extra padding between the + tab and right side of the screen.
-            var totalWidth = folderTitle.getWidth();
 
-            for(var i = 0; i < tabs.length; i++){
-                var anchor = Ext4.get(tabs[i]);
-                totalWidth = totalWidth + anchor.getWidth();
-                if(tabs[i].getAttribute('id') !== 'addTab'){
-                    totalWidth = totalWidth + 20;
+        var fatBars = function() {
+            var contentTable = Ext4.get(Ext4.DomQuery.select('table.labkey-proj')[0]).getBox();
+            var width = contentTable.width-5;
+            var menuBarRep = Ext4.get(Ext4.DomQuery.select('.main-menu-replicate')[0]);
+            menuBarRep.setWidth(width);
+            if (Ext4.isGecko || Ext4.isIE9m) {
+                menuBarRep.setStyle('top', '46px');
+            }
+
+            var appBar = Ext4.get(Ext4.DomQuery.select('.labkey-app-bar')[0]);
+            var appBarRep = Ext4.get(Ext4.DomQuery.select('.labkey-app-bar-replicate')[0]);
+            if (appBar && appBarRep) {
+                appBarRep.setSize(width, 32);
+                if (Ext4.isGecko || Ext4.isIE9p) {
+                    appBarRep.setStyle('top', '74px');
                 }
-            }
-
-            if(folderHeader){ // Why wouldn't it be there? Better safe than javascript errors.
-                if(folderHeaderWidth < totalWidth){
-                    folderHeader.setWidth(totalWidth);
-                } else {
-                    folderHeader.setWidth(folderHeaderWidth);
-                }
-            }
-            if (signIn) {
-                signIn.setLeft(viewportWidth - signIn.getBox().width - 20);
-            }
-        };
-
-        var lastScrollLeft = Math.max(document.documentElement.scrollLeft, document.body.scrollLeft);
-
-        var scrollListener = function(){
-            // Some browsers keep the value in documentElement, some in body.
-            var scrollLeft = Math.max(document.documentElement.scrollLeft, document.body.scrollLeft);
-
-            if(scrollLeft != lastScrollLeft){
-                setMinWidth();
             }
         };
 
         var addTabListeners = function() {
-            var tabs = Ext4.query('.labkey-app-bar ul li');
+            var tabs = Ext4.query('.tab-nav li');
             var tab, i=0;
             for(; i < tabs.length; i++){
                 tab = Ext4.get(tabs[i]);
@@ -236,17 +219,17 @@
             }
         };
 
-        setMinWidth();
+        fatBars();
         addTabListeners();
-        Ext4.EventManager.onWindowResize(setMinWidth);
+        Ext4.EventManager.onWindowResize(fatBars);
 
-        if (window.addEventListener) {
-            // Most browsers.
-            window.addEventListener('scroll', scrollListener, false);
-        }
-        else if(window.attachEvent) {
-            // <= IE8
-            window.attachEvent('onscroll',scrollListener);
-        }
+//        if (window.addEventListener) {
+//            // Most browsers.
+//            window.addEventListener('scroll', scrollListener, false);
+//        }
+//        else if(window.attachEvent) {
+//            // <= IE8
+//            window.attachEvent('onscroll',scrollListener);
+//        }
     });
 </script>

@@ -49,7 +49,6 @@
     ViewContext context = getViewContext();
     Container c = getContainer();
 
-//    FolderDisplayMode folderMode = LookAndFeelProperties.getInstance(c).getFolderDisplayMode();
     boolean showExperimentalNavigation = AppProps.getInstance().isExperimentalFeatureEnabled(MenuBarView.EXPERIMENTAL_NAV);
     boolean showProjectNavigation = showExperimentalNavigation || context.isShowFolders();
     boolean showFolderNavigation = !showExperimentalNavigation && c != null && !c.isRoot() && c.getProject() != null && context.isShowFolders();
@@ -62,6 +61,8 @@
             projectName = "Home";
     }
 %>
+<!-- TOPMENU -->
+<div id="topmenu" class="labkey-header-panel">
 <div id="menubar" class="labkey-main-menu">
     <ul>
 <%
@@ -116,6 +117,7 @@
     include(new HeaderMenu(pageConfig), out);
 %>
 </div>
+<div class="labkey-main-menu main-menu-replicate"></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
 
@@ -315,3 +317,5 @@
 %>
     });
 </script>
+</div>
+<!-- /TOPMENU -->
