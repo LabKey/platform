@@ -72,6 +72,11 @@ body, div, td, th, table, img, form
     color: #<%= text %>;
 }
 
+body
+{
+    background-color: #<%= primary %>;
+}
+
 body, div, td, th, table, img, form,
 .x-form-item, .x-panel-header, .x-btn button
 {
@@ -91,6 +96,7 @@ a, a:visited, .labkey-link, .labkey-link:visited
 table#header
 {
     border-color: #<%= link %>;
+    background-color:#<%= primary %>;
 }
 
 /* General */
@@ -236,7 +242,7 @@ span.labkey-button:active
     color: #<%= link %>;
 }
 
-.labkey-app-bar ul li.labkey-app-bar-tab-active { /* map bottom border and background color to Primary background color */
+.labkey-app-bar ul li.tab-nav-active { /* map bottom border and background color to Primary background color */
     background-color: #<%= primary %>;
 	border-bottom: 1px solid #<%= primary %>;
 }
@@ -318,7 +324,7 @@ td.labkey-blank-cell, th.labkey-blank-cell
     background-color:#<%= second %>;
 }
 
-table.labkey-main
+.labkey-main
 {
     background-color: #<%= primary %>;
 }
@@ -658,15 +664,15 @@ div.x4-splitter-vertical, div.x4-splitter-active, div.x4-resizable-overlay {
     background-image: none;
 }
 
-li.labkey-app-bar-tab-active {
+li.tab-nav-active {
     background-color: #<%= primary %>;
 }
 
-li.labkey-app-bar-tab-inactive:hover {
+li.tab-nav-inactive:hover {
     background-color: #<%= primary %>;
 }
 
-li.labkey-app-bar-tab-inactive a {
+li.tab-nav-inactive a {
     color: #<%= link %>;
 }
 
