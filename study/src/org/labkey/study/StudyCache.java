@@ -33,8 +33,6 @@ import org.labkey.api.study.StudyCachable;
  */
 public class StudyCache
 {
-    private static boolean ENABLE_CACHING = true;
-
     private static String getCacheName(Container c, @Nullable Object cacheKey)
     {
         return c.getId() + "/" + (null != cacheKey ? cacheKey : "");
@@ -44,8 +42,6 @@ public class StudyCache
     {
         if (cachable != null)
             cachable.lock();
-        if (!ENABLE_CACHING)
-            return;
         DbCache.put(tinfo, getCacheName(c, objectId), cachable, CacheManager.HOUR);
     }
 
@@ -54,37 +50,27 @@ public class StudyCache
         // We allow caching of null values: 
         if (cachable != null)
             cachable.lock();
-        if (!ENABLE_CACHING)
-            return;
         DbCache.put(tinfo, getCacheName(c, cacheKey), cachable, CacheManager.HOUR);
     }
 
     public static void uncache(TableInfo tinfo, Container c, Object cacheKey)
     {
-        if (!ENABLE_CACHING)
-            return;
         DbCache.remove(tinfo, getCacheName(c, cacheKey));
     }
 
     public static Object getCached(TableInfo tinfo, Container c, Object cacheKey)
     {
-        if (!ENABLE_CACHING)
-            return null;
         return DbCache.get(tinfo, getCacheName(c, cacheKey));
     }
 
     public static Object get(TableInfo tinfo, Container c, Object cacheKey, CacheLoader<String, Object> loader)
     {
-        if (!ENABLE_CACHING)
-            return loader.load(getCacheName(c, cacheKey), null);
         BlockingCache<String, Object> cache = new BlockingCache<>(DbCache.<Wrapper<Object>>getCacheGeneric(tinfo), loader);
         return cache.get(getCacheName(c, cacheKey), null);
     }
 
     public static void clearCache(TableInfo tinfo, Container c)
     {
-        if (!ENABLE_CACHING)
-            return;
         DbCache.removeUsingPrefix(tinfo, getCacheName(c, null));
     }
 }

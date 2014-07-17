@@ -29,7 +29,6 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
-import org.labkey.api.cache.Wrapper;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -641,6 +640,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (null == getTypeURI())
             return null;
 
+        // TODO: Why a transaction here? Remove it!
         try (DbScope.Transaction t = StudySchema.getInstance().getSchema().getScope().ensureTransaction(_lock))
         {
             Domain d = ensureDomain();
@@ -651,28 +651,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
             TableInfo ti = StorageProvisioner.createTableInfo(d, StudySchema.getInstance().getSchema(), null, true, RUNNABLE);
 
-//            TableInfo template = getTemplateTableInfo();
-//
-//            for (PropertyStorageSpec pss : d.getDomainKind().getBaseProperties())
-//            {
-//                ColumnInfo c = ti.getColumn(pss.getName());
-//                ColumnInfo tCol = template.getColumn(pss.getName());
-//                // The column may be null if the dataset is being deleted in the background
-//                if (null != tCol && c != null)
-//                {
-//                    c.setExtraAttributesFrom(tCol);
-//
-//                    // When copying a column, the hidden bit is not propagated, so we need to do it manually
-//                    if (tCol.isHidden())
-//                        c.setHidden(true);
-//                }
-//            }
             t.commit();
             return ti;
         }
     }
 
 
+    // TODO: Move this code to the DomainKind?
     private static StorageProvisioner.AfterTableLoadRunnable RUNNABLE = new StorageProvisioner.AfterTableLoadRunnable() {
         @Override
         public void afterLoadTable(SchemaTableInfo ti, Domain domain)
@@ -719,28 +704,6 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    /**** UNDONE  *****
-     *
-     * This is a terrible hack, this should go away ASAP, we should be relying on DbSchema for this
-     * caching
-     *
-     *****************/
-
-    static final CacheLoader<String,TableInfo> tableInfoCacheLoader = new CacheLoader<String,TableInfo>()
-    {
-        @Override
-        public TableInfo load(String key, @Nullable Object argument)
-        {
-            return ((DataSetDefinition)argument).loadStorageTableInfo();
-        }
-    };
-    static final Cache<String,TableInfo> storageTableInfos = new BlockingCache<String,TableInfo>(
-            new DatabaseCache<Wrapper<TableInfo>>(
-                StudySchema.getInstance().getScope(),
-                CacheManager.UNLIMITED, CacheManager.DAY, "dataset tableinfos"),
-            tableInfoCacheLoader
-            );
-
     @Transient
     public TableInfo getStorageTableInfo() throws UnauthorizedException
     {
@@ -752,19 +715,8 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         }
         else
         {
-            if (null == getTypeURI())
-                return null;
-            return storageTableInfos.get(getTypeURI(), this, null);
+            return loadStorageTableInfo();
         }
-    }
-
-
-    // for use by DatasetDomainKind
-    public void invalidateStorageTableInfo()
-    {
-        if (null == getTypeURI())
-            return;
-        storageTableInfos.remove(getTypeURI());
     }
 
 

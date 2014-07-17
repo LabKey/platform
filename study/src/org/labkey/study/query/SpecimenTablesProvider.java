@@ -21,6 +21,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -31,6 +32,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
+import org.labkey.data.xml.TableType;
+import org.labkey.study.StudySchema;
 import org.labkey.study.model.AbstractSpecimenDomainKind;
 import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.SpecimenEventDomainKind;
@@ -105,7 +108,7 @@ public class SpecimenTablesProvider
         Domain domain = getDomain(tableName, true);
         if (null == domain)
             throw new IllegalStateException("Unable to create domain for table '" + tableName + "'");
-        return createTableInfo(domain, _template);
+        return createTableInfo(domain);
     }
 
     @Nullable
@@ -113,7 +116,7 @@ public class SpecimenTablesProvider
     {
         Domain domain = getDomain(tableName, false);
         if (null != domain)
-            return createTableInfo(domain, null);
+            return createTableInfo(domain);
         return null;
     }
 
@@ -197,10 +200,22 @@ public class SpecimenTablesProvider
     }
 
     @NotNull
-    private TableInfo createTableInfo(@NotNull Domain domain, SpecimenTablesTemplate template)
+    private TableInfo createTableInfo(@NotNull Domain domain)
     {
         DomainKind domainKind = domain.getDomainKind();
-        return StorageProvisioner.createUncachedTableInfo(domain, getDbSchema(), domainKind.getKindName());
+        return StorageProvisioner.createTableInfo(domain, getDbSchema(), domainKind.getKindName(), true, RUNNABLE);
     }
+
+    // TODO: Move this code to the DomainKind?
+    public static StorageProvisioner.AfterTableLoadRunnable RUNNABLE = new StorageProvisioner.AfterTableLoadRunnable() {
+        @Override
+        public void afterLoadTable(SchemaTableInfo ti, Domain domain)
+        {
+            DomainKind kind = domain.getDomainKind();
+            DbSchema studySchema = StudySchema.getInstance().getSchema();
+            TableType xmlTable = studySchema.getTableXmlMap().get(kind.getMetaDataTableName());
+            ti.loadTablePropertiesFromXml(xmlTable, true);
+        }
+    };
 }
 
