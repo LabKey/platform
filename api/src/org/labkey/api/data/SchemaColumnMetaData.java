@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.dialect.PkMetaDataReader;
@@ -45,8 +44,6 @@ import java.util.TreeMap;
 */
 public class SchemaColumnMetaData
 {
-    private static final Logger LOG = Logger.getLogger(SchemaColumnMetaData.class);
-
     private final SchemaTableInfo _tinfo;
     private final List<ColumnInfo> _columns = new ArrayList<>();
 
@@ -58,7 +55,7 @@ public class SchemaColumnMetaData
 
     SchemaColumnMetaData(SchemaTableInfo tinfo) throws SQLException
     {
-        this(tinfo,true);
+        this(tinfo, true);
     }
 
     SchemaColumnMetaData(SchemaTableInfo tinfo, boolean load) throws SQLException
@@ -73,9 +70,7 @@ public class SchemaColumnMetaData
             try
             {
                 conn = scope.getConnection();
-                DbSchema schema = tinfo.getSchema();
-                assert _tinfo.getMetaDataSchemaName().equals(schema.getName());
-                loadFromMetaData(conn.getMetaData(), _tinfo.getSchema().getScope().getDatabaseName(), schema.getName(), _tinfo);
+                loadFromMetaData(conn.getMetaData(), _tinfo);
             }
             finally
             {
@@ -177,8 +172,13 @@ public class SchemaColumnMetaData
         }
     }
 
-    private void loadFromMetaData(DatabaseMetaData dbmd, final String catalogName, final String schemaName, final SchemaTableInfo ti) throws SQLException
+    private void loadFromMetaData(DatabaseMetaData dbmd, final SchemaTableInfo ti) throws SQLException
     {
+        DbSchema schema = ti.getSchema();
+        DbScope scope = schema.getScope();
+        final String catalogName = scope.getDatabaseName();
+        final String schemaName = schema.getName();
+
         loadColumnsFromMetaData(dbmd, catalogName, schemaName, ti);
 
         Selector pkSelector = new JdbcMetaDataSelector(ti.getSchema().getScope(), dbmd, new JdbcMetaDataSelector.JdbcMetaDataResultSetFactory()

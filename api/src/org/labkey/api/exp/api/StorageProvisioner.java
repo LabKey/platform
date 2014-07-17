@@ -210,8 +210,7 @@ public class StorageProvisioner
         }
         catch (RuntimeSQLException e)
         {
-            log.warn(String.format("Failed to drop table in schema %s for domain %s - %s",
-                    schemaName, domain.getName(), e.getMessage()), e);
+            log.warn(String.format("Failed to drop table in schema %s for domain %s - %s", schemaName, domain.getName(), e.getMessage()), e);
             throw e;
         }
     }
@@ -487,17 +486,10 @@ public class StorageProvisioner
 
 
     /**
-     * Return a TableInfo for this domain, creating if necessary. This method uses the DbSchema caching layer
-     *
+     * Return a TableInfo for this domain, creating if necessary. This method uses the DbSchema caching layer.
      */
     @NotNull
     public static SchemaTableInfo createTableInfo(Domain domain)
-    {
-        return createTableInfo(domain, null);
-    }
-
-    @NotNull
-    public static SchemaTableInfo createTableInfo(Domain domain, @Nullable AfterTableLoadRunnable runnable)
     {
         DomainKind kind = domain.getDomainKind();
         if (null == kind)
@@ -517,7 +509,7 @@ public class StorageProvisioner
         assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds must declare a schema type of DbSchemaType.Provisioned";
 
         DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
-        ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain, runnable);
+        ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
 
         return schema.getTable(options);
     }
@@ -1097,16 +1089,14 @@ public class StorageProvisioner
         }
     }
 
-    public static class ProvisionedSchemaOptions extends SchemaTableOptions
+    private static class ProvisionedSchemaOptions extends SchemaTableOptions
     {
         private final Domain _domain;
-        private final @Nullable AfterTableLoadRunnable _runnable;
 
-        public ProvisionedSchemaOptions(DbSchema schema, String tableName, Domain domain, @Nullable AfterTableLoadRunnable runnable)
+        private ProvisionedSchemaOptions(DbSchema schema, String tableName, Domain domain)
         {
             super(schema, tableName);
             _domain = domain;
-            _runnable = runnable;
         }
 
         public Domain getDomain()
@@ -1124,15 +1114,8 @@ public class StorageProvisioner
 
             fixupProvisionedDomain(ti, kind, domain, ti.getName());
 
-            if (null != _runnable)
-                _runnable.afterLoadTable(ti, domain);
+            kind.afterLoadTable(ti, domain);
         }
-    }
-
-    // TODO: Move this code to the DomainKind?
-    public interface AfterTableLoadRunnable
-    {
-        public void afterLoadTable(SchemaTableInfo ti, Domain domain);
     }
 
     @TestTimeout(120)

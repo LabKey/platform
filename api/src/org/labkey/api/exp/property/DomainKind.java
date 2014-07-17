@@ -22,6 +22,7 @@ import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -195,5 +196,12 @@ abstract public class DomainKind implements Handler<String>
     public TableInfo getTableInfo(User user, Container container, String name)
     {
         return null;
+    }
+
+    // Called for provisioned tables after StorageProvisioner has loaded them from JDBC but before they are locked and
+    // cached. Use this to decorate the SchemaTableInfo with additional meta data, for example.
+    public void afterLoadTable(SchemaTableInfo ti, Domain domain)
+    {
+        // Most DomainKinds do nothing here
     }
 }

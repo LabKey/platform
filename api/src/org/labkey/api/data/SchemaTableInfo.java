@@ -17,7 +17,6 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
@@ -76,17 +75,12 @@ import java.util.concurrent.TimeUnit;
 
 public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 {
-    private static final Logger _log = Logger.getLogger(SchemaTableInfo.class);
-
     // Table properties
     private final DbSchema _parentSchema;
     private final SQLFragment _selectName;
     private final String _metaDataName;
     private final DatabaseTableType _tableType;
     private final Path _notificationKey;
-
-    // TODO: Remove -- temp hack for StorageProvisioner, which sets "study" as schema but loads meta data from "studydatasets" schema
-    private String _metaDataSchemaName;
 
     private String _name;
     private String _description;
@@ -107,7 +101,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     // Column-related
     private TableType _xmlTable = null;
     private SchemaColumnMetaData _columnMetaData = null;
-    protected boolean _autoLoadMetaData = true;
+    protected boolean _autoLoadMetaData = true;      // TODO: Remove this? DatasetSchemaTableInfo is the only user of this.
     private final Object _columnLock = new Object();
     private String _versionColumnName = null;
     private List<FieldKey> _defaultVisibleColumns = null;
@@ -122,7 +116,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     public SchemaTableInfo(DbSchema parentSchema, DatabaseTableType tableType, String tableName, String metaDataName, String selectName, @Nullable String title)
     {
         _parentSchema = parentSchema;
-        _metaDataSchemaName = parentSchema.getName();
         _name = tableName;
         _metaDataName = metaDataName;
         _selectName = new SQLFragment(selectName);
@@ -393,13 +386,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return getColumn(name.getName());
     }
 
-
-    @Deprecated
-    public String getMetaDataSchemaName()
-    {
-        return _metaDataSchemaName;
-
-    }
 
     private static final int DEADLOCK_RETRIES = 5;
 
