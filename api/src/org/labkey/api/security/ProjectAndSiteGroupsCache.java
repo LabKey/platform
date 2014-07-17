@@ -27,6 +27,7 @@ import org.labkey.api.data.SqlSelector;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -56,7 +57,7 @@ public class ProjectAndSiteGroupsCache
             if (!c.isRoot())
                 sql.add(c);
 
-            return new SqlSelector(CORE.getSchema(), sql).getCollection(Integer.class);
+            return Collections.unmodifiableCollection(new SqlSelector(CORE.getSchema(), sql).getCollection(Integer.class));
         }
     };
 

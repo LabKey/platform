@@ -75,7 +75,7 @@ public class AssayResultTable extends FilteredTable<AssayProtocolSchema> impleme
 
     public AssayResultTable(AssayProtocolSchema schema, boolean includeCopiedToStudyColumns)
     {
-        super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol()), schema.getDbSchema()), schema);
+        super(StorageProvisioner.createTableInfo(schema.getProvider().getResultsDomain(schema.getProtocol())), schema);
         _protocol = _userSchema.getProtocol();
         _provider = _userSchema.getProvider();
 

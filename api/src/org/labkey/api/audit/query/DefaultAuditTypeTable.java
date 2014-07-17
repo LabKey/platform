@@ -62,7 +62,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     
     public DefaultAuditTypeTable(AuditTypeProvider provider, Domain domain, DbSchema dbSchema, UserSchema schema)
     {
-        super(StorageProvisioner.createTableInfo(domain, dbSchema), schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
+        super(StorageProvisioner.createTableInfo(domain), schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
 
         _provider = provider;
 

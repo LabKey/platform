@@ -26,7 +26,6 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -60,7 +59,6 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.data.xml.TableType;
 import org.springframework.validation.BindException;
 
 import java.sql.Connection;
@@ -491,29 +489,15 @@ public class StorageProvisioner
     /**
      * Return a TableInfo for this domain, creating if necessary. This method uses the DbSchema caching layer
      *
-     * @param parentSchema Schema to attach table to, should NOT be the physical db schema of the storage provider
      */
     @NotNull
-    public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema)
+    public static SchemaTableInfo createTableInfo(Domain domain)
     {
-        return createTableInfo(domain, parentSchema, null, true, null);
-    }
-
-    /**
-     * return a TableInfo for this domain, creating if necessary
-     * this method DOES NOT cache
-     *
-     * @param parentSchema Schema to attach table to, should NOT be the physical db schema of the storage provider
-     * @deprecated usages should be migrated to createCachedTableInfo
-     */
-    @NotNull    // TODO: Migrate specimen schema to use cached TableInfos and delete this
-    public static SchemaTableInfo createUncachedTableInfo(Domain domain, DbSchema parentSchema, @Nullable String title)
-    {
-        return createTableInfo(domain, parentSchema, title, false, null);
+        return createTableInfo(domain, null);
     }
 
     @NotNull
-    public static SchemaTableInfo createTableInfo(Domain domain, DbSchema parentSchema, @Nullable String title, boolean cache, @Nullable AfterTableLoadRunnable runnable)
+    public static SchemaTableInfo createTableInfo(Domain domain, @Nullable AfterTableLoadRunnable runnable)
     {
         DomainKind kind = domain.getDomainKind();
         if (null == kind)
@@ -530,31 +514,12 @@ public class StorageProvisioner
         if (null == tableName)
             tableName = _create(scope, kind, domain);
 
-        SchemaTableInfo ti;
-        if (cache)
-        {
-            assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds must declare a schema type of DbSchemaType.Provisioned";
+        assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds must declare a schema type of DbSchemaType.Provisioned";
 
-            DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
-            ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain, runnable);
+        DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
+        ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain, runnable);
 
-            ti = schema.getTable(options);
-        }
-        else
-        {
-            // non-cached legacy version... only used for specimen tables
-            ti = new SchemaTableInfo(parentSchema, DatabaseTableType.TABLE, tableName, tableName, schemaName + ".\"" + tableName + "\"", title);
-            ti.setMetaDataSchemaName(schemaName);
-
-            if (null != kind.getMetaDataSchemaName())
-            {
-                TableType xmlTable = DbSchema.get(kind.getMetaDataSchemaName()).getTableXmlMap().get(kind.getMetaDataTableName());
-                ti.loadTablePropertiesFromXml(xmlTable, true);
-            }
-
-            fixupProvisionedDomain(ti, kind, domain, tableName);
-        }
-        return ti;
+        return schema.getTable(options);
     }
 
     public static void addOrDropTableIndices(Domain domain, boolean doAdd)
@@ -1188,7 +1153,7 @@ public class StorageProvisioner
             domain = PropertyService.get().createDomain(container, lsid.toString(), domainName);
             domain.save(new User());
             DomainKind kind = domain.getDomainKind();
-            StorageProvisioner.createTableInfo(domain, DbSchema.get(kind.getStorageSchemaName(), kind.getSchemaType()));
+            StorageProvisioner.createTableInfo(domain);
             domain = PropertyService.get().getDomain(domain.getTypeId());
         }
 

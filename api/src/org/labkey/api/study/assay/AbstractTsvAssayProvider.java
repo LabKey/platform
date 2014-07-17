@@ -15,7 +15,6 @@
  */
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -66,7 +65,7 @@ public abstract class AbstractTsvAssayProvider extends AbstractAssayProvider
             }
         }
 
-        TableInfo table = StorageProvisioner.createTableInfo(getResultsDomain(protocol), DbSchema.get(AbstractTsvAssayProvider.ASSAY_SCHEMA_NAME));
+        TableInfo table = StorageProvisioner.createTableInfo(getResultsDomain(protocol));
         Map<String, Object>[] rows = new TableSelector(table, table.getColumns(AbstractTsvAssayProvider.DATA_ID_COLUMN_NAME), new SimpleFilter(FieldKey.fromParts(AbstractTsvAssayProvider.ROW_ID_COLUMN_NAME), id), null).getMapArray();
 
         for (Map<String, Object> row : rows)

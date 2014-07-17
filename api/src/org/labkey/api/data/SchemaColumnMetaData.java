@@ -73,7 +73,9 @@ public class SchemaColumnMetaData
             try
             {
                 conn = scope.getConnection();
-                loadFromMetaData(conn.getMetaData(), _tinfo.getSchema().getScope().getDatabaseName(), _tinfo.getMetaDataSchemaName(), _tinfo);
+                DbSchema schema = tinfo.getSchema();
+                assert _tinfo.getMetaDataSchemaName().equals(schema.getName());
+                loadFromMetaData(conn.getMetaData(), _tinfo.getSchema().getScope().getDatabaseName(), schema.getName(), _tinfo);
             }
             finally
             {

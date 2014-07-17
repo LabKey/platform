@@ -195,7 +195,8 @@ public class CacheManager
         }
         else if (value.getClass().isArray())
         {
-            Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned an array, which could be mutated by callers!");
+            // TODO: Stop caching arrays and re-enable this
+//            Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned an array, which could be mutated by callers!");
         }
     }
 }

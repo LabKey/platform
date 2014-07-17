@@ -401,13 +401,6 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
 
     }
 
-    @Deprecated
-    public void setMetaDataSchemaName(String metaDataSchemaName)
-    {
-        _metaDataSchemaName = metaDataSchemaName;
-    }
-
-
     private static final int DEADLOCK_RETRIES = 5;
 
     protected SchemaColumnMetaData getColumnMetaData()
