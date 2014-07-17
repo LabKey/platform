@@ -79,7 +79,7 @@ public class ProjectAndSiteGroupsCache
 
         addAll(groups, projectGroups);
 
-        return groups.toArray(new Group[0]);
+        return groups.toArray(new Group[groups.size()]);
     }
 
 
@@ -89,7 +89,7 @@ public class ProjectAndSiteGroupsCache
         ArrayList<Group> groups = new ArrayList<>(siteGroupIds.size());
         addAll(groups, siteGroupIds);
 
-        return groups.toArray(new Group[0]);
+        return groups.toArray(new Group[groups.size()]);
     }
 
 

@@ -1164,6 +1164,7 @@ public class StorageProvisioner
         }
     }
 
+    // TODO: Move this code to the DomainKind?
     public interface AfterTableLoadRunnable
     {
         public void afterLoadTable(SchemaTableInfo ti, Domain domain);
