@@ -70,7 +70,7 @@ public class QueryHelper<K extends StudyCachable>
         if (sortString != null)
             cacheId += "; sort = " + sortString;
 
-        CacheLoader<String,Object> loader = new CacheLoader<String,Object>()
+        CacheLoader<String, Object> loader = new CacheLoader<String, Object>()
         {
             @Override
             public Object load(String key, Object argument)

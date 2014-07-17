@@ -29,6 +29,7 @@ import org.labkey.api.cache.BlockingCache;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.Wrapper;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -448,7 +449,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     /**
      *
-     * We do not want to invalidate caches everytime some one updates a dataset row
+     * We do not want to invalidate caches everytime someone updates a dataset row
      * So don't store modified in this bean.
      *
      * Instead cache modified dates separately
@@ -462,13 +463,13 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         public Date load(String key, @Nullable Object argument)
         {
             StudySchema ss = StudySchema.getInstance();
-            SQLFragment sql = new SQLFragment("SELECT modified FROM " + ss.getTableInfoDataSet() + " WHERE entityid=?",key);
+            SQLFragment sql = new SQLFragment("SELECT Modified FROM " + ss.getTableInfoDataSet() + " WHERE EntityId = ?",key);
             Date modified = new SqlSelector(ss.getScope(),sql).getObject(Date.class);
             return modified;
         }
     };
-    static Cache<String,Date> modifiedDates = new BlockingCache<>(
-            new DatabaseCache(StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "dataset modified cache"),
+    static Cache<String, Date> modifiedDates = new BlockingCache<>(
+            new DatabaseCache<Wrapper<Date>>(StudySchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.HOUR, "dataset modified cache"),
             modifiedDatesLoader);
 
 
@@ -487,7 +488,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public static void updateModified(DataSetDefinition def, Date modified)
     {
         StudySchema ss = StudySchema.getInstance();
-        SQLFragment sql = new SQLFragment("UPDATE " + ss.getTableInfoDataSet() + " SET modified=? WHERE entityid=?", modified, def.getEntityId());
+        SQLFragment sql = new SQLFragment("UPDATE " + ss.getTableInfoDataSet() + " SET Modified = ? WHERE EntityId = ?", modified, def.getEntityId());
         new SqlExecutor(ss.getScope()).execute(sql);
         modifiedDates.remove(def.getEntityId());
     }
@@ -649,37 +650,12 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (null == d.getStorageTableName())
                 _domain = null;
 
-            TableInfo ti = StorageProvisioner.createTableInfo(d, RUNNABLE);
+            TableInfo ti = StorageProvisioner.createTableInfo(d);
 
             t.commit();
             return ti;
         }
     }
-
-
-    // TODO: Move this code to the DomainKind?
-    private static StorageProvisioner.AfterTableLoadRunnable RUNNABLE = new StorageProvisioner.AfterTableLoadRunnable() {
-        @Override
-        public void afterLoadTable(SchemaTableInfo ti, Domain domain)
-        {
-            TableInfo template = getTemplateTableInfo();
-
-            for (PropertyStorageSpec pss : domain.getDomainKind().getBaseProperties())
-            {
-                ColumnInfo c = ti.getColumn(pss.getName());
-                ColumnInfo tCol = template.getColumn(pss.getName());
-                // The column may be null if the dataset is being deleted in the background
-                if (null != tCol && c != null)
-                {
-                    c.setExtraAttributesFrom(tCol);
-
-                    // When copying a column, the hidden bit is not propagated, so we need to do it manually
-                    if (tCol.isHidden())
-                        c.setHidden(true);
-                }
-            }
-        }
-    };
 
 
     /**

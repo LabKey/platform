@@ -17,7 +17,6 @@ package org.labkey.study.model;
 
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.SpecimenTablesTemplate;
 
 import java.util.Arrays;
@@ -25,7 +24,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.TreeSet;
 
 public class SpecimenDomainKind extends AbstractSpecimenDomainKind
 {

@@ -16,20 +16,22 @@
 package org.labkey.study.model;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.data.xml.TableType;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.StudyController;
 import org.labkey.study.query.SpecimenTablesProvider;
@@ -132,10 +134,18 @@ public abstract class AbstractSpecimenDomainKind extends AbstractDomainKind
                 if (null == domain)
                     throw new IllegalStateException("Expected domain to be created if it didn't already exist.");
 
-                DomainKind domainKind = domain.getDomainKind();
-                TableInfo tableInfo = StorageProvisioner.createTableInfo(domain, SpecimenTablesProvider.RUNNABLE);
+                TableInfo tableInfo = StorageProvisioner.createTableInfo(domain);
                 foreignKey.setTableInfoProvisioned(tableInfo);
             }
         }
+    }
+
+    @Override
+    public void afterLoadTable(SchemaTableInfo ti, Domain domain)
+    {
+        // Grab the meta data for this table (event, vial, or specimen) and apply it to the provisioned table
+        DbSchema studySchema = StudySchema.getInstance().getSchema();
+        TableType xmlTable = studySchema.getTableXmlMap().get(getMetaDataTableName());
+        ti.loadTablePropertiesFromXml(xmlTable, true);
     }
 }

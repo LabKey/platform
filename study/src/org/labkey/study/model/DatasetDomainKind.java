@@ -16,12 +16,14 @@
 
 package org.labkey.study.model;
 
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.property.AbstractDomainKind;
@@ -257,5 +259,27 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
         DataSetDefinition dsd = schema.getDataSetDefinitionByName(name);
 
         return new DataSetTableImpl(schema, dsd);
+    }
+
+    @Override
+    public void afterLoadTable(SchemaTableInfo ti, Domain domain)
+    {
+        // Grab the "standard" properties and apply them to this dataset table
+        TableInfo template = DataSetDefinition.getTemplateTableInfo();
+
+        for (PropertyStorageSpec pss : domain.getDomainKind().getBaseProperties())
+        {
+            ColumnInfo c = ti.getColumn(pss.getName());
+            ColumnInfo tCol = template.getColumn(pss.getName());
+            // The column may be null if the dataset is being deleted in the background
+            if (null != tCol && c != null)
+            {
+                c.setExtraAttributesFrom(tCol);
+
+                // When copying a column, the hidden bit is not propagated, so we need to do it manually
+                if (tCol.isHidden())
+                    c.setHidden(true);
+            }
+        }
     }
 }

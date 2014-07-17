@@ -18,21 +18,16 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.SpecimenTablesTemplate;
-import org.labkey.data.xml.TableType;
-import org.labkey.study.StudySchema;
 import org.labkey.study.model.AbstractSpecimenDomainKind;
 import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.SpecimenEventDomainKind;
@@ -196,19 +191,7 @@ public class SpecimenTablesProvider
     @NotNull
     private TableInfo createTableInfo(@NotNull Domain domain)
     {
-        return StorageProvisioner.createTableInfo(domain, RUNNABLE);
+        return StorageProvisioner.createTableInfo(domain);
     }
-
-    // TODO: Move this code to the DomainKind?
-    public static StorageProvisioner.AfterTableLoadRunnable RUNNABLE = new StorageProvisioner.AfterTableLoadRunnable() {
-        @Override
-        public void afterLoadTable(SchemaTableInfo ti, Domain domain)
-        {
-            DomainKind kind = domain.getDomainKind();
-            DbSchema studySchema = StudySchema.getInstance().getSchema();
-            TableType xmlTable = studySchema.getTableXmlMap().get(kind.getMetaDataTableName());
-            ti.loadTablePropertiesFromXml(xmlTable, true);
-        }
-    };
 }
 
