@@ -70,7 +70,7 @@ public class AuditUpgradeCode implements UpgradeCode
 
                     Domain domain = provider.getDomain();
                     DbSchema dbSchema = AuditSchema.getInstance().getSchema();
-                    SchemaTableInfo table = StorageProvisioner.createTableInfo(domain, dbSchema);
+                    SchemaTableInfo table = StorageProvisioner.createTableInfo(domain);
 
                     SQLFragment sql = new SQLFragment();
                     sql.append("UPDATE ").append(table.getSelectName()).append(" SET \"user\" = NULL WHERE \"user\" = 0");

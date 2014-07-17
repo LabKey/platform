@@ -48,9 +48,9 @@ public class StudyProductTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("Type"));
     }
 
-    public StudyProductTable(Domain domain, DbSchema dbSchema, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    public StudyProductTable(Domain domain, UserSchema schema, @Nullable ContainerFilter containerFilter)
     {
-        super(domain, dbSchema, schema, containerFilter);
+        super(domain, schema, containerFilter);
 
         setName(StudyQuerySchema.PRODUCT_TABLE_NAME);
         setDescription("Contains one row per study product");

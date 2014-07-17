@@ -1100,7 +1100,7 @@ public class ListManager implements SearchService.DocumentProvider
             }
 
             // create the hard table
-            TableInfo toTable = StorageProvisioner.createTableInfo(newDomain, schema.getDbSchema());
+            TableInfo toTable = StorageProvisioner.createTableInfo(newDomain);
 
             // Smoke test row count
             long fromRowCount = new TableSelector(fromTable).getRowCount();

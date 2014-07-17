@@ -28,8 +28,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.ArrayList;
@@ -52,9 +50,9 @@ public class StudyProductAntigenTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("Sequence"));
     }
 
-    public StudyProductAntigenTable(Domain domain, DbSchema dbSchema, UserSchema schema, @Nullable ContainerFilter containerFilter)
+    public StudyProductAntigenTable(Domain domain, UserSchema schema, @Nullable ContainerFilter containerFilter)
     {
-        super(domain, dbSchema, schema, containerFilter);
+        super(domain, schema, containerFilter);
 
         setName(StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
         setDescription("Contains one row per study product antigen");

@@ -649,7 +649,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (null == d.getStorageTableName())
                 _domain = null;
 
-            TableInfo ti = StorageProvisioner.createTableInfo(d, StudySchema.getInstance().getSchema(), null, true, RUNNABLE);
+            TableInfo ti = StorageProvisioner.createTableInfo(d, RUNNABLE);
 
             t.commit();
             return ti;

@@ -51,9 +51,9 @@ public class StudyTreatmentTable extends DefaultStudyDesignTable
         defaultVisibleColumns.add(FieldKey.fromParts("DescriptionRendererType"));
     }
 
-    public StudyTreatmentTable(Domain domain, DbSchema dbSchema, UserSchema schema, @Nullable ContainerFilter filter)
+    public StudyTreatmentTable(Domain domain, UserSchema schema, @Nullable ContainerFilter filter)
     {
-        super(domain, dbSchema, schema, filter);
+        super(domain, schema, filter);
 
         setName(StudyQuerySchema.TREATMENT_TABLE_NAME);
         setDescription("Contains one row per study treatment");

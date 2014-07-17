@@ -19,7 +19,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.TableInfo;
@@ -56,11 +55,6 @@ public class SpecimenTablesProvider
         _container = container;
         _user = user;
         _template = template;
-    }
-
-    public static DbSchema getDbSchema()
-    {
-        return DbSchema.get(SCHEMA_NAME, DbSchemaType.Provisioned);
     }
 
     @Nullable
@@ -202,8 +196,7 @@ public class SpecimenTablesProvider
     @NotNull
     private TableInfo createTableInfo(@NotNull Domain domain)
     {
-        DomainKind domainKind = domain.getDomainKind();
-        return StorageProvisioner.createTableInfo(domain, getDbSchema(), domainKind.getKindName(), true, RUNNABLE);
+        return StorageProvisioner.createTableInfo(domain, RUNNABLE);
     }
 
     // TODO: Move this code to the DomainKind?
