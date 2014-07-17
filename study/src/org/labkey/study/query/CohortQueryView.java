@@ -133,18 +133,20 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Integer rowId = (Integer)rowIdColumn.getValue(ctx);
-            boolean inUse = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), rowId.intValue()).isInUse();
-
-            if (!inUse)
+            CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), rowId);
+            if (cohort != null)
             {
-                ActionURL actionURL = new ActionURL(CohortController.DeleteCohortAction.class, container);
-                actionURL.addParameter("rowId", rowId.toString());
+                if (!cohort.isInUse())
+                {
+                    ActionURL actionURL = new ActionURL(CohortController.DeleteCohortAction.class, container);
+                    actionURL.addParameter("rowId", rowId.toString());
 
-                out.write(PageFlowUtil.textLink("delete", actionURL.getLocalURIString()));
-            }
-            else
-            {
-                out.write("in use");
+                    out.write(PageFlowUtil.textLink("delete", actionURL.getLocalURIString()));
+                }
+                else
+                {
+                    out.write("in use");
+                }
             }
         }
     }
