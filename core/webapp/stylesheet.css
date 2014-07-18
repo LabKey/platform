@@ -3729,7 +3729,7 @@ input[type="checkbox"], input[type="radio"] {
     box-shadow: 0 -2px 2px #ddd;
 }
 
-.labkey-app-bar ul li.labkey-no-tab-menu {
+.labkey-app-bar ul li.tab-nav-no-menu {
     padding:  8px;
 }
 
