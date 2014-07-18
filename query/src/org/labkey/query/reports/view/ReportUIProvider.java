@@ -41,6 +41,8 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
@@ -131,8 +133,15 @@ public class ReportUIProvider extends DefaultReportUIProvider
         if (returnUrl == null)
             returnUrl = context.getActionURL();
         chartBean.setRedirectUrl(returnUrl.getLocalURIString());
-        designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", "XY and Time Charts",
-                ReportUtil.getChartDesignerURL(context, chartBean), _getIconPath(ChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION));
+
+        Study study = StudyService.get().getStudy(context.getContainer());
+
+        if (study == null)
+        {
+            // Study registers its own 'Chart View'
+            designers.add(new DesignerInfoImpl(ChartQueryReport.TYPE, "Chart View", "XY and Time Charts",
+                    ReportUtil.getChartDesignerURL(context, chartBean), _getIconPath(ChartQueryReport.TYPE), ReportService.DesignerType.VISUALIZATION));
+        }
 
         boolean canCreateScript = ReportUtil.canCreateScript(context);
 
