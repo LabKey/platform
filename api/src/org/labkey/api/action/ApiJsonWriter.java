@@ -69,6 +69,11 @@ public class ApiJsonWriter extends ApiResponseWriter
         {
             jg.useDefaultPrettyPrinter();
         }
+        initGenerator();
+    }
+
+    private void initGenerator()
+    {
         jg.setCodec(new ObjectMapper());  // makes the generator annotation aware
         // Don't flush the underlying Writer (thus committing the response) on all calls to write JSON content. See issue 19924
         jg.disable(JsonGenerator.Feature.FLUSH_PASSED_TO_STREAM);
@@ -205,5 +210,15 @@ public class ApiJsonWriter extends ApiResponseWriter
     public void writeListEntry(Object entry) throws IOException
     {
         writeObject(entry);
+    }
+
+    @Override
+    protected void resetOutput() throws IOException
+    {
+        super.resetOutput();
+        // Brute force destroy the generator we have and get a new one. There's probably a less drastic way to reset
+        // the generator outputContext, but I can't find one.
+        jg = new JsonFactory().createGenerator(getWriter());
+        initGenerator();
     }
 }

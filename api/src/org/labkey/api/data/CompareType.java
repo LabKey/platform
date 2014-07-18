@@ -408,7 +408,40 @@ public enum CompareType
                 throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
             }
         },
+    IN_NS("Equals One Of A Member Of A Named Set", "inns", "IN", true, null, OperatorType.IN)
+            {
+                // Each compare type uses CompareClause by default
+                FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+                {
+                    String namedSet = null;
+                    if (value != null && StringUtils.isNotBlank(value.toString()))
+                        namedSet = value.toString();
+                    return new SimpleFilter.InClause(fieldKey, namedSet, true);
+                }
 
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+                }
+            },
+    NOT_IN_NS("Does Not Equal Any Members Of A Named Set", "notinns", "NOT IN", true, null, OperatorType.NOTIN)
+            {
+                // Each compare type uses CompareClause by default
+                FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
+                {
+                    String namedSet = null;
+                    if (value != null && StringUtils.isNotBlank(value.toString()))
+                        namedSet = value.toString();
+                    return new SimpleFilter.InClause(fieldKey, namedSet, true);
+                }
+
+                @Override
+                public boolean meetsCriteria(Object value, Object[] paramVals)
+                {
+                    throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
+                }
+            },
     BETWEEEN("Between", "between", "BETWEEN", true, " BETWEEN ? AND ?", OperatorType.BETWEEN)
         {
             @Override

@@ -23,6 +23,7 @@ import org.labkey.api.query.PropertyValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.ExpectedException;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.NotFoundException;
 import org.springframework.validation.Errors;
@@ -171,19 +172,28 @@ public abstract class ApiResponseWriter
         }
         catch (Exception e)
         {
-            ExceptionUtil.logExceptionToMothership(null, e);
-            Logger.getLogger(ApiResponseWriter.class).warn("ApiResponseWriter exception: ", e);
-
+            if (!(e instanceof ExpectedException))
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+                Logger.getLogger(ApiResponseWriter.class).warn("ApiResponseWriter exception: ", e);
+            }
             //at this point, we can't guarantee a legitimate
             //JSON response, and we need to write the exception
             //back so the client can tell something went wrong
-            if (null != getResponse())
-            {
-                if (!getResponse().isCommitted())
-                    getResponse().reset();
-            }
+            if (null != getResponse() && !getResponse().isCommitted())
+                resetOutput();
+
             write(e);
         }
+    }
+
+    /**
+     * Override this method if the writer subclass tracks the output context independently of the response
+     * stream content.
+     */
+    protected void resetOutput() throws IOException
+    {
+        getResponse().reset();
     }
 
     protected abstract void writeObject(Object object) throws IOException;

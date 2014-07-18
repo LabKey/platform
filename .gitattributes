@@ -968,6 +968,7 @@ api/src/org/labkey/api/query/FieldKey.java -text
 api/src/org/labkey/api/query/FilteredTable.java -text
 api/src/org/labkey/api/query/FolderSchemaProvider.java -text
 api/src/org/labkey/api/query/InvalidKeyException.java -text
+api/src/org/labkey/api/query/InvalidNamedSetException.java -text
 api/src/org/labkey/api/query/JavaScriptExportScriptFactory.java -text
 api/src/org/labkey/api/query/LookupForeignKey.java -text
 api/src/org/labkey/api/query/MetadataException.java -text
@@ -1510,6 +1511,7 @@ api/src/org/labkey/api/util/ErrorRendererProperties.java -text
 api/src/org/labkey/api/util/ErrorView.java -text
 api/src/org/labkey/api/util/ExceptionReportingLevel.java -text
 api/src/org/labkey/api/util/ExceptionUtil.java -text
+api/src/org/labkey/api/util/ExpectedException.java -text
 api/src/org/labkey/api/util/ExtUtil.java -text
 api/src/org/labkey/api/util/FileStream.java -text
 api/src/org/labkey/api/util/FileType.java -text

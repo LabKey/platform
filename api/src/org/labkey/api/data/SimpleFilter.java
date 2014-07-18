@@ -27,6 +27,7 @@ import org.labkey.api.data.CompareType.CompareClause;
 import org.labkey.api.data.dialect.MockSqlDialect;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -578,6 +579,11 @@ public class SimpleFilter implements Filter
 
             _needsTypeConversion = urlClause;
             _negated = negated;
+        }
+
+        public InClause(FieldKey fieldKey, String namedSet, boolean urlClause)
+        {
+            this(fieldKey, QueryService.get().getNamedSet(namedSet), urlClause, false);
         }
 
         @Override
