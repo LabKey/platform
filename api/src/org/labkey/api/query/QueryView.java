@@ -1207,7 +1207,6 @@ public class QueryView extends WebPartView<Object>
 
     public MenuButton createChartButton()
     {
-        URLHelper target = urlChangeView();
         NavTreeMenuButton button = new NavTreeMenuButton("Charts");
 
         if (!getQueryDef().isTemporary() && _report == null)
