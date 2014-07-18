@@ -24,10 +24,10 @@ import org.jetbrains.annotations.Nullable;
 */
 public enum PHI
 {
-    NotPHI,
-    Limited,
-    PHI,
-    Restricted;
+    NotPHI(0),
+    Limited(1),
+    PHI(2),
+    Restricted(3);
 
     public static PHI fromString(@Nullable String value)
     {
@@ -36,5 +36,14 @@ public enum PHI
                 return phi;
 
         return null;
+    }
+
+    private final int rank;
+    private PHI(int rank) {
+        this.rank = rank;
+    }
+
+    public int getRank() {
+        return rank;
     }
 }
