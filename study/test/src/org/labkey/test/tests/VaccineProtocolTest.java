@@ -390,9 +390,9 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         deleteProject(getProjectName(), afterTest);
     }
 
-    public String getAssociatedModuleDirectory()
+    public java.util.List<String> getAssociatedModules()
     {
-        return "server/modules/study";
+        return Arrays.asList("study");
     }
 
     @Override
