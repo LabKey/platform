@@ -111,9 +111,11 @@ public class QueryServiceImpl extends QueryService
     private static final Cache<String, ModuleQueryDef> MODULE_QUERY_DEFS_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query defs cache");
     private static final Cache<String, ModuleCustomViewDef> MODULE_CUSTOM_VIEWS_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module custom view defs cache");
     private static final Cache<String, ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query metadata defs cache");
+    private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
     private static final String QUERYDEF_METADATA_SET_CACHE_ENTRY = "QUERYDEFSMETADATA:";
     private static final String CUSTOMVIEW_SET_CACHE_ENTRY = "CUSTOMVIEW:";
+    private static final String NAMED_SET_CACHE_ENTRY = "NAMEDSETS:";
     private static final Logger _log = Logger.getLogger(QueryServiceImpl.class);
 
     static public QueryServiceImpl get()
@@ -1562,6 +1564,27 @@ public class QueryServiceImpl extends QueryService
         return null;
     }
 
+    @Override
+    public void saveNamedSet(String setName, List<String> setList)
+    {
+        NAMED_SET_CACHE.put(NAMED_SET_CACHE_ENTRY + setName, setList);
+    }
+
+    @Override
+    public void deleteNamedSet(String setName)
+    {
+        NAMED_SET_CACHE.remove(NAMED_SET_CACHE_ENTRY + setName);
+    }
+
+    @Override
+    public List<String> getNamedSet(String setName)
+    {
+        List<String> namedSet = NAMED_SET_CACHE.get(NAMED_SET_CACHE_ENTRY + setName);
+        if (namedSet == null)
+            throw new InvalidNamedSetException("Named set not found in cache: " + setName);
+
+        return Collections.unmodifiableList(namedSet);
+    }
 
     @Override
     public ResultSet select(@NotNull QuerySchema schema, String sql, boolean strictColumnList, boolean cached) throws SQLException

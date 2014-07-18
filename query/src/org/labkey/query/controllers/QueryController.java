@@ -6103,4 +6103,60 @@ public class QueryController extends SpringActionController
             return errors;
         }
     }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class SaveNamedSetAction extends ApiAction<NamedSetForm>
+    {
+
+        @Override
+        public Object execute(NamedSetForm namedSetForm, BindException errors) throws Exception
+        {
+            QueryService.get().saveNamedSet(namedSetForm.getSetName(), namedSetForm.parseSetList());
+            return null;
+        }
+    }
+
+    public static class NamedSetForm
+    {
+        String setName;
+        String setList;
+
+        public String getSetName()
+        {
+            return setName;
+        }
+
+        public void setSetName(String setName)
+        {
+            this.setName = setName;
+        }
+
+        public String getSetList()
+        {
+            return setList;
+        }
+
+        public void setSetList(String memberList)
+        {
+            this.setList = memberList;
+        }
+
+        public List<String> parseSetList() throws IOException
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(setList, ArrayList.class);
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class DeleteNamedSetAction extends ApiAction<NamedSetForm>
+    {
+
+        @Override
+        public Object execute(NamedSetForm namedSetForm, BindException errors) throws Exception
+        {
+            QueryService.get().deleteNamedSet(namedSetForm.getSetName());
+            return null;
+        }
+    }
 }

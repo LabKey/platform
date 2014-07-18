@@ -25,6 +25,7 @@ import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
 import org.olap4j.OlapException;
@@ -432,6 +433,33 @@ public class QubeQuery
                         set.add(m);
                     }
                     e.membersSet = set;
+                }
+                else if (membersObj instanceof JSONObject)
+                {
+                    if (((Map)membersObj).containsKey("namedSet"))
+                    {
+                        // For now we're only expecting a single optional property in the json map, to use a previously
+                        // saved named set substition for the members enumeration.
+                        Object setName = ((Map) membersObj).get("namedSet");
+                        if (setName == null || !(setName instanceof String) || setName.toString().equals(""))
+                        {
+                            errors.reject(SpringActionController.ERROR_MSG, "Could not parse namedSet for members property");
+                            throw errors;
+                        }
+                        List<String> namedSet = QueryService.get().getNamedSet(setName.toString());
+                        TreeSet<Member> set = new TreeSet<>(new CompareMetaDataElement());
+                        for (String nsEntry : namedSet)
+                        {
+                            Member m = _getMember(nsEntry, h, l);
+                            if (null == m)
+                            {
+                                errors.reject(SpringActionController.ERROR_MSG, "Member not found: " + nsEntry);
+                                throw errors;
+                            }
+                            set.add(m);
+                        }
+                        e.membersSet = set;
+                    }
                 }
                 else
                 {
