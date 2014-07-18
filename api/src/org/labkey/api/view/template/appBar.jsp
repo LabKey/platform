@@ -61,7 +61,7 @@
 <div class="labkey-app-bar">
     <div class="labkey-folder-header">
         <div class="labkey-folder-title"><a href="<%=h(bean.getHref())%>"><%=h(folderTitle)%></a></div>
-        <div class="<%=text(isTabEditMode ? "tab-edit-mode-enabled" : "tab-edit-mode-disabled")%>">
+        <div class="button-bar <%=text(isTabEditMode ? "tab-edit-mode-enabled" : "tab-edit-mode-disabled")%>">
             <ul class="tab-nav">
                 <%
                     for (NavTree navTree : tabs)
@@ -78,7 +78,7 @@
                                 classes = classes + " tab-nav-hidden";
 
                             if (!context.hasPermission(getUser(), AdminPermission.class) || navTree.getChildCount() == 0)
-                                classes = classes + " labkey-no-tab-menu";
+                                classes = classes + " tab-nav-no-menu";
                 %>
                         <li class="<%=text(classes)%>">
                             <a href="<%=h(navTree.getHref())%>" id="<%=h(navTree.getText()).replace(" ", "")%>Tab"><%=h(navTree.getText())%></a>

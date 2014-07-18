@@ -606,8 +606,8 @@ LABKEY.Portal = new function()
                     var tabDiv = document.getElementsByClassName(classToSearchFor)[0];
 
                     if (tabDiv) {
-                        // Navigate tot the start URL if the current active tab is also hidden.
-                        if (response.startURL && tabDiv.querySelector('li.labkey-app-bar-tab-active.labkey-app-bar-tab-hidden'))
+                        // Navigate to the start URL if the current active tab is also hidden.
+                        if (response.startURL && tabDiv.querySelector('li.tab-nav-active.tab-nav-hidden'))
                             window.location = response.startURL;
                         else
                             tabDiv.setAttribute('class', tabDiv.getAttribute('class').replace(classToSearchFor, classToReplaceWith));
