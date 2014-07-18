@@ -29,7 +29,19 @@
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        // TODO: --Ext3-- This should be declared as part of the included views
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        return resources;
+    }
+%>
 <%
     JspView<SpecimenController.NewRequestBean> me = (JspView<SpecimenController.NewRequestBean>) HttpView.currentView();
     SpecimenController.NewRequestBean bean = me.getModelBean();
@@ -55,8 +67,8 @@
 </span>
 
 <script type="text/javascript">
-var LastSetValues = new Object();
-var DefaultValues = new Object();
+var LastSetValues = {};
+var DefaultValues = {};
     <%
     for (int i = 0; i < inputs.length; i++)
     {
@@ -65,7 +77,7 @@ var DefaultValues = new Object();
         {
     %>
 LastSetValues['input<%= i %>'] = '';
-DefaultValues['input<%= i %>'] = new Object();
+DefaultValues['input<%= i %>'] = {};
     <%
             Map<Integer, String> defaults = input.getDefaultSiteValues(c);
             for (Map.Entry<Integer,String> entry : defaults.entrySet())
@@ -82,12 +94,14 @@ function setDefaults()
     var locationId = document.getElementById('destinationLocation').value;
     for (var elementId in DefaultValues)
     {
-        var elem = document.getElementById(elementId);
-        var value = DefaultValues[elementId][locationId];
-        if (value && (!elem.value || elem.value == LastSetValues[elementId]))
-        {
-            elem.value = value;
-            LastSetValues[elementId] = elem.value;
+        if (DefaultValues.hasOwnProperty(elementId)) {
+            var elem = document.getElementById(elementId);
+            var value = DefaultValues[elementId][locationId];
+            if (value && (!elem.value || elem.value == LastSetValues[elementId]))
+            {
+                elem.value = value;
+                LastSetValues[elementId] = elem.value;
+            }
         }
     }
     return true;

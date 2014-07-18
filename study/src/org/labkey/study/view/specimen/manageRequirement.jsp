@@ -15,16 +15,27 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.study.Location"%>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
-<%@ page import="org.labkey.study.model.SpecimenRequestRequirement"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
-<%@ page import="java.util.List"%>
+<%@ page import="org.labkey.study.model.SpecimenRequestRequirement"%>
 <%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.study.Location" %>
+<%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        // TODO: --Ext3-- This should be declared as part of the included views
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        return resources;
+    }
+%>
 <%
     JspView<SpecimenController.ManageRequirementBean> me = (JspView<SpecimenController.ManageRequirementBean>) HttpView.currentView();
     SpecimenController.ManageRequirementBean bean = me.getModelBean();

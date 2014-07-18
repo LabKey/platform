@@ -22,14 +22,12 @@
 <script>
     function deleteStudy_onSubmit()
     {
-        var confirmed = Ext.get("deleteStudyConfirm").dom.checked;
+        var confirmed = document.querySelector("#deleteStudyConfirm").checked ? true : false;
         if (!confirmed)
         {
-            Ext.Msg.alert("Info", "Check 'confirm delete' to continue.");
-            return false;
+            alert("Check 'confirm delete' to continue.");
         }
-        Ext.getBody().mask();
-        return true;
+        return confirmed;
     }
 </script>
 <form action="<%=h(buildURL(StudyController.DeleteStudyAction.class))%>" method="post" onsubmit="return deleteStudy_onSubmit();">
