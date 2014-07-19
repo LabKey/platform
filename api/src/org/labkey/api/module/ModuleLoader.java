@@ -137,6 +137,12 @@ public class ModuleLoader implements Filter
     private static final String FOLDER_TYPE_ENABLED_STATE = "FolderTypeEnabledState";
     public static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
 
+    private static final String BANNER = "\n" +
+            "   __\u0366                                  \n" +
+            "   ||  |  _ |_ |/ _     (\u00af _  _   _  _\n" +
+            "  (_\u0366_) |_(_||_)|\\(/_\\/  _)(/_| \\/(/_|  \n" +
+            "                    /                  ";
+
     private boolean _deferUsageReport = false;
     private File _webappDir;
     private UpgradeState _upgradeState;
@@ -297,6 +303,8 @@ public class ModuleLoader implements Filter
     /** Full web-server initialization */
     private void doInit(ServletContext servletCtx) throws Exception
     {
+        _log.info(BANNER);
+
         _servletContext = servletCtx;
 
         verifyTomcatVersion();
