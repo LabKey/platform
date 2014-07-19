@@ -1799,6 +1799,8 @@ api/webapp/clientapi/ext4/data/Proxy.js -text
 api/webapp/clientapi/ext4/data/Reader.js -text
 api/webapp/clientapi/ext4/data/Store.js -text
 api/webapp/clientapi_core.lib.xml -text
+api/webapp/ext-3.4.1/adapter/ext/ext-base-debug.js -text
+api/webapp/ext-3.4.1/adapter/ext/ext-base.js -text
 api/webapp/ext-3.4.1/ext-all-debug.js -text
 api/webapp/ext-3.4.1/ext-all.js -text
 api/webapp/ext-3.4.1/ext-patches.js -text
