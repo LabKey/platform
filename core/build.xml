@@ -34,12 +34,12 @@
         <!-- create a combined Ext.js usable by the core module's server-side scripts -->
         <concat destfile="${core-scripts.out}/Ext.js" force="true">
             <header file="${core-scripts.src}/Ext.header.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs.dirname}/src/ext-core/src/core/Ext.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs.dirname}/src/Ext.js"/>
             <fileset file="${core-scripts.src}/Ext.middle.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs.dirname}/src/ext-core/src/util/Observable.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs.dirname}/src/ext-core/src/util/JSON.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs.dirname}/src/ext-core/src/data/Connection.js"/>
-            <fileset file="${basedir}/api/webapp/${extjs.dirname}/src/util/Format.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs.dirname}/src/Observable.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs.dirname}/src/JSON.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs.dirname}/src/Connection.js"/>
+            <fileset file="${basedir}/api/webapp/${extjs.dirname}/src/Format.js"/>
             <footer file="${core-scripts.src}/Ext.footer.js"/>
         </concat>
 
