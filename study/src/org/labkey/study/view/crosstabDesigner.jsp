@@ -24,7 +24,18 @@
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     JspView<ReportsController.CrosstabDesignBean> me = (JspView<ReportsController.CrosstabDesignBean>) HttpView.currentView();
     ReportsController.CrosstabDesignBean bean = me.getModelBean();
@@ -149,14 +160,14 @@
 <%      }
     } %>
 
-    Ext.onReady(function()
+    Ext4.onReady(function()
     {
         updateSelection();
     });
 
     function updateSelection()
     {
-        var statSel = Ext.get('statSelection').getValue();
+        var statSel = Ext4.get('statSelection').getValue();
         var enabled = false;
 
         if (statSel && statSel in columnTypeMap)
@@ -170,23 +181,25 @@
 
     function setEnabled(id, enabled)
     {
-        var el = Ext.get(id);
-        if (el) {
+        Ext4.onReady(function() {
+            var el = Ext4.get(id);
+            if (el) {
 
-            el.dom.disabled = !enabled;
-            if (!enabled)
-            {
-                el.dom.checked = false;
-                var span = el.next('//span');
-                if (span)
-                    span.addClass('labkey-disabled');
+                el.dom.disabled = !enabled;
+                if (!enabled)
+                {
+                    el.dom.checked = false;
+                    var span = el.next('//span');
+                    if (span)
+                        span.addCls('labkey-disabled');
+                }
+                else
+                {
+                    var span = el.next('//span');
+                    if (span)
+                        span.removeCls('labkey-disabled');
+                }
             }
-            else
-            {
-                var span = el.next('//span');
-                if (span)
-                    span.removeClass('labkey-disabled');
-            }
-        }
+        });
     }
 </script>

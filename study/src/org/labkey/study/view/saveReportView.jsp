@@ -42,7 +42,7 @@
 
     function validateForm()
     {
-        var reportName = Ext.DomQuery.selectNode('#reportName');
+        var reportName = document.querySelector('#reportName');
         if ((!reportName) || (reportName.value.length === 0))
         {
             alert("View name cannot be blank.");

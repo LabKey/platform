@@ -30,6 +30,7 @@
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromFilePath("Ext3"));
+        resources.add(ClientDependency.fromFilePath("study/redesignUtils.js"));
         return resources;
     }
 %>
@@ -49,9 +50,6 @@
     String groupControl1 = "groupControl1-" + time;
     String groupControl2 = "groupControl2-" + time;
 %>
-<script type="text/javascript">
-    LABKEY.requiresScript("study/redesignUtils.js", true);
-</script>
 <script type="text/javascript">
 
     function populateGroupingContent(grouping, hidden)

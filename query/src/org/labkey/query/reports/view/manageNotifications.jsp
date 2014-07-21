@@ -22,7 +22,18 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.query.reports.ReportsController.NotificationsForm" %>
 <%@ page import="org.labkey.api.util.ReturnURLString" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("dataview/ManageNotifications.js"));
+        return resources;
+    }
+%>
 <%
     JspView<NotificationsForm> me = (JspView<NotificationsForm>) HttpView.currentView();
     List<ViewCategoryTreeNode> categories = me.getModelBean().getCategorySubcriptionTree();
@@ -30,7 +41,6 @@
 %>
 
 <script type="text/javascript">
-    LABKEY.requiresScript('/dataview/ManageNotifications.js');
     Ext4.onReady(function()
     {
         var categories = getCategories();
