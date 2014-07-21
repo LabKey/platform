@@ -6119,7 +6119,7 @@ public class QueryController extends SpringActionController
     public static class NamedSetForm
     {
         String setName;
-        String setList;
+        Object setList;
 
         public String getSetName()
         {
@@ -6131,20 +6131,19 @@ public class QueryController extends SpringActionController
             this.setName = setName;
         }
 
-        public String getSetList()
+        public Object getSetList()
         {
             return setList;
         }
 
-        public void setSetList(String memberList)
+        public void setSetList(Object setList)
         {
-            this.setList = memberList;
+            this.setList = setList;
         }
 
         public List<String> parseSetList() throws IOException
         {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(setList, ArrayList.class);
+            return (List<String>)(List<?>) Arrays.asList(setList);
         }
     }
 
