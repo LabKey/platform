@@ -8,4 +8,7 @@
 
         <script path="ext-3.4.1/ext-patches.js" mode="both"/>
     </library>
+    <!--<dependencies>-->
+        <!--<dependency path="ext-3.4.1/resources/css/ext-all.css" />-->
+    <!--</dependencies>-->
 </libraries>

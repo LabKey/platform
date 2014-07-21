@@ -328,8 +328,12 @@ if (typeof LABKEY == "undefined")
                 href: fullPath
             });
 
-            _requestedCssFiles[fullPath] = 1;
+            _requestedCssFiles[fullPath] = true;
         };
+
+//        var alreadyPresentCSS = function(href) {
+//            return document.querySelectorAll('link[rel="stylesheet"][href="' + href + '"]').length > 0;
+//        };
 
         var requestedCssFiles = function()
         {
