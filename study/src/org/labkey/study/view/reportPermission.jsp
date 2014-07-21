@@ -32,7 +32,18 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     JspView<Report> me = (JspView<Report>) HttpView.currentView();
     Report bean = me.getModelBean();
@@ -91,7 +102,7 @@
         buttonDiv.style.display = useCustom ? "inline" : "none";
     }
 
-    Ext.onReady(updateDisplay);
+    Ext4.onReady(updateDisplay);
 
 </script>
 

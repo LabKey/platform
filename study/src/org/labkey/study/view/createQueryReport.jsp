@@ -28,8 +28,18 @@
 <%@ page import="org.labkey.study.query.DataSetQueryView" %>
 <%@ page import="org.labkey.study.reports.StudyQueryReport" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
 
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     JspView<ReportsController.CreateQueryReportBean> me = (JspView<org.labkey.study.controllers.reports.ReportsController.CreateQueryReportBean>) HttpView.currentView();
     ReportsController.CreateQueryReportBean bean = me.getModelBean();
@@ -41,8 +51,8 @@
     function verifyLabel()
     {
 
-        var labelElem = Ext.DomQuery.selectNode('#label');
-        var viewName = Ext.DomQuery.selectNode('#viewName');
+        var labelElem = Ext4.DomQuery.selectNode('#label');
+        var viewName = Ext4.DomQuery.selectNode('#viewName');
         var labelValue = '';
 
         if (labelElem.value)
@@ -59,7 +69,7 @@
 
     function onUpdateDataset()
     {
-        var selection = Ext.DomQuery.selectNode('#datasetSelection')
+        var selection = Ext4.DomQuery.selectNode('#datasetSelection');
         var value = selection.value;
         if (value)
         {
@@ -84,7 +94,7 @@
         }
     }
 
-    Ext.onReady(onUpdateDataset);
+    Ext4.onReady(onUpdateDataset);
 
 </script>
 
