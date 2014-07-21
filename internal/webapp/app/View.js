@@ -286,6 +286,12 @@ Ext.define('LABKEY.app.controller.View', {
 
         this.activeView = view;
 
+        this.activeContext = {
+            controller: controller,
+            view: view
+            // Add viewContext later???
+        };
+
         this.fireEvent('afterchangeview', controller, view, viewContext);
     },
 
