@@ -130,7 +130,6 @@ import java.util.Set;
 
             column.setParentIsObjectId(true);
             column.setReadOnly(false);
-            column.setScale(property.getScale()); // UNDONE: PropertyDescriptor does not have getScale() so have to set here, move to PropertyColumn
             safeAddColumn(column);
             defaultColumnsCandidates.add(column);
 

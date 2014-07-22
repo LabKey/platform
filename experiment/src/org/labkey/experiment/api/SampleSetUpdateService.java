@@ -32,6 +32,7 @@ import org.labkey.api.query.DuplicateKeyException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.MapLoader;
 import org.labkey.api.security.User;
@@ -220,6 +221,10 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         {
             errors.addRowError(vex);
         }
+        catch (RuntimeValidationException vex)
+        {
+            errors.addRowError(vex.getValidationException());
+        }
         return null;
     }
 
@@ -240,6 +245,10 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
         catch (ValidationException vex)
         {
             throw new BatchValidationException(Arrays.asList(vex), extraScriptContext);
+        }
+        catch (RuntimeValidationException vex)
+        {
+            throw new BatchValidationException(Arrays.asList(vex.getValidationException()), extraScriptContext);
         }
     }
 

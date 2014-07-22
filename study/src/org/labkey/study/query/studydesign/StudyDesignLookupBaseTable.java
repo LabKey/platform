@@ -144,17 +144,6 @@ public class StudyDesignLookupBaseTable extends BaseStudyTable
         private void validateValues(Map<String, Object> row) throws ValidationException
         {
             // TODO: add validation that the same key value doesn't already exist at the project level
-
-            // Issue 18313
-            for (ColumnInfo col : getRealTable().getColumns())
-            {
-                if (col != null && row.get(col.getName()) != null && col.getJdbcType() == JdbcType.VARCHAR && col.getScale() > 0)
-                {
-                    String value = row.get(col.getName()).toString();
-                    if (value != null && value.length() > col.getScale())
-                        throw new ValidationException("Value is too long for field " + col.getLabel() + ", a maximum length of " + col.getScale() + " is allowed.");
-                }
-            }
         }
     }
 

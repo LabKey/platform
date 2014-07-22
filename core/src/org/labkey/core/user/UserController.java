@@ -40,13 +40,13 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DataRegionSelection;
-import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UrlColumn;
+import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
@@ -60,6 +60,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.UserSchemaAction;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.GroupManager;
@@ -869,11 +870,13 @@ public class UserController extends SpringActionController
                     if (entry.getValue() != null)
                     {
                         ColumnInfo col = table.getColumn(FieldKey.fromParts(entry.getKey()));
-                        if (col != null && col.getJdbcType() == JdbcType.VARCHAR && col.getScale() > 0)
+                        try
                         {
-                            String value = entry.getValue().toString();
-                            if (value != null && value.length() > col.getScale())
-                                errors.reject(ERROR_MSG, "Value is too long for field " + col.getLabel() + ", a maximum length of " + col.getScale() + " is allowed.");
+                            ColumnValidators.validate(col, null, 1, entry.getValue());
+                        }
+                        catch (ValidationException e)
+                        {
+                            errors.reject(ERROR_MSG, e.getMessage());
                         }
                     }
                 }

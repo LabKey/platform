@@ -390,6 +390,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
+    // TODO: Consolidate with ColumnValidator and OntologyManager.validateProperty()
     private boolean validateProperty(DomainProperty prop, Object value, Map<String, Object> newRow, List<ValidationError> errors, ValidatorContext validatorCache)
     {
         //check for isRequired
