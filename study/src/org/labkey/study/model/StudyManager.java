@@ -4916,7 +4916,8 @@ public class StudyManager
             else
             {
                 for(String expectedError : expectedErrors)
-                    assertTrue(errors.get(0).contains(expectedError));
+                    assertTrue("Expected to find '" + expectedError + "' in error message: " + errors.get(0),
+                            errors.get(0).contains(expectedError));
             }
 
         }
