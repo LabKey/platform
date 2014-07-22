@@ -966,6 +966,7 @@ public class StudyController extends BaseStudyController
             String status = (String)ReportPropsManager.get().getPropertyValue(def.getEntityId(), getContainer(), "status");
             if (status != null)
             {
+                // inject the dataset status marker class, but it is up to the client to style the page accordingly
                 HtmlView scriptLock = new HtmlView("<script type=\"text/javascript\">Ext.onReady(function(){" +
                         "var dom = Ext.DomQuery.selectNode('table[class=labkey-proj]');" +
                         "if (dom) {" +
