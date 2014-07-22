@@ -17,9 +17,9 @@ public class DuplicateSingleKeyValidator extends AbstractColumnValidator
 
     Set _keys = null;
 
-    public DuplicateSingleKeyValidator(String columnLabel, JdbcType jdbcType, boolean caseInsensitive)
+    public DuplicateSingleKeyValidator(String columnName, JdbcType jdbcType, boolean caseInsensitive)
     {
-        super(columnLabel);
+        super(columnName);
         this._jdbcType = jdbcType;
         this.caseInsensitive = caseInsensitive;
     }
@@ -36,6 +36,6 @@ public class DuplicateSingleKeyValidator extends AbstractColumnValidator
         }
         if (_keys.size() > 10000 || _keys.add(key))
             return null;
-        return "Row " + rowNum + ": " + "The key field \"" + _columnLabel + "\" cannot have duplicate values.  The duplicate is: \"" + key + "\"";
+        return "Row " + rowNum + ": " + "The key field \"" + _columnName + "\" cannot have duplicate values.  The duplicate is: \"" + key + "\"";
     }
 }

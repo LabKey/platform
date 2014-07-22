@@ -11,9 +11,9 @@ public class RequiredValidator extends AbstractColumnValidator implements Unders
 {
     final boolean allowMV;
 
-    public RequiredValidator(String columnLabel, boolean allowMissingValueIndicators)
+    public RequiredValidator(String columnName, boolean allowMissingValueIndicators)
     {
-        super(columnLabel);
+        super(columnName);
         allowMV = allowMissingValueIndicators;
     }
 
@@ -38,6 +38,6 @@ public class RequiredValidator extends AbstractColumnValidator implements Unders
 
         // DatasetDefinition.importDatasetData:: errors.add("Row " + rowNumber + " does not contain required field " + col.getName() + ".");
         // OntologyManager.insertTabDelimited::  throw new ValidationException("Missing value for required property " + col.getName());
-        return "Missing value for required property: " + _columnLabel;
+        return "Missing value for required property: " + _columnName;
     }
 }

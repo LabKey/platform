@@ -7,9 +7,9 @@ public class LengthValidator extends AbstractColumnValidator
 {
     private final int scale;
 
-    public LengthValidator(String columnLabel, int scale)
+    public LengthValidator(String columnName, int scale)
     {
-        super(columnLabel);
+        super(columnName);
         this.scale = scale;
     }
 
@@ -20,7 +20,7 @@ public class LengthValidator extends AbstractColumnValidator
         {
             String s = (String)value;
             if (s.length() > scale)
-                return "Value is too long for column '" + _columnLabel + "', a maximum length of " + scale + " is allowed.";
+                return "Value is too long for column '" + _columnName + "', a maximum length of " + scale + " is allowed.";
         }
 
         return null;

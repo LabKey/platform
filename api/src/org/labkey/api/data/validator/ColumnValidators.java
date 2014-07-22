@@ -71,7 +71,7 @@ public class ColumnValidators
 
         if ((notnull || required) && (col == null || !col.isAutoIncrement()))
         {
-            String label = col != null ? col.getLabel() : dp.getLabel();
+            String label = col != null ? col.getName() : dp.getName();
             return new RequiredValidator(label, !notnull && supportsMV);
         }
 
@@ -86,7 +86,7 @@ public class ColumnValidators
 
         JdbcType jdbcType = col.getJdbcType();
         if (jdbcType.isText() && jdbcType != JdbcType.GUID && col.getScale() > 0)
-            return new LengthValidator(col.getLabel(), col.getScale());
+            return new LengthValidator(col.getName(), col.getScale());
 
         return null;
     }
@@ -101,7 +101,7 @@ public class ColumnValidators
         List<PropertyValidator> ret = new ArrayList<>(validators.size());
         for (IPropertyValidator pv : validators)
         {
-            ret.add(new PropertyValidator(dp.getLabel(), dp.getPropertyDescriptor(), pv));
+            ret.add(new PropertyValidator(dp.getName(), dp.getPropertyDescriptor(), pv));
         }
 
         return ret;
@@ -113,7 +113,7 @@ public class ColumnValidators
         if (col == null || !col.getJdbcType().isDateOrTime())
             return null;
 
-        return new DateValidator(col.getLabel());
+        return new DateValidator(col.getName());
     }
 
     @Nullable
@@ -122,7 +122,7 @@ public class ColumnValidators
         if (col == null)
             return null;
 
-        String label = col.getLabel();
+        String label = col.getName();
         JdbcType jdbcType = col.getJdbcType();
         return new DuplicateSingleKeyValidator(label, jdbcType, caseSensitive);
     }

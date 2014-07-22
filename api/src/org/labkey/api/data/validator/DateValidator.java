@@ -13,9 +13,9 @@ public class DateValidator extends AbstractColumnValidator
     static long minTimestamp =  DateUtil.parseISODateTime("1753-01-01");
     static long maxTimestamp = DateUtil.parseISODateTime("9999-12-31") + TimeUnit.DAYS.toMillis(1);
 
-    public DateValidator(String columnLabel)
+    public DateValidator(String columnName)
     {
-        super(columnLabel);
+        super(columnName);
     }
 
     @Override
