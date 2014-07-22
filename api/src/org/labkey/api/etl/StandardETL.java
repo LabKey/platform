@@ -23,6 +23,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
+import org.labkey.api.data.validator.ColumnValidator;
+import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -232,23 +234,8 @@ public class StandardETL implements DataIteratorBuilder
             else
                 indexConvert = convert.addConvertColumn(pair.target.getName(), pair.indexFrom, pair.indexMv, pair.dp.getPropertyDescriptor(), pair.dp.getPropertyDescriptor().getPropertyType());
 
-            boolean notnull = null != pair.target && !pair.target.isNullable();
-            boolean required = null != pair.dp && pair.dp.isRequired() || null != pair.target && pair.target.isRequired();
-            if ((notnull || required) && !pair.target.isAutoIncrement())
-            {
-                validate.addRequired(indexConvert, !notnull && supportsMV);
-            }
-
-            // UNDONE: Issue 17998: add better max length validation everywhere (need to fixup tests for new behavior)
-            //validate.addLengthValidator(indexConvert, pair.target);
-
-            if (null != pair.dp)
-                validate.addPropertyValidator(indexConvert, pair.dp);
-
-            if (null != pair.target && pair.target.getJdbcType().isDateOrTime())
-            {
-                validate.addDateValidator(indexConvert);
-            }
+            List<ColumnValidator> validators = ColumnValidators.create(pair.target, pair.dp);
+            validate.addValidators(indexConvert, validators);
         }
 
         DataIterator last = validate.hasValidators() ? validate : convert;

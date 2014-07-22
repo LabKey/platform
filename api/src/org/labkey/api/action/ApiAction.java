@@ -26,6 +26,7 @@ import org.json.JSONObject;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
@@ -169,6 +170,11 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         {
             // Catch separately to be sure that we call the subclass-specific write() method
             createResponseWriter().write(e);
+        }
+        catch (RuntimeValidationException e)
+        {
+            // Catch separately to be sure that we call the subclass-specific write() method
+            createResponseWriter().write(e.getValidationException());
         }
         catch (QueryException | IllegalArgumentException |
                 NotFoundException | InvalidKeyException | ApiUsageException e)

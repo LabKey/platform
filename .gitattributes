@@ -429,6 +429,16 @@ api/src/org/labkey/api/data/statistics/DoublePoint.java -text
 api/src/org/labkey/api/data/statistics/FitFailedException.java -text
 api/src/org/labkey/api/data/statistics/MathStat.java -text
 api/src/org/labkey/api/data/statistics/StatsService.java -text
+api/src/org/labkey/api/data/validator/AbstractColumnValidator.java -text
+api/src/org/labkey/api/data/validator/ColumnValidator.java -text
+api/src/org/labkey/api/data/validator/ColumnValidators.java -text
+api/src/org/labkey/api/data/validator/DateValidator.java -text
+api/src/org/labkey/api/data/validator/DuplicateSingleKeyValidator.java -text
+api/src/org/labkey/api/data/validator/LengthValidator.java -text
+api/src/org/labkey/api/data/validator/PropertyValidator.java -text
+api/src/org/labkey/api/data/validator/RequiredValidator.java -text
+api/src/org/labkey/api/data/validator/RowValidator.java -text
+api/src/org/labkey/api/data/validator/UnderstandsMissingValues.java -text
 api/src/org/labkey/api/data/views/DataViewInfo.java -text
 api/src/org/labkey/api/data/views/DataViewProvider.java -text
 api/src/org/labkey/api/data/views/DataViewService.java -text
@@ -1013,6 +1023,7 @@ api/src/org/labkey/api/query/RExportScriptModel.java -text
 api/src/org/labkey/api/query/ReportDataRegion.java -text
 api/src/org/labkey/api/query/RowIdForeignKey.java -text
 api/src/org/labkey/api/query/RowIdQueryUpdateService.java -text
+api/src/org/labkey/api/query/RuntimeValidationException.java -text
 api/src/org/labkey/api/query/SchemaKey.java -text
 api/src/org/labkey/api/query/SchemaTreeNode.java -text
 api/src/org/labkey/api/query/SchemaTreeVisitor.java -text

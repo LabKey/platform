@@ -697,6 +697,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         return errors;
     }
 
+    // TODO: Consolidate with OntologyManager.validateProperty and ColumnValidator
     private static void validateProperty(String value, String label, Boolean required, Class type, List<ValidationError> errors)
     {
         boolean missing = (value == null || value.length() == 0);

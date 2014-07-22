@@ -56,13 +56,7 @@ public abstract class ColumnMetaDataReader
 
     public int getScale() throws SQLException
     {
-        // TODO: Use type int instead?
-        String typeName = getSqlTypeName();
-
-        if (typeName.equalsIgnoreCase("ntext") || typeName.equalsIgnoreCase("text"))
-            return 0x7FFF;
-        else
-            return _rsCols.getInt(_scaleKey);
+        return _rsCols.getInt(_scaleKey);
     }
 
     public boolean isNullable() throws SQLException

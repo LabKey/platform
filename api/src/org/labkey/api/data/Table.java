@@ -30,6 +30,8 @@ import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Join;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.validator.ColumnValidator;
+import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.etl.AbstractDataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
@@ -42,6 +44,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
@@ -789,13 +792,15 @@ public class Table
                 valueSQL.append("NULL");
             else
             {
-                // Check if the value is too long for a VARCHAR column, and provide a better error message than the database does
-                // Can't do this right now because various modules override the <scale> in their XML metadata so that
-                // it doesn't match the actual column length in the database
-//                if (column.getJdbcType() == JdbcType.VARCHAR && column.getScale() > 0 && value.toString().length() > column.getScale())
-//                {
-//                    throw new SQLException("The column '" + column.getName() + "' has a maximum length of " + column.getScale() + " but the value '" + value + "' is " + value.toString().length() + " characters long.");
-//                }
+                // Validate the value
+                List<ColumnValidator> validators = ColumnValidators.create(column, null);
+                for (ColumnValidator v : validators)
+                {
+                    String msg = v.validate(1, value);
+                    if (msg != null)
+                        throw new RuntimeValidationException(msg, column.getName()); // CONSIDER: would prefer throwing ValidationException instead, but it's not a RuntimeException
+                }
+
                 valueSQL.append('?');
                 if (value instanceof Parameter.JdbcParameterValue)
                     parameters.add(value);
@@ -965,13 +970,14 @@ public class Table
             }
             else
             {
-                // Check if the value is too long for a VARCHAR column, and provide a better error message than the database does
-                // Can't do this right now because various modules override the <scale> in their XML metadata so that
-                // it doesn't match the actual column length in the database
-//                if (column.getJdbcType() == JdbcType.VARCHAR && column.getScale() > 0 && value.toString().length() > column.getScale())
-//                {
-//                    throw new SQLException("The column '" + column.getName() + "' has a maximum length of " + column.getScale() + " but the value '" + value + "' is " + value.toString().length() + " characters long.");
-//                }
+                // Validate the value
+                List<ColumnValidator> validators = ColumnValidators.create(column, null);
+                for (ColumnValidator v : validators)
+                {
+                    String msg = v.validate(1, value);
+                    if (msg != null)
+                        throw new RuntimeValidationException(msg, column.getName()); // CONSIDER: would prefer throwing ValidationException instead, but it's not a RuntimeException
+                }
 
                 setSQL.append("=?");
                 if (value instanceof Parameter.JdbcParameterValue)

@@ -506,7 +506,7 @@ public class OntologyManager
 		return resultingLsids;
 	}
     
-
+    // TODO: Consolidate with ColumnValidator
     public static boolean validateProperty(List<? extends IPropertyValidator> validators, PropertyDescriptor prop, ObjectProperty objectProperty,
             List<ValidationError> errors, ValidatorContext validatorCache)
     {
@@ -520,14 +520,17 @@ public class OntologyManager
             ret = false;
         }
 
-        // Check if the string is too long. We're currently using VARCHAR(4000) for all ontology manager values
-        int stringLengthLimit = getTinfoObjectProperty().getColumn("StringValue").getScale();
+        // Check if the string is too long. Use either the PropertyDescriptor's scale or VARCHAR(4000) for ontology managed values
+        int stringLengthLimit = prop.getScale() > 0 ? prop.getScale() : getTinfoObjectProperty().getColumn("StringValue").getScale();
         int stringLength = value == null ? 0 : value.toString().length();
-        if (prop.isStringType() && stringLength > stringLengthLimit)
+        if (value != null && prop.isStringType() && stringLength > stringLengthLimit)
         {
-            errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is limited to " + stringLengthLimit + " characters, but the value is " + stringLength + " characters. (The value starts with '" + value.toString().substring(0, 100) + "...')", prop.getName()));
+            String s = stringLength > 100 ? value.toString() : value.toString().substring(0, 100);
+            errors.add(new PropertyValidationError("Field '" + prop.getName() + "' is limited to " + stringLengthLimit + " characters, but the value is " + stringLength + " characters. (The value starts with '" + s + "...')", prop.getName()));
             ret = false;
         }
+
+        // TODO: check date is within postgres date range
 
         // Don't validate null values, #15683
         if (null != value && validators != null)
@@ -1775,10 +1778,16 @@ public class OntologyManager
         PropertyDescriptor pd = getPropertyDescriptor(propertyURI, propContainer);
         if (pd == null)
             return;
+
+        deleteProperty(o, pd);
+    }
+
+    public static void deleteProperty(OntologyObject o, PropertyDescriptor pd)
+    {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ObjectId"), o.getObjectId());
         filter.addCondition(FieldKey.fromParts("PropertyId"), pd.getPropertyId());
         Table.delete(getTinfoObjectProperty(), filter);
-        clearPropertyCache(objectURI);
+        clearPropertyCache(o.getObjectURI());
     }
 
     /** Delete properties owned by the objects. */

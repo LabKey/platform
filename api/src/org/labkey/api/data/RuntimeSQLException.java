@@ -108,6 +108,11 @@ public class RuntimeSQLException extends RuntimeException implements Serializabl
         return isConstraintException(getSQLException());
     }
 
+    public static boolean isConstraintException(RuntimeSQLException x)
+    {
+        return isConstraintException(x.getSQLException());
+    }
+
     public static boolean isConstraintException(SQLException x)
     {
         String sqlState = x.getSQLState();

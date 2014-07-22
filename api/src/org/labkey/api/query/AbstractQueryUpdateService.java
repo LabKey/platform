@@ -350,6 +350,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             {
                 errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i));
             }
+            catch (RuntimeValidationException rvex)
+            {
+                ValidationException vex = rvex.getValidationException();
+                errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i));
+            }
         }
 
         if (hasTableScript)
@@ -479,6 +484,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             {
                 errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i));
             }
+            catch (RuntimeValidationException rvex)
+            {
+                ValidationException vex = rvex.getValidationException();
+                errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), row, i));
+            }
         }
 
         getQueryTable().fireBatchTrigger(container, TableInfo.TriggerType.UPDATE, false, errors, extraScriptContext);
@@ -528,6 +538,11 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
             }
             catch (ValidationException vex)
             {
+                errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), key, i));
+            }
+            catch (RuntimeValidationException rvex)
+            {
+                ValidationException vex = rvex.getValidationException();
                 errors.addRowError(vex.fillIn(getQueryTable().getPublicSchemaName(), getQueryTable().getName(), key, i));
             }
         }

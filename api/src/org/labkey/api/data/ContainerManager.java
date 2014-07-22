@@ -35,6 +35,7 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.ConcurrentHashSet;
 import org.labkey.api.data.Container.ContainerException;
+import org.labkey.api.data.validator.ColumnValidators;
 import org.labkey.api.event.PropertyChange;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.ModuleLoader;
@@ -600,7 +601,10 @@ public class ContainerManager
     }
 
     public static void updateDescription(Container container, String description, User user)
+            throws ValidationException
     {
+        ColumnValidators.validate(CORE.getTableInfoContainers().getColumn("Title"), null, 1, description);
+
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
         StringBuilder sql = new StringBuilder("UPDATE ");
@@ -640,7 +644,10 @@ public class ContainerManager
     }
 
     public static void updateTitle(Container container, String title, User user)
+            throws ValidationException
     {
+        ColumnValidators.validate(CORE.getTableInfoContainers().getColumn("Title"), null, 1, title);
+
         //For some reason there is no primary key defined on core.containers
         //so we can't use Table.update here
         StringBuilder sql = new StringBuilder("UPDATE ");
