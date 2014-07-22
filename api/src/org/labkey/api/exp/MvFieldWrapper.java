@@ -80,6 +80,11 @@ public class MvFieldWrapper
         return getClass().getSimpleName() + ": value=" + value + ", mvIndicator=" + mvIndicator;
     }
 
+    public Object getOriginalValue()
+    {
+        return value != null ? value : mvIndicator;
+    }
+
     public boolean isEmpty()
     {
         return value == null && mvIndicator == null;

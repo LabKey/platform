@@ -17,6 +17,7 @@
 package org.labkey.api.qc;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.util.DateUtil;
@@ -66,6 +67,8 @@ public class TsvDataSerializer implements DataExchangeHandler.DataSerializer
                         {
                             if (Date.class.isAssignableFrom(o.getClass()))
                                 pw.append(DateUtil.formatDateTimeISO8601((Date) o));  // Always ISO? Or should we apply display format?
+                            else if (MvFieldWrapper.class.isAssignableFrom(o.getClass()))
+                                pw.append(String.valueOf(((MvFieldWrapper)o).getOriginalValue()));
                             else if (Collection.class.isAssignableFrom(o.getClass()))
                                 pw.append(StringUtils.join((Collection) o, ","));
                             else if (Object[].class.isAssignableFrom(o.getClass()))
