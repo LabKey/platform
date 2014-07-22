@@ -967,7 +967,7 @@ public class StudyController extends BaseStudyController
             if (status != null)
             {
                 HtmlView scriptLock = new HtmlView("<script type=\"text/javascript\">Ext.onReady(function(){" +
-                        "var dom = Ext.DomQuery.selectNode('td[class=labkey-proj]');" +
+                        "var dom = Ext.DomQuery.selectNode('table[class=labkey-proj]');" +
                         "if (dom) {" +
                             "var el = Ext.Element.fly(dom); " +
                             "if (el) " +
