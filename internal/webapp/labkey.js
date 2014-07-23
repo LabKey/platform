@@ -414,9 +414,11 @@ if (typeof LABKEY == "undefined")
         {
             if (arguments.length < 1) immediate = true;
 
+            var scripts = ['clientapi/ext3.min.js']; // production
+
             if (configs.devMode)
             {
-                var scripts = [
+                scripts = [
                     "clientapi/ext3/DataRegion.js",
                     "clientapi/ext3/EditorGridPanel.js",
                     "clientapi/ext3/ExtendedJsonReader.js",
@@ -433,23 +435,22 @@ if (typeof LABKEY == "undefined")
                     "clientapi/ext3/Store.js",
                     "clientapi/ext3/Utils.js"
                 ];
+            }
 
-                if (!window.Ext)
+            LABKEY.requiresCss('GuidedTip.css');
+            scripts.push('GuidedTip.js');
+
+            if (!window.Ext)
+            {
+                requiresExt3(immediate, function()
                 {
-                    requiresExt3(immediate, function()
-                    {
-                        //load individual scripts so that they get loaded from source tree
-                        requiresScript(scripts, immediate, callback, scope);
-                    });
-                }
-                else
-                {
+                    //load individual scripts so that they get loaded from source tree
                     requiresScript(scripts, immediate, callback, scope);
-                }
+                });
             }
             else
             {
-                requiresScript('clientapi/ext3.min.js', immediate, callback, scope);
+                requiresScript(scripts, immediate, callback, scope);
             }
         };
 
