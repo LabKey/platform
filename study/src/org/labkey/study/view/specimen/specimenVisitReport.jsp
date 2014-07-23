@@ -28,7 +28,18 @@
 <%@ page import="org.labkey.study.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.List" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     JspView<SpecimenVisitReportParameters> me = (JspView<SpecimenVisitReportParameters>) HttpView.currentView();
     SpecimenVisitReportParameters bean = me.getModelBean();
@@ -155,24 +166,24 @@ The request has produced no records.
 %>
     <script type="text/javascript">
         function resizeSpecimenTable(){
-            if(Ext.query('labkey-wp-header')){
-                var listDiv = Ext.get('<%=tableContainerId%>');
+            if(Ext4.query('labkey-wp-header')){
+                var listDiv = Ext4.get('<%=tableContainerId%>');
                 if (!listDiv) return;
                 var rightAreaWidth = 15;
-                try {rightAreaWidth = Ext.fly(Ext.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
+                try {rightAreaWidth = Ext4.fly(Ext4.select(".labkey-side-panel").elements[0]).getWidth();} catch (x){}
                 var padding = 60;
-                var viewWidth = Ext.getBody().getViewSize().width;
+                var viewWidth = Ext4.getBody().getViewSize().width;
                 var right = viewWidth - padding - rightAreaWidth;
                 var x = listDiv.getXY()[0];
                 var width = Math.max(740, (right-x));
                 listDiv.setWidth(width);
             }
         }
-        Ext.onReady(function(){
+        Ext4.onReady(function(){
            resizeSpecimenTable();
         });
 
-        Ext.EventManager.onWindowResize(function(){
+        Ext4.EventManager.onWindowResize(function(){
             resizeSpecimenTable();
         });
     </script>
