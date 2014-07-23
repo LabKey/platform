@@ -9,74 +9,78 @@
     overflow: hidden;
 }
 
-.folder-search
-{
-    height: 1.875em;
-    margin-top: 5px;
-}
-
-.folder-search-input
-{
-    float: right;
-    width: 15em;
-    border-radius: 2px;
-    box-shadow: 0 0 0 black, inset 0px 3px 3px #EEE;
-    height: 20px;
-    border: 1px solid #BFBFBF;
-    padding-left: 5px;
-}
-
 .list-content .title
 {
-    border-bottom: 1px solid #d3d3d3;
     padding-bottom: 0.5em;
     margin-bottom: 0;
+    font-size: 11pt;
+}
+
+.project-list-container
+{
+    min-width: 15em;
+    float: left;
+    overflow: hidden;
 }
 
 .project-list
 {
-    width: 17em;
-    float: left;
-    overflow: hidden;
+    border-right: 1px solid #d3d3d3;
 }
 
 .project-list ul
 {
     list-style: none;
-    padding: 5px 10px 10px 0px;
+    padding: 0;
     margin-top: 0;
 }
 
 .project-list ul li
 {
     list-style: none;
-    width: 11em;
-    height: 15px;
     white-space: nowrap;
     text-overflow: ellipsis;
     display: block;
-    margin-left: 0px;
-    margin-right: 30px;
-    padding: 5px;
+    padding-right: 25px;
+}
+
+.project-list ul li:hover
+{
+    /*background-color: #126495;*/
+    background-image: url('../_images/beta_nav_arrow.png');
+    background-repeat: no-repeat;
+    background-position: 95% 50%;
+}
+
+.project-list ul li:hover a
+{
+    color: #ffffff;
 }
 
 .project-list ul li a
 {
-    padding: 4px;
+    padding: 5px;
+    display: inline-block;
+    width: 100%;
 }
 
-.folder-list
+.folder-list-container
 {
     width: 24em;
     float: right;
     margin-left: 1.5em;
 }
 
-.beta-folder-tree {
+.beta-folder-tree
+{
     max-height: 358px;
     overflow-x: hidden;
     overflow-y: auto;
     -ms-overflow-y: auto;
     -ms-overflow-x: hidden;
     padding: 5px 50px 10px 10px;
+}
+
+.nav-buttons {
+    margin-top: 10px;
 }
