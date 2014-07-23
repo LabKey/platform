@@ -318,7 +318,7 @@ public class QueryProfiler
 
                         int row = 0;
 
-                        for (QueryTracker tracker : set)
+                        for (QueryTracker tracker : set.descendingSet())
                             tracker.renderRow(out, (0 == (++row) % 2) ? "labkey-alternate-row" : "labkey-row", _stackTraceURLFactory);
 
                         out.println("</table>");
@@ -489,7 +489,7 @@ public class QueryProfiler
 
                 QueryTracker.exportRowHeader(_pw);
 
-                for (QueryTracker tracker : export)
+                for (QueryTracker tracker : export.descendingSet())
                     tracker.exportRow(_pw);
             }
         }

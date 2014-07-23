@@ -698,8 +698,10 @@ public class QueryView extends WebPartView<Object>
                 else if (isQueryParam)
                 {
                     // Issue 20779: Error: Query 'Containers,Containers' in schema 'core' doesn't exist
-                    // Only a single value is accepted for query parameters -- overwrite the existing parameter so we don't have duplicate parameters.
-                    target.replaceParameter(newKey, value);
+                    // Issue 21101: Cannot export QueryWebPart views using a custom sql query to Excel file
+                    // Only a single non-empty value is accepted for query parameters -- overwrite the existing parameter so we don't have duplicate parameters.
+                    if (value != null && !value.isEmpty())
+                        target.replaceParameter(newKey, value);
                 }
                 else
                 {
@@ -2093,6 +2095,7 @@ public class QueryView extends WebPartView<Object>
             getSettings().setMaxRows(docType.getMaxRows());
         }
         getSettings().setOffset(Table.NO_OFFSET);
+        rgn.prepareDisplayColumns(view.getViewContext().getContainer()); // Prep the display columns to translate generic date/time formats, see #21094
         rgn.setAllowAsync(false);
         RenderContext rc = view.getRenderContext();
         // Cache resultset only for SAS/SHARE data sources. See #12966 (which removed caching) and #13638 (which added it back for SAS)

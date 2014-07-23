@@ -188,10 +188,10 @@ public class ApiJsonWriter extends ApiResponseWriter
         {
             jg.writeObject(value);
         }
-        if (devMode)
-        {
-            jg.flush();
-        }
+
+        // 21112: Malformed JSON response in production environments
+        // TODO: This is not the recommended pattern as this causes an unnecessary amount of flushing (performance)
+        jg.flush();
     }
 
     @Override

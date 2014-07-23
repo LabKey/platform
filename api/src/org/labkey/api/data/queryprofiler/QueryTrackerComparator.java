@@ -32,13 +32,13 @@ abstract class QueryTrackerComparator implements Comparator<QueryTracker>
     public int compare(QueryTracker qt1, QueryTracker qt2)
     {
         // Can use simple subtraction here since we won't have MAX_VALUE, MIN_VALUE, etc.
-        int ret = Long.signum(getPrimaryStatisticValue(qt2) - getPrimaryStatisticValue(qt1));
+        int ret = Long.signum(getPrimaryStatisticValue(qt1) - getPrimaryStatisticValue(qt2));
 
         if (0 == ret)
-            ret = Long.signum(getSecondaryStatisticValue(qt2) - getSecondaryStatisticValue(qt1));
+            ret = Long.signum(getSecondaryStatisticValue(qt1) - getSecondaryStatisticValue(qt2));
 
         if (0 == ret)
-            ret = qt2.getSql().compareTo(qt1.getSql());
+            ret = qt1.getSql().compareTo(qt2.getSql());
 
         return ret;
     }
