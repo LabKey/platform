@@ -585,11 +585,29 @@ Ext4.define('File.panel.Upload', {
                     name : name,
                     success : function(f, action, message) {
 
-                        var txt = (action.response.responseText || "").trim();
-                        if (txt)
+                        // File upload success response is same as PROPFIND, error response is JSON.
+
+                        // Issue 21100: IE8 responseText is the XML PROPFIND response
+                        // ExtJS creates a fake response object for file upload forms in iframes so we can't check for a 'Content-Type' header before parsing as JSON.
+                        // See: http://docs.sencha.com/extjs/4.2.1/#!/api/Ext.data.Connection-method-onUploadComplete
+                        // Unfortunately in IE8, the responseText string is the PROPFIND xml instead of empty string as in other browsers.
+                        // We can remove this block that checks for success after we drop support for IE8
+                        var success = false;
+                        if (action.response.responseXML && form.errorReader)
                         {
-                            var response = Ext4.JSON.decode(action.response.responseText);
-                            if (!response.success)
+                            var records = form.errorReader.read(action.response.responseXML);
+                            if (records && records.count > 0)
+                            {
+                                // If we parsed the PROPFIND xml response, the file was uploaded successfully
+                                success = true;
+                            }
+                        }
+
+                        var txt = (action.response.responseText || "").trim();
+                        if (!success && txt)
+                        {
+                            var response = Ext4.JSON.decode(txt);
+                            if (response && !response.success)
                             {
                                 if (response.status == 208)
                                 {

@@ -85,7 +85,9 @@ public class VialDomainKind extends AbstractSpecimenDomainKind
             new PropertyStorageSpec.Index(false, SPECIMENHASH),
             new PropertyStorageSpec.Index(false, CURRENTLOCATION),
             new PropertyStorageSpec.Index(true, GLOBALUNIQUEID),
-            new PropertyStorageSpec.Index(false, SPECIMENID)
+            new PropertyStorageSpec.Index(false, SPECIMENID),
+            new PropertyStorageSpec.Index(false, SPECIMENID, PROCESSINGLOCATION),
+            new PropertyStorageSpec.Index(false, SPECIMENID, FIRSTPROCESSEDBYINITIALS)
         };
         BASE_INDICES = new HashSet<>(Arrays.asList(indices));
 

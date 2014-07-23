@@ -1582,8 +1582,8 @@ public class SpecimenImporter
         int offset = 0;
         TableSelector vialSelector = new TableSelector(getTableInfoVial()).setMaxRows(CURRENT_SITE_UPDATE_SIZE);
 
-        if (!merge)
-            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
+//        if (!merge)
+//            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
 
         do
         {
@@ -1761,8 +1761,8 @@ public class SpecimenImporter
         }
         while (!vials.isEmpty());
 
-        if (!merge)
-            new SpecimenTablesProvider(getContainer(), getUser(), null).addTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
+//        if (!merge)
+//            new SpecimenTablesProvider(getContainer(), getUser(), null).addTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
 
         // finally, after all other data has been updated, we can update our cached specimen counts and processing locations:
         _iTimer.setPhase(ImportPhases.UpdateSpecimenProcessingInfo);

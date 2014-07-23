@@ -127,6 +127,7 @@ public class ReportAndDatasetChangeDigestEmailTemplate extends EmailTemplate
                 // TODO: Better yet, fix all the getRunReportURL implementations to take Container, @Nullable ActionURL instead of ViewContext
                 ViewContext context = new ViewContext();
                 context.setActionURL(new ActionURL());
+                context.setContainer(c);
                 ActionURL url = "Dataset".equalsIgnoreCase(notificationInfo.getType()) ?
                         PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(c, notificationInfo.getRowId()) :
                            notificationInfo.getReport().getRunReportURL(context);

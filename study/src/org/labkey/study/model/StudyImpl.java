@@ -16,6 +16,7 @@
 
 package org.labkey.study.model;
 
+import gwt.client.org.labkey.study.designer.client.model.GWTStudyDefinition;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -66,6 +67,8 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.study.DataspaceStudyFolderType;
 import org.labkey.study.SpecimenManager;
 import org.labkey.study.controllers.StudyController;
+import org.labkey.study.designer.StudyDesignInfo;
+import org.labkey.study.designer.StudyDesignManager;
 import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.specimen.settings.RepositorySettings;
 
@@ -275,6 +278,25 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     public List<CohortImpl> getCohorts(User user)
     {
         return StudyManager.getInstance().getCohorts(getContainer(), user);
+    }
+
+    @Override
+    public boolean hasGWTStudyDesign(Container c, User user)
+    {
+        StudyDesignManager manager = StudyDesignManager.get();
+        StudyDesignInfo info = manager.getDesignForStudy(this);
+        if (info != null)
+        {
+            // consider the XML study design non-empty if we have an immunogen, adjuvant, immunization timepoint, etc.
+            GWTStudyDefinition def = manager.getGWTStudyDefinition(user, c, info);
+            return def != null && (
+                    def.getImmunogens().size() > 0 || def.getAdjuvants().size() > 0 ||
+                    def.getImmunizationSchedule().getTimepoints().size() > 0 ||
+                    def.getAssaySchedule().getAssays().size() > 0 || def.getAssaySchedule().getTimepoints().size() > 0
+                );
+        }
+
+        return false;
     }
 
     @Override
