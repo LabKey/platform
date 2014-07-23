@@ -717,3 +717,8 @@ div.headermenu {
     white-space: nowrap;
     background-color: #<%= webpart %>;
 }
+
+/* See betanav.css for the rest of the styles. */
+.project-list ul li:hover {
+    background-color: #<%= link %>;
+}

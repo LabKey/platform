@@ -18,8 +18,18 @@
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     Collection<AdminConsole.ExperimentalFeatureFlag> flags = AdminConsole.getExperimentalFeatureFlags();
 %>
@@ -69,7 +79,7 @@
         // toggle the enabled state of the feature
         var enabled = el.firstChild.textContent == "Enable";
 
-        Ext.Ajax.request({
+        Ext4.Ajax.request({
             method: 'POST',
             url: LABKEY.ActionURL.buildURL("admin", "experimentalFeature.api"),
             params: { feature: flag, enabled: enabled },

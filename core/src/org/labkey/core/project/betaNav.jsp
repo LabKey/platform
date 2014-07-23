@@ -43,27 +43,23 @@
     ActionURL createProjectURL = new ActionURL(AdminController.CreateFolderAction.class, ContainerManager.getRoot());
 
     NavTree projects = ContainerManager.getProjectList(getViewContext());
-    Container currentProject = getContainer().getProject();
-
-    String projectName = null;
-    if (null != currentProject)
-        projectName = currentProject.getName();
 %>
 <div class="beta-nav">
-    <div class="folder-search">
-        <input placeholder="Search Folders" type="text" class="folder-search-input">
-    </div>
     <div class="list-content">
 
-        <div class="project-list">
+        <div class="project-list-container iScroll">
             <p class="title">Projects</p>
-            <div style="max-height: 375px; overflow-x: hidden;">
+            <div class="project-list" style="max-height: 375px; overflow-x: hidden;">
                 <ul>
                 <%
                     for (NavTree p : projects.getChildren())
                     {
+                        String projectTitle = p.getText();
+                        if (projectTitle.length() > 36) {
+                            projectTitle = projectTitle.substring(0, 31) + "...";
+                        }
                 %>
-                    <li><a title="<%=h(p.getText())%>" href="<%=h(p.getHref())%>" onclick="requestProject(<%=PageFlowUtil.jsString(p.getText())%>); return false;"><%=h(p.getText())%></a></li>
+                    <li><a title="<%=h(projectTitle)%>" href="<%=h(p.getHref())%>" onmouseover="requestProject(<%=PageFlowUtil.jsString(p.getText())%>); return false;"><%=h(projectTitle)%></a></li>
                 <%
                     }
                 %>
@@ -71,7 +67,7 @@
             </div>
         </div>
 
-        <div class="folder-list">
+        <div class="folder-list-container">
             <p class="title">Project Folders & Pages</p>
             <div id="folder-tree-wrap" class="beta-folder-tree">
                 <% me.include(form.getFolderMenu(), out); %>
@@ -79,7 +75,7 @@
         </div>
     </div>
 </div>
-<div class="project-menu-buttons">
+<div class="nav-buttons">
     <span class="button-icon"><a href="<%=createProjectURL%>" title="New Project"><img src="<%=getContextPath()%>/_images/icon_projects_add.png" alt="New Project" /></a></span>
 </div>
 <script type="text/javascript">
