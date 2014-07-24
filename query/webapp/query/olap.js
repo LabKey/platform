@@ -753,6 +753,7 @@ Ext4.define('LABKEY.query.olap.MDX', {
         this._filter[name] = filter;
 
         if (this._cube.useServerMemberCache === true && Ext4.isFunction(callback)) {
+//            console.log('going to get results for:', name);
             this.queryParticipantList({
                 useNamedFilters: [name],
                 success: function(cs) {
@@ -763,7 +764,7 @@ Ext4.define('LABKEY.query.olap.MDX', {
                         members.push(pos[a][0].name);
                     }
 
-                    console.log('saving "' + name + '" in server cache. Contains', members.length, 'members.');
+//                    console.log('saving "' + name + '" in server cache. Contains', members.length, 'members.');
                     this._serverSets[name] = members;
                     this.serverSaveNamedSet(name, members, callback, scope);
                 },
