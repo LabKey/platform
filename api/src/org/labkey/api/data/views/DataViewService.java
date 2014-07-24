@@ -231,6 +231,8 @@ public class DataViewService
             o.put("created",  info.getCreated());
         if (info.getModified() != null)
             o.put("modified", info.getModified());
+        if (info.getContentModified() != null)
+            o.put("contentModified", info.getContentModified());
 
         if (info.getRunUrl() != null)
             o.put("runUrl", info.getRunUrl().getLocalURIString());

@@ -94,6 +94,11 @@ public interface Report extends AttachmentParent, StaticThumbnailProvider
     void beforeSave(ContainerUser context);
 
     /**
+     * Determine if the report has a modification to its content, in which case we will update the "ContentModified" field
+     */
+    boolean hasContentModified(ContainerUser context);
+
+    /**
      * Called before the report is deleted to allow any additional cleanup by
      * individual reports.
      * @param context

@@ -41,6 +41,7 @@ public class ReportDB
     private int _flags;
     private Integer _categoryId;
     private Integer _displayOrder;
+    private Date _contentModified;
 
     public ReportDB(){}
 
@@ -57,6 +58,9 @@ public class ReportDB
             _reportOwner = descriptor.getOwner();
             _flags = descriptor.getFlags();
             _displayOrder = descriptor.getDisplayOrder();
+            _contentModified = descriptor.getContentModified();
+            if (_contentModified == null)
+                _contentModified = new java.sql.Timestamp(System.currentTimeMillis());
 
             ViewCategory category = descriptor.getCategory();
             if (category != null)
@@ -117,5 +121,14 @@ public class ReportDB
     public void setFlags(int flags)
     {
         _flags = flags;
+    }
+
+    public void setContentModified(Date contentModified)
+    {
+        _contentModified = contentModified;
+    }
+    public Date getContentModified()
+    {
+        return _contentModified;
     }
 }

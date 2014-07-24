@@ -33,6 +33,7 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.TabStripView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.util.Collections;
 import java.util.List;
@@ -186,5 +187,21 @@ public abstract class ScriptReport extends AbstractReport
             }
         }
         return errors.isEmpty();
+    }
+
+    @Override
+    public boolean hasContentModified(ContainerUser context)
+    {
+        // Content modified if change to the "script" config property
+        String newScript = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
+
+        String origScript = null;
+        if (getReportId() != null)
+        {
+            ScriptReport origReport = (ScriptReport)getReportId().getReport(context);
+            origScript = origReport != null  ? origReport.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script) : null;
+        }
+
+        return newScript != null && !newScript.equals(origScript);
     }
 }

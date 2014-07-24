@@ -83,7 +83,18 @@ public abstract class AbstractReport implements Report
         getDescriptor().setReportId(reportId);
     }
 
-    public void beforeSave(ContainerUser context){}
+    public void beforeSave(ContainerUser context)
+    {
+        // TODO: implement report cache so we don't have to hit database again in hasContentModified()
+        if (getDescriptor() != null && hasContentModified(context))
+            getDescriptor().setContentModified();
+    }
+
+    @Override
+    public boolean hasContentModified(ContainerUser context)
+    {
+        return false;
+    }
 
     // Delete attachments and thumbnails on delete
     @Override

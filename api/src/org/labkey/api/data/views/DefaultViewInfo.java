@@ -47,6 +47,7 @@ public class DefaultViewInfo implements DataViewInfo
     private User _author;
     private Date _created;
     private Date _modified;
+    private Date _contentModified;
 
     private ActionURL _runUrl;
     private String _runTarget;
@@ -164,6 +165,16 @@ public class DefaultViewInfo implements DataViewInfo
     public void setModified(Date modified)
     {
         _modified = modified;
+    }
+
+    public Date getContentModified()
+    {
+        return _contentModified;
+    }
+
+    public void setContentModified(Date contentModified)
+    {
+        _contentModified = contentModified;
     }
 
     public ActionURL getRunUrl()

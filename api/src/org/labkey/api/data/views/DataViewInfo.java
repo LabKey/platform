@@ -71,6 +71,8 @@ public interface DataViewInfo
     Date getCreated();
     @Nullable
     Date getModified();
+    @Nullable
+    Date getContentModified();
 
     @Nullable
     ActionURL getRunUrl();              // the action to render or display this view

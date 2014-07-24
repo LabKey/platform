@@ -86,6 +86,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     private ViewCategory _category;
     private int _displayOrder;
     private boolean _wasShared = false; // Used only by the save process
+    private Date _contentModified;
 
     protected Map<String, Object> _props = new LinkedHashMap<>();
 
@@ -829,6 +830,25 @@ public class ReportDescriptor extends Entity implements SecurableResource
     public void setDisplayOrder(int displayOrder)
     {
         _displayOrder = displayOrder;
+    }
+
+    public Date getContentModified()
+    {
+        return _contentModified;
+    }
+
+    public void setContentModified()
+    {
+        setContentModified(null);
+    }
+
+    public void setContentModified(@Nullable Date contentModified)
+    {
+        // either set to the parameter value or the current date/time
+        if (contentModified != null)
+            _contentModified = contentModified;
+        else
+            _contentModified = new java.sql.Timestamp(System.currentTimeMillis());
     }
 
     public void setModified(Date modified)
