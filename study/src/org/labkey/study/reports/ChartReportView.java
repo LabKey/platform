@@ -208,6 +208,8 @@ public class ChartReportView extends AbstractReportView
                 }
             }
         }
+
+        super.beforeSave(context);
     }
 
     public void beforeDelete(ContainerUser context)

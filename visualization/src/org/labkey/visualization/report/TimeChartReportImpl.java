@@ -17,6 +17,7 @@ package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ThumbnailUtil;
 import org.labkey.api.view.HBox;
@@ -29,6 +30,7 @@ import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.visualization.TimeChartReport;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.visualization.VisualizationController;
 
 import java.io.InputStream;
@@ -102,5 +104,22 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
     public void setSvg(String svg)
     {
         _svg = svg;
+    }
+
+    @Override
+    public boolean hasContentModified(ContainerUser context)
+    {
+        // Content modified if change to the JSON config property
+        String newJson = getDescriptor().getProperty(ReportDescriptor.Prop.json);
+
+        String origJson = null;
+        if (getReportId() != null)
+        {
+            // TODO: need to trim the JSON content to just relevant properties (i.e. don't need group IDs or categoryIDs which are currently also include in export/import)
+            TimeChartReport origReport = (TimeChartReport)getReportId().getReport(context);
+            origJson = origReport != null ? origReport.getDescriptor().getProperty(ReportDescriptor.Prop.json) : null;
+        }
+
+        return newJson != null && !newJson.equals(origJson);
     }
 }

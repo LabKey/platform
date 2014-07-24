@@ -482,6 +482,7 @@
       <ns:column columnName="Flags"/>
       <ns:column columnName="CategoryId"/>
       <ns:column columnName="DisplayOrder"/>
+      <ns:column columnName="ContentModified"/>
     </ns:columns>
   </ns:table>
 

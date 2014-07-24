@@ -16,6 +16,8 @@
 package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.Nullable;
+import org.json.JSONObject;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.PageFlowUtil;
@@ -29,6 +31,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.GenericChartReport;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.visualization.VisualizationController;
 
 import java.io.InputStream;
@@ -108,5 +111,24 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
         String name = null != type ? type.getThumbnailName() : RenderType.AUTO_PLOT.getName();
         InputStream is = GenericChartReportImpl.class.getResourceAsStream(name);
         return new Thumbnail(is, "image/png");
+    }
+
+    @Override
+    public boolean hasContentModified(ContainerUser context)
+    {
+        // Content modified if change to the "chartConfig" part of the JSON property
+        String newJson = getDescriptor().getProperty(ReportDescriptor.Prop.json);
+
+        if (getReportId() != null)
+        {
+            GenericChartReport origReport = (GenericChartReport)getReportId().getReport(context);
+            String origJson = origReport != null  ? origReport.getDescriptor().getProperty(ReportDescriptor.Prop.json) : null;
+
+            JSONObject origChartConfig = new JSONObject(origJson).getJSONObject("chartConfig");
+            JSONObject newChartConfig = new JSONObject(newJson).getJSONObject("chartConfig");
+            return newChartConfig != null && !newChartConfig.equals(origChartConfig);
+        }
+
+        return false;
     }
 }

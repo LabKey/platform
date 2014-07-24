@@ -37,6 +37,7 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.ParticipantCategoryImpl;
@@ -217,5 +218,27 @@ public class ParticipantReport extends AbstractReport
 
             getDescriptor().setProperty(GROUPS_PROP, newGroups.toString());
         }
+    }
+
+    @Override
+    public boolean hasContentModified(ContainerUser context)
+    {
+        // Content modified if there is a change to the "measures" or "groups" JSON config property
+        String newMeasuresConfig = getDescriptor().getProperty(ParticipantReport.MEASURES_PROP);
+        String newGroupsConfig = getDescriptor().getProperty(ParticipantReport.GROUPS_PROP);
+
+        String origMeasuresConfig = null;
+        String origGroupsConfig = null;
+        if (getReportId() != null)
+        {
+            ParticipantReport origReport = (ParticipantReport)getReportId().getReport(context);
+            origMeasuresConfig = origReport != null  ? origReport.getDescriptor().getProperty(ParticipantReport.MEASURES_PROP) : null;
+            origGroupsConfig = origReport != null  ? origReport.getDescriptor().getProperty(ParticipantReport.GROUPS_PROP) : null;
+        }
+
+        return (newMeasuresConfig != null && (!newMeasuresConfig.equals(origMeasuresConfig)))
+                || (newMeasuresConfig == null && origMeasuresConfig != null)
+                || (newGroupsConfig != null && (!newGroupsConfig.equals(origGroupsConfig)))
+                || (newGroupsConfig == null && origGroupsConfig != null);
     }
 }

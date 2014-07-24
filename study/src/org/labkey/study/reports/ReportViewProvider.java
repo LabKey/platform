@@ -167,6 +167,7 @@ public class ReportViewProvider implements DataViewProvider
                     info.setModifiedBy(modifiedBy);
                     info.setAuthor(author);
                     info.setModified(descriptor.getModified());
+                    info.setContentModified(descriptor.getContentModified());
 
                     /**
                      * shared reports are only available if there is a query/schema available in the container that matches

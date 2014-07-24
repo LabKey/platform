@@ -298,6 +298,18 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             });
         }
 
+        if (this.visibleFields['contentModified'] && this.data.contentModified) {
+
+            propertiesItems.push({
+                xtype      : 'displayfield',
+                fieldLabel : 'Content Modified',
+                value      : Ext4.util.Format.date(this.data.contentModified, LABKEY.extDefaultDateTimeFormat),
+                readOnly   : true,
+                labelWidth : 120,
+                width      : 400
+            });
+        }
+
         Ext4.each(this.extraItems, function(item) {
             propertiesItems.push(item);
         }, this);

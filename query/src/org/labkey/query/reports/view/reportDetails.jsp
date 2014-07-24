@@ -40,7 +40,9 @@
     Integer authorId = null;
     Integer createdBy = reportDescriptor.getCreatedBy();
     Date createdDate = reportDescriptor.getCreated();
+    Integer modifiedBy = reportDescriptor.getModifiedBy();
     Date modifiedDate = reportDescriptor.getModified();
+    Date contentModifiedDate = reportDescriptor.getContentModified();
     boolean isShared = reportDescriptor.isShared();
     Date refreshDate = null;
 
@@ -201,10 +203,35 @@
 
     <tr>
         <td class="labkey-form-label">
+            Modified By:
+        </td>
+        <td>
+            <%
+                if(modifiedBy != null)
+                {
+            %>
+            <%= h(UserManager.getUser(modifiedBy) != null ? UserManager.getUser(modifiedBy).getDisplayName(getUser()) : "")%>
+            <%
+                }
+            %>
+        </td>
+    </tr>
+
+    <tr>
+        <td class="labkey-form-label">
             Modified:
         </td>
         <td>
             <%=modifiedDate != null && modifiedDate.getTime() > 0 ? formatDateTime(modifiedDate) : ""%>
+        </td>
+    </tr>
+
+    <tr>
+        <td class="labkey-form-label">
+            Content Modified:
+        </td>
+        <td>
+            <%=contentModifiedDate != null && contentModifiedDate.getTime() > 0 ? formatDateTime(contentModifiedDate) : ""%>
         </td>
     </tr>
 

@@ -27,6 +27,7 @@ import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
+import org.labkey.api.reports.Report;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -41,6 +42,7 @@ import org.labkey.api.util.MimeMap;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.query.reports.ReportsController.DownloadAction;
 import org.labkey.query.reports.ReportsController.DownloadReportFileAction;
@@ -469,5 +471,27 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
     public String getDynamicThumbnailCacheKey()
     {
         return "Reports:" + getReportId();
+    }
+
+    @Override
+    public boolean hasContentModified(ContainerUser context)
+    {
+        // Content modified if type changes from file attachment to path, path changes, or file attachment changes
+        String newFilePath = getFilePath();
+
+        if (getReportId() != null)
+        {
+            AttachmentReport origReport = (AttachmentReport)getReportId().getReport(context);
+            String origFilePath = origReport != null ? origReport.getFilePath() : null;
+
+            if (newFilePath != null)
+                return origFilePath == null || !newFilePath.equals(origFilePath);
+
+            // NOTE: in the case of an update attachement file, the ContentModified will need to be updated in
+            // the UpdateAttachmentReportAction.afterReportSave since we can't tell at this point in beforeSave
+            // if a new file was uploaded or not
+        }
+
+        return false;
     }
 }

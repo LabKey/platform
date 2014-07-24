@@ -17,12 +17,15 @@ package org.labkey.query.reports;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ImageUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -93,5 +96,21 @@ public class LinkReport extends BaseRedirectReport implements DynamicThumbnailPr
         url.addParameter("reportId", getReportId().toString());
 
         return url;
+    }
+
+    @Override
+    public boolean hasContentModified(ContainerUser context)
+    {
+        // Content modified if change to the link URL string property
+        String newLinkUrl = getUrl(context.getContainer());
+
+        String origLinkUrl = null;
+        if (getReportId() != null)
+        {
+            LinkReport origReport = (LinkReport)getReportId().getReport(context);
+            origLinkUrl = origReport != null  ? origReport.getUrl(context.getContainer()) : null;
+        }
+
+        return newLinkUrl != null && !newLinkUrl.equals(origLinkUrl);
     }
 }

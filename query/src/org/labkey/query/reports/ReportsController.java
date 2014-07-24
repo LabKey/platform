@@ -2061,6 +2061,10 @@ public class ReportsController extends SpringActionController
                     // be sure to remove any existing local attachments
                     AttachmentService.get().deleteAttachments(report);
                     AttachmentService.get().addAttachments(report, attachments, getUser());
+
+                    // see NOTE in AttachmentReport.hasContentModified
+                    report.getDescriptor().setContentModified();
+                    ReportService.get().saveReport(getViewContext(), getReportKey(report, form), report);
                 }
             }
             else
@@ -2827,6 +2831,7 @@ public class ReportsController extends SpringActionController
                 columns.put("Type", Collections.singletonMap("checked", getCheckedState("Type", props, false)));
                 columns.put("Author", Collections.singletonMap("checked", getCheckedState("Author", props, false)));
                 columns.put("Modified", Collections.singletonMap("checked", getCheckedState("Modified", props, false)));
+                columns.put("Content Modified", Collections.singletonMap("checked", getCheckedState("Content Modified", props, false)));
                 columns.put("Status", Collections.singletonMap("checked", getCheckedState("Status", props, false)));
                 columns.put("Access", Collections.singletonMap("checked", getCheckedState("Access", props, true)));
                 columns.put("Details", Collections.singletonMap("checked", getCheckedState("Details", props, true)));
@@ -2981,11 +2986,6 @@ public class ReportsController extends SpringActionController
         return props;
     }
 
-    /**
-     * This action is currently just an example. This would provide the proper configuration for a tree-based
-     * layout of categorized data views. For now only dummy data is generated for rendering.
-     * See 'asTree' in DataViewsPanel.js.
-     */
     @RequiresPermissionClass(ReadPermission.class)
     @Action(ActionType.SelectMetaData)
     public class BrowseDataTreeAction extends ApiAction<BrowseDataForm>

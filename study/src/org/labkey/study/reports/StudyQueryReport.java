@@ -94,6 +94,8 @@ public class StudyQueryReport extends QueryReport
                 throw new RuntimeException(e);
             }
         }
+
+        super.beforeSave(context);
     }
 
     // XXX: Can we replace with a CustomViewChangeListener?

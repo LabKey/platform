@@ -277,6 +277,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     {name : 'icon'},
                     {name : 'modified', type: 'date'},
                     {name : 'modifiedBy'},
+                    {name : 'contentModified', type: 'date'},
                     {name : 'refreshDate',  type: 'date'},
                     {name : 'name'},
                     {name : 'access', mapping: 'access.label'},
@@ -302,7 +303,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     {name : 'createdBy'},
                     {name : 'displayOrder', type: 'int'},
                     {name : 'label'},
-                    {name : 'modfied'},
+                    {name : 'modified'},
                     {name : 'modifiedBy'},
                     {name : 'rowid'},
                     {name : 'subCategories'},
@@ -741,6 +742,17 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             });
         }
 
+        if (visibleColumns['Content Modified'] && visibleColumns['Content Modified'].checked) {
+            _columns.push({
+                text     : 'Content Modified',
+                width    : 140,
+                renderer : this.dateRenderer,
+                menuDisabled : true,
+                sortable : false,
+                dataIndex: 'contentModified'
+            });
+        }
+
         if (visibleColumns['Author'] && visibleColumns['Author'].checked) {
             _columns.push({
                 text     : 'Author',
@@ -1049,7 +1061,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
         if (data.visibleColumns) {
             for (var col in data.visibleColumns) {
                 var prop = data.visibleColumns[col];
-                cbColumns.push({boxLabel : col, name : col, checked : prop.checked, uncheckedValue : '0', width: 115, maxWidth: 150, handler : function(){this.updateConfig = true;}, scope : this});
+                cbColumns.push({boxLabel : col, name : col, checked : prop.checked, uncheckedValue : '0', width: 125, maxWidth: 150, handler : function(){this.updateConfig = true;}, scope : this});
             }
         }
 
@@ -1327,6 +1339,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     created     : true,
                     shared      : editInfo['shared'],
                     modified    : true,
+                    contentModified : true,
                     customThumbnail : editInfo['customThumbnail']
                 },
                 buttons     : buttons
