@@ -1196,18 +1196,20 @@ public class IssueManager
         {
             String title = String.valueOf(_properties.get("title"));
 
-            try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); Writer out = new OutputStreamWriter(bos))
+            try (ByteArrayOutputStream bos = new ByteArrayOutputStream())
             {
+                try (Writer out = new OutputStreamWriter(bos))
+                {
 
-                out.write("<html><head><title>");
-                out.write(PageFlowUtil.filter(title));
-                out.write("</title></head><body>");
-                out.write(PageFlowUtil.filter(title));
-                out.write("\n");
-                for (Issue.Comment c : _comments)
-                    if (null != c.getComment())
-                        out.write(c.getComment());
-
+                    out.write("<html><head><title>");
+                    out.write(PageFlowUtil.filter(title));
+                    out.write("</title></head><body>");
+                    out.write(PageFlowUtil.filter(title));
+                    out.write("\n");
+                    for (Issue.Comment c : _comments)
+                        if (null != c.getComment())
+                            out.write(c.getComment());
+                }
                 return new FileStream.ByteArrayFileStream(bos.toByteArray());
             }
         }
