@@ -32,14 +32,6 @@
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%!
-    public LinkedHashSet<ClientDependency> getClientDependencies()
-    {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
-        return resources;
-    }
-%>
 <%
     ProjectSettingsAction.LookAndFeelPropertiesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
@@ -266,8 +258,7 @@
 </table>
 </form>
 <script type="text/javascript">
-    var _form = new LABKEY.Form({ formElement: 'form-preferences'
-    });
+    var _form = new LABKEY.Form({ formElement: 'form-preferences'});
 
     function confirmReset()
     {
