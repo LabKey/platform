@@ -78,10 +78,11 @@ LABKEY.Form = function(config) {
     {
         if (!Ext4.isIE && !Ext4.isGecko)
         {
+            var me = this;
             window.onbeforeunload = function(){
-                if (this.isDirty())
-                    return this.warningMessage;
-            }.createDelegate(this);
+                if (me.isDirty())
+                    return me.warningMessage;
+            }
         }
         else
         {
