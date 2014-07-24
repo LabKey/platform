@@ -395,7 +395,7 @@ Ext.define('LABKEY.app.controller.State', {
         return this.addFilters([filter], skipState);
     },
 
-    addFilters : function(filters, skipState, clearSelection) {
+    addFilters : function(filters, skipState, clearSelection, callback, scope) {
         var _f = this.getFilters();
         if (!_f)
             _f = [];
@@ -411,13 +411,13 @@ Ext.define('LABKEY.app.controller.State', {
         if (clearSelection)
             this.clearSelections(true);
 
-        this.requestFilterUpdate(skipState, false);
+        this.requestFilterUpdate(skipState, false, false, callback, scope);
 
         return newFilters;
     },
 
-    prependFilter : function(filter, skipState) {
-        this.setFilters([filter].concat(this.filters), skipState);
+    prependFilter : function(filter, skipState, callback, scope) {
+        this.setFilters([filter].concat(this.filters), skipState, callback, scope);
     },
 
     loadFilters : function(stateIndex) {
@@ -431,9 +431,9 @@ Ext.define('LABKEY.app.controller.State', {
         }
     },
 
-    setFilters : function(filters, skipState) {
+    setFilters : function(filters, skipState, callback, scope) {
         this.filters = this._getFilterSet(filters);
-        this.requestFilterUpdate(skipState, false);
+        this.requestFilterUpdate(skipState, false, false, callback, scope);
     },
 
     clearFilters : function(skipState) {
