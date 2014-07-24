@@ -81,6 +81,7 @@ Ext.define('LABKEY.app.view.Selection', {
     },
 
     _wrapClick : function(xevt, xel) {
+        xevt.stopPropagation();
         this.onRemoveClick(Ext.get(xel));
     },
 

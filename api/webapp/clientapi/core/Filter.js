@@ -490,6 +490,25 @@ LABKEY.Filter = new function()
         },
 
         /**
+         * Not for public use. Can be changed or dropped at any time.
+         * @param typeName
+         * @param displayText
+         * @param urlSuffix
+         * @param isMultiType
+         * @private
+         */
+        _define : function(typeName, displayText, urlSuffix, isMultiType) {
+            if (!LABKEY.Filter.Types[typeName]) {
+                if (isMultiType) {
+                    LABKEY.Filter.Types[typeName] = createMultiValueFilterType(displayText, urlSuffix, null);
+                }
+                else {
+                    LABKEY.Filter.Types[typeName] = createSingleValueFilterType(displayText, urlSuffix, null);
+                }
+            }
+        },
+
+        /**
          * Given an array of filter objects, return a new filterArray with old filters from a column removed and new filters for the column added
          * If new filters are null, simply remove all old filters from baseFilters that refer to this column
          * @param {Array} baseFilters  Array of existing filters created by {@link LABKEY.Filter.create}

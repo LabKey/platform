@@ -142,6 +142,15 @@ public class VisualizationSourceColumn
             for (int i = 0; i < values.length(); i++)
                 _values.add(values.get(i));
         }
+        String namedSetValue = (String) properties.get("nsvalues");
+        if (namedSetValue != null)
+        {
+            List<String> namedSet = QueryService.get().getNamedSet(namedSetValue);
+            for (String ns : namedSet)
+            {
+                _values.add(ns);
+            }
+        }
     }
 
     private static UserSchema getUserSchema(ViewContext context, String schemaName)

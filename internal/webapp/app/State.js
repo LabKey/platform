@@ -3,6 +3,12 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
+Ext.define('LABKEY.app.constant', {
+    singleton: true,
+    STATE_FILTER: 'statefilter',
+    SELECTION_FILTER: 'stateSelectionFilter'
+});
+
 Ext.define('LABKEY.app.model.State', {
 
     extend : 'Ext.data.Model',
@@ -314,16 +320,23 @@ Ext.define('LABKEY.app.controller.State', {
         return this._is(this.selections, id);
     },
 
-    updateFilterMembers : function(id, members, skipState) {
+    /**
+     * You must call updateFilterMembersComplete() once done updating filter members
+     * @param id
+     * @param members
+     * @param skipState
+     */
+    updateFilterMembers : function(id, members) {
         for (var f=0; f < this.filters.length; f++) {
             if (this.filters[f].id == id)
             {
                 this.filters[f].set('members', members);
             }
         }
+    },
 
-        this.requestFilterUpdate(skipState, false, true);
-
+    updateFilterMembersComplete : function(skipState, callback, scope) {
+        this.requestFilterUpdate(skipState, false, true, callback, scope);
         // since it is silent we need to update the count seperately
         this.updateFilterCount();
     },
@@ -510,7 +523,7 @@ Ext.define('LABKEY.app.controller.State', {
         }
     },
 
-    requestFilterUpdate : function(skipState, opChange, silent) {
+    requestFilterUpdate : function(skipState, opChange, silent, callback, scope) {
 
         this.onMDXReady(function(mdx) {
 
@@ -528,17 +541,36 @@ Ext.define('LABKEY.app.controller.State', {
             }
 
             if (proceed) {
-                mdx.setNamedFilter('statefilter', olapFilters);
-                if (!skipState) {
-                    this.updateState();
+                if (olapFilters.length == 0) {
+                    mdx.clearNamedFilter(LABKEY.app.constant.STATE_FILTER, function() {
+                        this._filterUpdateHelper(skipState, silent, callback, scope);
+                    }, this);
                 }
-
-                if (!silent) {
-                    this.fireEvent('filterchange', this.filters);
+                else {
+                    mdx.setNamedFilter(LABKEY.app.constant.STATE_FILTER, olapFilters, function() {
+                        this._filterUpdateHelper(skipState, silent, callback, scope);
+                    }, this);
                 }
             }
 
         }, this);
+    },
+
+    /**
+     * @private
+     */
+    _filterUpdateHelper : function(skipState, silent, callback, scope) {
+        if (!skipState) {
+            this.updateState();
+        }
+
+        if (Ext.isFunction(callback)) {
+            callback.call(scope || this);
+        }
+
+        if (!silent) {
+            this.fireEvent('filterchange', this.filters);
+        }
     },
 
     getSelections : function(flat) {
@@ -700,12 +732,22 @@ Ext.define('LABKEY.app.controller.State', {
                 sels.push(this.selections[s].getOlapFilter(mdx, this.subjectName));
             }
 
-            mdx.setNamedFilter('stateSelectionFilter', sels);
+            if (sels.length == 0) {
+                mdx.clearNamedFilter(LABKEY.app.constant.SELECTION_FILTER, function() {
+                    if (!skipState)
+                        this.updateState();
 
-            if (!skipState)
-                this.updateState();
+                    this.fireEvent('selectionchange', this.selections, opChange);
+                }, this);
+            }
+            else {
+                mdx.setNamedFilter(LABKEY.app.constant.SELECTION_FILTER, sels, function() {
+                    if (!skipState)
+                        this.updateState();
 
-            this.fireEvent('selectionchange', this.selections, opChange);
+                    this.fireEvent('selectionchange', this.selections, opChange);
+                }, this);
+            }
         }, this);
     },
 
@@ -717,7 +759,7 @@ Ext.define('LABKEY.app.controller.State', {
         return this.privatefilters[name];
     },
 
-    addPrivateSelection : function(selection, name) {
+    addPrivateSelection : function(selection, name, callback, scope, memberCaching) {
 
         this.onMDXReady(function(mdx){
 
@@ -740,19 +782,38 @@ Ext.define('LABKEY.app.controller.State', {
                 }
             }
 
+            var cb = function() {
+                if (Ext.isFunction(callback)) {
+                    callback.call(scope || this);
+                }
+                this.fireEvent('privateselectionchange', mdx._filter[name], name);
+            };
+
             if (Ext.isArray(selection))
             {
-                mdx.setNamedFilter(name, filters);
+                if (memberCaching === false) {
+                    mdx.setNamedFilter(name, filters);
+                }
+                else {
+                    mdx.setNamedFilter(name, filters, cb, this);
+                }
             }
             else
             {
                 // TODO: This is wrong for when working with perspectives
-                mdx.setNamedFilter(name, [{
-                    hierarchy : this.subjectName,
-                    membersQuery : selection
-                }]);
+                if (memberCaching === false) {
+                    mdx.setNamedFilter(name, [{
+                        hierarchy : this.subjectName,
+                        membersQuery : selection
+                    }]);
+                }
+                else {
+                    mdx.setNamedFilter(name, [{
+                        hierarchy : this.subjectName,
+                        membersQuery : selection
+                    }], cb, this);
+                }
             }
-            this.fireEvent('privateselectionchange', mdx._filter[name], name);
 
         }, this);
     },
