@@ -457,6 +457,7 @@ api/src/org/labkey/api/defaults/SetDefaultValuesListAction.java -text
 api/src/org/labkey/api/di/DataIntegrationService.java -text
 api/src/org/labkey/api/di/ScheduledPipelineJobContext.java -text
 api/src/org/labkey/api/di/ScheduledPipelineJobDescriptor.java -text
+api/src/org/labkey/api/di/TaskrefTask.java -text
 api/src/org/labkey/api/ehr/EHRDemographicsService.java -text
 api/src/org/labkey/api/ehr/EHRQCState.java -text
 api/src/org/labkey/api/ehr/EHRService.java -text
