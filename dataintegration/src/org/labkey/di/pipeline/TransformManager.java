@@ -41,7 +41,6 @@ import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.di.DataIntegrationService;
 import org.labkey.api.di.ScheduledPipelineJobContext;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
@@ -76,6 +75,7 @@ import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.filters.RunFilterStrategy;
 import org.labkey.di.filters.SelectAllFilterStrategy;
+import org.labkey.di.steps.TaskrefTransformStepProvider;
 import org.labkey.di.steps.RemoteQueryTransformStepProvider;
 import org.labkey.di.steps.SimpleQueryTransformStepProvider;
 import org.labkey.di.steps.StepMeta;
@@ -734,6 +734,7 @@ public class TransformManager implements DataIntegrationService
         _providers.add(new SimpleQueryTransformStepProvider());
         _providers.add(new RemoteQueryTransformStepProvider());
         _providers.add(new StoredProcedureStepProvider());
+        _providers.add(new TaskrefTransformStepProvider());
         _providers.add(new TestTaskProvider());
 
     }
@@ -743,7 +744,7 @@ public class TransformManager implements DataIntegrationService
     {
         for (StepProvider potential : _providers)
         {
-            if (potential.getName().equals(providerName) || potential.getLegacyNames().contains(providerName))
+            if (potential.getName().equalsIgnoreCase(providerName) || potential.getLegacyNames().contains(providerName))
             {
                 return potential;
             }

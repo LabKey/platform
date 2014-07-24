@@ -5,6 +5,7 @@
         elementFormDefault="qualified"
         attributeFormDefault="unqualified">
 
+    <import namespace="http://labkey.org/pipeline/xml" schemaLocation="../../../../schemas/pipelineTasks.xsd"/>
 
     <element name="etl" type="etl:EtlType"/>
 
@@ -67,14 +68,15 @@
     </complexType>
 
     <complexType name="TransformType">
-        <all>
-            <!-- <element name="properties" type="etl:PropertiesType" minOccurs="0" maxOccurs="1"/> -->
-            <element name="description" type="string" minOccurs="0" maxOccurs="1"/>
-            <element name="source" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="0"/>
-            <element name="destination" type="etl:SchemaQueryType" maxOccurs="1" minOccurs="0"/>
-            <element name="procedure" type="etl:SchemaProcedureType" maxOccurs="1" minOccurs="0"/>
-        </all>
-        <attribute name="id" type="string" use="required"/>
+      <all>
+        <!-- <element name="properties" type="etl:PropertiesType" minOccurs="0" maxOccurs="1"/> -->
+        <element name="description" type="string" minOccurs="0" />
+        <element name="source" type="etl:SchemaQueryType" minOccurs="0"/>
+        <element name="destination" type="etl:SchemaQueryType" minOccurs="0"/>
+        <element name="procedure" type="etl:SchemaProcedureType" minOccurs="0"/>
+        <element name="taskref" type="etl:TaskRefType" maxOccurs="1" minOccurs="0"/>
+      </all>
+      <attribute name="id" type="string" use="required"/>
         <attribute name="type" type="string" default="SimpleQueryTransformStep"/>
         <attribute name="file" type="string"/>
         <attribute name="streaming" type="boolean" default="true"/>
@@ -151,4 +153,21 @@
         <attribute name="type" type="string" use="required" />
     </complexType>
 
+    <complexType name="TaskRefType">
+        <sequence>
+            <element name="settings" type="etl:SettingsType" minOccurs="0" maxOccurs="1"/>
+        </sequence>
+        <attribute name="ref" type="string" use="required"/>
+    </complexType>
+
+    <complexType name="SettingsType">
+        <sequence>
+            <element name="setting" type="etl:SettingType" minOccurs="0" maxOccurs="unbounded"/>
+        </sequence>
+    </complexType>
+
+    <complexType name="SettingType">
+        <attribute name="name" type="string" use="required"/>
+        <attribute name="value" type="string" use="required"/>
+    </complexType>
 </schema>

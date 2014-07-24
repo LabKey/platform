@@ -290,21 +290,22 @@ public class ServerManager
         }
     }
 
-    public static void warmCube(User u, Container c, String schemaName, String configId, String cubeName)
+    public static String warmCube(User u, Container c, String schemaName, String configId, String cubeName)
     {
+        String result;
         try
         {
             OlapSchemaDescriptor sd  = getDescriptor(c, configId);
             if (null == sd)
-                return;
+                return "Error: No cached descriptor found for " + configId + " in container " + c.getName();
 
             OlapConnection conn = sd.getConnection(c, u);
             if (null == conn)
-                return;
+                return "Error: No olap connection for " + cubeName + " in container " + c.getName();
 
             Cube cube = getCachedCube(sd, conn, c, u, schemaName, cubeName, getDummyBindException());
             if (null == cube)
-                return;
+                return "Error: No cached cube for " + cubeName + " in container " + c.getName();
 
             JSONArray jsonOnRows = new JSONArray();
             JSONObject jsonQuery = new JSONObject();
@@ -341,12 +342,16 @@ public class ServerManager
                 }
             }
             long end = System.currentTimeMillis();
-            _log.info("Warming the " + cubeName + " in container " + c.getName() + " took: " + DateUtil.formatDuration(end - start));
+            result = "Warming the " + cubeName + " in container " + c.getName() + " took: " + DateUtil.formatDuration(end - start);
+            _log.info(result);
         }
         catch(Exception e)
         {
-            _log.warn("Error trying to warm the " + cubeName + " in container " + c.getName(), e);
+            result = "Error trying to warm the " + cubeName + " in container " + c.getName();
+            _log.warn(result, e);
         }
+
+        return result;
     }
 
     private static void execCountDistinct(Container c, OlapSchemaDescriptor sd, OlapConnection conn,  Cube cube, JSONObject jsonQuery, BindException errors) throws Exception

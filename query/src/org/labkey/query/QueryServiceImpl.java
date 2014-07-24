@@ -2168,9 +2168,9 @@ public class QueryServiceImpl extends QueryService
     }
 
     @Override
-    public void warmCube(User user, Container container, String schemaName, String configId, String cubeName)
+    public String warmCube(User user, Container container, String schemaName, String configId, String cubeName)
     {
-        ServerManager.warmCube(user, container, schemaName, configId, cubeName);
+        return ServerManager.warmCube(user, container, schemaName, configId, cubeName);
     }
 
     public static class TestCase extends Assert

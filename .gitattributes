@@ -924,6 +924,7 @@ dataintegration/src/org/labkey/di/filters/RunFilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/SelectAllFilterStrategy.java -text
 dataintegration/src/org/labkey/di/pipeline/DescriptorCacheHandler.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
+dataintegration/src/org/labkey/di/pipeline/TaskrefTaskImpl.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformConfiguration.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJobContext.java -text
@@ -935,6 +936,7 @@ dataintegration/src/org/labkey/di/pipeline/TransformRun.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTask.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformTaskFactory.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformUtils.java -text
+dataintegration/src/org/labkey/di/steps/CubeMaintenanceTask.java -text
 dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStep.java -text
 dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStepMeta.java -text
 dataintegration/src/org/labkey/di/steps/RemoteQueryTransformStepProvider.java -text
@@ -947,6 +949,9 @@ dataintegration/src/org/labkey/di/steps/StepProvider.java -text
 dataintegration/src/org/labkey/di/steps/StoredProcedureStep.java -text
 dataintegration/src/org/labkey/di/steps/StoredProcedureStepMeta.java -text
 dataintegration/src/org/labkey/di/steps/StoredProcedureStepProvider.java -text
+dataintegration/src/org/labkey/di/steps/TaskrefTransformStep.java -text
+dataintegration/src/org/labkey/di/steps/TaskrefTransformStepMeta.java -text
+dataintegration/src/org/labkey/di/steps/TaskrefTransformStepProvider.java -text
 dataintegration/src/org/labkey/di/steps/TestTask.java -text
 dataintegration/src/org/labkey/di/steps/TestTaskProvider.java -text
 dataintegration/src/org/labkey/di/view/DataIntegrationController.java -text
