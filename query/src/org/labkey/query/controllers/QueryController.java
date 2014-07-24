@@ -6112,7 +6112,7 @@ public class QueryController extends SpringActionController
         public Object execute(NamedSetForm namedSetForm, BindException errors) throws Exception
         {
             QueryService.get().saveNamedSet(namedSetForm.getSetName(), namedSetForm.parseSetList());
-            return null;
+            return new ApiSimpleResponse("success", true);
         }
     }
 
@@ -6155,7 +6155,7 @@ public class QueryController extends SpringActionController
         public Object execute(NamedSetForm namedSetForm, BindException errors) throws Exception
         {
             QueryService.get().deleteNamedSet(namedSetForm.getSetName());
-            return null;
+            return new ApiSimpleResponse("success", true);
         }
     }
 }
