@@ -32,20 +32,27 @@ import java.util.Map;
  */
 public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
 {
-    private List<String> _sampleNames;
+    protected List<String> _sampleNames;
     protected final PlateTemplate _template;
+    protected WellGroup.Type _wellgroupType;
 
     public PlateSamplePropertyHelper(List<? extends DomainProperty> domainProperties, PlateTemplate template)
+    {
+        this(domainProperties, template, WellGroup.Type.SPECIMEN);
+    }
+
+    public PlateSamplePropertyHelper(List<? extends DomainProperty> domainProperties, PlateTemplate template, WellGroup.Type wellgroupType)
     {
         super(domainProperties);
         _template = template;
         _sampleNames = new ArrayList<>();
+        _wellgroupType = wellgroupType;
 
         if (template != null)
         {
             for (WellGroupTemplate wellgroup : template.getWellGroups())
             {
-                if (wellgroup.getType() == WellGroup.Type.SPECIMEN)
+                if (wellgroup.getType() == _wellgroupType)
                 {
                     _sampleNames.add(wellgroup.getName());
                 }
@@ -58,7 +65,7 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
         List<WellGroupTemplate> samples = new ArrayList<>();
         for (WellGroupTemplate wellgroup : _template.getWellGroups())
         {
-            if (wellgroup.getType() == WellGroup.Type.SPECIMEN)
+            if (wellgroup.getType() == _wellgroupType)
             {
                 samples.add(wellgroup);
             }

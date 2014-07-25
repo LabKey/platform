@@ -15,12 +15,14 @@
  */
 package org.labkey.api.assay.nab;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.DilutionManager;
 import org.labkey.api.assay.dilution.DilutionCurve;
 import org.labkey.api.assay.dilution.DilutionSummary;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
 import org.labkey.api.study.Plate;
+import org.labkey.api.study.Position;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
 
@@ -101,10 +103,11 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
         if (null == group)
             throw new FitFailedException("Invalid well group.");
         Plate plate = group.getPlate();
-        WellData cellControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.CELL_CONTROL_SAMPLE);
+        List<Position> dataPositions = (data instanceof WellGroup) ? ((WellGroup)data).getPositions() : null;
+        WellData cellControl = getCellControlWells(plate, dataPositions);
         if (cellControl == null)
             throw new FitFailedException("Invalid plate template: no cell control well group was found.");
-        WellData virusControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.VIRUS_CONTROL_SAMPLE);
+        WellData virusControl = getVirusControlWells(plate, dataPositions);
         if (virusControl == null)
             throw new FitFailedException("Invalid plate template: no virus control well group was found.");
         double controlRange = virusControl.getMean() - cellControl.getMean();
@@ -113,6 +116,20 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
             return 1.0;
         else
             return 1 - (data.getMean() - cellControlMean) / controlRange;
+    }
+
+    @Nullable
+    @Override
+    public WellGroup getCellControlWells(Plate plate, @Nullable List<Position> dataPositions)
+    {
+        return plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.CELL_CONTROL_SAMPLE);
+    }
+
+    @Nullable
+    @Override
+    public WellGroup getVirusControlWells(Plate plate, @Nullable List<Position> dataPositions)
+    {
+        return plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.VIRUS_CONTROL_SAMPLE);
     }
 
     public abstract List<Plate> getPlates();

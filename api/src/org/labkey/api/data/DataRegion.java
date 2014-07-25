@@ -76,7 +76,6 @@ public class DataRegion extends AbstractDataRegion
 {
     private static final Logger _log = Logger.getLogger(DataRegion.class);
     private List<DisplayColumn> _displayColumns = new ArrayList<>();
-    private List<DisplayColumnGroup> _groups = new ArrayList<>();
     private Map<String, List<Aggregate.Result>> _aggregateResults = null;
     private AggregateRowConfig _aggregateRowConfig = new AggregateRowConfig(false, true);
     private TableInfo _table = null;
@@ -107,7 +106,6 @@ public class DataRegion extends AbstractDataRegion
     private boolean _showPagination = true;
     private boolean _showPaginationCount = true;
 
-    private List<String> _groupHeadings;
     private boolean _horizontalGroups = true;
 
     private boolean _facetable = false;
@@ -127,6 +125,28 @@ public class DataRegion extends AbstractDataRegion
     public static final String LAST_FILTER_PARAM = ".lastFilter";
     public static final String SELECT_CHECKBOX_NAME = ".select";
     protected static final String TOGGLE_CHECKBOX_NAME = ".toggle";
+
+    private class GroupTable
+    {
+        private List<DisplayColumnGroup> _groups = new ArrayList<>();
+        private List<String> _groupHeadings = new ArrayList<>();
+
+        public List<DisplayColumnGroup> getGroups()
+        {
+            return _groups;
+        }
+
+        public List<String> getGroupHeadings()
+        {
+            return _groupHeadings;
+        }
+
+        public void setGroupHeadings(List<String> groupHeadings)
+        {
+            _groupHeadings = groupHeadings;
+        }
+    }
+    private List<GroupTable> _groupTables = new ArrayList<>();
 
     public void addDisplayColumn(DisplayColumn col)
     {
@@ -551,19 +571,22 @@ public class DataRegion extends AbstractDataRegion
 
         if (_table == null)
         {
-            for (DisplayColumnGroup group : _groups)
+            for (GroupTable groupTable : _groupTables)
             {
-                for (DisplayColumn dc : group.getColumns())
+                for (DisplayColumnGroup group : groupTable.getGroups())
                 {
-                    if (dc.isQueryColumn())
+                    for (DisplayColumn dc : group.getColumns())
                     {
-                        _table = dc.getColumnInfo().getParentTable();
+                        if (dc.isQueryColumn())
+                        {
+                            _table = dc.getColumnInfo().getParentTable();
+                            break;
+                        }
+                    }
+                    if (_table != null)
+                    {
                         break;
                     }
-                }
-                if (_table != null)
-                {
-                    break;
                 }
             }
         }
@@ -1718,9 +1741,8 @@ public class DataRegion extends AbstractDataRegion
             out.write(error);
     }
 
-    protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer) throws IOException
+    protected void renderFormField(RenderContext ctx, Writer out, DisplayColumn renderer, int span) throws IOException
     {
-        int span = _groups.isEmpty() ? 1 : (_horizontalGroups ? _groups.get(0).getColumns().size() + 1 : _groups.size());
         renderInputError(ctx, out, span, renderer);
         out.write("  <tr>\n    ");
         renderer.renderDetailsCaptionCell(ctx, out);
@@ -1821,61 +1843,93 @@ public class DataRegion extends AbstractDataRegion
             }
         }
 
+        int span = (_groupTables.isEmpty() || _groupTables.get(0).getGroups().isEmpty()) ?
+                1 :
+                (_horizontalGroups ?
+                        _groupTables.get(0).getGroups().get(0).getColumns().size() + 1 :
+                        _groupTables.get(0).getGroups().size()); // One extra one for the column to reuse the same value
+
         for (DisplayColumn renderer : renderers)
         {
             if (!shouldRender(renderer, ctx))
                 continue;
-            renderFormField(ctx, out, renderer);
+            renderFormField(ctx, out, renderer, span);
             if (null != renderer.getColumnInfo())
                 renderedColumns.add(renderer.getColumnInfo().getPropertyName());
         }
 
-        int span = _groups.isEmpty() ? 1 : (_horizontalGroups ? _groups.get(0).getColumns().size() + 1 : _groups.size()); // One extra one for the column to reuse the same value
-
-        if (!_groups.isEmpty())
+        if (!_groupTables.isEmpty())
         {
-            assert _groupHeadings != null : "Must set group headings before rendering";
-            out.write("<tr><td/>");
-            boolean hasCopyable = false;
-
-            for (DisplayColumnGroup group : _groups)
+            for (GroupTable groupTable : _groupTables)
             {
-                if (group.isCopyable() && group.getColumns().size() > 1)
+                List<DisplayColumnGroup> groups = groupTable.getGroups();
+                List<String> groupHeadings = groupTable.getGroupHeadings();
+//                assert _groupHeadings != null : "Must set group headings before rendering";
+                out.write("<tr><td/>");
+                boolean hasCopyable = false;
+
+                for (DisplayColumnGroup group : groups)
                 {
-                    hasCopyable = true;
-                    break;
+                    if (group.isCopyable() && group.getColumns().size() > 1)
+                    {
+                        hasCopyable = true;
+                        break;
+                    }
                 }
-            }
 
-            if (_horizontalGroups)
-            {
-                if (hasCopyable)
+                if (_horizontalGroups)
                 {
-                    writeSameHeader(ctx, out);
+                    if (hasCopyable)
+                    {
+                        writeSameHeader(ctx, out, groups);
+                    }
+                    else
+                    {
+                        out.write("<td/>");
+                    }
+                    for (String heading : groupHeadings)
+                    {
+                        out.write("<td valign='bottom' class='labkey-form-label'>");
+                        out.write(PageFlowUtil.filter(heading));
+                        out.write("</td>");
+                    }
                 }
                 else
                 {
-                    out.write("<td/>");
-                }
-                for (String heading : _groupHeadings)
-                {
-                    out.write("<td valign='bottom' class='labkey-form-label'>");
-                    out.write(PageFlowUtil.filter(heading));
-                    out.write("</td>");
-                }
-            }
-            else
-            {
-                for (DisplayColumnGroup group : _groups)
-                {
-                    group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
-                }
-                out.write("</tr>\n<tr>");
-                if (hasCopyable)
-                {
-                    writeSameHeader(ctx, out);
-                    for (DisplayColumnGroup group : _groups)
+                    for (DisplayColumnGroup group : groups)
                     {
+                        group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
+                    }
+                    out.write("</tr>\n<tr>");
+                    if (hasCopyable)
+                    {
+                        writeSameHeader(ctx, out, groups);
+                        for (DisplayColumnGroup group : groups)
+                        {
+                            if (group.isCopyable() && hasCopyable)
+                            {
+                                group.writeSameCheckboxCell(ctx, out);
+                            }
+                            else
+                            {
+                                out.write("<td/>");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        out.write("<td/>");
+                    }
+                }
+                out.write("</tr>");
+
+                if (_horizontalGroups)
+                {
+                    for (DisplayColumnGroup group : groups)
+                    {
+                        renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
+                        out.write("<tr>");
+                        group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
                         if (group.isCopyable() && hasCopyable)
                         {
                             group.writeSameCheckboxCell(ctx, out);
@@ -1884,69 +1938,46 @@ public class DataRegion extends AbstractDataRegion
                         {
                             out.write("<td/>");
                         }
+                        for (DisplayColumn col : group.getColumns())
+                        {
+                            if (!shouldRender(col, ctx))
+                                continue;
+                            col.renderInputCell(ctx, out, 1);
+                        }
+                        out.write("\t</tr>");
                     }
                 }
                 else
                 {
-                    out.write("<td/>");
-                }
-            }
-            out.write("</tr>");
+                    for (DisplayColumnGroup group : groups)
+                    {
+                        renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
+                    }
 
-            if (_horizontalGroups)
-            {
-                for (DisplayColumnGroup group : _groups)
-                {
-                    renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
-                    out.write("<tr>");
-                    group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
-                    if (group.isCopyable() && hasCopyable)
+                    for (int i = 0; i < groupHeadings.size(); i++)
                     {
-                        group.writeSameCheckboxCell(ctx, out);
+                        out.write("<tr>");
+                        out.write("<td valign='bottom' class='labkey-form-label'>");
+                        out.write(PageFlowUtil.filter(groupHeadings.get(i)));
+                        out.write("</td>");
+                        for (DisplayColumnGroup group : groups)
+                        {
+                            DisplayColumn col = group.getColumns().get(i);
+                            if (!shouldRender(col, ctx))
+                                continue;
+                            col.renderInputCell(ctx, out, 1);
+                        }
+                        out.write("\t</tr>");
                     }
-                    else
-                    {
-                        out.write("<td/>");
-                    }
-                    for (DisplayColumn col : group.getColumns())
-                    {
-                        if (!shouldRender(col, ctx))
-                            continue;
-                        col.renderInputCell(ctx, out, 1);
-                    }
-                    out.write("\t</tr>");
-                }
-            }
-            else
-            {
-                for (DisplayColumnGroup group : _groups)
-                {
-                    renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
                 }
 
-                for (int i = 0; i < _groupHeadings.size(); i++)
+                out.write("<script language='javascript'>");
+                for (DisplayColumnGroup group : groups)
                 {
-                    out.write("<tr>");
-                    out.write("<td valign='bottom' class='labkey-form-label'>");
-                    out.write(PageFlowUtil.filter(_groupHeadings.get(i)));
-                    out.write("</td>");
-                    for (DisplayColumnGroup group : _groups)
-                    {
-                        DisplayColumn col = group.getColumns().get(i);
-                        if (!shouldRender(col, ctx))
-                            continue;
-                        col.renderInputCell(ctx, out, 1);
-                    }
-                    out.write("\t</tr>");
+                    group.writeCopyableExtJavaScript(ctx, out);
                 }
+                out.write("</script>");
             }
-
-            out.write("<script language='javascript'>");
-            for (DisplayColumnGroup group : _groups)
-            {
-                group.writeCopyableExtJavaScript(ctx, out);
-            }
-            out.write("</script>");
         }
 
         out.write("<tr><td colspan=" + (span + 1) + " align=left>");
@@ -2060,61 +2091,93 @@ public class DataRegion extends AbstractDataRegion
             }
         }
 
+        int span = (_groupTables.isEmpty() || _groupTables.get(0).getGroups().isEmpty()) ?
+                        1 :
+                        (_horizontalGroups ?
+                                _groupTables.get(0).getGroups().get(0).getColumns().size() + 1 :
+                                _groupTables.get(0).getGroups().size()); // One extra one for the column to reuse the same value
+
         for (DisplayColumn renderer : renderers)
         {
             if (!shouldRender(renderer, ctx))
                 continue;
-            renderFormField(ctx, out, renderer);
+            renderFormField(ctx, out, renderer, span);
             if (null != renderer.getColumnInfo())
                 renderedColumns.add(renderer.getColumnInfo().getPropertyName());
         }
 
-        int span = _groups.isEmpty() ? 1 : (_horizontalGroups ? _groups.get(0).getColumns().size() + 1 : _groups.size()); // One extra one for the column to reuse the same value
-
-        if (!_groups.isEmpty())
+        if (!_groupTables.isEmpty())
         {
-            assert _groupHeadings != null : "Must set group headings before rendering";
-            out.write("<tr><td/>");
-            boolean hasCopyable = false;
-
-            for (DisplayColumnGroup group : _groups)
+            for (GroupTable groupTable : _groupTables)
             {
-                if (group.isCopyable() && group.getColumns().size() > 1)
+                List<DisplayColumnGroup> groups = groupTable.getGroups();
+                List<String> groupHeadings = groupTable.getGroupHeadings();
+//                assert _groupHeadings != null : "Must set group headings before rendering";
+                out.write("<tr><td/>");
+                boolean hasCopyable = false;
+
+                for (DisplayColumnGroup group : groups)
                 {
-                    hasCopyable = true;
-                    break;
+                    if (group.isCopyable() && group.getColumns().size() > 1)
+                    {
+                        hasCopyable = true;
+                        break;
+                    }
                 }
-            }
 
-            if (_horizontalGroups)
-            {
-                if (hasCopyable)
+                if (_horizontalGroups)
                 {
-                    writeSameHeader(ctx, out);
+                    if (hasCopyable)
+                    {
+                        writeSameHeader(ctx, out, groups);
+                    }
+                    else
+                    {
+                        out.write("<td/>");
+                    }
+                    for (String heading : groupHeadings)
+                    {
+                        out.write("<td valign='bottom' class='labkey-form-label'>");
+                        out.write(PageFlowUtil.filter(heading));
+                        out.write("</td>");
+                    }
                 }
                 else
                 {
-                    out.write("<td/>");
-                }
-                for (String heading : _groupHeadings)
-                {
-                    out.write("<td valign='bottom' class='labkey-form-label'>");
-                    out.write(PageFlowUtil.filter(heading));
-                    out.write("</td>");
-                }
-            }
-            else
-            {
-                for (DisplayColumnGroup group : _groups)
-                {
-                    group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
-                }
-                out.write("</tr>\n<tr>");
-                if (hasCopyable)
-                {
-                    writeSameHeader(ctx, out);
-                    for (DisplayColumnGroup group : _groups)
+                    for (DisplayColumnGroup group : groups)
                     {
+                        group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
+                    }
+                    out.write("</tr>\n<tr>");
+                    if (hasCopyable)
+                    {
+                        writeSameHeader(ctx, out, groups);
+                        for (DisplayColumnGroup group : groups)
+                        {
+                            if (group.isCopyable() && hasCopyable)
+                            {
+                                group.writeSameCheckboxCell(ctx, out);
+                            }
+                            else
+                            {
+                                out.write("<td/>");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        out.write("<td/>");
+                    }
+                }
+                out.write("</tr>");
+
+                if (_horizontalGroups)
+                {
+                    for (DisplayColumnGroup group : groups)
+                    {
+                        renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
+                        out.write("<tr>");
+                        group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
                         if (group.isCopyable() && hasCopyable)
                         {
                             group.writeSameCheckboxCell(ctx, out);
@@ -2123,73 +2186,50 @@ public class DataRegion extends AbstractDataRegion
                         {
                             out.write("<td/>");
                         }
+                        for (DisplayColumn col : group.getColumns())
+                        {
+                            if (!shouldRender(col, ctx))
+                                continue;
+                            col.renderInputCell(ctx, out, 1);
+                        }
+                        out.write("\t</tr>");
                     }
                 }
                 else
                 {
-                    out.write("<td/>");
-                }
-            }
-            out.write("</tr>");
+                    for (DisplayColumnGroup group : groups)
+                    {
+                        renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
+                    }
 
-            if (_horizontalGroups)
-            {
-                for (DisplayColumnGroup group : _groups)
-                {
-                    renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
-                    out.write("<tr>");
-                    group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
-                    if (group.isCopyable() && hasCopyable)
+                    for (int i = 0; i < groupHeadings.size(); i++)
                     {
-                        group.writeSameCheckboxCell(ctx, out);
+                        out.write("<tr");
+                        String rowClass = getRowClass(ctx, i);
+                        if (rowClass != null)
+                            out.write(" class=\"" + rowClass + "\"");
+                        out.write(">");
+                        out.write("<td class='labkey-form-label' nowrap>");
+                        out.write(PageFlowUtil.filter(groupHeadings.get(i)));
+                        out.write("</td>");
+                        for (DisplayColumnGroup group : groups)
+                        {
+                            DisplayColumn col = group.getColumns().get(i);
+                            if (!shouldRender(col, ctx))
+                                continue;
+                            col.renderInputCell(ctx, out, 1);
+                        }
+                        out.write("\t</tr>");
                     }
-                    else
-                    {
-                        out.write("<td/>");
-                    }
-                    for (DisplayColumn col : group.getColumns())
-                    {
-                        if (!shouldRender(col, ctx))
-                            continue;
-                        col.renderInputCell(ctx, out, 1);
-                    }
-                    out.write("\t</tr>");
-                }
-            }
-            else
-            {
-                for (DisplayColumnGroup group : _groups)
-                {
-                    renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
                 }
 
-                for (int i = 0; i < _groupHeadings.size(); i++)
+                out.write("<script language='javascript'>");
+                for (DisplayColumnGroup group : groups)
                 {
-                    out.write("<tr");
-                    String rowClass = getRowClass(ctx, i);
-                    if (rowClass != null)
-                        out.write(" class=\"" + rowClass + "\"");
-                    out.write(">");
-                    out.write("<td class='labkey-form-label' nowrap>");
-                    out.write(PageFlowUtil.filter(_groupHeadings.get(i)));
-                    out.write("</td>");
-                    for (DisplayColumnGroup group : _groups)
-                    {
-                        DisplayColumn col = group.getColumns().get(i);
-                        if (!shouldRender(col, ctx))
-                            continue;
-                        col.renderInputCell(ctx, out, 1);
-                    }
-                    out.write("\t</tr>");
+                    group.writeCopyableJavaScript(ctx, out);
                 }
+                out.write("</script>");
             }
-
-            out.write("<script language='javascript'>");
-            for (DisplayColumnGroup group : _groups)
-            {
-                group.writeCopyableJavaScript(ctx, out);
-            }
-            out.write("</script>");
         }
 
         out.write("<tr><td colspan=" + (span + 1) + " align=left>");
@@ -2243,12 +2283,12 @@ public class DataRegion extends AbstractDataRegion
     }
 
 
-    private void writeSameHeader(RenderContext ctx, Writer out)
+    private void writeSameHeader(RenderContext ctx, Writer out, List<DisplayColumnGroup> groups)
             throws IOException
     {
         out.write("<td class='labkey-form-label'>");
         out.write("<input type='checkbox' name='~~SELECTALL~~' onchange=\"");
-        for (DisplayColumnGroup group : _groups)
+        for (DisplayColumnGroup group : groups)
         {
             group.writeCopyableOnChangeHandler(ctx, out);
         }
@@ -2433,7 +2473,9 @@ public class DataRegion extends AbstractDataRegion
 
     public void setGroupHeadings(List<String> headings)
     {
-        _groupHeadings = headings;
+        if (_groupTables.isEmpty())
+            addGroupTable();
+        _groupTables.get(_groupTables.size() - 1).setGroupHeadings(headings);
     }
 
     public boolean getShowPagination()
@@ -2513,10 +2555,18 @@ public class DataRegion extends AbstractDataRegion
         _formActionUrl = formActionUrl;
     }
 
+    public void addGroupTable()
+    {
+        _groupTables.add(new GroupTable());
+    }
+
     public void addGroup(DisplayColumnGroup group)
     {
-        assert _groups.isEmpty() || _groups.get(0).getColumns().size() == group.getColumns().size() : "Must have matching column counts";
-        _groups.add(group);
+        if (_groupTables.isEmpty())
+            addGroupTable();
+        List<DisplayColumnGroup> groups = _groupTables.get(_groupTables.size() - 1).getGroups();        // always add to last (current)
+        assert groups.isEmpty() || groups.get(0).getColumns().size() == group.getColumns().size() : "Must have matching column counts";
+        groups.add(group);
     }
 
     public boolean isHorizontalGroups()

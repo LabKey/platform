@@ -40,6 +40,7 @@ import org.labkey.api.study.Plate;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
+import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -156,6 +157,9 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                     props.put(DILUTION_INPUT_MATERIAL_DATA_PROPERTY, sampleInput.getLSID());
                     props.put(WELLGROUP_NAME_PROPERTY, group.getName());
                     props.put(STD_DEV_PROPERTY_NAME, dilution.getStdDev(group));
+
+                    // TODO: factor this out in the nab data handlers
+                    props.put("VirusWellGroupName", group.getProperty("VirusWellGroupName"));
                 }
                 return results;
             }
@@ -443,6 +447,14 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return null;
     }
 
+    public PropertyDescriptor getStringPropertyDescriptor(Container container, ExpProtocol protocol, String propertyName)
+    {
+        Lsid propertyURI = new Lsid(NAB_PROPERTY_LSID_PREFIX, protocol.getName(), propertyName);
+        PropertyDescriptor pd = new PropertyDescriptor(propertyURI.toString(), PropertyType.STRING.getTypeUri(), propertyName, propertyName, container);
+        pd.setFormat(null);
+        return pd;
+    }
+
     public boolean isValidDataProperty(String propertyName)
     {
         return DATA_ROW_LSID_PROPERTY.equals(propertyName) ||
@@ -595,4 +607,14 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         return null;
     }
 
+    /**
+     * Helper to create the Lsid for the run->virusWellGroup relationship
+     */
+    public static Lsid createVirusWellGroupLsid(ExpData outputData, @Nullable String virusWellGroupName)
+    {
+        if (virusWellGroupName == null)
+            virusWellGroupName = AbstractPlateBasedAssayProvider.VIRUS_NAME_PROPERTY_NAME;
+
+        return new Lsid(outputData.getLSID() + "-" + virusWellGroupName);
+    }
 }

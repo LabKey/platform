@@ -93,6 +93,8 @@ public abstract class SamplePropertyHelper<ObjectType>
         List<String> sampleNames = getSampleNames();
         if (sampleNames.isEmpty())
             return;
+
+        region.addGroupTable();
         _groups = new HashMap<>();
         Map<String, Map<DomainProperty, Object>> domains = new HashMap<>();
         for (DomainProperty sampleProperty : _domainProperties)
@@ -137,7 +139,12 @@ public abstract class SamplePropertyHelper<ObjectType>
         }
         if (errorReshow && defaultValueContext != null)
             view.setInitialValues(defaultValueContext.getRequest().getParameterMap());
-        region.setGroupHeadings(sampleNames);
+
+        // don't display the group heading if there is only a single group
+        if (sampleNames.size() == 1)
+            region.setGroupHeadings(Collections.EMPTY_LIST);
+        else
+            region.setGroupHeadings(sampleNames);
         region.setHorizontalGroups(true);
     }
 

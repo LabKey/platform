@@ -38,6 +38,7 @@ public class NabSpecimen
     private String _objectUri;
     private int _objectId;          // TODO: remove when we remove use of exp.Object
     private int _protocolId;
+    private String _virusLsid;
 
     public int getDataId()
     {
@@ -187,5 +188,15 @@ public class NabSpecimen
     public void setRowId(int rowId)
     {
         _rowId = rowId;
+    }
+
+    public String getVirusLsid()
+    {
+        return _virusLsid;
+    }
+
+    public void setVirusLsid(String virusLsid)
+    {
+        _virusLsid = virusLsid;
     }
 }

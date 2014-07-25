@@ -316,6 +316,17 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public static String getDomainURIForPrefix(ExpProtocol protocol, String domainPrefix)
     {
+        String result = getDomainURIForPrefixIfExists(protocol, domainPrefix);
+        if (result == null)
+        {
+            throw new IllegalArgumentException("No domain match for prefix '" + domainPrefix + "' in protocol with LSID '" + protocol.getLSID() + "'");
+        }
+        return result;
+    }
+
+    @Nullable
+    public static String getDomainURIForPrefixIfExists(ExpProtocol protocol, String domainPrefix)
+    {
         String result = null;
         for (String uri : protocol.getObjectProperties().keySet())
         {
@@ -332,10 +343,6 @@ public abstract class AbstractAssayProvider implements AssayProvider
                 }
             }
         }
-        if (result == null)
-        {
-            throw new IllegalArgumentException("No domain match for prefix '" + domainPrefix + "' in protocol with LSID '" + protocol.getLSID() + "'");
-        }
         return result;
     }
 
@@ -343,6 +350,16 @@ public abstract class AbstractAssayProvider implements AssayProvider
     {
         Container container = protocol.getContainer();
         return PropertyService.get().getDomain(container, getDomainURIForPrefix(protocol, domainPrefix));
+    }
+
+    @Nullable
+    public static Domain getDomainByPrefixIfExists(ExpProtocol protocol, String domainPrefix)
+    {
+        String domainURI = getDomainURIForPrefixIfExists(protocol, domainPrefix);
+        if (null == domainURI)
+            return null;
+        Container container = protocol.getContainer();
+        return PropertyService.get().getDomain(container, domainURI);
     }
 
     public Domain getResultsDomain(ExpProtocol protocol)

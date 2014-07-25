@@ -50,11 +50,11 @@ import java.util.Set;
  * User: jeckels
  * Date: Oct 12, 2011
  */
-public class PlateBasedRunCreator extends DefaultAssayRunCreator<AbstractPlateBasedAssayProvider>
+public class PlateBasedRunCreator<ProviderType extends AbstractPlateBasedAssayProvider> extends DefaultAssayRunCreator<ProviderType>
 {
     public static final AssayDataType SAMPLE_METADATA_FILE_TYPE = new AssayDataType("SampleMetadataFile", new FileType(Arrays.asList(".xls", ".xlsx"), ".xls"));
 
-    public PlateBasedRunCreator(AbstractPlateBasedAssayProvider provider)
+    public PlateBasedRunCreator(ProviderType provider)
     {
         super(provider);
     }

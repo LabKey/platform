@@ -33,7 +33,7 @@ public interface PlateTypeHandler
 {
     public String getAssayType();
 
-    public List<String> getTemplateTypes();
+    public List<String> getTemplateTypes(Pair<Integer, Integer> size);
 
     /**
      * createPlate will be given a null value for templateTypeName when it is creating a new template which is a 

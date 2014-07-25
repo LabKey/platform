@@ -67,6 +67,16 @@ public class PlateService
         Plate createPlate(PlateTemplate template, double[][] wellValues);
 
         /**
+         * Adds a new well group to the plate
+         * @param plate A plate instance object.
+         * @param name The name of the well group.
+         * @param type The type of well group to create.
+         * @param positions A list of positions which comprises the group.
+         * @return
+         */
+        WellGroup createWellGroup(Plate plate, String name, WellGroup.Type type, List<Position> positions);
+
+        /**
          * Gets an existing plate template.
          * @param container The template's container.
          * @param templateName The template's name.

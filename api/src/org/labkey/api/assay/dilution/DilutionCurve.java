@@ -16,12 +16,17 @@
 
 package org.labkey.api.assay.dilution;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.statistics.CurveFit;
 import org.labkey.api.data.statistics.DoublePoint;
 import org.labkey.api.data.statistics.FitFailedException;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.study.Plate;
+import org.labkey.api.study.Position;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
+
+import java.util.List;
 
 /**
  * User: brittp
@@ -52,5 +57,27 @@ public interface DilutionCurve
     public static interface PercentCalculator
     {
         double getPercent(WellGroup group, WellData data) throws FitFailedException;
+
+        @Nullable
+        /**
+         * Returns the WellGroup for the cell control wells. An optional list of positions can be specified for the
+         * case where control wells may be specific to a particular virus well group (or other type of well group).
+         * The positions describe the sample well locations that the control wells are sought for.
+         *
+         * For the case where control wells have no affinity to other well groups on the plate, null can be
+         * specified for the data positions and by default all cell control wells will be returned.
+         */
+        WellGroup getCellControlWells(Plate plate, @Nullable List<Position> dataPositions);
+
+        @Nullable
+        /**
+         * Returns the WellGroup for the virus control wells. An optional list of positions can be specified for the
+         * case where control wells may be specific to a particular virus well group (or other type of well group).
+         * The positions describe the sample well locations that the control wells are sought for.
+         *
+         * For the case where control wells have no affinity to other well groups on the plate, null can be
+         * specified for the data positions and by default all virus control wells will be returned.
+         */
+        WellGroup getVirusControlWells(Plate plate, @Nullable List<Position> dataPositions);
     }
 }

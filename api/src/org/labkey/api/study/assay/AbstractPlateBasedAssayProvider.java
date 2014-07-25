@@ -54,6 +54,8 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
     public static final String ASSAY_DOMAIN_SAMPLE_WELLGROUP = ExpProtocol.ASSAY_DOMAIN_PREFIX + "SampleWellGroup";
     public static final String SAMPLE_METADATA_INPUT_ROLE = "Sample Metadata";
     public static final String METADATA_INPUT_FORMAT_SUFFIX = "#SampleMetadataInputFormat";
+    public static final String VIRUS_WELL_GROUP_NAME = "VirusWellGroupName";
+    public static final String VIRUS_NAME_PROPERTY_NAME = "VirusName";
 
     public AbstractPlateBasedAssayProvider(String protocolLSIDPrefix, String runLSIDPrefix, AssayDataType dataType, Module declaringModule)
     {

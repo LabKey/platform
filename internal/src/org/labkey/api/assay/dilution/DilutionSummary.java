@@ -29,6 +29,7 @@ import org.labkey.api.study.PlateService;
 import org.labkey.api.study.WellData;
 import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -53,7 +54,7 @@ public class DilutionSummary implements Serializable
     private StatsService.CurveFitType _curveFitType;
     protected DilutionMaterialKey _materialKey = null;
     protected Container _container;
-    public static final DilutionMaterialKey BLANK_NAB_MATERIAL = new DilutionMaterialKey(ContainerManager.getRoot(), "Blank", null, null, null);
+    public static final DilutionMaterialKey BLANK_NAB_MATERIAL = new DilutionMaterialKey(ContainerManager.getRoot(), "Blank", null, null, null, null);
 
 
     public DilutionSummary(Luc5Assay assay, WellGroup sampleGroup, String lsid, StatsService.CurveFitType curveFitType)
@@ -114,7 +115,14 @@ public class DilutionSummary implements Serializable
             Double visitId = (Double) firstWellGroup.getProperty(AbstractAssayProvider.VISITID_PROPERTY_NAME);
             String participantId = (String) firstWellGroup.getProperty(AbstractAssayProvider.PARTICIPANTID_PROPERTY_NAME);
             Date visitDate = (Date) firstWellGroup.getProperty(AbstractAssayProvider.DATE_PROPERTY_NAME);
-            _materialKey = new DilutionMaterialKey(_container, specimenId, participantId, visitId, visitDate);
+            String virusName = null;
+            if (_assay instanceof DilutionAssayRun)
+            {
+                String virusWellGroupName = (String) firstWellGroup.getProperty(AbstractPlateBasedAssayProvider.VIRUS_WELL_GROUP_NAME);
+                if (null != virusWellGroupName)
+                    virusName = ((DilutionAssayRun) _assay).getVirusName(virusWellGroupName);
+            }
+            _materialKey = new DilutionMaterialKey(_container, specimenId, participantId, visitId, visitDate, virusName);
         }
         return _materialKey;
     }

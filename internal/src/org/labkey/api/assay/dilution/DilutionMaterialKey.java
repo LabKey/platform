@@ -34,14 +34,16 @@ public class DilutionMaterialKey
     private String _participantId;
     private Double _visitId;
     private Date _date;
+    private String _virusName;
 
-    public DilutionMaterialKey(Container container, String specimenId, String participantId, Double visitId, Date date)
+    public DilutionMaterialKey(Container container, String specimenId, String participantId, Double visitId, Date date, String virusName)
     {
         _container = container;
         _specimenId = specimenId;
         _participantId = participantId;
         _visitId = visitId;
         _date = date;
+        _virusName = virusName;
     }
 
     private void appendAndSeparate(StringBuilder builder, String append)
@@ -96,6 +98,8 @@ public class DilutionMaterialKey
             }
             else if (_visitId != null)
                 appendAndSeparate(builder, "Vst " + _visitId);
+            if (_virusName != null)
+                appendAndSeparate(builder, _virusName);
             return builder.toString();
         }
         else

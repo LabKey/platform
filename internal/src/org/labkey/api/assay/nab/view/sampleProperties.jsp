@@ -43,6 +43,10 @@
     {
         Map<PropertyDescriptor, Object> sampleProps = new LinkedHashMap<>(result.getSampleProperties());
 
+        Pair<PropertyDescriptor, Object> virusPair = bean.getVirusName(result, c);
+        if (virusPair != null)
+            sampleProps.put(virusPair.getKey(), virusPair.getValue());
+
         Pair<PropertyDescriptor, Object> fitErrorPair = bean.getFitError(result, c);
         if (fitErrorPair != null)
             sampleProps.put(fitErrorPair.getKey(), fitErrorPair.getValue());

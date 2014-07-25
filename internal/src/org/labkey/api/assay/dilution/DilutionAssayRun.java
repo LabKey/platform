@@ -26,6 +26,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.StatsService;
+import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -40,6 +41,7 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
@@ -70,6 +72,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
     protected Map<PropertyDescriptor, Object> _runProperties;
     protected Map<PropertyDescriptor, Object> _runDisplayProperties;
     protected List<SampleResult> _sampleResults;
+    protected Map<String, Object> _virusNames;
     protected ExpRun _run;
     // Be extremely careful to not leak this user out in any objects (e.g, via schemas or tables) as it may have elevated permissions.
     protected User _user;
@@ -225,18 +228,13 @@ public abstract class DilutionAssayRun extends Luc5Assay
         return Collections.unmodifiableMap(_runDisplayProperties);
     }
 
-    protected Map<String, DilutionResultProperties> getSampleProperties(ExpData outputData)
+    protected Map<String, Map<PropertyDescriptor, Object>> getSampleProperties()
     {
-        Map<String, DilutionResultProperties> samplePropertyMap = new HashMap<>();
+        Map<String, Map<PropertyDescriptor, Object>> samplePropertyMap = new HashMap<>();
 
         Collection<ExpMaterial> inputs = _run.getMaterialInputs().keySet();
         Domain sampleDomain = _provider.getSampleWellGroupDomain(_protocol);
         List<? extends DomainProperty> sampleDomainProperties = sampleDomain.getProperties();
-
-        AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _run.getContainer(), _protocol, null);
-        // Do a query to get all the info we need to do the copy
-        TableInfo resultTable = schema.createDataTable(false);
-        DilutionManager mgr = new DilutionManager();
 
         for (ExpMaterial material : inputs)
         {
@@ -246,20 +244,58 @@ public abstract class DilutionAssayRun extends Luc5Assay
                 PropertyDescriptor property = dp.getPropertyDescriptor();
                 sampleProperties.put(property, material.getProperty(property));
             }
-
-            // in addition to the properties saved on the sample object, we'll add the properties associated with each sample's
-            // "output" data object.
-            Map<PropertyDescriptor, Object> dataProperties = new TreeMap<>(new PropertyDescriptorComparator());
-            String wellGroupName = getWellGroupName(material);
-            String dataRowLsid = getDataHandler().getDataRowLSID(outputData, wellGroupName, sampleProperties).toString();
-            Set<Double> cutoffValues = new HashSet<>();
-            for (Integer value : DilutionDataHandler.getCutoffFormats(_protocol, _run).keySet())
-                cutoffValues.add(value.doubleValue());
-            List<PropertyDescriptor> propertyDescriptors = DilutionProviderSchema.getExistingDataProperties(_protocol, cutoffValues);
-            mgr.getDataPropertiesFromRunData(resultTable, dataRowLsid, _run.getContainer(), propertyDescriptors, dataProperties);
-            samplePropertyMap.put(getSampleKey(material), new DilutionResultProperties(sampleProperties,  dataProperties));
+            samplePropertyMap.put(getSampleKey(material), sampleProperties);
         }
         return samplePropertyMap;
+    }
+
+    protected Map<String, DilutionResultProperties> getSampleProperties(ExpData outputData, DilutionSummary[] dilutionSummaries,
+                                                                        Map<String, Map<PropertyDescriptor, Object>> samplePropertiesMap)
+    {
+        Map<String, DilutionResultProperties> dilutionResultPropertiesMap = new HashMap<>();
+
+        AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _run.getContainer(), _protocol, null);
+        TableInfo virusTable = schema.createTable(DilutionManager.VIRUS_TABLE_NAME);
+
+        // Do a query to get all the info we need to do the copy
+        TableInfo resultTable = schema.createDataTable(false);
+        DilutionManager mgr = new DilutionManager();
+
+        Set<Double> cutoffValues = new HashSet<>();
+        for (Integer value : DilutionDataHandler.getCutoffFormats(_protocol, _run).keySet())
+            cutoffValues.add(value.doubleValue());
+        List<PropertyDescriptor> propertyDescriptors = DilutionProviderSchema.getExistingDataProperties(_protocol, cutoffValues);
+
+        for (DilutionSummary summary : dilutionSummaries)
+        {
+            // We need sample key without Virus for sample properties
+            Map<PropertyDescriptor, Object> sampleProperties = samplePropertiesMap.get(getSampleKey(summary));
+            Map<PropertyDescriptor, Object> dataProperties = new TreeMap<>(new PropertyDescriptorComparator());
+            String sampleKeyWithVirus = summary.getFirstWellGroup().getName();
+            String dataRowLsid = getDataHandler().getDataRowLSID(outputData, sampleKeyWithVirus, sampleProperties).toString();
+            mgr.getDataPropertiesFromRunData(resultTable, dataRowLsid, _run.getContainer(), propertyDescriptors, dataProperties);
+            dilutionResultPropertiesMap.put(sampleKeyWithVirus, new DilutionResultProperties(dataProperties,
+                    getVirusProperties(mgr, dataRowLsid, _run.getContainer(), virusTable)));
+        }
+        return dilutionResultPropertiesMap;
+    }
+
+
+    protected Map<String, Object> getVirusProperties(DilutionManager mgr, String dataRowLsid, Container container, TableInfo virusTable)
+    {
+        NabSpecimen nabSpecimen = mgr.getNabSpecimen(dataRowLsid, container);
+        if (null != nabSpecimen)
+        {
+            String virusLsid = nabSpecimen.getVirusLsid();
+            if (null != virusLsid)
+            {
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromString("VirusLsid"), virusLsid);
+                Map<String, Object> result = new TableSelector(virusTable, TableSelector.ALL_COLUMNS, filter, null).getMap();
+                if (null != result)
+                    return result;
+            }
+        }
+        return Collections.emptyMap();
     }
 
     protected CustomView getRunsCustomView(ViewContext context)
@@ -282,25 +318,50 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     public abstract List<SampleResult> getSampleResults();
 
+    public Map<String, Object> getVirusNames()
+    {
+        if (_virusNames == null)
+            _virusNames = Collections.EMPTY_MAP;
+        return _virusNames;
+    }
+
+    protected String getVirusName(String virusWellGroupName)
+    {
+        List<? extends ExpData> outputDatas = _run.getOutputDatas(null);
+        if (outputDatas.size() > 0)
+        {
+            Lsid virusLsid = DilutionDataHandler.createVirusWellGroupLsid(outputDatas.get(0), virusWellGroupName);
+            AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _run.getContainer(), _protocol, null);
+            TableInfo virusTable = schema.createTable(DilutionManager.VIRUS_TABLE_NAME);
+            ColumnInfo columnInfo = virusTable.getColumn(AbstractPlateBasedAssayProvider.VIRUS_NAME_PROPERTY_NAME);
+            SimpleFilter filter = new SimpleFilter(FieldKey.fromString("VirusLsid"), virusLsid.toString());
+            List<String> results = new TableSelector(columnInfo, filter, null).getArrayList(String.class);
+            if (!results.isEmpty())
+                return results.get(0);
+        }
+        return null;
+    }
+
     public static class DilutionResultProperties
     {
-        private Map<PropertyDescriptor, Object> _sampleProperties;
         private Map<PropertyDescriptor, Object> _dataProperties;
+        private Map<String, Object> _virusProperties;
 
-        public DilutionResultProperties(Map<PropertyDescriptor, Object> sampleProperties, Map<PropertyDescriptor, Object> dataProperties)
+        public DilutionResultProperties(Map<PropertyDescriptor, Object> dataProperties,
+                                        Map<String, Object> virusProperties)
         {
-            _sampleProperties = sampleProperties;
             _dataProperties = dataProperties;
-        }
-
-        public Map<PropertyDescriptor, Object> getSampleProperties()
-        {
-            return _sampleProperties;
+            _virusProperties = virusProperties;
         }
 
         public Map<PropertyDescriptor, Object> getDataProperties()
         {
             return _dataProperties;
+        }
+
+        public Map<String, Object> getVirusProperties()
+        {
+            return _virusProperties;
         }
     }
 
@@ -313,18 +374,20 @@ public abstract class DilutionAssayRun extends Luc5Assay
         private DilutionMaterialKey _materialKey;
         private Map<PropertyDescriptor, Object> _sampleProperties;
         private Map<PropertyDescriptor, Object> _dataProperties;
+        private Map<String, Object> _virusProperties;
         private boolean _longCaptions = false;
         private DilutionManager _mgr = new DilutionManager();
 
         public SampleResult(DilutionAssayProvider provider, ExpData data, DilutionSummary dilutionSummary, DilutionMaterialKey materialKey,
-                            Map<PropertyDescriptor, Object> sampleProperties, Map<PropertyDescriptor, Object> dataProperties)
+                            Map<PropertyDescriptor, Object> sampleProperties, DilutionResultProperties dilutionResultProperties)
         {
             _dilutionSummary = dilutionSummary;
             _materialKey = materialKey;
             _sampleProperties = sortProperties(sampleProperties);
-            _dataProperties = sortProperties(dataProperties);
+            _dataProperties = sortProperties(dilutionResultProperties.getDataProperties());
             _dataRowLsid = provider.getDataHandler().getDataRowLSID(data, dilutionSummary.getFirstWellGroup().getName(), sampleProperties).toString();
             _dataContainer = data.getContainer();
+            _virusProperties = dilutionResultProperties.getVirusProperties();
         }
 
         public Integer getObjectId()
@@ -359,6 +422,11 @@ public abstract class DilutionAssayRun extends Luc5Assay
         public Map<PropertyDescriptor, Object> getDataProperties()
         {
             return _dataProperties;
+        }
+
+        public Map<String, Object> getVirusProperties()
+        {
+            return _virusProperties;
         }
 
         public String getDataRowLsid()

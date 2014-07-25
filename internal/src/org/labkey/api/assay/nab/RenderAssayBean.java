@@ -40,6 +40,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.study.assay.AbstractAssayProvider;
+import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.DateUtil;
@@ -54,6 +55,7 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -120,6 +122,10 @@ public class RenderAssayBean extends RenderAssayForm
                     }
                 }
             }
+
+            Map<String, Object> virusNames = _assay.getVirusNames();
+            if (null != virusNames)
+                _displayProperties.putAll(virusNames);
         }
         return _displayProperties;
     }
@@ -327,6 +333,18 @@ public class RenderAssayBean extends RenderAssayForm
         PropertyDescriptor aucPD = _assay.getDataHandler().getPropertyDescriptor(container, getAssay().getProtocol(), aucPropertyName, new HashMap<Integer, String>());
         if (null != aucPD)
             return new Pair<>(aucPD, result.getDataProperty(aucPropertyName));
+        return null;
+    }
+
+    public Pair<PropertyDescriptor, Object> getVirusName(DilutionAssayRun.SampleResult result, Container container)
+    {
+        Map<String, Object> virusNames = _assay.getVirusNames();
+        if (virusNames.size() > 1)
+        {
+            PropertyDescriptor virusPD = _assay.getDataHandler().getStringPropertyDescriptor(container, getAssay().getProtocol(), "Virus");
+            if (null != virusPD)
+                return new Pair<>(virusPD, result.getVirusProperties().get(AbstractPlateBasedAssayProvider.VIRUS_NAME_PROPERTY_NAME));
+        }
         return null;
     }
 

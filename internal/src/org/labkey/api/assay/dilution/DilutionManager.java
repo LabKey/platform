@@ -65,6 +65,8 @@ public class DilutionManager
      */
     public static final String CUTOFF_VALUE_TABLE_NAME = "CutoffValue";
     public static final String NAB_SPECIMEN_TABLE_NAME = "NAbSpecimen";
+    public static final String VIRUS_TABLE_NAME = "Virus";
+
     public static final String NAB_DBSCHEMA_NAME = "nab";
     public static final String OOR_INDICATOR_SUFFIX = "OORIndicator";
 
