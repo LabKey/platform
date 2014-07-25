@@ -102,15 +102,6 @@ public class LinkReport extends BaseRedirectReport implements DynamicThumbnailPr
     public boolean hasContentModified(ContainerUser context)
     {
         // Content modified if change to the link URL string property
-        String newLinkUrl = getUrl(context.getContainer());
-
-        String origLinkUrl = null;
-        if (getReportId() != null)
-        {
-            LinkReport origReport = (LinkReport)getReportId().getReport(context);
-            origLinkUrl = origReport != null  ? origReport.getUrl(context.getContainer()) : null;
-        }
-
-        return newLinkUrl != null && !newLinkUrl.equals(origLinkUrl);
+        return hasDescriptorPropertyChanged(context, REDIRECT_URL);
     }
 }

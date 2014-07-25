@@ -109,17 +109,9 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
     @Override
     public boolean hasContentModified(ContainerUser context)
     {
+        // TODO: need to trim the JSON content to just relevant properties (i.e. don't need group IDs or categoryIDs which are currently also include in export/import)
+
         // Content modified if change to the JSON config property
-        String newJson = getDescriptor().getProperty(ReportDescriptor.Prop.json);
-
-        String origJson = null;
-        if (getReportId() != null)
-        {
-            // TODO: need to trim the JSON content to just relevant properties (i.e. don't need group IDs or categoryIDs which are currently also include in export/import)
-            TimeChartReport origReport = (TimeChartReport)getReportId().getReport(context);
-            origJson = origReport != null ? origReport.getDescriptor().getProperty(ReportDescriptor.Prop.json) : null;
-        }
-
-        return newJson != null && !newJson.equals(origJson);
+        return hasDescriptorPropertyChanged(context, ReportDescriptor.Prop.json.name());
     }
 }
