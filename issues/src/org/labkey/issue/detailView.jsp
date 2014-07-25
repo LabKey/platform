@@ -40,6 +40,7 @@
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="java.util.regex.Pattern" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -67,10 +68,39 @@
     Container relatedIssueContainer = IssueManager.getRelatedIssuesList(c);
     ActionURL insertURL = relatedIssueContainer == null ? null : new ActionURL(InsertAction.class, relatedIssueContainer);
     boolean showRelatedIssuesButton = relatedIssueContainer == null ? false : relatedIssueContainer.hasPermission(user, InsertPermission.class);
+
+    LinkedList<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue);
 %>
 <% if (!bean.isPrint())
 {
 %>
+
+<script type="text/javascript">
+    var hidden = true;
+
+    /**
+    * Toggle the hidden flag, set the hide button text to reflect state, and show or hide all related comments.
+     */
+    function toggleComments() {
+        // change the button text
+        var button = document.getElementById('showRelatedComments');
+        if (!hidden)
+            button.text = 'Show Related Comments';
+        else
+            button.text = 'Hide Related Comments';
+
+        // show/hide comment elements
+        var commentDivs = document.getElementsByClassName('relatedIssue');
+        for (var i = 0; i < commentDivs.length; i++) {
+            if (hidden)
+                commentDivs[i].style.display = 'inline';
+            else
+                commentDivs[i].style.display = 'none';
+        }
+        hidden = !hidden;
+    }
+</script>
+
 <%--<script src="<%=contextPath%>/issues/hashbang.js" type="text/javascript"></script>--%>
 <form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
     <table><tr><%
@@ -111,6 +141,10 @@
     if (showRelatedIssuesButton)
     {
         %><td><%= textLink("create related issue", "javascript:document.forms.CreateIssue.submit()") %></td><%
+    }
+    if ( IssueManager.hasRelatedIssues(issue))
+    {
+        %><td><%= PageFlowUtil.textLink("show related comments", "javascript:toggleComments()", "", "showRelatedComments") %></td><%
     }
     %>
     <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>
@@ -185,15 +219,30 @@
 
     StringBuilder commentText = new StringBuilder();
     boolean hasAttachements = false;
-    for (Issue.Comment comment : issue.getComments())
+    for (Issue.Comment comment : commentLinkedList)
     {
+        if (!issue.getComments().contains(comment))
+        {
+            %><div class="relatedIssue" style="display: none;"><%
+        }
+        else
+        {
+            %><div class="currentIssue" style="display: inline;"><%
+        }
         %><hr><table width="100%"><tr><td align="left"><b>
         <%=h(bean.writeDate(comment.getCreated()))%>
         </b></td><td align="right"><b>
         <%=h(comment.getCreatedByName(user))%>
         </b></td></tr></table>
+        <%
+        if (!issue.getComments().contains(comment))
+        {
+            %><div style="color:blue;font-weight:bold;">Related # <%=comment.getIssue().getIssueId()%> </div><%
+        }
+        %>
         <%=comment.getComment()%>
-        <%=bean.renderAttachments(context, comment)%><%
+        <%=bean.renderAttachments(context, comment)%>
+        </div><%
 
         // Determine if the comment has attachements
         hasAttachements = hasAttachements ? true : !bean.renderAttachments(context, comment).isEmpty();

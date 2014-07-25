@@ -182,6 +182,52 @@ public class IssueManager
         return issue;
     }
 
+    /**
+     * Returns a linked list of all comments for the argument Issue together with comments
+     * of all related issues sorted by creation date.
+     *
+     * @param   issue   an issue to retrieve comments from
+     * @return          the sorted linked list of all related comments
+     */
+    public static LinkedList<Issue.Comment> getCommentsForRelatedIssues(Issue issue)
+    {
+        // Get related issues for optional display
+        ArrayList<Integer> relatedIssues = issue.getRelatedIssues();
+        LinkedList<Issue.Comment> commentLinkedList = new LinkedList();
+
+        // Add all related issue comments
+        for (Integer relatedIssueInt : relatedIssues)
+        {
+            Issue relatedIssue = IssueManager.getIssue(null, relatedIssueInt);
+            if (relatedIssue != null)
+                commentLinkedList.addAll(relatedIssue.getComments());
+        }
+        // Add all current issue comments
+        commentLinkedList.addAll(issue.getComments());
+
+        Collections.sort(commentLinkedList, new Comparator<Issue.Comment>()
+        {
+            @Override
+            public int compare(Issue.Comment c1, Issue.Comment c2)
+            {
+                return c1.getCreated().compareTo(c2.getCreated());
+            }
+        });
+        return commentLinkedList;
+    }
+
+    /**
+     * Determine if the parameter issue has related issues.  Returns true if the issue has related
+     * issues and false otherwise.
+     *
+     * @param   issue   The issue to query
+     * @return          boolean return value
+     */
+    public static boolean hasRelatedIssues(Issue issue)
+    {
+        ArrayList<Integer> relatedIssues = issue.getRelatedIssues();
+        return relatedIssues.size() > 0;
+    }
 
     public static void saveIssue(User user, Container c, Issue issue) throws SQLException
     {
