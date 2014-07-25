@@ -96,6 +96,21 @@ public abstract class AbstractReport implements Report
         return false;
     }
 
+    protected boolean hasDescriptorPropertyChanged(ContainerUser context, String descriptorPropName)
+    {
+        // Content modified if change to the specified descriptor property
+        String newPropStr = getDescriptor().getProperty(descriptorPropName);
+
+        String origPropStr = null;
+        if (getReportId() != null)
+        {
+            Report origReport = getReportId().getReport(context);
+            origPropStr = origReport != null  ? origReport.getDescriptor().getProperty(descriptorPropName) : null;
+        }
+
+        return newPropStr != null && !newPropStr.equals(origPropStr);
+    }
+
     // Delete attachments and thumbnails on delete
     @Override
     public void beforeDelete(ContainerUser context)

@@ -193,15 +193,6 @@ public abstract class ScriptReport extends AbstractReport
     public boolean hasContentModified(ContainerUser context)
     {
         // Content modified if change to the "script" config property
-        String newScript = getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
-
-        String origScript = null;
-        if (getReportId() != null)
-        {
-            ScriptReport origReport = (ScriptReport)getReportId().getReport(context);
-            origScript = origReport != null  ? origReport.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script) : null;
-        }
-
-        return newScript != null && !newScript.equals(origScript);
+        return hasDescriptorPropertyChanged(context, ScriptReportDescriptor.Prop.script.name());
     }
 }
