@@ -997,7 +997,7 @@ table.labkey-data-region {
     border-spacing: 0;
 }
 
-.labkey-data-region-wrap {
+.labkey-data-region-auth {
     display: inline-block;
     border: 1px solid #DDDDDD;
 }

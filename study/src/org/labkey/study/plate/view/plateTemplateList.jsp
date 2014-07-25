@@ -86,7 +86,7 @@
             designerURL.addParameter("rowCount", rows);
             designerURL.addParameter("colCount", cols);
             designerURL.addParameter("assayType", handler.getAssayType());
-            List<String> types = handler.getTemplateTypes();
+            List<String> types = handler.getTemplateTypes(size);
             if (types == null || types.isEmpty())
             {
         %>
@@ -95,7 +95,7 @@
             </tr>
         <%
             }
-            for (String template : handler.getTemplateTypes())
+            for (String template : types)
             {
                 designerURL.replaceParameter("templateType", template);
             %>

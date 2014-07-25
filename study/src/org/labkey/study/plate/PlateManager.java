@@ -107,7 +107,7 @@ public class PlateManager implements PlateService.Service
                 return "blank";
             }
 
-            public List<String> getTemplateTypes()
+            public List<String> getTemplateTypes(Pair<Integer, Integer> size)
             {
                 return new ArrayList<>();
             }
@@ -135,7 +135,13 @@ public class PlateManager implements PlateService.Service
             throw new IllegalArgumentException("Only plate templates retrieved from the plate service can be used to create plate instances.");
         return new PlateImpl((PlateTemplateImpl) template, wellValues);
     }
-    
+
+    @Override
+    public WellGroup createWellGroup(Plate plate, String name, WellGroup.Type type, List<Position> positions)
+    {
+        return new WellGroupImpl((PlateImpl)plate, name, type, positions);
+    }
+
     public Position createPosition(Container container, int row, int column)
     {
         return new PositionImpl(container, row, column);
