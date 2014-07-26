@@ -103,7 +103,7 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
                         }
 
                         // clicked on the 'checkbox'
-                        else if (e.getTarget('.x4-grid-row-checker')) {
+                        else if (e.getTarget('.x4-grid-row-checker') || e.getTarget('.x-grid-row-checker')) {
                             // clicking on the checkbox for a row, selects or deselects just that row
                             this[this.getGrid().getSelectionModel().isSelected(record) ? 'deselect' : 'select'](record, false);
                         }
