@@ -17,7 +17,6 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.labkey.api.data.Aggregate;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.query.CustomView;
@@ -43,8 +42,6 @@ import org.labkey.data.xml.queryCustomView.PropertyType;
 import org.labkey.data.xml.queryCustomView.SortType;
 import org.labkey.data.xml.queryCustomView.SortsType;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -60,11 +57,10 @@ import java.util.Map;
 
 /*
     Base reader for de-serializing query custom view XML files (creating using queryCustomView.xsd) into a form that's
-    compatible with CustomView.  This class is used by folder import and simple modules.  
+    compatible with CustomView. This class is used by folder import and simple modules.
  */
 public class CustomViewXmlReader
 {
-    private static final Logger LOG = Logger.getLogger(CustomViewXmlReader.class);
     public static final String XML_FILE_EXTENSION = ".qview.xml";
 
     private String _schema;
@@ -229,24 +225,6 @@ public class CustomViewXmlReader
         catch (IOException ioe)
         {
             throw new UnexpectedException(ioe);
-        }
-    }
-
-    public static CustomViewXmlReader loadDefinition(File f)
-    {
-        InputStream is = null;
-        try
-        {
-            is = new FileInputStream(f);
-            return loadDefinition(is, f.toString());
-        }
-        catch (IOException ioe)
-        {
-            throw new UnexpectedException(ioe);
-        }
-        finally
-        {
-            if (is != null) try { is.close(); } catch (IOException e) { }
         }
     }
 

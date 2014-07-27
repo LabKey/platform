@@ -42,9 +42,10 @@ import java.util.Map;
  */
 public class ModuleCustomViewDef extends ResourceRef
 {
-    private String _schema, _query;
-    private CustomViewXmlReader _customView;
-    private long _lastModified;
+    private final String _schema;
+    private final String _query;
+    private final CustomViewXmlReader _customView;
+    private final long _lastModified;
 
     public ModuleCustomViewDef(Resource r, String schema, String query)
     {
