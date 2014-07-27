@@ -1107,25 +1107,23 @@ public class StorageProvisioner
         @Override
         public void afterLoadTable(SchemaTableInfo ti)
         {
-            super.afterLoadTable(ti);
-
             Domain domain = getDomain();
             DomainKind kind = domain.getDomainKind();
+            kind.afterLoadTable(ti, domain);
 
             fixupProvisionedDomain(ti, kind, domain, ti.getName());
-
-            kind.afterLoadTable(ti, domain);
         }
     }
 
     @TestTimeout(120)
     public static class TestCase extends Assert
     {
-        Container container = JunitUtil.getTestContainer();
-        Domain domain;
-        final String notNullPropName = "a_" + System.currentTimeMillis();
-        final String propNameB = "b_" + System.currentTimeMillis();
-        final String propBMvColumnName = PropertyStorageSpec.getMvIndicatorColumnName(propNameB).toLowerCase();
+        private final Container container = JunitUtil.getTestContainer();
+        private final String notNullPropName = "a_" + System.currentTimeMillis();
+        private final String propNameB = "b_" + System.currentTimeMillis();
+        private final String propBMvColumnName = PropertyStorageSpec.getMvIndicatorColumnName(propNameB).toLowerCase();
+
+        private Domain domain;
 
         @Before
         public void before() throws Exception

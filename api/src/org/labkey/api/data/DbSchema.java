@@ -357,23 +357,12 @@ public class DbSchema
 
         if (null != ti)
         {
-            afterLoadTable(ti, options);
+            options.afterLoadTable(ti);
+            ti.afterConstruct();
             ti.setLocked(true);
         }
 
         return ti;
-    }
-
-    /**
-     * Perform any post processing on the table specific to the schema type, implementations can override this method
-     * and bind by DbSchemaType
-     * @param ti
-     * @param options
-     * @param <OptionType>
-     */
-    protected <OptionType extends DbScope.SchemaTableOptions> void afterLoadTable(SchemaTableInfo ti, OptionType options)
-    {
-        options.afterLoadTable(ti);
     }
 
     SchemaTableInfo createTableFromDatabaseMetaData(final String tableName) throws SQLException

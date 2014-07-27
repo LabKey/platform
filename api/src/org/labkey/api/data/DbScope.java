@@ -1403,7 +1403,6 @@ public class DbScope
 
         public void afterLoadTable(SchemaTableInfo ti)
         {
-            ti.afterConstruct();
         }
     }
 
