@@ -15,7 +15,6 @@
  */
 package org.labkey.issue.model;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
 import org.labkey.api.cache.CacheLoader;
@@ -32,6 +31,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.issue.ColumnType;
 
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * User: adam
@@ -40,8 +40,6 @@ import java.util.Collection;
  */
 public class KeywordManager
 {
-    private static final Logger LOG = Logger.getLogger(KeywordManager.class);
-
     public static final Object KEYWORD_LOCK = new Object();
     public static final Cache<String, Collection<Keyword>> KEYWORD_CACHE = CacheManager.getCache(1000, CacheManager.HOUR, "Issue Keywords");
 
@@ -78,7 +76,7 @@ public class KeywordManager
                     keywords = selector.getCollection(Keyword.class);
                 }
 
-                return keywords;
+                return Collections.unmodifiableCollection(keywords);
             }
         });
     }
@@ -168,7 +166,7 @@ public class KeywordManager
                     }
                 }
 
-                IssueManager.setRequiredIssueFields(c, requiredFields.toString());
+                IssueManager.setRequiredIssueFields(c, requiredFields);
             }
         }
     }
