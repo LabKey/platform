@@ -17,16 +17,22 @@ package org.labkey.api.script;
 
 import com.sun.phobos.script.javascript.RhinoScriptEngineFactory;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheManager;
+import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMap;
+import org.labkey.api.files.FileSystemDirectoryListener;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.module.ModuleResourceCache;
+import org.labkey.api.module.ModuleResourceCacheHandler;
+import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.module.PathBasedModuleResourceCache;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
@@ -235,33 +241,62 @@ class RhinoFactory extends RhinoScriptEngineFactory implements ScriptService
 
 }
 
-// Caches the compiled script but not the execution context.
-// CompiledScript has a reference to the RhinoEngine used to compile it and the compiled Script object.
-class ScriptResourceRef extends ResourceRef
-{
-    private CompiledScript script;
-
-    public ScriptResourceRef(Resource resource, CompiledScript script)
-    {
-        super(resource);
-        this.script = script;
-        MemTracker.getInstance().put(this);
-    }
-
-    public CompiledScript getScript()
-    {
-        return script;
-    }
-
-}
-
 class ScriptReferenceImpl implements ScriptReference
 {
-    private static Cache<String, ScriptResourceRef> SCRIPT_CACHE = CacheManager.getCache(1024, CacheManager.HOUR, "Module JavaScript cache");
+    private static final ModuleResourceCacheHandler<Path, CompiledScript> CACHE_HANDLER = new ModuleResourceCacheHandler<Path, CompiledScript>()
+    {
+        private final CacheLoader<String, CompiledScript> _loader = new CacheLoader<String, CompiledScript>()
+        {
+            @Override
+            public CompiledScript load(String key, Object argument)
+            {
+                RhinoEngine engine = (RhinoEngine)argument;
 
-    private ScriptResourceRef ref;
-    private Resource r;
-    private RhinoEngine engine;
+                ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
+                Path path = Path.parse(cid.getName());
+                Resource r = cid.getModule().getModuleResource(path);
+
+                return compile(r, engine);
+            }
+        };
+
+        @Override
+        public boolean isResourceFile(String filename)
+        {
+            return filename.endsWith(".js");
+        }
+
+        @Override
+        public String getResourceName(Module module, String filename)
+        {
+            return filename;
+        }
+
+        @Override
+        public String createCacheKey(Module module, Path path)
+        {
+            return ModuleResourceCache.createCacheKey(module, path.toString());
+        }
+
+        @Override
+        public CacheLoader<String, CompiledScript> getResourceLoader()
+        {
+            return _loader;
+        }
+
+        @Nullable
+        @Override
+        public FileSystemDirectoryListener createChainedDirectoryListener(Module module)
+        {
+            return null;
+        }
+    };
+
+    private static final PathBasedModuleResourceCache<CompiledScript> NEW_CACHE = ModuleResourceCaches.create("Module JavaScript cache", CACHE_HANDLER);
+
+    private final Resource r;
+    private final RhinoEngine engine;
+
     private ScriptContext context; // context to eval and invoke in, not compile.
     private boolean evaluated = false;
 
@@ -282,39 +317,60 @@ class ScriptReferenceImpl implements ScriptReference
         }
     }
 
+    // This is factored out of the CacheLoader to provide access in the uncached case
+    private static CompiledScript compile(Resource r, RhinoEngine engine)
+    {
+        RhinoService.LOG.info("Compiling script '" + r.getPath().toString() + "'");
+
+        try (InputStreamReader reader = new InputStreamReader(r.getInputStream()))
+        {
+            engine.put(ScriptEngine.FILENAME, r.getPath().toString());
+            return engine.compile(reader);
+        }
+        catch (IOException | ScriptException e)
+        {
+            throw new UnexpectedException(e);
+        }
+    }
+
     private CompiledScript compile(Context ctx) throws ScriptException
     {
-        String cacheKey = r.toString();
-        CompiledScript script = null;
-        int opt = ctx.getOptimizationLevel();
-        if (ref == null && opt > -1)
-        {
-            ref = SCRIPT_CACHE.get(cacheKey);
-        }
+//
+//        TODO: Delete all this, the previous caching code
+//
+//        String cacheKey = r.toString();
+//        CompiledScript script = null;
+//        int opt = ctx.getOptimizationLevel();
+//        if (ref == null && opt > -1)
+//        {
+//            ref = SCRIPT_CACHE.get(cacheKey);
+//        }
+//
+//        if (ref == null || ref.isStale())
+//        {
+//            RhinoService.LOG.info((ref == null ? "Compiling new" : "Recompiling stale") + " script '" + r.getPath().toString() + "'");
+//
+//            try (InputStreamReader reader = new InputStreamReader(r.getInputStream()))
+//            {
+//                engine.put(ScriptEngine.FILENAME, r.getPath().toString());
+//                script = engine.compile(reader);
+//                ref = new ScriptResourceRef(r, script);
+//                if (opt > -1)
+//                    SCRIPT_CACHE.put(cacheKey, ref);
+//            }
+//            catch (IOException e)
+//            {
+//                throw new UnexpectedException(e);
+//            }
+//        }
+//        else
+//        {
+//            script = ref.getScript();
+//        }
 
-        if (ref == null || ref.isStale())
-        {
-            RhinoService.LOG.info((ref == null ? "Compiling new" : "Recompiling stale") + " script '" + r.getPath().toString() + "'");
-
-            try (InputStreamReader reader = new InputStreamReader(r.getInputStream()))
-            {
-                engine.put(ScriptEngine.FILENAME, r.getPath().toString());
-                script = engine.compile(reader);
-                ref = new ScriptResourceRef(r, script);
-                if (opt > -1)
-                    SCRIPT_CACHE.put(cacheKey, ref);
-            }
-            catch (IOException e)
-            {
-                throw new UnexpectedException(e);
-            }
-        }
-        else
-        {
-            script = ref.getScript();
-        }
-
-        return script;
+        // TODO: Review this... do we really want to skip caching based on optimization level?
+        boolean useCache = ctx.getOptimizationLevel() > -1;
+        return useCache ? NEW_CACHE.getResource(r, engine) : compile(r, engine);
     }
 
     public ScriptContext getContext()
@@ -557,7 +613,9 @@ class RhinoEngine extends RhinoScriptEngine
                 
                 Context cx = Context.enter();
                 cx.setLanguageVersion(Context.VERSION_1_8);
-                try {
+
+                try
+                {
                     /*
                      * RRC - modified this code to register JSAdapter and some functions
                      * directly, without using a separate RhinoTopLevel class
@@ -579,7 +637,9 @@ class RhinoEngine extends RhinoScriptEngine
 
                     //sealStandardObjects(cx, topLevel);
                     topLevel.sealObject();
-                } finally {
+                }
+                finally
+                {
                     cx.exit();
                 }
                 

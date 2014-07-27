@@ -25,6 +25,7 @@ import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.files.FileSystemWatcher;
 import org.labkey.api.files.FileSystemWatchers;
 import org.labkey.api.resource.MergedDirectoryResource;
+import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
 
@@ -40,10 +41,10 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
  * Time: 7:17 AM
  */
 
-// Cache for for file-system resources where the associated files can appear in multiple directories within a module
-// (as opposed to ModuleResourceCache, which support a single directory per module). This class loads individual
-// resources as requested, caches the loaded resources, registers file system listeners for each resource directory,
-// and clears elements from the cache in response to file system changes.
+// Cache for file-system resources where the associated files can appear in multiple directories within a module
+// (as opposed to ModuleResourceCache, which supports a single, consistent directory per module). This class loads
+// individual resources as requested, caches the loaded resources, registers file system listeners for each resource
+// directory, and clears elements from the cache in response to file system changes.
 //
 // Unlike ModuleResourceCache, which proactively registers all file listeners on first reference, this class registers
 // listeners on demand (any time a resource is loaded from a new directory). As a result, there's no way to query for
@@ -68,7 +69,7 @@ public final class PathBasedModuleResourceCache<T>
             @Override
             public T load(String key, @Nullable Object argument)
             {
-                // Register a listener, if this is directory has never been visited before
+                // Register a listener, if this directory has never been visited before
 
                 ModuleResourceCache.CacheId cid = ModuleResourceCache.parseCacheKey(key);
                 Module module = cid.getModule();
@@ -81,8 +82,12 @@ public final class PathBasedModuleResourceCache<T>
                 if (_pathsWithListeners.add(canonicalName))
                 {
                     Resource parent = module.getModuleResource(parentPath);
-                    LOG.debug("registering a listener on: " + parent);
-                    ((MergedDirectoryResource)parent).registerListener(_watcher, getListener(module, parent.getPath()), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+
+                    if (null != parent)
+                    {
+                        LOG.debug("registering a listener on: " + parent);
+                        ((MergedDirectoryResource) parent).registerListener(_watcher, getListener(module, parent.getPath()), ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
+                    }
                 }
 
                 // Now call the handler's load method
@@ -94,11 +99,35 @@ public final class PathBasedModuleResourceCache<T>
         _cache = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, description, wrapper);
     }
 
+
+    @Nullable
+    public T getResource(Module module, Path path, @Nullable Object argument)
+    {
+        String key = _handler.createCacheKey(module, path);
+        return _cache.get(key, argument);
+    }
+
     @Nullable
     public T getResource(Module module, Path path)
     {
-        String key = _handler.createCacheKey(module, path);
-        return _cache.get(key, null);
+        return getResource(module, path, null);
+    }
+
+    @Nullable
+    public T getResource(Resource r)
+    {
+        return getResource(r, null);
+    }
+
+    @Nullable
+    public T getResource(Resource r, @Nullable Object argument)
+    {
+        // This is hackery, but at least we're now explicit about it
+        Resolver resolver = r.getResolver();
+        assert resolver instanceof ModuleResourceResolver;
+        Module module = ((ModuleResourceResolver) resolver).getModule();
+
+        return getResource(module, r.getPath(), argument);
     }
 
     // Clear a single resource from the cache
