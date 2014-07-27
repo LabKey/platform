@@ -175,28 +175,28 @@ public class CacheManager
                 if (value instanceof Set)
                 {
                     if (!SINGLETON_SET_CLASS.isInstance(value) && !EMPTY_SET_CLASS.isInstance(value))
-                        Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable set (" + value.getClass() + "), which could be mutated by callers!");
+                        LOG.warn(loader.getClass().getName() + " returned a modifiable set (" + value.getClass() + "), which could be mutated by callers!");
                 }
                 else if (value instanceof List)
                 {
                     if (!SINGLETON_LIST_CLASS.isInstance(value) && !EMPTY_LIST_CLASS.isInstance(value))
-                        Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable list (" + value.getClass() + "), which could be mutated by callers!");
+                        LOG.warn(loader.getClass().getName() + " returned a modifiable list (" + value.getClass() + "), which could be mutated by callers!");
                 }
                 else
                 {
-                    Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable collection (" + value.getClass() + "), which could be mutated by callers!");
+                    LOG.warn(loader.getClass().getName() + " returned a modifiable collection (" + value.getClass() + "), which could be mutated by callers!");
                 }
             }
         }
         else if (value instanceof Map)
         {
             if (!UNMODIFIABLE_MAP_CLASS.isInstance(value))
-                Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned a modifiable map (" + value.getClass() + "), which could be mutated by callers!");
+                LOG.warn(loader.getClass().getName() + " returned a modifiable map (" + value.getClass() + "), which could be mutated by callers!");
         }
         else if (value.getClass().isArray())
         {
             // TODO: Stop caching arrays and re-enable this
-//            Logger.getLogger(BlockingCache.class).warn(loader.getClass().getName() + " returned an array, which could be mutated by callers!");
+//            LOG.warn(loader.getClass().getName() + " returned an array, which could be mutated by callers!");
         }
     }
 }

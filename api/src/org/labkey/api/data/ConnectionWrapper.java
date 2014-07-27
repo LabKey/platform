@@ -1455,7 +1455,7 @@ public class ConnectionWrapper implements java.sql.Connection
         {
             long start = System.currentTimeMillis();
             ResultSet ret = _md.getColumns(catalog, schemaPattern, tableNamePattern, columnNamePattern);
-            log("getColumns()", "getColumns(" + catalog + "," + schemaPattern + "," + tableNamePattern + "," + columnNamePattern + ")", start);
+            log("getColumns()", "getColumns(" + catalog + ", " + schemaPattern + ", " + tableNamePattern + ", " + columnNamePattern + ")", start);
 
             return ret;
         }
