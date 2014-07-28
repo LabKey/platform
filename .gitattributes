@@ -956,6 +956,7 @@ dataintegration/src/org/labkey/di/steps/TaskrefTransformStepMeta.java -text
 dataintegration/src/org/labkey/di/steps/TaskrefTransformStepProvider.java -text
 dataintegration/src/org/labkey/di/steps/TestTask.java -text
 dataintegration/src/org/labkey/di/steps/TestTaskProvider.java -text
+dataintegration/src/org/labkey/di/steps/TestTaskrefTask.java -text
 dataintegration/src/org/labkey/di/view/DataIntegrationController.java -text
 dataintegration/src/org/labkey/di/view/processedETLJobs.jsp -text
 dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text

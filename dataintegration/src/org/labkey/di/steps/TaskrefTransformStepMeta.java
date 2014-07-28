@@ -14,6 +14,10 @@ import java.util.Map;
  */
 public class TaskrefTransformStepMeta extends StepMetaImpl
 {
+    public static final String TASKREF_CLASS_NOT_FOUND = "Taskref class not found: ";
+    public static final String TASKREF_CLASS_MUST_IMPLEMENT_INTERFACE = "Taskref class must implement interface: ";
+    public static final String TASKREF_CLASS_INSTANTIATION_EXCEPTION = "Exception instantiating taskref class ";
+    public static final String TASKREF_MISSING_REQUIRED_SETTING = "Taskref missing required setting(s):";
     private TaskrefTask taskInstance = null;
     private String taskClassName = "";
 
@@ -36,13 +40,16 @@ public class TaskrefTransformStepMeta extends StepMetaImpl
         }
         catch (ClassNotFoundException e)
         {
-            throw new XmlException("Taskref class not found: " + taskClassName);
+            throw new XmlException(TASKREF_CLASS_NOT_FOUND + taskClassName);
         }
 
         Map<String, String> xmlSettings = new CaseInsensitiveHashMap<>();
-        for (SettingType setting : taskref.getSettings().getSettingArray())
+        if (taskref.getSettings() != null)
         {
-            xmlSettings.put(setting.getName(), setting.getValue());
+            for (SettingType setting : taskref.getSettings().getSettingArray())
+            {
+                xmlSettings.put(setting.getName(), setting.getValue());
+            }
         }
 
         initializeClass(taskClass, xmlSettings);
@@ -54,12 +61,12 @@ public class TaskrefTransformStepMeta extends StepMetaImpl
         {
             Object taskObject = taskClass.newInstance();
             if (!(taskObject instanceof TaskrefTask))
-                throw new XmlException("Taskref class " + taskClass.getName() + " must implement " + TaskrefTask.class.getName());
+                throw new XmlException(TASKREF_CLASS_MUST_IMPLEMENT_INTERFACE + taskClassName + " does not implement " + TaskrefTask.class.getName());
             taskInstance = (TaskrefTask)taskObject;
         }
         catch (InstantiationException | IllegalAccessException e)
         {
-            throw new XmlException("Exception instantiating taskref class " + taskClass.getName(), e);
+            throw new XmlException(TASKREF_CLASS_INSTANTIATION_EXCEPTION + taskClassName, e);
         }
 
         validateSettings(xmlSettings);
@@ -75,7 +82,7 @@ public class TaskrefTransformStepMeta extends StepMetaImpl
             if (!xmlSettings.containsKey(requiredSetting))
             {
                 if (sb.length() == 0)
-                    sb.append("Taskref missing required setting(s):\n");
+                    sb.append(TASKREF_MISSING_REQUIRED_SETTING).append("\n");
                 sb.append(requiredSetting).append("\n");
             }
         }

@@ -85,10 +85,4 @@ public class CubeMaintenanceTask extends TaskrefTaskImpl
     {
         return Arrays.asList(CUBE, SCHEMA, CONFIG_ID);
     }
-
-    @Override
-    public String getRecordedActionName()
-    {
-        return "Cube Maintenance";
-    }
 }

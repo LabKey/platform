@@ -45,7 +45,7 @@ public abstract class TaskrefTaskImpl implements TaskrefTask
      */
     protected RecordedAction makeRecordedAction()
     {
-        RecordedAction ra = new RecordedAction(getRecordedActionName());
+        RecordedAction ra = new RecordedAction(this.getClass().getSimpleName());
         for (Map.Entry<String,String> setting : settings.entrySet())
         {
             RecordedAction.ParameterType paramType = new RecordedAction.ParameterType(setting.getKey(), "terms.labkey.org#" + setting.getKey().replaceAll("\\s",""), PropertyType.STRING);
