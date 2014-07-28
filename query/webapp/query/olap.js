@@ -736,15 +736,21 @@ Ext4.define('LABKEY.query.olap.MDX', {
 
     clearNamedFilter : function(name, callback, scope)
     {
+        var found = false;
         if (this._filter[name]) {
             delete this._filter[name];
 
             if (this._cube.useServerMemberCache === true) {
                 if (this._serverSets[name]) {
                     delete this._serverSets[name];
+                    found = true;
                     this.serverDeleteNamedSet(name, callback, scope);
                 }
             }
+        }
+
+        if (!found && Ext4.isFunction(callback)) {
+            callback.call(scope || this);
         }
     },
 
