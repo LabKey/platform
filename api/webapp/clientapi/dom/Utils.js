@@ -283,6 +283,44 @@ LABKEY.Utils = new function(impl) {
         }
     };
 
+    impl.addClass = function(element, cls)
+    {
+        if (LABKEY.Utils.isDefined(element))
+        {
+            if (LABKEY.Utils.isDefined(element.classList))
+            {
+                element.classList.add(cls);
+            }
+            else
+            {
+                element.className += " " + cls;
+            }
+        }
+    };
+
+    impl.removeClass = function(element, cls)
+    {
+        if (LABKEY.Utils.isDefined(element))
+        {
+            if (LABKEY.Utils.isDefined(element.classList))
+            {
+                element.classList.remove(cls);
+            }
+            else
+            {
+                // http://stackoverflow.com/questions/195951/change-an-elements-css-class-with-javascript
+                var reg = new RegExp("(?:^|\\s)" + cls + "(?!\\S)/g");
+                element.className.replace(reg, '');
+            }
+        }
+    };
+
+    impl.replaceClass = function(element, removeCls, addCls)
+    {
+        LABKEY.Utils.removeClass(element, removeCls);
+        LABKEY.Utils.addClass(element, addCls);
+    };
+
     return impl;
 
 }(LABKEY.Utils);

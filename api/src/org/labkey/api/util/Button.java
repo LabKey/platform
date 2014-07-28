@@ -119,7 +119,7 @@ public class Button
 
         if (isDisableOnClick())
         {
-            String replaceClass = ";Ext.get(this).replaceClass(" + qCls + ", " + qDisabledCls + ");";
+            String replaceClass = ";LABKEY.Utils.replaceClass(this, " + qCls + ", " + qDisabledCls + ");";
             onClickMethod += replaceClass;
         }
 
