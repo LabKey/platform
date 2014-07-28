@@ -2393,6 +2393,7 @@ public class AnnouncementsController extends SpringActionController
             gridView.setFrame(FrameType.PORTAL);  // Prevent double title
             gridView.setContainer(c);
             gridView.setSort(settings.getSort());
+            addClientDependencies(gridView.getClientDependencies());
 
             SimpleFilter filter = getFilter(settings, perm, displayAll);
             gridView.setFilter(filter);

@@ -34,8 +34,19 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     final JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
     final IssuePage bean = me.getModelBean();
@@ -198,7 +209,7 @@
                                     resolutionSelect.addEventListener('change', updateDuplicateInput, false);
                                 else if (window.attachEvent)
                                     resolutionSelect.attachEvent('onchange', updateDuplicateInput);
-                                Ext.EventManager.on(duplicateInput, 'keypress', filterNumber);
+                                Ext4.EventManager.on(duplicateInput, 'keypress', filterNumber);
                             </script>
                         <%
                             }
@@ -218,7 +229,7 @@
                         <%=text(bean.writeInput("related", issue.getRelated() == null ? null : issue.getRelated(), "id=related tabindex=\"2\""))%>
 
                         <script type="text/javascript">
-                            Ext.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterCommaSepNumber);
+                            Ext4.EventManager.on(document.getElementsByName('related')[0], 'keypress', filterCommaSepNumber);
                         </script>
 
                         <%=text(bean.writeCustomColumn(ColumnType.INT1, 2, true))%>

@@ -2440,24 +2440,6 @@ public class IssuesController extends SpringActionController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class AppAction extends SimpleViewAction<Object>
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            getPageConfig().setTemplate(PageConfig.Template.Print);
-            return new JspView(IssuesController.class, "extjs4.jsp", null);
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
-        }
-    }
-
-
     private static void _appendChange(StringBuilder sbHTML, StringBuilder sbText, String internalFieldName, String from, String to, CustomColumnConfiguration ccc, boolean newIssue)
     {
         // Use custom caption if one is configured

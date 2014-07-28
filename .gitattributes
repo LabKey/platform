@@ -1628,7 +1628,6 @@ issues/src/org/labkey/issue/IssuesWebPartFactory.java -text
 issues/src/org/labkey/issue/detailList.jsp -text
 issues/src/org/labkey/issue/detailView.jsp -text
 issues/src/org/labkey/issue/emailPreferences.jsp -text
-issues/src/org/labkey/issue/extjs4.jsp -text
 issues/src/org/labkey/issue/issuesCustomize.jsp -text
 issues/src/org/labkey/issue/keywordAdmin.jsp -text
 issues/src/org/labkey/issue/list.jsp -text
