@@ -19,15 +19,12 @@ import org.apache.commons.lang3.time.DateUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.ehcache.EhCacheProvider;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.mbean.LabKeyManagement;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * User: adam
@@ -58,16 +55,6 @@ public class CacheManager
     private static final CacheProvider PROVIDER = EhCacheProvider.getInstance();
     private static final List<TrackingCache> KNOWN_CACHES = new LinkedList<>();
     public static final int UNLIMITED = 0;
-
-    // Collections.Unmodifiable* classes are not public, so grab them statically to use in validate() below
-    private static final Class<? extends Collection> UNMODIFIABLE_COLLECTION_CLASS = Collections.unmodifiableCollection(Collections.emptyList()).getClass();
-    private static final Class<? extends Map> UNMODIFIABLE_MAP_CLASS = Collections.unmodifiableMap(Collections.emptyMap()).getClass();
-    private static final Class<? extends Set> SINGLETON_SET_CLASS = Collections.singleton(null).getClass();
-    private static final Class<? extends List> SINGLETON_LIST_CLASS = Collections.singletonList(null).getClass();
-    private static final Class<? extends Map> SINGLETON_MAP_CLASS = Collections.singletonMap(null, null).getClass();
-    private static final Class<? extends Set> EMPTY_SET_CLASS = Collections.emptySet().getClass();
-    private static final Class<? extends List> EMPTY_LIST_CLASS = Collections.emptyList().getClass();
-    private static final Class<? extends Map> EMPTY_MAP_CLASS = Collections.emptyMap().getClass();
 
     private static <K, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)
     {
@@ -162,41 +149,16 @@ public class CacheManager
         PROVIDER.shutdown();
     }
 
-    // Validate a cached value. For now, just log warnings for arrays and mutable collections.
-    public static <V> void validate(CacheLoader loader, V value)
+    // Validate a cached value. For now, just log warnings for mutable collections.
+    public static <V> void validate(CacheLoader loader, @Nullable V value)
     {
-        if (null == value)
-            return;
+        String description = CollectionUtils.getModifiableCollectionMapOrArrayType(value);
 
-        if (value instanceof Collection)
+        // TODO: Stop caching arrays and remove this array check
+        //noinspection ConstantConditions
+        if (null != description && !value.getClass().isArray())
         {
-            if (!UNMODIFIABLE_COLLECTION_CLASS.isInstance(value))
-            {
-                if (value instanceof Set)
-                {
-                    if (!SINGLETON_SET_CLASS.isInstance(value) && !EMPTY_SET_CLASS.isInstance(value))
-                        LOG.warn(loader.getClass().getName() + " returned a modifiable set (" + value.getClass() + "), which could be mutated by callers!");
-                }
-                else if (value instanceof List)
-                {
-                    if (!SINGLETON_LIST_CLASS.isInstance(value) && !EMPTY_LIST_CLASS.isInstance(value))
-                        LOG.warn(loader.getClass().getName() + " returned a modifiable list (" + value.getClass() + "), which could be mutated by callers!");
-                }
-                else
-                {
-                    LOG.warn(loader.getClass().getName() + " returned a modifiable collection (" + value.getClass() + "), which could be mutated by callers!");
-                }
-            }
-        }
-        else if (value instanceof Map)
-        {
-            if (!UNMODIFIABLE_MAP_CLASS.isInstance(value))
-                LOG.warn(loader.getClass().getName() + " returned a modifiable map (" + value.getClass() + "), which could be mutated by callers!");
-        }
-        else if (value.getClass().isArray())
-        {
-            // TODO: Stop caching arrays and re-enable this
-//            LOG.warn(loader.getClass().getName() + " returned an array, which could be mutated by callers!");
+            LOG.warn(loader.getClass().getName() + " returned " + description + ", which could be mutated by callers!");
         }
     }
 }

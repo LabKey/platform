@@ -181,6 +181,7 @@ api/src/org/labkey/api/collections/CaseInsensitiveMapTest.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveMapWrapper.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveTreeMap.java -text
 api/src/org/labkey/api/collections/CaseInsensitiveTreeSet.java -text
+api/src/org/labkey/api/collections/CollectionUtils.java -text
 api/src/org/labkey/api/collections/CompareMap.java -text
 api/src/org/labkey/api/collections/ConcurrentCaseInsensitiveSortedMap.java -text
 api/src/org/labkey/api/collections/ConcurrentCaseInsensitiveSortedSet.java -text
