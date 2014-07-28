@@ -59,6 +59,4 @@ public interface TaskrefTask
      *
      */
     public void setLogger(Logger logger);
-
-    public String getRecordedActionName();
 }
