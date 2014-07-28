@@ -11,6 +11,7 @@ Ext.define('LABKEY.app.model.Filter', {
         {name : 'hierarchy'},
         {name : 'level'},
         {name : 'members', defaultValue: []},
+        {name : 'membersName'},
         {name : 'perspective'},
         {name : 'operator'},
         {name : 'isGrid', type: 'boolean', defaultValue: false}, // TODO: rename to isSql
@@ -412,9 +413,15 @@ Ext.define('LABKEY.app.model.Filter', {
             }
             else {
                 if (data.hierarchy == subjectName) {
+
+                    var m = data.members;
+                    if (data.membersName && data.membersName.length > 0) {
+                        m = { namedSet: data.membersName };
+                    }
+
                     filter.arguments.push({
-                        hierarchy : subjectName,
-                        members  : data.members
+                        hierarchy: subjectName,
+                        members: m
                     });
                 }
                 else {
@@ -677,7 +684,10 @@ Ext.define('LABKEY.app.model.Filter', {
             jsonable.gridFilter = jsonGridFilters;
         }
 
+        // remove properties that do not persist across refresh
         delete jsonable.id;
+        delete jsonable.membersName;
+
         return jsonable;
     }
 });
