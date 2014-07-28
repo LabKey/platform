@@ -12,7 +12,6 @@
     </library>
     <dependencies>
         <dependency path="clientapi_core" />
-        <dependency path="clientapi/ext3" />
         <dependency path="Ext4" />  <!-- TODO: Remove this dependency once all core APIs are Ext independent -->
     </dependencies>
 </libraries>
