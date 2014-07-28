@@ -25,7 +25,7 @@
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
-    addClientDependency("ext4");
+    addClientDependency("clientapi/ext4");
 %>
 
 <%final String ID_PREFIX = "labkey_";
