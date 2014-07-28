@@ -21,6 +21,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
@@ -231,7 +232,7 @@ public class ParticipantReport extends AbstractReport
         String origGroupsConfig = null;
         if (getReportId() != null)
         {
-            ParticipantReport origReport = (ParticipantReport)getReportId().getReport(context);
+            Report origReport = ReportService.get().getReport(getReportId().getRowId());
             origMeasuresConfig = origReport != null  ? origReport.getDescriptor().getProperty(ParticipantReport.MEASURES_PROP) : null;
             origGroupsConfig = origReport != null  ? origReport.getDescriptor().getProperty(ParticipantReport.GROUPS_PROP) : null;
         }

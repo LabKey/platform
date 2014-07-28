@@ -25,6 +25,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.FolderImportContext;
 import org.labkey.api.admin.ImportContext;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -102,6 +105,8 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
     private static List<ReportService.ViewFactory> _viewFactories = new ArrayList<>();
     private static List<ReportService.UIProvider> _uiProviders = new ArrayList<>();
     private static Map<String, ReportService.UIProvider> _typeToProviderMap = new HashMap<>();
+
+    private static final Cache<Integer, ReportDB> REPORT_DB_CACHE = CacheManager.getCache(CacheManager.UNLIMITED, CacheManager.DAY, "Database Report Cache");
 
     /** maps descriptor types to providers */
     private final ConcurrentMap<String, Class> _descriptors = new ConcurrentHashMap<>();
@@ -465,6 +470,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
     public void containerDeleted(Container c, User user)
     {
         ContainerUtil.purgeTable(getTable(), c, "ContainerId");
+        REPORT_DB_CACHE.clear();
     }
 
     public Report createFromQueryString(String queryString) throws Exception
@@ -512,6 +518,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ContainerId"), c.getId());
         filter.addCondition(FieldKey.fromParts("RowId"), reportId);
         Table.delete(getTable(), filter);
+        REPORT_DB_CACHE.remove(reportId);
     }
 
     @Override
@@ -617,6 +624,8 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         else
             reportDB = Table.insert(user, getTable(), reportDB);
 
+        REPORT_DB_CACHE.remove(reportDB.getRowId());
+
         return reportDB;
     }
 
@@ -683,8 +692,16 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
 
     public Report getReport(int reportId)
     {
-        ReportDB report = new TableSelector(getTable(), new SimpleFilter(FieldKey.fromParts("RowId"), reportId), null).getObject(ReportDB.class);
-        return _getInstance(report);
+        ReportDB reportDB = REPORT_DB_CACHE.get(reportId, null, new CacheLoader<Integer, ReportDB>()
+        {
+            @Override
+            public ReportDB load(Integer key, @Nullable Object argument)
+            {
+                return new TableSelector(getTable(), new SimpleFilter(FieldKey.fromParts("RowId"), key), null).getObject(ReportDB.class);
+            }
+        });
+
+        return _getInstance(reportDB);
     }
 
     public ReportIdentifier getReportIdentifier(String reportId)

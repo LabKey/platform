@@ -17,6 +17,8 @@ package org.labkey.visualization.report;
 
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -121,7 +123,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
 
         if (getReportId() != null)
         {
-            GenericChartReport origReport = (GenericChartReport)getReportId().getReport(context);
+            Report origReport = ReportService.get().getReport(getReportId().getRowId());
             String origJson = origReport != null  ? origReport.getDescriptor().getProperty(ReportDescriptor.Prop.json) : null;
 
             JSONObject origChartConfig = new JSONObject(origJson).getJSONObject("chartConfig");

@@ -27,7 +27,7 @@ import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
-import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
@@ -481,7 +481,7 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
 
         if (getReportId() != null)
         {
-            AttachmentReport origReport = (AttachmentReport)getReportId().getReport(context);
+            AttachmentReport origReport = (AttachmentReport) ReportService.get().getReport(getReportId().getRowId());
             String origFilePath = origReport != null ? origReport.getFilePath() : null;
 
             if (newFilePath != null)
