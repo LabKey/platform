@@ -125,21 +125,23 @@ public class CollectionUtils
 
             // Unmodifiable Sets
             assertUnmodifiable(Collections.emptySet());
-            assertUnmodifiable(Collections.emptyNavigableSet());
-            assertUnmodifiable(Collections.emptySortedSet());
             assertUnmodifiable(Collections.singleton(null));
             assertUnmodifiable(Collections.unmodifiableSet(new HashSet<>()));
             assertUnmodifiable(Collections.unmodifiableSortedSet(new TreeSet<>()));
-            assertUnmodifiable(Collections.unmodifiableNavigableSet(new TreeSet<>()));
 
             // Unmodifiable Maps
             assertUnmodifiable(Collections.emptyMap());
-            assertUnmodifiable(Collections.emptyNavigableMap());
-            assertUnmodifiable(Collections.emptySortedMap());
             assertUnmodifiable(Collections.singletonMap(null, null));
             assertUnmodifiable(Collections.unmodifiableMap(new HashMap<>()));
             assertUnmodifiable(Collections.unmodifiableSortedMap(new TreeMap<>()));
-            assertUnmodifiable(Collections.unmodifiableNavigableMap(new TreeMap<>()));
+
+//  These Collections methods are new to Java 8... re-enable when we require that version
+//            assertUnmodifiable(Collections.emptyNavigableSet());
+//            assertUnmodifiable(Collections.emptySortedSet());
+//            assertUnmodifiable(Collections.unmodifiableNavigableSet(new TreeSet<>()));
+//            assertUnmodifiable(Collections.emptyNavigableMap());
+//            assertUnmodifiable(Collections.emptySortedMap());
+//            assertUnmodifiable(Collections.unmodifiableNavigableMap(new TreeMap<>()));
         }
 
         private void assertModifiable(Object value, String expectedType)
