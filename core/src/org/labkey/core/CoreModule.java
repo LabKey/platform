@@ -30,6 +30,7 @@ import org.labkey.api.audit.ClientApiAuditProvider;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.collections.SwapQueue;
 import org.labkey.api.data.*;
 import org.labkey.api.data.dialect.SqlDialectManager;
@@ -825,7 +826,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 SimpleFilter.FilterTestCase.class,
                 SimpleFilter.InClauseTestCase.class,
                 SimpleFilter.BetweenClauseTestCase.class,
-                InlineInClauseGenerator.TestCase.class
+                InlineInClauseGenerator.TestCase.class,
+                CollectionUtils.TestCase.class
         ));
     }
 
