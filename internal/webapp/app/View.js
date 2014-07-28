@@ -75,7 +75,7 @@ Ext.define('LABKEY.app.controller.View', {
             this.actions.show[xtype] = {
                 fn: showAction,
                 scope: scope
-            }
+            };
         }
     },
 
@@ -84,7 +84,7 @@ Ext.define('LABKEY.app.controller.View', {
             this.actions.hide[xtype] = {
                 fn: hideAction,
                 scope: scope
-            }
+            };
         }
     },
 
