@@ -356,9 +356,9 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
 
     getCardSectionHeader : function(title, subTitle) {
         var txt;
-        txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: title}) +
-                (subTitle ? Ext.DomHelper.markup({tag:'div', style:'margin-top: 10px', html: subTitle}) : "") +
-                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
+        txt = Ext4.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: title}) +
+                (subTitle ? Ext4.DomHelper.markup({tag:'div', style:'margin-top: 10px', html: subTitle}) : "") +
+                Ext4.DomHelper.markup({tag:'div', html:'&nbsp;'});
         return {xtype:'displayfield', value: txt};
     },
 

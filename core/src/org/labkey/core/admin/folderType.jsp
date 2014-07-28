@@ -32,13 +32,22 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
 
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <labkey:errors/>
 
 <script>
-LABKEY.requiresExt4Sandbox();
 var requiredModules = new Object();
 var defaultModules = new Object();
 <% //Generate javascript objects...
@@ -141,8 +150,8 @@ function updateDefaultOptions(cb)
         {
             var dm = [];
             //only warn about dependencies if they are active
-            Ext.each(dependencyMap[cb.value], function(m){
-                var els = Ext.Element.select('input[value='+m+'][type="checkbox"]');
+            Ext4.each(dependencyMap[cb.value], function(m){
+                var els = Ext4.Element.select('input[value='+m+'][type="checkbox"]');
                 if(!els.elements.length){
                     return;
                 }
@@ -152,17 +161,17 @@ function updateDefaultOptions(cb)
 
             if(dm && dm.length)
             {
-                Ext.Msg.confirm('Warning', 'This module is required by the following other active modules: ' + dm.join(', ') + '. Disabling this module will also disable these modules.  Do you want to continue?', function(btn){
+                Ext4.Msg.confirm('Warning', 'This module is required by the following other active modules: ' + dm.join(', ') + '. Disabling this module will also disable these modules.  Do you want to continue?', function(btn){
                     if(btn == 'yes')
                     {
                         //uncheck boxes without firing onclick events
                         uncheckEl(cb.value);
-                        Ext.each(dm, function(m){
+                        Ext4.each(dm, function(m){
                             uncheckEl(m);
                         }, this);
 
                         function uncheckEl(m){
-                            var el = Ext.Element.select('input[value='+m+'][type="checkbox"]');
+                            var el = Ext4.Element.select('input[value='+m+'][type="checkbox"]');
                             el.elements[0].checked = false;
                         }
                     }
@@ -177,7 +186,7 @@ function updateDefaultOptions(cb)
             {
                 if(dependencyMap[m].indexOf(cb.value) > -1)
                 {
-                    var el = Ext.Element.select('input[value='+m+'][type="checkbox"]');
+                    var el = Ext4.Element.select('input[value='+m+'][type="checkbox"]');
                     el.elements[0].checked = true;
                 }
             }
@@ -228,14 +237,6 @@ function updateDefaultOptions(cb)
 function setNodeText(parent, text)
 {
     parent.innerHTML = text;
-    /* Test runner blows up with this...
-    var child = parent.firstChild;
-    var textNode = document.createTextNode(text);
-    if (null != child)
-        parent.replaceChild(textNode, child);
-    else
-        parent.appendChild(child);
-    */
 }
 function validate()
 {
@@ -351,7 +352,7 @@ for (Module module : allModules)
         handler: function() {
             if (!validate())
             {
-                Ext.MessageBox.alert("Error", "Please select at least one tab to display.");
+                Ext4.Msg.alert("Error", "Please select at least one tab to display.");
             }
             else
             {
@@ -362,7 +363,7 @@ for (Module module : allModules)
                 {
                     if (currentType.toLowerCase() != newFolderType.toLowerCase())
                     {
-                        Ext.MessageBox.confirm("Change Folder Type", "Are you sure you want to change a tab folder's type?", function(btn) {
+                        Ext4.Msg.confirm("Change Folder Type", "Are you sure you want to change a tab folder's type?", function(btn) {
                             if (btn == "yes")
                             {
                                 submitForm(document.getElementById('folderModules'));
