@@ -765,7 +765,6 @@ Ext4.define('LABKEY.query.olap.MDX', {
                     }
 
 //                    console.log('saving "' + name + '" in server cache. Contains', members.length, 'members.');
-                    this._serverSets[name] = members;
                     this.serverSaveNamedSet(name, members, callback, scope);
                 },
                 scope: this
@@ -777,6 +776,8 @@ Ext4.define('LABKEY.query.olap.MDX', {
     },
 
     serverSaveNamedSet : function(name, members, callback, scope) {
+        this._serverSets[name] = members;
+
         Ext4.Ajax.request({
             url: LABKEY.ActionURL.buildURL('query', 'saveNamedSet'),
             method: 'POST',
