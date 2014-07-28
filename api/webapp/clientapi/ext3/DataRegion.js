@@ -322,12 +322,13 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     }
                 };
 
-                LABKEY.requiresExt4Sandbox();  // Ext 4 might not be present
-                LABKEY.requiresScript([
-                    '/study/ReportFilterPanel.js',
-                    '/study/ParticipantFilterPanel.js',
-                    '/dataregion/panel/Facet.js'
-                ], true, initFacet);
+                LABKEY.requiresExt4Sandbox(true, function() {
+                    LABKEY.requiresScript([
+                        '/study/ReportFilterPanel.js',
+                        '/study/ParticipantFilterPanel.js',
+                        '/dataregion/panel/Facet.js'
+                    ], true, initFacet);
+                });
             },
 
             showFaceting: function ()

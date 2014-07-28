@@ -772,7 +772,9 @@ if (typeof LABKEY == "undefined")
              * NOTE: It is important to place this line in a separate script block in your code.  For example:
              * @example
              &lt;script type="text/javascript"&gt;
-             LABKEY.requiresExt4Sandbox();
+             LABKEY.requiresExt4Sandbox(true, function(){
+             //your code here
+             });
              &lt;/script&gt;
              &lt;script type="text/javascript"&gt;
              Ext4.onReady(function(){
