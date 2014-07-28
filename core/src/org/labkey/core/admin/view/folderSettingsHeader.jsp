@@ -1,3 +1,5 @@
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%
 /*
  * Copyright (c) 2011 LabKey Corporation
@@ -17,7 +19,9 @@
 %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
+<%
+    addClientDependency("ext4");
+%>
 <labkey:errors/>
 
 <script type="text/javascript">
