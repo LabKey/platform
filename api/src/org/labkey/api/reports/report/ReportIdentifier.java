@@ -34,4 +34,5 @@ import java.util.Comparator;
 public interface ReportIdentifier
 {
     public @Nullable Report getReport(ContainerUser cu);
+    public int getRowId();
 }

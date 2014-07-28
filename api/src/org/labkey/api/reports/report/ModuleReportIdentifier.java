@@ -95,6 +95,12 @@ public class ModuleReportIdentifier extends AbstractReportIdentifier
         return _reportPath;
     }
 
+    @Override
+    public int getRowId()
+    {
+        return -1;
+    }
+
     public Report getReport(ContainerUser cu)
     {
         if (null != getModule())

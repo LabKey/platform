@@ -85,7 +85,6 @@ public abstract class AbstractReport implements Report
 
     public void beforeSave(ContainerUser context)
     {
-        // TODO: implement report cache so we don't have to hit database again in hasContentModified()
         if (getDescriptor() != null && hasContentModified(context))
             getDescriptor().setContentModified();
     }
@@ -104,7 +103,7 @@ public abstract class AbstractReport implements Report
         String origPropStr = null;
         if (getReportId() != null)
         {
-            Report origReport = getReportId().getReport(context);
+            Report origReport = ReportService.get().getReport(getReportId().getRowId());
             origPropStr = origReport != null  ? origReport.getDescriptor().getProperty(descriptorPropName) : null;
         }
 
