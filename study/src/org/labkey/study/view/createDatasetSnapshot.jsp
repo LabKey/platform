@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.data.ColumnInfo" %>
 <%@ page import="org.labkey.api.data.DisplayColumn" %>
 <%@ page import="org.labkey.api.query.snapshot.QuerySnapshotService" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
@@ -55,7 +54,7 @@
 
 
 <form action="" method="post" onsubmit="validateForm();">
-<table>
+    <table>
         <tr><th colspan="10" class="labkey-header">Snapshot Name</th></tr>
         <tr><td colspan="10" class="labkey-title-area-line"></td></tr>
 
@@ -75,7 +74,7 @@
         <tr><td></td><td><select name="updateDelay" id="updateDelay" style="display:none"><labkey:options value="<%=String.valueOf(bean.getUpdateDelay())%>" map="<%=updateDelay%>"></labkey:options></select></td></tr>
         <tr><td colspan="10" class="labkey-title-area-line"></td></tr>
         <tr><td colspan="10">
-        <%
+                <%
             if (!bean.isEdit())
             {
                 out.println(button("Edit Dataset Definition").submit(true).onClick("this.form.action.value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'"));
@@ -90,7 +89,7 @@
         %>
     </table>
     <%  if (getActionURL().getParameter(DataSetDefinition.DATASETKEY) != null) { %>
-            <input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=getActionURL().getParameter(DataSetDefinition.DATASETKEY)%>">
+    <input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=getActionURL().getParameter(DataSetDefinition.DATASETKEY)%>">
     <%  } %>
     <input type="hidden" name="action" value="<%=StudyController.StudySnapshotForm.CREATE_SNAPSHOT%>" id="action">
     <input type="hidden" name="snapshotDatasetId" value="<%=bean.getSnapshotDatasetId()%>">
@@ -98,24 +97,16 @@
 
 <script type="text/javascript">
 
-    var manualUpdate = Ext.DomQuery.selectNode('#manualUpdate');
-    var updateDelay = Ext.DomQuery.selectNode('#updateDelay');
+    var manualUpdate = document.querySelector('#manualUpdate');
 
-    function onAutoUpdate()
-    {
-        if (manualUpdate.checked)
-            updateDelay.style.display = "none";
-        else
-            updateDelay.style.display = "";
-    }
+    var updateDelay = document.querySelector('#updateDelay');
+    updateDelay.style.display = manualUpdate.checked ? "none" : "";
 
     function validateForm()
     {
         if (manualUpdate.checked)
             updateDelay.value = "0";
     }
-
-    Ext.onReady(onAutoUpdate);
 
 </script>
 
