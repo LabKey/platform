@@ -570,6 +570,9 @@ Ext.define('LABKEY.app.controller.State', {
 
         if (!silent) {
             this.fireEvent('filterchange', this.filters);
+            if (this.filters.length == 0) {
+                this.fireEvent('filterclear');
+            }
         }
     },
 
