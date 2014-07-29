@@ -12,6 +12,13 @@
 
     Ext4.ns('LABKEY.ext4');
 
+    // TODO: Get these off the global 'Date' object
+    Ext4.ns('Date.patterns');
+    Ext4.applyIf(Date.patterns, {
+        ISO8601Long:"Y-m-d H:i:s",
+        ISO8601Short:"Y-m-d"
+    });
+
     /**
      * @name LABKEY.ext4.Util
      * @class

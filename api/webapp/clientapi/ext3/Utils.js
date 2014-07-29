@@ -5,6 +5,13 @@
  */
 Ext.namespace('LABKEY.ext');
 
+// TODO: Get these off the global 'Date' object
+Ext.ns("Date.patterns");
+Ext.applyIf(Date.patterns,{
+    ISO8601Long:"Y-m-d H:i:s",
+    ISO8601Short:"Y-m-d"
+});
+
 LABKEY.ext.Utils = new function() {
     var createHttpProxyImpl = function(containerPath, errorListener) {
         var proxy = new Ext.data.HttpProxy(new Ext.data.Connection({

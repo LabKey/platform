@@ -181,18 +181,6 @@ LABKEY.GridView = function(config)
                                     'j-M-y|j-M-Y|' +
                                     'Y-n-d H:i:s|Y-n-d'
                     });
-                        /*
-                    editor.on("change", function (thisEditor, newValue, oldValue)
-                    {
-                        var dateValue = new Date(newValue);
-                        if (dateValue)
-                        {
-                            if (dateValue.getHours() == 0 && dateValue.getMinutes() == 0 && dateValue.getSeconds() == 0)
-                                thisEditor.value = dateValue.format(Date.patterns.ISO8601Short);
-                            else
-                                thisEditor.value = dateValue.format(Date.patterns.ISO8601Long)
-                        }
-                    });*/
                     break;
                 case "string":
                     editor = new Ext.form.TextField();
