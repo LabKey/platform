@@ -5567,6 +5567,7 @@ api/webapp/ext-theme/harvest/images/util/splitter/mini-left.gif -text
 api/webapp/ext-theme/harvest/images/util/splitter/mini-right.gif -text
 api/webapp/ext-theme/harvest/images/util/splitter/mini-top.gif -text
 api/webapp/ext-theme/harvest/scss/Component.scss -text
+api/webapp/ext-theme/labkey-base/scss/Component.scss -text
 api/webapp/ext-theme/madison/ext-all-debug.css -text
 api/webapp/ext-theme/madison/ext-all.css -text
 api/webapp/ext-theme/madison/images/boundlist/trigger-arrow.png -text
