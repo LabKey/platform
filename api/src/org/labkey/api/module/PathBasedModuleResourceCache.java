@@ -96,7 +96,7 @@ public final class PathBasedModuleResourceCache<T>
         };
 
         _handler = handler;
-        _cache = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, description, wrapper);
+        _cache = CacheManager.getBlockingStringKeyCache(5000, CacheManager.DAY, description, wrapper);
     }
 
 
