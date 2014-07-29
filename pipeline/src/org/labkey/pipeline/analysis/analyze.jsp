@@ -18,8 +18,19 @@
 <%@ page import="org.labkey.api.pipeline.PipelineUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
-<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     ActionURL cancelURL = (ActionURL)HttpView.currentModel();
 %>
@@ -132,7 +143,7 @@
     function changeProtocol(selectedProtocolName)
     {
         var selectedProtocol = allProtocols[selectedProtocolName];
-        var inputs = Ext.DomQuery.select("[@class=protocol-input]");
+        var inputs = Ext4.DomQuery.select("[@class=protocol-input]");
         var disabledState;
         if (selectedProtocol)
         {
@@ -168,7 +179,7 @@
         return disabledState;
     }
 
-    Ext.onReady(function()
+    Ext4.onReady(function()
     {
         selectedFileNames = LABKEY.ActionURL.getParameterArray("file");
         if (!selectedFileNames || selectedFileNames.length == 0)
