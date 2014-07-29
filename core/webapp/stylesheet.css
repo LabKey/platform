@@ -3544,3 +3544,7 @@ div.facet_header .x4-panel-header-text
 {
     background-color: #ffffff;
 }
+
+a.x4-menu-item-link {
+    width: 100%;
+}
