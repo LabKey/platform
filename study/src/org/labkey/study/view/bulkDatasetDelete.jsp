@@ -22,8 +22,19 @@
 <%@ page import="org.labkey.study.controllers.DatasetController" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 
 <p>Please select the datasets you want to delete:</p>
 <form action="<%=h(buildURL(DatasetController.BulkDatasetDeleteAction.class))%>" name="bulkDatasetDelete" method="POST">
@@ -63,9 +74,9 @@
         
 %>
 </table>
-<%= button("Delete Selected").submit(true).onClick(
+<%= button("Delete Selected").id("delete_btn").submit(true).onClick(
         "if (confirm('Delete selected datasets?')){" +
-            "Ext.get(this).replaceClass('labkey-button', 'labkey-disabled-button');" +
+            "Ext4.get(this).replaceCls('labkey-button', 'labkey-disabled-button');" +
             "return true;" +
         "} " +
             "else return false;")%>
