@@ -107,9 +107,10 @@ function validateForm(form)
         return true;
     }
 }
-
-Ext.onReady(function(){
-    new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
+LABKEY.requiresExt3(true, function() {
+    Ext.onReady(function(){
+        new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
+    });
 });
 </script>
 <form method="post" action="<%=h(baseUrl.setAction("update.post").getLocalURIString())%>" enctype="multipart/form-data" onSubmit="return validateForm(this)">

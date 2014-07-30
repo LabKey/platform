@@ -20,6 +20,7 @@
         <script path="vis/timeChart/timeChartPanel.js"/>
     </library>
     <dependencies>
+        <dependency path="clientapi/ext3"/> <!-- QWP -->
         <dependency path="Ext4ClientApi"/>
         <dependency path="vis/vis"/>
         <dependency path="codemirror"/>

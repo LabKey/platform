@@ -145,8 +145,10 @@ else
 <p/>
 <% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>
 <script type="text/javascript">
-Ext.onReady(function(){
-    new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
-});
+    LABKEY.requiresExt3(true, function() {
+        Ext.onReady(function(){
+            new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
+        });
+    });
 </script>
 

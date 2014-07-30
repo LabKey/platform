@@ -77,7 +77,6 @@ var discussionMenu = {};
     discussionMenu.config =
     {
         id:'menuDiscussionMenu',
-        cls:'extContainer',
         items:[<%
 
         String comma = "";
@@ -131,8 +130,10 @@ var discussionMenu = {};
     function onShow()
     {
         if (!discussionMenu.menu)
-            discussionMenu.menu = new Ext.menu.Menu(discussionMenu.config);
-        discussionMenu.menu.show('discussionMenuToggle');
+        {
+            discussionMenu.menu = Ext4.create('Ext.menu.Menu', discussionMenu.config);
+        }
+        discussionMenu.menu.showBy(Ext4.get('discussionMenuToggle'));
     }
 
     Ext4.onReady(function(){Ext4.get("discussionMenuToggle").on("click", onShow)});

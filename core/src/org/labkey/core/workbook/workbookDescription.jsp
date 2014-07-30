@@ -16,23 +16,28 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.view.HttpView" %>
-<%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext3"));
+        resources.add(ClientDependency.fromFilePath("editInPlaceElement.css"));
+        resources.add(ClientDependency.fromFilePath("editInPlaceElement.js"));
+        return resources;
+    }
+%>
 <%
     Container container = getContainer();
 %>
 <script type="text/javascript">
-    LABKEY.requiresCss("editInPlaceElement.css");
-    LABKEY.requiresScript("editInPlaceElement.js");
-</script>
-
-<script type="text/javascript">
     var _wb_titleId = Ext.id();
     LABKEY.NavTrail.setTrail("<span class='wb-name'><%=container.getRowId()%>:&nbsp;</span><span class='labkey-edit-in-place' id='" + _wb_titleId + "'><%=h(container.getTitle())%></span>",
             undefined, <%=PageFlowUtil.jsString(container.getTitle())%>);
-    //LABKEY.NavTrail.setTrail("<%=h(container.getTitle())%>");
 </script>
 
 <style type="text/css">

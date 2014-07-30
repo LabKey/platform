@@ -25,7 +25,18 @@
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.StudyImpl" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     Container c = getContainer();
     StudyImpl s = StudyManager.getInstance().getStudy(c);
@@ -86,7 +97,6 @@
                 fieldLabel: 'Change ' + jsSubjectNounColumnName,
                 labelSeparator: '',
                 value: "",
-//                width : 310,
                 labelWidth: 140,
                 maxLength: 20,
                 enforceMaxLength: true,
@@ -100,7 +110,6 @@
                 fieldLabel: 'to',
                 labelSeparator: '',
                 value: "",
-//                width : 220,
                 labelWidth: 40,
                 maxLength: 20,
                 enforceMaxLength: true,
@@ -223,9 +232,9 @@
         });
 
         var trimFields = function() {
-            oldIdField.setValue(Ext.util.Format.trim(oldIdField.getValue()));
-            newIdField.setValue(Ext.util.Format.trim(newIdField.getValue()));
-            aliasSourceField.setValue(Ext.util.Format.trim(aliasSourceField.getValue()));
+            oldIdField.setValue(Ext4.util.Format.trim(oldIdField.getValue()));
+            newIdField.setValue(Ext4.util.Format.trim(newIdField.getValue()));
+            aliasSourceField.setValue(Ext4.util.Format.trim(aliasSourceField.getValue()));
         };
 
         var resetPreview = function(resetPreviewPanel, resetPreviewButton)

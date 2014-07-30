@@ -65,8 +65,10 @@ function validateForm(form)
         return true;
     }
 }
-Ext.onReady(function(){
-    new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
+LABKEY.requiresExt3(true, function() {
+    Ext.onReady(function(){
+        new Ext.Resizable('body', { handles:'se', minWidth:200, minHeight:100, wrap:true });
+    });
 });
 </script>
 <form method=post enctype="multipart/form-data" action="<%=respondUrl%>" onSubmit="return validateForm(this)">
