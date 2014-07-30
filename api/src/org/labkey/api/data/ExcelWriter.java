@@ -29,7 +29,6 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.util.CellRangeAddress;
-import org.apache.poi.xssf.streaming.SXSSFRow;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ResultSetRowMapFactory;
@@ -56,13 +55,6 @@ import java.util.regex.Pattern;
 
 public class ExcelWriter implements ExportWriter
 {
-    static
-    {
-        // Disable SXSSF assertion; see #14960.
-        // TODO: Remove this once assert is removed from SXSSFRow.getCell(int, MissingCellPolicy), https://issues.apache.org/bugzilla/show_bug.cgi?id=53271
-        SXSSFRow.class.getClassLoader().setClassAssertionStatus(SXSSFRow.class.getName(), false);
-    }
-
     public enum CaptionType
     {
         Name {

@@ -84,7 +84,7 @@ public class ExcelFactory
         }
         catch (IllegalArgumentException e)
         {
-            throw new InvalidFormatException("Unable to open file as an Excel document. " + e.getMessage() == null ? "" : e.getMessage());
+            throw new InvalidFormatException("Unable to open file as an Excel document. " + (e.getMessage() == null ? "" : e.getMessage()));
         }
         finally
         {
@@ -178,7 +178,7 @@ public class ExcelFactory
                     }
                     else if (value instanceof Boolean)
                     {
-                        cell.setCellValue(((Boolean) value).booleanValue());
+                        cell.setCellValue((Boolean) value);
                     }
                     else if (value instanceof String && !forceString)
                     {
