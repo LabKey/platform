@@ -15,6 +15,8 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.view.template.ClientDependency;
@@ -32,16 +34,19 @@ import java.util.Set;
  */
 public class JavaScriptDisplayColumn extends DataColumn
 {
-    private final LinkedHashSet<ClientDependency> _dependencies;
+    private final LinkedHashSet<ClientDependency> _dependencies = new LinkedHashSet<>();
     private final StringExpressionFactory.FieldKeyStringExpression _eventExpression;
 
-    public JavaScriptDisplayColumn(ColumnInfo col, Collection<String> dependencies, String javaScriptEvents)
+    public JavaScriptDisplayColumn(ColumnInfo col, @Nullable Collection<String> dependencies, String javaScriptEvents)
     {
         super(col);
 
-        _dependencies = new LinkedHashSet<>();
-        for (String dependency : dependencies)
-            _dependencies.add(ClientDependency.fromFilePath(dependency));
+        if (null != dependencies)
+        {
+            for (String dependency : dependencies)
+                _dependencies.add(ClientDependency.fromFilePath(dependency));
+        }
+
         _eventExpression = StringExpressionFactory.FieldKeyStringExpression.create(javaScriptEvents, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.OutputNull);
     }
 
@@ -63,7 +68,7 @@ public class JavaScriptDisplayColumn extends DataColumn
     }
 
     @Override
-    public Set<ClientDependency> getClientDependencies()
+    public @NotNull Set<ClientDependency> getClientDependencies()
     {
         return _dependencies;
     }

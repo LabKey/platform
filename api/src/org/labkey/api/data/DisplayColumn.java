@@ -166,7 +166,7 @@ public abstract class DisplayColumn extends RenderColumn
         return _urlTitleCompiled.eval(ctx);
     }
 
-    public Set<ClientDependency> getClientDependencies()
+    public @NotNull Set<ClientDependency> getClientDependencies()
     {
         return Collections.emptySet();
     }
