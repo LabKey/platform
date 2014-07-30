@@ -66,7 +66,7 @@ public class SchemaTableInfoCache
 
     private String getCacheKey(@NotNull DbSchema schema, @NotNull String tableName)
     {
-        return schema.getType().getCacheKey(schema.getName()) + "|" + tableName.toLowerCase();
+        return getCacheKey(schema.getName(), tableName, schema.getType());
     }
 
     private String getCacheKey(@NotNull String schemaName, @NotNull String tableName, @NotNull DbSchemaType type)

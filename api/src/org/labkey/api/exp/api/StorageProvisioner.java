@@ -501,10 +501,7 @@ public class StorageProvisioner
         if (null == scope || null == schemaName)
             throw new IllegalArgumentException();
 
-        String tableName = domain.getStorageTableName();
-
-        if (null == tableName)
-            tableName = _create(scope, kind, domain);
+        String tableName = ensureStorageTable(domain, kind, scope);
 
         assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds must declare a schema type of DbSchemaType.Provisioned";
 
@@ -512,6 +509,21 @@ public class StorageProvisioner
         ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
 
         return schema.getTable(options);
+    }
+
+    private static final Object ENSURE_LOCK = new Object();
+
+    private static String ensureStorageTable(Domain domain, DomainKind kind, DbScope scope)
+    {
+        synchronized (ENSURE_LOCK)
+        {
+            String tableName = domain.getStorageTableName();
+
+            if (null == tableName)
+                tableName = _create(scope, kind, domain);
+
+            return tableName;
+        }
     }
 
     public static void addOrDropTableIndices(Domain domain, boolean doAdd)
