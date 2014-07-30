@@ -98,9 +98,12 @@
 <script type="text/javascript">
 
     var manualUpdate = document.querySelector('#manualUpdate');
-
     var updateDelay = document.querySelector('#updateDelay');
-    updateDelay.style.display = manualUpdate.checked ? "none" : "";
+
+    function onAutoUpdate()
+    {
+        updateDelay.style.display = manualUpdate.checked ? "none" : "";
+    }
 
     function validateForm()
     {
