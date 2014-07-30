@@ -74,7 +74,7 @@ public class CoreUpgradeCode implements UpgradeCode
         return new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT EntityId FROM core.Containers WHERE Parent IS NULL").getObject(String.class);
     }
 
-    // invoked by core-11.20-11.30.sql
+    // invoked by core-12.10-12.20.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void handleUnknownModules(ModuleContext context)
     {
