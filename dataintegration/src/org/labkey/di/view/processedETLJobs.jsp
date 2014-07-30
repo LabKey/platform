@@ -15,6 +15,21 @@
  * limitations under the License.
  */
 %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
+<div id='errorLog'></div>
+<div id='runsChart'></div>
+<div id='schedulerButton'></div>
 <script type="text/javascript">
 
     function redirectToPipeline(id)
@@ -126,7 +141,3 @@
 
     });
 </script>
-
-<div id='errorLog'></div>
-<div id='runsChart'></div>
-<div id='schedulerButton'></div>

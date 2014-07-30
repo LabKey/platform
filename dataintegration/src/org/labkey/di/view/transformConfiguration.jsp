@@ -26,7 +26,18 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
 List<TransformConfiguration> configurationsList = TransformManager.get().getTransformConfigurations(getContainer());
 Map<String,TransformConfiguration> configurationsMap = new HashMap<>(configurationsList.size()*2);
@@ -51,16 +62,14 @@ for (TransformConfiguration c : configurationsList)
 boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
 %>
 <script>
-    var X = Ext4 || Ext;
-
     function onFailedConfigurationUpdate(response,config)
     {
-        X.MessageBox.show({
+        Ext4.MessageBox.show({
             modal:true,
             title:response.statusText,
             msg:"There was an error updating the configuration",
-            icon:Ext.MessageBox.ERROR,
-            buttons: Ext.MessageBox.OK,
+            icon: Ext4.MessageBox.ERROR,
+            buttons: Ext4.MessageBox.OK,
             fn: function(){window.location.reload(true);}
         });
     }
@@ -69,7 +78,7 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
         var params = {'transformId':transformId};
         params[property] = value;
 
-        X.Ajax.request({
+        Ext4.Ajax.request({
             url : <%=q(buildURL(DataIntegrationController.UpdateTransformConfigurationAction.class))%>,
             params : params,
             method : "POST"
@@ -88,7 +97,7 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
     function Transform_runNow(transformId)
     {
         var params = {'transformId':transformId};
-        X.Ajax.request({
+        Ext4.Ajax.request({
             url : <%=q(buildURL(DataIntegrationController.RunTransformAction.class))%>,
             params : params,
             method : "POST",
@@ -111,7 +120,7 @@ boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
     function Transform_resetState(transformId)
     {
         var params = {'transformId':transformId};
-        X.Ajax.request({
+        Ext4.Ajax.request({
             url : <%=q(buildURL(DataIntegrationController.ResetTransformStateAction.class))%>,
             params : params,
             method : "POST",

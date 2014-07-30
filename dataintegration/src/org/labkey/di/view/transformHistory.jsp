@@ -20,7 +20,18 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.di.pipeline.TransformManager" %>
 <%@ page import="org.labkey.di.view.DataIntegrationController" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        return resources;
+    }
+%>
 <%
     JspView<DataIntegrationController.TransformViewForm> me =
             (JspView<DataIntegrationController.TransformViewForm>) HttpView.currentView();
