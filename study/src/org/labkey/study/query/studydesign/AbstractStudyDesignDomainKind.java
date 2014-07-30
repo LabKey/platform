@@ -15,13 +15,7 @@
  */
 package org.labkey.study.query.studydesign;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.audit.AbstractAuditTypeProvider;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.JdbcType;
@@ -29,24 +23,18 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.PropertyDescriptor;
-import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
-import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.xar.LsidUtils;
-import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.StudySchema;
 import org.labkey.study.query.StudyQuerySchema;
@@ -61,17 +49,22 @@ import java.util.Set;
  */
 public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
 {
-    private static String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
-    private static String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
+    private static final String XAR_SUBSTITUTION_SCHEMA_NAME = "SchemaName";
+    private static final String XAR_SUBSTITUTION_TABLE_NAME = "TableName";
 
-    private static String DOMAIN_NAMESPACE_PREFIX_TEMPLATE = "%s-${SchemaName}";
-    private static String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
+    private static final String DOMAIN_NAMESPACE_PREFIX_TEMPLATE = "%s-${SchemaName}";
+    private static final String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
 
     private static final Set<PropertyStorageSpec> _baseFields;
-    private Set<PropertyStorageSpec> _standardFields = new LinkedHashSet<>();
+
+    private final Set<PropertyStorageSpec> _standardFields = new LinkedHashSet<>();
     private final String _tableName;
 
-    static {
+    // Prevent race conditions, #21128. Ideally, this would be one lock per DomainKind, but we new these up all over the place (??)
+    private static final Object ENSURE_DOMAIN_LOCK = new Object();
+
+    static
+    {
         Set<PropertyStorageSpec> baseFields = new LinkedHashSet<>();
         baseFields.add(createFieldSpec("Container", JdbcType.VARCHAR).setEntityId(true).setNullable(false));
         baseFields.add(createFieldSpec("Created", JdbcType.TIMESTAMP));
@@ -93,21 +86,26 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     public Domain ensureDomain(Container container, User user, String tableName)
     {
         String domainURI = generateDomainURI(StudyQuerySchema.SCHEMA_NAME, tableName, container, null);
-        Domain domain = PropertyService.get().getDomain(container, domainURI);
 
-        if (domain == null)
+        synchronized (ENSURE_DOMAIN_LOCK)
         {
-            try {
+            Domain domain = PropertyService.get().getDomain(container, domainURI);
 
-                domain = PropertyService.get().createDomain(container, domainURI, tableName);
-                domain.save(user);
-            }
-            catch (Exception e)
+            if (domain == null)
             {
-                throw new RuntimeException(e);
+                try
+                {
+                    domain = PropertyService.get().createDomain(container, domainURI, tableName);
+                    domain.save(user);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException(e);
+                }
             }
+
+            return domain;
         }
-        return domain;
     }
 
     protected abstract String getNamespacePrefix();
