@@ -356,23 +356,57 @@ public class AnalysisController extends SpringActionController
             JSONArray protocols = new JSONArray();
             for (String protocolName : factory.getProtocolNames(root, dirData))
             {
-                JSONObject protocol = new JSONObject();
-                protocol.put("name", protocolName);
-                AbstractFileAnalysisProtocol pipelineProtocol = getProtocol(root, dirData, factory, protocolName);
-                protocol.put("description", pipelineProtocol.getDescription());
-                protocol.put("xmlParameters", pipelineProtocol.getXml());
-                ParamParser parser = PipelineJobService.get().createParamParser();
-                parser.parse(new ReaderInputStream(new StringReader(pipelineProtocol.getXml())));
-                if (parser.getErrors() == null || parser.getErrors().length == 0)
-                {
-                    protocol.put("jsonParameters", new JSONObject(parser.getInputParameters()));
-                }
-                protocols.put(protocol);
+                protocols.put(getProtocolJson(protocolName, root, dirData, factory));
             }
+
+            if (form.getIncludeWorkbooks())
+            {
+                for (Container c : getContainer().getChildren())
+                {
+                    if (c.isWorkbook())
+                    {
+                        PipeRoot wbRoot = PipelineService.get().findPipelineRoot(getContainer());
+                        if (wbRoot == null || !wbRoot.isValid())
+                            continue;
+
+                        File wbDirData = null;
+                        if (form.getPath() != null)
+                        {
+                            wbDirData = wbRoot.resolvePath(form.getPath());
+                            if (wbDirData == null || !NetworkDrive.exists(wbDirData))
+                                continue;
+                        }
+
+                        for (String protocolName : factory.getProtocolNames(wbRoot, wbDirData))
+                        {
+                            protocols.put(getProtocolJson(protocolName, wbRoot, wbDirData, factory));
+                        }
+                    }
+                }
+            }
+
             JSONObject result = new JSONObject();
             result.put("protocols", protocols);
             result.put("defaultProtocolName", PipelineService.get().getLastProtocolSetting(factory, getContainer(), getUser()));
             return new ApiSimpleResponse(result);
+        }
+
+        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory)
+        {
+            JSONObject protocol = new JSONObject();
+            protocol.put("name", protocolName);
+            AbstractFileAnalysisProtocol pipelineProtocol = getProtocol(root, dirData, factory, protocolName);
+            protocol.put("description", pipelineProtocol.getDescription());
+            protocol.put("xmlParameters", pipelineProtocol.getXml());
+            protocol.put("containerPath", root.getContainer().getPath());
+            ParamParser parser = PipelineJobService.get().createParamParser();
+            parser.parse(new ReaderInputStream(new StringReader(pipelineProtocol.getXml())));
+            if (parser.getErrors() == null || parser.getErrors().length == 0)
+            {
+                protocol.put("jsonParameters", new JSONObject(parser.getInputParameters()));
+            }
+
+            return protocol;
         }
     }
 
@@ -390,6 +424,7 @@ public class AnalysisController extends SpringActionController
         private boolean runAnalysis = false;
         private boolean activeJobs = false;
         private Boolean allowNonExistentFiles;
+        private Boolean includeWorkbooks = false;
 
         private static final String UNKNOWN_STATUS = "UNKNOWN";
 
@@ -503,6 +538,16 @@ public class AnalysisController extends SpringActionController
         public boolean isActiveJobs()
         {
             return activeJobs;
+        }
+
+        public Boolean getIncludeWorkbooks()
+        {
+            return includeWorkbooks;
+        }
+
+        public void setIncludeWorkbooks(Boolean includeWorkbooks)
+        {
+            this.includeWorkbooks = includeWorkbooks;
         }
 
         public boolean isSaveProtocol()
