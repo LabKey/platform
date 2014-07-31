@@ -55,13 +55,10 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
     private static final String DOMAIN_NAMESPACE_PREFIX_TEMPLATE = "%s-${SchemaName}";
     private static final String DOMAIN_LSID_TEMPLATE = "${FolderLSIDBase}:${TableName}";
 
-    private static final Set<PropertyStorageSpec> _baseFields;
-
-    private final Set<PropertyStorageSpec> _standardFields = new LinkedHashSet<>();
-    private final String _tableName;
-
-    // Prevent race conditions, #21128. Ideally, this would be one lock per DomainKind, but we new these up all over the place (??)
+    // Prevent race conditions, #21128. TODO: Ideally, this would be one lock per DomainKind, but we new these up all over the place, #21199.
     private static final Object ENSURE_DOMAIN_LOCK = new Object();
+
+    private static final Set<PropertyStorageSpec> BASE_FIELDS;
 
     static
     {
@@ -72,14 +69,15 @@ public abstract class AbstractStudyDesignDomainKind extends AbstractDomainKind
         baseFields.add(createFieldSpec("Modified", JdbcType.TIMESTAMP));
         baseFields.add(createFieldSpec("ModifiedBy", JdbcType.INTEGER));
 
-        _baseFields = Collections.unmodifiableSet(baseFields);
+        BASE_FIELDS = Collections.unmodifiableSet(baseFields);
     }
+
+    private final Set<PropertyStorageSpec> _standardFields = new LinkedHashSet<>(BASE_FIELDS);
+    private final String _tableName;
 
     public AbstractStudyDesignDomainKind(String tableName, Set<PropertyStorageSpec> standardFields)
     {
         _tableName = tableName;
-
-        _standardFields.addAll(_baseFields);
         _standardFields.addAll(standardFields);
     }
 

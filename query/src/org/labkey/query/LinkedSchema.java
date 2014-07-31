@@ -85,7 +85,7 @@ public class LinkedSchema extends ExternalSchema
     }
 
     private final UserSchema _sourceSchema;
-    protected final Collection<String> _availableQueries;
+    private final Collection<String> _availableQueries;
 
     public static LinkedSchema get(User user, Container container, LinkedSchemaDef def)
     {

@@ -89,7 +89,6 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.assay.AbstractParticipantVisitResolver;
 import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
