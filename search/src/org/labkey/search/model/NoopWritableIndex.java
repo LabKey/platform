@@ -18,7 +18,6 @@ package org.labkey.search.model;
 
 import org.apache.log4j.Logger;
 import org.apache.lucene.document.Document;
-import org.apache.lucene.index.IndexGate;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.labkey.api.search.SearchMisconfiguredException;
@@ -102,7 +101,7 @@ public class NoopWritableIndex implements WritableIndexManager
 
     private void log(String action)
     {
-        if (0 == (_errors.get() % 1000))
+        if (0 == (_errors.get() % 10000))
             _log.warn("Unable to " + action + "; " + _statusMessage);
 
         _errors.incrementAndGet();
