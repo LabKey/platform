@@ -106,7 +106,6 @@ CREATE TABLE core.Containers
     Parent ENTITYID,
     Name VARCHAR(255),
     SortOrder INTEGER NOT NULL DEFAULT 0,
-    CaBIGPublished BIT NOT NULL DEFAULT 0,
     Searchable BIT NOT NULL DEFAULT 1,     -- Should this container's content be searched during multi-container searches?
 
     Description NVARCHAR(4000),
@@ -551,35 +550,3 @@ BEGIN
 END;
 
 GO
-
-/* core-12.10-12.20.sql */
-
--- Remove caBIG, #15050
-EXEC core.executeJavaUpgradeCode 'handleUnknownModules';
-
--- Stupid SQL Server can't drop a stupid column that has a stupid default defined without some convoluted SQL like:
-DECLARE @defname VARCHAR(100), @cmd VARCHAR(1000)
-SET @defname = (SELECT name
-    FROM sysobjects so JOIN sysconstraints sc ON so.id = sc.constid
-    WHERE object_name(so.parent_obj) = 'Containers'
-    AND OBJECT_SCHEMA_NAME(so.parent_obj) = 'core'
-    AND so.xtype = 'D'
-    AND sc.colid = (SELECT colid FROM syscolumns
-        WHERE id = object_id('core.Containers') AND
-        name = 'CaBIGPublished'));
-
-IF (@defname IS NOT NULL)
-BEGIN
-    SET @cmd = 'ALTER TABLE core.Containers DROP CONSTRAINT ' + @defname
-    EXEC(@cmd)
-END;
-
-ALTER TABLE core.Containers DROP COLUMN CaBIGPublished;
-
-UPDATE core.Modules SET AutoUninstall = 1, Schemas = 'dataspace' WHERE ClassName = 'org.labkey.dataspace.DataspaceModule';
-
--- Note: Commented out in 13.3, since new version is being installed
-
--- Run the script that installs the CLR GROUP_CONCAT aggregrate functions on SQL Server 2008 and above. Run the script
--- via upgrade code to do the version check and skip the install on SQL Server 2005.
--- EXEC core.executeJavaUpgradeCode 'installGroupConcat';

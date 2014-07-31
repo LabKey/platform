@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
--- DROP all views (current and obsolete).
--- NOTE: Never remove any of these drop statements, even if we stop using the view.  These drop statements must remain
---   in place so we can correctly upgrade from older versions.  If you're not convinced, talk to adam.
+-- DROP all views (current and obsolete)
+
+-- NOTE: Don't remove any of these drop statements, even if we stop re-creating the view in *-create.sql. Drop statements must
+-- remain in place so we can correctly upgrade from older versions, which we commit to for two years after each release.
+
+-- Obsolete views: we stopped re-creating these in 14.1 (r29981). Look at removing these statements in 16.2.
 SELECT core.fn_dropifexists('SpecimenSummary', 'study', 'VIEW', NULL);
-SELECT core.fn_dropifexists('SpecimenDetail', 'study', 'VIEW', NULL);
 SELECT core.fn_dropifexists('VialCounts', 'study', 'VIEW', NULL);
+
+-- Current views
 SELECT core.fn_dropifexists('LockedSpecimens', 'study', 'VIEW', NULL);
 SELECT core.fn_dropifexists('ParticipantGroupCohortUnion', 'study', 'VIEW', NULL);

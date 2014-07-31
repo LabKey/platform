@@ -107,7 +107,6 @@ CREATE TABLE core.Containers
     Parent ENTITYID,
     Name VARCHAR(255),
     SortOrder INTEGER NOT NULL DEFAULT 0,
-    CaBIGPublished BOOLEAN NOT NULL DEFAULT '0',
     Searchable BOOLEAN NOT NULL DEFAULT TRUE,
 
     Description VARCHAR(4000),
@@ -444,11 +443,3 @@ DELETE FROM core.MvIndicators WHERE Container NOT IN (SELECT EntityId FROM core.
 DELETE FROM core.RoleAssignments WHERE
   ResourceId IN (SELECT EntityId FROM core.Containers WHERE Parent IS NULL)
   AND UserId IN(-2, -3);
-
-/* core-12.10-12.20.sql */
-
--- Remove caBIG, #15050
-SELECT core.executeJavaUpgradeCode('handleUnknownModules');
-ALTER TABLE core.Containers DROP COLUMN CaBIGPublished CASCADE;
-
-UPDATE core.Modules SET AutoUninstall = TRUE, Schemas = 'dataspace' WHERE ClassName = 'org.labkey.dataspace.DataspaceModule';

@@ -892,8 +892,6 @@ ALTER TABLE study.Specimen
 
 ALTER INDEX study.IX_Specimen_ParticipantSequenceKey RENAME TO IX_Specimen_ParticipantSequenceNum;
 
-SELECT core.executeJavaUpgradeCode('renameDataSetParticipantSequenceKey');
-
 ALTER TABLE study.participantgroup
   ADD COLUMN filters text,
   ADD COLUMN description varchar(250);

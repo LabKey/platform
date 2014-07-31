@@ -15,7 +15,6 @@
  */
 package org.labkey.core;
 
-import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -64,17 +63,16 @@ import java.util.Set;
  */
 public class CoreUpgradeCode implements UpgradeCode
 {
-    private static final Logger _log = Logger.getLogger(CoreUpgradeCode.class);
-
     // We don't call ContainerManager.getRoot() during upgrade code since the container table may not yet match
     // ContainerManager's assumptions. For example, older installations don't have a description column until
     // the 10.1 scripts run (see #9927).
+    @SuppressWarnings("UnusedDeclaration")
     private String getRootId()
     {
         return new SqlSelector(CoreSchema.getInstance().getSchema(), "SELECT EntityId FROM core.Containers WHERE Parent IS NULL").getObject(String.class);
     }
 
-    // invoked by core-12.10-12.20.sql
+    // Not currently invoked, but available for future scripts
     @SuppressWarnings({"UnusedDeclaration"})
     public void handleUnknownModules(ModuleContext context)
     {
@@ -92,8 +90,7 @@ public class CoreUpgradeCode implements UpgradeCode
         if (domain == null)
             domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
 
-        if (domain != null)
-            UsersDomainKind.ensureDomainProperties(domain, context.getUpgradeUser(), context.isNewInstall());
+        UsersDomainKind.ensureDomainProperties(domain, context.getUpgradeUser(), context.isNewInstall());
     }
 
     // invoked by core-12.22-12.23.sql
@@ -286,7 +283,6 @@ public class CoreUpgradeCode implements UpgradeCode
             }
         }
 
-        if (domain != null)
-            UsersDomainKind.ensureDomainPropertyScales(domain, context.getUpgradeUser());
+        UsersDomainKind.ensureDomainPropertyScales(domain, context.getUpgradeUser());
     }
 }

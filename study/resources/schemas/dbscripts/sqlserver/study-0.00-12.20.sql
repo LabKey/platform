@@ -899,9 +899,6 @@ EXEC sp_rename 'study.Specimen.IX_Specimen_ParticipantSequenceKey', 'IX_Specimen
 GO
 
 
-EXEC core.executeJavaUpgradeCode 'renameDataSetParticipantSequenceKey';
-GO
-
 ALTER TABLE study.ParticipantGroup ADD
     Filter NTEXT NULL,
     Description NVARCHAR(250) NULL

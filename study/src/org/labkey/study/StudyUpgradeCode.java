@@ -34,17 +34,13 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleUpgrader;
 import org.labkey.api.query.QueryChangeListener;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.SchemaKey;
@@ -53,10 +49,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
-import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.SpecimenDomainKind;
@@ -71,7 +64,6 @@ import org.labkey.study.reports.ParticipantReport;
 import org.labkey.study.reports.ParticipantReportDescriptor;
 import org.labkey.study.reports.WindowsCommandLineSplitter;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -88,89 +80,6 @@ import java.util.Set;
 public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
-
-    // invoked by study-12.10-12.11.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void renameDataSetParticipantSequenceKey(ModuleContext context)
-    {
-        if (context.isNewInstall())
-            return;
-
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
-        {
-            renameDataSetParticipantSequenceKey(ContainerManager.getRoot());
-            transaction.commit();
-        }
-    }
-
-    private void renameDataSetParticipantSequenceKey(Container c)
-    {
-        try
-        {
-            Study study = StudyService.get().getStudy(c);
-            if (study != null)
-            {
-                for (DataSet dataSet : study.getDataSets())
-                {
-                    renameDataSetParticipantSequenceKey(c, dataSet);
-                }
-            }
-
-            // Recurse through the children
-            for (Container child : c.getChildren())
-            {
-                renameDataSetParticipantSequenceKey(child);
-            }
-        }
-        catch (SQLException e)
-        {
-            throw new UnexpectedException(e);
-        }
-    }
-
-    private void renameDataSetParticipantSequenceKey(Container c, DataSet dataSet) throws SQLException
-    {
-        Domain domain = dataSet.getDomain();
-        if (domain == null)
-        {
-            ModuleUpgrader.getLogger().info("No domain for DatSet '" + dataSet.getName() + "', in container '" + c.getPath() + "'.  Skipping.");
-            return;
-        }
-
-        ModuleUpgrader.getLogger().info("Renaming ParticipantSequenceKey to ParticipantSequenceNum on DatSet '" + dataSet.getName() + "', in container '" + c.getPath() + "'");
-        DomainKind kind = domain.getDomainKind();
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-
-        // We should already be running in a transaction with the top-level upgrade script
-        assert scope.isTransactionActive();
-        Connection con = null;
-        try
-        {
-            con = scope.getConnection();
-
-            String tableName = domain.getStorageTableName();
-            TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.RenameColumns);
-
-            // Casing of the columns must match the names used in DatastDomainKind
-            // When the name is too long it is hashed to truncate the length and won't match the existing name otherwise.
-            change.addColumnRename("participantsequencekey", "participantsequencenum");
-            change.addIndexRename(
-                    new PropertyStorageSpec.Index(false, "participantsequencekey"),
-                    new PropertyStorageSpec.Index(false, "participantsequencenum"));
-
-            ModuleUpgrader.getLogger().info("Will issue:");
-            for (String sql : scope.getSqlDialect().getChangeStatements(change))
-            {
-                ModuleUpgrader.getLogger().info("\t" + sql);
-                con.prepareStatement(sql).execute();
-            }
-        }
-        finally
-        {
-            scope.releaseConnection(con);
-        }
-    }
 
     // invoked by study-12.24-12.25.sql
     @SuppressWarnings({"UnusedDeclaration"})
@@ -632,5 +541,4 @@ public class StudyUpgradeCode implements UpgradeCode
             }
         }
     }
-
 }
