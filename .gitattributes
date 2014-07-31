@@ -1296,6 +1296,8 @@ api/src/org/labkey/api/security/roles/SiteAdminRole.java -text
 api/src/org/labkey/api/security/roles/SubmitterRole.java -text
 api/src/org/labkey/api/security/roles/TroubleshooterRole.java -text
 api/src/org/labkey/api/sequence/IlluminaReadHeader.java -text
+api/src/org/labkey/api/sequenceanalysis/RefNtSequenceModel.java -text
+api/src/org/labkey/api/sequenceanalysis/ReferenceLibraryHelper.java -text
 api/src/org/labkey/api/services/ServiceRegistry.java -text
 api/src/org/labkey/api/settings/AbstractSettingsGroup.java -text
 api/src/org/labkey/api/settings/AbstractWriteableSettingsGroup.java -text
@@ -7163,6 +7165,7 @@ internal/src/org/labkey/api/gwt/server/BaseRemoteService.java -text
 internal/src/org/labkey/api/issues/IssuesSchema.java -text
 internal/src/org/labkey/api/ldk/table/ContainerScopedTable.java -text
 internal/src/org/labkey/api/ldk/table/CustomPermissionsTable.java -text
+internal/src/org/labkey/api/ldk/table/SharedDataTable.java -text
 internal/src/org/labkey/api/message/digest/DailyMessageDigest.java -text
 internal/src/org/labkey/api/message/digest/MessageDigest.java -text
 internal/src/org/labkey/api/message/digest/PeriodicMessageDigest.java -text

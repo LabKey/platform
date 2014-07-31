@@ -61,6 +61,8 @@ LABKEY.Pipeline = new function(){
          * 
          * @param {Object} config A configuration object with the following properties.
          * @param {String} config.taskId Identifier for the pipeline.
+         * @param {String} config.path relative path from the folder's pipeline root
+         * @param {Boolean} config.includeWorkbooks If true, protocols from workbooks under the selected container will also be included
          * @param {String} [config.containerPath] The container in which to make the request (defaults to current container)
          * @param {Function} config.success The function to call with the resulting information.
          * This function will be passed a list of protocol objects, which will have the following properties:
@@ -69,6 +71,7 @@ LABKEY.Pipeline = new function(){
          *  <li>description: description of the saved protocol, if provided.</li>
          *  <li>xmlParameters: bioml representation of the parameters defined by this protocol.</li>
          *  <li>jsonParameters: JSON representation of the parameters defined by this protocol.</li>
+         *  <li>containerPath: The container path where this protocol was saved</li>
          * </ul>
          * @param {Function} [config.failure] A function to call if an error occurs. This function
          * will receive one parameter of type object with the following properites:
@@ -79,7 +82,9 @@ LABKEY.Pipeline = new function(){
          */
         getProtocols : function(config) {
             var params = {
-                taskId: config.taskId
+                taskId: config.taskId,
+                includeWorkbooks: !!config.includeWorkbooks,
+                path: config.path
             };
 
             var containerPath = config.containerPath ? config.containerPath : LABKEY.ActionURL.getContainer();

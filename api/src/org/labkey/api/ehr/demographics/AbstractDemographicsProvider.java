@@ -79,6 +79,11 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
 
     public Map<String, Map<String, Object>> getProperties(Container c, User u, Collection<String> ids)
     {
+        if (ids.size() > 500)
+        {
+            _log.error("unexpected amount of IDs in demographics provider: " + getName() + ".  was: " + ids.size(), new Exception());
+        }
+
         final Map<String, Map<String, Object>> ret = new HashMap<>();
         final TableInfo ti = getTableInfo(c, u);
 

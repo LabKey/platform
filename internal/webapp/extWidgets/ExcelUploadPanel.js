@@ -333,7 +333,14 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
             this.btnToEnableOnComplete = null;
         }
 
-        var response = (action.response && action.response.responseText) ? Ext4.JSON.decode(action.response.responseText) : null;
+        var response;
+        try {
+            response = (action.response && action.response.responseText) ? Ext4.JSON.decode(action.response.responseText) : null;
+        }
+        catch (err){
+            console.error(err);
+        }
+
         if (response && response.errors){
             var html = '<div style="color: red;padding-bottom: 10px;">There were errors in the upload: ';
             if (response.errors._form){
