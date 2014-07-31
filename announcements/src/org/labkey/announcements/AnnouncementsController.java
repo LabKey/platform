@@ -149,10 +149,8 @@ import java.util.Set;
  */
 public class AnnouncementsController extends SpringActionController
 {
-    private static CommSchema _comm = CommSchema.getInstance();
-
-    private static DefaultActionResolver _actionResolver = new DefaultActionResolver(AnnouncementsController.class,
-            SendMessageAction.class);
+    private static final CommSchema _comm = CommSchema.getInstance();
+    private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(AnnouncementsController.class, SendMessageAction.class);
 
     public AnnouncementsController() throws Exception
     {

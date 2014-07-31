@@ -47,10 +47,3 @@ CREATE VIEW comm.AllWikiVersions AS
         FROM comm.PageVersions pv INNER JOIN comm.Pages p ON pv.PageEntityId = p.EntityId;
 
 GO
-
--- Simple alias for backward compatibility... we used to expose the CurrentWikiVersions view as "PagesAndVersions", but
--- switched to more explicit naming to distiniguish CurrentWikiVersions from AllWikiVersions
-CREATE VIEW comm.PagesAndVersions AS
-    SELECT * FROM comm.CurrentWikiVersions;
-
-GO

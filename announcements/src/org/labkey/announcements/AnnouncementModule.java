@@ -97,7 +97,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
     @Override
     public double getVersion()
     {
-        return 14.20;
+        return 14.21;
     }
 
     protected void init()

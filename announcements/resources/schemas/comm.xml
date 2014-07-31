@@ -323,33 +323,6 @@
       </ns:column>
     </ns:columns>
   </ns:table>
-  <ns:table tableName="PagesAndVersions" tableDbType="VIEW">
-    <ns:description>Deprecated: Use CurrentWikiVersions instead. This view will be removed in a future release of LabKey Server.</ns:description>
-    <ns:tableUrl/>
-    <ns:columns>
-      <ns:column columnName="RowId">
-        <ns:nullable>false</ns:nullable>
-        <ns:isReadOnly>true</ns:isReadOnly>
-        <ns:isKeyField>true</ns:isKeyField>
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="Container">
-        <ns:isHidden>true</ns:isHidden>
-      </ns:column>
-      <ns:column columnName="Name">
-        <ns:url>/wiki/page.view?name=${Name}</ns:url>
-      </ns:column>
-      <ns:column columnName="Title"/>
-      <ns:column columnName="Version">
-        <ns:url>/wiki/version.view?name=${Name}&amp;version=${Version}</ns:url>
-      </ns:column>
-      <ns:column columnName="Body"/>
-      <ns:column columnName="CreatedBy"/>
-      <ns:column columnName="Created"/>
-      <ns:column columnName="ModifiedBy"/>
-      <ns:column columnName="Modified"/>
-    </ns:columns>
-  </ns:table>
   <ns:table tableName="EmailFormats" tableDbType="TABLE">
     <ns:description>Contains one row per email format option (HTML/plain text)</ns:description>
     <ns:columns>
