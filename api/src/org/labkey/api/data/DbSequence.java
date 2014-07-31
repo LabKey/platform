@@ -55,4 +55,10 @@ public class DbSequence
     {
         DbSequenceManager.ensureMinimum(this, minimum);
     }
+
+    @Override
+    public String toString()
+    {
+        return _c.toString() + ": " + _rowId;
+    }
 }

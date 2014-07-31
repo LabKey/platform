@@ -105,9 +105,7 @@ public class DbSequenceManager
         getRowIdSql.add(name);
         getRowIdSql.add(id);
 
-        SqlSelector selector = new SqlSelector(tinfo.getSchema(), getRowIdSql);
-
-        return selector.getObject(Integer.class);
+        return executeAndMaybeReturnInteger(tinfo, getRowIdSql);
     }
 
 
@@ -129,7 +127,7 @@ public class DbSequenceManager
         try
         {
             // Don't bother logging constraint violations
-            return executeAndReturnInteger(tinfo, insertSql, Level.ERROR);
+            return executeAndReturnInt(tinfo, insertSql, Level.ERROR);
         }
         catch (DataIntegrityViolationException e)
         {
@@ -189,17 +187,12 @@ public class DbSequenceManager
         sql.add(sequence.getContainer());
         sql.add(sequence.getRowId());
 
-        DbScope scope = tinfo.getSchema().getScope();
+        Integer currentValue = executeAndMaybeReturnInteger(tinfo, sql);
 
-        // Separate connection that's not participating in the current transaction
-        try (Connection conn = scope.getPooledConnection())
-        {
-            return new SqlSelector(scope, conn, sql).getObject(Integer.class);
-        }
-        catch (SQLException e)
-        {
-            throw new RuntimeSQLException(e);
-        }
+        if (null == currentValue)
+            throw new IllegalStateException("Current value for " + sequence + " was null!");
+
+        return currentValue;
     }
 
 
@@ -222,7 +215,7 @@ public class DbSequenceManager
         // Add locking appropriate to this dialect
         addLocks(tinfo, sql);
 
-        return multiline ? executeMultipleStatementsAndReturnInteger(tinfo, sql) : executeAndReturnInteger(tinfo, sql, Level.WARN);
+        return multiline ? executeMultipleStatementsAndReturnInteger(tinfo, sql) : executeAndReturnInt(tinfo, sql, Level.WARN);
     }
 
 
@@ -314,8 +307,24 @@ public class DbSequenceManager
     }
 
 
-    // Executes in a separate connection that does NOT participate in the current transaction
-    private static int executeAndReturnInteger(TableInfo tinfo, SQLFragment sql, Level level)
+    // Executes in a separate connection that does NOT participate in the current transaction. Returns Integer or null.
+    private static @Nullable Integer executeAndMaybeReturnInteger(TableInfo tinfo, SQLFragment sql)
+    {
+        DbScope scope = tinfo.getSchema().getScope();
+
+        try (Connection conn = scope.getPooledConnection())
+        {
+            return new SqlSelector(scope, conn, sql).getObject(Integer.class);
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+    }
+
+
+    // Executes in a separate connection that does NOT participate in the current transaction. Always returns an int.
+    private static int executeAndReturnInt(TableInfo tinfo, SQLFragment sql, Level level)
     {
         DbScope scope = tinfo.getSchema().getScope();
 
