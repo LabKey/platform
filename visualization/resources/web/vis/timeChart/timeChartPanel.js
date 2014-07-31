@@ -900,7 +900,10 @@ Ext4.define('LABKEY.vis.TimeChartPanel', {
         {
             simplified.subject.groups = [];
             for(var i = 0; i < config.subject.groups.length; i++)
-                simplified.subject.groups.push({label: config.subject.groups[i].label, participantIds: config.subject.groups[i].participantIds});
+                simplified.subject.groups.push({
+                    label: config.subject.groups[i].label,
+                    participantIds: config.subject.groups[i].participantIds.sort()
+                });
         }
 
         simplified.measures = [];
