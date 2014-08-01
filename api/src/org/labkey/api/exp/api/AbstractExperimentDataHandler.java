@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import org.apache.commons.io.FileUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
@@ -39,24 +40,13 @@ public abstract class AbstractExperimentDataHandler implements ExperimentDataHan
     {
         if (dataFile != null)
         {
-            FileInputStream fIn = null;
             try
             {
-                fIn = new FileInputStream(dataFile);
-                byte[] b = new byte[4096];
-                int i;
-                while((i = fIn.read(b)) != -1)
-                {
-                    out.write(b, 0, i);
-                }
+                FileUtils.copyFile(dataFile, out);
             }
             catch (IOException e)
             {
                 throw new ExperimentException(e);
-            }
-            finally
-            {
-                if (fIn != null) { try { fIn.close(); } catch (IOException e) {}}
             }
         }
     }

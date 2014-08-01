@@ -100,9 +100,8 @@ public class Compress
     // Decompress a byte array that was compressed using GZIP.
     public static String decompressGzip(byte[] bytes)
     {
-        try (ByteArrayOutputStream buf = new ByteArrayOutputStream())
+        try (GZIPInputStream is = new GZIPInputStream(new ByteArrayInputStream(bytes)); ByteArrayOutputStream buf = new ByteArrayOutputStream())
         {
-            GZIPInputStream is = new GZIPInputStream(new ByteArrayInputStream(bytes));
             IOUtils.copy(is, buf);
 
             return buf.toString("UTF-8");

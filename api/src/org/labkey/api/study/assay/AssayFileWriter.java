@@ -16,20 +16,28 @@
 
 package org.labkey.api.study.assay;
 
+import org.apache.commons.io.FileUtils;
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.data.Container;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.view.ViewContext;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 /**
  * User: jeckels
@@ -87,6 +95,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
 
         String protocolName = protocol.getName();
         char[] characters = protocolName.toCharArray();
+
         for (int i = 0; i < characters.length; i++)
         {
             char character = characters[i];
@@ -97,6 +106,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         protocolName = new String(characters);
 
         File file;
+
         do
         {
             String extra = id++ == 0 ? "" : String.valueOf(id);
@@ -105,26 +115,13 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
             file = new File(dir, fileName);
         }
         while (file.exists());
+
         return file;
     }
 
-    protected void writeFile(InputStream in, File file)
-            throws IOException
+    protected void writeFile(InputStream in, File file) throws IOException
     {
-        FileOutputStream out = null;
-        try
-        {
-            out = new FileOutputStream(file);
-            int count;
-            byte[] b = new byte[4096];
-            while ((count = in.read(b)) > 0)
-                out.write(b, 0, count);
-        }
-        finally
-        {
-            if (null != out)
-                try { out.close(); } catch (Exception x) { /* fall through */ }
-        }
+        FileUtils.copyInputStreamToFile(in, file);
     }
 
     @NotNull
@@ -165,6 +162,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
             uniquifier++;
         }
         while (file.exists());
+
         return file;
     }
 
@@ -211,7 +209,7 @@ public class AssayFileWriter<ContextType extends AssayRunUploadContext<? extends
         File newFile = findUniqueFileName(file.getName(), dir);
         try
         {
-            writeFile(new FileInputStream(file), newFile);
+            FileUtils.copyFile(file, newFile);
             return newFile;
         }
         catch (IOException e)

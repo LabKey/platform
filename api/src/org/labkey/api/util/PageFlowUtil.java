@@ -950,6 +950,22 @@ public class PageFlowUtil
     }
 
 
+    public static void streamLogFile(HttpServletResponse response, long startingOffset, File logFile) throws Exception
+    {
+        if (logFile.exists())
+        {
+            try (FileInputStream fIn = new FileInputStream(logFile))
+            {
+                //noinspection ResultOfMethodCallIgnored
+                fIn.skip(startingOffset);
+                OutputStream out = response.getOutputStream();
+                response.setContentType("text/plain");
+                FileUtil.copyData(fIn, out);
+            }
+        }
+    }
+
+
     // Fetch the contents of a text file, and return it in a String.
     public static String getFileContentsAsString(File aFile)
     {
@@ -1561,7 +1577,6 @@ public class PageFlowUtil
         return getStylesheetIncludes(c, u, null);
     }
 
-    /** */  // TODO: userAgent is unused... delete?
     public static String getStylesheetIncludes(Container c, User u, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         boolean useLESS = null != HttpView.currentRequest().getParameter("less");
@@ -1716,15 +1731,6 @@ public class PageFlowUtil
         }
     }
 
-    /**
-     * Returns the default scripts included on all pages.  ClientDependency will handle dev/production
-     * mode differences
-     */
-    public static LinkedHashSet<ClientDependency> getDefaultJavaScriptPaths()
-    {
-        return getDefaultJavaScriptPaths(false);
-    }
-
     public static LinkedHashSet<ClientDependency> getDefaultJavaScriptPaths(boolean coreClientApiOnly)
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -1742,31 +1748,6 @@ public class PageFlowUtil
         if (!coreClientApiOnly)
             resources.add(ClientDependency.fromFilePath("internal"));
         return resources;
-    }
-
-    /**
-     * Used by CombinedJavascriptAction only - it's possible this can be deprecated
-     */
-    public static void getJavaScriptPaths(Container c, User u, Set<String> scripts, Set<String> included)
-    {
-        LinkedHashSet<ClientDependency> resources = getDefaultJavaScriptPaths();
-        if (resources != null)
-        {
-            for (ClientDependency r : resources) {
-                if(AppProps.getInstance().isDevMode())
-                {
-                    scripts.addAll(r.getJsPaths(c, u, true));
-                    included.addAll(r.getJsPaths(c, u, true));
-                }
-                else
-                {
-                    scripts.addAll(r.getJsPaths(c, u, false));
-                    //include both production and devmode scripts for requiresScript()
-                    included.addAll(r.getJsPaths(c, u, true));
-                    included.addAll(r.getJsPaths(c, u, false));
-                }
-            }
-        }
     }
 
     public static String getLabkeyJS(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
@@ -1948,7 +1929,8 @@ public class PageFlowUtil
 
 
 
-    static Integer serverHash = null;
+    private static final int SERVER_HASH = 0x7fffffff & AppProps.getInstance().getServerSessionGUID().hashCode();
+    private static final String SERVER_HASH_STRING = Integer.toString(SERVER_HASH);
 
     // This is used during server-side JavaScript initialization -- see core/resources/scripts/labkey/init.js
     @SuppressWarnings("UnusedDeclaration")
@@ -2044,15 +2026,13 @@ public class PageFlowUtil
 
     public static String getServerSessionHash()
     {
-        if (null == serverHash)
-            serverHash = 0x7fffffff & AppProps.getInstance().getServerSessionGUID().hashCode();
-        return Integer.toString(serverHash);
+        return SERVER_HASH_STRING;
     }
 
 
     private static class ValidateHandler extends org.xml.sax.helpers.DefaultHandler
     {
-        static HashSet<String> _illegalElements = new HashSet<>();
+        private static final HashSet<String> _illegalElements = new HashSet<>();
 
         static
         {
@@ -2071,8 +2051,8 @@ public class PageFlowUtil
             _illegalElements.add("plaintext");
         }
 
-        Collection<String> _errors;
-        HashSet<String> _reported = new HashSet<>();
+        private final Collection<String> _errors;
+        private final HashSet<String> _reported = new HashSet<>();
 
 
         ValidateHandler(Collection<String> errors)
@@ -2139,8 +2119,6 @@ public class PageFlowUtil
     }
 
 
-
-
     public static boolean isRobotUserAgent(String userAgent)
     {
         if (StringUtils.isEmpty(userAgent))
@@ -2175,12 +2153,9 @@ public class PageFlowUtil
     }
 
 
-
     //
     // TestCase
     //
-
-
     public static class TestCase extends Assert
     {
         @Test
