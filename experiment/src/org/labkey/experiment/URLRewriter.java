@@ -16,6 +16,7 @@
 
 package org.labkey.experiment;
 
+import org.apache.commons.io.FileUtils;
 import org.labkey.api.exp.ExperimentDataHandler;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpData;
@@ -23,10 +24,11 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.util.NetworkDrive;
 
 import java.io.File;
-import java.io.OutputStream;
 import java.io.IOException;
-import java.io.FileInputStream;
-import java.util.*;
+import java.io.OutputStream;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: jeckels
@@ -65,7 +67,7 @@ public abstract class URLRewriter
         private final File _file;
         private final String _name;
         private final ExperimentDataHandler _handler;
-        private ExpData _data;
+        private final ExpData _data;
 
         public FileInfo(ExpData data, File file, String name, ExperimentDataHandler handler)
         {
@@ -122,21 +124,7 @@ public abstract class URLRewriter
             }
             else
             {
-                FileInputStream fIn = null;
-                try
-                {
-                    fIn = new FileInputStream(_file);
-                    byte[] b = new byte[4096];
-                    int i;
-                    while ((i = fIn.read(b)) != -1)
-                    {
-                        out.write(b, 0, i);
-                    }
-                }
-                finally
-                {
-                    if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
-                }
+                FileUtils.copyFile(_file, out);
             }
         }
 

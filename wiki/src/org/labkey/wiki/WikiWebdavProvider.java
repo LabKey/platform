@@ -16,6 +16,7 @@
 
 package org.labkey.wiki;
 
+import org.apache.poi.util.IOUtils;
 import org.apache.xmlbeans.XmlOptions;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.AttachmentService;
@@ -272,15 +273,13 @@ public class WikiWebdavProvider implements WebdavService.Provider
 
                 XmlOptions options = new XmlOptions();
                 options.setSavePrettyPrint();
-                InputStream in = document.newInputStream(options);
-                ByteArrayOutputStream out = new ByteArrayOutputStream();
-                byte[] buffer = new byte[4096];
-                int length;
-                while ((length = in.read(buffer)) != -1)
+
+                try (InputStream in = document.newInputStream(options); ByteArrayOutputStream out = new ByteArrayOutputStream())
                 {
-                    out.write(buffer, 0, length);
+                    IOUtils.copy(in, out);
+                    result = out.toByteArray();
                 }
-                result = out.toByteArray();
+
                 _content = new WeakReference<>(result);
             }
 

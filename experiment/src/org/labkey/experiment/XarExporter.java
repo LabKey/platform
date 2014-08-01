@@ -958,46 +958,43 @@ public class XarExporter
 
     public void write(OutputStream out) throws IOException, ExperimentException
     {
-        ZipOutputStream zOut = null;
-        try
+        try (ZipOutputStream zOut = new ZipOutputStream(out))
         {
-            zOut = new ZipOutputStream(out);
-            if (_includeXML)
+            try
             {
-                ZipEntry xmlEntry = new ZipEntry(_xarXmlFileName);
-                zOut.putNextEntry(xmlEntry);
-                logProgress("Adding XAR XML to archive");
-                dumpXML(zOut);
-                zOut.closeEntry();
-            }
-
-            for (URLRewriter.FileInfo fileInfo : _urlRewriter.getFileInfos())
-            {
-                if (fileInfo.hasContentToExport())
+                if (_includeXML)
                 {
-                    logProgress("Adding data file to archive: " + fileInfo.getName());
-                    ZipEntry fileEntry = new ZipEntry(fileInfo.getName());
-                    zOut.putNextEntry(fileEntry);
-
-                    fileInfo.writeFile(zOut);
+                    ZipEntry xmlEntry = new ZipEntry(_xarXmlFileName);
+                    zOut.putNextEntry(xmlEntry);
+                    logProgress("Adding XAR XML to archive");
+                    dumpXML(zOut);
                     zOut.closeEntry();
                 }
-            }
-        }
-        catch (Exception e)
-        {
-            // insert the stack trace into the zip file
-            ZipEntry errorEntry = new ZipEntry("error.log");
-            zOut.putNextEntry(errorEntry);
 
-            final PrintStream ps = new PrintStream(zOut, true);
-            ps.println("Failed to complete export of the XAR file: ");
-            e.printStackTrace(ps);
-            zOut.closeEntry();
-        }
-        finally
-        {
-            if (zOut != null) { try { zOut.close(); } catch (IOException e) {} }
+                for (URLRewriter.FileInfo fileInfo : _urlRewriter.getFileInfos())
+                {
+                    if (fileInfo.hasContentToExport())
+                    {
+                        logProgress("Adding data file to archive: " + fileInfo.getName());
+                        ZipEntry fileEntry = new ZipEntry(fileInfo.getName());
+                        zOut.putNextEntry(fileEntry);
+
+                        fileInfo.writeFile(zOut);
+                        zOut.closeEntry();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                // insert the stack trace into the zip file
+                ZipEntry errorEntry = new ZipEntry("error.log");
+                zOut.putNextEntry(errorEntry);
+
+                final PrintStream ps = new PrintStream(zOut, true);
+                ps.println("Failed to complete export of the XAR file: ");
+                e.printStackTrace(ps);
+                zOut.closeEntry();
+            }
         }
     }
 

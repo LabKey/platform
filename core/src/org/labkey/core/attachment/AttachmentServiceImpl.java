@@ -16,6 +16,7 @@
 
 package org.labkey.core.attachment;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -817,15 +818,11 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
 
             try
             {
-                byte[] buf = new byte[4096];
-                int r;
-                while (0 < (r = s.read(buf)))
-                    out.write(buf, 0, r);
+                IOUtils.copy(s, out);
             }
             finally
             {
-                if (null != s)
-                    s.close();
+                s.close();
             }
         }
         catch (SQLException x)

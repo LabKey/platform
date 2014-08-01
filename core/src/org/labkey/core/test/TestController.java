@@ -567,7 +567,7 @@ public class TestController extends SpringActionController
                 npe = new NullPointerException();
             else
                 npe = new NullPointerException(form.getMessage());
-            ExceptionUtil.decorateException(npe, ExceptionUtil.ExceptionInfo.QuerySchema, "testing", true);
+            ExceptionUtil.decorateException(npe, ExceptionUtil.ExceptionInfo.ExtraMessage, "testing", true);
             throw npe;
         }
 
@@ -693,7 +693,6 @@ public class TestController extends SpringActionController
     @RequiresPermissionClass(ReadPermission.class)
     public class CoreClientApiAction extends SimpleViewAction<Object>
     {
-
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             return new HtmlView("Core Client API Action");

@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -2080,7 +2081,7 @@ public class AdminController extends SpringActionController
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            showLogFile(response, _errorMark, getErrorLogFile());
+            PageFlowUtil.streamLogFile(response, _errorMark, getErrorLogFile());
         }
     }
 
@@ -2090,7 +2091,7 @@ public class AdminController extends SpringActionController
     {
         public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
         {
-            showLogFile(response, 0, getErrorLogFile());
+            PageFlowUtil.streamLogFile(response, 0, getErrorLogFile());
         }
     }
 
@@ -2101,7 +2102,7 @@ public class AdminController extends SpringActionController
         {
             File tomcatHome = new File(System.getProperty("catalina.home"));
             File logFile = new File(tomcatHome, "logs/labkey.log");
-            showLogFile(response, 0, logFile);
+            PageFlowUtil.streamLogFile(response, 0, logFile);
         }
     }
 
@@ -2110,27 +2111,6 @@ public class AdminController extends SpringActionController
         File tomcatHome = new File(System.getProperty("catalina.home"));
         return new File(tomcatHome, "logs/labkey-errors.log");
     }
-
-    public void showLogFile(HttpServletResponse response, long startingOffset, File logFile) throws Exception
-    {
-        if (logFile.exists())
-        {
-            try (FileInputStream fIn = new FileInputStream(logFile))
-            {
-                //noinspection ResultOfMethodCallIgnored
-                fIn.skip(startingOffset);
-                OutputStream out = response.getOutputStream();
-                response.setContentType("text/plain");
-                byte[] b = new byte[4096];
-                int i;
-                while ((i = fIn.read(b)) != -1)
-                {
-                    out.write(b, 0, i);
-                }
-            }
-        }
-    }
-
 
     private static ActionURL getActionsURL()
     {

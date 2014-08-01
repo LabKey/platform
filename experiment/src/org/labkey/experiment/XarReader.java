@@ -1137,27 +1137,19 @@ public class XarReader extends AbstractXarImporter
 
     private byte[] hashFile(File existingFile) throws ExperimentException
     {
-        FileInputStream fIn = null;
-        try
+        try (FileInputStream fIn = new FileInputStream(existingFile))
         {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
-            fIn = new FileInputStream(existingFile);
             DigestInputStream dIn = new DigestInputStream(fIn, digest);
             byte[] b = new byte[4096];
-            while (dIn.read(b) != -1) {}
+            while (dIn.read(b) != -1)
+            {
+            }
             return digest.digest();
         }
-        catch (IOException e)
+        catch (IOException | NoSuchAlgorithmException e)
         {
             throw new ExperimentException(e);
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw new ExperimentException(e);
-        }
-        finally
-        {
-            if (fIn != null) { try { fIn.close(); } catch (IOException e) {} }
         }
     }
 

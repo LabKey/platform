@@ -676,17 +676,11 @@ public class AssayPublishManager implements AssayPublishService.Service
             file = new File(dir, fileName);
         }
         while (file.exists());
-        FileOutputStream out = null;
-        try
+
+        try (FileOutputStream out = new FileOutputStream(file))
         {
-            out = new FileOutputStream(file);
             IOUtils.copy(tsv.openInputStream(), out);
             tsv.closeInputStream();
-        }
-        finally
-        {
-            if (null != out)
-                try { out.close(); } catch (Exception ignored) {}
         }
 
         UploadLog ul = new UploadLog();
