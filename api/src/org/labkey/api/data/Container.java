@@ -1182,6 +1182,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
             if (null != getTitle())
                 containerProps.put("title", getTitle());
         }
+        else
+        {
+            // Issue 21207: backward compatibility for Skyline on 14.2
+            containerProps.put("userPermissions", 0);
+            containerProps.put("activeModules", new HashSet<Module>());
+            containerProps.put("folderType", "");
+        }
         return containerProps;
     }
 
