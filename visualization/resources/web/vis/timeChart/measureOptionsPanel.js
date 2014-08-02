@@ -308,6 +308,11 @@ Ext4.define('LABKEY.vis.MeasureOptionsPanel', {
             disabled: true,
             editable: false,
             width: 195,
+            listConfig : {
+                getInnerTpl: function (displayField) {
+                    return '<div data-qtip="{name:htmlEncode}">{' + displayField + ':htmlEncode}</div>';
+                }
+            },
             listeners: {
                 scope: this,
                 'select': function(cmp, records) {

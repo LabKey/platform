@@ -282,7 +282,7 @@ function onCancel()
 
 function onDeletePage()
 {
-    window.location.href = LABKEY.ActionURL.buildURL("wiki", "delete") + "?name=" + _wikiProps.name + "&rowId=" + _wikiProps.rowId;
+    window.location.href = LABKEY.ActionURL.buildURL("wiki", "delete") + "?name=" + encodeURIComponent(_wikiProps.name) + "&rowId=" + _wikiProps.rowId;
 }
 
 function onChangeName()
@@ -431,7 +431,7 @@ function getRedirUrl()
     if(!_redirUrl || _redirUrl.length == 0)
     {
         if(_wikiProps.name && _wikiProps.name.length > 0)
-            return LABKEY.ActionURL.buildURL("wiki", "page") + "?name=" + _wikiProps.name;
+            return LABKEY.ActionURL.buildURL("wiki", "page") + "?name=" + encodeURIComponent(_wikiProps.name);
         else
             return LABKEY.ActionURL.buildURL("project", "begin");
     }

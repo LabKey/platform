@@ -168,6 +168,8 @@ abstract public class ExpTableImpl<C extends Enum> extends FilteredTable<UserSch
         ret.setDescription("Contains a reference to a user-editable comment about this row");
         ret.setNullable(true);
         ret.setInputType("text");
+        ret.setMeasure(false);
+        ret.setDimension(false);
         return ret;
     }
 
