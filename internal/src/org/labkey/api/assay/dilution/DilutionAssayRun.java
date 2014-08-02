@@ -15,10 +15,14 @@
  */
 package org.labkey.api.assay.dilution;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.assay.dilution.query.DilutionProviderSchema;
 import org.labkey.api.assay.nab.Luc5Assay;
+import org.labkey.api.assay.nab.NabGraph;
 import org.labkey.api.assay.nab.NabSpecimen;
+import org.labkey.api.assay.nab.RenderAssayBean;
 import org.labkey.api.assay.nab.view.RunDetailOptions;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.RuntimeSQLException;
@@ -26,7 +30,6 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.statistics.StatsService;
-import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
@@ -41,7 +44,6 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.assay.AbstractAssayProvider;
-import org.labkey.api.study.assay.AbstractPlateBasedAssayProvider;
 import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.NotFoundException;
@@ -271,8 +273,8 @@ public abstract class DilutionAssayRun extends Luc5Assay
             // We need sample key without Virus for sample properties
             Map<PropertyDescriptor, Object> sampleProperties = samplePropertiesMap.get(getSampleKey(summary));
             Map<PropertyDescriptor, Object> dataProperties = new TreeMap<>(new PropertyDescriptorComparator());
-            String sampleKeyWithVirus = summary.getFirstWellGroup().getName();
-            String dataRowLsid = getDataHandler().getDataRowLSID(outputData, sampleKeyWithVirus, sampleProperties).toString();
+            String sampleKeyWithVirus = getSampleKeyForResultPoperties(summary, virusTable);
+            String dataRowLsid = getDataHandler().getDataRowLSID(outputData, summary.getFirstWellGroup().getName(), sampleProperties).toString();
             mgr.getDataPropertiesFromRunData(resultTable, dataRowLsid, _run.getContainer(), propertyDescriptors, dataProperties);
             dilutionResultPropertiesMap.put(sampleKeyWithVirus, new DilutionResultProperties(dataProperties,
                     getVirusProperties(mgr, dataRowLsid, _run.getContainer(), virusTable)));
@@ -281,21 +283,30 @@ public abstract class DilutionAssayRun extends Luc5Assay
     }
 
 
-    protected Map<String, Object> getVirusProperties(DilutionManager mgr, String dataRowLsid, Container container, TableInfo virusTable)
+    protected CaseInsensitiveHashMap<Object> getVirusProperties(DilutionManager mgr, String dataRowLsid, Container container, @Nullable TableInfo virusTable)
     {
-        NabSpecimen nabSpecimen = mgr.getNabSpecimen(dataRowLsid, container);
-        if (null != nabSpecimen)
+        if (null != virusTable)
         {
-            String virusLsid = nabSpecimen.getVirusLsid();
-            if (null != virusLsid)
+            NabSpecimen nabSpecimen = mgr.getNabSpecimen(dataRowLsid, container);
+            if (null != nabSpecimen)
             {
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromString("VirusLsid"), virusLsid);
-                Map<String, Object> result = new TableSelector(virusTable, TableSelector.ALL_COLUMNS, filter, null).getMap();
-                if (null != result)
-                    return result;
+                String virusLsid = nabSpecimen.getVirusLsid();
+                if (null != virusLsid)
+                {
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromString("VirusLsid"), virusLsid);
+                    Map<String, Object> results = new TableSelector(virusTable, TableSelector.ALL_COLUMNS, filter, null).getMap();
+                    if (null != results)
+                    {
+                        CaseInsensitiveHashMap<Object> props = new CaseInsensitiveHashMap<>();
+                        for (Map.Entry<String, Object> entry : results.entrySet())
+                            if (!entry.getKey().equalsIgnoreCase("_row") && !entry.getKey().equalsIgnoreCase("viruslsid"))
+                                props.put(entry.getKey(), entry.getValue());
+                        return props;
+                    }
+                }
             }
         }
-        return Collections.emptyMap();
+        return new CaseInsensitiveHashMap<>();
     }
 
     protected CustomView getRunsCustomView(ViewContext context)
@@ -327,28 +338,16 @@ public abstract class DilutionAssayRun extends Luc5Assay
 
     protected String getVirusName(String virusWellGroupName)
     {
-        List<? extends ExpData> outputDatas = _run.getOutputDatas(null);
-        if (outputDatas.size() > 0)
-        {
-            Lsid virusLsid = DilutionDataHandler.createVirusWellGroupLsid(outputDatas.get(0), virusWellGroupName);
-            AssayProtocolSchema schema = _provider.createProtocolSchema(_user, _run.getContainer(), _protocol, null);
-            TableInfo virusTable = schema.createTable(DilutionManager.VIRUS_TABLE_NAME);
-            ColumnInfo columnInfo = virusTable.getColumn(AbstractPlateBasedAssayProvider.VIRUS_NAME_PROPERTY_NAME);
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromString("VirusLsid"), virusLsid.toString());
-            List<String> results = new TableSelector(columnInfo, filter, null).getArrayList(String.class);
-            if (!results.isEmpty())
-                return results.get(0);
-        }
         return null;
     }
 
     public static class DilutionResultProperties
     {
         private Map<PropertyDescriptor, Object> _dataProperties;
-        private Map<String, Object> _virusProperties;
+        private CaseInsensitiveHashMap<Object> _virusProperties;
 
         public DilutionResultProperties(Map<PropertyDescriptor, Object> dataProperties,
-                                        Map<String, Object> virusProperties)
+                                        CaseInsensitiveHashMap<Object> virusProperties)
         {
             _dataProperties = dataProperties;
             _virusProperties = virusProperties;
@@ -359,7 +358,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
             return _dataProperties;
         }
 
-        public Map<String, Object> getVirusProperties()
+        public CaseInsensitiveHashMap<Object> getVirusProperties()
         {
             return _virusProperties;
         }
@@ -374,7 +373,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
         private DilutionMaterialKey _materialKey;
         private Map<PropertyDescriptor, Object> _sampleProperties;
         private Map<PropertyDescriptor, Object> _dataProperties;
-        private Map<String, Object> _virusProperties;
+        private CaseInsensitiveHashMap<Object> _virusProperties;
         private boolean _longCaptions = false;
         private DilutionManager _mgr = new DilutionManager();
 
@@ -424,7 +423,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
             return _dataProperties;
         }
 
-        public Map<String, Object> getVirusProperties()
+        public CaseInsensitiveHashMap<Object> getVirusProperties()
         {
             return _virusProperties;
         }
@@ -560,6 +559,19 @@ public abstract class DilutionAssayRun extends Luc5Assay
     protected String getSampleKey(DilutionSummary summary)
     {
         return summary.getFirstWellGroup().getName();
+    }
+
+    protected String getSampleKeyForResultPoperties(DilutionSummary summary, @Nullable TableInfo virusTable)
+    {
+        return null != virusTable ? summary.getFirstWellGroup().getName() : getSampleKey(summary);
+    }
+
+    public void updateRenderAssayBean(RenderAssayBean bean)
+    {
+        if (!bean.isMaxSamplesPerGraphSet())
+            bean.setMaxSamplesPerGraph(NabGraph.DEFAULT_MAX_SAMPLES_PER_GRAPH);
+        if (!bean.isGraphsPerRowSet())
+            bean.setGraphsPerRow(NabGraph.DEFAULT_GRAPHS_PER_ROW);
     }
 
 }

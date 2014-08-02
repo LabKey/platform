@@ -134,26 +134,26 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
 
     public abstract List<Plate> getPlates();
 
-    public double getControlRange(Plate plate)
+    public double getControlRange(Plate plate, String virusWellGroupName)    // override to support multi-virus
     {
         WellData cellControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.CELL_CONTROL_SAMPLE);
         WellData virusControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.VIRUS_CONTROL_SAMPLE);
         return virusControl.getMean() - cellControl.getMean();
     }
 
-    public double getVirusControlMean(Plate plate)
+    public double getVirusControlMean(Plate plate, String virusWellGroupName)
     {
         WellData virusControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.VIRUS_CONTROL_SAMPLE);
         return virusControl.getMean();
     }
 
-    public double getCellControlMean(Plate plate)
+    public double getCellControlMean(Plate plate, String virusWellGroupName)
     {
         WellData cellControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.CELL_CONTROL_SAMPLE);
         return cellControl.getMean();
     }
 
-    public double getVirusControlPlusMinus(Plate plate)
+    public double getVirusControlPlusMinus(Plate plate, String virusWellGroupName)
     {
         WellData virusControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.VIRUS_CONTROL_SAMPLE);
         double virusControlMean = virusControl.getMean();
@@ -161,12 +161,22 @@ public abstract class Luc5Assay implements Serializable, DilutionCurve.PercentCa
         return virusControlStdDev / virusControlMean;
     }
 
-    public double getCellControlPlusMinus(Plate plate)
+    public double getCellControlPlusMinus(Plate plate, String virusWellGroupName)
     {
         WellData cellControl = plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.CELL_CONTROL_SAMPLE);
         double cellControlMean = cellControl.getMean();
         double cellControlStdDev = cellControl.getStdDev();
         return cellControlStdDev / cellControlMean;
+    }
+
+    public WellGroup getCellControlWellGroup(Plate plate, String virusWellGroupName)
+    {
+        return plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.CELL_CONTROL_SAMPLE);
+    }
+
+    public WellGroup getVirusControlWellGroup(Plate plate, String virusWellGroupName)
+    {
+        return plate.getWellGroup(WellGroup.Type.CONTROL, DilutionManager.CELL_CONTROL_SAMPLE);
     }
 
     public Map<Integer, String> getCutoffFormats()

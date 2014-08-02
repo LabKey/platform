@@ -586,7 +586,7 @@ public enum PropertyType
 
     public static Object getFromExcelCell(Cell cell) throws ConversionException
     {
-        if (Cell.CELL_TYPE_NUMERIC == cell.getCellType())
+        if (ExcelFactory.isCellNumeric(cell))
         {
             // Ugly, the POI implementation doesn't expose an explicit date type
             if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell))

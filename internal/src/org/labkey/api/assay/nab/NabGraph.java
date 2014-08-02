@@ -59,6 +59,8 @@ public class NabGraph
 {
     public static final int DEFAULT_WIDTH = 425;
     public static final int DEFAULT_HEIGHT = 300;
+    public static final int DEFAULT_GRAPHS_PER_ROW = 2;
+    public static final int DEFAULT_MAX_SAMPLES_PER_GRAPH = 5;
 
     private static final Color[] GRAPH_COLORS = {
             ChartColor.BLUE,

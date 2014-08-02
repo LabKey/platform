@@ -122,7 +122,7 @@ public class MapLoader extends DataLoader
         protected MapLoaderIterator()
                 throws IOException
         {
-            super(_skipLines, false);
+            super(_skipLines);
         }
 
         @Override

@@ -99,6 +99,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     // CONSIDER: explicit flags for hasHeaders, inferHeaders, skipLines etc.
     protected int _skipLines = -1;      // -1 means infer headers
     private boolean _inferTypes = true;
+    private boolean _includeBlankLines = false;
     protected boolean _throwOnErrors = false;
     protected final Container _mvIndicatorContainer;
     // true if the results can be scrolled by the DataIterator created in .getDataIterator()
@@ -132,6 +133,17 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     public void setThrowOnErrors(boolean throwOnErrors)
     {
         _throwOnErrors = throwOnErrors;
+    }
+
+    public boolean isIncludeBlankLines()
+    {
+        return _includeBlankLines;
+    }
+
+    /** When true (the default), lines that have no values will be skipped.  When values, an row of null values is returned. */
+    public void setIncludeBlankLines(boolean includeBlankLines)
+    {
+        _includeBlankLines = includeBlankLines;
     }
 
     public final ColumnDescriptor[] getColumns() throws IOException
@@ -463,17 +475,15 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
     {
         protected final ColumnDescriptor[] _activeColumns;
         private final RowMapFactory<Object> _factory;
-        private final boolean _skipEmpty;
 
         private Object[] _fields = null;
         private Map<String, Object> _values = null;
         private int _lineNum = 0;
         private boolean _closed = false;
 
-        protected DataLoaderIterator(int lineNum, boolean skipEmpty) throws IOException
+        protected DataLoaderIterator(int lineNum) throws IOException
         {
             _lineNum = lineNum;
-            _skipEmpty = skipEmpty;
 
             // Figure out the active columns (load = true).  This is the list of columns we care about throughout the iteration.
             ColumnDescriptor[] allColumns = getColumns();
@@ -536,7 +546,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     _lineNum++;
 
                     _values = convertValues();
-                    if (_values == Collections.EMPTY_MAP && _skipEmpty)
+                    if (_values == Collections.EMPTY_MAP && !isIncludeBlankLines())
                         continue;
 
                     return _values != null;
@@ -549,7 +559,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
             }
         }
 
-        protected Map<String, Object> convertValues()
+        protected final Map<String, Object> convertValues()
         {
             if (_fields == null)
                 return null;    // consider: throw IllegalState
@@ -706,7 +716,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                         foundData = true;
                 }
 
-                if (foundData)
+                if (foundData || isIncludeBlankLines())
                 {
                     // This extra copy was added to AbstractTabLoader in r12810 to let DataSetDefinition.importDatasetData()
                     // modify the underlying maps. TODO: Refactor dataset import and return immutable maps. 
@@ -714,8 +724,9 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                     list.addAll(Arrays.asList(values));
                     return _factory.getRowMap(list);
                 }
-                else if (_skipEmpty)
+                else
                 {
+                    // Return EMPTY_MAP to signal that we haven't reached the end yet
                     return Collections.emptyMap();
                 }
             }
@@ -732,7 +743,8 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 if (null != _file)
                     _log.error("failed loading file " + _file.getName() + " at line: " + _lineNum + " " + e, e);
             }
-            
+
+            // Return null to signals there are no more rows
             return null;
         }
 

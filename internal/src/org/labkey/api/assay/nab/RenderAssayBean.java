@@ -55,7 +55,6 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,13 +77,16 @@ public class RenderAssayBean extends RenderAssayForm
     private Boolean _dupFile = null;
     private int _graphHeight = NabGraph.DEFAULT_HEIGHT;
     private int _graphWidth = NabGraph.DEFAULT_WIDTH;
-    private int _maxSamplesPerGraph = 8;
-    private int _graphsPerRow = 2;
+    private int _maxSamplesPerGraph = 0;
+    private int _graphsPerRow = 0;
     private String _sampleNoun = "Sample";
     private String _neutralizationAbrev = "Neut.";
     private ActionURL _graphURL;
     private String _plateDataFormat;
     private RunDetailOptions.DataIdentifier _dataIdentifier = RunDetailOptions.DataIdentifier.DefaultFormat;
+
+    private static final int DEFAULT_MAX_SAMPLE_PER_GRAPH = 8;
+    private static final int DEFAULT_GRAPHS_PER_ROW = 2;
 
     public RenderAssayBean()
     {
@@ -122,10 +124,6 @@ public class RenderAssayBean extends RenderAssayForm
                     }
                 }
             }
-
-            Map<String, Object> virusNames = _assay.getVirusNames();
-            if (null != virusNames)
-                _displayProperties.putAll(virusNames);
         }
         return _displayProperties;
     }
@@ -370,7 +368,12 @@ public class RenderAssayBean extends RenderAssayForm
 
     public int getMaxSamplesPerGraph()
     {
-        return _maxSamplesPerGraph;
+        return 0 != _maxSamplesPerGraph ? _maxSamplesPerGraph : DEFAULT_MAX_SAMPLE_PER_GRAPH;
+    }
+
+    public boolean isMaxSamplesPerGraphSet()
+    {
+        return 0 != _maxSamplesPerGraph;
     }
 
     public void setMaxSamplesPerGraph(int maxSamplesPerGraph)
@@ -380,7 +383,12 @@ public class RenderAssayBean extends RenderAssayForm
 
     public int getGraphsPerRow()
     {
-        return _graphsPerRow;
+        return 0 != _graphsPerRow ? _graphsPerRow: DEFAULT_GRAPHS_PER_ROW;
+    }
+
+    public boolean isGraphsPerRowSet()
+    {
+        return 0 != _graphsPerRow;
     }
 
     public void setGraphsPerRow(int graphsPerRow)

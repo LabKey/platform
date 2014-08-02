@@ -15,12 +15,13 @@
  */
 package org.labkey.api.reader;
 
-import org.apache.commons.collections15.iterators.ArrayIterator;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.CharSequenceReader;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.tika.detect.AutoDetectReader;
+import org.apache.tika.exception.TikaException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -34,6 +35,7 @@ import org.labkey.api.util.Filter;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -47,7 +49,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -179,7 +180,15 @@ public class TabLoader extends DataLoader
             public BufferedReader getReader() throws IOException
             {
                 verifyFile(inputFile);
-                return new BufferedReader(new FileReader(inputFile));
+                try
+                {
+                    // Let tika figure out the Charset encoding used in the file
+                    return new AutoDetectReader(new FileInputStream(inputFile));
+                }
+                catch (TikaException e)
+                {
+                    throw new IOException(e);
+                }
             }
         }, hasColumnHeaders, mvIndicatorContainer);
 
@@ -316,15 +325,15 @@ public class TabLoader extends DataLoader
 
 
 
-    private CharSequence readLine(BufferedReader r, boolean skipComments)
+    private CharSequence readLine(BufferedReader r, boolean skipComments, boolean skipBlankLines)
     {
-        String line = readOneTextLine(r,skipComments);
+        String line = readOneTextLine(r, skipComments, skipBlankLines);
         if (null == line || null == _lineDelimiter)
             return line;
         if (line.endsWith(_lineDelimiter))
             return line.substring(0,line.length()-_lineDelimiter.length());
         StringBuilder sb = new StringBuilder(line);
-        while (null != (line = readOneTextLine(r,false)))
+        while (null != (line = readOneTextLine(r, false, false)))
         {
             sb.append("\n");
             if (line.endsWith(_lineDelimiter))
@@ -338,7 +347,7 @@ public class TabLoader extends DataLoader
     }
 
 
-    private String readOneTextLine(BufferedReader r, boolean skipComments)
+    private String readOneTextLine(BufferedReader r, boolean skipComments, boolean skipBlankLines)
     {
         try
         {
@@ -349,7 +358,7 @@ public class TabLoader extends DataLoader
                 if (line == null)
                     return null;
             }
-            while (skipComments && (null == StringUtils.trimToNull(line) || line.charAt(0) == '#'));
+            while ((skipComments && line.length() > 0 && line.charAt(0) == COMMENT_CHAR) || (skipBlankLines && null == StringUtils.trimToNull(line)));
             return line;
         }
         catch (Exception e)
@@ -365,7 +374,7 @@ public class TabLoader extends DataLoader
     {
         if (!_parseQuotes)
         {
-            CharSequence line = readLine(r, true);
+            CharSequence line = readLine(r, true, !isIncludeBlankLines());
             if (line == null)
                 return null;
             String[] fields = StringUtils.splitByWholeSeparator(line.toString(), _strDelimiter);
@@ -374,7 +383,7 @@ public class TabLoader extends DataLoader
             return fields;
         }
 
-        CharSequence line = readLine(r, true);
+        CharSequence line = readLine(r, true, !isIncludeBlankLines());
         if (line == null)
             return null;
         StringBuilder buf = line instanceof StringBuilder ? (StringBuilder)line : new StringBuilder(line);
@@ -416,7 +425,7 @@ public class TabLoader extends DataLoader
                     if (end == -1)
                     {
                         // XXX: limit number of lines we read
-                        CharSequence nextLine = readLine(r, false);
+                        CharSequence nextLine = readLine(r, false, false);
                         end = buf.length();
                         if (nextLine == null)
                         {
@@ -633,7 +642,7 @@ public class TabLoader extends DataLoader
 
         protected TabLoaderIterator() throws IOException
         {
-            super(_commentLines + _skipLines, false);
+            super(_commentLines + _skipLines);
             assert _skipLines != -1;
 
             reader = getReader();
@@ -900,6 +909,58 @@ public class TabLoader extends DataLoader
             assertEquals("this\\nis\\tmulti-line", row.get("Multi-Line"));
             assertEquals("b", row.get("B"));
 
+        }
+
+        @Test
+        public void testEmptyRow() throws Exception
+        {
+            final String data =
+                    "A\tB\n" +
+                    "first\tline\n" +
+                    "\n" +
+                    "# comment\n" +
+                    "second\tline\n";
+
+            for (int i = 0; i < 1; i++)
+            {
+                boolean parseQuotes = i == 0;
+
+                // default behavior is to skip blank lines
+                {
+                    TabLoader loader = new TabLoader(data, true);
+                    loader.setInferTypes(false);
+                    loader.setParseQuotes(parseQuotes);
+                    List<Map<String, Object>> rows = loader.load();
+                    assertEquals(2, rows.size());
+
+                    Map<String, Object> row = rows.get(0);
+                    assertEquals("first", row.get("A"));
+
+                    row = rows.get(1);
+                    assertEquals("second", row.get("A"));
+                }
+
+                // include blank lines as row of all null values
+                {
+                    TabLoader loader = new TabLoader(data, true);
+                    loader.setInferTypes(false);
+                    loader.setParseQuotes(parseQuotes);
+                    loader.setIncludeBlankLines(true);
+                    List<Map<String, Object>> rows = loader.load();
+                    assertEquals(3, rows.size());
+
+                    Map<String, Object> row = rows.get(0);
+                    assertEquals("first", row.get("A"));
+
+                    row = rows.get(1);
+                    assertEquals(null, row.get("A"));
+                    assertEquals(null, row.get("B"));
+
+                    row = rows.get(2);
+                    assertEquals("second", row.get("A"));
+                }
+
+            }
         }
 
         @Test

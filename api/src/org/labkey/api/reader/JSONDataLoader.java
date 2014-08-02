@@ -787,7 +787,7 @@ public class JSONDataLoader extends DataLoader
     {
         protected Iter() throws IOException
         {
-            super(_skipLines, false);
+            super(_skipLines);
             assert _skipLines != -1;
 
             int start = _firstRows == null ? 0 : _firstRows.size();

@@ -100,9 +100,13 @@ public abstract class RunDetailsAction<FormType extends RenderAssayBean> extends
         form.setContext(getViewContext());
         form.setAssay(assay);
 
+        RunDetailsHeaderView headerView = new RunDetailsHeaderView(getContainer(), _protocol, provider, _runRowId, assay.getSampleResults());
+        if (headerView.isShowGraphLayoutOptions())
+            assay.updateRenderAssayBean(form);
+
         HttpView view = new JspView<RenderAssayBean>("/org/labkey/api/assay/nab/view/runDetails.jsp", form);
         if (!isPrint())
-            view = new VBox(new RunDetailsHeaderView(getContainer(), _protocol, provider, _runRowId, assay.getSampleResults()), view);
+            view = new VBox(headerView, view);
 
         return view;
     }

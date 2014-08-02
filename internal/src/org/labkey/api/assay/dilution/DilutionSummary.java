@@ -200,7 +200,10 @@ public class DilutionSummary implements Serializable
         if (getPercent(data) == 0)
             return 0;
         else
-            return getStdDev(data) / _assay.getControlRange(data.getPlate());
+        {
+            String virusWellGroupName = (String) getFirstWellGroup().getProperty(AbstractPlateBasedAssayProvider.VIRUS_WELL_GROUP_NAME);
+            return getStdDev(data) / _assay.getControlRange(data.getPlate(), virusWellGroupName);
+        }
     }
 
     public List<WellData> getWellData()

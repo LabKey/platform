@@ -95,6 +95,7 @@ public class ExcelLoader extends DataLoader
     private Workbook _workbook = null;
 
     private String sheetName;
+    private Integer sheetIndex;
 
     public ExcelLoader(File file) throws IOException
     {
@@ -120,6 +121,15 @@ public class ExcelLoader extends DataLoader
         super(mvIndicatorContainer);
         setHasColumnHeaders(hasColumnHeaders);
         setSource(file);
+        setScrollable(true);
+    }
+
+    public ExcelLoader(Workbook workbook, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
+    {
+        super(mvIndicatorContainer);
+        setHasColumnHeaders(hasColumnHeaders);
+        _file = null;
+        _workbook = workbook;
         setScrollable(true);
     }
 
@@ -161,6 +171,13 @@ public class ExcelLoader extends DataLoader
     public void setSheetName(String sheetName)
     {
         this.sheetName = sheetName;
+        this.sheetIndex = null;
+    }
+
+    public void setSheetIndex(int index)
+    {
+        this.sheetName = null;
+        this.sheetIndex = index;
     }
 
     private Sheet getSheet() throws IOException
@@ -170,6 +187,8 @@ public class ExcelLoader extends DataLoader
             Workbook workbook = getWorkbook();
             if (sheetName != null)
                 return workbook.getSheet(sheetName);
+            else if (sheetIndex != null)
+                return workbook.getSheetAt(sheetIndex);
             else
                 return workbook.getSheetAt(0);
         }
@@ -201,7 +220,7 @@ public class ExcelLoader extends DataLoader
                             foundData = true;
                         rowData.add(data != null ? data : "");
                     }
-                    if (foundData)
+                    if (foundData || isIncludeBlankLines())
                         cells.add(rowData.toArray(new String[rowData.size()]));
                 }
                 return cells.toArray(new String[cells.size()][]);
@@ -384,7 +403,7 @@ public class ExcelLoader extends DataLoader
 
         public XlsxIterator() throws IOException, InvalidFormatException
         {
-            super(_skipLines == -1 ? 1 : _skipLines, true);
+            super(_skipLines == -1 ? 1 : _skipLines);
             grid = getParsedGridXLSX();
         }
 
@@ -417,7 +436,7 @@ public class ExcelLoader extends DataLoader
 
         public ExcelIterator() throws IOException
         {
-            super(_skipLines == -1 ? 1 : _skipLines, true);
+            super(_skipLines == -1 ? 1 : _skipLines);
 
             sheet = getSheet();
             numRows = sheet.getLastRowNum() + 1;

@@ -86,21 +86,21 @@ public class DilutionRunUploadForm<Provider extends DilutionAssayProvider> exten
                     break;
                 }
             }
-            if (selected == null)
-                throw new NotFoundException(getProvider().getResourceName() + " run input " + scope + " could not be found for run " + getReRunId() + ".");
-            Map<String, Object> values = OntologyManager.getProperties(getContainer(), selected.getLSID());
-            Map<DomainProperty, Object> ret = new HashMap<>();
-            Set<String> requiredColumns = new CaseInsensitiveHashSet(ThawListResolverType.REQUIRED_COLUMNS);
-            for (DomainProperty property : domain.getProperties())
+            if (selected != null)
             {
-                // 20047 On reimport with a thaw list, don't use the previously resolved LastEntered values for specimenIds. Users should reinput the Thaw List index values.
-                if (!didImportUseThawList(reRun) || !requiredColumns.contains((property.getName())))
-                    ret.put(property, values.get(property.getPropertyURI()));
+                Map<String, Object> values = OntologyManager.getProperties(getContainer(), selected.getLSID());
+                Map<DomainProperty, Object> ret = new HashMap<>();
+                Set<String> requiredColumns = new CaseInsensitiveHashSet(ThawListResolverType.REQUIRED_COLUMNS);
+                for (DomainProperty property : domain.getProperties())
+                {
+                    // 20047 On reimport with a thaw list, don't use the previously resolved LastEntered values for specimenIds. Users should reinput the Thaw List index values.
+                    if (!didImportUseThawList(reRun) || !requiredColumns.contains((property.getName())))
+                        ret.put(property, values.get(property.getPropertyURI()));
+                }
+                return ret;
             }
-            return ret;
         }
-        else
-            return super.getDefaultValues(domain, scope);
+        return super.getDefaultValues(domain, scope);
     }
 
     private boolean didImportUseThawList(ExpRun reRun)

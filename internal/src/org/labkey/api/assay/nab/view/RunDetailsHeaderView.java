@@ -48,7 +48,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
 {
     private int _runId;
     private Container _container;
-    private boolean _showGraphLayoutOptions;
+    private final boolean _showGraphLayoutOptions;
     private List<DilutionAssayRun.SampleResult> _samples;
     private Map<String, PropertyDescriptor> _propertyDescriptorMap = new CaseInsensitiveHashMap<>();
 
@@ -163,7 +163,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
 
     private NavTree getGraphLayoutMenu()
     {
-        int currentLayout = NumberUtils.toInt(getViewContext().getActionURL().getParameter("graphsPerRow"), 1);
+        int currentLayout = NumberUtils.toInt(getViewContext().getActionURL().getParameter("graphsPerRow"), NabGraph.DEFAULT_GRAPHS_PER_ROW);
         NavTree menu = new NavTree("Graphs per Row");
 
         ActionURL url = getViewContext().cloneActionURL();
@@ -195,7 +195,7 @@ public class RunDetailsHeaderView extends AssayHeaderView
 
     private NavTree getSamplesPerGraphMenu()
     {
-        int currentLayout = NumberUtils.toInt(getViewContext().getActionURL().getParameter("maxSamplesPerGraph"), 5);
+        int currentLayout = NumberUtils.toInt(getViewContext().getActionURL().getParameter("maxSamplesPerGraph"), NabGraph.DEFAULT_MAX_SAMPLES_PER_GRAPH);
         NavTree menu = new NavTree("Samples per Graph");
 
         ActionURL url = getViewContext().cloneActionURL();
@@ -260,5 +260,10 @@ public class RunDetailsHeaderView extends AssayHeaderView
                 return false;
         }
         return true;
+    }
+
+    public boolean isShowGraphLayoutOptions()
+    {
+        return _showGraphLayoutOptions;
     }
 }

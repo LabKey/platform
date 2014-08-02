@@ -23,6 +23,7 @@ import org.apache.poi.ss.formula.FormulaParseException;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Comment;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.Hyperlink;
 import org.apache.poi.ss.usermodel.RichTextString;
 import org.apache.poi.ss.usermodel.Row;
@@ -212,7 +213,81 @@ public class JxlCell implements Cell
     @Override
     public RichTextString getRichStringCellValue()
     {
+        switch(getCellType()) {
+            case CELL_TYPE_BLANK:
+                return new JxlRichTextString("");
+            case CELL_TYPE_STRING:
+                return new JxlRichTextString(_cell.getContents());
+            case CELL_TYPE_FORMULA:
+                return null;
+            default:
+                throw new IllegalStateException("Expected string cell type, got '" + _cell.getType() + "'");
+        }
+    }
+
+    private static class JxlRichTextString implements RichTextString
+    {
+        String _string;
+
+        private JxlRichTextString(String string)
+        {
+            _string = string;
+        }
+
+        @Override
+        public void applyFont(int startIndex, int endIndex, short fontIndex)
+        {
         throw new UnsupportedOperationException("method not yet supported");
+        }
+
+        @Override
+        public void applyFont(int startIndex, int endIndex, Font font)
+        {
+            throw new UnsupportedOperationException("method not yet supported");
+        }
+
+        @Override
+        public void applyFont(short fontIndex)
+        {
+            throw new UnsupportedOperationException("method not yet supported");
+        }
+
+        @Override
+        public void applyFont(Font font)
+        {
+            throw new UnsupportedOperationException("method not yet supported");
+        }
+
+        @Override
+        public void clearFormatting()
+        {
+            throw new UnsupportedOperationException("method not yet supported");
+        }
+
+        @Override
+        public String getString()
+        {
+            return _string;
+        }
+
+        @Override
+        public int length()
+        {
+            return _string.length();
+        }
+
+        @Override
+        public int numFormattingRuns()
+        {
+            return 0;
+        }
+
+        @Override
+        public int getIndexOfFormattingRun(int index)
+        {
+            return 0;
+        }
+
     }
 
     @Override

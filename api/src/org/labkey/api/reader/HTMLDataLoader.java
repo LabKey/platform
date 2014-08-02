@@ -15,7 +15,6 @@
  */
 package org.labkey.api.reader;
 
-import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.iterator.CloseableIterator;
@@ -291,7 +290,7 @@ public class HTMLDataLoader extends DataLoader
 
         protected Iter() throws IOException
         {
-            super(_skipLines, false);
+            super(_skipLines);
             assert _skipLines != -1;
 
             Collection<String[]> table = parse(0);
