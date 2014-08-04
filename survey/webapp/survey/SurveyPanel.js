@@ -373,7 +373,7 @@ Ext4.define('LABKEY.ext4.SurveyPanel', {
                     else
                     {
                         // if no btn param, the save was done via the auto save task
-                        this.autosaveInfo.update("<span style='font-style: italic; font-size: 90%'>Responses automatically saved at " + new Date().format('g:i:s A') + "</span>");
+                        this.autosaveInfo.update("<span style='font-style: italic; font-size: 90%'>Responses automatically saved at " + Ext4.util.Format.date(new Date(), 'g:i:s A') + "</span>");
                     }
 
                     if (successUrl && idParamName)

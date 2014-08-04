@@ -327,10 +327,7 @@ Ext4.define('LABKEY.ext4.SurveyDesignPanel', {
     initCombo : function(cmp, value) {
 
         if (cmp.getStore().getCount() == 0)
-        {
-            this.initCombo.defer(20, this, [cmp, value]);
-            return;
-        }
+            Ext4.defer(this.initCombo, 20, this, [cmp, value]);
         else
             cmp.select(value, true);
     },
