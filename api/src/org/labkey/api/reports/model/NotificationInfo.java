@@ -89,7 +89,7 @@ public class NotificationInfo
         }
     }
 
-    public NotificationInfo(DatasetDB dataset)
+    public NotificationInfo(DatasetDB dataset, boolean isHidden)
     {
         _name = dataset.getName();
         _type = "Dataset";
@@ -98,8 +98,8 @@ public class NotificationInfo
         _categoryId = null != dataset.getCategoryId() ? dataset.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID;
         _displayOrder = dataset.getDisplayOrder();
         _report = null;
-        _hidden = false;
-        _shared = true;
+        _hidden = isHidden;
+        _shared = true;             // shared datasets means something different.
         _container = ContainerManager.getForId(dataset.getContainer());
         _status = (null != _container) ?
                 (String)ReportPropsManager.get().getPropertyValue(dataset.getEntityId(), _container, "status") : "";
