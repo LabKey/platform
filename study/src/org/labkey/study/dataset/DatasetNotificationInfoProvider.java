@@ -15,6 +15,7 @@
  */
 package org.labkey.study.dataset;
 
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -25,7 +26,10 @@ import org.labkey.api.query.NotificationInfoProvider;
 import org.labkey.api.reports.model.NotificationInfo;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.study.DatasetDB;
+import org.labkey.api.study.Study;
 import org.labkey.study.StudySchema;
+import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -56,10 +60,23 @@ public class DatasetNotificationInfoProvider extends NotificationInfoProvider
                     if (!notificationInfoMap.containsKey(containerId))
                         notificationInfoMap.put(containerId, new HashMap<Integer, List<NotificationInfo>>());
                     Map<Integer, List<NotificationInfo>> subMap = notificationInfoMap.get(containerId);
-                    int categoryId = null != report.getCategoryId() ? report.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID;
-                    if (!subMap.containsKey(categoryId))
-                        subMap.put(categoryId, new ArrayList<NotificationInfo>());
-                    subMap.get(categoryId).add(new NotificationInfo(report));
+                    if (null != report.getContainer())
+                    {
+                        Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(report.getContainer()));
+                        if (null != study)
+                        {
+                            DataSetDefinition dataSetDefinition = StudyManager.getInstance().getDataSetDefinition(study, report.getDatasetId());
+                            NotificationInfo notificationInfo = new NotificationInfo(report, !dataSetDefinition.isShowByDefault());
+                            if (null != notificationInfo.getContainer() && !notificationInfo.isHidden() && notificationInfo.isShared())
+                            {
+                                // Don't include hidden reports (or if container was deleted)
+                                int categoryId = null != report.getCategoryId() ? report.getCategoryId() : ViewCategoryManager.UNCATEGORIZED_ROWID;
+                                if (!subMap.containsKey(categoryId))
+                                    subMap.put(categoryId, new ArrayList<NotificationInfo>());
+                                subMap.get(categoryId).add(notificationInfo);
+                            }
+                        }
+                    }
                 }
             }, DatasetDB.class);
             _notificationInfoMap = notificationInfoMap;
