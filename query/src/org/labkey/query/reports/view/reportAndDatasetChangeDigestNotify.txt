@@ -9,7 +9,7 @@
 </head>
 <body>
 <table width="100%">
-    <tr><td>Summary of notifications of reports and dataset changes for folder <a href="^folderUrl^">^folderPath^</a>.</td></tr>
+    <tr><td>Summary of report and dataset changes for folder <a href="^folderUrl^">^folderPath^</a>.</td></tr>
 </table>
 <hr size="1"/>
 <br>
