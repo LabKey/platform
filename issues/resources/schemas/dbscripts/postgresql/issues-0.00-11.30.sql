@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-/* issues-0.00-10.30.sql */
-
 /* issues-0.00-10.20.sql */
 
 CREATE SCHEMA issues;
@@ -103,8 +101,6 @@ CREATE TABLE issues.EmailPrefs
 );
 
 /* issues-10.20-10.30.sql */
-
-/* issues-10.20-10.21.sql */
 
 ALTER TABLE issues.Issues
     ADD COLUMN String3 VARCHAR(200) NULL,
