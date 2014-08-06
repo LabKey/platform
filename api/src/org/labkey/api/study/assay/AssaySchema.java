@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 public abstract class AssaySchema extends UserSchema
 {
     public static final String ASSAY_LIST_TABLE_NAME = "AssayList";
+    public static final String ASSAY_PROVIDERS_TABLE_NAME = "AssayProviders";
     public static String NAME = "assay";
     private static final String DESCR = "Contains data about the set of defined assays and their associated batches and runs.";
 
@@ -71,4 +72,5 @@ public abstract class AssaySchema extends UserSchema
     {
         return true;
     }
+
 }

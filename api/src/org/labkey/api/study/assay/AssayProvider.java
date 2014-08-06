@@ -251,7 +251,16 @@ public interface AssayProvider extends Handler<ExpProtocol>
     AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
     /** Make a context that knows how to do the import in the background, on a separate thread from the final HTTP step in the wizard */
     AssayRunAsyncContext createRunAsyncContext(AssayRunUploadContext context) throws IOException, ExperimentException;
+
     String getRunLSIDPrefix();
+
+    /**
+     * Return a SQL pattern that can be used to match a protocol's LSID to this AssayProvider.
+     * The pattern must match a protocol's LSID in the same manner as
+     * {@link #getPriority(org.labkey.api.exp.api.ExpProtocol)}.
+     */
+    @Nullable String getProtocolPattern();
+
     void registerLsidHandler();
 
     boolean supportsFlagColumnType(ExpProtocol.AssayDomainTypes type);

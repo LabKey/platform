@@ -311,6 +311,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
         return null;
     }
 
+    public String getProtocolPattern()
+    {
+        return "%:" + _protocolLSIDPrefix + ".%";
+    }
+
     @NotNull
     public abstract AssayTableMetadata getTableMetadata(@NotNull ExpProtocol protocol);
 
