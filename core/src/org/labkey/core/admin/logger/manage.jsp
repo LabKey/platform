@@ -18,7 +18,18 @@
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     Container c = getContainer();
 %>
@@ -118,7 +129,8 @@
 </datalist>
 
 <script type="text/javascript">
-Ext.onReady(function () {
+(function ()
+{
     var searchInput = document.getElementById('search');
     var showInheritedInput = document.getElementById('showInherited');
     var showLevelSelect = document.getElementById('showLevel');
@@ -130,14 +142,14 @@ Ext.onReady(function () {
     var resetButton = document.getElementById('reset');
 
     var levels = {
-      "OFF": "OFF",
-      "FATAL": "FATAL",
-      "ERROR": "ERROR",
-      "WARN": "WARN",
-      "INFO": "INFO",
-      "DEBUG": "DEBUG",
-      "TRACE": "TRACE",
-      "ALL": "ALL",
+        "OFF": "OFF",
+        "FATAL": "FATAL",
+        "ERROR": "ERROR",
+        "WARN": "WARN",
+        "INFO": "INFO",
+        "DEBUG": "DEBUG",
+        "TRACE": "TRACE",
+        "ALL": "ALL",
     };
 
     //
@@ -147,56 +159,64 @@ Ext.onReady(function () {
     refreshLoggers();
 
     refreshButton.addEventListener('click', onRefreshClick, false);
-    function onRefreshClick() {
-      refreshLoggers();
+    function onRefreshClick()
+    {
+        refreshLoggers();
     }
 
-    function refreshLoggers() {
-      Ext.Ajax.request({
-        url: LABKEY.ActionURL.buildURL("logger", "list.api"),
-        success: LABKEY.Utils.getCallbackWrapper(function (response) {
-          updateDisplay(response["loggers"]);
-        }, this)
-      });
+    function refreshLoggers()
+    {
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("logger", "list.api"),
+            success: LABKEY.Utils.getCallbackWrapper(function (response)
+            {
+                updateDisplay(response["loggers"]);
+            }, this)
+        });
     }
 
     function updateDisplay(loggers)
     {
-      loggers.sort(function(a,b){return a.name.localeCompare(b.name);});
-      if (loggers.length == 0)
-      {
-        loggerTableMessage.innerHTML = 'No loggers in response';
-        loggerTableMessage.style.display = '';
-      }
-      else
-      {
-        var isVisible = createVisibleFilter();
-        var rows = [];
-        for (var i = 0, len = loggers.length; i < len; i++) {
-          var logger = loggers[i];
-          var visible = isVisible(logger);
-          rows.push(renderLogger(logger, visible));
+        loggers.sort(function (a, b)
+        {
+            return a.name.localeCompare(b.name);
+        });
+        if (loggers.length == 0)
+        {
+            loggerTableMessage.innerHTML = 'No loggers in response';
+            loggerTableMessage.style.display = '';
         }
+        else
+        {
+            var isVisible = createVisibleFilter();
+            var rows = [];
+            for (var i = 0, len = loggers.length; i < len; i++)
+            {
+                var logger = loggers[i];
+                var visible = isVisible(logger);
+                rows.push(renderLogger(logger, visible));
+            }
 
-        loggerTableMessage.style.display = 'none';
-        loggerTable.tBodies[0].innerHTML = rows.join("");
-      }
+            loggerTableMessage.style.display = 'none';
+            loggerTable.tBodies[0].innerHTML = rows.join("");
+        }
     }
 
     // The logger info is stored on the <tr> as a dataset using the 'data-*' attributes
     //   https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/Using_data_attributes
     //   https://developer.mozilla.org/en-US/docs/Web/API/HTMLElement.dataset
-    function renderLogger(logger, visible) {
-      var inherited = logger.inherited === true || logger.inherited === "true"; // convert to boolean
+    function renderLogger(logger, visible)
+    {
+        var inherited = logger.inherited === true || logger.inherited === "true"; // convert to boolean
 
-      return "<tr class='logger-row' " + (visible ? "" : " style='display:none;'") +
-        "data-name='" + logger.name + "' data-level='" + logger.level + "' data-inherited='" + logger.inherited + "' data-parent='" + logger.parent + "'>" +
-        "<td class='" + (inherited ? 'level-inherited' : 'level-configured') + " level-" + logger.level + "'>" +
-        logger.level +
-        "</td>" +
-        "<td>" + (logger.name == 'null' ? '&lt;root&gt;' : logger.name) + "</td>" +
-        "<td>" + logger.parent + "</td>" +
-        "</tr>";
+        return "<tr class='logger-row' " + (visible ? "" : " style='display:none;'") +
+                "data-name='" + logger.name + "' data-level='" + logger.level + "' data-inherited='" + logger.inherited + "' data-parent='" + logger.parent + "'>" +
+                "<td class='" + (inherited ? 'level-inherited' : 'level-configured') + " level-" + logger.level + "'>" +
+                logger.level +
+                "</td>" +
+                "<td>" + (logger.name == 'null' ? '&lt;root&gt;' : logger.name) + "</td>" +
+                "<td>" + logger.parent + "</td>" +
+                "</tr>";
     }
 
     //
@@ -204,23 +224,26 @@ Ext.onReady(function () {
     //
 
     resetButton.addEventListener('click', onResetClick, false);
-    function onResetClick() {
-      reset();
+    function onResetClick()
+    {
+        reset();
     }
 
-    function reset() {
-        Ext.Ajax.request({
-          url: LABKEY.ActionURL.buildURL("logger", "reset.api"),
-          success: LABKEY.Utils.getCallbackWrapper(function (response) {
-            // Reset inputs back to default state
-            searchInput.value = '';
-            showLevelSelect.value = '';
-            showInheritedInput.checked = true;
+    function reset()
+    {
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("logger", "reset.api"),
+            success: LABKEY.Utils.getCallbackWrapper(function (response)
+            {
+                // Reset inputs back to default state
+                searchInput.value = '';
+                showLevelSelect.value = '';
+                showInheritedInput.checked = true;
 
-            // Reload the list of loggers
-            refreshLoggers();
-          })
-      });
+                // Reload the list of loggers
+                refreshLoggers();
+            })
+        });
     }
 
     //
@@ -231,54 +254,63 @@ Ext.onReady(function () {
     showLevelSelect.addEventListener('change', updateVisibleRows, false);
     showInheritedInput.addEventListener('change', updateVisibleRows, false);
 
-    function updateVisibleRows() {
-      var isVisible = createVisibleFilter();
+    function updateVisibleRows()
+    {
+        var isVisible = createVisibleFilter();
 
-      var visibleRows = 0;
-      var tbody = loggerTable.tBodies[0];
-      var nl = tbody.querySelectorAll("tr");
-      for (var i = 0, len = nl.length; i < len; i++) {
-        var row = nl[i];
-        var visible = isVisible(row.dataset);
+        var visibleRows = 0;
+        var tbody = loggerTable.tBodies[0];
+        var nl = tbody.querySelectorAll("tr");
+        for (var i = 0, len = nl.length; i < len; i++)
+        {
+            var row = nl[i];
+            var visible = isVisible(row.dataset);
 
-        if (visible) {
-          row.style.display = "";
-          visibleRows++;
+            if (visible)
+            {
+                row.style.display = "";
+                visibleRows++;
+            }
+            else
+            {
+                row.style.display = "none";
+            }
         }
-        else {
-          row.style.display = "none";
-        }
-      }
 
-      if (visibleRows > 0) {
-        loggerTableMessage.style.display = "none";
-      } else {
-        loggerTableMessage.innerHTML = "No rows visible.";
-        loggerTableMessage.style.display = "";
-      }
+        if (visibleRows > 0)
+        {
+            loggerTableMessage.style.display = "none";
+        }
+        else
+        {
+            loggerTableMessage.innerHTML = "No rows visible.";
+            loggerTableMessage.style.display = "";
+        }
     }
 
-    function createVisibleFilter() {
-      var filterName = searchInput.value.toLowerCase();
-      var filterLevel = showLevelSelect.value;
-      var filterInherited = showInheritedInput.checked;
+    function createVisibleFilter()
+    {
+        var filterName = searchInput.value.toLowerCase();
+        var filterLevel = showLevelSelect.value;
+        var filterInherited = showInheritedInput.checked;
 
-      return function (logger) {
-        var name = logger.name.toLowerCase();
-        var inherited = logger.inherited === true || logger.inherited === "true"; // convert to boolean
+        return function (logger)
+        {
+            var name = logger.name.toLowerCase();
+            var inherited = logger.inherited === true || logger.inherited === "true"; // convert to boolean
 
-        var visible = true;
-        if (filterName && name.indexOf(filterName) == -1)
-          visible = false;
+            var visible = true;
+            if (filterName && name.indexOf(filterName) == -1)
+                visible = false;
 
-        if (filterLevel && logger.level != filterLevel)
-          visible = false;
+            if (filterLevel && logger.level != filterLevel)
+                visible = false;
 
-        if (!filterInherited && inherited)
-          visible = false;
+            if (!filterInherited && inherited)
+                visible = false;
 
-        return visible;
-      }
+            return visible;
+        }
     }
 
     //
@@ -287,61 +319,67 @@ Ext.onReady(function () {
 
     loggerTable.addEventListener('click', onTableClick, false);
 
-    function onTableClick(evt) {
-      var target = evt.target;
-      if (target.tagName == "TD" && target.classList.contains("level-configured") || target.classList.contains("level-inherited")) {
-        var initialValue = target.parentNode.dataset.level;
+    function onTableClick(evt)
+    {
+        var target = evt.target;
+        if (target.tagName == "TD" && target.classList.contains("level-configured") || target.classList.contains("level-inherited"))
+        {
+            var initialValue = target.parentNode.dataset.level;
 
-        var input = document.createElement("input");
-        input.type = "text";
-        input.setAttribute("list", "levelsList");
-        input.size = 7;
-        input.value = initialValue;
-        input.addEventListener('blur', onLevelInputBlur, false);
-        input.style.fontSize = '11px';
+            var input = document.createElement("input");
+            input.type = "text";
+            input.setAttribute("list", "levelsList");
+            input.size = 7;
+            input.value = initialValue;
+            input.addEventListener('blur', onLevelInputBlur, false);
+            input.style.fontSize = '11px';
 
-        // remove level classes
-        target.classList.remove('level-inherited');
-        target.classList.remove('level-configured');
-        target.classList.remove('level-' + initialValue);
+            // remove level classes
+            target.classList.remove('level-inherited');
+            target.classList.remove('level-configured');
+            target.classList.remove('level-' + initialValue);
 
-        // remove all content and add the <select>
-        target.innerHTML = "";
-        target.appendChild(input);
-      }
+            // remove all content and add the <select>
+            target.innerHTML = "";
+            target.appendChild(input);
+        }
     }
 
-    function onLevelInputBlur(evt) {
-      var target = evt.target;
-      var td = target.parentNode;
-      var tr = td.parentNode;
-      var newLevel = target.value;
+    function onLevelInputBlur(evt)
+    {
+        var target = evt.target;
+        var td = target.parentNode;
+        var tr = td.parentNode;
+        var newLevel = target.value;
 
-      // update the new level value if it is valid
-      var updated = false;
-      if (levels[newLevel] && newLevel != tr.dataset.level) {
-        updated = true;
-        tr.dataset.level = newLevel;
-        tr.dataset.inherited = false;
-      }
+        // update the new level value if it is valid
+        var updated = false;
+        if (levels[newLevel] && newLevel != tr.dataset.level)
+        {
+            updated = true;
+            tr.dataset.level = newLevel;
+            tr.dataset.inherited = false;
+        }
 
-      tr.innerHTML = renderLogger(tr.dataset, true);
+        tr.innerHTML = renderLogger(tr.dataset, true);
 
-      if (updated) {
-        save(tr);
-      }
+        if (updated)
+        {
+            save(tr);
+        }
     }
 
-    function save(row) {
-        Ext.Ajax.request({
-          url: LABKEY.ActionURL.buildURL("logger", "update.api"),
-          jsonData: {
-            name: row.dataset.name,
-            level: row.dataset.level
-          }
-      });
+    function save(row)
+    {
+        LABKEY.Ajax.request({
+            url: LABKEY.ActionURL.buildURL("logger", "update.api"),
+            jsonData: {
+                name: row.dataset.name,
+                level: row.dataset.level
+            }
+        });
     }
 
-});
+})();
 
 </script>
