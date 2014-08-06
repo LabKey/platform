@@ -39,6 +39,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
@@ -207,22 +208,24 @@ public class ExcelLoader extends DataLoader
             {
                 List<ArrayList<Object>> grid = getParsedGridXLSX();
                 List<String[]> cells = new ArrayList<>();
+
                 for (int i=0 ; cells.size() < n && i<grid.size() ; i++)
                 {
                     ArrayList<Object> currentRow = grid.get(i);
                     ArrayList<String> rowData = new ArrayList<>(currentRow.size());
                     boolean foundData = false;
-                    for (int column = 0; column < currentRow.size() ; column++)
+
+                    for (Object v : currentRow)
                     {
-                        Object v = currentRow.get(column);
-                        String data = (v != null && !(v instanceof String)) ? String.valueOf(v) : (String)v;
+                        String data = (v != null && !(v instanceof String)) ? String.valueOf(v) : (String) v;
                         if (!StringUtils.isEmpty(data))
                             foundData = true;
                         rowData.add(data != null ? data : "");
                     }
-                    if (foundData || isIncludeBlankLines())
+                    if (foundData)
                         cells.add(rowData.toArray(new String[rowData.size()]));
                 }
+
                 return cells.toArray(new String[cells.size()][]);
             }
             catch (InvalidFormatException x)
@@ -230,6 +233,7 @@ public class ExcelLoader extends DataLoader
                 /* fall through */
             }
         }
+
         return getFirstNLinesXLS(n);
     }
 
@@ -237,15 +241,15 @@ public class ExcelLoader extends DataLoader
     public String[][] getFirstNLinesXLS(int n) throws IOException
     {
         Sheet sheet = getSheet();
-
         List<String[]> cells = new ArrayList<>();
+
         for (Row currentRow : sheet)
         {
             List<String> rowData = new ArrayList<>();
 
-            // Excel can report back more rows than exist. If we find no data at all,
-            // we should not add a row.
+            // Excel can report back more rows than exist. If we find no data at all, we should not add a row.
             boolean foundData = false;
+
             if (currentRow.getPhysicalNumberOfCells() != 0)
             {
                 for (int column = 0; column < currentRow.getLastCellNum(); column++)
@@ -253,7 +257,15 @@ public class ExcelLoader extends DataLoader
                     Cell cell = currentRow.getCell(column);
                     if (cell != null)
                     {
-                        String data = String.valueOf(PropertyType.getFromExcelCell(cell));
+                        Object value = PropertyType.getFromExcelCell(cell);
+
+                        String data;
+
+                        // Use ISO format instead of Date.toString(), #21232
+                        if (value instanceof Date)
+                            data = DateUtil.formatDateTimeISO8601((Date)value);
+                        else
+                            data = String.valueOf(value);
 
                         if (data != null && !"".equals(data))
                             foundData = true;
@@ -269,6 +281,7 @@ public class ExcelLoader extends DataLoader
             if (--n == 0)
                 break;
         }
+
         return cells.toArray(new String[cells.size()][]);
     }
 
@@ -377,11 +390,7 @@ public class ExcelLoader extends DataLoader
         {
             throw new InvalidFormatException("File is not an xlsx file: " + _file.getPath());
         }
-        catch (InvalidFormatException x)
-        {
-            throw x;
-        }
-        catch (IOException x)
+        catch (InvalidFormatException | IOException x)
         {
             throw x;
         }
@@ -558,8 +567,6 @@ public class ExcelLoader extends DataLoader
     }
 
 
-
-
     /* code modified from example code found XLS2CSV.java
      * http://svn.apache.org/repos/asf/poi/trunk/src/examples/src/org/apache/poi/xssf/eventusermodel/XLSX2CSV.java
      */
@@ -607,8 +614,9 @@ public class ExcelLoader extends DataLoader
          * Destination for data
          */
         private final Collection<ArrayList<Object>> output;
-        ArrayList<Object> currentRow;
-        int widestRow = 1;
+
+        private ArrayList<Object> currentRow;
+        private int widestRow = 1;
 
         /**
          * Number of columns to read starting with leftmost

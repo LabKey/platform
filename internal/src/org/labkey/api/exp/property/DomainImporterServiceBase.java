@@ -65,15 +65,9 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
 
     public List<InferencedColumn> inferenceColumns() throws ImportException
     {
-        DataLoader loader = getDataLoader();
-
-        try
+        try (DataLoader loader = getDataLoader())
         {
             return getColumns(loader);
-        }
-        finally
-        {
-            loader.close();
         }
     }
 
@@ -134,7 +128,6 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
         try
         {
             ColumnDescriptor[] columns = loader.getColumns();
-
             String[][] data = loader.getFirstNLines(_numSampleRows + 1); // also need the header
             int numRows = data.length;
 
@@ -143,27 +136,40 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
                 ColumnDescriptor column = columns[colIndex];
                 GWTPropertyDescriptor prop = new GWTPropertyDescriptor();
                 String name = column.name;
+
                 if (name.length() > 2 && name.startsWith("\"") && name.endsWith("\""))
                     name = name.substring(1, name.length()-1);
+
                 prop.setName(name);
                 PropertyType rangeURI = PropertyType.fromName(column.getRangeURI());
+
                 if (null != rangeURI)
                     prop.setRangeURI(rangeURI.getURI());
                 else
                     prop.setRangeURI(column.getRangeURI());
-                prop.setMvEnabled(column.isMvEnabled());
 
+                prop.setMvEnabled(column.isMvEnabled());
                 List<String> columnData = new ArrayList<>();
+
                 for (int rowIndex=1; rowIndex<numRows; rowIndex++)
                 {
                     String datum = "";
+
                     if (data[rowIndex].length > colIndex) // Not guaranteed that every row has every column
+                    {
                         datum = data[rowIndex][colIndex];
+
+                        if (column.clazz == Integer.class && !datum.isEmpty())
+                        {
+                            // data comes back as "3.0", but we know it's an integer column... so convert to "3", #21232
+                            datum = String.valueOf(Double.valueOf(datum).intValue());
+                        }
+                    }
+
                     columnData.add(datum);
                 }
 
                 InferencedColumn infColumn = new InferencedColumn(prop, columnData);
-
                 result.add(infColumn);
             }
         }
@@ -181,5 +187,4 @@ public abstract class DomainImporterServiceBase extends DomainEditorServiceBase 
     }
 
     public abstract ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException;
-    
 }
