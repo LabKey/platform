@@ -19,10 +19,14 @@ package org.labkey.study.assay.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssaySchema;
+import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.study.controllers.assay.AssayController;
 
@@ -31,7 +35,6 @@ import java.util.*;
 /**
  * User: brittp
  * Date: Jun 28, 2007
- * Time: 11:07:32 AM
  */
 public class AssayListTable extends FilteredTable<AssaySchemaImpl>
 {
@@ -52,8 +55,10 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         addWrapColumn(_rootTable.getColumn("RowId")).setHidden(true);
         ColumnInfo nameCol = addWrapColumn(_rootTable.getColumn("Name"));
         nameCol.setURL(detailsURL);
+
         ColumnInfo desc = wrapColumn("Description", _rootTable.getColumn("ProtocolDescription"));
         addColumn(desc);
+
         addWrapColumn(_rootTable.getColumn("Created"));
         addWrapColumn(_rootTable.getColumn("CreatedBy"));
         addWrapColumn(_rootTable.getColumn("Modified"));
@@ -63,7 +68,25 @@ public class AssayListTable extends FilteredTable<AssaySchemaImpl>
         
         ColumnInfo lsidColumn = addWrapColumn(_rootTable.getColumn("LSID"));
         lsidColumn.setHidden(true);
-        ColumnInfo typeColumn = wrapColumn("Type", _rootTable.getColumn("LSID"));
+
+        // Generate a CASE statement that matches an LSID to an AssayProvider so we can create a lookup to the AssayProviderTable.
+        // The column value is null if no AssayProvider is matched.
+        SQLFragment typeFrag = new SQLFragment();
+        typeFrag.append("(CASE");
+        for (AssayProvider provider : AssayService.get().getAssayProviders())
+        {
+            String protocolPattern = provider.getProtocolPattern();
+            if (protocolPattern != null)
+            {
+                typeFrag.append("\n");
+                typeFrag.append("WHEN ").append(ExprColumn.STR_TABLE_ALIAS).append(".LSID LIKE ? THEN ?");
+                typeFrag.add(protocolPattern);
+                typeFrag.add(provider.getName());
+            }
+        }
+        typeFrag.append("END)");
+        ColumnInfo typeColumn = new ExprColumn(this, "Type", typeFrag, JdbcType.VARCHAR);
+        typeColumn.setFk(new QueryForeignKey(getUserSchema(), null, AssaySchema.ASSAY_PROVIDERS_TABLE_NAME, "Name", "Name"));
         typeColumn.setDisplayColumnFactory(new DisplayColumnFactory()
         {
             public DisplayColumn createRenderer(ColumnInfo colInfo)

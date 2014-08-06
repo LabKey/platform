@@ -45,6 +45,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -96,7 +97,10 @@ public class AssaySchemaImpl extends AssaySchema
     @Override
     public Set<String> getTableNames()
     {
-        return Collections.singleton(ASSAY_LIST_TABLE_NAME);
+        LinkedHashSet<String> names = new LinkedHashSet<>();
+        names.add(ASSAY_LIST_TABLE_NAME);
+        names.add(ASSAY_PROVIDERS_TABLE_NAME);
+        return Collections.unmodifiableSet(names);
     }
 
     private Map<ExpProtocol, AssayProvider> getProtocols()
@@ -171,6 +175,9 @@ public class AssaySchemaImpl extends AssaySchema
     {
         if (name.equalsIgnoreCase(ASSAY_LIST_TABLE_NAME))
             return new AssayListTable(this);
+
+        if (name.equalsIgnoreCase(ASSAY_PROVIDERS_TABLE_NAME))
+            return new AssayProviderTable(this);
 
         // For backward compatibility with <12.2, resolve "protocolName tableName" tables.
         for (Map.Entry<ExpProtocol, AssayProvider> entry : getProtocols().entrySet())

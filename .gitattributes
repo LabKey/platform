@@ -3411,6 +3411,7 @@ study/src/org/labkey/study/assay/query/AssayAuditViewFactory.java -text
 study/src/org/labkey/study/assay/query/AssayListPortalView.java -text
 study/src/org/labkey/study/assay/query/AssayListQueryView.java -text
 study/src/org/labkey/study/assay/query/AssayListTable.java -text
+study/src/org/labkey/study/assay/query/AssayProviderTable.java -text
 study/src/org/labkey/study/assay/query/AssaySchemaImpl.java -text
 study/src/org/labkey/study/assay/query/TypeDisplayColumn.java -text
 study/src/org/labkey/study/assay/view/assaySetup.jsp -text
