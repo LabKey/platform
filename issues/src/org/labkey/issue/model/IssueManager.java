@@ -189,18 +189,23 @@ public class IssueManager
      * @param   issue   an issue to retrieve comments from
      * @return          the sorted linked list of all related comments
      */
-    public static LinkedList<Issue.Comment> getCommentsForRelatedIssues(Issue issue)
+    public static List<Issue.Comment> getCommentsForRelatedIssues(Issue issue, User user)
     {
         // Get related issues for optional display
-        ArrayList<Integer> relatedIssues = issue.getRelatedIssues();
-        LinkedList<Issue.Comment> commentLinkedList = new LinkedList();
+        List<Integer> relatedIssues = issue.getRelatedIssues();
+        List<Issue.Comment> commentLinkedList = new LinkedList();
 
-        // Add all related issue comments
+        // Add related issue comments
         for (Integer relatedIssueInt : relatedIssues)
         {
+            // only add related issues that the user has permission to see
             Issue relatedIssue = IssueManager.getIssue(null, relatedIssueInt);
             if (relatedIssue != null)
-                commentLinkedList.addAll(relatedIssue.getComments());
+            {
+                boolean hasReadPermission = ContainerManager.getForId(relatedIssue.getContainerId()).hasPermission(user, ReadPermission.class);
+                if (hasReadPermission)
+                    commentLinkedList.addAll(relatedIssue.getComments());
+            }
         }
         // Add all current issue comments
         commentLinkedList.addAll(issue.getComments());
@@ -223,10 +228,20 @@ public class IssueManager
      * @param   issue   The issue to query
      * @return          boolean return value
      */
-    public static boolean hasRelatedIssues(Issue issue)
+    public static boolean hasRelatedIssues(Issue issue, User user)
     {
-        ArrayList<Integer> relatedIssues = issue.getRelatedIssues();
-        return relatedIssues.size() > 0;
+        List<Integer> relatedIssues = issue.getRelatedIssues();
+        for (Integer relatedIssueInt : relatedIssues)
+        {
+            Issue relatedIssue = IssueManager.getIssue(null, relatedIssueInt);
+            if (relatedIssue != null && relatedIssue.getComments().size() > 0)
+            {
+                boolean hasReadPermission = ContainerManager.getForId(relatedIssue.getContainerId()).hasPermission(user, ReadPermission.class);
+                if (hasReadPermission)
+                    return true;
+            }
+        }
+        return false;
     }
 
     public static void saveIssue(User user, Container c, Issue issue) throws SQLException

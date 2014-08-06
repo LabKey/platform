@@ -43,6 +43,7 @@
 <%@ page import="java.util.LinkedList" %>
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="java.util.regex.Pattern" %>
+<%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -69,7 +70,7 @@
     ActionURL insertURL = relatedIssueContainer == null ? null : new ActionURL(InsertAction.class, relatedIssueContainer);
     boolean showRelatedIssuesButton = relatedIssueContainer == null ? false : relatedIssueContainer.hasPermission(user, InsertPermission.class);
 
-    LinkedList<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue);
+    List<Issue.Comment> commentLinkedList = IssueManager.getCommentsForRelatedIssues(issue, user);
 %>
 <% if (!bean.isPrint())
 {
@@ -142,7 +143,7 @@
     {
         %><td><%= textLink("create related issue", "javascript:document.forms.CreateIssue.submit()") %></td><%
     }
-    if ( IssueManager.hasRelatedIssues(issue))
+    if ( IssueManager.hasRelatedIssues(issue, user))
     {
         %><td><%= PageFlowUtil.textLink("show related comments", "javascript:toggleComments()", "", "showRelatedComments") %></td><%
     }
