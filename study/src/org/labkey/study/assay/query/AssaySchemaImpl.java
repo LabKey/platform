@@ -43,8 +43,10 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -289,7 +291,7 @@ public class AssaySchemaImpl extends AssaySchema
         @Test
         public void testProviderChildSchemas()
         {
-            assertEquals(Collections.singleton(AssaySchema.ASSAY_LIST_TABLE_NAME), _schemaImpl.getTableNames());
+            assertEquals(new HashSet<>(Arrays.asList(AssaySchema.ASSAY_LIST_TABLE_NAME, AssaySchema.ASSAY_PROVIDERS_TABLE_NAME)), _schemaImpl.getTableNames());
             assertEquals(PageFlowUtil.set("Folder", "Provider1"), _schemaImpl.getSchemaNames());
 
             assertNotNull(_schemaImpl.getSchema("Provider1"));
