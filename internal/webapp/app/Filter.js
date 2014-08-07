@@ -412,7 +412,7 @@ Ext.define('LABKEY.app.model.Filter', {
                 }
             }
             else {
-                if (data.hierarchy == subjectName) {
+                if (LABKEY.app.model.Filter.usesMemberName(data, subjectName)) {
 
                     var m = data.members;
                     if (data.membersName && data.membersName.length > 0) {
@@ -438,6 +438,10 @@ Ext.define('LABKEY.app.model.Filter', {
             }
 
             return filter;
+        },
+
+        usesMemberName : function(data, subjectName) {
+            return data.hierarchy == subjectName;
         },
 
         getOlapFilters : function(mdx, datas, subjectName) {
@@ -640,6 +644,10 @@ Ext.define('LABKEY.app.model.Filter', {
         return this.get('isPlot');
     },
 
+    usesCaching : function(subjectName) {
+        return LABKEY.app.model.Filter.usesMemberName(this.data, subjectName);
+    },
+
     getGridHierarchy : function() {
         return LABKEY.app.model.Filter.getGridHierarchy(this.data);
     },
@@ -689,6 +697,24 @@ Ext.define('LABKEY.app.model.Filter', {
         delete jsonable.membersName;
 
         return jsonable;
+    },
+
+    generateNamedSet : function() {
+
+        var namedSet = {
+            key: LABKEY.Utils.generateUUID(),
+            members: []
+        };
+
+        if (this.data.members.length > 0 && this.data.members[0].uniqueName.indexOf('[Subject].') == 0) {
+            var members = [];
+            Ext.each(this.data.members, function(m) {
+                members.push(m.uniqueName);
+            });
+            namedSet.members = members;
+        }
+
+        return namedSet;
     }
 });
 

@@ -324,7 +324,6 @@ Ext.define('LABKEY.app.controller.State', {
      * You must call updateFilterMembersComplete() once done updating filter members
      * @param id
      * @param members
-     * @param skipState
      */
     updateFilterMembers : function(id, members) {
         for (var f=0; f < this.filters.length; f++) {
@@ -523,35 +522,98 @@ Ext.define('LABKEY.app.controller.State', {
         }
     },
 
+    configureCacheListener : function(mdx) {
+        if (mdx.allowMemberCaching()) {
+            this.on('filterclear', function() {
+                var sets = mdx.serverGetNamedSets();
+                Ext.iterate(sets, function(key) {
+                    mdx.serverDeleteNamedSet(key);
+                }, this);
+            });
+        }
+    },
+
+    processCaching : function(mdx, filterSet, callback, scope) {
+        if (mdx.allowMemberCaching()) {
+
+            this.configureCacheListener(mdx);
+//            console.log('processing caches...');
+
+            // determine if any filters need to be cached
+            var toCache = {}, requireCache = 0;
+
+            Ext.each(filterSet, function(ff) {
+
+                if (ff.usesCaching(this.subjectName) && !mdx.serverHasNamedSet(ff.get('membersName'))) {
+//                    console.log('membersName:', ff.get('membersName'));
+                    toCache[ff.id] = ff;
+                    requireCache++;
+                }
+
+            }, this);
+
+            if (requireCache) {
+
+                var flights = requireCache;
+
+                var complete = function(filter, membersName) {
+                    flights--;
+//                    console.log('flights:', flights);
+                    filter.set('membersName', membersName);
+                    if (flights == 0)
+                    {
+                        callback.call(scope || this);
+                    }
+                };
+
+                Ext.iterate(toCache, function(id, ff) {
+                    var namedSet = ff.generateNamedSet();
+                    mdx.serverSaveNamedSet(namedSet.key, namedSet.members, function() {
+                        complete(ff, namedSet.key);
+                    }, this);
+                }, this);
+            }
+            else {
+                callback.call(scope || this);
+            }
+        }
+        else if (Ext.isFunction(callback)) {
+            callback.call(scope || this);
+        }
+    },
+
     requestFilterUpdate : function(skipState, opChange, silent, callback, scope) {
 
         this.onMDXReady(function(mdx) {
 
-            var olapFilters = [], getOlap = LABKEY.app.model.Filter.getOlapFilter;
-            for (var f=0; f < this.filters.length; f++) {
-                olapFilters.push(getOlap(mdx, this.filters[f].data, this.subjectName));
-            }
+            this.processCaching(mdx, this.filters, function() {
 
-            var proceed = true;
-            for (f=0; f < olapFilters.length; f++) {
-                if (olapFilters[f].arguments.length == 0) {
-                    alert('EMPTY ARGUMENTS ON FILTER');
-                    proceed = false;
-                }
-            }
+                // we're done, all the filters should be cached appropriately on the server
+                var olapFilters = [], getOlap = LABKEY.app.model.Filter.getOlapFilter;
+                Ext.each(this.filters, function(ff) {
+                    olapFilters.push(getOlap(mdx, ff.data, this.subjectName));
+                }, this);
 
-            if (proceed) {
-                if (olapFilters.length == 0) {
-                    mdx.clearNamedFilter(LABKEY.app.constant.STATE_FILTER, function() {
-                        this._filterUpdateHelper(skipState, silent, callback, scope);
-                    }, this);
+                var proceed = true;
+                Ext.each(olapFilters, function(of) {
+                    if (of.arguments.length == 0) {
+                        alert('EMPTY ARGUMENTS ON FILTER');
+                        proceed = false;
+                    }
+                });
+
+                if (proceed) {
+                    if (olapFilters.length == 0) {
+                        mdx.clearNamedFilter(LABKEY.app.constant.STATE_FILTER);
+                    }
+                    else {
+                        mdx.setNamedFilter(LABKEY.app.constant.STATE_FILTER, olapFilters);
+                    }
+
+                    this._filterUpdateHelper(skipState, silent, callback, scope);
                 }
-                else {
-                    mdx.setNamedFilter(LABKEY.app.constant.STATE_FILTER, olapFilters, function() {
-                        this._filterUpdateHelper(skipState, silent, callback, scope);
-                    }, this);
-                }
-            }
+
+            }, this);
 
         }, this);
     },
@@ -736,21 +798,17 @@ Ext.define('LABKEY.app.controller.State', {
             }
 
             if (sels.length == 0) {
-                mdx.clearNamedFilter(LABKEY.app.constant.SELECTION_FILTER, function() {
-                    if (!skipState)
-                        this.updateState();
-
-                    this.fireEvent('selectionchange', this.selections, opChange);
-                }, this);
+                mdx.clearNamedFilter(LABKEY.app.constant.SELECTION_FILTER);
             }
             else {
-                mdx.setNamedFilter(LABKEY.app.constant.SELECTION_FILTER, sels, function() {
-                    if (!skipState)
-                        this.updateState();
-
-                    this.fireEvent('selectionchange', this.selections, opChange);
-                }, this);
+                mdx.setNamedFilter(LABKEY.app.constant.SELECTION_FILTER, sels);
             }
+
+            if (!skipState)
+                this.updateState();
+
+            this.fireEvent('selectionchange', this.selections, opChange);
+
         }, this);
     },
 
@@ -785,21 +843,13 @@ Ext.define('LABKEY.app.controller.State', {
                 }
             }
 
-            var cb = function() {
+            if (Ext.isArray(selection))
+            {
+                mdx.setNamedFilter(name, filters);
                 if (Ext.isFunction(callback)) {
                     callback.call(scope || this);
                 }
                 this.fireEvent('privateselectionchange', mdx._filter[name], name);
-            };
-
-            if (Ext.isArray(selection))
-            {
-                if (memberCaching === false) {
-                    mdx.setNamedFilter(name, filters);
-                }
-                else {
-                    mdx.setNamedFilter(name, filters, cb, this);
-                }
             }
             else
             {
