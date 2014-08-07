@@ -1728,7 +1728,7 @@ public class QueryView extends WebPartView<Object>
         rgn.setShowPaginationCount(isShowPaginationCount());
 
         // Allow region to specify header lock, optionally override
-        if (false != rgn.getAllowHeaderLock())
+        if (rgn.getAllowHeaderLock())
             rgn.setAllowHeaderLock(getSettings().getAllowHeaderLock());
 
         rgn.setTable(getTable());
@@ -2174,38 +2174,25 @@ public class QueryView extends WebPartView<Object>
             return null;
     }
 
-    public void exportToTsv(HttpServletResponse response) throws Exception
+    public void exportToTsv(HttpServletResponse response) throws IOException
     {
         exportToTsv(response, false, TSVWriter.DELIM.TAB, TSVWriter.QUOTE.DOUBLE);
     }
 
-    public void exportToTsv(final HttpServletResponse response, final boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote) throws Exception
+    public void exportToTsv(final HttpServletResponse response, final boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote) throws IOException
     {
         _exportView = true;
         TableInfo table = getTable();
 
-        // Place for the anonymous inner class to store the return value
-        final int[] rowCount = new int[1];
-
         if (table != null)
         {
-            DbScope scope = getSchema().getDbSchema().getScope();
-
-            scope.getSqlDialect().executeWithoutJdbcCaching(scope, new Closure()
-            {
-                @Override
-                public void execute() throws Exception
-                {
-                    rowCount[0] = doExport(response, isExportAsWebPage, delim, quote);
-                }
-            });
-
-            logAuditEvent("Exported to TSV", rowCount[0]);
+            int rowCount = doExport(response, isExportAsWebPage, delim, quote);
+            logAuditEvent("Exported to TSV", rowCount);
         }
     }
 
 
-    private int doExport(HttpServletResponse response, boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote) throws ServletException, IOException, SQLException
+    private int doExport(HttpServletResponse response, boolean isExportAsWebPage, final TSVWriter.DELIM delim, final TSVWriter.QUOTE quote) throws IOException
     {
         TSVGridWriter tsv = getTsvWriter();
         tsv.setExportAsWebPage(isExportAsWebPage);

@@ -311,12 +311,13 @@ public abstract class SqlDialect
         return null;
     }
 
-    public void configureToDisableJdbcCaching(Connection connection) throws SQLException
+    public void configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
     {
         // No-op by default
     }
 
     // By default, do nothing interesting -- most drivers don't cache results
+    @Deprecated
     public void executeWithoutJdbcCaching(DbScope scope, Closure runnable) throws Exception
     {
         runnable.execute();

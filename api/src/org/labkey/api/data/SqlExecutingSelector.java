@@ -279,7 +279,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
         protected ExecutingResultSetFactory(SqlFactory factory)
         {
-            this(factory, true, false, false);
+            this(factory, true, false, true);
         }
 
         protected ExecutingResultSetFactory(SqlFactory factory, boolean closeResultSet, boolean scrollable, boolean tweakJdbcParameters)
@@ -301,17 +301,13 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                 return null;
             }
 
-            DbScope scope = getScope();
-
-            if (_tweakJdbcParameters && Table.isSelect(_sql.getSQL()) && !scope.isTransactionActive())
+            // TODO: _tweakJdbcParameters is always false, so remove... unless we want to skip this in, say, the single-row cases (getObject(), getRowCount(), etc.)
+            if (_tweakJdbcParameters)
             {
-                // Only fiddle with the Connection settings if we're not inside of a transaction so we won't mess
-                // up any state the caller is relying on. Also, only do this when we're fairly certain that it's
-                // a read-only statement (starting with SELECT)
-                scope.getSqlDialect().configureToDisableJdbcCaching(conn);
+                DbScope scope = getScope();
+                scope.getSqlDialect().configureToDisableJdbcCaching(conn, scope, _sql);
             }
 
-            boolean inTransaction = getScope().isTransactionActive();
             ResultSet rs;
 
             try
@@ -320,7 +316,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             }
             catch (SQLException outer)
             {
-                if (inTransaction || !SqlDialect.isTransactionException(outer))
+                if (getScope().isTransactionActive() || !SqlDialect.isTransactionException(outer))
                     throw outer;
                 // retry if simple transaction exception
                 try
