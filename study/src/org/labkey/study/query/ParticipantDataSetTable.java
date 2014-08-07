@@ -16,7 +16,11 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.LookupColumn;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.study.StudyService;

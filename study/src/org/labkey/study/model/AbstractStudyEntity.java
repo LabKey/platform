@@ -27,15 +27,12 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.study.StudyEntity;
 import org.labkey.study.StudyModule;
 
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 /**
  * User: brittp
@@ -177,13 +174,6 @@ public abstract class AbstractStudyEntity<T>
         //study will override to return the set of securable entities
         //for all other entities, there are no children
         return Collections.emptyList();
-    }
-
-    @NotNull
-    @Transient
-    public Set<Class<? extends Permission>> getRelevantPermissions()
-    {
-        return RoleManager.BasicPermissions;
     }
 
     @NotNull

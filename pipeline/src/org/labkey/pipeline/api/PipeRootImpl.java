@@ -30,11 +30,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.view.SetupForm;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.DeletePermission;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URIUtil;
@@ -47,9 +43,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class PipeRootImpl implements PipeRoot
 {
@@ -287,18 +281,6 @@ public class PipeRootImpl implements PipeRoot
     public String getResourceDescription()
     {
         return "The pipeline root directory " + getResourceName();
-    }
-
-    @NotNull
-    public Set<Class<? extends Permission>> getRelevantPermissions()
-    {
-        //TODO: review this--what are the relevant permissions for a pipeline root?
-        Set<Class<? extends Permission>> perms = new HashSet<>();
-        perms.add(ReadPermission.class);
-        perms.add(InsertPermission.class);
-        perms.add(UpdatePermission.class);
-        perms.add(DeletePermission.class);
-        return perms;
     }
 
     @NotNull

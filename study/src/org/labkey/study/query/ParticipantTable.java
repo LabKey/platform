@@ -19,7 +19,6 @@ package org.labkey.study.query;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.AbstractForeignKey;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;

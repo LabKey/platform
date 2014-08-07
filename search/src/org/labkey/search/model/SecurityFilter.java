@@ -175,12 +175,6 @@ class SecurityFilter extends Filter
         }
 
         @NotNull
-        public Set<Class<? extends Permission>> getRelevantPermissions()
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @NotNull
         public Module getSourceModule()
         {
             throw new UnsupportedOperationException();

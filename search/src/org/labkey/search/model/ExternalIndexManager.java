@@ -167,15 +167,6 @@ public class ExternalIndexManager extends IndexManager implements SecurableResou
 
     @NotNull
     @Override
-    public Set<Class<? extends Permission>> getRelevantPermissions()
-    {
-        Set<Class<? extends Permission>> perms = new HashSet<>();
-        perms.add(ReadPermission.class);
-        return perms;
-    }
-
-    @NotNull
-    @Override
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getModule(SearchModule.class);

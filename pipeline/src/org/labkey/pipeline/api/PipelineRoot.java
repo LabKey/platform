@@ -18,6 +18,7 @@ package org.labkey.pipeline.api;
 import org.labkey.api.data.Entity;
 
 /**
+ * Serialization bean for round-tripping pipeline root configuration to/from the database.
  */
 public class PipelineRoot extends Entity
 {
