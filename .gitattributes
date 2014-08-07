@@ -722,6 +722,7 @@ api/src/org/labkey/api/iterator/CloseableFilteredIterator.java -text
 api/src/org/labkey/api/iterator/CloseableIterator.java -text
 api/src/org/labkey/api/iterator/FilteredIterator.java -text
 api/src/org/labkey/api/iterator/IteratorUtil.java -text
+api/src/org/labkey/api/iterator/MarkableIterator.java -text
 api/src/org/labkey/api/iterator/WrappingCloseableIterator.java -text
 api/src/org/labkey/api/jsp/FormPage.java -text
 api/src/org/labkey/api/jsp/JspBase.java -text
