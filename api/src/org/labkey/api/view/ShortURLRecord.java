@@ -130,13 +130,6 @@ public class ShortURLRecord implements SecurableResource
 
     @NotNull
     @Override
-    public Set<Class<? extends Permission>> getRelevantPermissions()
-    {
-        return RoleManager.BasicPermissions;
-    }
-
-    @NotNull
-    @Override
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getCoreModule();

@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpExperiment;
 import org.labkey.api.exp.api.ExpRun;
-import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.Pair;
 
@@ -49,6 +48,4 @@ public interface AssayRunCreator<ProviderType extends AssayProvider>
      */
     public ExpExperiment saveExperimentRun(AssayRunUploadContext<ProviderType> context, @Nullable ExpExperiment batch, ExpRun run, boolean forceSaveBatchProps)
         throws ExperimentException, ValidationException;
-
-    DataTransformer<ProviderType> getDataTransformer();
 }

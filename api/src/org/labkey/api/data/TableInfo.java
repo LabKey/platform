@@ -34,8 +34,6 @@ import org.labkey.api.query.SchemaTreeNode;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.HasPermission;
-import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -50,16 +48,18 @@ import java.util.Map;
 import java.util.Set;
 
 /**
+ * Representation of a queryable unit in the database. Might be backed by a "physical" table, a database VIEW,
+ * or an arbitrary generated chunk of SELECT SQL.
+ *
  * User: Matthew
  * Date: Apr 27, 2006
- * Time: 11:29:43 AM
  */
 public interface TableInfo extends HasPermission, SchemaTreeNode
 {
 
     String getName();
 
-    /** Get title or name, if title is null **/
+    /** Get title, falling back to the name if title is null **/
     String getTitle();
 
     /** Get title field, whether null or not **/
@@ -153,6 +153,10 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      */
     Map<FieldKey, ColumnInfo> getExtendedColumns(boolean includeHidden);
 
+    /**
+     * @return the {@link org.labkey.api.query.FieldKey}s that should be part of the default view of the table,
+     * assuming that no other default view has been configured.
+     */
     List<FieldKey> getDefaultVisibleColumns();
 
     void setDefaultVisibleColumns(Iterable<FieldKey> keys);
@@ -228,8 +232,6 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     StringExpression getDetailsURL(@Nullable Set<FieldKey> columns, Container container);
     boolean hasDetailsURL();
 
-    boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm);
-
     /**
      * Return the method of a given name.  Methods are accessible via the QueryModule's query
      * language.  Most tables do not have methods. 
@@ -238,7 +240,7 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     /**
      * Returns a string that will appear on the default import page and as the top line
-     * of the default excel template
+     * of the default generated Excel template
      */
     public String getImportMessage();
 
@@ -270,15 +272,12 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      * Finds and applies the first metadata xml from active modules in the schema's container and then the first user-created metadata in the container hierarchy.
      *
      * @see QueryService#findMetadataOverride(UserSchema, String, boolean, boolean, Collection, Path)
-     *
-     * @param tableName
-     * @param schema
-     * @param errors
      */
     public void overlayMetadata(String tableName, UserSchema schema, Collection<QueryException> errors);
 
     public void overlayMetadata(Collection<TableType> metadata, UserSchema schema, Collection<QueryException> errors);
 
+    /** @return whether this table accepts XML metadata configuration to be overlaid on the default level of metadata */
     public boolean isMetadataOverrideable();
 
     public ColumnInfo getLookupColumn(ColumnInfo parent, String name);

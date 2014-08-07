@@ -20,6 +20,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.UserSchema;
 
+/**
+ * A {@link org.labkey.api.data.TableInfo} implemenation that is not backed directly by a real table in the database,
+ * but instead knows how to generate its own SQL.
+ */
+
 public class VirtualTable<SchemaType extends UserSchema> extends AbstractTableInfo
 {
     protected final SchemaType _userSchema;

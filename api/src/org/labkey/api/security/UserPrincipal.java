@@ -27,6 +27,8 @@ import java.io.Serializable;
 import java.util.Set;
 
 /**
+ * A user-oriented principal within the system. This encompasses both users and groups (of groups and users).
+ *
  * User: matthewb
  * Date: Sep 20, 2006
  * Time: 1:28:26 PM
@@ -98,6 +100,12 @@ public abstract class UserPrincipal implements Principal, Parameter.JdbcParamete
 
     public abstract int[] getGroups();
 
+    /**
+     * @return the roles that the user is assumed to embody, which may go beyond the basic set of roles that the
+     * user might have otherwise. For example, a user in an {@link org.labkey.api.security.roles.AuthorRole} might
+     * be allowed to edit an object that they created, even though they aren't in an {@link org.labkey.api.security.roles.EditorRole}
+     * and therefore don't have {@link org.labkey.api.security.permissions.UpdatePermission} to make edits more generally.
+     */
     public abstract Set<Role> getContextualRoles(SecurityPolicy policy);
 
     public abstract boolean isInGroup(int group);

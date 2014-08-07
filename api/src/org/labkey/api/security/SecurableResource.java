@@ -19,45 +19,44 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
-import org.labkey.api.security.permissions.Permission;
 
 import java.util.List;
-import java.util.Set;
-
-/*
-* User: Dave
-* Date: Apr 9, 2009
-* Time: 2:03:59 PM
-*/
 
 /**
- * Represents a securable resource
+ * A resource to which users and groups may be assigned roles. Examples include {@link org.labkey.api.data.Container} and {@link org.labkey.api.study.DataSet}.
+ * User: Dave
+ * Date: Apr 9, 2009
  */
 public interface SecurableResource
 {
+    /**@return a GUID, unique to this resource */
     @NotNull
     String getResourceId();
 
+    /** @return a short name for this resource */
     @NotNull
     public String getResourceName();
 
+    /** @return a short description of what this resource represents */
     @NotNull
     public String getResourceDescription();
 
-    @NotNull
-    public Set<Class<? extends Permission>> getRelevantPermissions();
-
+    /** @return the module that is responsible for the resource */
     @NotNull
     public Module getSourceModule();
 
+    /** @return if available, the resource that is the logical parent of this resource. Should be consistent with what the parent returns from getChildResources() */
     @Nullable
     public SecurableResource getParentResource();
 
+    /** @return the container to which this resource belongs */
     @NotNull
     public Container getResourceContainer();
 
+    /** @return resources that are logical children of this resource. Should be consistent with what the children return from getParentResources() */
     @NotNull
     public List<SecurableResource> getChildResources(User user);
 
+    /** @return whether this resource may inherit the security policy associated with its parent */
     public boolean mayInheritPolicy();
 }

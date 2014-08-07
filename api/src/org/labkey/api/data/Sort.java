@@ -17,14 +17,22 @@
 package org.labkey.api.data;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.URLHelper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+/**
+ * Descriptor for how to sort a query to a database. May include multiple columns, with separate ascending/descending
+ * orders for all of them.
+ */
 
 public class Sort
 {
@@ -63,6 +71,7 @@ public class Sort
             return ASC;
         }
 
+        /** @return {@link SortDirection#DESC} if c is '-', {@link org.labkey.api.data.Sort.SortDirection#ASC} otherwise */
         public static SortDirection fromChar(char c)
         {
             if (DESC.dir == c)
@@ -73,8 +82,7 @@ public class Sort
      }
 
     private static String SORT_KEY = ".sort";
-    private static Logger _log = Logger.getLogger(Sort.class);
-    private ArrayList<SortField> _sortList = new ArrayList<>();
+    private List<SortField> _sortList = new ArrayList<>();
 
     public static class SortFieldBuilder
     {

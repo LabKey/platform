@@ -19,14 +19,11 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
 import org.labkey.api.security.roles.Role;
 
-/*
-* User: Dave
-* Date: Apr 9, 2009
-* Time: 12:44:14 PM
-*/
-
 /**
- * Represents a particular permission defined by a module
+ * Represents a particular permission defined by a module. The most granular level of access that a user might be allowed.
+ * Permissions are assigned to {@link org.labkey.api.security.UserPrincipal} via the assignment of {@link org.labkey.api.security.roles.Role}.
+ * User: Dave
+ * Date: Apr 9, 2009
  */
 public interface Permission extends Role
 {

@@ -23,6 +23,8 @@ import java.io.Writer;
 import java.io.IOException;
 
 /**
+ * Just renders the text directly into the page, HTML-encoding as needed.
+ *
  * User: jeckels
  * Date: Jan 11, 2008
  */
@@ -31,6 +33,10 @@ public class SimpleTextDisplayElement extends DisplayElement
     private final String _text;
     private final boolean _html;
 
+    /**
+     * @param text the text to be rendered
+     * @param isHtml whether the text is already in HTML, and thus shouldn't be encoded
+     */
     public SimpleTextDisplayElement(String text, boolean isHtml)
     {
         _text = text;

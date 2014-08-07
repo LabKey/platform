@@ -24,13 +24,12 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Set;
 
-/*
-* User: adam
-* Date: Sep 3, 2011
-* Time: 3:07:21 PM
+/**
+ * Standard {@link org.labkey.api.data.TableSelector} that throws checked SQLExceptions instead of RuntimeExceptions
+ * User: adam
+ * Date: Sep 3, 2011
 */
 
-// Standard TableSelector that throws checked SQLExceptions instead of RuntimeExceptions
 public class LegacyTableSelector extends LegacySelector<TableSelector, LegacyTableSelector>
 {
     public LegacyTableSelector(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)

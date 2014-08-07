@@ -37,6 +37,9 @@ import java.util.LinkedList;
 import java.util.Set;
 
 /**
+ * Used to indicate that a user is impersonating a specific group (site or project), and are not operating as their
+ * normal logged-in self.
+ *
  * User: adam
  * Date: 11/9/11
  * Time: 10:23 PM

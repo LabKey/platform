@@ -32,16 +32,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * A partial, base implementation of {@link org.labkey.api.data.Selector}. This class manipulates result sets but doesn't generate them. Subclasses
+ * include ExecutingSelector (which executes SQL to generate a result set) and ResultSetSelector, which takes an externally
+ * generated ResultSet (e.g., from JDBC metadata calls) and allows Selector operations on it.
  * User: adam
  * Date: 12/11/12
- * Time: 5:29 AM
  */
 
-/**
- * A partial, base implementation of Selector; this class manipulates result sets but doesn't create them. Subclasses
- * execute SQL to generate result sets (TableSelector and SqlSelector), call JDBC meta data methods to generate result
- * sets (JdbcMetaDataSelector), or simply receive result sets generated elsewhere (ResultSetSelector).
- */
 public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCommand<SELECTOR> implements Selector
 {
     protected BaseSelector(@NotNull DbScope scope, @Nullable Connection conn)

@@ -27,9 +27,11 @@ import java.util.Collections;
 import java.util.Map;
 
 /**
+ * A menu which is not fully rendered/visible at original page render time, but instead
+ * is shown in response to show user action, like clicking on a button.
+ *
  * User: Mark Igra
  * Date: May 13, 2008
- * Time: 3:30:25 PM
  */
 public class PopupMenu extends DisplayElement
 {

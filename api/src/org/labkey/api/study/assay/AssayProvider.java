@@ -18,7 +18,6 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.exp.ExperimentException;
@@ -75,6 +74,11 @@ public interface AssayProvider extends Handler<ExpProtocol>
         ReRunAndReplace
     }
 
+    /**
+     * Creates a schema scoped to the assay provider.
+     * This will be exposed a child schema of the top-level 'assay' schema. It includes a separate child schema for
+     * each assay design that is in scope. Specific providers may include additional child schemas or queries.
+     */
     AssayProviderSchema createProviderSchema(User user, Container container, Container targetStudy);
 
     /** Get a schema that includes queries like Batch, Run, Results, and any additional tables. */
@@ -91,6 +95,10 @@ public interface AssayProvider extends Handler<ExpProtocol>
     /** @return all of the legal data collectors that the user can choose from for the current import attempt */
     List<AssayDataCollector> getDataCollectors(Map<String, File> uploadedFiles, AssayRunUploadForm context);
 
+    /**
+     * @return the name of the assay provider.
+     * This should not change once assay designs have been created, or they will be orphaned because they will no longer match.
+     */
     String getName();
 
     /** Get the root resource name.  Usually this is the same as the AssayProvider name, but may be shorter
@@ -249,7 +257,10 @@ public interface AssayProvider extends Handler<ExpProtocol>
     DataExchangeHandler createDataExchangeHandler();
     /** Make a context that knows how to update a run that's already been stored in the database */
     AssayRunDatabaseContext createRunDatabaseContext(ExpRun run, User user, HttpServletRequest request);
-    /** Make a context that knows how to do the import in the background, on a separate thread from the final HTTP step in the wizard */
+    /**
+     * Make a context that knows how to do the import in the background, on a separate thread
+     * (and therefore detached from the HTTP request that might have spawned it)
+     */
     AssayRunAsyncContext createRunAsyncContext(AssayRunUploadContext context) throws IOException, ExperimentException;
 
     String getRunLSIDPrefix();

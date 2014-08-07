@@ -43,18 +43,14 @@ import java.security.spec.KeySpec;
 import java.util.Map;
 
 /**
-* User: adam
-* Date: 10/19/13
-* Time: 2:25 PM
+ * Easy to use wrappers for common encryption algorithms. Also includes related helper methods for shared operations
+ * such as generating salts & keys, and for retrieving & saving the master encryption key and standard salt.
+ *
+ * WARNING: Do not change the core algorithms or parameters of existing implementations; changes will likely
+ * render existing data irrecoverable.
+ * User: adam
+ * Date: 10/19/13
 */
-
-/*
-    Easy to use wrappers for common encryption algorithms. Also includes related helper methods for shared operations
-    such as generating salts & keys, and for retrieving & saving the master encryption key and standard salt.
-
-    WARNING: Do not change the core algorithms or parameters of existing implementations; changes will likely
-    render existing data irrecoverable.
- */
 
 public class Encryption
 {

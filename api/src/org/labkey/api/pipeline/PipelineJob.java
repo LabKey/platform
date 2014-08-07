@@ -168,6 +168,7 @@ abstract public class PipelineJob extends Job implements Serializable
             public String toString() { return "SPLIT WAITING"; }
         };
 
+        /** @return whether this step is considered to be actively running */
         public abstract boolean isActive();
 
         public String toString()
@@ -182,8 +183,9 @@ abstract public class PipelineJob extends Job implements Serializable
     }
     
     /**
-     * <code>Task</code> implements a runnable to complete a part of the
-     * processing associated with a particular <code>PipelineJob</code>.
+     * Implements a runnable to complete a part of the
+     * processing associated with a particular <code>PipelineJob</code>. This is often the execution of an external tool,
+     * the importing of files into the database, etc.
      */
     abstract static public class Task<FactoryType extends TaskFactory>
     {
@@ -201,6 +203,10 @@ abstract public class PipelineJob extends Job implements Serializable
             return _job;
         }
 
+        /**
+         * Do the work of the task.
+         * @return the files used as inputs and generated as outputs, and the steps that operated on them
+         */
         public abstract RecordedActionSet run() throws PipelineJobException;
     }
 

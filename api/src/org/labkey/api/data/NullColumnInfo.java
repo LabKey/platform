@@ -18,9 +18,10 @@ package org.labkey.api.data;
 import org.labkey.api.query.FieldKey;
 
 /**
+ * Implementation that returns an appropriately typed NULL value
+ *
  * User: matthewb
  * Date: Sep 30, 2010
- * Time: 9:25:44 AM
  */
 
 public class NullColumnInfo extends ColumnInfo

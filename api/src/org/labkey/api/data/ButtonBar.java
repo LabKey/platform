@@ -24,8 +24,13 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.*;
 
+/**
+ * A set of buttons that are displayed as a unit. Typically, but not always,
+ * attached to a {@link org.labkey.api.data.DataRegion}
+ */
 public class ButtonBar extends DisplayElement
 {
+    /** Dictates how the ButtonBar is styled when it's rendered */
     public enum Style
     {
         toolbar,
@@ -37,7 +42,6 @@ public class ButtonBar extends DisplayElement
     // It's possible to have multiple button bar configs, as in the case of a tableinfo-level config
     // that's partially overridden by a
     private List<ButtonBarConfig> _configs = null;
-    private boolean _renderedIncludes = false;
     private boolean _alwaysShowRecordSelectors = false;
 
     /**
@@ -228,7 +232,7 @@ public class ButtonBar extends DisplayElement
                 continue;
 
             if (item.getInsertAfter() != null || item.getInsertBefore() != null || item.getInsertPosition() != null)
-                mergedItems.add(new Pair(item, elem));
+                mergedItems.add(new Pair<>(item, elem));
             else
                 _elementList.add(elem);
         }

@@ -32,11 +32,24 @@ import org.springframework.web.servlet.mvc.Controller;
 import java.io.IOException;
 import java.io.Writer;
 
+/**
+ * A standard, fully-HTML rendered (as opposed to being rendered as ExtJS config),
+ * button in the appearence sense (but not necessarily an &lt;input&gt; element).
+ */
+
 public class ActionButton extends DisplayElement implements Cloneable
 {
+    /** How to respond to the user clicking on the button */
     public enum Action
     {
-        POST("post"), GET("get"), LINK("link"), SCRIPT("script");
+        /** Do an HTTP POST of the surrounding form */
+        POST("post"),
+        /** Do an HTTP GET of the surrounding form */
+        GET("get"),
+        /** Do a simple link via an &lt;a&gt; */
+        LINK("link"),
+        /** Run a JavaScript snippet */
+        SCRIPT("script");
 
         private String _description;
 
@@ -56,6 +69,9 @@ public class ActionButton extends DisplayElement implements Cloneable
         }
     }
 
+    // All of these buttons assume that they can address an action of a predefined name
+    // in the same controller as the current page. This isn't usually a good assumption,
+    // as it doesn't work for web parts that might be rendered by another controller.
     public static ActionButton BUTTON_DELETE = null;
     public static ActionButton BUTTON_SHOW_INSERT = null;
     public static ActionButton BUTTON_SHOW_UPDATE = null;

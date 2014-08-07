@@ -26,6 +26,11 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * A {@link org.labkey.api.data.ColumnInfo} that is part of a lookup target. This implementation knows
+ * how to do the JOIN to the target query/table, and how to find the value of that expression in the generated ResultSet.
+ */
+
 public class LookupColumn extends ColumnInfo
 {
     /**

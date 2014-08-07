@@ -37,6 +37,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Representation of a column to be rendered into an Excel file. Wraps a
+ * {@link org.labkey.api.data.DisplayColumn}
+ */
+
 public class ExcelColumn extends RenderColumn
 {
     private static Logger _log = Logger.getLogger(ExcelColumn.class);

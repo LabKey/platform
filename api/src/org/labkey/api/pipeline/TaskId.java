@@ -18,7 +18,7 @@ package org.labkey.api.pipeline;
 import java.io.Serializable;
 
 /**
- * <code>TaskId</code>
+ * Identifier for a pipeline definition.
  *
  * <dl>
  *     <dt>namespaceClass</dt>

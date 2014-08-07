@@ -25,6 +25,9 @@ import java.io.Writer;
 import java.util.Set;
 
 /**
+ * Column type that renders an indicator if there is an associated missing value indicator to accompany the normal
+ * value.
+ *
  * User: jgarms
  * Date: Jan 08, 2009
  */

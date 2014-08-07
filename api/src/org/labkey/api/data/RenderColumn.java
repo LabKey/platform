@@ -19,9 +19,9 @@ package org.labkey.api.data;
 import org.labkey.api.view.DisplayElement;
 
 /**
+ * Base class for a column to be rendered into some sort of output
  * User: arauch
  * Date: Feb 15, 2005
- * Time: 5:45:15 PM
  */
 public abstract class RenderColumn extends DisplayElement
 {

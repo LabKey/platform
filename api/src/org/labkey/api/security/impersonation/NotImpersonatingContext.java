@@ -25,10 +25,12 @@ import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
 
-import java.util.Collections;
 import java.util.Set;
 
 /**
+ * Used for when a user is not impersonating another user. That is, they are logged in normally, and operating
+ * as themselves.
+ *
  * User: adam
  * Date: 11/9/11
  * Time: 5:18 AM

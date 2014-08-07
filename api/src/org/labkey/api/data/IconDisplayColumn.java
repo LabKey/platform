@@ -16,13 +16,15 @@
 
 package org.labkey.api.data;
 
-import org.labkey.api.view.ActionURL;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 
-import java.io.Writer;
 import java.io.IOException;
+import java.io.Writer;
 
 /**
+ * An implementation that renders an image in HTML, with a link, instead of a value from the results of the query.
  * User: jeckels
  * Date: Jan 11, 2008
  */
@@ -31,11 +33,12 @@ public class IconDisplayColumn extends DataColumn
     private int _height;
     private int _width;
     private String _imageTitle;
+    @NotNull
     private final ActionURL _linkURL;
     private final String _parameterName;
     private final String _imageURL;
 
-    public IconDisplayColumn(ColumnInfo col, int height, int width, ActionURL linkURL, String parameterName, String imageURL)
+    public IconDisplayColumn(ColumnInfo col, int height, int width, @NotNull ActionURL linkURL, String parameterName, String imageURL)
     {
         super(col);
         _linkURL = linkURL;

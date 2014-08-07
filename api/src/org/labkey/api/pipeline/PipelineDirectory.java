@@ -22,6 +22,10 @@ import java.io.FileFilter;
 import java.util.List;
 
 /**
+ * Abstraction layer over a directory on the file system. Implementations may
+ * perform caching to avoid many round-trips to the file system to get metadata,
+ * such as the list of children and their types.
+ *
  * User: jeckels
  * Date: Aug 17, 2010
  */
@@ -34,8 +38,6 @@ public interface PipelineDirectory
 
     /**
      * Returns a filtered set of files with cached directory/file status.
-     * The function also uses a map to avoid looking for the same fileset
-     * multiple times.
      *
      * @param filter The filter to use on the listed files.
      * @return List of filtered files.

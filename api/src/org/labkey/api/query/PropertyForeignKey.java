@@ -18,21 +18,30 @@ package org.labkey.api.query;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.*;
-import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.data.AbstractForeignKey;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.CoreSchema;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.exp.PropertyColumn;
+import org.labkey.api.exp.PropertyDescriptor;
+import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
-import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpression;
 
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.sql.Types;
 
+/**
+ * Used to create a table from a set of {@link org.labkey.api.exp.PropertyDescriptor} objects, which are exposed
+ * as a lookup from the source column (which typically holds an ObjectId or ObjectURI value).
+ */
 public class PropertyForeignKey extends AbstractForeignKey implements PropertyColumnDecorator
 {
     private static final Logger LOG = Logger.getLogger(PropertyForeignKey.class);
@@ -53,7 +62,7 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
     /**
      * Creates a virtual table with columns for each of the property descriptors.
      */
-    public PropertyForeignKey(PropertyDescriptor[] pds, QuerySchema schema)
+    public PropertyForeignKey(Iterable<PropertyDescriptor> pds, QuerySchema schema)
     {
         _pdMap = new TreeMap<>();
         for (PropertyDescriptor pd : pds)
@@ -71,13 +80,12 @@ public class PropertyForeignKey extends AbstractForeignKey implements PropertyCo
 
 
     
-    private static PropertyDescriptor[] listProperties(Domain domain)
+    private static List<PropertyDescriptor> listProperties(Domain domain)
     {
-        List<? extends DomainProperty> properties = domain.getProperties();
-        PropertyDescriptor[] result = new PropertyDescriptor[properties.size()];
-        for (int i = 0; i < properties.size(); i++)
+        List<PropertyDescriptor> result = new ArrayList<>();
+        for (DomainProperty prop : domain.getProperties())
         {
-            result[i] = properties.get(i).getPropertyDescriptor();
+            result.add(prop.getPropertyDescriptor());
         }
         return result;
     }

@@ -25,7 +25,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * <code>PipelineStatusFile</code>
+ * The serializable data object for the current state of a pipeline job.
  *
  * @author brendanx
  */

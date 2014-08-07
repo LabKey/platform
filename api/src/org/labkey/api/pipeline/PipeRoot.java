@@ -29,6 +29,8 @@ import java.net.URI;
 import java.util.List;
 
 /**
+ *
+ *
  * User: Nick
  * Date: Jul 7, 2007
  * Time: 8:09:14 PM
@@ -54,6 +56,7 @@ public interface PipeRoot extends SecurableResource
     /** @return relative path to the file from the root. null if the file isn't under the root. Does not include a leading slash */
     String relativePath(File file);
 
+    /** @return whether the file specified is a child of the pipeline root */
     boolean isUnderRoot(File file);
 
     boolean hasPermission(Container container, User user, Class<? extends Permission> perm);
@@ -65,6 +68,7 @@ public interface PipeRoot extends SecurableResource
     @NotNull
     File ensureSystemDirectory();
 
+    /** @return the entityId for this pipeline root, used to store permissions */
     String getEntityId();
 
     /**
@@ -73,7 +77,7 @@ public interface PipeRoot extends SecurableResource
     @Nullable
     GlobusKeyPair getGlobusKeyPair();
 
-    // returns whether this root should be indexed by the crawler
+    /** @return whether this root's contents should be indexed by the crawler */
     boolean isSearchable();
 
     String getWebdavURL();

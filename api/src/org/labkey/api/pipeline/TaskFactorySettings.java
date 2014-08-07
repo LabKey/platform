@@ -17,8 +17,11 @@ package org.labkey.api.pipeline;
 
 import org.labkey.api.module.Module;
 
+import java.util.List;
+
 /**
- * <code>TaskFactorySettings</code>
+ * Settings/configuration for a particular task factory. Used to ensure that overridden properties are stored properly,
+ * and unspecified properties are inherited from the default configuration.
  */
 public interface TaskFactorySettings
 {
@@ -32,6 +35,6 @@ public interface TaskFactorySettings
 
     public interface Provider
     {
-        TaskFactorySettings[] getSettings();
+        List<TaskFactorySettings> getSettings();
     }
 }

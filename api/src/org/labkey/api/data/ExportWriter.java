@@ -16,6 +16,8 @@
 package org.labkey.api.data;
 
 /**
+ * Base interface for writers that render to a specific output format, such as HTML or a downloadable file.
+ *
  * User: jeckels
  * Date: 3/11/13
  */

@@ -46,7 +46,6 @@ import org.labkey.api.exp.property.ValidatorContext;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.qc.DataTransformer;
-import org.labkey.api.qc.DefaultTransformResult;
 import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TransformResult;
 import org.labkey.api.query.SimpleValidationError;
@@ -88,11 +87,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
     public TransformResult transform(AssayRunUploadContext<ProviderType> context, ExpRun run) throws ValidationException
     {
-        DataTransformer<ProviderType> transformer = getDataTransformer();
-        if (transformer != null)
-            return transformer.transformAndValidate(context, run);
-
-        return DefaultTransformResult.createEmptyResult();
+        DataTransformer<ProviderType> transformer = new DefaultDataTransformer<>();
+        return transformer.transformAndValidate(context, run);
     }
 
     /**
@@ -108,7 +104,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         ExpExperiment exp = null;
         if (batchId != null)
         {
-            exp = ExperimentService.get().getExpExperiment(batchId.intValue());
+            exp = ExperimentService.get().getExpExperiment(batchId);
         }
 
         AssayProvider provider = context.getProvider();
@@ -305,9 +301,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
 
             importResultData(context, run, inputDatas, outputDatas, info, xarContext, transformResult, insertedDatas);
 
-            if (context.getReRunId() != null && getProvider().getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
+            Integer reRunId = context.getReRunId();
+            if (reRunId != null && getProvider().getReRunSupport() == AssayProvider.ReRunSupport.ReRunAndReplace)
             {
-                final ExpRun replacedRun = ExperimentService.get().getExpRun(context.getReRunId().intValue());
+                final ExpRun replacedRun = ExperimentService.get().getExpRun(reRunId);
                 // Make sure the run to be replaced is still around
                 if (replacedRun != null)
                 {
@@ -329,7 +326,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                 }
                 else
                 {
-                    throw new ExperimentException("Unable to find run to be replaced (RowId " + context.getReRunId() + ")");
+                    throw new ExperimentException("Unable to find run to be replaced (RowId " + reRunId + ")");
                 }
             }
 
@@ -742,10 +739,5 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     protected ProviderType getProvider()
     {
         return _provider;
-    }
-
-    public DataTransformer<ProviderType> getDataTransformer()
-    {
-        return new DefaultDataTransformer<>();
     }
 }

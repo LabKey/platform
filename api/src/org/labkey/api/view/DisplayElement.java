@@ -35,12 +35,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.HashSet;
 
+/**
+ * An element that can be displayed within a page. Handles showing/hiding based
+ * on the permissions of the current user, so that the same element can be reused
+ * and rendered appropriately for different users.
+ */
 public abstract class DisplayElement implements View, Cloneable
 {
+    /** The permission that the current user must have in order for this element to be rendered (shown as opposed to hidden) */
     private Class<? extends Permission> _displayPermission = ReadPermission.class;
     private boolean _visible = true;
     private int _displayModes = DataRegion.MODE_ALL;
     protected StringExpression _caption = null;
+    /** Whether the object is considered immutable */
     protected boolean _locked = false;
     private Set<Role> _contextualRoles = null;
 

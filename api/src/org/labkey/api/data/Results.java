@@ -30,6 +30,8 @@ import java.sql.Timestamp;
 import java.util.Map;
 
 /**
+ * A {@link java.sql.ResultSet} with additional metadata to make it easier to use. Understands the mapping of a
+ * {@link org.labkey.api.query.FieldKey} that was part of the query to its value in the result set.
  * User: matthewb
  * Date: Nov 18, 2010
  * Time: 11:26:39 AM

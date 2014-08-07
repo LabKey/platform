@@ -18,8 +18,8 @@ package org.labkey.api.pipeline;
 import org.labkey.api.module.Module;
 
 /**
- * <code>TaskPipeline</code> identifies a set of <code>TasksFactory</code>
- * objects that can be used to create <code>Task</code> instances for processing
+ * <code>TaskPipeline</code> identifies a set of {@link org.labkey.api.pipeline.TaskFactory}
+ * objects that can be used to create {@link org.labkey.api.pipeline.PipelineJob.Task} instances for processing
  * a pipeline job.
  */
 public interface TaskPipeline<SettingsType extends TaskPipelineSettings>

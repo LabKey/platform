@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.io.Writer;
 
 /**
+ * A button that responds to a user click by popping up a menu.
+ *
  * User: jeckels
  * Date: Nov 15, 2007
  */

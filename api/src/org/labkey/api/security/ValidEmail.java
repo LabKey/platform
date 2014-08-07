@@ -28,9 +28,11 @@ import javax.mail.internet.InternetAddress;
 import java.util.Map;
 
 /**
+ * Represents an email address that is known to be valid according to RFC 822. Will automatically append
+ * the default email domain and do other normalization if needed.
+ *
  * User: adam
  * Date: Aug 24, 2006
- * Time: 3:38:37 PM
  */
 public class ValidEmail
 {

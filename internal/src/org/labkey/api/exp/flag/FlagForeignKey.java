@@ -21,9 +21,9 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.VirtualTable;
-import org.labkey.api.util.StringExpression;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.security.User;
+import org.labkey.api.util.StringExpression;
 
 public class FlagForeignKey extends AbstractForeignKey
 {

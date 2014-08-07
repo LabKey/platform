@@ -23,11 +23,13 @@ import org.labkey.api.security.UserPrincipal;
 import java.util.HashSet;
 import java.util.Set;
 
-/*
-* User: Dave
-* Date: Apr 28, 2009
-* Time: 4:02:35 PM
-*/
+/**
+ * Describes the ability to perform administration. Note that this is distinct from {@link org.labkey.api.security.roles.SiteAdminRole},
+ * which is far more all-encompassing.
+ *
+ * User: Dave
+ * Date: Apr 28, 2009
+ */
 public class AdminPermission extends AbstractPermission
 {
     public AdminPermission()

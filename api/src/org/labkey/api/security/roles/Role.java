@@ -32,7 +32,8 @@ import java.util.Set;
 */
 
 /**
- * Represents a security role, which is a set of permissions with a name and description
+ * Represents a security role, which is a set of permissions with a name and description. Roles are what are assigned
+ * to users and groups to grant them access to resources.
  */
 public interface Role extends Parameter.JdbcParameterValue
 {

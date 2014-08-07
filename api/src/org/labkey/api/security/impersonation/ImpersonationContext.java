@@ -28,20 +28,28 @@ import java.io.Serializable;
 import java.util.Set;
 
 /**
+ * Context that describes the way in which a user is operating within the system. They may be logged in normally,
+ * or they may be impersonating a specific user or a group, depending on the implementation.
+ *
  * User: adam
  * Date: 11/8/11
  * Time: 8:01 PM
  */
 public interface ImpersonationContext extends Serializable
 {
+    /** @return whether the user is impersonating someone or some group, or working as their normal self */
     public boolean isImpersonating();
     public boolean isAllowedGlobalRoles();
+    /** @return if non-null, the container to which the impersonation should be restricted */
     public @Nullable Container getImpersonationProject();
+    /** @return the user who is actually performing the operation, not the user that they might be impersonating */
     public User getAdminUser();
     public String getNavTreeCacheKey();  // Caching permission-related state is very tricky with impersonation; context needs to provide the cache key suffix
+    /** @return the URL to which the user should be returned when their impersonation context changes to another context */
     public URLHelper getReturnURL();
     public int[] getGroups(User user);
     public Set<Role> getContextualRoles(User user, SecurityPolicy policy);
     public ImpersonationContextFactory getFactory();
+    /** Responsible for adding menu items to allow the user to initiate or stop impersonating, based on the current state */
     public void addMenu(NavTree menu, Container c, User user, ActionURL currentURL);
 }

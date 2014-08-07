@@ -29,7 +29,7 @@ import java.util.List;
 
 /**
  * <code>TaskPipelineRegistrar</code> is meant for use in a Spring
- * configuration file for adding object to the <code>TaskPipelineRegistry</code>.
+ * configuration file for adding object to the {@link org.labkey.api.pipeline.TaskPipelineRegistrar}.
  *
  * @author brendanx
  */

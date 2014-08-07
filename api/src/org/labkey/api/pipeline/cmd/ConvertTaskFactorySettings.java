@@ -16,11 +16,13 @@
 package org.labkey.api.pipeline.cmd;
 
 import org.labkey.api.pipeline.AbstractTaskFactorySettings;
-import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskFactorySettings;
+import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.util.FileType;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * <code>ConvertTaskFactorySettings</code>
@@ -108,10 +110,10 @@ public class ConvertTaskFactorySettings extends AbstractTaskFactorySettings
         return commandIds;
     }
 
-    public TaskFactorySettings[] getSettings()
+    public List<TaskFactorySettings> getSettings()
     {
         if (_commands == null)
-            return new TaskFactorySettings[0];
+            return Collections.emptyList();
         
         ArrayList<TaskFactorySettings> settingsList = new ArrayList<>();
         for (int i = 0; i < _commands.length; i++)
@@ -125,6 +127,6 @@ public class ConvertTaskFactorySettings extends AbstractTaskFactorySettings
                 _commands[i] = settings.getId();
             }
         }
-        return settingsList.toArray(new TaskFactorySettings[settingsList.size()]);
+        return settingsList;
     }
 }

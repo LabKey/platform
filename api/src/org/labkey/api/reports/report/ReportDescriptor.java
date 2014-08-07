@@ -774,12 +774,6 @@ public class ReportDescriptor extends Entity implements SecurableResource
     }
 
     @NotNull
-    public Set<Class<? extends Permission>> getRelevantPermissions()
-    {
-        return RoleManager.BasicPermissions;
-    }
-
-    @NotNull
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getCoreModule();

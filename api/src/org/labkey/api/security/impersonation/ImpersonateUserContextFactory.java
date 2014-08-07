@@ -41,8 +41,10 @@ import java.util.Map;
 import java.util.Set;
 
 /**
-* User: adam
-* Date: 11/9/11
+ * Context representing that a user is impersonating another user, and should not be treated as their normal self.
+ *
+ * User: adam
+ * Date: 11/9/11
 */
 
 // We stash simple properties (container and user id) in session and turn them into a context with objects on each request

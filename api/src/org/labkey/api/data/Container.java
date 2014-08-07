@@ -1296,12 +1296,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
     }
 
     @NotNull
-    public Set<Class<? extends Permission>> getRelevantPermissions()
-    {
-        return RoleManager.BasicPermissions;
-    }
-
-    @NotNull
     public Module getSourceModule()
     {
         return ModuleLoader.getInstance().getCoreModule();

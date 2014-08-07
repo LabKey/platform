@@ -15,11 +15,11 @@
  */
 package org.labkey.api.security.permissions;
 
-/*
-* User: Dave
-* Date: Apr 30, 2009
-* Time: 6:08:48 PM
-*/
+/**
+ * Describes the ability to read a limited subset of information within a specific context.
+ * User: Dave
+ * Date: Apr 30, 2009
+ */
 public class ReadSomePermission extends AbstractPermission
 {
     public ReadSomePermission()

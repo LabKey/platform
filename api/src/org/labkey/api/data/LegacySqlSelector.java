@@ -16,13 +16,13 @@
 
 package org.labkey.api.data;
 
-/*
-* User: adam
-* Date: Sep 3, 2011
-* Time: 3:07:21 PM
+/**
+ * Standard {@link org.labkey.api.data.SqlSelector} that throws checked SQLExceptions instead of RuntimeExceptions
+ *
+ * User: adam
+ * Date: Sep 3, 2011
 */
 
-// Standard SqlSelector that throws checked SQLExceptions instead of RuntimeExceptions
 public class LegacySqlSelector extends LegacySelector<SqlSelector, LegacySqlSelector>
 {
     public LegacySqlSelector(DbSchema schema, SQLFragment sql)

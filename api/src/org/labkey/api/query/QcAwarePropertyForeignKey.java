@@ -334,7 +334,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
             }
         }
 
-        public PropertyDescriptor[] getDisplayProperties()
+        public List<PropertyDescriptor> getDisplayProperties()
         {
             List<PropertyDescriptor> pds = new ArrayList<>();
             pds.addAll(_additionalDisplayPds);
@@ -351,7 +351,7 @@ public class QcAwarePropertyForeignKey extends PropertyForeignKey
                 pds.add(group.getIndicatorPd());
                 pds.add(group.getRawValuePd());
             }
-            return pds.toArray(new PropertyDescriptor[pds.size()]);
+            return pds;
         }
 
         public PropertyDescriptor[] getDefaultHiddenProperties()

@@ -15,10 +15,10 @@
  */
 package org.labkey.api.pipeline;
 
-import org.labkey.api.module.Module;
-import org.labkey.api.util.FileType;
-import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.apache.log4j.Logger;
+import org.labkey.api.module.Module;
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.util.FileType;
 
 import java.io.IOException;
 import java.util.List;
@@ -40,6 +40,7 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
 
     TaskFactory cloneAndConfigure(SettingsType settings) throws CloneNotSupportedException;
 
+    /** @return the types of files that are consumable by this task as input */
     List<FileType> getInputTypes();
 
     /**
@@ -55,11 +56,19 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
     /** The prefix for a parameter group. Used to collect task-specific properties like Globus configuration overrides */
     String getGroupParameterName();
 
+    /**
+     * @return true if this task operates on all of the split items (say, multiple input files) as a whole, or false
+     * if each split item should be operated on independently (and potentially in parallel)
+     */
     boolean isJoin();
 
     /** Invoked on the web server to figure out if the task has already been run */
     boolean isJobComplete(PipelineJob job);
 
+    /**
+     * @return whether the task is expected to execute as part of a particular job. Individual tasks in a pipeline
+     * might not be relevant if they are, for example, optional and have been disabled with a parameter in the protocol
+     */
     boolean isParticipant(PipelineJob job) throws IOException;
 
     /**
@@ -68,8 +77,12 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
      */
     void validateParameters(PipelineJob job) throws PipelineValidationException;
 
-    boolean isAutoRetryEnabled(PipelineJob job); 
+    boolean isAutoRetryEnabled(PipelineJob job);
 
+    /**
+     * @return the name of the location on which the task should be executed. This is an abstract name, which needn't map
+     * to a specific machine name
+     */
     String getExecutionLocation();
 
     GlobusSettings getGlobusSettings();
@@ -80,10 +93,11 @@ public interface TaskFactory<SettingsType extends TaskFactorySettings>
 
     void setDeclaringModule(Module declaringModule);
 
+    /** @return the module that declared/defined this task */
     Module getDeclaringModule();
 
     /**
-     * Task is run on the LabKey Server.
+     * Location name for task to run on the LabKey Server itself (inside the Tomcat process).
      */
     static final String WEBSERVER = "webserver";
 }

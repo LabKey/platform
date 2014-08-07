@@ -20,6 +20,7 @@ import java.io.File;
 import java.net.URI;
 
 /**
+ * A collection of all the recorded actions performed in the context of a single pipeline job.
  * User: jeckels
  * Date: Aug 8, 2008
  */

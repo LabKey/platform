@@ -26,10 +26,13 @@ import java.util.Map;
 import java.util.Set;
 
 /**
-* User: adam
-* Date: Sep 14, 2010
-* Time: 1:10:03 PM
-*/
+ * Implementation of {@link org.labkey.api.data.ForeignKey} that allows for the display of multiple values, instead
+ * of the typical single-value lookup. Assumes that there's a mapping table that specifies the many-to-many
+ * (or one-to-many) relationship.
+ *
+ * User: adam
+ * Date: Sep 14, 2010
+ */
 public class MultiValuedForeignKey implements ForeignKey
 {
     private final ForeignKey _fk;

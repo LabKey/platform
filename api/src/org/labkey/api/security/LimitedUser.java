@@ -21,11 +21,12 @@ import org.labkey.api.security.roles.Role;
 import java.util.HashSet;
 import java.util.Set;
 
-/*
-* User: adam
-* Date: Sep 10, 2011
-* Time: 3:04:41 PM
-*/
+/**
+ * A wrapper around another user that limits the permissions associated that that user, and thus
+ * the operations that the user is allowed to perform.
+ * User: adam
+ * Date: Sep 10, 2011
+ */
 public class LimitedUser extends User
 {
     private final int[] _groups;

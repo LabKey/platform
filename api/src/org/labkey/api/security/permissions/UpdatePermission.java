@@ -15,11 +15,11 @@
  */
 package org.labkey.api.security.permissions;
 
-/*
-* User: Dave
-* Date: Apr 27, 2009
-* Time: 1:39:21 PM
-*/
+/**
+ * Describes the ability to change existing objects within the system.
+ * User: Dave
+ * Date: Apr 27, 2009
+ */
 public class UpdatePermission extends AbstractPermission
 {
     public UpdatePermission()

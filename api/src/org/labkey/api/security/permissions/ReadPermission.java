@@ -15,11 +15,11 @@
  */
 package org.labkey.api.security.permissions;
 
-/*
-* User: Dave
-* Date: Apr 23, 2009
-* Time: 1:39:49 PM
-*/
+/**
+ * Describes the ability to view information within the system.
+ * User: Dave
+ * Date: Apr 23, 2009
+ */
 public class ReadPermission extends AbstractPermission
 {
     public ReadPermission()

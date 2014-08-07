@@ -1740,6 +1740,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
+    /** @return whether the column is part of the primary key for the table */
     public boolean isKeyField()
     {
         return isKeyField;

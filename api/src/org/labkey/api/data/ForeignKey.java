@@ -25,8 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Interface describing a ColumnInfo's foreign key relationship.
- *
+ * Interface describing a ColumnInfo's foreign key relationship, making it a lookup to the foreign key's target.
  */
 public interface ForeignKey
 {

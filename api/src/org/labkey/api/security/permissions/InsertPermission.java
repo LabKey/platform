@@ -15,11 +15,11 @@
  */
 package org.labkey.api.security.permissions;
 
-/*
-* User: Dave
-* Date: Apr 27, 2009
-* Time: 1:28:41 PM
-*/
+/**
+ * Describes the ability to add new objects to the system.
+ * User: Dave
+ * Date: Apr 27, 2009
+ */
 public class InsertPermission extends AbstractPermission
 {
     public InsertPermission()

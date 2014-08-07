@@ -16,9 +16,10 @@
 package org.labkey.api.data;
 
 /**
+ * Marker interface for code that is invoked via a SQL upgrade script to perform upgrade operations that are
+ * difficult or impossible to perform in straight-SQL.
  * User: adam
  * Date: Nov 21, 2008
- * Time: 5:58:09 PM
  */
 public interface UpgradeCode
 {

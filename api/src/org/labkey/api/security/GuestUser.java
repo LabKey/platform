@@ -16,6 +16,10 @@
 
 package org.labkey.api.security;
 
+/**
+ * A special kind of user, representing anonymous access.
+ * That is, users who have not authenticated with an account.
+ */
 class GuestUser extends User
 {
     private static final int[] _guestGroups = new int[]{Group.groupGuests};

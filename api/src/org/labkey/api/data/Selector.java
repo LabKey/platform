@@ -24,11 +24,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-/*
-* User: adam
-* Date: Sep 3, 2011
-* Time: 9:13:05 AM
-*/
+/**
+ * Base-level interface for getting results from the database.
+ * User: adam
+ * Date: Sep 3, 2011
+ */
 public interface Selector
 {
     /**
@@ -43,23 +43,24 @@ public interface Selector
 
     long getRowCount();
 
+    /** @return whether there is at least one row that matches the selection criteria */
     boolean exists();
 
     @NotNull <T> T[] getArray(Class<T> clazz);
 
-    // Convenience method that avoids "unchecked assignment" warnings
+    /** Convenience method that avoids "unchecked assignment" warnings */
     @NotNull Map<String, Object>[] getMapArray();
 
     @NotNull <E> Collection<E> getCollection(Class<E> clazz);
 
-    // Convenience method that avoids "unchecked assignment" warnings
+    /** Convenience method that avoids "unchecked assignment" warnings */
     @NotNull Collection<Map<String, Object>> getMapCollection();
 
     @NotNull <E> ArrayList<E> getArrayList(Class<E> clazz);
 
     <T> T getObject(Class<T> clazz);
 
-    // Convenience method that avoids "unchecked assignment" warnings
+    /** Convenience method that avoids "unchecked assignment" warnings */
     Map<String, Object> getMap();
 
     void forEach(ForEachBlock<ResultSet> block);
@@ -74,8 +75,10 @@ public interface Selector
     /** Populate an existing map from a two-column query; the first column is the key, the second column is the value. */
     @NotNull <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> map);
 
+    /** Callback interface for dealing with result set rows */
     interface ForEachBlock<T>
     {
+        /** Invoked once for each row returned by the selector */
         void exec(T object) throws SQLException;
     }
 }
