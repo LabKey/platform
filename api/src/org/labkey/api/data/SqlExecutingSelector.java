@@ -136,7 +136,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     public TableResultSet getResultSet(boolean cache, boolean scrollable)
     {
         SqlFactory sqlFactory = getSqlFactory(true);
-        ExecutingResultSetFactory factory = new ExecutingResultSetFactory(sqlFactory, cache, scrollable, true);
+        ExecutingResultSetFactory factory = new ExecutingResultSetFactory(sqlFactory, cache, scrollable);
 
         return getResultSet(factory, cache);
     }
@@ -273,21 +273,19 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
         private final SqlFactory _factory;
         private final boolean _closeResultSet;
         private final boolean _scrollable;
-        private final boolean _tweakJdbcParameters;
 
         private @Nullable SQLFragment _sql = null;
 
         protected ExecutingResultSetFactory(SqlFactory factory)
         {
-            this(factory, true, false, true);
+            this(factory, true, false);
         }
 
-        protected ExecutingResultSetFactory(SqlFactory factory, boolean closeResultSet, boolean scrollable, boolean tweakJdbcParameters)
+        protected ExecutingResultSetFactory(SqlFactory factory, boolean closeResultSet, boolean scrollable)
         {
             _factory = factory;
             _closeResultSet = closeResultSet;
             _scrollable = scrollable;
-            _tweakJdbcParameters = tweakJdbcParameters;
         }
 
         @Override
@@ -301,12 +299,8 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                 return null;
             }
 
-            // TODO: _tweakJdbcParameters is always false, so remove... unless we want to skip this in, say, the single-row cases (getObject(), getRowCount(), etc.)
-            if (_tweakJdbcParameters)
-            {
-                DbScope scope = getScope();
-                scope.getSqlDialect().configureToDisableJdbcCaching(conn, scope, _sql);
-            }
+            DbScope scope = getScope();
+            scope.getSqlDialect().configureToDisableJdbcCaching(conn, scope, _sql);
 
             ResultSet rs;
 
@@ -316,7 +310,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
             }
             catch (SQLException outer)
             {
-                if (getScope().isTransactionActive() || !SqlDialect.isTransactionException(outer))
+                if (scope.isTransactionActive() || !SqlDialect.isTransactionException(outer))
                     throw outer;
                 // retry if simple transaction exception
                 try

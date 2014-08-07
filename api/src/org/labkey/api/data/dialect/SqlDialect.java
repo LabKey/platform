@@ -44,7 +44,6 @@ import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.AliasManager;
-import org.labkey.api.query.Closure;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.SystemMaintenance;
@@ -314,13 +313,6 @@ public abstract class SqlDialect
     public void configureToDisableJdbcCaching(Connection connection, DbScope scope, SQLFragment sql) throws SQLException
     {
         // No-op by default
-    }
-
-    // By default, do nothing interesting -- most drivers don't cache results
-    @Deprecated
-    public void executeWithoutJdbcCaching(DbScope scope, Closure runnable) throws Exception
-    {
-        runnable.execute();
     }
 
     /**

@@ -261,7 +261,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     {
         ensureStableColumnOrder("getResults()");
         TableSqlFactory tableSqlFactory = getSqlFactory(true);
-        ExecutingResultSetFactory factory = new ExecutingResultSetFactory(tableSqlFactory, cache, scrollable, true);
+        ExecutingResultSetFactory factory = new ExecutingResultSetFactory(tableSqlFactory, cache, scrollable);
         ResultSet rs = getResultSet(factory, cache);
 
         return new ResultsImpl(rs, tableSqlFactory.getSelectedColumns());

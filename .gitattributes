@@ -960,7 +960,6 @@ api/src/org/labkey/api/query/AliasManager.java -text
 api/src/org/labkey/api/query/AliasedColumn.java -text
 api/src/org/labkey/api/query/BatchValidationException.java -text
 api/src/org/labkey/api/query/ChooseQueryView.java -text
-api/src/org/labkey/api/query/Closure.java -text
 api/src/org/labkey/api/query/CreateJavaScriptModel.java -text
 api/src/org/labkey/api/query/CreatePerlScriptModel.java -text
 api/src/org/labkey/api/query/CreateURLScriptModel.java -text
