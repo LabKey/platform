@@ -767,7 +767,15 @@ public class StatusController extends SpringActionController
                 return false;
 
             getContainerCheckAdmin();
-            deleteStatus(getViewBackgroundInfo(), form.isDeleteRuns(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
+            try
+            {
+                deleteStatus(getViewBackgroundInfo(), form.isDeleteRuns(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
+            }
+            catch (PipelineProvider.HandlerException e)
+            {
+                errors.addError(new LabkeyError(e.getMessage() == null ? "Failed to delete at least one job" : e.getMessage()));
+                return false;
+            }
             return true;
         }
 

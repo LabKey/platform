@@ -36,9 +36,9 @@
 <%@ page import="java.io.File" %>
 <%@ page import="org.labkey.api.pipeline.PipelineService" %>
 <%@ page import="org.labkey.api.pipeline.PipeRoot" %>
-<%@ page import="org.labkey.api.exp.api.ExpData" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
@@ -124,6 +124,7 @@
         return sb.toString();
     }
 %>
+<labkey:errors />
 <%
     ConfirmDeleteStatusForm form = (ConfirmDeleteStatusForm)HttpView.currentModel();
 
