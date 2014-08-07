@@ -739,51 +739,19 @@ Ext4.define('LABKEY.query.olap.MDX', {
         var found = false;
         if (this._filter[name]) {
             delete this._filter[name];
-
-            if (this._cube.useServerMemberCache === true) {
-                if (this._serverSets[name]) {
-                    delete this._serverSets[name];
-                    found = true;
-                    this.serverDeleteNamedSet(name, callback, scope);
-                }
-            }
         }
 
-        if (!found && Ext4.isFunction(callback)) {
+        if (Ext4.isFunction(callback)) {
             callback.call(scope || this);
         }
     },
 
-    setNamedFilter : function(name, filter, callback, scope)
+    setNamedFilter : function(name, filter)
     {
         this._filter[name] = filter;
-
-        if (this._cube.useServerMemberCache === true && Ext4.isFunction(callback)) {
-//            console.log('going to get results for:', name);
-            this.queryParticipantList({
-                useNamedFilters: [name],
-                success: function(cs) {
-
-                    var members = [];
-                    var pos = cs.axes[1].positions;
-                    for (var a=0; a < pos.length; a++) {
-                        members.push(pos[a][0].name);
-                    }
-
-//                    console.log('saving "' + name + '" in server cache. Contains', members.length, 'members.');
-                    this.serverSaveNamedSet(name, members, callback, scope);
-                },
-                scope: this
-            });
-        }
-        else if (Ext4.isFunction(callback)) {
-            callback.call(scope || this);
-        }
     },
 
     serverSaveNamedSet : function(name, members, callback, scope) {
-        this._serverSets[name] = members;
-
         Ext4.Ajax.request({
             url: LABKEY.ActionURL.buildURL('query', 'saveNamedSet'),
             method: 'POST',
@@ -792,6 +760,8 @@ Ext4.define('LABKEY.query.olap.MDX', {
                 setList: members
             },
             success: function(response) {
+//                console.log('saved "' + name + '" in server cache. Contains', members.length, 'members.');
+                this._serverSets[name] = members;
                 if (Ext4.isFunction(callback)) {
                     callback.call(scope || this, name);
                 }
@@ -803,6 +773,10 @@ Ext4.define('LABKEY.query.olap.MDX', {
         });
     },
 
+    allowMemberCaching : function() {
+        return this._cube.useServerMemberCache === true;
+    },
+
     serverDeleteNamedSet : function(name, callback, scope) {
         Ext4.Ajax.request({
             url: LABKEY.ActionURL.buildURL('query', 'deleteNamedSet'),
@@ -811,6 +785,10 @@ Ext4.define('LABKEY.query.olap.MDX', {
                 setName: name
             },
             success: function() {
+//                console.log('deleted "' + name + '" in server cache.');
+                if (this._serverSets[name]) {
+                    delete this._serverSets[name];
+                }
                 if (Ext4.isFunction(callback)) {
                     callback.call(scope || this);
                 }
@@ -822,8 +800,16 @@ Ext4.define('LABKEY.query.olap.MDX', {
         });
     },
 
+    serverGetNamedSets : function() {
+        return Ext4.clone(this._serverSets);
+    },
+
     serverGetNamedSet : function(name) {
         return this._serverSets[name];
+    },
+
+    serverHasNamedSet : function(name) {
+        return Ext4.isArray(this._serverSets[name]);
     },
 
     resetNamedFilters : function()
