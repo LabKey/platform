@@ -3160,7 +3160,7 @@ public class QueryController extends SpringActionController
     @Action(ActionType.Export)
     public class ExportSqlAction extends ExportAction<ExportSqlForm>
     {
-        public void export(ExportSqlForm form, HttpServletResponse response, BindException errors) throws Exception
+        public void export(ExportSqlForm form, HttpServletResponse response, BindException errors) throws IOException, ExportException
         {
             String schemaName = StringUtils.trimToNull(form.getSchemaName());
             if (null == schemaName)

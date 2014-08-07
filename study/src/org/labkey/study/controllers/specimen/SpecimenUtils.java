@@ -431,14 +431,19 @@ public class SpecimenUtils
         }
     }
 
-    public void writeExportData(SpecimenQueryView view, String type) throws Exception
+    public void writeExportData(SpecimenQueryView view, String type) throws IOException
     {
-        if ("excel".equals(type))
-            view.exportToExcel(_controller.getViewContext().getResponse());
-        else if ("tsv".equals(type))
-            view.exportToTsv(_controller.getViewContext().getResponse());
-        else
-            throw new IllegalArgumentException(type + " is not a supported export type.");
+        switch (type)
+        {
+            case "excel":
+                view.exportToExcel(_controller.getViewContext().getResponse());
+                break;
+            case "tsv":
+                view.exportToTsv(_controller.getViewContext().getResponse());
+                break;
+            default:
+                throw new IllegalArgumentException(type + " is not a supported export type.");
+        }
     }
 
     public void sendNewRequestNotifications(SpecimenRequest request, BindException errors) throws Exception
