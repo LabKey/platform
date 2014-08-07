@@ -27,7 +27,7 @@ import java.util.List;
  * User: tgaluhn
  * Date: 7/21/2014
  */
-public class TaskrefTransformStepProvider implements StepProvider
+public class TaskrefTransformStepProvider extends StepProviderImpl
 {
     @Override
     public String getName()

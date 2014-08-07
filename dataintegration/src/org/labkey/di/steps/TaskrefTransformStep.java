@@ -34,7 +34,7 @@ import java.util.Map;
  */
 public class TaskrefTransformStep extends TransformTask
 {
-    final TaskrefTransformStepMeta _meta;
+    protected final TaskrefTransformStepMeta _meta;
 
     public TaskrefTransformStep(TransformTaskFactory factory, PipelineJob job, TaskrefTransformStepMeta meta, TransformJobContext context)
     {

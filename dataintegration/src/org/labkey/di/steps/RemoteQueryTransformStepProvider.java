@@ -28,7 +28,7 @@ import java.util.List;
  * User: gktaylor
  * Date: 10/10/13
  */
-public class RemoteQueryTransformStepProvider implements StepProvider
+public class RemoteQueryTransformStepProvider extends StepProviderImpl
 {
     @Override
     public String getName()

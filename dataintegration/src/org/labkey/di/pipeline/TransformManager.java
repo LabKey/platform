@@ -23,6 +23,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
@@ -125,7 +126,7 @@ public class TransformManager implements DataIntegrationService
     private static final String JOB_GROUP_NAME = "org.labkey.di.pipeline.ETLManager";
     private static final ModuleResourceCache<ScheduledPipelineJobDescriptor> DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(DescriptorCacheHandler.DIR_NAME), "ETL job descriptors", new DescriptorCacheHandler());
 
-    private List<StepProvider> _providers = new ArrayList<>();
+    private Map<String, StepProvider> _providers = new CaseInsensitiveHashMap<>();
 
     public static TransformManager get()
     {
@@ -731,26 +732,18 @@ public class TransformManager implements DataIntegrationService
     @Override
     public void registerStepProviders()
     {
-        _providers.add(new SimpleQueryTransformStepProvider());
-        _providers.add(new RemoteQueryTransformStepProvider());
-        _providers.add(new StoredProcedureStepProvider());
-        _providers.add(new TaskrefTransformStepProvider());
-        _providers.add(new TestTaskProvider());
+        _providers.putAll(new SimpleQueryTransformStepProvider().getNameProviderMap());
+        _providers.putAll(new RemoteQueryTransformStepProvider().getNameProviderMap());
+        _providers.putAll(new StoredProcedureStepProvider().getNameProviderMap());
+        _providers.putAll(new TaskrefTransformStepProvider().getNameProviderMap());
+        _providers.putAll(new TestTaskProvider().getNameProviderMap());
 
     }
 
     @Nullable
     public StepProvider getStepProvider(String providerName)
     {
-        for (StepProvider potential : _providers)
-        {
-            if (potential.getName().equalsIgnoreCase(providerName) || potential.getLegacyNames().contains(providerName))
-            {
-                return potential;
-            }
-        }
-
-        return null;
+        return _providers.get(providerName);
     }
 
     //

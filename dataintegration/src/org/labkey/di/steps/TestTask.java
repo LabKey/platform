@@ -51,7 +51,7 @@ public class TestTask extends TransformTask
     public static final String Transient = "TransientProperty";
 
 
-    SimpleQueryTransformStepMeta _meta;
+    private final SimpleQueryTransformStepMeta _meta;
 
     public TestTask(TransformTaskFactory factory, PipelineJob job, SimpleQueryTransformStepMeta meta)
     {

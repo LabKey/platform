@@ -21,6 +21,7 @@ import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: tgaluhn
@@ -63,4 +64,6 @@ public interface StepProvider
      * @return An instance of the Step class corresponding to the type
      */
     public TransformTask createStepInstance(TransformTaskFactory f, PipelineJob job, StepMeta meta, TransformJobContext context);
+
+    public Map<String, StepProvider> getNameProviderMap();
 }

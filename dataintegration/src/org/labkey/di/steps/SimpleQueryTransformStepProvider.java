@@ -28,7 +28,7 @@ import java.util.List;
  * User: tgaluhn
  * Date: 10/9/13
  */
-public class SimpleQueryTransformStepProvider implements StepProvider
+public class SimpleQueryTransformStepProvider extends StepProviderImpl
 {
     @Override
     public String getName()

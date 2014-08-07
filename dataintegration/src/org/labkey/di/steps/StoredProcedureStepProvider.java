@@ -27,7 +27,7 @@ import java.util.List;
  * User: tgaluhn
  * Date: 10/9/13
  */
-public class StoredProcedureStepProvider implements StepProvider
+public class StoredProcedureStepProvider extends StepProviderImpl
 {
     @Override
     public String getName()

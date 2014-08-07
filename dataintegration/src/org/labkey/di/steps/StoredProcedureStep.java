@@ -53,7 +53,7 @@ import java.util.Map;
  */
 public class StoredProcedureStep extends TransformTask
 {
-    final StoredProcedureStepMeta _meta;
+    private final StoredProcedureStepMeta _meta;
 
     private String procSchema;
     private String procName;

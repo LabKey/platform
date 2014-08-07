@@ -954,6 +954,7 @@ dataintegration/src/org/labkey/di/steps/SimpleQueryTransformStepProvider.java -t
 dataintegration/src/org/labkey/di/steps/StepMeta.java -text
 dataintegration/src/org/labkey/di/steps/StepMetaImpl.java -text
 dataintegration/src/org/labkey/di/steps/StepProvider.java -text
+dataintegration/src/org/labkey/di/steps/StepProviderImpl.java -text
 dataintegration/src/org/labkey/di/steps/StoredProcedureStep.java -text
 dataintegration/src/org/labkey/di/steps/StoredProcedureStepMeta.java -text
 dataintegration/src/org/labkey/di/steps/StoredProcedureStepProvider.java -text

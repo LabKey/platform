@@ -46,13 +46,13 @@ import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,7 +63,7 @@ import java.util.Map;
  */
 public class SimpleQueryTransformStep extends TransformTask
 {
-    final SimpleQueryTransformStepMeta _meta;
+    protected final SimpleQueryTransformStepMeta _meta;
 
     boolean _useAsynchrousQuery = false;
 
