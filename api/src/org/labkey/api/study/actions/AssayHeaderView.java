@@ -123,7 +123,10 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
                             setDefaultsTree.addChild(domain.getName(), currentEditUrl);
                         }
                     }
-                    manageMenu.addChild(setDefaultsTree);
+                    if (setDefaultsTree.hasChildren())
+                    {
+                        manageMenu.addChild(setDefaultsTree);
+                    }
                 }
             }
 
