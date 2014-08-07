@@ -1216,6 +1216,7 @@ public class AdminController extends SpringActionController
             props.setMemoryUsageDumpInterval(form.getMemoryUsageDumpInterval());
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setExt3Required(form.isExt3Required());
+            props.setExt3APIRequired(form.isExt3APIRequired());
 
             props.setAdminOnlyMessage(form.getAdminOnlyMessage());
             props.setShowRibbonMessage(form.isShowRibbonMessage());
@@ -1645,6 +1646,7 @@ public class AdminController extends SpringActionController
         private boolean _adminOnlyMode;
         private boolean _showRibbonMessage;
         private boolean _ext3Required;
+        private boolean _ext3APIRequired;
         private String _adminOnlyMessage;
         private String _ribbonMessageHtml;
         private int _sslPort;
@@ -1753,6 +1755,16 @@ public class AdminController extends SpringActionController
         public void setExt3Required(boolean ext3Required)
         {
             _ext3Required = ext3Required;
+        }
+
+        public boolean isExt3APIRequired()
+        {
+            return _ext3APIRequired;
+        }
+
+        public void setExt3APIRequired(boolean ext3APIRequired)
+        {
+            _ext3APIRequired = ext3APIRequired;
         }
 
         public int getSslPort()
