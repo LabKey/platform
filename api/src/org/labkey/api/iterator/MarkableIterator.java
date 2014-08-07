@@ -44,6 +44,12 @@ public class MarkableIterator<T> implements Iterator<T>
         return value;
     }
 
+    @Override
+    public void remove()
+    {
+        throw new UnsupportedOperationException("remove");
+    }
+
     public void mark()
     {
         _marked = true;
@@ -170,6 +176,13 @@ public class MarkableIterator<T> implements Iterator<T>
             {
                 // Just link _head to the upcoming node, orphaning all intervening nodes. Garbage collector should reclaim.
                 _head.setNext(_current.getNext());
+            }
+
+            @Override
+            public void remove()
+            {
+                // TODO
+                throw new UnsupportedOperationException("remove");
             }
         }
     }
