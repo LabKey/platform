@@ -28,7 +28,7 @@
             this.id = LABKEY.Utils.generateUUID();
         }
 
-        this.editFieldId = id + "_inline_field";
+        this.editFieldId = this.id + "_inline_field";
         this.saving = false;
         this.config = config;
     }
@@ -270,7 +270,7 @@
 
         if (isEditing(config.dom))
         {
-            console.log("Editor already active");
+//            console.log("Editor already active");
             return;
         }
 
