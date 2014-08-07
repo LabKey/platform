@@ -343,6 +343,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
     {
         ActionURL targetURL = getViewContext().getActionURL().clone().deleteParameters();
         ActionButton newRunButton = new ActionButton(targetURL, "Next", DataRegion.MODE_INSERT, ActionButton.Action.POST);
+        newRunButton.setScript("this.className += \" labkey-disabled-button\";", true);
         bbar.add(newRunButton);
     }
 
@@ -490,8 +491,10 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
     protected void addFinishButtons(FormType newRunForm, InsertView insertView, ButtonBar bbar)
     {
+        String jsFormReferenceStr = insertView.getDataRegion().getJavascriptFormReference(false);
+
         ActionButton saveFinishButton = new ActionButton(getViewContext().getActionURL().clone().deleteParameters(), "Save and Finish");
-        saveFinishButton.setScript(insertView.getDataRegion().getJavascriptFormReference(false) + ".multiRunUpload.value = \"false\";");
+        saveFinishButton.setScript(jsFormReferenceStr + ".multiRunUpload.value = \"false\"; this.className += \" labkey-disabled-button\";");
         saveFinishButton.setActionType(ActionButton.Action.POST);
         bbar.add(saveFinishButton);
 
@@ -502,7 +505,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
             if (t != AssayDataCollector.AdditionalUploadType.Disallowed)
             {
                 ActionButton saveUploadAnotherButton = new ActionButton(getViewContext().getActionURL().clone().deleteParameters(), t.getButtonText());
-                saveUploadAnotherButton.setScript(insertView.getDataRegion().getJavascriptFormReference(false) + ".multiRunUpload.value = \"true\";");
+                saveUploadAnotherButton.setScript(jsFormReferenceStr + ".multiRunUpload.value = \"true\"; this.className += \" labkey-disabled-button\";");
                 saveUploadAnotherButton.setActionType(ActionButton.Action.POST);
                 bbar.add(saveUploadAnotherButton);
                 break;

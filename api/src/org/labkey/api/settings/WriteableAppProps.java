@@ -103,6 +103,11 @@ public class WriteableAppProps extends AppPropsImpl
         storeBooleanValue(EXT3_REQUIRED, ext3Required);
     }
 
+    public void setExt3APIRequired(boolean ext3APIRequired)
+    {
+        storeBooleanValue(EXT3API_REQUIRED, ext3APIRequired);
+    }
+
     public void setBLASTServerBaseURL(String blastServerBaseURL)
     {
         storeStringValue(BLAST_SERVER_BASE_URL_PROP, blastServerBaseURL);
