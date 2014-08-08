@@ -17,7 +17,7 @@ package org.labkey.di.pipeline;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.di.TaskrefTask;
+import org.labkey.api.di.TaskRefTask;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.writer.ContainerUser;
@@ -28,7 +28,7 @@ import java.util.Map;
  * User: tgaluhn
  * Date: 7/22/2014
  */
-public abstract class TaskrefTaskImpl implements TaskrefTask
+public abstract class TaskRefTaskImpl implements TaskRefTask
 {
 
     protected Map<String, String> settings = new CaseInsensitiveHashMap<>();

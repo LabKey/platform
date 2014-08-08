@@ -15,7 +15,7 @@
  */
 package org.labkey.di.steps;
 
-import org.labkey.api.di.TaskrefTask;
+import org.labkey.api.di.TaskRefTask;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
@@ -32,11 +32,11 @@ import java.util.Map;
  * User: tgaluhn
  * Date: 7/21/2014
  */
-public class TaskrefTransformStep extends TransformTask
+public class TaskRefTransformStep extends TransformTask
 {
-    protected final TaskrefTransformStepMeta _meta;
+    protected final TaskRefTransformStepMeta _meta;
 
-    public TaskrefTransformStep(TransformTaskFactory factory, PipelineJob job, TaskrefTransformStepMeta meta, TransformJobContext context)
+    public TaskRefTransformStep(TransformTaskFactory factory, PipelineJob job, TaskRefTransformStepMeta meta, TransformJobContext context)
     {
         super(factory, job, meta, context);
         _meta = meta;
@@ -53,8 +53,8 @@ public class TaskrefTransformStep extends TransformTask
     {
         try
         {
-            getJob().debug("TaskrefTransformStep.doWork called");
-            TaskrefTask taskInstance = _meta.getTaskInstance();
+            getJob().debug("TaskRefTransformStep.doWork called");
+            TaskRefTask taskInstance = _meta.getTaskInstance();
             String className = taskInstance.getClass().getName();
             taskInstance.setContainerUser(_context);
             taskInstance.setLogger(getJob().getLogger());

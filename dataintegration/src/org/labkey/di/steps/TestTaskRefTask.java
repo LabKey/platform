@@ -17,7 +17,7 @@ package org.labkey.di.steps;
 
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
-import org.labkey.di.pipeline.TaskrefTaskImpl;
+import org.labkey.di.pipeline.TaskRefTaskImpl;
 
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +26,7 @@ import java.util.List;
  * User: tgaluhn
  * Date: 7/25/2014
  */
-public class TestTaskrefTask extends TaskrefTaskImpl
+public class TestTaskRefTask extends TaskRefTaskImpl
 {
     private static final String SETTING_1 = "setting1";
 

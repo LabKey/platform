@@ -17,7 +17,7 @@ package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.di.TaskrefTask;
+import org.labkey.api.di.TaskRefTask;
 import org.labkey.etl.xml.SettingType;
 import org.labkey.etl.xml.TaskRefType;
 import org.labkey.etl.xml.TransformType;
@@ -27,19 +27,19 @@ import java.util.Map;
  * User: tgaluhn
  * Date: 7/21/2014
  */
-public class TaskrefTransformStepMeta extends StepMetaImpl
+public class TaskRefTransformStepMeta extends StepMetaImpl
 {
-    public static final String TASKREF_CLASS_NOT_FOUND = "Taskref class not found: ";
-    public static final String TASKREF_CLASS_MUST_IMPLEMENT_INTERFACE = "Taskref class must implement interface: ";
-    public static final String TASKREF_CLASS_INSTANTIATION_EXCEPTION = "Exception instantiating taskref class ";
-    public static final String TASKREF_MISSING_REQUIRED_SETTING = "Taskref missing required setting(s):";
-    private TaskrefTask taskInstance = null;
+    public static final String TASKREF_CLASS_NOT_FOUND = "TaskRef class not found: ";
+    public static final String TASKREF_CLASS_MUST_IMPLEMENT_INTERFACE = "TaskRef class must implement interface: ";
+    public static final String TASKREF_CLASS_INSTANTIATION_EXCEPTION = "Exception instantiating taskRef class ";
+    public static final String TASKREF_MISSING_REQUIRED_SETTING = "TaskRef missing required setting(s):";
+    private TaskRefTask taskInstance = null;
     private String taskClassName = "";
 
     @Override
     public String toString()
     {
-        return TaskrefTask.class.getSimpleName() + " " + taskClassName;
+        return TaskRefTask.class.getSimpleName() + " " + taskClassName;
     }
 
     @Override
@@ -75,9 +75,9 @@ public class TaskrefTransformStepMeta extends StepMetaImpl
         try
         {
             Object taskObject = taskClass.newInstance();
-            if (!(taskObject instanceof TaskrefTask))
-                throw new XmlException(TASKREF_CLASS_MUST_IMPLEMENT_INTERFACE + taskClassName + " does not implement " + TaskrefTask.class.getName());
-            taskInstance = (TaskrefTask)taskObject;
+            if (!(taskObject instanceof TaskRefTask))
+                throw new XmlException(TASKREF_CLASS_MUST_IMPLEMENT_INTERFACE + taskClassName + " does not implement " + TaskRefTask.class.getName());
+            taskInstance = (TaskRefTask)taskObject;
         }
         catch (InstantiationException | IllegalAccessException e)
         {
@@ -105,7 +105,7 @@ public class TaskrefTransformStepMeta extends StepMetaImpl
             throw new XmlException(sb.toString());
     }
 
-    public TaskrefTask getTaskInstance()
+    public TaskRefTask getTaskInstance()
     {
         return taskInstance;
     }

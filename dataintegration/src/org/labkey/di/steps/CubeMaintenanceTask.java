@@ -18,7 +18,7 @@ package org.labkey.di.steps;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.QueryService;
-import org.labkey.di.pipeline.TaskrefTaskImpl;
+import org.labkey.di.pipeline.TaskRefTaskImpl;
 
 import java.util.Arrays;
 import java.util.List;
@@ -38,7 +38,7 @@ import java.util.List;
  *      both    - do both operations, reset, then rewarm
  * Default if not specified, or an invalid value is given, is "both"
  */
-public class CubeMaintenanceTask extends TaskrefTaskImpl
+public class CubeMaintenanceTask extends TaskRefTaskImpl
 {
     private static final String CUBE = "cube";
     private static final String SCHEMA = "schema";

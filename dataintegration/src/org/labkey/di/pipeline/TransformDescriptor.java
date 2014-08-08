@@ -68,7 +68,7 @@ import org.labkey.di.data.TransformDataType;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.steps.StepMeta;
-import org.labkey.di.steps.TaskrefTransformStepMeta;
+import org.labkey.di.steps.TaskRefTransformStepMeta;
 import org.labkey.di.steps.TestTask;
 import org.quartz.CronExpression;
 import org.quartz.CronScheduleBuilder;
@@ -566,7 +566,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             checkInvalidSyntax(getFile(BAD_SOURCE), TransformManager.INVALID_SOURCE);
             checkInvalidSyntax(getFile(BAD_TARGET), TransformManager.INVALID_DESTINATION);
             checkInvalidSyntax(getFile(BAD_PROCEDURE), TransformManager.INVALID_PROCEDURE);
-            checkInvalidSyntax(getFile(TASKREF_BAD_SETTING), TaskrefTransformStepMeta.TASKREF_MISSING_REQUIRED_SETTING + "\nsetting1\n");
+            checkInvalidSyntax(getFile(TASKREF_BAD_SETTING), TaskRefTransformStepMeta.TASKREF_MISSING_REQUIRED_SETTING + "\nsetting1\n");
         }
 
         @Test

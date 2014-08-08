@@ -27,12 +27,12 @@ import java.util.List;
  * User: tgaluhn
  * Date: 7/21/2014
  */
-public class TaskrefTransformStepProvider extends StepProviderImpl
+public class TaskRefTransformStepProvider extends StepProviderImpl
 {
     @Override
     public String getName()
     {
-        return TaskrefTransformStep.class.getSimpleName();
+        return TaskRefTransformStep.class.getSimpleName();
     }
 
     @Override
@@ -44,18 +44,18 @@ public class TaskrefTransformStepProvider extends StepProviderImpl
     @Override
     public Class getStepClass()
     {
-        return TaskrefTransformStep.class;
+        return TaskRefTransformStep.class;
     }
 
     @Override
     public StepMeta createMetaInstance()
     {
-        return new TaskrefTransformStepMeta();
+        return new TaskRefTransformStepMeta();
     }
 
     @Override
     public TransformTask createStepInstance(TransformTaskFactory f, PipelineJob job, StepMeta meta, TransformJobContext context)
     {
-        return new TaskrefTransformStep(f, job, (TaskrefTransformStepMeta)meta, context);
+        return new TaskRefTransformStep(f, job, (TaskRefTransformStepMeta)meta, context);
     }
 }
