@@ -3017,26 +3017,29 @@ public class QueryController extends SpringActionController
                 return null;
             }
 
-            // Attach any URL-based filters. This would apply to 'filterArray' from the JavaScript API.
-            SimpleFilter filter = new SimpleFilter(settings.getBaseFilter());
+            SimpleFilter filter = null;
 
-            String dataRegionName = form.getDataRegionName();
-            if (StringUtils.trimToNull(dataRegionName) == null)
-                dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
-
-            // Support for 'viewName'
-            if (null != settings.getViewName())
+            // 21032: Respect 'ignoreFilter'
+            if (!settings.getIgnoreUserFilter())
             {
-                CustomView view = service.getCustomView(getUser(), getContainer(), getUser(), settings.getSchemaName(), settings.getQueryName(), settings.getViewName());
-                if (null != view)
+                // Attach any URL-based filters. This would apply to 'filterArray' from the JavaScript API.
+                filter = new SimpleFilter(settings.getBaseFilter());
+
+                String dataRegionName = form.getDataRegionName();
+                if (StringUtils.trimToNull(dataRegionName) == null)
+                    dataRegionName = QueryView.DATAREGIONNAME_DEFAULT;
+
+                // Support for 'viewName'
+                CustomView view = settings.getCustomView(getViewContext(), form.getQueryDef());
+                if (null != view && view.hasFilterOrSort())
                 {
                     ActionURL url = new ActionURL(SelectDistinctAction.class, getContainer());
                     view.applyFilterAndSortToURL(url, dataRegionName);
                     filter.addAllClauses(new SimpleFilter(url, dataRegionName));
                 }
-            }
 
-            filter.addUrlFilters(getViewContext().getActionURL(), dataRegionName);
+                filter.addUrlFilters(getViewContext().getActionURL(), dataRegionName);
+            }
 
             SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
 
