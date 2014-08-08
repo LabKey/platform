@@ -22,6 +22,7 @@ import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayProvider;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.study.assay.AssayUrls;
@@ -70,11 +71,16 @@ public class AssayUploadPipelineJob<ProviderType extends AssayProvider> extends 
     /** Finds a file name that hasn't been used yet, appending ".2", ".3", etc as needed */
     private void findUniqueLogFile(File primaryFile, String baseName)
     {
+        // need to look in both the assay data and archived dirs for any unused log file names (issue 20987)
         File fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName);
+        File archivedDir = new File(primaryFile.getParentFile(), AssayFileWriter.ARCHIVED_DIR_NAME);
+        File fileLogArchived = FT_LOG.newFile(archivedDir, baseName);
+
         int index = 1;
-        while (NetworkDrive.exists(fileLog))
+        while (NetworkDrive.exists(fileLog) || NetworkDrive.exists(fileLogArchived))
         {
-            fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName + "." + (index++));
+            fileLog = FT_LOG.newFile(primaryFile.getParentFile(), baseName + "." + (index));
+            fileLogArchived = FT_LOG.newFile(archivedDir, baseName + "." + (index++));
         }
         setLogFile(fileLog);
     }
