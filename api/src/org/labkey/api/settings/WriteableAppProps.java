@@ -98,11 +98,6 @@ public class WriteableAppProps extends AppPropsImpl
         storeIntValue(MAX_BLOB_SIZE, maxBLOBSize);
     }
 
-    public void setExt3Required(boolean ext3Required)
-    {
-        storeBooleanValue(EXT3_REQUIRED, ext3Required);
-    }
-
     public void setExt3APIRequired(boolean ext3APIRequired)
     {
         storeBooleanValue(EXT3API_REQUIRED, ext3APIRequired);
