@@ -820,7 +820,7 @@ Ext.define('LABKEY.app.controller.State', {
         return this.privatefilters[name];
     },
 
-    addPrivateSelection : function(selection, name, callback, scope, memberCaching) {
+    addPrivateSelection : function(selection, name, callback, scope) {
 
         this.onMDXReady(function(mdx){
 
@@ -846,26 +846,19 @@ Ext.define('LABKEY.app.controller.State', {
             if (Ext.isArray(selection))
             {
                 mdx.setNamedFilter(name, filters);
-                if (Ext.isFunction(callback)) {
-                    callback.call(scope || this);
-                }
                 this.fireEvent('privateselectionchange', mdx._filter[name], name);
             }
             else
             {
                 // TODO: This is wrong for when working with perspectives
-                if (memberCaching === false) {
-                    mdx.setNamedFilter(name, [{
-                        hierarchy : this.subjectName,
-                        membersQuery : selection
-                    }]);
-                }
-                else {
-                    mdx.setNamedFilter(name, [{
-                        hierarchy : this.subjectName,
-                        membersQuery : selection
-                    }], cb, this);
-                }
+                mdx.setNamedFilter(name, [{
+                    hierarchy : this.subjectName,
+                    membersQuery : selection
+                }]);
+            }
+
+            if (Ext.isFunction(callback)) {
+                callback.call(scope || this);
             }
 
         }, this);
