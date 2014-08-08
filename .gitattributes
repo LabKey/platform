@@ -958,7 +958,7 @@ dataintegration/src/org/labkey/di/steps/StepProviderImpl.java -text
 dataintegration/src/org/labkey/di/steps/StoredProcedureStep.java -text
 dataintegration/src/org/labkey/di/steps/StoredProcedureStepMeta.java -text
 dataintegration/src/org/labkey/di/steps/StoredProcedureStepProvider.java -text
-dataintegration/src/org/labkey/di/steps/TaskrefTransformStep.java -text
+dataintegration/src/org/labkey/di/steps/TaskRefTransformStep.java -text
 dataintegration/src/org/labkey/di/steps/TaskrefTransformStepMeta.java -text
 dataintegration/src/org/labkey/di/steps/TaskrefTransformStepProvider.java -text
 dataintegration/src/org/labkey/di/steps/TestTask.java -text
