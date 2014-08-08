@@ -23,6 +23,8 @@
  * Unlike Ext.ToolTip, this ToolTip class won't be dismissed when
  * then mouse is hovering over the ToolTip's popup element.
  */
+Ext.ns('LABKEY.ext');
+
 LABKEY.ext.PersistentToolTip = Ext.extend(Ext.ToolTip,{
     initComponent: function() {
         Ext.apply(this, {

@@ -1315,6 +1315,8 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
 
 Ext.reg('filter-view-faceted', LABKEY.FilterDialog.View.Faceted);
 
+Ext.ns('LABKEY.ext');
+
 LABKEY.ext.BooleanTextField = Ext.extend(Ext.form.TextField, {
     initComponent : function() {
         Ext.apply(this, {
