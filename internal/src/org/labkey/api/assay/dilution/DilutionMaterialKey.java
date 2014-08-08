@@ -126,6 +126,7 @@ public class DilutionMaterialKey
             return false;
         if (_specimenId != null ? !_specimenId.equalsIgnoreCase(that._specimenId) : that._specimenId != null) return false;
         if (_visitId != null ? !_visitId.equals(that._visitId) : that._visitId != null) return false;
+        if (_virusName != null ? !_virusName.equalsIgnoreCase(that._virusName) : that._virusName != null) return false;
 
         return true;
     }
@@ -137,6 +138,7 @@ public class DilutionMaterialKey
         result = 31 * result + (_participantId != null ? _participantId.hashCode() : 0);
         result = 31 * result + (_visitId != null ? _visitId.hashCode() : 0);
         result = 31 * result + (_date != null ? _date.hashCode() : 0);
+        result = 31 * result + (_virusName != null ? _virusName.hashCode() : 0);
         return result;
     }
 }

@@ -365,7 +365,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         for (int wellIndex = firstGroup; wellIndex >= 0 && wellIndex < wells.size(); wellIndex = wellIndex + incrementor)
         {
             WellData well = wells.get(wellIndex);
-            if (!first)
+            if (!first && factor != 0)
             {
                 if (method == SampleInfo.Method.Dilution)
                     dilution *= factor;
