@@ -386,7 +386,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     TableInfo getQueryTable() throws ServletException
     {
         StudyQuerySchema schema = StudyQuerySchema.createSchema(getStudy(), getUser(), true);
-        TableInfo datasetQueryTable = schema.createDatasetTableInternal(_ds);
+        TableInfo datasetQueryTable= schema.getTable(_ds.getName());
         if (null == datasetQueryTable) // shouldn't happen...
             throw new NotFoundException("table: study." + _ds.getName());
         return datasetQueryTable;

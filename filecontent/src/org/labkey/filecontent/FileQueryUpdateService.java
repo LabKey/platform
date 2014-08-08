@@ -150,7 +150,7 @@ public class FileQueryUpdateService extends AbstractQueryUpdateService
                 }
 
                 if (results.next())
-                    _log.error("More than one row returned for data file: " + filter.toSQLString(getQueryTable().getSqlDialect()));
+                    _log.warn("More than one row returned for data file: " + filter.toSQLString(getQueryTable().getSqlDialect()));
             }
         }
 

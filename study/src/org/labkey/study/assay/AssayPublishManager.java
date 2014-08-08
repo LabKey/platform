@@ -718,7 +718,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 if (defaultQCStateId != null)
                     defaultQCState = StudyManager.getInstance().getQCStateForRowId(study.getContainer(), defaultQCStateId.intValue());
                 lsids = StudyManager.getInstance().importDatasetData(user, dsd, dl, columnMap, errors, DataSetDefinition.CheckForDuplicates.sourceOnly, 
-                        defaultQCState, QueryUpdateService.InsertOption.MERGE, null, null);
+                        defaultQCState, QueryUpdateService.InsertOption.IMPORT, null, null);
                 if (!errors.hasErrors())
                     transaction.commit();
             }
