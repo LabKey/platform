@@ -301,6 +301,11 @@ public abstract class SqlDialect
         }
     }
 
+    @Nullable
+    public String sqlCastTypeNameFromJdbcType(JdbcType type)
+    {
+        return sqlTypeNameFromJdbcType(type);   // Override for alternate behavior
+    }
 
     public abstract String sqlTypeNameFromSqlType(PropertyStorageSpec prop);
 
