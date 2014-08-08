@@ -594,6 +594,10 @@ public class VisualizationController extends SpringActionController
                     else
                         queryName = ((DataSetTable) table).getDataSet().getName();
                 }
+                else if (asLabel)
+                {
+                    queryName = table.getTitle();
+                }
             }
 
             return queryName;
