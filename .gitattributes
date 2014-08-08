@@ -932,7 +932,7 @@ dataintegration/src/org/labkey/di/filters/RunFilterStrategy.java -text
 dataintegration/src/org/labkey/di/filters/SelectAllFilterStrategy.java -text
 dataintegration/src/org/labkey/di/pipeline/DescriptorCacheHandler.java -text
 dataintegration/src/org/labkey/di/pipeline/ETLPipelineProvider.java -text
-dataintegration/src/org/labkey/di/pipeline/TaskrefTaskImpl.java -text
+dataintegration/src/org/labkey/di/pipeline/TaskRefTaskImpl.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformConfiguration.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformDescriptor.java -text
 dataintegration/src/org/labkey/di/pipeline/TransformJobContext.java -text
