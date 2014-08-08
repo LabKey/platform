@@ -59,13 +59,16 @@
     if (null == cube)
         return;
 %>
+<script type="text/javascript">
+    LABKEY.requiresExt4Sandbox(true);
+</script>
 <script>
 
     var cube = null;
     function Level_onClick(name)
     {
-        var elems = Ext.DomQuery.select("#members div.membersList").forEach(function(d){d.style.display='none'});
-        Ext.get(name).applyStyles({display:'block'});
+        var elems = Ext4.DomQuery.select("#members div.membersList").forEach(function(d){d.style.display='none'});
+        Ext4.get(name).applyStyles({display:'block'});
     }
 </script>
 <labkey:errors></labkey:errors>
