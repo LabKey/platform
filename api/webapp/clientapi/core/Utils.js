@@ -568,6 +568,7 @@ LABKEY.Utils = new function()
         },
         /**
           * Returns a universally unique identifier, of the general form: "92329D39-6F5C-4520-ABFC-AAB64544E172"
+          * NOTE: Do not use this for DOM id's as it does not meet the requirements for DOM id specification.
           * Based on original Math.uuid.js (v1.4)
           * http://www.broofa.com
           * mailto:robert@broofa.com
