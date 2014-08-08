@@ -42,8 +42,8 @@ LABKEY.pipeline.StatusUpdate = function(controller, action, returnURL)
     var isSelectionModified = function()
     {
         // Disable refresh if the user has toggled any checkboxes
-        return LABKEY.DataRegions &&
-               LABKEY.DataRegions["StatusFiles"] &&
+        return LABKEY.Utils.isDefined(LABKEY.DataRegions) &&
+               LABKEY.Utils.isDefined(LABKEY.DataRegions["StatusFiles"]) &&
                LABKEY.DataRegions["StatusFiles"].selectionModified;
     };
 
