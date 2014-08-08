@@ -960,7 +960,7 @@ dataintegration/src/org/labkey/di/steps/StoredProcedureStepMeta.java -text
 dataintegration/src/org/labkey/di/steps/StoredProcedureStepProvider.java -text
 dataintegration/src/org/labkey/di/steps/TaskRefTransformStep.java -text
 dataintegration/src/org/labkey/di/steps/TaskRefTransformStepMeta.java -text
-dataintegration/src/org/labkey/di/steps/TaskrefTransformStepProvider.java -text
+dataintegration/src/org/labkey/di/steps/TaskRefTransformStepProvider.java -text
 dataintegration/src/org/labkey/di/steps/TestTask.java -text
 dataintegration/src/org/labkey/di/steps/TestTaskProvider.java -text
 dataintegration/src/org/labkey/di/steps/TestTaskrefTask.java -text
