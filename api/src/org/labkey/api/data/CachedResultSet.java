@@ -107,7 +107,13 @@ public class CachedResultSet implements ResultSet, TableResultSet
             for (int col = _md.getColumnCount(); col >= 1; col--)
             {
                 // Use getColumnLabel() (not getColumnName()) to better match JDBC 4.0 and to work on MySQL, #19869
-                String colLabel = _md.getColumnLabel(col).toLowerCase();
+                String label = _md.getColumnLabel(col);
+
+                // #21259 SAS/SHARE needs to use ResultSetMetaData.getColumnName()
+                if (label.isEmpty())
+                    label = _md.getColumnName(col);
+
+                String colLabel = label.toLowerCase();
                 assert !_columns.containsKey(colLabel) : "Duplicate column label: " + colLabel;
                 _columns.put(colLabel, col);
             }

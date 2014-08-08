@@ -77,6 +77,10 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
         {
             String propName = md.getColumnLabel(i);
 
+            // #21259 SAS/SHARE needs to use ResultSetMetaData.getColumnName()
+            if (propName.isEmpty())
+                propName = md.getColumnName(i);
+
             if (propName.length() > 0 && Character.isUpperCase(propName.charAt(0)))
                 propName = Introspector.decapitalize(propName);
 
