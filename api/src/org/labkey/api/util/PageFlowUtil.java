@@ -1737,8 +1737,6 @@ public class PageFlowUtil
 
         if (AppProps.getInstance().isExt3APIRequired())
             resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
-        else if (AppProps.getInstance().isExt3Required())
-            resources.add(ClientDependency.fromFilePath("Ext3"));
 
         if (coreClientApiOnly)
             resources.add(ClientDependency.fromFilePath("clientapi_core"));

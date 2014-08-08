@@ -88,7 +88,6 @@ public class AppProps
         public int getSSLPort();
         public int getMemoryUsageDumpInterval();
         public int getMaxBLOBSize();
-        public boolean isExt3Required();
         public boolean isExt3APIRequired();
         public ExceptionReportingLevel getExceptionReportingLevel();
         public String getServerGUID();

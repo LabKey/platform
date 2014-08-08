@@ -87,7 +87,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     protected static final String EXPERIMENTAL_FEATURE_PREFIX = "experimentalFeature.";
     protected static final String WEB_ROOT = "webRoot";
     protected static final String MAX_BLOB_SIZE = "maxBLOBSize";
-    protected static final String EXT3_REQUIRED = "ext3Required";
     protected static final String EXT3API_REQUIRED = "ext3APIRequired";
 
     protected static final String SITE_CONFIG_NAME = "SiteConfig";
@@ -346,11 +345,6 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     public int getMaxBLOBSize()
     {
         return lookupIntValue(MAX_BLOB_SIZE, 50000000);
-    }
-
-    public boolean isExt3Required()
-    {
-        return lookupBooleanValue(EXT3_REQUIRED, false);
     }
 
     public boolean isExt3APIRequired() { return lookupBooleanValue(EXT3API_REQUIRED, false); }
