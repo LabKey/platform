@@ -5,6 +5,8 @@
  */
 (function () {
 
+    var ID_COUNTER = 0;
+
     function InlineEditor(config)
     {
         if (!config.id && !config.dom)
@@ -25,7 +27,7 @@
         else
         {
             this.dom = config.dom;
-            this.id = LABKEY.Utils.generateUUID();
+            this.id = 'inlineeditor_' + (ID_COUNTER++);
         }
 
         this.editFieldId = this.id + "_inline_field";
