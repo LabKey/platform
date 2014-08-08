@@ -40,7 +40,7 @@ import java.util.Map;
  * we downcast the TransformJobContext to the ContainerUser interface when passing it to the task.
  *
  */
-public interface TaskrefTask
+public interface TaskRefTask
 {
     /**
      * The method that does the real work in the implementing class. Signature matches PipelineJob.Task<TaskFactory>.run()
