@@ -175,6 +175,15 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     @Override
+    @Nullable
+    public String sqlCastTypeNameFromJdbcType(JdbcType type)
+    {
+        if (type.equals(JdbcType.VARCHAR))
+            return "NVARCHAR(MAX)";
+        return sqlTypeNameFromJdbcType(type);   // Override for alternate behavior
+    }
+
+    @Override
     public boolean isSqlServer()
     {
         return true;

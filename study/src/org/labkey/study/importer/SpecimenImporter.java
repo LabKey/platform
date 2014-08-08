@@ -1570,7 +1570,7 @@ public class SpecimenImporter
                 vialPropertiesSql += ", " + colName + " = " +
                         (JdbcType.VARCHAR.equals(column.getJdbcType()) ?
                         "?" :
-                        "CAST(? AS " + vialTable.getSqlDialect().sqlTypeNameFromSqlType(column.getJdbcType().sqlType) + ")");
+                        "CAST(? AS " + vialTable.getSqlDialect().sqlCastTypeNameFromJdbcType(column.getJdbcType()) + ")");
             }
         }
 
@@ -2370,7 +2370,7 @@ public class SpecimenImporter
 
     private void appendEqualCheck(DbSchema schema, StringBuilder sql, ImportableColumn col)
     {
-        String dialectType = schema.getSqlDialect().sqlTypeNameFromJdbcType(col.getJdbcType());
+        String dialectType = schema.getSqlDialect().sqlCastTypeNameFromJdbcType(col.getJdbcType());
         String paramCast = "CAST(? AS " + dialectType + ")";
         // Each unique col has two parameters in the null-equals check.
         sql.append("(").append(col.getDbColumnName()).append(" IS NULL AND ").append(paramCast).append(" IS NULL)");
@@ -3337,7 +3337,7 @@ public class SpecimenImporter
         ArrayList<String> hash = new ArrayList<>(loadedColumns.size());
         hash.add("?");
         updateHashSql.add("Fld-" + _container.getRowId());
-        String strType = schema.getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR);
+        String strType = schema.getSqlDialect().sqlCastTypeNameFromJdbcType(JdbcType.VARCHAR);                //here
 
         for (SpecimenColumn col : loadedColumns)
         {

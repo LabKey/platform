@@ -958,7 +958,7 @@ public class StudyServiceImpl implements StudyService.Service
                     col = t.getColumn(((StudyQuerySchema)t.getUserSchema()).getSubjectColumnName());
                 if (null == col)
                 {
-                    sqlf.append("CAST(NULL AS ").append(dialect.sqlTypeNameFromJdbcType(colUnion.getJdbcType())).append(")");
+                    sqlf.append("CAST(NULL AS ").append(dialect.sqlCastTypeNameFromJdbcType(colUnion.getJdbcType())).append(")");
                 }
                 else if (col.getJdbcType() != colUnion.getJdbcType())
                 {
