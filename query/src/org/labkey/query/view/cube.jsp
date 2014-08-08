@@ -17,8 +17,10 @@
 %>
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.query.controllers.OlapController" %>
 <%@ page import="org.labkey.query.olap.OlapSchemaDescriptor" %>
+<%@ page import="org.labkey.query.olap.ServerManager" %>
 <%@ page import="org.olap4j.OlapConnection" %>
 <%@ page import="org.olap4j.metadata.Cube" %>
 <%@ page import="org.olap4j.metadata.Dimension" %>
@@ -27,11 +29,21 @@
 <%@ page import="org.olap4j.metadata.Member" %>
 <%@ page import="org.olap4j.metadata.Schema" %>
 <%@ page import="java.util.Collection" %>
-<%@ page import="org.labkey.query.olap.ServerManager" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
-<labkey:errors></labkey:errors>
+<labkey:errors/>
+
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <%
     Collection<OlapSchemaDescriptor> list = ServerManager.SCHEMA_DESCRIPTOR_CACHE.getResources(getContainer());
     for (OlapSchemaDescriptor sd : list)
@@ -59,9 +71,6 @@
     if (null == cube)
         return;
 %>
-<script type="text/javascript">
-    LABKEY.requiresExt4Sandbox(true);
-</script>
 <script>
 
     var cube = null;
@@ -71,11 +80,7 @@
         Ext4.get(name).applyStyles({display:'block'});
     }
 </script>
-<labkey:errors></labkey:errors>
-<%
-    if (null != cube)
-    {
-%>
+
 <table><tr><td valign=top style="padding:10px;">
     <div style="background-color:#eeeeee; padding:10px; min-width:400px; min-height:800px;">
         <ul style="margin:0; font-size:8pt;"><%
@@ -114,6 +119,3 @@
                 }
             }
         %></div></td></tr></table>
-<%
-    }
-%>

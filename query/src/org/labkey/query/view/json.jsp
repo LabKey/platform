@@ -16,23 +16,31 @@
  */
 %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.query.controllers.OlapController" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     OlapController.OlapForm form = (OlapController.OlapForm)HttpView.currentModel();
 %>
 
-<labkey:errors></labkey:errors>
+<labkey:errors/>
+<%!
+
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
+%>
 <form action="#">
     query: <textarea cols=80 rows=25 id=query name=query style='font-size:10pt; font-family: Andale Monaco, monospace;'><%=h(request.getParameter("query"))%></textarea><br>
     <input type=button onclick="executeQuery(Ext4.get('query').getValue())" value=submit>
 </form>
 <p>&nbsp;</p>
 <div id=cellset></div>
-<script type="text/javascript">
-    LABKEY.requiresExt4Sandbox(true);
-</script>
 <script src="<%=h(request.getContextPath())%>/query/olap.js"></script>
 <script type="text/javascript">
     var resizer = new (Ext4||Ext).Resizable("query", {
