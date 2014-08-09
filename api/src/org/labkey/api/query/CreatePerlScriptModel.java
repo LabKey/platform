@@ -59,10 +59,11 @@ public class CreatePerlScriptModel extends ExportScriptModel
         return ret.toString();
     }
 
+    // Our Perl clientapi expects filters with operators in the middle
     protected String makeFilterExpression(String name, CompareType operator, String value)
     {
         return "[" + PageFlowUtil.jsString(name) + ", "
-                + PageFlowUtil.jsString(value) + ", '" + operator.getPreferredUrlKey() + "']";
+                + operator.getPreferredUrlKey() + ", '" + PageFlowUtil.jsString(value) + "']";
     }
 
     public String getColumns()
@@ -111,7 +112,7 @@ public class CreatePerlScriptModel extends ExportScriptModel
             ContainerFilter.Type type = containerFilter.getType();
 
             if (null != type)
-                params.append(",\n").append(indent).append("-containerFilterName => '").append(type.name()).append("',\n");
+                params.append(",\n").append(indent).append("-containerFilterName => '").append(type.name()).append("'");
         }
 
         String sort = getSort();

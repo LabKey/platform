@@ -73,8 +73,15 @@ LABKEY.Mothership = (function () {
     }
 
     function log(msg) {
-        if (_debug)
+        if (_debug && console && console.warn)
             console.debug(msg);
+    }
+
+    function warn(msg) {
+        if (console && console.warn)
+            console.warn(msg);
+        else
+            alert(msg);
     }
 
     function encodeQuery(data) {
@@ -93,7 +100,7 @@ LABKEY.Mothership = (function () {
 
         var req = createXMLHTTPObject();
         if (!req) {
-            console.warn("** Failed to send error report: ", data);
+            warn("** Failed to send error report: ", data);
             return;
         }
         req.open('GET', url, true);
@@ -228,7 +235,7 @@ LABKEY.Mothership = (function () {
             stackTrace += '\n\n' + err._allocation;
         }
 
-        console.debug("** Uncaught error:", msg, '\n\n', stackTrace);
+        log("** Uncaught error:", msg, '\n\n', stackTrace);
         if (!_enabled)
             return false;
 
