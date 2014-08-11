@@ -4043,58 +4043,11 @@ public class QueryController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin  // TODO: NYI
-    public class InsertMultipleExternalSchemasAction extends FormViewAction<ExternalSchemaForm>
-    {
-        public void validateCommand(ExternalSchemaForm form, Errors errors)
-        {
-			form.validate(errors);
-        }
-
-        public ModelAndView getView(ExternalSchemaForm form, boolean reshow, BindException errors) throws Exception
-        {
-            setHelpTopic(new HelpTopic("externalSchemas"));
-            return new JspView<>("/org/labkey/query/view/multipleSchemas.jsp", new ExternalSchemaBean(getContainer(), form.getBean(), true), errors);
-        }
-
-        public boolean handlePost(ExternalSchemaForm form, BindException errors) throws Exception
-        {
-            try
-            {
-                form.doInsert();
-            }
-            catch (SQLException e)
-            {
-                if (RuntimeSQLException.isConstraintException(e))
-                {
-                    errors.reject(ERROR_MSG, "A schema by that name is already defined in this folder");
-                    return false;
-                }
-
-                throw e;
-            }
-
-            return true;
-        }
-
-        public ActionURL getSuccessURL(ExternalSchemaForm externalSchemaForm)
-        {
-            return new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer());
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            new AdminAction(getViewContext()).appendNavTrail(root);
-            root.addChild("Define Multiple Schemas", new ActionURL(QueryController.InsertMultipleExternalSchemasAction.class, getContainer()));
-            return root;
-        }
-    }
-
     public static class DataSourceInfo
     {
-        public String sourceName;
-        public String displayName;
-        public boolean editable;
+        public final String sourceName;
+        public final String displayName;
+        public final boolean editable;
 
         public DataSourceInfo(DbScope scope)
         {

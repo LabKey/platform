@@ -2686,7 +2686,6 @@ query/src/org/labkey/query/view/linkedSchema.jsp -text
 query/src/org/labkey/query/view/manageRemoteConnections.jsp -text
 query/src/org/labkey/query/view/manageViews.jsp -text
 query/src/org/labkey/query/view/mdx.jsp -text
-query/src/org/labkey/query/view/multipleSchemas.jsp -text
 query/src/org/labkey/query/view/newQuery.jsp -text
 query/src/org/labkey/query/view/propertiesQuery.jsp -text
 query/src/org/labkey/query/view/sourceQuery.jsp -text
