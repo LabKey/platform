@@ -1157,6 +1157,7 @@ Ext4.define('File.panel.Browser', {
             var listeners = {
                 load : {
                     fn : function(s) {
+                        this.loadRootNode();
                         this.ensureVisible(this.fileSystem.getOffsetURL());
                         this.onRefresh();
                     },
@@ -1191,6 +1192,35 @@ Ext4.define('File.panel.Browser', {
                 scope : this
             }
         });
+    },
+
+    loadRootNode : function() {
+        var proxy = Ext4.create( 'File.data.webdav.Proxy', {
+            url: this.fileSystem.getURI(this.fileSystem.getBaseURL()),
+            model: 'File.data.webdav.XMLResponse',
+            reader: new Ext4.data.reader.Xml({
+                record: 'response',
+                root: 'multistatus',
+                model: 'File.data.webdav.XMLResponse'
+            }),
+            depth: 0
+        });
+
+        var tree = this.getComponent('treenav');
+        if (tree) {
+            var store = tree.getView().getTreeStore();
+            proxy.read(new Ext4.data.Operation({action: 'read'}), function(s) {
+                var options;
+                if (s.success) {
+                    // only one result (depth=0)
+                    options = s.resultSet.records[0].data.options;
+                }
+                else {
+                    options = {COPY: false, DELETE: false, GET: false, HEAD: false, LOCK: false, MKCOL: false, MOVE: false, OPTIONS: false, POST: false, PROPFIND: false, PUT: false, UNLOCK: false };
+                }
+                store.tree.root.data.options = options;
+            });
+        }
     },
 
     /**

@@ -63,6 +63,10 @@ Ext4.define('File.data.webdav.Proxy', {
             if (!this.requestFiles) {
                 params += '&isCollection=1';
             }
+
+            if (this.depth != undefined) {
+                params += '&depth='+this.depth;
+            }
         }
 
         return params;
