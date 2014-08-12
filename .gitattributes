@@ -1790,6 +1790,7 @@ api/webapp/clientapi/dom/GetData.js -text
 api/webapp/clientapi/dom/NavTrail.js -text
 api/webapp/clientapi/dom/Portal.js -text
 api/webapp/clientapi/dom/Query.js -text
+api/webapp/clientapi/dom/Tour.js -text
 api/webapp/clientapi/dom/Utils.js -text
 api/webapp/clientapi/dom/WebPart.js -text
 api/webapp/clientapi/ext3.lib.xml -text
@@ -7977,6 +7978,11 @@ internal/webapp/gxt/images/gxt/tree/tree-table-special-col-sel.gif -text
 internal/webapp/gxt/images/gxt/tree/tree-table-special-col.gif -text
 internal/webapp/gxt/images/gxt/tree/vnode.gif -text
 internal/webapp/gxt/images/gxt/tree/vnode_transparent.gif -text
+internal/webapp/hopscotch/LICENSE -text
+internal/webapp/hopscotch/css/hopscotch.css -text
+internal/webapp/hopscotch/img/sprite-green.png -text
+internal/webapp/hopscotch/img/sprite-orange.png -text
+internal/webapp/hopscotch/js/hopscotch.js -text
 internal/webapp/impersonate_dialog.lib.xml -text
 internal/webapp/index.html -text
 internal/webapp/internal-FileDrop.lib.xml -text

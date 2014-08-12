@@ -1,6 +1,7 @@
 <libraries xmlns="http://labkey.org/clientLibrary/xml/">
     <library compileInProductionMode="true">
         <script path="clientapi/dom/Utils.js"/>
+        <script path="clientapi/dom/Tour.js"/>
         <script path="clientapi/dom/Chart.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.DomHelper.append and Ext.decode, moved to dom -->
         <script path="clientapi/dom/Form.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.get, Ext.EventManager, Ext.isIE, Ext.isGecko, moved to dom -->
         <script path="clientapi/dom/NavTrail.js"/>
