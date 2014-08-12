@@ -32,6 +32,7 @@
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.visualization.VisualizationController" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.api.settings.FolderSettingsCache" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -104,6 +105,7 @@
             defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
             allowEditMode: <%=!user.isGuest() && form.allowToggleMode()%>,
             editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>,
+            restrictColumnsEnabled: <%=FolderSettingsCache.areRestrictedColumnsEnabled(c)%>,
             firstLoad: true
         });
 

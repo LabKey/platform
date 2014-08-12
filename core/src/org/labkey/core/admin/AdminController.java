@@ -15,7 +15,6 @@
  */
 package org.labkey.core.admin;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -154,10 +153,8 @@ import javax.servlet.http.HttpSession;
 import java.beans.Introspector;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.management.ClassLoadingMXBean;
@@ -1342,7 +1339,7 @@ public class AdminController extends SpringActionController
         public void setEnabledCloudStore(String[] enabledCloudStore);
     }
 
-    public interface DefaultFormatsForm
+    public interface FolderSettingsForm
     {
         String getDefaultDateFormat();
 
@@ -1353,9 +1350,14 @@ public class AdminController extends SpringActionController
 
         @SuppressWarnings("UnusedDeclaration")
         void setDefaultNumberFormat(String defaultNumberFormat);
+
+        public boolean areRestrictedColumnsEnabled();
+
+        @SuppressWarnings("UnusedDeclaration")
+        public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled);
     }
 
-    public static class ProjectSettingsForm extends SetupForm implements FileManagementForm, DefaultFormatsForm
+    public static class ProjectSettingsForm extends SetupForm implements FileManagementForm, FolderSettingsForm
     {
         private boolean _shouldInherit; // new subfolders should inherit parent permissions
         private String _systemDescription;
@@ -1377,6 +1379,7 @@ public class AdminController extends SpringActionController
         private String _dateParsingMode;
         private String _defaultDateFormat;
         private String _defaultNumberFormat;
+        private boolean _restrictedColumnsEnabled;
 
         public enum FileRootProp
         {
@@ -1632,6 +1635,17 @@ public class AdminController extends SpringActionController
         {
             _defaultNumberFormat = defaultNumberFormat;
         }
+
+        public boolean areRestrictedColumnsEnabled()
+        {
+            return _restrictedColumnsEnabled;
+        }
+
+        public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled)
+        {
+            _restrictedColumnsEnabled = restrictedColumnsEnabled;
+        }
+
     }
 
     public static class SiteSettingsForm

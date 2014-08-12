@@ -130,6 +130,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     {name: 'name', type: 'string'},
                     {name: 'hidden', type: 'boolean'},
                     {name: 'measure', type: 'boolean'},
+                    {name: 'dimension', type: 'boolean'},
                     {name: 'type'},
                     {name: 'displayFieldJsonType'},
                     {name: 'normalizedType', convert: typeConvert}
@@ -389,14 +390,26 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             },
             listeners: {
                 load: function(store) {
-                    store.filterBy(function(record, id){
-                        var hidden = record.get('hidden');
-                        return !hidden;
-                    });
+                    if (!this.restrictColumnsEnabled)
+                    {
+                        // NOTE: why no normalizedType check here?
+                        store.filterBy(function(record, id){
+                            return !record.get('hidden');
+                        });
+                    }
+                    else
+                    {
+                        store.filterBy(function(record, id){
+                            return !record.get('hidden') && (record.get('measure') || record.get('dimension'));
+                        });
+                    }
                 },
                 scope: this
             }
         });
+
+
+        SS = this.xMeasureStore;
 
         this.xMeasureGrid = Ext4.create('Ext.grid.Panel', {
             store: this.xMeasureStore,
@@ -525,9 +538,14 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 load: function(store){
                     store.filterBy(function(record, id){
                         var type = record.get('normalizedType');
-                        var hidden = record.get('hidden');
-                        return (!hidden && (type == 'int' || type == 'float' || type == 'double'));
+                        return !record.get('hidden') && (type == 'int' || type == 'float' || type == 'double');
                     });
+                    if (this.restrictColumnsEnabled)
+                    {
+                        store.filterBy(function(record, id){
+                            return record.get('measure');
+                        });
+                    }
                 },
                 scope: this
             }
@@ -788,9 +806,17 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             listeners: {
                 load: function(store) {
                     store.filterBy(function(record, id){
-                        var normalizedType = record.get('normalizedType');
-                        return (!record.get('hidden') && normalizedType !== 'float' && normalizedType !== 'int' && normalizedType !== 'double');
+                        var type = record.get('normalizedType');
+                        return !record.get('hidden') && type !== 'float' && type !== 'int' && type !== 'double';
                     });
+
+                    if (this.restrictColumnsEnabled)
+                    {
+                        store.filterBy(function(record, id){
+                            return record.get('dimension') ;
+                        });
+
+                    }
 
                     var firstVal = store.getAt(0);
 

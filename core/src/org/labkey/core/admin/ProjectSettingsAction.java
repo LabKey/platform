@@ -553,7 +553,7 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
 
 
     // Validate and populate the folder settings; save & log all changes
-    public static boolean saveFolderSettings(Container c, AdminController.DefaultFormatsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
+    public static boolean saveFolderSettings(Container c, AdminController.FolderSettingsForm form, WriteableFolderLookAndFeelProperties props, User user, BindException errors)
     {
         String defaultDateFormat = StringUtils.trimToNull(form.getDefaultDateFormat());
         if (null == defaultDateFormat)
@@ -589,6 +589,16 @@ public class ProjectSettingsAction extends FormViewAction<AdminController.Projec
                 errors.reject(SpringActionController.ERROR_MSG, "Invalid number format: " + e.getMessage());
                 return false;
             }
+        }
+
+        try
+        {
+            props.setRestrictedColumnsEnabled(form.areRestrictedColumnsEnabled());
+        }
+        catch (IllegalArgumentException e)
+        {
+            errors.reject(SpringActionController.ERROR_MSG, "Invalid restricted columns flag: " + e.getMessage());
+            return false;
         }
 
         props.save();

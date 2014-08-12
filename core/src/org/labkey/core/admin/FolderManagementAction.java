@@ -624,7 +624,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         return root;
     }
 
-    public static class FolderManagementForm extends SetupForm implements AdminController.FileManagementForm, AdminController.DefaultFormatsForm
+    public static class FolderManagementForm extends SetupForm implements AdminController.FileManagementForm, AdminController.FolderSettingsForm
     {
         // folder type settings
         private String[] activeModules = new String[ModuleLoader.getInstance().getModules().size()];
@@ -668,6 +668,8 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         // default format settings
         private String _defaultDateFormat;
         private String _defaultNumberFormat;
+
+        private boolean _restrictedColumnsEnabled;
 
         public String[] getActiveModules()
         {
@@ -1002,6 +1004,17 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         {
             _defaultNumberFormat = defaultNumberFormat;
         }
+
+        public boolean areRestrictedColumnsEnabled()
+        {
+            return _restrictedColumnsEnabled;
+        }
+
+        public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled)
+        {
+            _restrictedColumnsEnabled = restrictedColumnsEnabled;
+        }
+
     }
 
 

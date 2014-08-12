@@ -246,6 +246,17 @@
 </tr>
 
 <tr>
+    <td colspan=2>Customize column restrictions (<%=text(bean.helpLink)%>)</td>
+</tr>
+<tr>
+    <td class="labkey-form-label">Restrict charting columns by measure and dimension flags</td>
+    <td><input type="checkbox" name="restrictedColumnsEnabled" size="50"<%=checked(laf.areRestrictedColumnsEnabled())%>></td>
+</tr>
+<tr>
+    <td>&nbsp;</td>
+</tr>
+
+<tr>
     <td><%= button("Save").submit(true).onClick("_form.setClean();") %>&nbsp;<%= PageFlowUtil.button("Reset")
             .href(new AdminController.AdminUrlsImpl().getResetLookAndFeelPropertiesURL(c))
             .onClick("return confirmReset();") %>
