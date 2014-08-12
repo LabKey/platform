@@ -29,6 +29,7 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     static final String LOOK_AND_FEEL_SET_NAME = "LookAndFeel";
 
     protected static final String DEFAULT_DATE_FORMAT = "defaultDateFormatString";
+    protected static final String RESTRICTED_COLUMNS_ENABLED = "restrictedColumnsEnabled";
     protected static final String DEFAULT_NUMBER_FORMAT = "defaultNumberFormatString";
 
     protected final Container _c;
@@ -71,6 +72,11 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
     {
         // Look up this value starting from the current container (unlike all the other look & feel settings)
         return lookupStringValue(_c, DEFAULT_DATE_FORMAT, DateUtil.getStandardDateFormatString());
+    }
+
+    public boolean areRestrictedColumnsEnabled()
+    {
+        return lookupBooleanValue(RESTRICTED_COLUMNS_ENABLED, false);
     }
 
     public String getDefaultNumberFormat()

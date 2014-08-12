@@ -22,6 +22,7 @@ import java.text.DecimalFormat;
 
 import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_DATE_FORMAT;
 import static org.labkey.api.settings.LookAndFeelFolderProperties.DEFAULT_NUMBER_FORMAT;
+import static org.labkey.api.settings.LookAndFeelFolderProperties.RESTRICTED_COLUMNS_ENABLED;
 import static org.labkey.api.settings.LookAndFeelProperties.LOOK_AND_FEEL_SET_NAME;
 
 /**
@@ -100,6 +101,23 @@ public class WriteableFolderLookAndFeelProperties extends AbstractWriteableSetti
     {
         WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
         props.setDefaultNumberFormat(defaultNumberFormat);
+        props.save();
+    }
+
+    public void clearRestrictedColumnsEnabled()
+    {
+        remove(RESTRICTED_COLUMNS_ENABLED);
+    }
+
+    public void setRestrictedColumnsEnabled(boolean restrictedColumnsEnabled) throws IllegalArgumentException
+    {
+        storeBooleanValue(RESTRICTED_COLUMNS_ENABLED, restrictedColumnsEnabled);
+    }
+
+    public static void saveRestrictedColumnsEnabled(Container c, boolean restrictedColumnsEnabled) throws IllegalArgumentException
+    {
+        WriteableFolderLookAndFeelProperties props = LookAndFeelProperties.getWriteableFolderInstance(c);
+        props.setRestrictedColumnsEnabled(restrictedColumnsEnabled);
         props.save();
     }
 }
