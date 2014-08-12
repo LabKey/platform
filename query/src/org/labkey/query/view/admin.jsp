@@ -134,6 +134,7 @@ else
     if (isAdmin)
     { %>
     <labkey:link href="<%= new ActionURL(QueryController.InsertExternalSchemaAction.class, c)%>" text="new external schema"/>
+    <%
     }
 
     if (defs.size() > 1)
