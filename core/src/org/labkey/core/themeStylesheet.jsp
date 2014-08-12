@@ -96,7 +96,7 @@ a, a:visited, .labkey-link, .labkey-link:visited
 table#header
 {
     border-color: #<%= link %>;
-    background-color:#<%= primary %>;
+    background-color:#<%= second %>;
 }
 
 /* General */
