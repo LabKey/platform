@@ -1560,6 +1560,9 @@ freezerpro/src/org/labkey/freezerpro/export/FreezerProCommandResonse.java -text
 freezerpro/src/org/labkey/freezerpro/export/FreezerProExport.java -text
 freezerpro/src/org/labkey/freezerpro/view/configure.jsp -text
 issues/module.properties -text
+issues/resources/queries/issues/Issues/mine.qview.xml -text
+issues/resources/queries/issues/Issues/open.qview.xml -text
+issues/resources/queries/issues/Issues/resolved.qview.xml -text
 issues/resources/schemas/dbscripts/postgresql/issues-0.00-11.30.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-12.30-13.10.sql -text
 issues/resources/schemas/dbscripts/postgresql/issues-14.10-14.20.sql -text

@@ -1,0 +1,10 @@
+<cv:customView xmlns:cv="http://labkey.org/data/xml/queryCustomView">
+    <cv:filters>
+        <cv:filter column="Status" operator="eq" value="resolved" />
+    </cv:filters>
+    <cv:sorts>
+        <cv:sort column="Milestone" />
+        <cv:sort column="Priority" />
+        <cv:sort column="AssignedTo/DisplayName" />
+    </cv:sorts>
+</cv:customView>
