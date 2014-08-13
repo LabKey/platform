@@ -1246,10 +1246,6 @@ td.labkey-blank-cell, th.labkey-blank-cell
     border-collapse:collapse;
 }
 
-.labkey-row-remove {
-    background-image: url(./_images/remove.gif);
-}
-
 /* Used for the little icon on the column filter headers */
 img.labkey-grid-filter-icon
 {
