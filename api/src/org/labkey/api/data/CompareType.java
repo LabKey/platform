@@ -30,6 +30,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
@@ -935,6 +936,31 @@ public enum CompareType
         }
         if (!(paramVal instanceof String))
             return paramVal;
+
+        // Expand the magic 'me' value if the column is a userid or a user display name
+        if ("~me~".equals(paramVal))
+        {
+            // get the current user from the query env
+            User user = (User) QueryService.get().getEnvironment(QueryService.Environment.USER);
+
+            if (colInfo.getJdbcType() == JdbcType.INTEGER && ("userid".equals(colInfo.getSqlTypeName()) || colInfo.getFk() instanceof UserIdForeignKey))
+            {
+                if (user != null)
+                    return user.getUserId();
+
+                return User.guest.getUserId();
+            }
+
+            // TODO: How can I tell if this column is the core.Users DisplayName display column?
+            if (colInfo.getJdbcType() == JdbcType.VARCHAR && colInfo instanceof LookupColumn &&
+                    (colInfo.getPropertyURI().endsWith("core#UsersData.DisplayName") || colInfo.getPropertyURI().endsWith("core#Users.DisplayName")))
+            {
+                if (user != null)
+                    return user.getDisplayName(user);
+
+                return null;
+            }
+        }
 
         switch (colInfo.getSqlTypeInt())
         {
