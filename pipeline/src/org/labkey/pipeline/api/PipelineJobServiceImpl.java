@@ -74,8 +74,8 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class PipelineJobServiceImpl extends PipelineJobService
 {
     public static final String MODULE_PIPELINE_DIR = "pipeline";
-    private static final String pipelineToolsError = "Failed to locate %s. Use the site pipeline tools settings to specify where it can be found. (Currently '%s')";
-    private static final String installedPipelineToolError = "Failed to locate %s. Check tool install location defined in pipelineConfig.xml. (Currently '%s')";
+    private static final String PIPELINE_TOOLS_ERROR = "Failed to locate %s. Use the site pipeline tools settings to specify where it can be found. (Currently '%s')";
+    private static final String INSTALLED_PIPELINE_TOOL_ERROR = "Failed to locate %s. Check tool install location defined in pipelineConfig.xml. (Currently '%s')";
 
     public static PipelineJobServiceImpl get()
     {
@@ -672,8 +672,22 @@ public class PipelineJobServiceImpl extends PipelineJobService
                         @Override
                         public boolean accept(File file)
                         {
-                            return file.getName().startsWith(relName + ".") || file.getName().equals(relName) &&
-                                    file.getParent().endsWith(relPackage) &&
+                            String fileName = file.getName();
+                            String parentName = file.getParent();
+                            String relNameExpected = relName;
+                            String relPackageExpected = relPackage;
+
+                            if (FileUtil.isCaseInsensitiveFileSystem())
+                            {
+                                // Convert to a lower case to do a case-insensitive comparison on Windows, etc. See issue 21269
+                                fileName = fileName.toLowerCase();
+                                parentName = parentName.toLowerCase();
+                                relNameExpected = relNameExpected.toLowerCase();
+                                relPackageExpected = relPackageExpected.toLowerCase();
+                            }
+
+                            return fileName.startsWith(relNameExpected + ".") || fileName.equals(relNameExpected) &&
+                                    parentName.endsWith(relPackageExpected) &&
                                     file.canExecute();
                         }
                     });
@@ -685,9 +699,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
         }
 
         if (installPath == null)
-            throw new FileNotFoundException(String.format(pipelineToolsError, rel, getAppProperties().getToolsDirectory()));
+            throw new FileNotFoundException(String.format(PIPELINE_TOOLS_ERROR, rel, getAppProperties().getToolsDirectory()));
         else
-            throw new FileNotFoundException(String.format(installedPipelineToolError, rel, installPath));
+            throw new FileNotFoundException(String.format(INSTALLED_PIPELINE_TOOL_ERROR, rel, installPath));
     }
 
     private String getToolsPath()
@@ -825,7 +839,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
             catch (FileNotFoundException e)
             {
-                assertEquals(String.format(pipelineToolsError, "percolator", _tempDir), e.getMessage());
+                assertEquals(String.format(PIPELINE_TOOLS_ERROR, "percolator", _tempDir), e.getMessage());
             }
         }
 
@@ -839,7 +853,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
             catch (FileNotFoundException e)
             {
-                assertEquals(String.format(pipelineToolsError, "percolator_v.1.04/percolator", _tempDir), e.getMessage());
+                assertEquals(String.format(PIPELINE_TOOLS_ERROR, "percolator_v.1.04/percolator", _tempDir), e.getMessage());
             }
         }
 
@@ -866,7 +880,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
             catch (FileNotFoundException e)
             {
-                assertEquals(String.format(pipelineToolsError, "percolator_v.1.04/percolator", _tempDir), e.getMessage());
+                assertEquals(String.format(PIPELINE_TOOLS_ERROR, "percolator_v.1.04/percolator", _tempDir), e.getMessage());
             }
         }
 
@@ -880,7 +894,7 @@ public class PipelineJobServiceImpl extends PipelineJobService
             }
             catch (FileNotFoundException e)
             {
-                assertEquals(String.format(pipelineToolsError, "percolator_v1.04", _tempDir), e.getMessage());
+                assertEquals(String.format(PIPELINE_TOOLS_ERROR, "percolator_v1.04", _tempDir), e.getMessage());
             }
         }
 
