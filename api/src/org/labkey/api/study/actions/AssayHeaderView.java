@@ -75,73 +75,9 @@ public class AssayHeaderView extends JspView<AssayHeaderView>
     public List<NavTree> getLinks()
     {
         List<NavTree> links = new ArrayList<>();
-        NavTree manageMenu = new NavTree("manage assay design");
         if (!_minimizeLinks)
         {
-            if (allowUpdate(_protocol))
-            {
-                ActionURL editURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(_protocol.getContainer(), _protocol, false, getViewContext().getActionURL());
-                if (editURL != null)
-                {
-                    String editLink = editURL.toString();
-                    if (!_protocol.getContainer().equals(getViewContext().getContainer()))
-                    {
-                        editLink = "javascript: if (window.confirm('This assay is defined in the " + _protocol.getContainer().getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }";
-                    }
-                    manageMenu.addChild("edit assay design", editLink);
-                }
-
-                ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseCopyDestinationURL(_protocol, _protocol.getContainer());
-                if (copyURL != null)
-                    manageMenu.addChild("copy assay design", copyURL.toString());
-            }
-
-            if (allowDelete(_protocol))
-            {
-                manageMenu.addChild("delete assay design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(_protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(getViewContext().getContainer())));
-            }
-
-            ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolURL(_protocol.getContainer(), _protocol);
-            manageMenu.addChild("export assay design", exportURL.toString());
-
-            if (getViewContext().getContainer().hasPermission(getViewContext().getUser(), AdminPermission.class))
-            {
-                List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos = _provider.getDomains(_protocol);
-                if (!domainInfos.isEmpty())
-                {
-                    NavTree setDefaultsTree = new NavTree("set default values");
-                    ActionURL baseEditUrl = new ActionURL(SetDefaultValuesAssayAction.class, getViewContext().getContainer());
-                    baseEditUrl.addParameter(ActionURL.Param.returnUrl, getViewContext().getActionURL().getLocalURIString());
-                    baseEditUrl.addParameter("providerName", _provider.getName());
-                    for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
-                    {
-                        Domain domain = domainInfo.getKey();
-                        if (_provider.allowDefaultValues(domain) && !domain.getProperties().isEmpty())
-                        {
-                            ActionURL currentEditUrl = baseEditUrl.clone();
-                            currentEditUrl.addParameter("domainId", domain.getTypeId());
-                            setDefaultsTree.addChild(domain.getName(), currentEditUrl);
-                        }
-                    }
-                    if (setDefaultsTree.hasChildren())
-                    {
-                        manageMenu.addChild(setDefaultsTree);
-                    }
-                }
-            }
-
-            if (manageMenu.getChildCount() > 0)
-                links.add(manageMenu);
-
-            String lastFilterScope = AssayProtocolSchema.getLastFilterScope(_protocol);
-
-            links.add(new NavTree("view batches", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(getViewContext().getContainer(), _protocol, _containerFilter), lastFilterScope)));
-            links.add(new NavTree("view runs", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(getViewContext().getContainer(), _protocol, _containerFilter), lastFilterScope)));
-
             links.addAll(getProvider().getHeaderLinks(getViewContext(), _protocol, _containerFilter));
-
-            if (AuditLogService.get().isViewable())
-                links.add(new NavTree("view copy-to-study history", AssayPublishService.get().getPublishHistory(getViewContext().getContainer(), _protocol, _containerFilter)));
         }
         else
         {

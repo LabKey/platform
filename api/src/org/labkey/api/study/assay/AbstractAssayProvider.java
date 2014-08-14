@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
@@ -37,6 +38,7 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.defaults.DefaultValueService;
+import org.labkey.api.defaults.SetDefaultValuesAssayAction;
 import org.labkey.api.exp.DomainNotFoundException;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.Lsid;
@@ -56,6 +58,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.exp.api.ExperimentUrls;
 import org.labkey.api.exp.api.IAssayDomainType;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
@@ -71,6 +74,8 @@ import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
@@ -80,6 +85,7 @@ import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.DesignerAction;
 import org.labkey.api.study.actions.UploadWizardAction;
 import org.labkey.api.study.assay.pipeline.AssayRunAsyncContext;
+import org.labkey.api.study.permissions.DesignAssayPermission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -1330,13 +1336,98 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public List<NavTree> getHeaderLinks(ViewContext viewContext, ExpProtocol protocol, ContainerFilter containerFilter)
     {
         List<NavTree> result = new ArrayList<>();
+
+        NavTree manageMenu = getManageMenuNavTree(viewContext, protocol);
+        if (manageMenu.getChildCount() > 0) result.add(manageMenu);
+
+        result.add(new NavTree("view batches", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayBatchesURL(viewContext.getContainer(), protocol, containerFilter), AssayProtocolSchema.getLastFilterScope(protocol))));
+        result.add(new NavTree("view runs", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayRunsURL(viewContext.getContainer(), protocol, containerFilter), AssayProtocolSchema.getLastFilterScope(protocol))));
         result.add(new NavTree("view results", PageFlowUtil.addLastFilterParameter(PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(viewContext.getContainer(), protocol, containerFilter), AssayProtocolSchema.getLastFilterScope(protocol))));
         if (isBackgroundUpload(protocol))
         {
             ActionURL url = PageFlowUtil.urlProvider(AssayUrls.class).getShowUploadJobsURL(viewContext.getContainer(), protocol, containerFilter);
             result.add(new NavTree("view upload jobs", PageFlowUtil.addLastFilterParameter(url, AssayProtocolSchema.getLastFilterScope(protocol))));
         }
+
+        if (AuditLogService.get().isViewable())
+            result.add(new NavTree("view copy-to-study history", AssayPublishService.get().getPublishHistory(viewContext.getContainer(), protocol, containerFilter)));
+
         return result;
+    }
+
+    private NavTree getManageMenuNavTree(ViewContext context, ExpProtocol protocol)
+    {
+        Container protocolContainer = protocol.getContainer();
+        Container contextContainer = context.getContainer();
+
+        NavTree manageMenu = new NavTree("manage assay design");
+
+        if (allowUpdate(context, protocol))
+        {
+            ActionURL editURL = PageFlowUtil.urlProvider(AssayUrls.class).getDesignerURL(protocolContainer, protocol, false, context.getActionURL());
+            if (editURL != null)
+            {
+                String editLink = editURL.toString();
+                if (!protocolContainer.equals(contextContainer))
+                {
+                    editLink = "javascript: if (window.confirm('This assay is defined in the " + protocolContainer.getPath() + " folder. Would you still like to edit it?')) { window.location = '" + editLink + "' }";
+                }
+                manageMenu.addChild("edit assay design", editLink);
+            }
+
+            ActionURL copyURL = PageFlowUtil.urlProvider(AssayUrls.class).getChooseCopyDestinationURL(protocol, protocolContainer);
+            if (copyURL != null)
+                manageMenu.addChild("copy assay design", copyURL.toString());
+        }
+
+        if (allowDelete(context, protocol))
+        {
+            manageMenu.addChild("delete assay design", PageFlowUtil.urlProvider(ExperimentUrls.class).getDeleteProtocolURL(protocol, PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(contextContainer)));
+        }
+
+        ActionURL exportURL = PageFlowUtil.urlProvider(ExperimentUrls.class).getExportProtocolURL(protocolContainer, protocol);
+        manageMenu.addChild("export assay design", exportURL.toString());
+
+        if (contextContainer.hasPermission(context.getUser(), AdminPermission.class))
+        {
+            List<Pair<Domain, Map<DomainProperty, Object>>> domainInfos = getDomains(protocol);
+            if (!domainInfos.isEmpty())
+            {
+                NavTree setDefaultsTree = new NavTree("set default values");
+                ActionURL baseEditUrl = new ActionURL(SetDefaultValuesAssayAction.class, contextContainer);
+                baseEditUrl.addParameter(ActionURL.Param.returnUrl, context.getActionURL().getLocalURIString());
+                baseEditUrl.addParameter("providerName", getName());
+                for (Pair<Domain, Map<DomainProperty, Object>> domainInfo : domainInfos)
+                {
+                    Domain domain = domainInfo.getKey();
+                    if (allowDefaultValues(domain) && !domain.getProperties().isEmpty())
+                    {
+                        ActionURL currentEditUrl = baseEditUrl.clone();
+                        currentEditUrl.addParameter("domainId", domain.getTypeId());
+                        setDefaultsTree.addChild(domain.getName(), currentEditUrl);
+                    }
+                }
+                if (setDefaultsTree.hasChildren())
+                {
+                    manageMenu.addChild(setDefaultsTree);
+                }
+            }
+        }
+
+        return manageMenu;
+    }
+
+    protected boolean allowUpdate(ViewContext viewContext, ExpProtocol protocol)
+    {
+        Container container = protocol.getContainer();
+        return container.hasPermission(viewContext.getUser(), DesignAssayPermission.class);
+    }
+
+    protected boolean allowDelete(ViewContext viewContext, ExpProtocol protocol)
+    {
+        Container container = protocol.getContainer();
+        //deleting will delete data as well as design, so user must have both design assay and delete perms
+        return container.getPolicy().hasPermissions(viewContext.getUser(), DesignAssayPermission.class, DeletePermission.class);
     }
 
     public String getRunLSIDPrefix()
