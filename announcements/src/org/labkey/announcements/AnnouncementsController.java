@@ -63,6 +63,7 @@ import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
@@ -797,6 +798,14 @@ public class AnnouncementsController extends SpringActionController
             try
             {
                 AnnouncementManager.insertAnnouncement(c, u, insert, files);
+
+                // update the parent message setting it active
+                AnnouncementModel parent = AnnouncementManager.getAnnouncement(getContainer(), insert.getParent(), true);
+                if (parent != null)
+                {
+                    parent.setStatus(DiscussionService.ACTIVE);
+                    Table.update(u, _comm.getTableInfoAnnouncements(), parent, parent.getRowId());
+                }
             }
             catch (IOException e)
             {
@@ -2267,7 +2276,7 @@ public class AnnouncementsController extends SpringActionController
                 filter.addWhereClause("Expires IS NULL OR Expires > ?", new Object[]{new Date(System.currentTimeMillis() - DateUtils.MILLIS_PER_DAY)});
 
             if (settings.hasStatus())
-                filter.addCondition(FieldKey.fromParts("Status"), "Closed", CompareType.NEQ_OR_NULL);
+                filter.addCondition(FieldKey.fromParts("Status"), DiscussionService.CLOSED, CompareType.NEQ_OR_NULL);
         }
 
         return filter;
