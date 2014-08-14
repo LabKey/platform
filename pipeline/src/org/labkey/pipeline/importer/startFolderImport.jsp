@@ -24,7 +24,7 @@
         <tr><td>By default, queries will be validated upon import of a folder archive and any failure to validate will cause the import job to raise an error.
             To suppress this validation step, uncheck the Validate Imported Queries option before clicking Start Import. </td></tr>
         <tr><td>&nbsp;</td></tr>
-        <tr><td><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
+        <tr><td><label><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</label></td></tr>
         <tr><td><%= button("Start Import").submit(true) %></td></tr>
     </table>
 </form>

@@ -85,9 +85,9 @@
     <tr><td><input type="file" name="folderZip" size="50"></td></tr><%
     if (canCreateSharedDatasets)
     {
-        %><tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="createSharedDatasets" checked value="true">&nbsp;Create shared datasets</td></tr><%
+        %><tr><td style="padding-left: 15px; padding-top: 8px;"><label><input type="checkbox" name="createSharedDatasets" checked value="true">&nbsp;Create shared datasets</label></td></tr><%
     }
-    %><tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
+    %><tr><td style="padding-left: 15px; padding-top: 8px;"><label><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</label></td></tr>
     <tr>
         <td><%= button("Import Study From Local Zip Archive").submit(true) %></td>
 
@@ -99,9 +99,9 @@
     <tr><td><input type="file" name="folderZip" size="50"></td></tr><%
     if (canCreateSharedDatasets)
     {
-        %><tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="createSharedDatasets" checked value="true">&nbsp;Create shared datasets</td></tr><%
+        %><tr><td style="padding-left: 15px; padding-top: 8px;"><label><input type="checkbox" name="createSharedDatasets" checked value="true">&nbsp;Create shared datasets</label></td></tr><%
     }
-    %><tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
+    %><tr><td style="padding-left: 15px; padding-top: 8px;"><label><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</label></td></tr>
     <tr>
         <td><%= button("Reload Study From Local Zip Archive").submit(true) %></td>
 
@@ -112,7 +112,7 @@
     <tr><td>To import a folder from a zip archive on your local machine (for example, a folder that you have exported and saved
         to your local hard drive), browse to a zip archive file, open it, and click the "Import Folder From Local Zip Archive" button below.</td></tr>
     <tr><td><input type="file" name="folderZip" size="50"></td></tr>
-    <tr><td style="padding-left: 15px; padding-top: 8px;"><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</td></tr>
+    <tr><td style="padding-left: 15px; padding-top: 8px;"><label><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</label></td></tr>
     <tr>
         <td><%= button("Import Folder From Local Zip Archive").submit(true) %></td>
 <% } %>
