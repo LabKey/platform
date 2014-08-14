@@ -30,6 +30,6 @@ public class TransformHistoryView extends QueryView
     public TransformHistoryView(UserSchema schema, QuerySettings settings)
     {
         super(schema, settings);
-        settings.setBaseSort(new Sort("-Run"));
+        settings.setBaseSort(new Sort("-DateRun"));
     }
 }

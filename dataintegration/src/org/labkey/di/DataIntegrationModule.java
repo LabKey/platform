@@ -133,7 +133,8 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return Arrays.asList(
-                (WebPartFactory)new SimpleWebPartFactory("Data Transforms", WebPartFactory.LOCATION_BODY, TransFormsWebPart.class, null)
+                (WebPartFactory)new SimpleWebPartFactory("Data Transforms", WebPartFactory.LOCATION_BODY, TransFormsWebPart.class, null),
+                (WebPartFactory)new SimpleWebPartFactory("Data Transform Jobs", WebPartFactory.LOCATION_BODY, TransformJobsWebPart.class, null)
         );
     }
 
@@ -149,6 +150,23 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
         {
             super(DataIntegrationController.class, "transformConfiguration.jsp", null);
             setTitle("Data Transforms");
+            setFrame(WebPartView.FrameType.PORTAL);
+            setModelBean(this);
+        }
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public static class TransformJobsWebPart extends JspView<Object>
+    {
+        public TransformJobsWebPart(ViewContext portalCtx) throws Exception
+        {
+            this(portalCtx.getContainer());
+        }
+
+        public TransformJobsWebPart(Container c)
+        {
+            super(DataIntegrationController.class, "processedETLJobs.jsp", null);
+            setTitle("Processed Data Transforms");
             setFrame(WebPartView.FrameType.PORTAL);
             setModelBean(this);
         }

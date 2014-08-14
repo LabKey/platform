@@ -23,98 +23,18 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("Ext4"));
+        resources.add(ClientDependency.fromFilePath("clientapi/ext4"));
         return resources;
     }
 %>
-<div id='errorLog'></div>
-<div id='runsChart'></div>
-<div id='schedulerButton'></div>
 <script type="text/javascript">
-
-    function redirectToPipeline(id)
-    {
-        if (id)
-        {
-            window.location = LABKEY.ActionURL.buildURL("pipeline-status", "details", null, {rowId: id});
-        }
-        else
-        {
-            this.errorText.setText('No pipeline information available for selected run.');
-            this.errorText.show();
-        }
-    }
-
-    function redirectToExperiment(id)
-    {
-        if (id)
-        {
-            window.location = LABKEY.ActionURL.buildURL("experiment", "showRunText", null, {rowId: id});
-        }
-        else
-        {
-            this.errorText.setText('No experiment information available for selected run.');
-            this.errorText.show();
-        }
-    }
-
     Ext4.onReady(function ()
     {
-
-        Ext4.define('jobModel', {
-            extend: 'Ext.data.Model',
-            fields: [
-                {name: 'Created', type: 'string'},
-                {name: 'TransformId', type: 'string'},
-                {name: 'JobId', type: 'string'},
-                {name: 'Status', type: 'string'},
-                {name: 'exprunid', type: 'string'}
-            ]
-        });
-
-        this.errorText = Ext4.create('Ext.form.Label', {
-            renderTo: 'errorLog',
-            hidden: true,
-            text: '',
-            style: 'color : red'
-        });
-
-        var jobStore = Ext4.create('Ext.data.Store', {
-            model: 'jobModel',
-            sortInfo: [
-                {field: 'TransformId', direction: 'ASC'},
-                {field: 'Created', direction: 'ASC'}
-            ]
-        });
-        var pipelineCol = Ext4.create('Ext.grid.column.Template', {
-            text: 'Pipeline Info',
-            width: 95,
-            sortable: true,
-            dataIndex: 'label',
-            tpl: '<a class="labkey-button" href="#" onClick="redirectToPipeline({JobId})" ><span>Pipeline</span></a>'
-        });
-
-        var expCol = Ext4.create('Ext.grid.column.Template', {
-            text: 'Experiment Info',
-            width: 120,
-            sortable: true,
-            dataIndex: 'label',
-            tpl: '<a class="labkey-button" href="#" onClick="redirectToExperiment({exprunid})" ><span>Experiment</span></a>'
-        });
-
-        var grid = Ext4.create('Ext.grid.Panel', {
-            renderTo: 'runsChart',
-            name: 'infoGrid',
-            maxHeight: 2000,
-            width: 650,
-            store: jobStore,
-            columns: [
-                {header: 'Description', dataIndex: 'TransformId', width: 150},
-                {header: 'Created At', dataIndex: 'Created', flex: 1},
-                {header: 'Status', dataIndex: 'Status', width: 75},
-                pipelineCol,
-                expCol
-            ]
+        var qwp = new LABKEY.QueryWebPart({
+            renderTo: 'transformHistoryDiv',
+            schemaName: 'dataintegration',
+            queryName: 'transformhistory',
+            frame : 'none'
         });
 
         Ext4.create('Ext.Button', {
@@ -126,18 +46,10 @@
             }
         });
 
-        LABKEY.Query.selectRows({
-            schemaName: 'dataintegration',
-            queryName: 'transformrun',
-            success: function (data)
-            {
-                jobStore.loadData(data.rows);
-            },
-            failure: function ()
-            { /**/
-            },
-            filterArray: [LABKEY.Filter.create('Description', ['ETL'], LABKEY.Filter.Types.CONTAINS)]
-        });
-
     });
 </script>
+<span>
+<div id="transformHistoryDiv"></div>
+<p/>
+<div id = "schedulerButton"></div>
+</span>

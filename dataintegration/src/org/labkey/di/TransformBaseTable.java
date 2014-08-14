@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -62,6 +63,8 @@ abstract public class TransformBaseTable extends VirtualTable
         colMap.put("TransformVersion", "Version");
         colMap.put("RecordCount", "RecordsProcessed");
         colMap.put("ExecutionTime", "ExecutionTime");
+        colMap.put("JobId", "JobInfo");
+        colMap.put("ExpRunId", "RunInfo");
         return colMap;
     }
 
@@ -104,7 +107,11 @@ abstract public class TransformBaseTable extends VirtualTable
         sql.append(" AS FLOAT)/1000)");
         sql.append(" AS ");
         sql.append(_nameMap.get("ExecutionTime"));
-        sql.append(", t.JobId, t.TransformRunId");
+        sql.append(", t.JobId AS ");
+        sql.append(_nameMap.get("JobId"));
+        sql.append(", t.ExpRunId AS ");
+        sql.append(_nameMap.get("ExpRunId"));
+        sql.append(", t.TransformRunId");
         sql.append(" FROM ");
         sql.append(DataIntegrationQuerySchema.getTransformRunTableName());
         sql.append(" t\n");
@@ -172,7 +179,7 @@ abstract public class TransformBaseTable extends VirtualTable
         addColumn(execTime);
 
         // job id lookup to log file path
-        ColumnInfo jobId = new ColumnInfo("JobId", this);
+        ColumnInfo jobId = new ColumnInfo(_nameMap.get("JobId"), this);
         jobId.setJdbcType(JdbcType.INTEGER);
         jobId.setFk(new LookupForeignKey("rowId", "FilePath")
         {
@@ -190,7 +197,7 @@ abstract public class TransformBaseTable extends VirtualTable
             @Override
             public DisplayColumn createRenderer(ColumnInfo colInfo)
             {
-                return new StatusColumn(colInfo);
+                return new StatusColumn(colInfo, _nameMap);
             }
         });
 
@@ -198,6 +205,11 @@ abstract public class TransformBaseTable extends VirtualTable
         transformRunId.setJdbcType(JdbcType.INTEGER);
         transformRunId.setHidden(true);
         addColumn(transformRunId);
+
+        ColumnInfo expRunId = new ColumnInfo(_nameMap.get("ExpRunId"), this);
+        expRunId.setJdbcType(JdbcType.INTEGER);
+        expRunId.setHidden(true);
+        addColumn(expRunId);
     }
 
     @Override
@@ -206,10 +218,11 @@ abstract public class TransformBaseTable extends VirtualTable
         return null;
     }
 
-    //
-    // renders a popup that shows the log file for the pipeline job that is
-    // run for the transform
-    //
+    private String hq(String s)
+    {
+        return PageFlowUtil.filter(PageFlowUtil.jsString(s));
+    }
+
     public static class StatusColumn extends DataColumn
     {
         private final ColumnInfo _statusColumn;
@@ -218,12 +231,13 @@ abstract public class TransformBaseTable extends VirtualTable
         private final String ShowLog = "_showLog";
         private boolean _includeShowLogScript;
 
-        public StatusColumn(ColumnInfo status)
+        public StatusColumn(ColumnInfo status, Map<String, String> nameMap)
         {
             super(status);
             _statusColumn = status;
-            _jobFieldKey = FieldKey.fromString(_statusColumn.getFieldKey().getParent(), "JobId");
-            _filePathFieldKey = FieldKey.fromString(_statusColumn.getFieldKey().getParent(), "JobId/FilePath");
+            String jobColumn = nameMap.get("JobId");
+            _jobFieldKey = FieldKey.fromString(_statusColumn.getFieldKey().getParent(), jobColumn);
+            _filePathFieldKey = FieldKey.fromString(_statusColumn.getFieldKey().getParent(), jobColumn + "/FilePath");
             _includeShowLogScript = true;
         }
 
@@ -231,11 +245,6 @@ abstract public class TransformBaseTable extends VirtualTable
         public boolean isSortable()
         {
             return true;
-        }
-
-        private String hq(String s)
-        {
-            return PageFlowUtil.filter(PageFlowUtil.jsString(s));
         }
 
         //
