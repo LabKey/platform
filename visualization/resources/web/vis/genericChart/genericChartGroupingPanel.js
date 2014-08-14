@@ -63,10 +63,22 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
         
         groupingItems.push(this.colorTypeRadioGroup);
 
+        // TODO: fix this. We shouldn't need to have two stores but this occurs because the combobox fires a clearFilters event
+        this.colorStore = Ext4.create('Ext.data.Store', {
+            model: this.store.model.$className,
+            proxy: {
+                type: 'memory',
+                reader: {
+                    type: 'json'
+                }
+            },
+            scope: this
+        });
+
         this.colorCombo = Ext4.create('Ext.form.field.ComboBox', {
             fieldLabel: 'Color Category',
             name: 'colorMeasure',
-            store: this.store,
+            store: this.colorStore,
             disabled: this.colorType ? this.colorType === 'single' : true,
             editable: false,
             valueField: 'name',
@@ -132,7 +144,7 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
         this.pointCombo = Ext4.create('Ext.form.field.ComboBox', {
             fieldLabel: 'Point Category',
             name: 'pointMeasure',
-            store: this.store,
+            store: this.colorStore,
             disabled: this.shapeType ? this.shapeType === 'single' : true,
             editable: false,
             valueField: 'name',
@@ -236,7 +248,7 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
     },
 
     getStore: function(){
-        return this.store;
+        return this.colorStore;
     },
 
     getColorType: function(){
@@ -277,5 +289,10 @@ Ext4.define('LABKEY.vis.GenericChartGroupingPanel', {
         // Have to set value.name because we store an object with name and label,
         // and name is the value field of the combo box.
         this.pointCombo.setValue(value.name);
+    },
+
+    loadStore: function(store){
+        this.colorStore.removeAll();
+        this.colorStore.loadRecords(store.getRange());
     }
 });

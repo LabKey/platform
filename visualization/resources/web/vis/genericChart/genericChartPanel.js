@@ -408,9 +408,6 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             }
         });
 
-
-        SS = this.xMeasureStore;
-
         this.xMeasureGrid = Ext4.create('Ext.grid.Panel', {
             store: this.xMeasureStore,
             width: 360,
@@ -536,14 +533,18 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             },
             listeners: {
                 load: function(store){
-                    store.filterBy(function(record, id){
-                        var type = record.get('normalizedType');
-                        return !record.get('hidden') && (type == 'int' || type == 'float' || type == 'double');
-                    });
-                    if (this.restrictColumnsEnabled)
+                    if (!this.restrictColumnsEnabled)
+                    {
+                        store.filterBy(function (record, id){
+                            var type = record.get('normalizedType');
+                            return !record.get('hidden') && (type == 'int' || type == 'float' || type == 'double');
+                        });
+                    }
+                    else
                     {
                         store.filterBy(function(record, id){
-                            return record.get('measure');
+                            var type = record.get('normalizedType');
+                            return record.get('measure') && !record.get('hidden') && (type == 'int' || type == 'float' || type == 'double');
                         });
                     }
                 },
@@ -805,17 +806,19 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             },
             listeners: {
                 load: function(store) {
-                    store.filterBy(function(record, id){
-                        var type = record.get('normalizedType');
-                        return !record.get('hidden') && type !== 'float' && type !== 'int' && type !== 'double';
-                    });
-
-                    if (this.restrictColumnsEnabled)
+                    if (!this.restrictColumnsEnabled)
+                    {
+                        store.filterBy(function (record, id){
+                            var type = record.get('normalizedType');
+                            return !record.get('hidden') && type !== 'float' && type !== 'int' && type !== 'double';
+                        });
+                    }
+                    else
                     {
                         store.filterBy(function(record, id){
-                            return record.get('dimension') ;
+                            var type = record.get('normalizedType');
+                            return record.get('dimension') && !record.get('hidden') && type !== 'float' && type !== 'int' && type !== 'double';
                         });
-
                     }
 
                     var firstVal = store.getAt(0);
@@ -2200,6 +2203,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
         this.yMeasureStore.loadRawData(sortedFields);
         this.xMeasureStore.loadRawData(sortedFields);
         this.groupingMeasureStore.loadRawData(this.chartData.metaData.fields);
+        this.groupingPanel.loadStore(this.groupingMeasureStore);
 
         if(this.yMeasureGrid.getEl() && this.yMeasureGrid.getEl().isMasked()){
             this.yMeasureGrid.getEl().unmask();
