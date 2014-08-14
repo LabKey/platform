@@ -40,6 +40,8 @@
   }
 %>
 <%
+    addClientDependency("Ext4");
+
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getUser());
     JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
     Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
@@ -199,7 +201,7 @@
             }
             %>
         };
-        var checkboxes = Ext.select("INPUT[name=visible]").elements;
+        var checkboxes = Ext4.select("INPUT[name=visible]").elements;
         for (var i=0 ; i<checkboxes.length ; i++)
         {
             var checkbox = checkboxes[i];
