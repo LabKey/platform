@@ -41,6 +41,8 @@ import java.util.Collection;
 public class DiscussionService
 {
     private static Service _serviceImpl = null;
+    public static String ACTIVE = "Active";
+    public static String CLOSED = "Closed";
 
     public interface Service
     {
@@ -134,7 +136,7 @@ public class DiscussionService
         boolean _includeGroups = false;
         SortOrder _sortOrder = SortOrder.getDefaultSortOrder();
 
-        String _statusOptions = "Active;Closed";
+        String _statusOptions = ACTIVE + ";" + CLOSED;
 
         public enum SortOrder
         {
