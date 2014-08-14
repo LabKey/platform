@@ -101,6 +101,7 @@ public class StudyQuerySchema extends UserSchema
 
     public static final String STUDY_TABLE_NAME = "Study";
     public static final String PROPERTIES_TABLE_NAME = "StudyProperties";
+    public static final String STUDY_SNAPSHOT_TABLE_NAME = "StudySnapshot";
     public static final String OBJECTIVE_TABLE_NAME = "Objective";
     public static final String PERSONNEL_TABLE_NAME = "Personnel";
     public static final String VISIT_TAG_TABLE_NAME = "VisitTag";
@@ -324,6 +325,7 @@ public class StudyQuerySchema extends UserSchema
             ret.add(PERSONNEL_TABLE_NAME);
             ret.add(VISIT_TAG_TABLE_NAME);
             ret.add(VISIT_TAG_MAP_TABLE_NAME);
+            ret.add(STUDY_SNAPSHOT_TABLE_NAME);
         }
         return ret;
     }
@@ -609,6 +611,10 @@ public class StudyQuerySchema extends UserSchema
         {
             FilteredTable ret = new VialRequestTable(this);
             return ret;
+        }
+        if (STUDY_SNAPSHOT_TABLE_NAME.equalsIgnoreCase(name))
+        {
+            return new StudySnapshotTable(this);
         }
         if (PRODUCT_TABLE_NAME.equalsIgnoreCase(name))
         {

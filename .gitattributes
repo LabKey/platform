@@ -3715,6 +3715,7 @@ study/src/org/labkey/study/query/StudyPropertiesUpdateService.java -text
 study/src/org/labkey/study/query/StudyQuerySchema.java -text
 study/src/org/labkey/study/query/StudyQueryView.java -text
 study/src/org/labkey/study/query/StudySchemaProvider.java -text
+study/src/org/labkey/study/query/StudySnapshotTable.java -text
 study/src/org/labkey/study/query/VialRequestTable.java -text
 study/src/org/labkey/study/query/VialTable.java -text
 study/src/org/labkey/study/query/VisitTable.java -text
