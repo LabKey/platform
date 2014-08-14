@@ -138,9 +138,9 @@ public class ModuleLoader implements Filter
     public static final String APACHE_TOMCAT_SERVER_NAME_PREFIX = "Apache Tomcat/";
 
     private static final String BANNER = "\n" +
-            "   __\u0366                                  \n" +
+            "   __                                   \n" +
             "   ||  |  _ |_ |/ _     (\u00af _  _   _  _\n" +
-            "  (_\u0366_) |_(_||_)|\\(/_\\/  _)(/_| \\/(/_|  \n" +
+            "  (__) |_(_||_)|\\(/_\\/  _)(/_| \\/(/_|  \n" +
             "                    /                  ";
 
     private boolean _deferUsageReport = false;
