@@ -739,7 +739,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         this.callParent([config]);
 
         this.addEvents(
+            'beforeMeasuresStoreQuery',
+            'beforeMeasureSourceCountsLoad',
             'beforeMeasuresStoreLoad',
+            'measureSourceCountsLoad',
             'measuresStoreLoaded',
             'measureChanged'
         );
@@ -845,6 +848,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     getSourceCounts : function() {
         if (this.displaySourceCounts) {
+            this.fireEvent('beforeMeasureSourceCountsLoad', this);
+
             var store = this.getSourceStore();
             var sources = store.getRange();
 
@@ -887,6 +892,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
                         }, this);
                     }
+
+                    this.fireEvent('measureSourceCountsLoad', this);
                 },
                 scope: this
             });
@@ -894,10 +901,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     },
 
     setCountMemberSet : function(memberSet) {
-        if (Ext.isArray(memberSet)) {
-            this.sourceCountMemberSet = memberSet;
-            this.getSourceCounts();
-        }
+        this.sourceCountMemberSet = Ext.isArray(memberSet) ? memberSet : [];
+        this.getSourceCounts();
     },
 
     createMeasurePanel : function() {
@@ -1034,6 +1039,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     },
 
     getMeasures : function() {
+        this.fireEvent('beforeMeasuresStoreQuery', this);
 
         var filter = this.filter || LABKEY.Query.Visualization.Filter.create({schemaName: 'study'});
 
