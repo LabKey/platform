@@ -21,7 +21,7 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.labkey.test.BaseWebDriverMultipleTest;
+import org.labkey.test.BaseWebDriverTest;
 import org.labkey.test.Locator;
 import org.labkey.test.TestFileUtils;
 import org.labkey.test.categories.DailyB;
@@ -43,7 +43,7 @@ import static org.junit.Assert.*;
  * Created by tchadick on 1/29/14.
  */
 @Category({DailyB.class, Study.class})
-public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
+public class StudyProtocolDesignerTest extends BaseWebDriverTest
 {
     private static final File STUDY_ARCHIVE = new File(TestFileUtils.getSampledataPath(), "study/CohortStudy.zip");
     // Cohorts: defined in study archive
@@ -306,6 +306,12 @@ public class StudyProtocolDesignerTest extends BaseWebDriverMultipleTest
     protected BrowserType bestBrowser()
     {
         return BrowserType.CHROME;
+    }
+
+    @Override
+    public List<String> getAssociatedModules()
+    {
+        return Arrays.asList("study");
     }
 
     public static class Locators
