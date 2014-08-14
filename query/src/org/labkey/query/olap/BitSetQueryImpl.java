@@ -470,7 +470,22 @@ public class BitSetQueryImpl
         @Override
         void toMdxSet(StringBuilder sb)
         {
-            throw new UnsupportedOperationException();
+            if (results.size() == 1)
+            {
+                results.get(0).toMdxSet(sb);
+            }
+            else if (results.size() == 2)
+            {
+                sb.append("CROSSJOIN(");
+                results.get(0).toMdxSet(sb);
+                sb.append(",");
+                results.get(1).toMdxSet(sb);
+                sb.append(")");
+            }
+            else
+            {
+                throw new UnsupportedOperationException("NYI");
+            }
         }
 
         @Override
@@ -606,7 +621,12 @@ public class BitSetQueryImpl
         {
             Result subquery = processExpr(expr.membersQuery);
             Result filtered;
-            filtered = _cubeHelper.membersQuery(outer, (MemberSetResult)subquery);
+            if (subquery instanceof MemberSetResult)
+                filtered = _cubeHelper.membersQuery(outer, (MemberSetResult)subquery);
+            else if (subquery instanceof CrossResult)
+                filtered = _cubeHelper.membersQuery(outer, (CrossResult)subquery);
+            else
+                throw new IllegalStateException("unsupported query, did not expect " + subquery.getClass().getName());
             return filtered;
         }
 
@@ -871,7 +891,7 @@ public class BitSetQueryImpl
                 // because we only support COUNT DISTINCT, we can treat this filter like
                 // NON EMPTY distinctLevel.members WHERE <filter>,
                 // for SUM() or COUNT() this wouldn't work
-                intersectSet = _cubeHelper.membersQuery(new MemberSetResult(measureLevel), result);
+                intersectSet = _cubeHelper.membersQuery(new MemberSetResult(measureLevel), (MemberSetResult)result);
             }
             if (null == filteredSet)
                 filteredSet = new MemberSet(intersectSet.getCollection());
@@ -1081,8 +1101,6 @@ public class BitSetQueryImpl
             sb.append(",");
             to.toMdxSet(sb);
             sb.append(") ON ROWS\n");
-//            sb.append(from.getUniqueName()).append(".members,");
-//            sb.append(to.getUniqueName()).append(".members ON ROWS\n");
             sb.append("FROM ").append(cube.getUniqueName());
             return sb.toString();
         }
@@ -1099,8 +1117,6 @@ public class BitSetQueryImpl
             sb.append(",");
             to.toMdxSet(sb);
             sb.append(") ON ROWS\n");
-//            sb.append(from.getUniqueName()).append(".members,");
-//            sb.append(to.getUniqueName()).append(".members ON ROWS\n");
             sb.append("FROM ").append(cube.getUniqueName());
             return sb.toString();
         }
@@ -1117,8 +1133,6 @@ public class BitSetQueryImpl
             sb.append(",");
             sb.append(to.getUniqueName()).append(".members");
             sb.append(") ON ROWS\n");
-//            sb.append(from.getUniqueName()).append(".members,");
-//            sb.append(to.getUniqueName()).append(".members ON ROWS\n");
             sb.append("FROM ").append(cube.getUniqueName());
             return sb.toString();
         }
@@ -1140,11 +1154,28 @@ public class BitSetQueryImpl
         }
 
 
+        String queryWhere(MemberSetResult from, Result where)
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.append(
+                    "SELECT\n" +
+                            "  [Measures].DefaultMember ON COLUMNS,\n" +
+                            "  NON EMPTY ");
+            from.toMdxSet(sb);
+            sb.append(" ON ROWS\n");
+            sb.append("FROM ").append(cube.getUniqueName()).append("\n");
+            sb.append("WHERE ");
+            where.toMdxSet(sb);
+
+            return sb.toString();
+        }
+
+
         /**
          * return a set of members in <MemberSetResult=outer> that intersect (non empty cross join) with <MemberSetResult=sub>.
          * Note that this basically gives OR or UNION semantics w/respect to the sub members.
          */
-        MemberSetResult membersQuery(MemberSetResult outer, Result sub) throws SQLException
+        MemberSetResult membersQuery(MemberSetResult outer, MemberSetResult sub) throws SQLException
         {
             MemberSet set;
 
@@ -1231,6 +1262,33 @@ public class BitSetQueryImpl
                 return set;
             }
         }
+
+
+        MemberSetResult membersQuery(MemberSetResult outer, CrossResult sub) throws SQLException
+        {
+            String query = queryWhere(outer, sub);
+            MemberSet s = resultsCacheGet(query);
+            if (null != s)
+                return new MemberSetResult(s);
+
+            try (CellSet cs = execute(query))
+            {
+                MemberSet set = new MemberSet();
+                List<Position> rowPositions = cs.getAxes().get(1).getPositions();
+                for (int row=0 ; row<rowPositions.size() ; row++)
+                {
+                    Position p = rowPositions.get(row);
+                    Member m = p.getMembers().get(0);
+                    double value = cs.getCell(row).getDoubleValue();
+                    if (0.0 != value)
+                        set.add(getCubeMember(m));
+                }
+                resultsCachePut(query, set);
+                return new MemberSetResult(set);
+            }
+        }
+
+
 
         void populateCache(Level outerLevel, Result inner) throws SQLException
         {
