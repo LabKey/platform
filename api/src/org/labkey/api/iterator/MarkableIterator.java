@@ -1,7 +1,6 @@
 package org.labkey.api.iterator;
 
 import org.apache.commons.collections15.iterators.ArrayIterator;
-import org.apache.commons.collections15.iterators.IteratorChain;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -14,11 +13,28 @@ import java.util.NoSuchElementException;
  * Date: 8/1/2014
  * Time: 5:04 PM
  */
+
+// An Iterator wrapper that supports mark-reset functionality, similar to BufferedInputStream and BufferedReader. Can be
+// used with any Iterator to read elements and then back up, allowing them to be read again. Could be useful for inferring
+// type information or column headers before actually reading data.
 public class MarkableIterator<T> implements Iterator<T>
 {
+    // There are simpler ways to do this (e.g., building an IteratorChain<>(_buffer.iterator(), _iter) on every reset()
+    // would be cleaner), but more bookkeepping minimizes memory usage: we reuse the same buffer for repeated mark/reset
+    // combinations and (if not currently marked) we clear the buffer as we iterate over it.
+
+    // A marked iterator stores elements into _buffer as they are read. On reset(), _bufferedIter is set to iterate over
+    // _buffer, and subsequent hasNext() and next() calls exhaust _bufferedIter and then defer back to _iter. On reset,
+    // _buffer is left alone; if the iterator is marked again while iterating _bufferedIter we'll just reuse the existing
+    // buffer.
+
     private Iterator<T> _iter;
+
+    // Indicates whether the MarkableIterator is marked or not
     private boolean _marked = false;
+
     private SimpleLinkedList _buffer = null;
+    private SimpleLinkedList.SimpleLinkedListIterator _bufferIter = null;
 
     public MarkableIterator(Iterator<T> iter)
     {
@@ -28,20 +44,41 @@ public class MarkableIterator<T> implements Iterator<T>
     @Override
     public boolean hasNext()
     {
-        return _iter.hasNext();
+        return bufferIterHasNext() || _iter.hasNext();
     }
 
     @Override
     public T next()
     {
+        if (bufferIterHasNext())
+        {
+            T value = _bufferIter.next();
+
+            if (!_marked)
+                _bufferIter.remove();
+
+            return value;
+        }
+
         T value = _iter.next();
 
         if (_marked)
-        {
             _buffer.add(value);
-        }
 
         return value;
+    }
+
+    private boolean bufferIterHasNext()
+    {
+        if (null != _bufferIter)
+        {
+            if (_bufferIter.hasNext())
+                return true;
+
+            _bufferIter = null;
+        }
+
+        return false;
     }
 
     @Override
@@ -52,27 +89,31 @@ public class MarkableIterator<T> implements Iterator<T>
 
     public void mark()
     {
+        if (null == _bufferIter)
+            _buffer = new SimpleLinkedList();
+        else
+            _bufferIter.removeAllVisited();
+
         _marked = true;
-        _buffer = new SimpleLinkedList();
     }
 
     public void reset()
     {
         verifyMarked();
+        _bufferIter = _buffer.iterator();
         _marked = false;
-        _iter = new IteratorChain<>(_buffer.iterator(), _iter);
     }
 
     public void clearMark()
     {
         verifyMarked();
-        _marked = false;
         _buffer = null;
+        _marked = false;
     }
 
     private void verifyMarked()
     {
-        if (!_marked)
+        if (!_marked || null == _buffer)
             throw new IllegalStateException("Not marked");
     }
 
@@ -106,7 +147,7 @@ public class MarkableIterator<T> implements Iterator<T>
 
     private class SimpleLinkedList implements Iterable<T>
     {
-        private Node _head = new Node(null);
+        private final Node _head = new Node(null);
         private Node _tail = _head;
 
         private SimpleLinkedList()
@@ -118,19 +159,6 @@ public class MarkableIterator<T> implements Iterator<T>
             Node newNode = new Node(value);
             _tail.setNext(newNode);
             _tail = newNode;
-        }
-
-        private T remove()
-        {
-            Node node = _head.getNext();
-
-            if (null != node)
-            {
-                _head.setNext(node.getNext());
-                return node.getValue();
-            }
-
-            return null;
         }
 
         @Override
@@ -150,7 +178,7 @@ public class MarkableIterator<T> implements Iterator<T>
             return new SimpleLinkedListIterator();
         }
 
-        private class SimpleLinkedListIterator implements Iterator<T>
+        class SimpleLinkedListIterator implements Iterator<T>
         {
             private Node _current = _head;
 
@@ -171,18 +199,20 @@ public class MarkableIterator<T> implements Iterator<T>
                 return _current.getValue();
             }
 
-            // Remove all nodes between _head and _current in the underlying list
+            // Remove all nodes in the underlying list between _head and _current
             void removeAllVisited()
             {
                 // Just link _head to the upcoming node, orphaning all intervening nodes. Garbage collector should reclaim.
-                _head.setNext(_current.getNext());
+                Node next = _current.getNext();
+                _head.setNext(next);
+                if (null == next)
+                    _tail = _head;
             }
 
             @Override
             public void remove()
             {
-                // TODO
-                throw new UnsupportedOperationException("remove");
+                removeAllVisited();
             }
         }
     }
