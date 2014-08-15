@@ -102,7 +102,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
     {
         Domain domain = getDomain();
 
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema.getDbSchema(), userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
         {
             @Override
             protected void initColumn(ColumnInfo col)
