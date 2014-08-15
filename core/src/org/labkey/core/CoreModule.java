@@ -782,6 +782,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return new HashSet<Class>(Arrays.asList(
                 DateUtil.TestCase.class,
                 TSVWriter.TestCase.class,
+                TSVMapWriter.Tests.class,
                 ExcelLoader.ExcelLoaderTestCase.class,
                 ExcelFactory.ExcelFactoryTestCase.class,
                 ModuleDependencySorter.TestCase.class,
