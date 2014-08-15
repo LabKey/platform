@@ -71,16 +71,15 @@ public class StatusDataRegion extends DataRegion
             super.renderTable(ctx, out);
             return;
         }
-        
-        out.write("<script type=\"text/javascript\">\n" +
-                "LABKEY.requiresScript('pipeline/StatusUpdate.js');\n" +
-                "</script>\n");
 
         String controller = SpringActionController.getControllerName(_apiAction);
         String action = SpringActionController.getActionName(_apiAction);
+
         out.write("<script type=\"text/javascript\">\n" +
-                "var su = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + ", " + PageFlowUtil.jsString(action) + ", " + PageFlowUtil.jsString(_returnURL.toString()) + ");\n" +
-                "su.start();\n" +
+                "LABKEY.requiresScript('pipeline/StatusUpdate.js', true, function(){\n" +
+                    "var su = new LABKEY.pipeline.StatusUpdate(" + PageFlowUtil.jsString(controller) + "," + PageFlowUtil.jsString(action) + "," + PageFlowUtil.jsString(_returnURL.toString()) + ");\n" +
+                    "su.start();\n" +
+                "});\n" +
                 "</script>\n");
 
         ActionURL url = StatusController.urlShowList(ctx.getContainer(), false);
