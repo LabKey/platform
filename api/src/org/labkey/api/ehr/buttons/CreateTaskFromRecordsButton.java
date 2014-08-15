@@ -15,14 +15,10 @@
  */
 package org.labkey.api.ehr.buttons;
 
-import org.apache.commons.lang3.StringUtils;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.ehr.security.EHRInProgressInsertPermission;
 import org.labkey.api.ehr.security.EHRScheduledInsertPermission;
 import org.labkey.api.ldk.table.SimpleButtonConfigFactory;
 import org.labkey.api.module.Module;
-import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.DataSetTable;
 import org.labkey.api.view.template.ClientDependency;
@@ -49,7 +45,7 @@ public class CreateTaskFromRecordsButton extends SimpleButtonConfigFactory
 
         if (ti instanceof DataSetTable)
         {
-            Set<Class<? extends Permission>> perms = ((DataSetTable) ti).getDataSet().getPermissions(ti.getUserSchema().getUser());
+            Set<Class<? extends Permission>> perms = ((DataSetTable) ti).getDataset().getPermissions(ti.getUserSchema().getUser());
             return perms.contains(EHRScheduledInsertPermission.class);
         }
 

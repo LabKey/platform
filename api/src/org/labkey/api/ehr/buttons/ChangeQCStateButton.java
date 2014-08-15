@@ -16,21 +16,12 @@
 package org.labkey.api.ehr.buttons;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.ehr.EHRService;
-import org.labkey.api.ehr.dataentry.DataEntryForm;
 import org.labkey.api.ehr.security.EHRRequestAdminPermission;
-import org.labkey.api.ehr.security.EHRScheduledInsertPermission;
 import org.labkey.api.ldk.table.SimpleButtonConfigFactory;
 import org.labkey.api.module.Module;
-import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.DataSetTable;
-import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.Collections;
@@ -70,7 +61,7 @@ public class ChangeQCStateButton extends SimpleButtonConfigFactory
 
         if (ti instanceof DataSetTable)
         {
-            Set<Class<? extends Permission>> perms = ((DataSetTable) ti).getDataSet().getPermissions(ti.getUserSchema().getUser());
+            Set<Class<? extends Permission>> perms = ((DataSetTable) ti).getDataset().getPermissions(ti.getUserSchema().getUser());
             return perms.contains(EHRRequestAdminPermission.class);
         }
 

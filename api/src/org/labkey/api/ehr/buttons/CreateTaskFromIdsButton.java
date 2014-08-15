@@ -18,19 +18,13 @@ package org.labkey.api.ehr.buttons;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.ehr.EHRService;
-import org.labkey.api.ehr.dataentry.DataEntryForm;
-import org.labkey.api.ehr.security.EHRInProgressInsertPermission;
 import org.labkey.api.ehr.security.EHRScheduledInsertPermission;
 import org.labkey.api.ldk.table.SimpleButtonConfigFactory;
 import org.labkey.api.module.Module;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.template.ClientDependency;
 
 /**
@@ -76,7 +70,7 @@ public class CreateTaskFromIdsButton extends SimpleButtonConfigFactory
 
     private DataSet getDataSet(Study s, String name)
     {
-        for (DataSet ds : s.getDataSets())
+        for (DataSet ds : s.getDatasets())
         {
             if (ds.getName().equalsIgnoreCase(name) || ds.getLabel().equalsIgnoreCase(name))
                 return ds;

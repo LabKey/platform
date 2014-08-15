@@ -663,7 +663,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             studyCopiedColumn.setReadOnly(true);
             studyCopiedColumn.setShownInInsertView(false);
             studyCopiedColumn.setShownInUpdateView(false);
-            studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataSet.getContainer(), assayDataSet.getDataSetId())));
+            studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataSet.getContainer(), assayDataSet.getDatasetId())));
 
             table.addColumn(studyCopiedColumn);
 

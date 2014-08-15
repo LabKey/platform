@@ -23,5 +23,5 @@ import org.labkey.api.data.TableInfo;
  */
 public interface DataSetTable extends TableInfo
 {
-    DataSet getDataSet();
+    DataSet getDataset();
 }

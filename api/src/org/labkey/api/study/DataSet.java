@@ -68,7 +68,7 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
 
     String getDescription();
 
-    int getDataSetId();
+    int getDatasetId();
 
     @Nullable
     String getTypeURI();
@@ -143,10 +143,10 @@ public interface DataSet<T extends DataSet> extends StudyEntity, StudyCachable<T
 
     /**
      * Compares the extra key for this dataset with the passed in dataset.
-     * @param pkDataSet dataset to compare
+     * @param pkDataset dataset to compare
      * @return true if the extra key for this DataSet matches the extra key for the passed in dataset
      */
-    public boolean hasMatchingExtraKey(DataSet pkDataSet);
+    public boolean hasMatchingExtraKey(DataSet pkDataset);
 
     public void delete(User user);
 

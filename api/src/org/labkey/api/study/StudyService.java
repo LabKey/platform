@@ -92,7 +92,7 @@ public class StudyService
          * @param datasetId The dataset id
          * @return The container's dataset or null
          */
-        public DataSet getDataSet(Container container, int datasetId);
+        public DataSet getDataset(Container container, int datasetId);
 
         /**
          * Returns the dataset id of the requested dataset definition label,

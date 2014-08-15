@@ -47,7 +47,7 @@ public class ReassignRequestButton extends SimpleButtonConfigFactory
 
         if (ti instanceof DataSetTable)
         {
-            Set<Class<? extends Permission>> perms = ((DataSetTable) ti).getDataSet().getPermissions(ti.getUserSchema().getUser());
+            Set<Class<? extends Permission>> perms = ((DataSetTable) ti).getDataset().getPermissions(ti.getUserSchema().getUser());
             return perms.contains(EHRRequestAdminPermission.class);
         }
 

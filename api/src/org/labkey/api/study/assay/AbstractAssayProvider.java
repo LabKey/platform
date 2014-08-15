@@ -273,7 +273,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
             Study targetStudy = StudyService.get().getStudy(entry.getKey());
 
             // Look for an existing dataset backed by this assay definition
-            for (DataSet dataSet : targetStudy.getDataSets())
+            for (DataSet dataSet : targetStudy.getDatasets())
             {
                 if (protocol.equals(dataSet.getAssayProtocol()) && dataSet.getKeyPropertyName() != null)
                 {

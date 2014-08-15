@@ -35,15 +35,15 @@ public interface Study extends StudyEntity
 {
     List<? extends Visit> getVisits(Visit.Order order);
 
-    DataSet getDataSet(int id);
+    DataSet getDataset(int id);
 
-    DataSet getDataSetByName(String name);
+    DataSet getDatasetByName(String name);
 
-    DataSet getDataSetByLabel(String label);
+    DataSet getDatasetByLabel(String label);
 
-    List<? extends DataSet> getDataSets();
+    List<? extends DataSet> getDatasets();
 
-    List<? extends DataSet> getDataSetsByType(String... types);
+    List<? extends DataSet> getDatasetsByType(String... types);
 
     List<? extends Location> getLocations();
 
