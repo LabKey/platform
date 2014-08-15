@@ -543,8 +543,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     else
                     {
                         store.filterBy(function(record, id){
-                            var type = record.get('normalizedType');
-                            return record.get('measure') && !record.get('hidden') && (type == 'int' || type == 'float' || type == 'double');
+                            return record.get('measure') && !record.get('hidden');
                         });
                     }
                 },
@@ -816,8 +815,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     else
                     {
                         store.filterBy(function(record, id){
-                            var type = record.get('normalizedType');
-                            return record.get('dimension') && !record.get('hidden') && type !== 'float' && type !== 'int' && type !== 'double';
+                            return record.get('dimension') && !record.get('hidden');
                         });
                     }
 
