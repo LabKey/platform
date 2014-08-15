@@ -20,7 +20,6 @@ import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.User;
