@@ -220,7 +220,7 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
     {
         Domain domain = getDomain();
 
-        return new DefaultAuditTypeTable(this, domain, getSchema(), userSchema);
+        return new DefaultAuditTypeTable(this, domain, userSchema);
     }
 
     @Override

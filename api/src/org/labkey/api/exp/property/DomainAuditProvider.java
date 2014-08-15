@@ -22,7 +22,6 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -90,7 +89,7 @@ public class DomainAuditProvider extends AbstractAuditTypeProvider implements Au
     {
         Domain domain = getDomain();
 
-        return new DefaultAuditTypeTable(this, domain, getSchema(), userSchema)
+        return new DefaultAuditTypeTable(this, domain, userSchema)
         {
             @Override
             protected void initColumn(ColumnInfo col)

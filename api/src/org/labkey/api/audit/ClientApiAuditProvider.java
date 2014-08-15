@@ -18,7 +18,6 @@ package org.labkey.api.audit;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyStorageSpec.Index;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
@@ -139,7 +138,7 @@ public class ClientApiAuditProvider extends AbstractAuditTypeProvider implements
     {
         Domain domain = getDomain();
 
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, getSchema(), userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
         {
             @Override
             public List<FieldKey> getDefaultVisibleColumns()

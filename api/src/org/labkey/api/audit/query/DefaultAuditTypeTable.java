@@ -23,7 +23,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
 import org.labkey.api.exp.api.StorageProvisioner;
@@ -35,9 +34,9 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
-import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.CanSeeAuditLogRole;
@@ -60,7 +59,7 @@ public class DefaultAuditTypeTable extends FilteredTable<UserSchema>
     protected Map<String, String> _dbSchemaToColumnMap;
     protected List<FieldKey> _defaultVisibleColumns = new ArrayList<>();
     
-    public DefaultAuditTypeTable(AuditTypeProvider provider, Domain domain, DbSchema dbSchema, UserSchema schema)
+    public DefaultAuditTypeTable(AuditTypeProvider provider, Domain domain, UserSchema schema)
     {
         super(StorageProvisioner.createTableInfo(domain), schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
 
