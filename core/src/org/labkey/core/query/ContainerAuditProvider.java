@@ -22,7 +22,6 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
@@ -90,7 +89,7 @@ public class ContainerAuditProvider extends AbstractAuditTypeProvider implements
     {
         Domain domain = getDomain();
 
-        return new DefaultAuditTypeTable(this, domain, getSchema(), userSchema)
+        return new DefaultAuditTypeTable(this, domain, userSchema)
         {
             @Override
             public List<FieldKey> getDefaultVisibleColumns()

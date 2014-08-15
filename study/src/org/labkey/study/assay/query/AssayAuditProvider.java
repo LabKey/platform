@@ -25,7 +25,6 @@ import org.labkey.api.audit.data.RunColumn;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.PropertyStorageSpec.Index;
@@ -98,7 +97,7 @@ public class AssayAuditProvider extends AbstractAuditTypeProvider implements Aud
     {
         Domain domain = getDomain();
 
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, getSchema(), userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
         {
             @Override
             protected void initColumn(ColumnInfo col)

@@ -132,7 +132,7 @@ public class GroupAuditProvider extends AbstractAuditTypeProvider implements Aud
     {
         Domain domain = getDomain();
 
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, getSchema(), userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
         {
             @Override
             protected void initColumn(ColumnInfo col)
