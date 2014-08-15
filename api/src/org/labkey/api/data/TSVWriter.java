@@ -279,7 +279,10 @@ public class TSVWriter extends TextWriter
             return;
 
         for (String line : _fileHeader)
-            _pw.println(line);
+        {
+            _pw.print(line);
+            _pw.write(_rowSeparator);
+        }
     }
 
     protected void writeFileFooter()

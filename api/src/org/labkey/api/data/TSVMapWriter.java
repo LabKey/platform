@@ -126,8 +126,9 @@ public class TSVMapWriter extends TSVWriter
             writer.setFileHeader(Arrays.asList("# file header"));
             writer.setDelimiterCharacter(',');
             writer.setQuoteCharacter('\'');
+            writer.setRowSeparator("|");
 
-            String lineSep = System.lineSeparator();
+            String lineSep = "|";
 
             // Test
             {
