@@ -68,6 +68,18 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
         return value;
     }
 
+    // TODO: consider enforcing usage of lookupBooleanValue with container
+    /*@Override
+    protected boolean lookupBooleanValue(String name, boolean defaultValue)
+    {
+        throw new IllegalStateException("Must provide a container");
+    }*/
+
+    protected boolean lookupBooleanValue(Container c, String name, boolean defaultValue)
+    {
+        return "TRUE".equalsIgnoreCase(lookupStringValue(c, name, defaultValue ? "TRUE" : "FALSE"));
+    }
+
     public String getDefaultDateFormat()
     {
         // Look up this value starting from the current container (unlike all the other look & feel settings)
@@ -76,7 +88,7 @@ public class LookAndFeelFolderProperties extends AbstractWriteableSettingsGroup
 
     public boolean areRestrictedColumnsEnabled()
     {
-        return lookupBooleanValue(RESTRICTED_COLUMNS_ENABLED, false);
+        return lookupBooleanValue(_c, RESTRICTED_COLUMNS_ENABLED, false);
     }
 
     public String getDefaultNumberFormat()
