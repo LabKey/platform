@@ -42,6 +42,7 @@ import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.module.FirstRequestHandler;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.FolderTypeResourceLoader;
@@ -827,7 +828,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 SimpleFilter.InClauseTestCase.class,
                 SimpleFilter.BetweenClauseTestCase.class,
                 InlineInClauseGenerator.TestCase.class,
-                CollectionUtils.TestCase.class
+                CollectionUtils.TestCase.class,
+                MarkableIterator.TestCase.class
         ));
     }
 
