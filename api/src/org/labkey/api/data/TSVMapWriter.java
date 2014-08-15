@@ -127,16 +127,18 @@ public class TSVMapWriter extends TSVWriter
             writer.setDelimiterCharacter(',');
             writer.setQuoteCharacter('\'');
 
+            String lineSep = System.lineSeparator();
+
             // Test
             {
                 StringBuilder sb = new StringBuilder();
                 writer.write(sb);
 
-                String expected = "# file header\n" +
-                        "one,two,three\n" +
-                        "1.1,TWO,'test,quoting'\n" +
-                        ",2.2,\n" +
-                        ",,3.3\n";
+                String expected = "# file header" + lineSep +
+                        "one,two,three" + lineSep +
+                        "1.1,TWO,'test,quoting'" + lineSep +
+                        ",2.2," + lineSep +
+                        ",,3.3" + lineSep;
 
                 assertEquals(expected, sb.toString());
             }
@@ -148,10 +150,10 @@ public class TSVMapWriter extends TSVWriter
                 StringBuilder sb = new StringBuilder();
                 writer.write(sb);
 
-                String expected = "# file header\n" +
-                        "1.1,TWO,'test,quoting'\n" +
-                        ",2.2,\n" +
-                        ",,3.3\n";
+                String expected = "# file header" + lineSep +
+                        "1.1,TWO,'test,quoting'" + lineSep +
+                        ",2.2," + lineSep +
+                        ",,3.3" + lineSep;
 
                 assertEquals(expected, sb.toString());
             }
