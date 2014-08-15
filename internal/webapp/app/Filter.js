@@ -22,9 +22,14 @@ Ext.define('LABKEY.app.model.Filter', {
             if (Ext.isArray(raw)) {
                 Ext.each(raw, function(r) {
                     if (Ext.isString(r)) {
-                        var build = LABKEY.Filter.getFiltersFromUrl(r, 'query');
-                        if (Ext.isArray(build)) {
-                            filters.push(build[0]); // assume single filters
+                        if (r === "_null") {
+                            filters.push(null);
+                        }
+                        else {
+                            var build = LABKEY.Filter.getFiltersFromUrl(r, 'query');
+                            if (Ext.isArray(build)) {
+                                filters.push(build[0]); // assume single filters
+                            }
                         }
                     }
                     else if (Ext.isDefined(r)) {
@@ -679,8 +684,11 @@ Ext.define('LABKEY.app.model.Filter', {
         if (Ext.isArray(jsonable.gridFilter)) {
             var jsonGridFilters = [];
             Ext.each(jsonable.gridFilter, function(filter) {
-                if (Ext.isDefined(filter) && filter !== null) {
-                    if (Ext.isString(filter)) {
+                if (Ext.isDefined(filter)) {
+                    if (filter === null) {
+                        jsonGridFilters.push("_null");
+                    }
+                    else if (Ext.isString(filter)) {
                         jsonGridFilters.push(filter);
                     }
                     else {
