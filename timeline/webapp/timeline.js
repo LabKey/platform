@@ -20,7 +20,7 @@ LABKEY.Timeline = {
             else if (typeof getter == "function")
                 return getter;
             else if (htmlEncode)
-                return function (row) { return Ext.util.Format.htmlEncode(row[getter]); };
+                return function (row) { return Ext4.htmlEncode(row[getter]); };
             else
                 return function (row) { return row[getter]; };
         }
@@ -65,7 +65,7 @@ LABKEY.Timeline = {
                 link:linkFn(row),
                 color:colorFn(row),
                 textColor:textColorFn(row)
-            }
+            };
             tlData.events.push(event);
         }
         config.eventSource.loadJSON(tlData, window.location.href);
@@ -73,7 +73,7 @@ LABKEY.Timeline = {
 
     addEventSet: function(eventConfig)
     {
-        var ec = Ext.apply({}, eventConfig);
+        var ec = Ext4.apply({}, eventConfig);
 
         if (null == ec.query || null == ec.query.queryName || null == ec.query.schemaName)
             throw "Query specification error in addEventSet";
@@ -84,7 +84,7 @@ LABKEY.Timeline = {
         if (ec.query.successCallback)
             throw "Unexpected callback in queryConfig";
 
-        var queryConfig = Ext.apply({}, ec.query, {
+        var queryConfig = Ext4.apply({}, ec.query, {
             success:function(data) {LABKEY.Timeline.populateEvents(data, ec)},
             failure:function() {alert("Error occurred in timeline query. schemaName: " + ec.query.schemaName + ", queryName: " + ec.query.queryName)}
         });
@@ -158,8 +158,8 @@ LABKEY.Timeline = {
  *==================================================
  */
 
-var Timeline = new Object();
-Timeline.Platform = new Object();
+var Timeline = {};
+Timeline.Platform = {};
     /*
         HACK: We need these 2 things here because we cannot simply append
         a <script> element containing code that accesses Timeline.Platform
@@ -233,7 +233,7 @@ Timeline.Platform = new Object();
         if ("SimileAjax" in window) {
             includeJavascriptFiles = function(urlPrefix, filenames) {
                 SimileAjax.includeJavascriptFiles(document, urlPrefix, filenames);
-            }
+            };
             includeCssFiles = function(urlPrefix, filenames) {
                 SimileAjax.includeCssFiles(document, urlPrefix, filenames);
             }
@@ -256,7 +256,7 @@ Timeline.Platform = new Object();
                 link.setAttribute("type", "text/css");
                 link.setAttribute("href", url);
                 getHead().appendChild(link);
-            }
+            };
 
             includeCssFiles = function(urlPrefix, filenames) {
                 for (var i = 0; i < filenames.length; i++) {
@@ -288,7 +288,7 @@ Timeline.Platform = new Object();
                 }
             }
             return false;
-        }
+        };
         var tryLocale = function(locale) {
             if (tryExactLocale(locale)) {
                 return locale;
@@ -300,7 +300,7 @@ Timeline.Platform = new Object();
             }
 
             return null;
-        }
+        };
 
         for (var l = 0; l < desiredLocales.length; l++) {
             tryLocale(desiredLocales[l]);
