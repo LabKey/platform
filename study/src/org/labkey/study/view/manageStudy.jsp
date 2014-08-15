@@ -112,7 +112,7 @@
         ancillaryStudyName = "New Study " + i++;
     }
 
-    int numDatasets = study.getDataSetsByType(org.labkey.api.study.DataSet.TYPE_STANDARD, org.labkey.api.study.DataSet.TYPE_PLACEHOLDER).size();
+    int numDatasets = study.getDatasetsByType(org.labkey.api.study.DataSet.TYPE_STANDARD, org.labkey.api.study.DataSet.TYPE_PLACEHOLDER).size();
 
     FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
     if (null == registry)

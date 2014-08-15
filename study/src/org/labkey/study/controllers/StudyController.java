@@ -383,7 +383,7 @@ public class StudyController extends BaseStudyController
                 errors.reject("defineDatasetType", "You must supply an integer Dataset Id");
             if (null != form.getDataSetId())
             {
-                DataSet dsd = StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId());
+                DataSet dsd = StudyManager.getInstance().getDatasetDefinition(StudyManager.getInstance().getStudy(getContainer()), form.getDataSetId());
                 if (null != dsd)
                     errors.reject("defineDatasetType", "There is already a dataset with id " + form.getDataSetId());
             }
@@ -394,7 +394,7 @@ public class StudyController extends BaseStudyController
                 // Check if a dataset, query or table exists with the same name
                 StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
                 StudyQuerySchema studySchema = StudyQuerySchema.createSchema(study, getUser(), true);
-                if (null != studySchema.getDataSetDefinitionByName(form.getTypeName())
+                if (null != studySchema.getDatasetDefinitionByName(form.getTypeName())
                         || studySchema.getTableNames().contains(form.getTypeName())
                         || QueryService.get().getQueryDef(getUser(), getContainer(), "study", form.getTypeName()) != null)
                 {
@@ -430,12 +430,12 @@ public class StudyController extends BaseStudyController
             if (!form.isFileImport())
             {
                 return new ActionURL(EditTypeAction.class, getContainer()).
-                    addParameter(DataSetDefinition.DATASETKEY, _def.getDataSetId());
+                    addParameter(DataSetDefinition.DATASETKEY, _def.getDatasetId());
             }
             else
             {
                 return new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).
-                    addParameter(DataSetDefinition.DATASETKEY, _def.getDataSetId());
+                    addParameter(DataSetDefinition.DATASETKEY, _def.getDatasetId());
             }
         }
 
@@ -472,7 +472,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetForm form, BindException errors) throws Exception
         {
             StudyImpl study = getStudyRedirectIfNull();
-            DataSetDefinition def = study.getDataSet(form.getDatasetId());
+            DataSetDefinition def = study.getDataset(form.getDatasetId());
             _def = def;
             if (null == def)
             {
@@ -480,7 +480,7 @@ public class StudyController extends BaseStudyController
             }
             if (!def.canUpdateDefinition(getUser()))
             {
-                ActionURL details = new ActionURL(DatasetDetailsAction.class,getContainer()).addParameter("id",def.getDataSetId());
+                ActionURL details = new ActionURL(DatasetDetailsAction.class,getContainer()).addParameter("id",def.getDatasetId());
                 throw new RedirectException(details);
             }
             if (null == def.getTypeURI())
@@ -513,7 +513,7 @@ public class StudyController extends BaseStudyController
         public NavTree appendNavTrail(NavTree root)
         {
             _appendNavTrailDatasetAdmin(root);
-            root.addChild(_def.getName(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", _def.getDataSetId()));
+            root.addChild(_def.getName(), new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", _def.getDatasetId()));
             return root.addChild("Edit Dataset Definition");
         }
     }
@@ -525,7 +525,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
-            _def = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), form.getId());
+            _def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getId());
             if (_def == null)
             {
                 throw new NotFoundException("Invalid Dataset ID");
@@ -733,13 +733,13 @@ public class StudyController extends BaseStudyController
             }
 
             int datasetId = NumberUtils.toInt((String)context.get(DataSetDefinition.DATASETKEY), -1);
-            DataSet def = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), datasetId);
+            DataSet def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
 
             if (def != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
                                         replaceParameter(DATASET_REPORT_ID_PARAMETER_NAME, report.getDescriptor().getReportId().toString()).
-                                        replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
+                                        replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDatasetId()));
 
                 return HttpView.redirect(url);
             }
@@ -802,7 +802,7 @@ public class StudyController extends BaseStudyController
             super(DatasetFilterForm.class);
         }
 
-        private DataSetDefinition getDataSetDefinition() throws ServletException
+        private DataSetDefinition getDatasetDefinition() throws ServletException
         {
             if (null == _def)
             {
@@ -818,7 +818,7 @@ public class StudyController extends BaseStudyController
                     try
                     {
                         int id = NumberUtils.toInt(String.valueOf(datasetKeyObject), 0);
-                        _def = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), id);
+                        _def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), id);
                     }
                     catch (ConversionException x)
                     {
@@ -829,7 +829,7 @@ public class StudyController extends BaseStudyController
                 {
                     String entityId = (String)getViewContext().get("entityId");
                     if (null != entityId)
-                        _def = StudyManager.getInstance().getDataSetDefinitionByEntityId(getStudyRedirectIfNull(), entityId);
+                        _def = StudyManager.getInstance().getDatasetDefinitionByEntityId(getStudyRedirectIfNull(), entityId);
                 }
             }
             if (null == _def)
@@ -848,7 +848,7 @@ public class StudyController extends BaseStudyController
             if (NumberUtils.isDigits(viewName))
             {
                 // one last check to see if there is a view with that name before trying to redirect to the report
-                DataSetDefinition def = getDataSetDefinition();
+                DataSetDefinition def = getDatasetDefinition();
 
                 if (def != null &&
                     QueryService.get().getCustomView(getUser(), getContainer(), getUser(), StudySchema.getInstance().getSchemaName(), def.getName(), viewName) == null)
@@ -880,7 +880,7 @@ public class StudyController extends BaseStudyController
             String export = StringUtils.trimToNull(context.getActionURL().getParameter("export"));
 
             String viewName = (String)context.get(DATASET_VIEW_NAME_PARAMETER_NAME);
-            DataSetDefinition def = getDataSetDefinition();
+            DataSetDefinition def = getDatasetDefinition();
             if (null == def)
                 return new TypeNotFoundAction().getView(form, errors);
             String typeURI = def.getTypeURI();
@@ -922,8 +922,8 @@ public class StudyController extends BaseStudyController
                 setColumnURL(url, queryView, schema, def);
 
                 // Clear any cached participant lists, since the filter/sort may have changed
-                removeParticipantListFromCache(context, def.getDataSetId(), viewName, _cohortFilter, form.getQCState());
-                getExpandedState(context, def.getDataSetId()).clear();
+                removeParticipantListFromCache(context, def.getDatasetId(), viewName, _cohortFilter, form.getQCState());
+                getExpandedState(context, def.getDatasetId()).clear();
             }
 
             if (null != export)
@@ -1026,7 +1026,7 @@ public class StudyController extends BaseStudyController
             setHelpTopic("gridBasics");
             try
             {
-                return _appendNavTrail(root, getDataSetDefinition().getDataSetId(), _visitId, _cohortFilter, _encodedQcState);
+                return _appendNavTrail(root, getDatasetDefinition().getDatasetId(), _visitId, _cohortFilter, _encodedQcState);
             }
             catch (ServletException x)
             {
@@ -1836,22 +1836,22 @@ public class StudyController extends BaseStudyController
             StudyManager.getInstance().updateVisit(getUser(), postedVisit);
 
             HashMap<Integer,VisitDataSetType> visitTypeMap = new HashMap<>();
-            for (VisitDataSet vds :  postedVisit.getVisitDataSets())
-                visitTypeMap.put(vds.getDataSetId(), vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
+            for (VisitDataSet vds :  postedVisit.getVisitDatasets())
+                visitTypeMap.put(vds.getDatasetId(), vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
 
             if (form.getDataSetIds() != null)
             {
                 for (int i = 0; i < form.getDataSetIds().length; i++)
                 {
-                    int dataSetId = form.getDataSetIds()[i];
+                    int datasetId = form.getDataSetIds()[i];
                     VisitDataSetType type = VisitDataSetType.valueOf(form.getDataSetStatus()[i]);
-                    VisitDataSetType oldType = visitTypeMap.get(dataSetId);
+                    VisitDataSetType oldType = visitTypeMap.get(datasetId);
                     if (oldType == null)
                         oldType = VisitDataSetType.NOT_ASSOCIATED;
                     if (type != oldType)
                     {
                         StudyManager.getInstance().updateVisitDataSetMapping(getUser(), getContainer(),
-                                postedVisit.getRowId(), dataSetId, type);
+                                postedVisit.getRowId(), datasetId, type);
                     }
                 }
             }
@@ -2092,7 +2092,7 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(DatasetForm form, boolean reshow, BindException errors) throws Exception
         {
-            _def = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), form.getDatasetId());
+            _def = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getDatasetId());
 
             if (_def == null)
             {
@@ -2105,7 +2105,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(DatasetForm form, BindException errors) throws Exception
         {
-            DataSetDefinition original = StudyManager.getInstance().getDataSetDefinition(getStudyThrowIfNull(), form.getDatasetId());
+            DataSetDefinition original = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), form.getDatasetId());
             DataSetDefinition modified = original.createMutable();
             if (null != form.getVisitRowIds())
             {
@@ -2123,9 +2123,9 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(DatasetForm dataSetForm)
+        public ActionURL getSuccessURL(DatasetForm datasetForm)
         {
-            return new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", dataSetForm.getDatasetId());
+            return new ActionURL(DatasetDetailsAction.class, getContainer()).addParameter("id", datasetForm.getDatasetId());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2163,7 +2163,7 @@ public class StudyController extends BaseStudyController
                 super.setImportMessage("This is the Alias Dataset.  You do not need to include information for the date column.");
             }
 
-            _def = StudyManager.getInstance().getDataSetDefinition(_study, form.getDatasetId());
+            _def = StudyManager.getInstance().getDatasetDefinition(_study, form.getDatasetId());
             if (null == _def)
                throw new NotFoundException("Dataset not found");
             if (null == _def.getTypeURI())
@@ -2375,7 +2375,7 @@ public class StudyController extends BaseStudyController
             if (form.getId() != 0)
             {
                 filter.addCondition(DataSetDefinition.DATASETKEY, form.getId());
-                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), form.getId());
+                DataSetDefinition dsd = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getId());
                 if (dsd != null)
                     _datasetLabel = dsd.getLabel();
             }
@@ -2437,7 +2437,7 @@ public class StudyController extends BaseStudyController
             VBox view = new VBox();
 
             int datasetId = NumberUtils.toInt((String)context.get(DataSetDefinition.DATASETKEY), -1);
-            final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+            final DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
 
             if (def != null)
             {
@@ -2497,7 +2497,7 @@ public class StudyController extends BaseStudyController
 
         public boolean handlePost(DeleteDatasetRowsForm form, BindException errors) throws Exception
         {
-            final DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudyThrowIfNull(), form.getDatasetId());
+            final DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), form.getDatasetId());
             if (def == null)
                 throw new IllegalArgumentException("Could not find a dataset definition for id: " + form.getDatasetId());
 
@@ -2613,7 +2613,7 @@ public class StudyController extends BaseStudyController
         {
             int datasetId = form.getDatasetId();
             StudyImpl study = getStudyThrowIfNull();
-            DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+            DataSet dataset = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
             if (null == dataset)
                 throw new NotFoundException();
 
@@ -2653,7 +2653,7 @@ public class StudyController extends BaseStudyController
     public static class ImportTypeForm
     {
         private String typeName;
-        private Integer dataSetId;
+        private Integer datasetId;
         private boolean autoDatasetId;
         private boolean fileImport;
 
@@ -2669,12 +2669,12 @@ public class StudyController extends BaseStudyController
 
         public Integer getDataSetId()
         {
-            return dataSetId;
+            return datasetId;
         }
 
-        public void setDataSetId(Integer dataSetId)
+        public void setDataSetId(Integer datasetId)
         {
-            this.dataSetId = dataSetId;
+            this.datasetId = datasetId;
         }
 
         public boolean isAutoDatasetId()
@@ -2729,7 +2729,7 @@ public class StudyController extends BaseStudyController
 
         // push any filter, sort params, and viewname
         ActionURL base = new ActionURL(ParticipantAction.class, querySchema.getContainer());
-        base.addParameter(DataSetDefinition.DATASETKEY, Integer.toString(def.getDataSetId()));
+        base.addParameter(DataSetDefinition.DATASETKEY, Integer.toString(def.getDatasetId()));
         for (Pair<String, String> param : url.getParameters())
         {
             if ((param.getKey().contains(".sort")) ||
@@ -2931,7 +2931,7 @@ public class StudyController extends BaseStudyController
             final StudyManager studyMgr = StudyManager.getInstance();
             final StudyImpl study = studyMgr.getStudy(context.getContainer());
 
-            DataSetDefinition def = studyMgr.getDataSetDefinition(study, dataset);
+            DataSetDefinition def = studyMgr.getDatasetDefinition(study, dataset);
             if (null == def)
                 return Collections.emptyList();
             String typeURI = def.getTypeURI();
@@ -3460,7 +3460,7 @@ public class StudyController extends BaseStudyController
         {
             StudyImpl study = getStudyRedirectIfNull();
             _datasetId = updateQCForm.getDatasetId();
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, _datasetId);
+            DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, _datasetId);
             if (def == null)
             {
                 throw new NotFoundException("No dataset found for id: " + _datasetId);
@@ -3649,7 +3649,7 @@ public class StudyController extends BaseStudyController
             ViewContext context = getViewContext();
 
             int datasetId = null == context.get(DataSetDefinition.DATASETKEY) ? 0 : Integer.parseInt((String) context.get(DataSetDefinition.DATASETKEY));
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+            DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
             if (null == def)
             {
                 redirectTypeNotFound(datasetId);
@@ -3737,7 +3737,7 @@ public class StudyController extends BaseStudyController
             if (NumberUtils.isDigits(id))  // Should be a positive integer
             {
                 int dsid = NumberUtils.toInt(id);
-                def = StudyManager.getInstance().getDataSetDefinition(study, dsid);
+                def = StudyManager.getInstance().getDatasetDefinition(study, dsid);
                 if (def != null)
                 {
                     List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), def);
@@ -3747,7 +3747,7 @@ public class StudyController extends BaseStudyController
                     }
                     else
                     {
-                        defaultView = getDefaultView(getViewContext(), def.getDataSetId());
+                        defaultView = getDefaultView(getViewContext(), def.getDatasetId());
                         if (!StringUtils.isEmpty(defaultView))
                         {
                             boolean defaultExists = false;
@@ -3780,7 +3780,7 @@ public class StudyController extends BaseStudyController
             ActionURL datasetURL = getViewContext().getActionURL().clone();
             datasetURL.setAction(DatasetAction.class);
 
-            String label = def.getLabel() != null ? def.getLabel() : "" + def.getDataSetId();
+            String label = def.getLabel() != null ? def.getLabel() : "" + def.getDatasetId();
             root.addChild(new NavTree(label, datasetURL.getLocalURIString()));
 
             root.addChild(new NavTree("View Preferences"));
@@ -4065,7 +4065,7 @@ public class StudyController extends BaseStudyController
 
             if ("POST".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
             {
-                DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), datasetId);
+                DataSetDefinition dataset = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
                 if (null == dataset)
                 {
                     throw new NotFoundException();
@@ -4115,7 +4115,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull()).updateParticipantVisits(getUser(), getStudyRedirectIfNull().getDataSets());
+            StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull()).updateParticipantVisits(getUser(), getStudyRedirectIfNull().getDatasets());
 
             TableInfo tinfoParticipantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
             int count = new SqlSelector(StudySchema.getInstance().getSchema(),
@@ -4289,7 +4289,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(DatasetPropertyForm form, boolean reshow, BindException errors) throws Exception
         {
             Map<Integer, DatasetVisibilityData> bean = new HashMap<>();
-            for (DataSet def : getStudyRedirectIfNull().getDataSets())
+            for (DataSet def : getStudyRedirectIfNull().getDatasets())
             {
                 DatasetVisibilityData data = new DatasetVisibilityData();
                 data.label = def.getLabel();
@@ -4300,7 +4300,7 @@ public class StudyController extends BaseStudyController
                 TableInfo t = def.getTableInfo(getViewContext().getUser());
                 boolean exists = new TableSelector(t).exists();
                 data.empty = !exists;
-                bean.put(def.getDataSetId(), data);
+                bean.put(def.getDatasetId(), data);
             }
 
             // Merge with form data
@@ -4388,7 +4388,7 @@ public class StudyController extends BaseStudyController
             String[] statuses = form.getStatuses();
             for (int i = 0; i < allIds.length; i++)
             {
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudyThrowIfNull(), allIds[i]);
+                DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(getStudyThrowIfNull(), allIds[i]);
                 boolean show = visible.contains(allIds[i]);
                 String[] extraData = form.getExtraData();
                 String category = extraData == null ? null : extraData[i];
@@ -4487,7 +4487,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
-            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), form.getId());
+            DataSetDefinition ds = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getId());
             if (null == ds)
                 redirectTypeNotFound(form.getId());
 
@@ -4780,7 +4780,7 @@ public class StudyController extends BaseStudyController
                         if (dataset.getName().equals(cohortDatasetName))
                         {
                             study = study.createMutable();
-                            study.setParticipantCohortDataSetId(dataset.getDataSetId());
+                            study.setParticipantCohortDataSetId(dataset.getDatasetId());
                             study.setParticipantCohortProperty(cohortProperty);
                             StudyManager.getInstance().updateStudy(getUser(), study);
                         }
@@ -4886,7 +4886,7 @@ public class StudyController extends BaseStudyController
                 DataSet dataset = StudyManager.getInstance().getDatasetDefinitionByQueryName(StudyManager.getInstance().getStudy(getContainer()), name);
                 if (dataset != null)
                 {
-                    if (dataset.getDataSetId() != form.getSnapshotDatasetId())
+                    if (dataset.getDatasetId() != form.getSnapshotDatasetId())
                         errors.reject("snapshotQuery.error", "A Dataset with the same name/label already exists");
                 }
             }
@@ -4910,7 +4910,7 @@ public class StudyController extends BaseStudyController
             else if (StudySnapshotForm.EDIT_DATASET.equals(form.getAction()))
             {
                 StudyImpl study = getStudyRedirectIfNull();
-                DataSet dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, form.getSnapshotName());
+                DataSet dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
 
                 ActionURL url = getViewContext().cloneActionURL().replaceParameter("ff_snapshotName", form.getSnapshotName()).
                         replaceParameter("ff_updateDelay", String.valueOf(form.getUpdateDelay())).
@@ -4921,7 +4921,7 @@ public class StudyController extends BaseStudyController
 
                 Map<String,String> props = PageFlowUtil.map(
                         "studyId", String.valueOf(study.getRowId()),
-                        "datasetId", String.valueOf(dsDef.getDataSetId()),
+                        "datasetId", String.valueOf(dsDef.getDatasetId()),
                         "typeURI", dsDef.getTypeURI(),
                         "timepointType", String.valueOf(study.getTimepointType()),
                         ActionURL.Param.returnUrl.name(), url.getLocalURIString(),
@@ -4946,7 +4946,7 @@ public class StudyController extends BaseStudyController
                 StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
 
                 // a dataset definition was edited previously, but under a different name, need to delete the old one
-                DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, form.getSnapshotDatasetId());
+                DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinition(study, form.getSnapshotDatasetId());
                 if (dsDef != null)
                 {
                     StudyManager.getInstance().deleteDataset(study, getUser(), dsDef, true);
@@ -4958,7 +4958,7 @@ public class StudyController extends BaseStudyController
         private void createDataset(StudySnapshotForm form, BindException errors) throws Exception
         {
             StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
-            DataSet dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, form.getSnapshotName());
+            DataSet dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
 
             if (dsDef == null)
             {
@@ -4973,7 +4973,7 @@ public class StudyController extends BaseStudyController
 
                 if (datasetId != -1)
                 {
-                    DataSetDefinition sourceDef = study.getDataSet(datasetId);
+                    DataSetDefinition sourceDef = study.getDataset(datasetId);
                     if (sourceDef != null)
                     {
                         additionalKey = sourceDef.getKeyPropertyName();
@@ -4995,7 +4995,7 @@ public class StudyController extends BaseStudyController
 
                 if (def != null)
                 {
-                    form.setSnapshotDatasetId(def.getDataSetId());
+                    form.setSnapshotDatasetId(def.getDatasetId());
                     if (keyManagementType != DataSet.KeyManagementType.None)
                     {
                         def = def.createMutable();
@@ -5112,7 +5112,7 @@ public class StudyController extends BaseStudyController
                 {
                     // create the GWT dataset designer
                     StudyImpl study = getStudyRedirectIfNull();
-                    DataSet dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, form.getSnapshotName());
+                    DataSet dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, form.getSnapshotName());
 
                     if (dsDef == null)
                         throw new NotFoundException("Unable to edit the created DataSet Definition");
@@ -5120,7 +5120,7 @@ public class StudyController extends BaseStudyController
                     ActionURL returnURL = getViewContext().cloneActionURL().replaceParameter("showDataset", "0");
                     Map<String,String> props = PageFlowUtil.map(
                             "studyId", String.valueOf(study.getRowId()),
-                            "datasetId", String.valueOf(dsDef.getDataSetId()),
+                            "datasetId", String.valueOf(dsDef.getDatasetId()),
                             "typeURI", dsDef.getTypeURI(),
                             "timepointType", String.valueOf(study.getTimepointType()), // XXX: should always be "VISIT" ?
                             ActionURL.Param.returnUrl.name(), returnURL.toString(),
@@ -5401,7 +5401,7 @@ public class StudyController extends BaseStudyController
         }
 
         public List<Pair<String, String>> getViews(){return _views;}
-        public DataSet getDataSetDefinition(){return _def;}
+        public DataSet getDatasetDefinition(){return _def;}
     }
 
 
@@ -5833,7 +5833,7 @@ public class StudyController extends BaseStudyController
         {
             final int datasetId = Integer.parseInt(descriptor.getProperty(DataSetDefinition.DATASETKEY));
             final Study study = StudyManager.getInstance().getStudy(context.getContainer());
-            DataSet def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+            DataSet def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
 
             return def.getTableInfo(context.getUser());
         }
@@ -6045,16 +6045,16 @@ public class StudyController extends BaseStudyController
 
         /**
          * Don't blow up when posting bad value
-         * @param dataSetIdStr
+         * @param datasetIdStr
          */
-        public void setDatasetIdStr(String dataSetIdStr)
+        public void setDatasetIdStr(String datasetIdStr)
         {
             try
             {
-                if (null == StringUtils.trimToNull(dataSetIdStr))
+                if (null == StringUtils.trimToNull(datasetIdStr))
                     _datasetId = 0;
                 else
-                    _datasetId = Integer.parseInt(dataSetIdStr);
+                    _datasetId = Integer.parseInt(datasetIdStr);
             }
             catch (Exception x)
             {
@@ -6359,14 +6359,14 @@ public class StudyController extends BaseStudyController
                 throw new NotFoundException("No study found");
             }
             // First try the dataset id as an entityid
-            DataSetDefinition dataset = StudyManager.getInstance().getDataSetDefinitionByEntityId(study, form.getDatasetId());
+            DataSetDefinition dataset = StudyManager.getInstance().getDatasetDefinitionByEntityId(study, form.getDatasetId());
             if (dataset == null)
             {
                 try
                 {
                     // Then try the dataset id as an integer
                     int id = Integer.parseInt(form.getDatasetId());
-                    dataset = StudyManager.getInstance().getDataSetDefinition(study, id);
+                    dataset = StudyManager.getInstance().getDatasetDefinition(study, id);
                 }
                 catch (NumberFormatException e) {}
 
@@ -6770,7 +6770,7 @@ public class StudyController extends BaseStudyController
             {
                 schedule.setVisits(manager.getVisits(study, cohort, getUser(), Visit.Order.DISPLAY));
                 schedule.setDatasets(
-                        manager.getDataSetDefinitions(study, cohort, DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER),
+                        manager.getDatasetDefinitions(study, cohort, DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER),
                         DataViewService.get().getViews(getViewContext(), Collections.singletonList(DatasetViewProvider.TYPE)));
 
                 response.put("schedule", schedule.toJSON(getUser()));
@@ -6839,7 +6839,7 @@ public class StudyController extends BaseStudyController
             {
                 for (Map.Entry<Integer, List<VisitDataSet>> entry : form.getSchedule().entrySet())
                 {
-                    DataSet ds = StudyService.get().getDataSet(getContainer(), entry.getKey());
+                    DataSet ds = StudyService.get().getDataset(getContainer(), entry.getKey());
                     if (ds != null)
                     {
                         for (VisitDataSet visit : entry.getValue())
@@ -6847,7 +6847,7 @@ public class StudyController extends BaseStudyController
                             VisitDataSetType type = visit.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.NOT_ASSOCIATED;
 
                             StudyManager.getInstance().updateVisitDataSetMapping(getUser(), getContainer(),
-                                    visit.getVisitRowId(), ds.getDataSetId(), type);
+                                    visit.getVisitRowId(), ds.getDatasetId(), type);
                         }
                     }
                 }
@@ -6905,7 +6905,7 @@ public class StudyController extends BaseStudyController
                     case importFromFile:
                         if (StringUtils.isEmpty(form.getName()))
                             errors.reject(ERROR_MSG, "A Dataset name must be specified.");
-                        else if (StudyManager.getInstance().getDataSetDefinitionByName(_study, form.getName()) != null)
+                        else if (StudyManager.getInstance().getDatasetDefinitionByName(_study, form.getName()) != null)
                             errors.reject(ERROR_MSG, "A Dataset named: " + form.getName() + " already exists in this folder.");
                         break;
 
@@ -6956,9 +6956,9 @@ public class StudyController extends BaseStudyController
 
                         ActionURL redirect;
                         if (form.getType() == DefineDatasetForm.Type.defineManually)
-                            redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
+                            redirect = new ActionURL(EditTypeAction.class, getContainer()). addParameter(DataSetDefinition.DATASETKEY, def.getDatasetId());
                         else
-                            redirect = new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
+                            redirect = new ActionURL(DatasetController.DefineAndImportDatasetAction.class, getContainer()).addParameter(DataSetDefinition.DATASETKEY, def.getDatasetId());
 
                         response.put("redirectUrl", redirect.getLocalURIString());
                         break;
@@ -6969,12 +6969,12 @@ public class StudyController extends BaseStudyController
                         {
                             def.provisionTable();
                         }
-                        response.put("datasetId", def.getDataSetId());
+                        response.put("datasetId", def.getDatasetId());
                         break;
 
                     case linkManually:
                     case linkImport:
-                        def = StudyManager.getInstance().getDataSetDefinition(_study, form.getExpectationDataset());
+                        def = StudyManager.getInstance().getDatasetDefinition(_study, form.getExpectationDataset());
                         if (def != null)
                         {
                             def = def.createMutable();
@@ -6998,8 +6998,8 @@ public class StudyController extends BaseStudyController
                         break;
 
                     case linkToTarget:
-                        DataSetDefinition expectationDataset = StudyManager.getInstance().getDataSetDefinition(_study, form.getExpectationDataset());
-                        DataSetDefinition targetDataset = StudyManager.getInstance().getDataSetDefinition(_study, form.getTargetDataset());
+                        DataSetDefinition expectationDataset = StudyManager.getInstance().getDatasetDefinition(_study, form.getExpectationDataset());
+                        DataSetDefinition targetDataset = StudyManager.getInstance().getDatasetDefinition(_study, form.getTargetDataset());
 
                         StudyManager.getInstance().linkPlaceHolderDataSet(_study, getUser(), expectationDataset, targetDataset);
                         break;
@@ -7025,7 +7025,7 @@ public class StudyController extends BaseStudyController
                 String expectationDataset = getViewContext().getActionURL().getParameter("expectationDataset");
                 if (NumberUtils.isDigits(expectationDataset))
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, NumberUtils.toInt(expectationDataset));
+                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, NumberUtils.toInt(expectationDataset));
                     if (def != null)
                     {
                         def = def.createMutable();
@@ -7187,18 +7187,18 @@ public class StudyController extends BaseStudyController
 
     public static class MapAliasIdsForm
     {
-        private int _dataSetId;
+        private int _datasetId;
         private String _aliasColumn = "";
         private String _sourceColumn = "";
 
         public int getDataSetId()
         {
-            return _dataSetId;
+            return _datasetId;
         }
 
-        public void setDataSetId(int dataSetId)
+        public void setDataSetId(int datasetId)
         {
-            _dataSetId = dataSetId;
+            _datasetId = datasetId;
         }
 
         public String getAliasColumn()
@@ -7304,10 +7304,10 @@ public class StudyController extends BaseStudyController
         StudyManager.getInstance().updateStudy(getUser(), study);
     }
 
-    private void setAliasMappingProperties(StudyImpl study, int dataSetId, String aliasColumn, String sourceColumn)
+    private void setAliasMappingProperties(StudyImpl study, int datasetId, String aliasColumn, String sourceColumn)
     {
         study = study.createMutable();
-        study.setParticipantAliasDatasetId(dataSetId);
+        study.setParticipantAliasDatasetId(datasetId);
         study.setParticipantAliasProperty(aliasColumn);
         study.setParticipantAliasSourceProperty(sourceColumn);
         StudyManager.getInstance().updateStudy(getUser(), study);

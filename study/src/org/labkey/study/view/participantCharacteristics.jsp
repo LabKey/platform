@@ -77,7 +77,7 @@
     Study study = manager.getStudy(getContainer());
 
     User user = (User) request.getUserPrincipal();
-    List<DataSetDefinition> datasets = manager.getDataSetDefinitions(study);
+    List<DataSetDefinition> datasets = manager.getDatasetDefinitions(study);
     Map<Integer, String> expandedMap = StudyController.getExpandedState(context, bean.getDatasetId());
     boolean updateAccess = study.getContainer().hasPermission(user, UpdatePermission.class);
 %>
@@ -85,28 +85,28 @@
 <table class="labkey-data-region">
 
     <%
-        for (DataSetDefinition dataSet : datasets)
+        for (DataSetDefinition dataset : datasets)
         {
             // Only interested in default-visible visible demographic data
-            if (!dataSet.isDemographicData() || !dataSet.isShowByDefault())
+            if (!dataset.isDemographicData() || !dataset.isShowByDefault())
                 continue;
 
-            String typeURI = dataSet.getTypeURI();
+            String typeURI = dataset.getTypeURI();
             if (null == typeURI)
                 continue;
 
-            int datasetId = dataSet.getDataSetId();
+            int datasetId = dataset.getDatasetId();
             boolean expanded = true;
             if ("collapse".equalsIgnoreCase(expandedMap.get(datasetId)))
                 expanded = false;
 
             // sort the properties so they appear in the same order as the grid view
-            PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(context, typeURI), dataSet, context);
-            if (!dataSet.canRead(user))
+            PropertyDescriptor[] pds = sortProperties(StudyController.getParticipantPropsFromCache(context, typeURI), dataset, context);
+            if (!dataset.canRead(user))
             {
     %>
     <tr class="labkey-header">
-        <th nowrap align="left" class="labkey-expandable-row-header"><%=h(dataSet.getDisplayString())%>
+        <th nowrap align="left" class="labkey-expandable-row-header"><%=h(dataset.getDisplayString())%>
         </th>
         <td nowrap align="left" class="labkey-expandable-row-header">(no access)</td>
     </tr>
@@ -122,11 +122,11 @@
                onclick="return LABKEY.Utils.toggleLink(this, true);">
                 <img src="<%=getContextPath()%>/_images/<%= text(expanded ? "minus.gif" : "plus.gif") %>"
                      alt="Click to expand/collapse">
-                <%=h(dataSet.getDisplayString())%>
+                <%=h(dataset.getDisplayString())%>
             </a><%
-            if (null != StringUtils.trimToNull(dataSet.getDescription()))
+            if (null != StringUtils.trimToNull(dataset.getDescription()))
             {
-        %><%=PageFlowUtil.helpPopup(dataSet.getDisplayString(), dataSet.getDescription())%><%
+        %><%=PageFlowUtil.helpPopup(dataset.getDisplayString(), dataset.getDescription())%><%
             }
         %></th>
     </tr>
@@ -157,9 +157,9 @@
 
         // Cache the request for data, so that we don't have to repeat this query
         // once for each row and column, but only once per row.
-        TableInfo datasetTable = dataSet.getTableInfo(user);
+        TableInfo datasetTable = dataset.getTableInfo(user);
         SimpleFilter filter = new SimpleFilter();
-        filter.addCondition(StudyService.get().getSubjectColumnName(dataSet.getContainer()), bean.getParticipantId());
+        filter.addCondition(StudyService.get().getSubjectColumnName(dataset.getContainer()), bean.getParticipantId());
 
         Sort sort;
         if (study.getTimepointType() != TimepointType.VISIT)
@@ -172,11 +172,11 @@
         }
 
         // Issue 13496: it is possible for older studies (<12.1) to have multiple records for a participant in a demographic dataset, so default to the first one
-        Map<String, Object>[] results = new TableSelector(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataSet.getContainer()) + ",Date,SequenceNum"), filter, sort).getMapArray();
+        Map<String, Object>[] results = new TableSelector(datasetTable, new CsvSet("lsid," + StudyService.get().getSubjectColumnName(dataset.getContainer()) + ",Date,SequenceNum"), filter, sort).getMapArray();
         if (results.length > 1)
         {
             String msg = "Unexpected number of demographic dataset records. Expected 0 or 1 but found " + results.length + "\n" +
-                    dataSet.getName() + " in container " + dataSet.getContainer().getPath();
+                    dataset.getName() + " in container " + dataset.getContainer().getPath();
             ExceptionUtil.logExceptionToMothership(context.getRequest(), new IllegalStateException(msg));
         }
         String lsid = results.length > 0 ? (String) results[0].get("lsid") : null;
@@ -184,10 +184,10 @@
 
         if (lsid != null)
         {
-            datasetRow = dataSet.getDatasetRow(user, lsid);
+            datasetRow = dataset.getDatasetRow(user, lsid);
         }
 
-        boolean editAccess = dataSet.canWrite(user);
+        boolean editAccess = dataset.canWrite(user);
         if (datasetRow == null)
         {
             if (editAccess)

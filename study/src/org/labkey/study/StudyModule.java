@@ -352,7 +352,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             long participants = StudyManager.getInstance().getParticipantCount(study);
             if (0 < participants)
                 list.add("" + participants + " " + StudyService.get().getSubjectNounPlural(c));
-            int datasets = study.getDataSets().size();
+            int datasets = study.getDatasets().size();
             if (0 < datasets)
                 list.add("" + datasets + " datasets");
             return list;

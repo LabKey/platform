@@ -143,7 +143,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private Container _definitionContainer;
     private Boolean _isShared = null;
     private StudyImpl _study;
-    private int _dataSetId;
+    private int _datasetId;
     private String _name;
     private String _typeURI;
     private String _category;
@@ -235,24 +235,24 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    public DataSetDefinition(StudyImpl study, int dataSetId)
+    public DataSetDefinition(StudyImpl study, int datasetId)
     {
         _study = study;
         setContainer(_study.getContainer());
-        _dataSetId = dataSetId;
-        _name = String.valueOf(dataSetId);
-        _label =  String.valueOf(dataSetId);
+        _datasetId = datasetId;
+        _name = String.valueOf(datasetId);
+        _label =  String.valueOf(datasetId);
         _typeURI = null;
         _showByDefault = true;
         _isShared = study.getShareDatasetDefinitions();
     }
 
 
-    public DataSetDefinition(StudyImpl study, int dataSetId, String name, String label, String category,  String entityId, @Nullable String typeURI)
+    public DataSetDefinition(StudyImpl study, int datasetId, String name, String label, String category,  String entityId, @Nullable String typeURI)
     {
         _study = study;
         setContainer(_study.getContainer());
-        _dataSetId = dataSetId;
+        _datasetId = datasetId;
         _name = name;
         _label = label;
         _category = category;
@@ -356,7 +356,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         {
             NumberFormat dsf = new DecimalFormat("dataset000.tsv");
 
-            return dsf.format(getDataSetId());
+            return dsf.format(getDatasetId());
         }
         else
         {
@@ -370,7 +370,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (null != _fileName)
             return _fileName;
 
-        String filename = "dataset" + new DecimalFormat("000").format(getDataSetId());
+        String filename = "dataset" + new DecimalFormat("000").format(getDatasetId());
         String name = getName();
         if (!StringUtils.isEmpty(name))
         {
@@ -435,15 +435,15 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         return null;
     }
 
-    public int getDataSetId()
+    public int getDatasetId()
     {
-        return _dataSetId;
+        return _datasetId;
     }
 
-    public void setDataSetId(int dataSetId)
+    public void setDatasetId(int datasetId)
     {
         verifyMutability();
-        _dataSetId = dataSetId;
+        _datasetId = datasetId;
     }
 
 
@@ -526,7 +526,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public VisitDataSetType getVisitType(int visitRowId)
     {
-        VisitDataSet vds = getVisitDataSet(visitRowId);
+        VisitDataSet vds = getVisitDataset(visitRowId);
         if (vds == null)
             return VisitDataSetType.NOT_ASSOCIATED;
         else if (vds.isRequired())
@@ -536,16 +536,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     }
 
 
-    public List<VisitDataSet> getVisitDataSets()
+    public List<VisitDataSet> getVisitDatasets()
     {
         return Collections.unmodifiableList(StudyManager.getInstance().getMapping(this));
     }
 
 
-    public VisitDataSet getVisitDataSet(int visitRowId)
+    public VisitDataSet getVisitDataset(int visitRowId)
     {
-        List<VisitDataSet> dataSets = getVisitDataSets();
-        for (VisitDataSet vds : dataSets)
+        List<VisitDataSet> datasets = getVisitDatasets();
+        for (VisitDataSet vds : datasets)
         {
             if (vds.getVisitRowId() == visitRowId)
                 return vds;
@@ -556,7 +556,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     public int getRowId()
     {
-        return getDataSetId();
+        return getDatasetId();
     }
 
     public Object getPrimaryKey()
@@ -612,7 +612,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (isInherited())
         {
             StudyImpl shared = getDefinitionStudy();
-            DataSetDefinition ds = shared.getDataSet(getDataSetId());
+            DataSetDefinition ds = shared.getDataset(getDatasetId());
             return null == ds ? null : ds.ensureDomain();
         }
 
@@ -686,7 +686,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (isInherited())
         {
             StudyImpl shared = getDefinitionStudy();
-            DataSetDefinition ds = shared.getDataSet(getDataSetId());
+            DataSetDefinition ds = shared.getDataset(getDatasetId());
             return null == ds ? null : ds.getStorageTableInfo();
         }
         else
@@ -717,7 +717,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             if (cutoff != null)
                 studyDataFrag.append(" AND _VisitDate > ?").add(cutoff);
             count = new LegacySqlExecutor(StudySchema.getInstance().getSchema()).execute(studyDataFrag);
-            StudyManager.dataSetModified(this, user, true);
+            StudyManager.datasetModified(this, user, true);
 
             time.stop();
             _log.debug("purgeDataset " + getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
@@ -740,7 +740,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public boolean isParticipantAliasDataset()
     {
         Integer id = _study.getParticipantAliasDatasetId();
-        return null != id && id.equals(getDataSetId());
+        return null != id && id.equals(getDatasetId());
     }
 
     @Override
@@ -970,7 +970,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             Table.delete(data, new SimpleFilter().addWhereClause("Container=?", new Object[] {getContainer()}));
-            StudyManager.dataSetModified(this, user, true);
+            StudyManager.datasetModified(this, user, true);
             transaction.commit();
         }
     }
@@ -1536,7 +1536,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         if (isInherited())
         {
             StudyImpl shared = getDefinitionStudy();
-            DataSetDefinition ds = shared.getDataSet(getDataSetId());
+            DataSetDefinition ds = shared.getDataset(getDatasetId());
             return null == ds ? null : ds.getDomain();
         }
 
@@ -1697,7 +1697,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     @Override
     public String toString()
     {
-        return "DataSetDefinition: " + getLabel() + " " + getDataSetId();
+        return "DataSetDefinition: " + getLabel() + " " + getDatasetId();
     }
 
 
@@ -1716,7 +1716,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 filter.addWhereClause("Container=?", new Object[]{getContainer()});
                 filter.addInClause(FieldKey.fromParts("LSID"), rowLSIDs);
                 Table.delete(data, filter);
-                StudyManager.dataSetModified(this, user, true);
+                StudyManager.datasetModified(this, user, true);
             }
             transaction.commit();
         }
@@ -2497,7 +2497,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                 throw context.getErrors();
 
             _log.info("imported " + getName() + " : " + DateUtil.formatDuration(Math.max(0,end-start)));
-            StudyManager.dataSetModified(this, user, true);
+            StudyManager.datasetModified(this, user, true);
             transaction.commit();
             if (logger != null) logger.debug("commit complete");
 
@@ -2612,7 +2612,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     /** @return the LSID prefix to be used for this dataset's rows */
     public String getURNPrefix()
     {
-        return "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + getContainer().getRowId() + ":" + getDataSetId() + ".";
+        return "urn:lsid:" + AppProps.getInstance().getDefaultLsidAuthority() + ":Study.Data-" + getContainer().getRowId() + ":" + getDatasetId() + ".";
     }
 
 
@@ -2858,7 +2858,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         DataSetDefinition that = (DataSetDefinition) o;
 
-        if (_dataSetId != that._dataSetId) return false;
+        if (_datasetId != that._datasetId) return false;
         // The _studyDateBased member variable is populated lazily in the getter,
         // so go through the getter instead of relying on the variable to be populated
         if (getStudy() != null ? !getStudy().equals(that.getStudy()) : that.getStudy() != null) return false;
@@ -2870,7 +2870,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public int hashCode()
     {
         int result = _study != null ? _study.hashCode() : 0;
-        result = 31 * result + _dataSetId;
+        result = 31 * result + _datasetId;
         return result;
     }
 
@@ -2899,7 +2899,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         StudyImpl study = StudyManager.getInstance().getStudy(c);
                         if (study != null)
                         {
-                            for (DataSetDefinition dataset : study.getDataSets())
+                            for (DataSetDefinition dataset : study.getDatasets())
                             {
                                 if (dataset.getName().equalsIgnoreCase(datasetName))
                                 {

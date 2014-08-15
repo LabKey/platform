@@ -108,7 +108,7 @@ public class DataSetAutoJoinTable extends VirtualTable
         }
 
         Set<FieldKey> defaultVisible = new LinkedHashSet<>();
-        for (DataSetDefinition dataset : _schema.getStudy().getDataSets())
+        for (DataSetDefinition dataset : _schema.getStudy().getDatasets())
         {
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).

@@ -124,7 +124,7 @@ public class DatasetController extends BaseStudyController
         public ModelAndView getView(EditDatasetRowForm form, boolean reshow, BindException errors) throws Exception
         {
             StudyImpl study = getStudyRedirectIfNull();
-            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(study, form.getDatasetId());
+            DataSetDefinition ds = StudyManager.getInstance().getDatasetDefinition(study, form.getDatasetId());
             if (null == ds)
             {
                 redirectTypeNotFound(form.getDatasetId());
@@ -139,7 +139,7 @@ public class DatasetController extends BaseStudyController
 
             // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
             // than a text entry box:
-            if (!study.isManualCohortAssignment() && safeEquals(ds.getDataSetId(), study.getParticipantCohortDataSetId()))
+            if (!study.isManualCohortAssignment() && safeEquals(ds.getDatasetId(), study.getParticipantCohortDatasetId()))
             {
                 final Cohort[] cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
                 ColumnInfo cohortCol = datasetTable.getColumn(study.getParticipantCohortProperty());
@@ -250,7 +250,7 @@ public class DatasetController extends BaseStudyController
         public boolean handlePost(EditDatasetRowForm form, BindException errors) throws Exception
         {
             int datasetId = form.getDatasetId();
-            DataSetDefinition ds = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), datasetId);
+            DataSetDefinition ds = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
             if (null == ds)
             {
                 redirectTypeNotFound(form.getDatasetId());
@@ -404,7 +404,7 @@ public class DatasetController extends BaseStudyController
                 if (lsid != null)
                 {
                     // If we have a current record, display it
-                    DataSet ds = StudyManager.getInstance().getDataSetDefinition(getStudyRedirectIfNull(), datasetId);
+                    DataSet ds = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), datasetId);
                     if (null != ds)
                     {
                         TableInfo datasetTable = ds.getTableInfo(getUser());
@@ -507,7 +507,7 @@ public class DatasetController extends BaseStudyController
             // Loop over each dataset, transacting per dataset to keep from locking out other users
             for (int datasetId : datasetIds)
             {
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+                DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
                 if (def == null)
                     continue; // It's already been deleted; ignore it. User likely double-clicked.
 
@@ -541,7 +541,7 @@ public class DatasetController extends BaseStudyController
             Map<String,String> props = new HashMap<>();
 
             Study study = getStudyRedirectIfNull();
-            DataSet def = study.getDataSet(form.getDatasetId());
+            DataSet def = study.getDataset(form.getDatasetId());
             if (null == def)
                 throw new NotFoundException("Invalid dataset id");
 

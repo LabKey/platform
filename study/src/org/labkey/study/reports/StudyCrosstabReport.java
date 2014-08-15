@@ -83,7 +83,7 @@ public class StudyCrosstabReport extends CrosstabReport
                 {
                     DataSetDefinition def = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, queryName) ;
                     if (def != null)
-                        datasetId = def.getDataSetId();
+                        datasetId = def.getDatasetId();
                 }
             }
         }

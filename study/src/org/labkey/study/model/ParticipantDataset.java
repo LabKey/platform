@@ -31,7 +31,7 @@ public class ParticipantDataset
     private Container _container;
     private Double _sequenceNum;
     private Date _visitDate;
-    private Integer _studyDataSetId;
+    private Integer _studyDatasetId;
     private String _studyParticipantId;
 
     public Container getContainer()
@@ -46,12 +46,12 @@ public class ParticipantDataset
 
     public Integer getDataSetId()
     {
-        return _studyDataSetId;
+        return _studyDatasetId;
     }
 
-    public void setDataSetId(Integer studyDataSetId)
+    public void setDataSetId(Integer studyDatasetId)
     {
-        _studyDataSetId = studyDataSetId;
+        _studyDatasetId = studyDatasetId;
     }
 
     public String getParticipantId()

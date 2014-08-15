@@ -102,7 +102,7 @@ public class ReportImporter implements FolderImporter
             if (study != null)
             {
                 List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<>();
-                for (DataSet dataSet : study.getDataSets())
+                for (DataSet dataSet : study.getDatasets())
                 {
                     if (!dataSet.getName().equals(dataSet.getLabel()))
                     {

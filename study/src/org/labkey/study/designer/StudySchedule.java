@@ -142,7 +142,7 @@ public class StudySchedule implements CustomApiForm
 
         o.put("description", ds.getDescription());
         o.put("displayOrder", ds.getDisplayOrder());
-        o.put("id", ds.getDataSetId());
+        o.put("id", ds.getDatasetId());
         o.put("type", ds.getType());
 
         return o;
@@ -162,7 +162,7 @@ public class StudySchedule implements CustomApiForm
 
             o.put("dataset", serializeDataset(user, ds));
 
-            for (VisitDataSet vds : ds.getVisitDataSets())
+            for (VisitDataSet vds : ds.getVisitDatasets())
             {
                 VisitImpl visit = visitMap.get(vds.getVisitRowId());
                 if (visit != null)

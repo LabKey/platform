@@ -229,15 +229,15 @@ public abstract class BaseStudyController extends SpringActionController
             if (visitRowId > 0)
                 visit = StudyManager.getInstance().getVisitForRowId(study, visitRowId);
 
-            DataSet dataSet = study.getDataSet(datasetId);
-            if (dataSet != null)
+            DataSet dataset = study.getDataset(datasetId);
+            if (dataset != null)
             {
                 StringBuilder label = new StringBuilder();
                 label.append("Dataset: ");
-                if (dataSet.getLabel() != null)
-                    label.append(dataSet.getLabel());
+                if (dataset.getLabel() != null)
+                    label.append(dataset.getLabel());
                 else
-                    label.append("CRF/Assay ").append(dataSet.getDataSetId());
+                    label.append("CRF/Assay ").append(dataset.getDatasetId());
 
                 if (visit != null)
                     label.append(", ").append(visit.getDisplayString());

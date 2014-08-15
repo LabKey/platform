@@ -409,7 +409,7 @@ public class ReportsController extends BaseStudyController
                     DataSet def = StudyManager.getInstance().getDatasetDefinitionByQueryName(study, form.getQueryName());
                     if (def != null)
                     {
-                        report.getDescriptor().setProperty("showWithDataset", String.valueOf(def.getDataSetId()));
+                        report.getDescriptor().setProperty("showWithDataset", String.valueOf(def.getDatasetId()));
                         ((StudyQueryReport) report).renameReport(getViewContext(), key, form.getViewName());
                         return new ApiSimpleResponse("success", true);
                     }
@@ -866,7 +866,7 @@ public class ReportsController extends BaseStudyController
         public CreateCrosstabBean(ViewContext context) throws IllegalStateException
         {
             Study study = getStudyThrowIfNull(context.getContainer());
-            _datasets = StudyManager.getInstance().getDataSetDefinitions(study);
+            _datasets = StudyManager.getInstance().getDatasetDefinitions(study);
             _visits = StudyManager.getInstance().getVisits(study, Visit.Order.DISPLAY);
         }
 
@@ -918,7 +918,7 @@ public class ReportsController extends BaseStudyController
                 _datasetMap = new HashMap<>();
                 final Study study = getStudyThrowIfNull(_container);
 
-                for (DataSetDefinition def : StudyManager.getInstance().getDataSetDefinitions(study))
+                for (DataSetDefinition def : StudyManager.getInstance().getDatasetDefinitions(study))
                 {
                     _datasetMap.put(def.getName(), def);
                 }
@@ -1087,7 +1087,7 @@ public class ReportsController extends BaseStudyController
 
             Container c = getViewContext().getContainer();
             Study study = getStudyThrowIfNull(c);
-            List<DataSetDefinition> defs = StudyManager.getInstance().getDataSetDefinitions(study);
+            List<DataSetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(study);
             out.write("<td>Add as Custom View For: ");
             out.write("<select name=\"showWithDataset\">");
             //out.write("<option value=\"0\">Views and Reports Web Part</option>");
@@ -1095,10 +1095,10 @@ public class ReportsController extends BaseStudyController
             for (DataSet def : defs)
             {
                 out.write("<option ");
-                if (def.getDataSetId() == showWithDataset)
+                if (def.getDatasetId() == showWithDataset)
                     out.write(" selected ");
                 out.write("value=\"");
-                out.write(String.valueOf(def.getDataSetId()));
+                out.write(String.valueOf(def.getDatasetId()));
                 out.write("\">");
                 out.write(PageFlowUtil.filter(def.getLabel()));
                 out.write("</option>");
@@ -1398,7 +1398,7 @@ public class ReportsController extends BaseStudyController
 
         public ReportData(Study study, int datasetId, int visitRowId, User user, ActionURL filterUrl) throws ServletException, SQLException
         {
-            DataSet def = study.getDataSet(datasetId);
+            DataSet def = study.getDataset(datasetId);
             if (def == null)
             {
                 throw new NotFoundException();
@@ -1461,7 +1461,7 @@ public class ReportsController extends BaseStudyController
             props.put("participantId", getViewContext().getActionURL().getParameter("participantId"));
 
             _datasetId = NumberUtils.toInt((String) getViewContext().get(DataSetDefinition.DATASETKEY));
-            DataSet def = StudyManager.getInstance().getDataSetDefinition(BaseStudyController.getStudyRedirectIfNull(getContainer()), _datasetId);
+            DataSet def = StudyManager.getInstance().getDatasetDefinition(BaseStudyController.getStudyRedirectIfNull(getContainer()), _datasetId);
             if (def != null)
                 props.put("datasetId", String.valueOf(_datasetId));
 
@@ -1574,12 +1574,12 @@ public class ReportsController extends BaseStudyController
             if (_report == null)
                 return new HtmlView("Unable to locate the specified report");
 
-            DataSet def = getDataSetDefinition();
+            DataSet def = getDatasetDefinition();
             if (def != null && _report != null)
             {
                 ActionURL url = getViewContext().cloneActionURL().setAction(StudyController.DatasetAction.class).
                         replaceParameter(StudyController.DATASET_REPORT_ID_PARAMETER_NAME, _report.getDescriptor().getReportId().toString()).
-                        replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDataSetId()));
+                        replaceParameter(DataSetDefinition.DATASETKEY, String.valueOf(def.getDatasetId()));
 
                 return HttpView.redirect(url);
             }
@@ -1590,7 +1590,7 @@ public class ReportsController extends BaseStudyController
                 return new HtmlView("User does not have read permission on this report.");
         }
 
-        protected DataSet getDataSetDefinition()
+        protected DataSet getDatasetDefinition()
         {
             if (_def == null && _report != null)
             {
@@ -1606,12 +1606,12 @@ public class ReportsController extends BaseStudyController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            DataSet def = getDataSetDefinition();
+            DataSet def = getDatasetDefinition();
 
             if (def != null)
             {
                 String qcState = getViewContext().getActionURL().getParameter(SharedFormParameters.QCState);
-                _appendNavTrail(root, def.getDataSetId(), 0, null, qcState);
+                _appendNavTrail(root, def.getDatasetId(), 0, null, qcState);
             }
             return root;
         }
@@ -1699,11 +1699,11 @@ public class ReportsController extends BaseStudyController
 
             if (datasetId > 0)
             {
-                DataSet dataSet = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+                DataSet dataset = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
 
-                if (dataSet != null)
+                if (dataset != null)
                 {
-                    String label = dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId();
+                    String label = dataset.getLabel() != null ? dataset.getLabel() : "" + dataset.getDatasetId();
 
                     if (0 == visitRowId && study.getTimepointType() != TimepointType.CONTINUOUS)
                         label += " (All Visits)";

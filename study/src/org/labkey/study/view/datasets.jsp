@@ -32,7 +32,7 @@
     Container container = getContainer();
     Study study = manager.getStudy(container);
     User user = getUser();
-    List<DataSetDefinition> datasets = manager.getDataSetDefinitions(study);
+    List<DataSetDefinition> datasets = manager.getDatasetDefinitions(study);
 
     if (null == datasets || datasets.isEmpty())
     {
@@ -45,13 +45,13 @@
     }
 
     List<DataSetDefinition> userDatasets = new ArrayList<>();
-    for (DataSetDefinition dataSet : datasets)
+    for (DataSetDefinition dataset : datasets)
     {
-        if (!dataSet.isShowByDefault())
+        if (!dataset.isShowByDefault())
             continue;
 
-        if (dataSet.canRead(getUser()))
-            userDatasets.add(dataSet);
+        if (dataset.canRead(getUser()))
+            userDatasets.add(dataset);
     }
 
     int datasetsPerCol = userDatasets.size() / 3;
@@ -99,21 +99,21 @@
             sb.append("<tr><td class=\"labkey-title-area-line\"></td></tr>\n");
         }
 
-        for (DataSet dataSet : datasets.subList(startIndex, endIndex))
+        for (DataSet dataset : datasets.subList(startIndex, endIndex))
         {
-            if (!equal(category, dataSet.getCategory()))
+            if (!equal(category, dataset.getCategory()))
             {
-                category = dataSet.getCategory();
+                category = dataset.getCategory();
                 sb.append("<tr><td class=\"labkey-announcement-title\"><span>").append(h(category == null ? "Uncategorized" : category)).append("</span></td></tr>\n");
                 sb.append("<tr><td class=\"labkey-title-area-line\"></td></tr>\n");
             }
 
-            String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
+            String datasetLabel = (dataset.getLabel() != null ? dataset.getLabel() : "" + dataset.getDatasetId());
 
             sb.append("        <tr><td>");
-            sb.append("<a href=\"").append(datasetURL.replaceParameter("datasetId", String.valueOf(dataSet.getDataSetId())));
+            sb.append("<a href=\"").append(datasetURL.replaceParameter("datasetId", String.valueOf(dataset.getDatasetId())));
             sb.append("\">");
-            sb.append(h(dataSetLabel));
+            sb.append(h(datasetLabel));
             sb.append("</a></td></tr>\n");
         }
         sb.append("    </table>");

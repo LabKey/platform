@@ -361,26 +361,26 @@
                 });
             };
 
-            var changeIdMapping = function(dataSetId, aliasColumn, sourceColumn) {
+            var changeIdMapping = function(datasetId, aliasColumn, sourceColumn) {
                 if((sourceColumn != null) && (aliasColumn != null)){
                     Ext4.Ajax.request({
                         url : LABKEY.ActionURL.buildURL("study", "mapAliasIds"),
                         method : 'POST',
 
                         success: function(details){
-                            if(dataSetId != -1)
+                            if(datasetId != -1)
                                 displayDoneChangingMessage("Save Alias Settings", <%=q(subjectNounSingular)%> + " alias settings saved successfully.");
                             else
                                 displayDoneChangingMessage("Clear Alias Settings", <%=q(subjectNounSingular)%> + " alias settings cleared.")
-                            aliasDataSetId = dataSetId;
-                            if(dataSetId != -1)
+                            aliasDataSetId = datasetId;
+                            if(datasetId != -1)
                                 importButton.setDisabled(false);
 
                         },
                         failure: function(response, options){
                             LABKEY.Utils.displayAjaxErrorResponse(response, options, false, 'An error occurred:<br>');
                         },
-                        jsonData : {dataSetId : dataSetId, aliasColumn : aliasColumn, sourceColumn : sourceColumn},
+                        jsonData : {dataSetId : datasetId, aliasColumn : aliasColumn, sourceColumn : sourceColumn},
                         headers : {'Content-Type' : 'application/json'},
                         scope: this
                     });

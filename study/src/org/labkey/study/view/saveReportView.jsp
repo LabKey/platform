@@ -97,7 +97,7 @@
         for (DataSet def : defs)
         {
             if (def.canRead(getUser())) %>
-                <option<%=selected(def.getDataSetId() == showWithDataset)%> value="<%=def.getDataSetId()%>"><%=h(def.getLabel())%></option>
+                <option<%=selected(def.getDatasetId() == showWithDataset)%> value="<%=def.getDatasetId()%>"><%=h(def.getLabel())%></option>
 <%
         }
 %>

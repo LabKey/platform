@@ -25,7 +25,7 @@ import org.labkey.api.data.Container;
  */
 public class VisitDataSet
 {
-    private int _dataSetId;
+    private int _datasetId;
     private int _visitId;
     private boolean _isRequired = false;
     private Container _container;
@@ -34,9 +34,9 @@ public class VisitDataSet
     {
     }
 
-    public VisitDataSet(Container container, int dataSetId, int visitId, boolean isRequired)
+    public VisitDataSet(Container container, int datasetId, int visitId, boolean isRequired)
     {
-        _dataSetId = dataSetId;
+        _datasetId = datasetId;
         _visitId = visitId;
         _isRequired = isRequired;
         _container = container;
@@ -52,9 +52,9 @@ public class VisitDataSet
         return _visitId;
     }
 
-    public int getDataSetId()
+    public int getDatasetId()
     {
-        return _dataSetId;
+        return _datasetId;
     }
 
     public Container getContainer()

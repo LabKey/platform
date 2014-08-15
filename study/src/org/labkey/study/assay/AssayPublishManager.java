@@ -267,7 +267,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
         try (DbScope.Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
         {
-            List<DataSetDefinition> datasets = StudyManager.getInstance().getDataSetDefinitions(targetStudy);
+            List<DataSetDefinition> datasets = StudyManager.getInstance().getDatasetDefinitions(targetStudy);
 
             for (int i = 0; i < datasets.size() && dataset == null; i++)
             {
@@ -336,7 +336,7 @@ public class AssayPublishManager implements AssayPublishService.Service
         // in 'ensurePropertyDescriptors'.
         if (schemaChanged)
             StudyManager.getInstance().uncache(dataset);
-        dataset = StudyManager.getInstance().getDataSetDefinition(targetStudy, dataset.getRowId());
+        dataset = StudyManager.getInstance().getDatasetDefinition(targetStudy, dataset.getRowId());
         Integer defaultQCStateId = targetStudy.getDefaultAssayQCState();
         QCState defaultQCState = null;
         if (defaultQCStateId != null)
@@ -359,7 +359,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 event.setContainerId(sourceContainer.getId());
 
                 Map<String, Object> dataMap = new HashMap<>();
-                dataMap.put("datasetId", dataset.getDataSetId());
+                dataMap.put("datasetId", dataset.getDatasetId());
 
                 dataMap.put("sourceLsid", entry.getKey());
                 dataMap.put("recordCount", entry.getValue()[0]);
@@ -633,7 +633,7 @@ public class AssayPublishManager implements AssayPublishService.Service
     private static String createUniqueDatasetName(Study study, String assayName)
     {
         Set<String> inUseNames = new CaseInsensitiveHashSet();
-        for (DataSet def : study.getDataSetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
+        for (DataSet def : study.getDatasetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
             inUseNames.add(def.getName());
 
         int suffix = 1;
@@ -685,7 +685,7 @@ public class AssayPublishManager implements AssayPublishService.Service
 
         UploadLog ul = new UploadLog();
         ul.setContainer(dsd.getContainer());
-        ul.setDatasetId(dsd.getDataSetId());
+        ul.setDatasetId(dsd.getDatasetId());
         ul.setCreated(dateCreated);
         ul.setUserId(user.getUserId());
         ul.setStatus("Initializing");

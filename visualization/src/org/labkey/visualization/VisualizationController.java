@@ -44,7 +44,6 @@ import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
@@ -91,7 +90,6 @@ import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
-import org.labkey.api.util.TestContext;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -433,7 +431,7 @@ public class VisualizationController extends SpringActionController
             TableInfo t = q.getTable(null, false);
             if (!(t instanceof DataSetTable))
                 return false;
-            return ((DataSetTable)t).getDataSet().isDemographicData();
+            return ((DataSetTable)t).getDataset().isDemographicData();
         }
         catch (QueryException qe)
         {
@@ -590,9 +588,9 @@ public class VisualizationController extends SpringActionController
                 if (table instanceof DataSetTable)
                 {
                     if (asLabel)
-                        queryName = ((DataSetTable) table).getDataSet().getLabel();
+                        queryName = ((DataSetTable) table).getDataset().getLabel();
                     else
-                        queryName = ((DataSetTable) table).getDataSet().getName();
+                        queryName = ((DataSetTable) table).getDataset().getName();
                 }
                 else if (asLabel)
                 {
@@ -611,7 +609,7 @@ public class VisualizationController extends SpringActionController
             {
                 TableInfo table = _tableInfoMap.get(query);
                 if (table instanceof DataSetTable)
-                    description = ((DataSetTable) table).getDataSet().getDescription();
+                    description = ((DataSetTable) table).getDataset().getDescription();
             }
 
             return description;

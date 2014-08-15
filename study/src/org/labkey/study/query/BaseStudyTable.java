@@ -460,9 +460,9 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         DataSetDefinition defPtidVisit = null;
 
         if (study.getParticipantCommentDataSetId() != null)
-            defPtid = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantCommentDataSetId());
+            defPtid = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDataSetId());
         if (study.getParticipantVisitCommentDataSetId() != null)
-            defPtidVisit = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantVisitCommentDataSetId());
+            defPtidVisit = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDataSetId());
 
         boolean validParticipantCommentTable = defPtid != null && defPtid.canRead(schema.getUser()) && defPtid.isDemographicData();
         TableInfo participantCommentTable = validParticipantCommentTable ? defPtid.getTableInfo(schema.getUser()) : null;

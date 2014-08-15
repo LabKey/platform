@@ -140,7 +140,7 @@ public abstract class VisitManager
         // to the dataset that specifies the cohort
         if (!_study.isManualCohortAssignment() &&
                 cohortDatasetId != null &&
-                changedDatasets.contains(StudyManager.getInstance().getDataSetDefinition(_study, cohortDatasetId)))
+                changedDatasets.contains(StudyManager.getInstance().getDatasetDefinition(_study, cohortDatasetId)))
         {
             try
             {
@@ -589,7 +589,7 @@ public abstract class VisitManager
         //See if there are any demographic datasets that contain a start date
         DbSchema schema = StudySchema.getInstance().getSchema();
 
-        for (DataSetDefinition dataset : getStudy().getDataSets())
+        for (DataSetDefinition dataset : getStudy().getDatasets())
         {
             if (dataset.isDemographicData())
             {
@@ -653,7 +653,7 @@ public abstract class VisitManager
                 TableInfo tableSpecimen = getSpecimenTable(study);
 
                 SQLFragment ptids = new SQLFragment();
-                SQLFragment studyDataPtids = studyDataPtids(study.getDataSets());
+                SQLFragment studyDataPtids = studyDataPtids(study.getDatasets());
                 if (null != studyDataPtids)
                 {
                     ptids.append(studyDataPtids);

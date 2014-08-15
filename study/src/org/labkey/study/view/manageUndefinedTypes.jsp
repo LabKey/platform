@@ -22,7 +22,7 @@
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     List<DataSetDefinition> undefined = new ArrayList<>();
-    for (DataSetDefinition def : getDataSets())
+    for (DataSetDefinition def : getDatasets())
     {
         if (def.getTypeURI() == null)
             undefined.add(def);
@@ -54,7 +54,7 @@
     {
 %>
     <tr>
-        <td><%= def.getDataSetId() %></td>
+        <td><%= def.getDatasetId() %></td>
         <td><%= def.getLabel() != null ? def.getLabel() : "" %></td>
     </tr>
 <%

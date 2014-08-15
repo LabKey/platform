@@ -48,7 +48,7 @@ public class StudyDataTable extends BaseStudyTable
         List<FieldKey> defaultColumns = new LinkedList<>();
 
         ColumnInfo datasetColumn = new AliasedColumn(this, "DataSet", _rootTable.getColumn("DataSet"));
-        datasetColumn.setFk(new LookupForeignKey(getDataSetURL(), "entityId", "entityId", "Name") {
+        datasetColumn.setFk(new LookupForeignKey(getDatasetURL(), "entityId", "entityId", "Name") {
             public TableInfo getLookupTableInfo()
             {
                 return new DataSetsTable(_userSchema);
@@ -132,9 +132,8 @@ public class StudyDataTable extends BaseStudyTable
         setDetailsURL(new DetailsURL(new ActionURL(StudyController.DatasetDetailRedirectAction.class, getContainer()), params));
     }
 
-    public ActionURL getDataSetURL()
+    public ActionURL getDatasetURL()
     {
         return new ActionURL(StudyController.DatasetAction.class, _userSchema.getContainer());
     }
-
 }

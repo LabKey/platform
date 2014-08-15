@@ -74,7 +74,7 @@ public class StudyRReport extends RReport
             return reportView;
 
         int datasetId = 0;
-        DataSetDefinition def = getDataSetDefinition(context);
+        DataSetDefinition def = getDatasetDefinition(context);
         if (def != null)
             datasetId = def.getRowId();
 
@@ -89,7 +89,7 @@ public class StudyRReport extends RReport
         return vBox;
     }
 
-    protected DataSetDefinition getDataSetDefinition(ViewContext context)
+    protected DataSetDefinition getDatasetDefinition(ViewContext context)
     {
         try
         {

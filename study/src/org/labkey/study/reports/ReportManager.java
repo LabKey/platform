@@ -217,7 +217,7 @@ public class ReportManager implements DatasetManager.DatasetListener
     public Results getReportResultSet(ViewContext ctx, int datasetId, int visitRowId) throws ServletException, SQLException
     {
         StudyImpl study = StudyManager.getInstance().getStudy(ctx.getContainer());
-        DataSetDefinition def = study.getDataSet(datasetId);
+        DataSetDefinition def = study.getDataset(datasetId);
         if (def == null)
         {
             throw new NotFoundException();
@@ -298,7 +298,7 @@ public class ReportManager implements DatasetManager.DatasetListener
                 Study study = StudyManager.getInstance().getStudy(c);
                 if (study == null)
                     return Collections.emptyMap();
-                for (DataSetDefinition ds : StudyManager.getInstance().getDataSetDefinitions(study))
+                for (DataSetDefinition ds : StudyManager.getInstance().getDatasetDefinitions(study))
                     _datasets.put(ds.getName(), ds);
             }
 
@@ -313,7 +313,7 @@ public class ReportManager implements DatasetManager.DatasetListener
             if (datasets.containsKey(view.getQueryName()))
             {
                 return new ActionURL(StudyController.DatasetReportAction.class, c).
-                        addParameter(DataSetDefinition.DATASETKEY, datasets.get(view.getQueryName()).getDataSetId()).
+                        addParameter(DataSetDefinition.DATASETKEY, datasets.get(view.getQueryName()).getDatasetId()).
                         addParameter(StudyController.DATASET_VIEW_NAME_PARAMETER_NAME, view.getName());
             }
 
@@ -355,7 +355,7 @@ public class ReportManager implements DatasetManager.DatasetListener
 
                 if (NumberUtils.isDigits(datasetId))
                 {
-                    DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, NumberUtils.toInt(datasetId));
+                    DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinition(study, NumberUtils.toInt(datasetId));
                     if (dsDef != null)
                         return dsDef.canRead(user);
                 }
@@ -400,7 +400,7 @@ public class ReportManager implements DatasetManager.DatasetListener
     {
         if (def != null)
         {
-            _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
+            _log.debug("Cache cleared notification on dataset : " + def.getDatasetId());
             String reportKey = ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), def.getName());
             for (Report report : ReportUtil.getReports(def.getContainer(), null, reportKey, true))
             {

@@ -23,7 +23,6 @@ import org.labkey.api.audit.AuditTypeProvider;
 import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
@@ -103,7 +102,7 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
     {
         Domain domain = getDomain();
 
-        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, getSchema(), userSchema)
+        DefaultAuditTypeTable table = new DefaultAuditTypeTable(this, domain, userSchema)
         {
             @Override
             protected void initColumn(ColumnInfo col)
@@ -156,10 +155,10 @@ public class DatasetAuditProvider extends AbstractAuditTypeProvider implements A
             if (type == SecurityType.ADVANCED_READ || type == SecurityType.ADVANCED_WRITE)
             {
                 List<Integer> readDatasets = new ArrayList<>();
-                for (DataSet ds : study.getDataSets())
+                for (DataSet ds : study.getDatasets())
                 {
                     if (ds.canRead(user))
-                        readDatasets.add(ds.getDataSetId());
+                        readDatasets.add(ds.getDatasetId());
                 }
 
                 table.addInClause(table.getRealTable().getColumn(COLUMN_NAME_DATASET_ID), readDatasets);

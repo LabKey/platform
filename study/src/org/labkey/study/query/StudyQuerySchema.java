@@ -306,7 +306,7 @@ public class StudyQuerySchema extends UserSchema
 
             // Add only datasets that the user can read
             User user = getUser();
-            for (DataSetDefinition dsd : _study.getDataSets())
+            for (DataSetDefinition dsd : _study.getDatasets())
             {
                 boolean canRead = dsd.canRead(user);
                 if (dsd.getName() == null || !canRead)
@@ -330,13 +330,13 @@ public class StudyQuerySchema extends UserSchema
         return ret;
     }
 
-    public Map<String, DataSetDefinition> getDataSetDefinitions()
+    public Map<String, DataSetDefinition> getDatasetDefinitions()
     {
         Map<String, DataSetDefinition> ret = new LinkedHashMap<>();
         assert _study != null : "Attempt to get datasets without a study";
         if (_study != null)
         {
-            for (DataSetDefinition dsd : _study.getDataSets())
+            for (DataSetDefinition dsd : _study.getDatasets())
             {
                 if (dsd.getName() == null)
                     continue;
@@ -347,12 +347,12 @@ public class StudyQuerySchema extends UserSchema
     }
 
     @Nullable
-    public DataSetDefinition getDataSetDefinitionByName(String name)
+    public DataSetDefinition getDatasetDefinitionByName(String name)
     {
         assert _study != null : "Attempt to get datasets without a study";
         if (_study != null)
         {
-            for (DataSetDefinition dsd : _study.getDataSets())
+            for (DataSetDefinition dsd : _study.getDatasets())
             {
                 if (name.equalsIgnoreCase(dsd.getName()))
                     return dsd;
@@ -384,7 +384,7 @@ public class StudyQuerySchema extends UserSchema
         if (null == _datasetSequenceMap)
             _datasetSequenceMap =  StudyManager.getInstance().getVisitManager(_study).getDatasetSequenceNums();
 
-        return _datasetSequenceMap.get(dsd.getDataSetId());
+        return _datasetSequenceMap.get(dsd.getDatasetId());
     }
 
 
@@ -770,7 +770,7 @@ public class StudyQuerySchema extends UserSchema
 
             if (null != id)
             {
-                DataSetDefinition def = study.getDataSet(id);
+                DataSetDefinition def = study.getDataset(id);
 
                 if (null != def)
                 {

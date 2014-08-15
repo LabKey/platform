@@ -87,10 +87,10 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
         if (study != null)
         {
-            for (DataSet def : StudyManager.getInstance().getDataSetDefinitions(study))
+            for (DataSet def : StudyManager.getInstance().getDatasetDefinitions(study))
             {
                 if (def.canRead(getUser()))
-                    datasets.add(new GWTPair(def.getLabel(), Integer.toString(def.getDataSetId())));
+                    datasets.add(new GWTPair(def.getLabel(), Integer.toString(def.getDatasetId())));
             }
         }
         return datasets;
@@ -193,7 +193,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
             String queryName = null;
             Study study = StudyManager.getInstance().getStudy(_context.getContainer());
-            DataSet def = StudyManager.getInstance().getDataSetDefinition(study, showWithDataset);
+            DataSet def = StudyManager.getInstance().getDatasetDefinition(study, showWithDataset);
             if (def != null)
                 queryName = def.getName();
             return ReportUtil.getReportKey(StudySchema.getInstance().getSchemaName(), queryName);

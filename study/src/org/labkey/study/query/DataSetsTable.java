@@ -15,7 +15,6 @@
  */
 package org.labkey.study.query;
 
-import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -31,7 +30,6 @@ import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
-import org.labkey.api.util.Filter;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.StudyManager;
@@ -100,7 +98,7 @@ public class DataSetsTable extends FilteredTable<StudyQuerySchema>
             return new SimpleFilter().addClause(new SimpleFilter.FalseClause());
         List<String> entityIds = new ArrayList<>();
         Set<String> containerIds = new HashSet<>();
-        for (DataSet ds : study.getDataSets())
+        for (DataSet ds : study.getDatasets())
         {
             entityIds.add(ds.getEntityId());
             containerIds.add(((DataSetDefinition)ds).getDefinitionContainer().getId());

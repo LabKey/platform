@@ -164,7 +164,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     {
         DataSet def = getDatasetDefinition(domain.getTypeURI());
         ActionURL url = new ActionURL(StudyController.DatasetReportAction.class, containerUser.getContainer());
-        url.addParameter("datasetId", "" + def.getDataSetId());
+        url.addParameter("datasetId", "" + def.getDatasetId());
         return url;
     }
 
@@ -173,7 +173,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     {
         DataSet def = getDatasetDefinition(domain.getTypeURI());
         ActionURL url = new ActionURL(StudyController.EditTypeAction.class, containerUser.getContainer());
-        url.addParameter("datasetId", "" + def.getDataSetId());
+        url.addParameter("datasetId", "" + def.getDatasetId());
         return url;
     }
 
@@ -256,7 +256,7 @@ public abstract class DatasetDomainKind extends AbstractDomainKind
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
         StudyQuerySchema schema = StudyQuerySchema.createSchema(study, user, true);
-        DataSetDefinition dsd = schema.getDataSetDefinitionByName(name);
+        DataSetDefinition dsd = schema.getDatasetDefinitionByName(name);
 
         return new DataSetTableImpl(schema, dsd);
     }

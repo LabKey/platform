@@ -96,7 +96,7 @@ public class StudyUnionTableInfo extends VirtualTable
                 continue;
             count++;
             sqlf.append(unionAll);
-            sqlf.append("SELECT CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ") AS dataset, " + def.getDataSetId() + " AS datasetid");
+            sqlf.append("SELECT CAST('" + def.getEntityId() + "' AS " + getSqlDialect().getGuidType() + ") AS dataset, " + def.getDatasetId() + " AS datasetid");
 
             String visitPropertyName = def.getVisitDateColumnName();
             ColumnInfo visitColumn = null == visitPropertyName ? null : ti.getColumn(visitPropertyName);

@@ -123,7 +123,7 @@
                         if (def != null) {
                             String label = !def.getLabel().equals(def.getName()) ? def.getName() + " (" + def.getLabel() + ")" : def.getLabel();
                 %>
-                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name) + "&datasetId=" + def.getDataSetId()) %>"<%=selected(name.equals(bean.getQueryName()))%>><%= h(label) %></option>
+                        <option value="<%= h(paramStart + '&' + QueryParam.queryName.toString() + '=' + u(name) + "&datasetId=" + def.getDatasetId()) %>"<%=selected(name.equals(bean.getQueryName()))%>><%= h(label) %></option>
                 <%
                         } else {
                 %>

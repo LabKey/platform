@@ -61,7 +61,7 @@ public class StudyRunChartReportView extends RunChartReportView
             {
                 ViewContext context = getViewContext();
                 int datasetId = 0;
-                DataSetDefinition def = getDataSetDefinition();
+                DataSetDefinition def = getDatasetDefinition();
                 if (def != null)
                     datasetId = def.getRowId();
 
@@ -93,12 +93,12 @@ public class StudyRunChartReportView extends RunChartReportView
         }
     }
 
-    protected DataSetDefinition getDataSetDefinition()
+    protected DataSetDefinition getDatasetDefinition()
     {
         try
         {
             int datasetId = NumberUtils.toInt(getReport().getDescriptor().getProperty(DataSetDefinition.DATASETKEY));
-            return StudyManager.getInstance().getDataSetDefinition(StudyManager.getInstance().getStudy(getViewContext().getContainer()), datasetId);
+            return StudyManager.getInstance().getDatasetDefinition(StudyManager.getInstance().getStudy(getViewContext().getContainer()), datasetId);
         }
         catch (Exception e)
         {

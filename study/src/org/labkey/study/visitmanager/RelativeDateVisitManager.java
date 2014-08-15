@@ -188,9 +188,9 @@ public class RelativeDateVisitManager extends VisitManager
         sqlUpdateDays.add(VisitImpl.DEMOGRAPHICS_VISIT);
         sqlUpdateDays.add(container);
         new SqlExecutor(schema).execute(sqlUpdateDays);
-//            for (DataSetDefinition dataSet : _study.getDataSets())
+//            for (DataSetDefinition dataset : _study.getDatasets())
 //            {
-//                TableInfo tempTableInfo = dataSet.getMaterializedTempTableInfo(user, false);
+//                TableInfo tempTableInfo = dataset.getMaterializedTempTableInfo(user, false);
 //                if (tempTableInfo != null)
 //                {
 //                    executor.execute(new SQLFragment("UPDATE " + tempTableInfo + " SET Day = (SELECT Day FROM " + tableParticipantVisit + " pv WHERE pv.ParticipantSequenceNum = " + tempTableInfo + ".ParticipantSequenceNum" +
@@ -281,7 +281,7 @@ public class RelativeDateVisitManager extends VisitManager
                 executor.execute("DELETE FROM " + tableVisit + " WHERE Container=?", c);
 
                 //Now recompute everything
-                updateParticipantVisits(user, getStudy().getDataSets());
+                updateParticipantVisits(user, getStudy().getDatasets());
             }
         }
     }

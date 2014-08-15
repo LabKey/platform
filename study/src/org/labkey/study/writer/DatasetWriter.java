@@ -102,7 +102,7 @@ public class DatasetWriter implements InternalStudyWriter
         {
             DatasetsDocument.Datasets.Datasets2.Dataset datasetXml = datasets2Xml.addNewDataset();
             datasetXml.setName(def.getName());
-            datasetXml.setId(def.getDataSetId());
+            datasetXml.setId(def.getDatasetId());
 
             Cohort cohort = def.getCohort();
 

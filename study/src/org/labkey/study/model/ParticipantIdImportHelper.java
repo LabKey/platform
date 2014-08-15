@@ -84,17 +84,17 @@ public class ParticipantIdImportHelper
         String participantAliasProperty = studyImpl.getParticipantAliasProperty();
 
         // only generate the alias hashmap if the alias table has been configured properly
-        if (participantAliasDatasetId != null && (targetDef == null || targetDef.getDataSetId() != participantAliasDatasetId)) // do not apply lookups on the alias table itself.
+        if (participantAliasDatasetId != null && (targetDef == null || targetDef.getDatasetId() != participantAliasDatasetId)) // do not apply lookups on the alias table itself.
         {
             StudyManager studyManager = StudyManager.getInstance();
-            DataSetDefinition aliasDataset = studyManager.getDataSetDefinition(studyImpl, participantAliasDatasetId);
+            DataSetDefinition aliasDataset = studyManager.getDatasetDefinition(studyImpl, participantAliasDatasetId);
             if (aliasDataset != null) // possible if the alias dataset has been deleted
             {
                 // Build up a HashSet of ptids to check for conflicts in the alias table
                 HashSet<String> ptids = generatePtidHashSet(studyImpl);
 
                 //  Build up a HashMap of aliases
-                TableInfo aliasTableInfo = studyManager.getDataSetDefinition(studyImpl, participantAliasDatasetId).getTableInfo(_user);
+                TableInfo aliasTableInfo = studyManager.getDatasetDefinition(studyImpl, participantAliasDatasetId).getTableInfo(_user);
                 Map<String, Object>[] rows = new TableSelector(aliasTableInfo, ImmutableSet.of(studyImpl.getSubjectColumnName(), participantAliasSourceProperty, participantAliasProperty), null, null).getMapArray();
                 for (Map<String, Object> row : rows)
                 {

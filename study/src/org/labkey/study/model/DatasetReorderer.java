@@ -45,7 +45,7 @@ public class DatasetReorderer
     // list; any unspecified datasets will appear at the end of the list, maintaining their current order.
     public void reorderDatasets(List<Integer> orderedIds) throws SQLException
     {
-        List<DataSetDefinition> defs = StudyManager.getInstance().getDataSetDefinitions(_study);
+        List<DataSetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(_study);
         Map<Integer, DataSetDefinition> map = new LinkedHashMap<>(defs.size());
 
         for (DataSetDefinition def : defs)
@@ -53,7 +53,7 @@ public class DatasetReorderer
             // TODO: ordering with shared datasets?
             if (def.isShared())
                 continue;
-            map.put(def.getDataSetId(), def);
+            map.put(def.getDatasetId(), def);
         }
 
         resetCounter();
@@ -73,7 +73,7 @@ public class DatasetReorderer
 
     public void resetOrder() throws SQLException
     {
-        List<DataSetDefinition> defs = StudyManager.getInstance().getDataSetDefinitions(_study);
+        List<DataSetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(_study);
         for (DataSetDefinition def : defs)
             updateDef(def, 0);
     }

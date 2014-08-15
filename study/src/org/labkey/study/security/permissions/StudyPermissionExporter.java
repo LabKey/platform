@@ -17,7 +17,6 @@ package org.labkey.study.security.permissions;
 
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlOptions;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityManager;
@@ -53,7 +52,6 @@ import org.labkey.studySecurityPolicy.xml.StudySecurityPolicyDocument;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -114,7 +112,7 @@ public class StudyPermissionExporter
             {
                 PerDatasetPermissions pdp = PerDatasetPermissions.Factory.newInstance();
 
-                for (DataSet ds : study.getDataSets())
+                for (DataSet ds : study.getDatasets())
                 {
                     SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
 
@@ -235,7 +233,7 @@ public class StudyPermissionExporter
                 Map<DataSet, List<PerDatasetPermission>> map = new HashMap<>();
                 for (PerDatasetPermission pd : sp.getPerDatasetPermissions().getDatasetPermissionArray())
                 {
-                    DataSet ds = study.getDataSetByName(pd.getDatasetName());
+                    DataSet ds = study.getDatasetByName(pd.getDatasetName());
                     if (ds == null)
                     {
                         errorMsgs.add("Unable to find dataset with name: " + pd.getDatasetName() + ", skipping");
@@ -250,7 +248,7 @@ public class StudyPermissionExporter
                     map.put(ds, list);
                 }
 
-                for (DataSet ds : study.getDataSets())
+                for (DataSet ds : study.getDatasets())
                 {
                     MutableSecurityPolicy dsPolicy = new MutableSecurityPolicy(ds);
                     List<PerDatasetPermission> list = map.get(ds);

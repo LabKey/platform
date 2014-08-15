@@ -41,12 +41,12 @@ String error = null;
 <tr><td>Dataset</td><td><select name="<%=text(DataSetDefinition.DATASETKEY)%>" onchange="refreshForm(this.options[this.selectedIndex].value);">
     <option value="-1"></option>
 <%
-for (DataSetDefinition ds : bean.study.getDataSets())
+for (DataSetDefinition ds : bean.study.getDatasets())
 {
-    boolean selected = bean.form.getDatasetId().intValue() == ds.getDataSetId();
+    boolean selected = bean.form.getDatasetId().intValue() == ds.getDatasetId();
     if (selected)
         selectedDataset = ds;
-    %><option<%=selected(selected)%> value="<%=ds.getDataSetId()%>"><%=h(ds.getDisplayString())%></option><%
+    %><option<%=selected(selected)%> value="<%=ds.getDatasetId()%>"><%=h(ds.getDisplayString())%></option><%
 }
 %></select></td></tr>
 <%
@@ -58,7 +58,7 @@ if (selectedDataset != null)
         if (visit.getSequenceNumMin() == visit.getSequenceNumMax())
             visits.put(visit.getRowId(), visit);
     }
-    List<VisitDataSet> datasetVisits = selectedDataset.getVisitDataSets();
+    List<VisitDataSet> datasetVisits = selectedDataset.getVisitDatasets();
     if (null != selectedDataset.getTypeURI())
         pds = OntologyManager.getPropertiesForType(selectedDataset.getTypeURI(),bean.study.getContainer());
     if (null == pds || pds.length == 0)

@@ -49,7 +49,7 @@
 
     if (aliasDatasetId != null)
     {
-        DataSetDefinition ds = s.getDataSet(aliasDatasetId);
+        DataSetDefinition ds = s.getDataset(aliasDatasetId);
         if (ds != null)
         {
             aliasDatasetName = ds.getName();

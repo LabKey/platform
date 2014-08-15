@@ -156,7 +156,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
                 col.addSeries(seriesTotal);
                 col.addSeries(seriesPeriod);
 
-                DataSet ds = study.getDataSet(datasetId);
+                DataSet ds = study.getDataset(datasetId);
                 byte[] bytes = generateTimeChart("Dataset: " + ds.getLabel(), col, "Visit Date", "", null);
                 response.setContentType("image/png");
                 response.setContentLength(bytes.length);
@@ -205,7 +205,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
 
     private static Selector getVisitDateSelector(Study study, int datasetId, double sequenceNum, User user)
     {
-        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+        DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
         TableInfo ti = def.getTableInfo(user);
         SQLFragment sql = new SQLFragment();
         sql.append(

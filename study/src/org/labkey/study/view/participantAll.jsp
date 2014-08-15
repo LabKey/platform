@@ -111,7 +111,7 @@
     StudyImpl study = manager.getStudy(getContainer());
 
     User user = (User) request.getUserPrincipal();
-    List<DataSetDefinition> allDatasets = manager.getDataSetDefinitions(study);
+    List<DataSetDefinition> allDatasets = manager.getDatasetDefinitions(study);
     ArrayList<DataSetDefinition> datasets = new ArrayList<>(allDatasets.size());
     for (DataSetDefinition def : allDatasets)
     {
@@ -298,7 +298,7 @@
         if (null == typeURI)
             continue;
 
-        int datasetId = dataset.getDataSetId();
+        int datasetId = dataset.getDatasetId();
         boolean expanded = false;
         if ("expand".equalsIgnoreCase(expandedMap.get(datasetId)))
             expanded = true;

@@ -160,12 +160,12 @@ public class ParticipantTable extends BaseStudyTable
     {
         if (_study != null && _study.getParticipantAliasDatasetId() != null)
         {
-            DataSetDefinition dataSet = _study.getDataSet(_study.getParticipantAliasDatasetId());
+            DataSetDefinition dataset = _study.getDataset(_study.getParticipantAliasDatasetId());
             User user = getUserSchema().getUser();
-            if (dataSet != null && dataSet.canRead(user))
+            if (dataset != null && dataset.canRead(user))
             {
                 // Get the table and the two admin-configured columns
-                final DataSetDefinition.DatasetSchemaTableInfo datasetTable = dataSet.getTableInfo(user, true);
+                final DataSetDefinition.DatasetSchemaTableInfo datasetTable = dataset.getTableInfo(user, true);
                 final ColumnInfo aliasColumn = datasetTable.getColumn(_study.getParticipantAliasProperty());
                 final ColumnInfo sourceColumn = datasetTable.getColumn(_study.getParticipantAliasSourceProperty());
 

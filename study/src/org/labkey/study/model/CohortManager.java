@@ -325,7 +325,7 @@ public class CohortManager
         {
             DataSetDefinition dataset = null;
             if (study.getParticipantCohortDataSetId() != null)
-                dataset = study.getDataSet(study.getParticipantCohortDataSetId().intValue());
+                dataset = study.getDataset(study.getParticipantCohortDataSetId().intValue());
 
             if (null != dataset)
             {

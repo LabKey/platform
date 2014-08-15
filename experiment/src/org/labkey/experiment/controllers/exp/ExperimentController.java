@@ -2130,7 +2130,7 @@ public class ExperimentController extends SpringActionController
             List<Pair<SecurableResource, ActionURL>> noPermissionDatasetRows = new ArrayList<>();
             for (DataSet dataset : StudyService.get().getDatasetsForAssayRuns(runs, getUser()))
             {
-                ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDataSetId());
+                ActionURL url = PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataset.getContainer(), dataset.getDatasetId());
                 if (dataset.canWrite(getUser()))
                 {
                     permissionDatasetRows.add(new Pair<SecurableResource, ActionURL>(dataset, url));
@@ -2251,7 +2251,7 @@ public class ExperimentController extends SpringActionController
                 }
                 for (DataSet dataSet : StudyService.get().getDatasetsForAssayProtocol(protocol))
                 {
-                    Pair<SecurableResource, ActionURL> entry = new Pair<SecurableResource, ActionURL>(dataSet, PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataSet.getContainer(), dataSet.getDataSetId()));
+                    Pair<SecurableResource, ActionURL> entry = new Pair<SecurableResource, ActionURL>(dataSet, PageFlowUtil.urlProvider(StudyUrls.class).getDatasetURL(dataSet.getContainer(), dataSet.getDatasetId()));
                     if (dataSet.canDelete(getUser()))
                     {
                         deleteableDatasets.add(entry);

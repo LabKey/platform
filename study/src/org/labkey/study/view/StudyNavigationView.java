@@ -61,10 +61,10 @@ public class StudyNavigationView extends JspView<NavTree>
 //        NavTree ntDatasets = new NavTree("Datasets", new ActionURL("project","getWebPart",_study.getContainer()).addParameter("webpart.name","Datasets"));
         NavTree ntDatasets = new NavTree("Datasets", new ActionURL(StudyController.DatasetsAction.class, _study.getContainer()));
         ntRoot.addChild(ntDatasets);
-        List<DataSetDefinition> defs = _study.getDataSets();
+        List<DataSetDefinition> defs = _study.getDatasets();
 //        for (DataSetDefinition def : defs)
 //        {
-//            ntDatasets.addChild(def.getDisplayString(), _base.clone().setAction(StudyController.DatasetAction.class).addParameter("datasetId",def.getDataSetId()));
+//            ntDatasets.addChild(def.getDisplayString(), _base.clone().setAction(StudyController.DatasetAction.class).addParameter("datasetId",def.getDatasetId()));
 //        }
 
         //
@@ -85,11 +85,11 @@ public class StudyNavigationView extends JspView<NavTree>
         {
             NavTree ntParticipants = new NavTree(StudyService.get().getSubjectNounPlural(getContextContainer()));
             ntRoot.addChild(ntParticipants);
-            ntParticipants.addChild("all", _base.clone().setAction(StudyController.DatasetAction.class).addParameter("datasetId",dem.getDataSetId()));
+            ntParticipants.addChild("all", _base.clone().setAction(StudyController.DatasetAction.class).addParameter("datasetId",dem.getDatasetId()));
             List<CohortImpl> cohorts = _study.getCohorts(user);
             for (CohortImpl cohort : cohorts)
             {
-                NavTree ntCohort = new NavTree(cohort.getDisplayString(), _base.clone().setAction(StudyController.DatasetAction.class).addParameter("datasetId",dem.getDataSetId()).addParameter("cohortId",cohort.getRowId()));
+                NavTree ntCohort = new NavTree(cohort.getDisplayString(), _base.clone().setAction(StudyController.DatasetAction.class).addParameter("datasetId",dem.getDatasetId()).addParameter("cohortId",cohort.getRowId()));
                 ntParticipants.addChild(ntCohort);
             }
         }

@@ -118,7 +118,7 @@ public class ParticipantVisitTable extends BaseStudyTable
                 addWrapColumn(col);
         }
 
-        for (DataSetDefinition dataset : _userSchema.getStudy().getDataSets())
+        for (DataSetDefinition dataset : _userSchema.getStudy().getDatasets())
         {
             // verify that the current user has permission to read this dataset (they may not if
             // advanced study security is enabled).

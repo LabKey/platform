@@ -62,22 +62,22 @@
 <%
 if (isSharedDataset)
 {
-    ActionURL manageShared = new ActionURL(StudyController.DatasetDetailsAction.class,dataset.getDefinitionContainer()).addParameter("id",dataset.getDataSetId());
+    ActionURL manageShared = new ActionURL(StudyController.DatasetDetailsAction.class,dataset.getDefinitionContainer()).addParameter("id",dataset.getDatasetId());
     %>This dataset is defined in another folder: <a href="<%=h(manageShared)%>"><%=h(dataset.getDefinitionContainer().getName())%></a><br><%
 }
 
 if (permissions.contains(AdminPermission.class))
 {
     ActionURL viewDatasetURL = new ActionURL(StudyController.DatasetAction.class, c);
-    viewDatasetURL.addParameter("datasetId", dataset.getDataSetId());
+    viewDatasetURL.addParameter("datasetId", dataset.getDatasetId());
 
     ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, c);
-    updateDatasetURL.addParameter("datasetId", dataset.getDataSetId());
+    updateDatasetURL.addParameter("datasetId", dataset.getDatasetId());
 
     ActionURL manageTypesURL = new ActionURL(StudyController.ManageTypesAction.class, c);
 
     ActionURL deleteDatasetURL = new ActionURL(StudyController.DeleteDatasetAction.class, c);
-    deleteDatasetURL.addParameter("id", dataset.getDataSetId());
+    deleteDatasetURL.addParameter("id", dataset.getDatasetId());
 
     %>
     <br>
@@ -99,10 +99,10 @@ if (permissions.contains(AdminPermission.class))
 if (permissions.contains(UpdatePermission.class) && !isSharedDataset)
 {
     ActionURL showHistoryURL = new ActionURL(StudyController.ShowUploadHistoryAction.class, c);
-    showHistoryURL.addParameter("id", dataset.getDataSetId());
+    showHistoryURL.addParameter("id", dataset.getDatasetId());
 
     ActionURL editTypeURL = new ActionURL(StudyController.EditTypeAction.class, c);
-    editTypeURL.addParameter("datasetId", dataset.getDataSetId());
+    editTypeURL.addParameter("datasetId", dataset.getDatasetId());
 
     %>&nbsp;<%= button("Show Import History").href(showHistoryURL) %>
 <%  if (dataset.getType().equals(org.labkey.api.study.DataSet.TYPE_STANDARD)) { %>
@@ -128,7 +128,7 @@ if (!pipelineSet)
         <th align=left><%= h(dataset.getName()) %></th>
 
         <td class=labkey-form-label>ID</td>
-        <td align=left><%= dataset.getDataSetId() %></td>
+        <td align=left><%= dataset.getDatasetId() %></td>
     </tr>
     <tr>
         <td class=labkey-form-label>Label</td>
@@ -243,10 +243,10 @@ if (!pipelineSet)
         Ext4.onReady(function(){
             var datasets = [
 <%
-        for (DataSet def : study.getDataSetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
+        for (DataSet def : study.getDatasetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
         {
 %>
-                {label: "<%=h(def.getLabel())%>", id: <%=def.getDataSetId()%>},
+                {label: "<%=h(def.getLabel())%>", id: <%=def.getDatasetId()%>},
 <%
         }
 %>
@@ -356,7 +356,7 @@ if (!pipelineSet)
             function linkDatasetHandler(){
                 var json = {};
                 json.type = linkDatasetGroup.getValue().deftype;
-                json.expectationDataset = <%= dataset.getDataSetId() %>;
+                json.expectationDataset = <%= dataset.getDatasetId() %>;
 
                 if(json.type == 'linkToTarget'){
                     json.targetDataset = datasetCombo.getValue();

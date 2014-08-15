@@ -76,12 +76,12 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
     {
         try
         {
-            DataSetDefinition dd = study.getDataSet(id);
+            DataSetDefinition dd = study.getDataset(id);
             if (null == dd)
                 return null;
             GWTDataset ds = new GWTDataset();
             PropertyUtils.copyProperties(ds, dd);
-            ds.setDatasetId(dd.getDataSetId()); // upper/lowercase problem
+            ds.setDatasetId(dd.getDatasetId()); // upper/lowercase problem
             ds.setKeyPropertyManaged(dd.getKeyManagementType() != DataSet.KeyManagementType.None);
 
             List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
@@ -182,7 +182,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         {
             // CONSIDER: optimistic concurrency validate against current
             // validate that this smells right
-            DataSetDefinition def = study.getDataSet(ds.getDatasetId());
+            DataSetDefinition def = study.getDataset(ds.getDatasetId());
             if (null == def)
             {
                 errors.add("Dataset not found");
@@ -246,8 +246,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
 
             if (!def.getLabel().equals(updated.getLabel()))
             {
-                DataSet existing = studyManager.getDataSetDefinitionByLabel(study, updated.getLabel());
-                if (existing != null && existing.getDataSetId() != ds.getDatasetId())
+                DataSet existing = studyManager.getDatasetDefinitionByLabel(study, updated.getLabel());
+                if (existing != null && existing.getDatasetId() != ds.getDatasetId())
                 {
                     errors.add("A Dataset already exists with the label \"" + updated.getLabel() +"\"");
                     return errors;
@@ -257,8 +257,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             if (!def.getName().equals(updated.getName()))
             {
                 // issue 17766: check if dataset or query exist with this name
-                DataSet existing = studyManager.getDataSetDefinitionByName(study, updated.getName());
-                if ((null != existing && existing.getDataSetId() != ds.getDatasetId())
+                DataSet existing = studyManager.getDatasetDefinitionByName(study, updated.getName());
+                if ((null != existing && existing.getDatasetId() != ds.getDatasetId())
                     || null != QueryService.get().getQueryDef(getUser(), getContainer(), "study", updated.getName()))
                 {
                     errors.add("A Dataset or Query already exists with the name \"" + updated.getName() +"\"");
@@ -333,7 +333,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
             errors.add("Study not found in current container");
             return false;
         }
-        DataSetDefinition def = (DataSetDefinition)study.getDataSet(ds.getDatasetId());
+        DataSetDefinition def = (DataSetDefinition)study.getDataset(ds.getDatasetId());
         if (null == def)
         {
             errors.add("Dataset not found");

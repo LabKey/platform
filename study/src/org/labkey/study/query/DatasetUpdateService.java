@@ -93,7 +93,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         int count = _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE), extraScriptContext);
         if (count > 0)
         {
-            StudyManager.dataSetModified(_dataset, user, true);
+            StudyManager.datasetModified(_dataset, user, true);
             resyncStudy(user, container, null, null, true);
         }
         return count;
@@ -107,7 +107,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
         int count = super._importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
         if (count > 0)
         {
-            StudyManager.dataSetModified(_dataset, user, true);
+            StudyManager.datasetModified(_dataset, user, true);
             resyncStudy(user, container, null, null, true);
         }
         return count;
@@ -138,7 +138,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
             }
 
             _participantVisitResyncRequired = true; // 13717 : Study failing to resync() on dataset insert
-            StudyManager.dataSetModified(_dataset, user, true);
+            StudyManager.datasetModified(_dataset, user, true);
             resyncStudy(user, container);
         }
         return result;
@@ -193,7 +193,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     {
         throw new IllegalStateException();
 //        List<String> errors = new ArrayList<String>();
-//        String newLsid = StudyService.get().insertDatasetRow(user, container, _dataset.getDataSetId(), row, errors);
+//        String newLsid = StudyService.get().insertDatasetRow(user, container, _dataset.getDatasetId(), row, errors);
 //
 //        if(errors.size() > 0)
 //        {

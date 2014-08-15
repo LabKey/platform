@@ -203,7 +203,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     {
         if (table instanceof DataSetTable)
         {
-            if (!((DataSetTable) table).getDataSet().isShowByDefault())
+            if (!((DataSetTable) table).getDataset().isShowByDefault())
                 return false;
         }
         if (type == ColumnMatchType.CONFIGURED_MEASURES)
@@ -285,7 +285,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         Study study = getSchema().getStudy();
         if (study != null)
         {
-            for (DataSet ds : study.getDataSets())
+            for (DataSet ds : study.getDatasets())
             {
                 if (ds.isDemographicData() && ds.isShowByDefault())
                 {
@@ -359,7 +359,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     {
         if (study != null)
         {
-            for (DataSet ds : study.getDataSets())
+            for (DataSet ds : study.getDatasets())
             {
                 if (ds.isShowByDefault())
                 {

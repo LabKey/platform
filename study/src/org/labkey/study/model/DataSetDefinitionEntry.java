@@ -25,23 +25,23 @@ import org.labkey.data.xml.reportProps.PropertyList;
  */
 public class DataSetDefinitionEntry
 {
-    public DataSetDefinitionEntry(DataSetDefinition dataSetDefinition, boolean isNew, PropertyList tags)
+    public DataSetDefinitionEntry(DataSetDefinition datasetDefinition, boolean isNew, PropertyList tags)
     {
-        this.dataSetDefinition = dataSetDefinition;
+        this.datasetDefinition = datasetDefinition;
         this.isNew = isNew;
         this.isModified = isNew;
         this.tags = tags;
     }
 
-    public DataSetDefinitionEntry(DataSetDefinition dataSetDefinition, boolean isNew, boolean isModified, PropertyList tags)
+    public DataSetDefinitionEntry(DataSetDefinition datasetDefinition, boolean isNew, boolean isModified, PropertyList tags)
     {
-        this.dataSetDefinition = dataSetDefinition;
+        this.datasetDefinition = datasetDefinition;
         this.isNew = isNew;
         this.isModified = isModified;
         this.tags = tags;
     }
 
-    public DataSetDefinition dataSetDefinition;
+    public DataSetDefinition datasetDefinition;
     public boolean isNew;
     public boolean isModified;
     public PropertyList tags;

@@ -153,7 +153,7 @@ else
     }
 
     java.util.List<Role> possibleRoles = new ArrayList<>();
-    List<DataSetDefinition> datasets = new ArrayList<>(study.getDataSets());
+    List<DataSetDefinition> datasets = new ArrayList<>(study.getDatasets());
     Collections.sort(datasets, new Comparator<DataSetDefinition>(){
         @Override
         public int compare(DataSetDefinition o1, DataSetDefinition o2)
@@ -204,7 +204,7 @@ else
     {
         SecurityPolicy dsPolicy = SecurityPolicyManager.getPolicy(ds);
 
-        String inputName = "dataset." + ds.getDataSetId();
+        String inputName = "dataset." + ds.getDatasetId();
         %><tr class="<%=getShadeRowClass(row++ % 2 == 0)%>"><td><%=h(ds.getLabel())%></td><%
 
         for (Group g : restrictedGroups)

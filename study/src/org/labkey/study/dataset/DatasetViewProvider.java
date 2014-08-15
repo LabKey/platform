@@ -95,7 +95,7 @@ public class DatasetViewProvider implements DataViewProvider
 
             if (null != study)
             {
-                for (DataSet ds : study.getDataSets())
+                for (DataSet ds : study.getDatasets())
                 {
                     if (ds.canRead(user))
                     {
@@ -114,7 +114,7 @@ public class DatasetViewProvider implements DataViewProvider
                         view.setIcon(AppProps.getInstance().getContextPath() + "/reports/grid.gif");
                         view.setVisible(ds.isShowByDefault());
 
-                        ActionURL runUrl = new ActionURL(StudyController.DefaultDatasetReportAction.class, container).addParameter("datasetId", ds.getDataSetId());
+                        ActionURL runUrl = new ActionURL(StudyController.DefaultDatasetReportAction.class, container).addParameter("datasetId", ds.getDatasetId());
                         view.setRunUrl(runUrl);
                         view.setDetailsUrl(runUrl);
 
@@ -170,7 +170,7 @@ public class DatasetViewProvider implements DataViewProvider
 
             if (study != null)
             {
-                DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByEntityId(study, id);
+                DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByEntityId(study, id);
                 if (dsDef == null)
                     errors.add(new SimpleValidationError("Unable to locate the dataset for the specified ID"));
             }
@@ -191,7 +191,7 @@ public class DatasetViewProvider implements DataViewProvider
                 StudyImpl study = StudyManager.getInstance().getStudy(context.getContainer());
                 if (study != null)
                 {
-                    DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByEntityId(study, id);
+                    DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByEntityId(study, id);
                     if (dsDef != null)
                     {
                         ViewCategory category = null;

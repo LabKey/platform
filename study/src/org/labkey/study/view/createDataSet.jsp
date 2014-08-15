@@ -21,6 +21,8 @@
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
+    // TODO: Delete this JSP... not used!?
+
     JspView<StudyController.DatasetForm> me = (JspView<StudyController.DatasetForm>) HttpView.currentView();
     StudyController.DatasetForm form = me.getModelBean();
 %>

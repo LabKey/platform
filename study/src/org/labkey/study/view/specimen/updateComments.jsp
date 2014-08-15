@@ -159,13 +159,13 @@
 
         if (hasParticipantMenu)
         {
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantCommentDataSetId());
+            DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDataSetId());
             hasParticipantMenu = def != null && def.canWrite(user);
         }
 
         if (hasParticipantVisitMenu)
         {
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantVisitCommentDataSetId());
+            DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDataSetId());
             hasParticipantVisitMenu = def != null && def.canWrite(user);
         }
 

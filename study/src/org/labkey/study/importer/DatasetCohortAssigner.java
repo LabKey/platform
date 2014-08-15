@@ -60,7 +60,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
             StudyManager studyManager = StudyManager.getInstance();
             Map<String, DatasetDefinitionImporter.DatasetImportProperties> datasetProps = DatasetDefinitionImporter.getDatasetImportProperties(datasets);
 
-            for (DataSetDefinition def : study.getDataSets())
+            for (DataSetDefinition def : study.getDatasets())
             {
                 DatasetDefinitionImporter.DatasetImportProperties props = datasetProps.get(def.getName());
 

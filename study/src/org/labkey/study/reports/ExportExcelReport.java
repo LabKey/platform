@@ -139,7 +139,7 @@ public class ExportExcelReport extends RedirectReport
 
         ExcelWriter writer = new ExcelWriter(ExcelWriter.ExcelDocumentType.xls);
 
-        for (DataSetDefinition def : study.getDataSets())
+        for (DataSetDefinition def : study.getDatasets())
         {
             if (def.getTypeURI() == null)
                 continue;
@@ -155,7 +155,7 @@ public class ExportExcelReport extends RedirectReport
             settings.setBaseSort(sort);
 
             QueryView queryView = schema.createView(context, settings, errors);
-            String label = def.getLabel() != null ? def.getLabel() : String.valueOf(def.getDataSetId());
+            String label = def.getLabel() != null ? def.getLabel() : String.valueOf(def.getDatasetId());
 
             writer.setDisplayColumns(queryView.getExportColumns(queryView.getDisplayColumns()));
             renderSheet(writer, label, queryView.getResults());

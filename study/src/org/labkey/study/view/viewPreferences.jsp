@@ -33,7 +33,7 @@
 
     ViewContext context = getViewContext();
     ActionURL url = context.cloneActionURL();
-    String defaultView = StudyController.getDefaultView(context, bean.getDataSetDefinition().getDataSetId());
+    String defaultView = StudyController.getDefaultView(context, bean.getDatasetDefinition().getDatasetId());
 %>
 
 <table>

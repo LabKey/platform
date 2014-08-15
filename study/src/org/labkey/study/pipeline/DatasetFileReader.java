@@ -120,7 +120,7 @@ public class DatasetFileReader
             return;
         }
 
-        List<DataSetDefinition> dsArray = _studyManager.getDataSetDefinitions(_study);
+        List<DataSetDefinition> dsArray = _studyManager.getDatasetDefinitions(_study);
         HashMap<String, DataSetDefinition> dsMap = new HashMap<>(dsArray.size() * 3);
         // UNDONE: duplicate labels? dataset named participant?
         for (DataSetDefinition ds : dsArray)
@@ -138,7 +138,7 @@ public class DatasetFileReader
             String name = StringUtils.trimToNull(ds.getName());
             if (null != name)
                 dsMap.put(name.toLowerCase(), ds);
-            dsMap.put(String.valueOf(ds.getDataSetId()), ds);
+            dsMap.put(String.valueOf(ds.getDatasetId()), ds);
         }
 
         // add fake DataSetDefinition for virtual Participant dataset
@@ -294,7 +294,7 @@ public class DatasetFileReader
                     return name1.compareTo(name2);
                 if (name1 != null || name2 != null)
                     return name1 == null ? -1 : 1;
-                return j1._datasetDefinition.getDataSetId() - j2._datasetDefinition.getDataSetId();
+                return j1._datasetDefinition.getDatasetId() - j2._datasetDefinition.getDatasetId();
             }
         });
     }
@@ -322,7 +322,7 @@ public class DatasetFileReader
     private DatasetImportRunnable newImportJob(DataSetDefinition ds, VirtualFile root, String tsv, Action defaultAction, boolean defaultDeleteAfterImport, Date defaultReplaceCutoff, OneToOneStringMap defaultColumnMap)
     {
         DatasetImportRunnable runnable;
-        if (ds.getDataSetId() == -1 && "Participant".equals(ds.getName()))
+        if (ds.getDatasetId() == -1 && "Participant".equals(ds.getName()))
             runnable = new ParticipantImportRunnable(_job, _study, ds, root, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap);
         else
             runnable = new DatasetImportRunnable(_job, _study, ds, root, tsv, defaultAction, defaultDeleteAfterImport, defaultReplaceCutoff, defaultColumnMap, _studyImportContext);

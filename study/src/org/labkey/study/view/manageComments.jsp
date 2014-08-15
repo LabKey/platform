@@ -39,7 +39,7 @@
     StudyImpl study = getStudy();
     StudyManager manager = StudyManager.getInstance();
 
-    List<? extends DataSet> datasets = manager.getDataSetDefinitions(study);
+    List<? extends DataSet> datasets = manager.getDatasetDefinitions(study);
 
     PropertyDescriptor[] ptidDescriptors = new PropertyDescriptor[0];
     PropertyDescriptor[] ptidVisitDescriptors = new PropertyDescriptor[0];
@@ -48,7 +48,7 @@
 
     if (participantCommentDataSetId != null && participantCommentDataSetId.intValue() >= 0)
     {
-        DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, participantCommentDataSetId.intValue());
+        DataSet dataset = StudyManager.getInstance().getDatasetDefinition(study, participantCommentDataSetId.intValue());
         if (dataset != null)
             ptidDescriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
     }
@@ -57,7 +57,7 @@
     {
         if (participantVisitCommentDataSetId != null && participantVisitCommentDataSetId.intValue() >= 0)
         {
-            DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, participantVisitCommentDataSetId.intValue());
+            DataSet dataset = StudyManager.getInstance().getDatasetDefinition(study, participantVisitCommentDataSetId.intValue());
             if (dataset != null)
                 ptidVisitDescriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
         }
@@ -111,9 +111,9 @@
                             if (dataset.isDemographicData())
                             {
                                 boolean selected = (bean.getParticipantCommentDataSetId() != null &&
-                                        dataset.getDataSetId() == bean.getParticipantCommentDataSetId());
+                                        dataset.getDatasetId() == bean.getParticipantCommentDataSetId());
                     %>
-                    <option value="<%= dataset.getDataSetId() %>"<%=selected(selected)%>><%= h(dataset.getLabel()) %>
+                    <option value="<%= dataset.getDatasetId() %>"<%=selected(selected)%>><%= h(dataset.getLabel()) %>
                     </option>
                     <%
                             }
@@ -173,9 +173,9 @@
                             if (!dataset.isDemographicData())
                             {
                                 boolean selected = (bean.getParticipantVisitCommentDataSetId() != null &&
-                                        dataset.getDataSetId() == bean.getParticipantVisitCommentDataSetId());
+                                        dataset.getDatasetId() == bean.getParticipantVisitCommentDataSetId());
                     %>
-                    <option value="<%= dataset.getDataSetId() %>"<%=selected(selected)%>><%= h(dataset.getLabel()) %>
+                    <option value="<%= dataset.getDatasetId() %>"<%=selected(selected)%>><%= h(dataset.getLabel()) %>
                     </option>
                     <%
                             }

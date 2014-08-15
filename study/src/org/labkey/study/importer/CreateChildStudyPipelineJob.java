@@ -136,7 +136,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // get the list of datasets to export
                 for (int datasetId : _form.getDatasets())
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getSourceStudy(), datasetId);
+                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(getSourceStudy(), datasetId);
 
                     if (def != null)
                         _datasets.add(def);
@@ -163,7 +163,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     // Limit datasets taken to those in the selected set of visits.
                     if (visit.getVisitDateDatasetId() != null && (null == selectedVisits || selectedVisits.contains(visit.getId())))
                     {
-                        DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getSourceStudy(), visit.getVisitDateDatasetId());
+                        DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(getSourceStudy(), visit.getVisitDateDatasetId());
                         if (def != null)
                             _datasets.add(def);
                     }
@@ -173,7 +173,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 // visits are correctly calculated\
                 if (_sourceStudy.getTimepointType() == TimepointType.DATE)
                 {
-                    for (DataSetDefinition dataset : _sourceStudy.getDataSets())
+                    for (DataSetDefinition dataset : _sourceStudy.getDatasets())
                     {
                         if (dataset.isDemographicData())
                         {
@@ -187,7 +187,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                                 // also add the visits included in this dataset
                                 if (selectedVisits != null)
                                 {
-                                    for (Visit visit : StudyManager.getInstance().getVisitsForDataset(_sourceStudy.getContainer(), dataset.getDataSetId()))
+                                    for (Visit visit : StudyManager.getInstance().getVisitsForDataset(_sourceStudy.getContainer(), dataset.getDatasetId()))
                                         selectedVisits.add(visit.getId());
                                 }
                             }
@@ -419,7 +419,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
             VisitImporter visitImporter = new VisitImporter();
 
             // don't create dataset definitions for datasets we don't import
-            visitImporter.setEnsureDataSets(false);
+            visitImporter.setEnsureDatasets(false);
             visitImporter.process(importContext, studyDir, errors);
 
             ProtocolDocumentImporter proImporter = new ProtocolDocumentImporter();

@@ -120,7 +120,7 @@ public class CohortImporter implements InternalStudyImporter
         {
             int id = cohortsXml.getDatasetId();
 
-            if (null != study.getDataSet(id))
+            if (null != study.getDataset(id))
                 return id;
         }
 

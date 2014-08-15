@@ -57,7 +57,7 @@ public class DataFaxVisitMapWriter implements Writer<StudyImpl, StudyExportConte
 
             for (VisitImpl v : visits)
             {
-                List<VisitDataSet> vds = v.getVisitDataSets();
+                List<VisitDataSet> vds = v.getVisitDatasets();
 
                 out.print(df.format(v.getSequenceNumMin()));
 
@@ -86,10 +86,10 @@ public class DataFaxVisitMapWriter implements Writer<StudyImpl, StudyExportConte
                 // Required datasets
                 for (VisitDataSet vd : vds)
                 {
-                    if (vd.isRequired() && ctx.isExportedDataset(vd.getDataSetId()))
+                    if (vd.isRequired() && ctx.isExportedDataset(vd.getDatasetId()))
                     {
                         out.print(s);
-                        out.print(vd.getDataSetId());
+                        out.print(vd.getDatasetId());
                         s = " ";
                     }
                 }
@@ -103,7 +103,7 @@ public class DataFaxVisitMapWriter implements Writer<StudyImpl, StudyExportConte
                     if (!vd.isRequired())
                     {
                         out.print(s);
-                        out.print(vd.getDataSetId());
+                        out.print(vd.getDatasetId());
                         s = " ";
                     }
                 }

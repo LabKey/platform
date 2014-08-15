@@ -32,8 +32,8 @@ import java.io.IOException;
  */
 public class VisitForm extends ViewForm
 {
-    private int[] _dataSetIds;
-    private String[] _dataSetStatus;
+    private int[] _datasetIds;
+    private String[] _datasetStatus;
     private Double _sequenceNumMin;
     private Double _sequenceNumMax;
     private Double _protocolDay;
@@ -144,22 +144,22 @@ public class VisitForm extends ViewForm
 
     public String[] getDataSetStatus()
     {
-        return _dataSetStatus;
+        return _datasetStatus;
     }
 
-    public void setDataSetStatus(String[] dataSetStatus)
+    public void setDataSetStatus(String[] datasetStatus)
     {
-        _dataSetStatus = dataSetStatus;
+        _datasetStatus = datasetStatus;
     }
 
     public int[] getDataSetIds()
     {
-        return _dataSetIds;
+        return _datasetIds;
     }
 
-    public void setDataSetIds(int[] dataSetIds)
+    public void setDataSetIds(int[] datasetIds)
     {
-        _dataSetIds = dataSetIds;
+        _datasetIds = datasetIds;
     }
 
     public Double getSequenceNumMin()

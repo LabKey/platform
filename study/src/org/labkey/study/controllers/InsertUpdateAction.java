@@ -108,7 +108,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     public ModelAndView getView(Form form, boolean reshow, BindException errors) throws Exception
     {
         StudyImpl study = getStudy();
-        _ds = StudyManager.getInstance().getDataSetDefinition(getStudy(), form.getDatasetId());
+        _ds = StudyManager.getInstance().getDatasetDefinition(getStudy(), form.getDatasetId());
         if (null == _ds)
         {
             redirectTypeNotFound(form.getDatasetId());
@@ -129,7 +129,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
 
         // if this is our cohort assignment dataset, we may want to display drop-downs for cohort, rather
         // than a text entry box:
-        if (!study.isManualCohortAssignment() && Objects.equals(_ds.getDataSetId(), study.getParticipantCohortDataSetId()))
+        if (!study.isManualCohortAssignment() && Objects.equals(_ds.getDatasetId(), study.getParticipantCohortDataSetId()))
         {
             final List<? extends Cohort> cohorts = StudyManager.getInstance().getCohorts(study.getContainer(), getUser());
             String participantCohortPropertyName = study.getParticipantCohortProperty();
@@ -241,7 +241,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
             }
             root.addChild(study.getLabel(), rootURL);
             ActionURL grid = new ActionURL(StudyController.DatasetAction.class, getContainer());
-            grid.addParameter(DataSetDefinition.DATASETKEY, _ds.getDataSetId());
+            grid.addParameter(DataSetDefinition.DATASETKEY, _ds.getDatasetId());
             grid.addParameter(DataRegion.LAST_FILTER_PARAM, "true");
             root.addChild(_ds.getLabel(), grid);
             appendExtraNavTrail(root);
@@ -264,7 +264,7 @@ public abstract class InsertUpdateAction<Form extends DatasetController.EditData
     {
         int datasetId = form.getDatasetId();
         StudyImpl study = getStudy();
-        _ds = StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+        _ds = StudyManager.getInstance().getDatasetDefinition(study, datasetId);
         if (null == _ds)
         {
             redirectTypeNotFound(form.getDatasetId());

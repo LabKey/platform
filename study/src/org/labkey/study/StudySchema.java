@@ -129,7 +129,7 @@ public class StudySchema
 
     public TableInfo getTableInfoStudyData(StudyImpl study, @Nullable User user)
     {
-        return new StudyUnionTableInfo(study, StudyManager.getInstance().getDataSetDefinitions(study), user, study.isDataspaceStudy());
+        return new StudyUnionTableInfo(study, StudyManager.getInstance().getDatasetDefinitions(study), user, study.isDataspaceStudy());
     }
 
     public TableInfo getTableInfoStudyDataFiltered(StudyImpl study, Collection<DataSetDefinition> defs, User user)
@@ -139,7 +139,7 @@ public class StudySchema
 
     public TableInfo getTableInfoStudyDataVisible(StudyImpl study, @Nullable User user)
     {
-        List<DataSetDefinition> defsAll = study.getDataSets();
+        List<DataSetDefinition> defsAll = study.getDatasets();
         List<DataSetDefinition> defsVisible = new ArrayList<>(defsAll.size());
         for (DataSetDefinition def : defsAll)
         {

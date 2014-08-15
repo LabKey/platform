@@ -353,11 +353,11 @@ public class SecurityController extends SpringActionController
             for (Group g : groups)
                 groupsInProject.add(g.getUserId());
 
-            for (DataSet dsDef : study.getDataSets())
+            for (DataSet dsDef : study.getDatasets())
             {
                 // Data that comes back is a list of permissions and groups separated by underscores.
                 // e.g. "NONE_1182" or "READ_-1"
-                List<String> permsAndGroups = getViewContext().getList("dataset." + dsDef.getDataSetId());
+                List<String> permsAndGroups = getViewContext().getList("dataset." + dsDef.getDatasetId());
                 Map<Integer, String> group2Perm = convertToGroupsAndPermissions(permsAndGroups);
 
                 if (group2Perm != null)

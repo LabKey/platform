@@ -153,13 +153,13 @@
                 <select name="visitDateDatasetId">
                     <option value="0">[None]</option>
                     <%
-                        for (VisitDataSet vds : visit.getVisitDataSets())
+                        for (VisitDataSet vds : visit.getVisitDatasets())
                         {
-                            DataSet def = StudyManager.getInstance().getDataSetDefinition(getStudy(), vds.getDataSetId());
+                            DataSet def = StudyManager.getInstance().getDatasetDefinition(getStudy(), vds.getDatasetId());
                             if (def == null || def.getTypeURI() == null)
                                 continue;
-                            boolean selected = (visit.getVisitDateDatasetId() == def.getDataSetId());
-                            %><option value="<%= def.getDataSetId() %>"<%=selected(selected) %>><%= h(def.getLabel()) %></option><%
+                            boolean selected = (visit.getVisitDateDatasetId() == def.getDatasetId());
+                            %><option value="<%= def.getDatasetId() %>"<%=selected(selected) %>><%= h(def.getLabel()) %></option><%
                         }
                     %>
                 </select>
@@ -169,7 +169,7 @@
             <td class="labkey-form-label">Visit Date Column Name</td>
             <td><%
                 // UNDONE: use fancy javascript or AJAX here
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(getStudy(), visit.getVisitDateDatasetId());
+                DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(getStudy(), visit.getVisitDateDatasetId());
                 String visitDatePropertyName = (null != def && null != def.getVisitDateColumnName()) ? def.getVisitDateColumnName() : "";
                 %><input disabled=true value="<%=h(visitDatePropertyName)%>">
             </td>
@@ -205,19 +205,19 @@
                 <table>
                 <%
                     HashMap<Integer, VisitDataSetType> typeMap = new HashMap<>();
-                    for (VisitDataSet vds : visit.getVisitDataSets())
-                        typeMap.put(vds.getDataSetId(), vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
+                    for (VisitDataSet vds : visit.getVisitDatasets())
+                        typeMap.put(vds.getDatasetId(), vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
 
-                    for (DataSet dataSet : getDataSets())
+                    for (DataSet dataset : getDatasets())
                     {
-                        VisitDataSetType type = typeMap.get(dataSet.getDataSetId());
+                        VisitDataSetType type = typeMap.get(dataset.getDatasetId());
                         if (null == type)
                             type = VisitDataSetType.NOT_ASSOCIATED;
                 %>
                         <tr>
-                            <td><%= h(dataSet.getDisplayString()) %></td>
+                            <td><%= h(dataset.getDisplayString()) %></td>
                             <td>
-                                <input type="hidden" name="dataSetIds" value="<%= dataSet.getDataSetId() %>">
+                                <input type="hidden" name="dataSetIds" value="<%= dataset.getDatasetId() %>">
                                 <select name="dataSetStatus">
                                     <option value="<%= h(VisitDataSetType.NOT_ASSOCIATED.name()) %>"
                                         <%=selected(type == VisitDataSetType.NOT_ASSOCIATED)%>></option>

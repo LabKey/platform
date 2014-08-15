@@ -53,16 +53,16 @@
 
     ActionURL cancelURL = new ActionURL(StudyController.ManageTypesAction.class, study.getContainer());
 
-    for (DataSet def : study.getDataSetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
+    for (DataSet def : study.getDatasetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER))
     {
         ActionURL detailsURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, study.getContainer());
-        detailsURL.addParameter("datasetId", def.getDataSetId());
+        detailsURL.addParameter("datasetId", def.getDatasetId());
         String detailsLink = detailsURL.getLocalURIString();
     %>
 
     <tr>
-        <td><input type="checkbox" name="datasetIds" value="<%=def.getDataSetId()%>"></td>
-        <td><a href="<%=detailsLink%>"><%=def.getDataSetId()%></a></td>
+        <td><input type="checkbox" name="datasetIds" value="<%=def.getDatasetId()%>"></td>
+        <td><a href="<%=detailsLink%>"><%=def.getDatasetId()%></a></td>
         <td><a href="<%=detailsLink%>"><%= h(def.getLabel()) %></a></td>
         <td><%= h(def.getViewCategory() != null ? def.getViewCategory().getLabel() : null) %></td>
         <td><%= def.getType() %></td>

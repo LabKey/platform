@@ -80,9 +80,9 @@ public class BaseStudyView<T> extends HttpView<T>
     {
         if (null == _datasetDefs)
         {
-            _datasetDefs = _studyManager.getDataSetDefinitions(_study);
+            _datasetDefs = _studyManager.getDatasetDefinitions(_study);
             for (DataSetDefinition d : _datasetDefs)
-                _datasetMap.put(d.getDataSetId(), d);
+                _datasetMap.put(d.getDatasetId(), d);
         }
         return _datasetDefs;
     }

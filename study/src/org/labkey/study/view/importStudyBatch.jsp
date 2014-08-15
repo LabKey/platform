@@ -54,7 +54,7 @@ for (DatasetImportRunnable runnable : runnables)
     }
     %>
     <tr class="<%=getShadeRowClass(row++ % 2 == 0)%>">
-        <td align=right><%= dataset != null ? dataset.getDataSetId() : ""%></td>
+        <td align=right><%= dataset != null ? dataset.getDatasetId() : ""%></td>
         <td><%=dataset != null ? dataset.getLabel() : "Unknown"%></td>
         <td><%=message%></td>
         <td><%=runnable.getAction()%></td>

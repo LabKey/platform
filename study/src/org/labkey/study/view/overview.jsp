@@ -78,7 +78,7 @@
     VisitStatistic[] statisticsToDisplay = bean.stats.toArray(new VisitStatistic[bean.stats.size()]);
 
     List<VisitImpl> visits = manager.getVisits(study, selectedCohort, user, Visit.Order.DISPLAY);
-    List<DataSetDefinition> datasets = manager.getDataSetDefinitions(study, selectedCohort);
+    List<DataSetDefinition> datasets = manager.getDatasetDefinitions(study, selectedCohort);
     boolean cantReadOneOrMoreDatasets = false;
     String basePage = buildURL(StudyController.OverviewAction.class);
 
@@ -196,9 +196,9 @@
         String prevCategory = null;
         boolean useCategories = false;
 
-        for (DataSetDefinition dataSet : datasets)
+        for (DataSetDefinition dataset : datasets)
         {
-            if (dataSet.getCategory() != null)
+            if (dataset.getCategory() != null)
             {
                 useCategories = true;
                 break;
@@ -207,22 +207,22 @@
 
         Map<VisitMapKey, Boolean> requiredMap = StudyManager.getInstance().getRequiredMap(study);
 
-        for (DataSetDefinition dataSet : datasets)
+        for (DataSetDefinition dataset : datasets)
         {
-            if (!bean.showAll && !dataSet.isShowByDefault())
+            if (!bean.showAll && !dataset.isShowByDefault())
                 continue;
 
-            boolean userCanRead = dataSet.canRead(user);
+            boolean userCanRead = dataset.canRead(user);
 
             if (!userCanRead)
                 cantReadOneOrMoreDatasets = true;
 
             row++;
-            key.datasetId = dataSet.getDataSetId();
+            key.datasetId = dataset.getDatasetId();
 
             if (useCategories)
             {
-                String category = dataSet.getCategory();
+                String category = dataset.getCategory();
                 if (category == null)
                     category = "Uncategorized";
                 if (!category.equals(prevCategory))
@@ -237,13 +237,13 @@
             prevCategory = category;
         }
 
-        String dataSetLabel = (dataSet.getLabel() != null ? dataSet.getLabel() : "" + dataSet.getDataSetId());
+        String datasetLabel = (dataset.getLabel() != null ? dataset.getLabel() : "" + dataset.getDatasetId());
     %>
     <tr class="<%=getShadeRowClass(row % 2 == 0)%>">
-        <td align="center" class="labkey-row-header"><%= h(dataSetLabel) %><%
-            if (null != StringUtils.trimToNull(dataSet.getDescription()))
+        <td align="center" class="labkey-row-header"><%= h(datasetLabel) %><%
+            if (null != StringUtils.trimToNull(dataset.getDescription()))
             {
-        %><%=PageFlowUtil.helpPopup(dataSetLabel, dataSet.getDescription())%><%
+        %><%=PageFlowUtil.helpPopup(datasetLabel, dataset.getDescription())%><%
             }
         %></td>
         <td style="font-weight:bold;" align="center" nowrap="true"><%
@@ -272,7 +272,7 @@
             if (userCanRead)
             {
                 ActionURL defaultReportURL = new ActionURL(StudyController.DefaultDatasetReportAction.class, container);
-                defaultReportURL.addParameter(DataSetDefinition.DATASETKEY, dataSet.getDataSetId());
+                defaultReportURL.addParameter(DataSetDefinition.DATASETKEY, dataset.getDatasetId());
                 if (selectedCohort != null && bean.cohortFilter != null)
                     bean.cohortFilter.addURLParameters(study, defaultReportURL, "Dataset");
                 if (bean.qcStates != null)
@@ -316,7 +316,7 @@
                 {
                     ActionURL datasetLink = new ActionURL(StudyController.DatasetAction.class, container);
                     datasetLink.addParameter(VisitImpl.VISITKEY, visit.getRowId());
-                    datasetLink.addParameter(DataSetDefinition.DATASETKEY, dataSet.getDataSetId());
+                    datasetLink.addParameter(DataSetDefinition.DATASETKEY, dataset.getDatasetId());
                     if (selectedCohort != null)
                         bean.cohortFilter.addURLParameters(study, datasetLink, null);
                     if (bean.qcStates != null)

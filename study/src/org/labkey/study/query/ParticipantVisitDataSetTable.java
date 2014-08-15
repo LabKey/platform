@@ -60,7 +60,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
 
         // visits for this dataset
         // NOTE vdsList (and therefore visitList) is in display order
-        List<VisitDataSet> vdsList = _dataset.getVisitDataSets();
+        List<VisitDataSet> vdsList = _dataset.getVisitDatasets();
         Set<Integer> visitIds = new HashSet<>();
         List<VisitImpl> visitList = new ArrayList<>(vdsList.size());
         for (VisitDataSet vds : vdsList)

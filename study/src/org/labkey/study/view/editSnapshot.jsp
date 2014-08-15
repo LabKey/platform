@@ -44,7 +44,7 @@
     String datasetLabel = showDataset ? "Hide Dataset Definition" : "Edit Dataset Definition";
 
     final Study study = StudyManager.getInstance().getStudy(getContainer());
-    final DataSet dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, bean.getSnapshotName());
+    final DataSet dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, bean.getSnapshotName());
     ActionURL deleteSnapshotURL = new ActionURL(StudyController.DeleteDatasetAction.class, getContainer());
 %>
 
@@ -69,7 +69,7 @@
             <td><%= button(historyLabel).href(context.cloneActionURL().replaceParameter("showHistory", String.valueOf(!showHistory))) %></td>
             <td><%= button(datasetLabel).href(context.cloneActionURL().replaceParameter("showDataset", String.valueOf(!showDataset))) %></td>
             <td><%= button("Delete Snapshot")
-                    .href(deleteSnapshotURL.addParameter("id", dsDef.getDataSetId()))
+                    .href(deleteSnapshotURL.addParameter("id", dsDef.getDatasetId()))
                     .onClick("return confirm('Are you sure you want to delete this snapshot?  All related data will also be deleted.')") %></td>
 <%      } %>
         </tr>

@@ -80,9 +80,9 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
             return getStudy().getVisits(order);
         }
 
-        public List<? extends DataSet> getDataSets()
+        public List<? extends DataSet> getDatasets()
         {
-            return getStudy().getDataSets();
+            return getStudy().getDatasets();
         }
 
         public List<? extends Location> getSites()

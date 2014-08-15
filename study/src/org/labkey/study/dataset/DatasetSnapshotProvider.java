@@ -198,7 +198,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
             // dataset snapshots must have an underlying dataset definition defined
             StudyImpl study = StudyManager.getInstance().getStudy(qsDef.getContainer());
-            DataSetDefinition def = StudyManager.getInstance().getDataSetDefinitionByName(study, qsDef.getName());
+            DataSetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, qsDef.getName());
             if (def != null)
             {
                 QueryView view = createQueryView(context, qsDef, errors);
@@ -331,9 +331,9 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             if (!errors.hasErrors())
             {
                 Study study = StudyManager.getInstance().getStudy(qsDef.getContainer());
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinitionByName(study, qsDef.getName());
+                DataSetDefinition def = StudyManager.getInstance().getDatasetDefinitionByName(study, qsDef.getName());
                 return new ActionURL(StudyController.DatasetAction.class, qsDef.getContainer()).
-                        addParameter(DataSetDefinition.DATASETKEY, def.getDataSetId());
+                        addParameter(DataSetDefinition.DATASETKEY, def.getDatasetId());
             }
         }
         return null;
@@ -383,7 +383,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             StudyImpl study = StudyManager.getInstance().getStudy(form.getViewContext().getContainer());
 
             // purge the dataset rows then recreate the new one...
-            DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, def.getName());
+            DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
             if (dsDef != null)
             {
                 DbSchema schema = StudySchema.getInstance().getSchema();
@@ -435,7 +435,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                             transaction.commit();
 
                             return new ActionURL(StudyController.DatasetAction.class, form.getViewContext().getContainer()).
-                                    addParameter(DataSetDefinition.DATASETKEY, dsDef.getDataSetId());
+                                    addParameter(DataSetDefinition.DATASETKEY, dsDef.getDatasetId());
                         }
                     }
                 }
@@ -457,7 +457,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         // update the study dataset columns
 /*
         Study study = StudyManager.getInstance().getStudy(context.getContainer());
-        DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinition(study, def.getName());
+        DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinition(study, def.getName());
         if (dsDef != null)
         {
             String domainURI = dsDef.getTypeURI();
@@ -494,7 +494,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         if (def != null)
         {
             Study study = StudyManager.getInstance().getStudy(context.getContainer());
-            DataSetDefinition dsDef = StudyManager.getInstance().getDataSetDefinitionByName(study, def.getName());
+            DataSetDefinition dsDef = StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName());
             if (dsDef != null)
             {
                 if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(DatasetAuditProvider.DATASET_AUDIT_EVENT))
@@ -543,7 +543,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     public void datasetChanged(final DataSet def)
     {
-        _log.debug("Cache cleared notification on dataset : " + def.getDataSetId());
+        _log.debug("Cache cleared notification on dataset : " + def.getDatasetId());
 
         _sourceDataChanged(new SnapshotDependency.SourceDataType(def.getContainer(), SnapshotDependency.SourceDataType.Type.dataset, def));
     }
@@ -684,7 +684,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             Set<DataSetDefinition> deferredDatasets = new HashSet<>(snapshotDefs.size());
             for (QuerySnapshotDefinition def : snapshotDefs)
             {
-                deferredDatasets.add(StudyManager.getInstance().getDataSetDefinitionByName(study, def.getName()));
+                deferredDatasets.add(StudyManager.getInstance().getDatasetDefinitionByName(study, def.getName()));
                 TimerTask task = new SnapshotUpdateTask(def, true);
                 task.run();
             }

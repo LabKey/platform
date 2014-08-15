@@ -116,12 +116,12 @@
                         onchange="document.manageCohorts.participantCohortProperty.value=''; document.manageCohorts.submit()">
                     <option value="-1">[None]</option>
                     <%
-                        for (DataSet dataset : manager.getDataSetDefinitions(study))
+                        for (DataSet dataset : manager.getDatasetDefinitions(study))
                         {
                             boolean selected = (study.getParticipantCohortDataSetId() != null &&
-                                    dataset.getDataSetId() == study.getParticipantCohortDataSetId());
+                                    dataset.getDatasetId() == study.getParticipantCohortDataSetId());
                     %>
-                    <option value="<%= dataset.getDataSetId() %>"<%=selected(selected)%>><%= h(dataset.getLabel()) %>
+                    <option value="<%= dataset.getDatasetId() %>"<%=selected(selected)%>><%= h(dataset.getLabel()) %>
                     </option>
                     <%
                         }
@@ -141,7 +141,7 @@
                             descriptors = new PropertyDescriptor[0];
                         else
                         {
-                            DataSet dataset = StudyManager.getInstance().getDataSetDefinition(study, participantCohortDataSetId.intValue());
+                            DataSet dataset = StudyManager.getInstance().getDatasetDefinition(study, participantCohortDataSetId.intValue());
                             if (dataset != null)
                                 descriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
                             else

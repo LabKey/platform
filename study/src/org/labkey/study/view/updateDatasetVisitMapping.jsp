@@ -58,14 +58,14 @@
 %>
 
 <form action="<%=h(updateDatasetURL.getLocalURIString())%>" method="POST">
-<%= button("Save").submit(true) %>&nbsp;<%= text(button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDataSetId())).toString()) %>
+<%= button("Save").submit(true) %>&nbsp;<%= text(button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDatasetId())).toString()) %>
 <% WebPartView.startTitleFrame(out, "Dataset Properties", null, "100%", null); %>
     <table>
         <tr>
             <td class="labkey-form-label">Id</td>
             <td>
-                <input type="hidden" name="datasetId" value="<%= dataset.getDataSetId() %>">
-                <%= dataset.getDataSetId() %>
+                <input type="hidden" name="datasetId" value="<%= dataset.getDatasetId() %>">
+                <%= dataset.getDatasetId() %>
             </td>
         </tr>
         <tr>
@@ -107,7 +107,7 @@
                 <%
                 if (dataset.getTypeURI() == null)
                 {
-                    %><a href="importDataType.view?<%=h(DataSetDefinition.DATASETKEY)%>=<%= dataset.getDataSetId() %>">[Upload]</a><%
+                    %><a href="importDataType.view?<%=h(DataSetDefinition.DATASETKEY)%>=<%= dataset.getDatasetId() %>">[Upload]</a><%
                 }
                 else
                 {
@@ -150,5 +150,5 @@
         </tr>
     </table>
 <% WebPartView.endTitleFrame(out); %>
-<%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDataSetId())) %>
+<%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDatasetId())) %>
 </form>

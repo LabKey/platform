@@ -158,7 +158,7 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
                             return;
                         }
 
-                        DataSet def = study.getDataSet(datasetId.intValue());
+                        DataSet def = study.getDataset(datasetId.intValue());
                         if (def == null)
                         {
                             return;
@@ -229,10 +229,10 @@ public class DatasetAuditViewFactory extends SimpleAuditViewFactory
             if (type == SecurityType.ADVANCED_READ || type == SecurityType.ADVANCED_WRITE)
             {
                 List<Integer> readDatasets = new ArrayList<>();
-                for (DataSet ds : study.getDataSets())
+                for (DataSet ds : study.getDatasets())
                 {
                     if (ds.canRead(user))
-                        readDatasets.add(ds.getDataSetId());
+                        readDatasets.add(ds.getDatasetId());
                 }
 
                 table.addInClause(table.getRealTable().getColumn("IntKey1"), readDatasets);

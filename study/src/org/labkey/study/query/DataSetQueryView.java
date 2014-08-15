@@ -229,7 +229,7 @@ public class DataSetQueryView extends StudyQueryView
         }
 
         // allow posts from dataset data regions to determine which dataset was being displayed:
-        view.getDataRegion().addHiddenFormField(DataSetDefinition.DATASETKEY, "" + _dataset.getDataSetId());
+        view.getDataRegion().addHiddenFormField(DataSetDefinition.DATASETKEY, "" + _dataset.getDatasetId());
 
         return view;
     }
@@ -390,7 +390,7 @@ public class DataSetQueryView extends StudyQueryView
                 if ((user.isSiteAdmin() || canWrite))
                 {
                     // manage dataset
-                    ActionButton manageButton = new ActionButton(new ActionURL(StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", _dataset.getDataSetId()), "Manage Dataset");
+                    ActionButton manageButton = new ActionButton(new ActionURL(StudyController.DatasetDetailsAction.class, getContainer()).addParameter("id", _dataset.getDatasetId()), "Manage Dataset");
                     manageButton.setDisplayModes(DataRegion.MODE_GRID);
                     manageButton.setActionType(ActionButton.Action.LINK);
                     manageButton.setDisplayPermission(InsertPermission.class);

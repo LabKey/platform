@@ -85,7 +85,7 @@ function orderModule(down)
         <tr>
             <td>
                 <%
-                    List<DataSetDefinition> defs = getDataSets();
+                    List<DataSetDefinition> defs = getDatasets();
                     boolean first = true;
                 %>
                 <select name="items" size="<%= defs.size() %>">
@@ -93,7 +93,7 @@ function orderModule(down)
                 for (DataSet def: defs)
                 {
                     StringBuilder desc = new StringBuilder();
-                    desc.append(def.getDataSetId());
+                    desc.append(def.getDatasetId());
                     if (def.getLabel() != null)
                         desc.append(": ").append(h(def.getLabel()));
                     if (def.getViewCategory() != null)
@@ -107,7 +107,7 @@ function orderModule(down)
                         first = false;
                     }
                     %>
-                    <option value="<%= def.getDataSetId() %>"><%= desc.toString() %></option>
+                    <option value="<%= def.getDatasetId() %>"><%= desc.toString() %></option>
                     <%
                 }
                 %>

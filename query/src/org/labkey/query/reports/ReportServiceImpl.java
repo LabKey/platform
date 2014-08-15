@@ -955,7 +955,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
                 Study study = StudyService.get().getStudy(ctx.getContainer());
                 if (study != null && schema != null && schema.equals("study"))
                 {
-                    DataSet dataset = study.getDataSetByLabel(descriptor.getProperty(ReportDescriptor.Prop.queryName));
+                    DataSet dataset = study.getDatasetByLabel(descriptor.getProperty(ReportDescriptor.Prop.queryName));
                     if (dataset != null && !dataset.getName().equals(dataset.getLabel()))
                     {
                         String newKey = ReportUtil.getReportKey(schema, dataset.getName());

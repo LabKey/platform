@@ -179,7 +179,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @NotNull
     public List<SecurableResource> getChildResources(User user)
     {
-        List<DataSetDefinition> datasets = getDataSets();
+        List<DataSetDefinition> datasets = getDatasets();
         ArrayList<SecurableResource> readableDatasets = new ArrayList<>(datasets.size());
         for (DataSetDefinition ds : datasets)
             if (ds.canRead(user))
@@ -223,32 +223,32 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
 
-    public DataSetDefinition getDataSet(int id)
+    public DataSetDefinition getDataset(int id)
     {
-        return StudyManager.getInstance().getDataSetDefinition(this, id);
+        return StudyManager.getInstance().getDatasetDefinition(this, id);
     }
 
     @Override
-    public DataSetDefinition getDataSetByName(String name)
+    public DataSetDefinition getDatasetByName(String name)
     {
-        return StudyManager.getInstance().getDataSetDefinitionByName(this, name);
+        return StudyManager.getInstance().getDatasetDefinitionByName(this, name);
     }
 
     @Override
-    public DataSetDefinition getDataSetByLabel(String label)
+    public DataSetDefinition getDatasetByLabel(String label)
     {
-        return StudyManager.getInstance().getDataSetDefinitionByLabel(this, label);
+        return StudyManager.getInstance().getDatasetDefinitionByLabel(this, label);
     }
 
-    public List<DataSetDefinition> getDataSets()
+    public List<DataSetDefinition> getDatasets()
     {
-        return StudyManager.getInstance().getDataSetDefinitions(this);
+        return StudyManager.getInstance().getDatasetDefinitions(this);
     }
 
     @Override
-    public List<DataSetDefinition> getDataSetsByType(String... types)
+    public List<DataSetDefinition> getDatasetsByType(String... types)
     {
-        return StudyManager.getInstance().getDataSetDefinitions(this, null, types);
+        return StudyManager.getInstance().getDatasetDefinitions(this, null, types);
     }
 
     public Set<PropertyDescriptor> getSharedProperties()
@@ -696,7 +696,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             TimepointType timepointType = getTimepointType();
             return PageFlowUtil.filter((getLabel() == null ? "This study" : getLabel()) + " tracks data in ")
                     + "<a href=\"" + new ActionURL(StudyController.DatasetsAction.class, getContainer()) + "\">"
-                    + getDataSets().size() + " dataset" + (getDataSets().size() == 1 ? "" : "s") + "</a>"
+                    + getDatasets().size() + " dataset" + (getDatasets().size() == 1 ? "" : "s") + "</a>"
                     + PageFlowUtil.filter(" over " + getVisits(Visit.Order.DISPLAY).size() + " "
                     + (timepointType.isVisitBased() ? "visit" : "time point") + (getVisits(Visit.Order.DISPLAY).size() == 1 ? "" : "s")
                     + ". Data is present for " + count + " " + PageFlowUtil.filter(subjectNoun) + ".");
@@ -807,7 +807,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
 
     public boolean isEmptyStudy()
     {
-        List<DataSetDefinition> datasets = getDataSets();
+        List<DataSetDefinition> datasets = getDatasets();
         List<VisitImpl> visits = getVisits(Visit.Order.DISPLAY);
         return visits.size() < 1 && datasets.size() < 1;
     }
@@ -1037,7 +1037,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
             LOG.error("Can't extract text from study description", e);
         }
 
-        for (DataSetDefinition dataset : getDataSets())
+        for (DataSetDefinition dataset : getDatasets())
         {
             appendKeyword(sb, dataset.getName());
             appendKeyword(sb, dataset.getLabel());

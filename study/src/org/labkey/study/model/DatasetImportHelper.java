@@ -54,8 +54,8 @@ class DatasetImportHelper implements OntologyManager.UpdateableTableImportHelper
     {
         _containerId = dataset.getContainer().getId();
         _study = dataset.getStudy();
-        _datasetId = dataset.getDataSetId();
-        _dataset = StudyManager.getInstance().getDataSetDefinition(_study, _datasetId);
+        _datasetId = dataset.getDatasetId();
+        _dataset = StudyManager.getInstance().getDatasetDefinition(_study, _datasetId);
         _urnPrefix = dataset.getURNPrefix();
         _lastModified = lastModified;
 

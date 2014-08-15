@@ -144,7 +144,7 @@ public class StudyUpgradeCode implements UpgradeCode
                 if (study != null)
                 {
                     List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<>();
-                    for (DataSetDefinition dsd : StudyManager.getInstance().getDataSetDefinitions(study))
+                    for (DataSetDefinition dsd : StudyManager.getInstance().getDatasetDefinitions(study))
                     {
                         if (!dsd.getName().equals(dsd.getLabel()))
                         {
@@ -418,7 +418,7 @@ public class StudyUpgradeCode implements UpgradeCode
             StudyImpl study = StudyManager.getInstance().getStudy(c);
             if (null == study)
                 continue;
-            for (DataSetDefinition def : study.getDataSets())
+            for (DataSetDefinition def : study.getDatasets())
             {
                 migrateDatasetStorage(def);
                 uncacheDef(def);

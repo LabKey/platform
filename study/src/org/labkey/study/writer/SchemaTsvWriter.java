@@ -75,7 +75,7 @@ public class SchemaTsvWriter implements Writer<List<DataSetDefinition>, ImportCo
 
         for (DataSetDefinition def : definitions)
         {
-            String prefix = def.getName() + '\t' + def.getLabel() + '\t' + def.getDataSetId() + '\t' + (def.isShowByDefault() ? "\t" : "true\t");
+            String prefix = def.getName() + '\t' + def.getLabel() + '\t' + def.getDatasetId() + '\t' + (def.isShowByDefault() ? "\t" : "true\t");
 
             TableInfo tinfo = schema.createDatasetTableInternal(def);
             String visitDatePropertyName = def.getVisitDateColumnName();

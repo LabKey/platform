@@ -45,7 +45,7 @@
     Study study = StudyManager.getInstance().getStudy(c);
     boolean sharedDatasets = null != StudyManager.getInstance().getSharedStudy(study);
 
-    List<? extends DataSet> datasets = study.getDataSetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER);
+    List<? extends DataSet> datasets = study.getDatasetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER);
     int countUndefined = 0;
     for (DataSet def : datasets)
     {
@@ -150,12 +150,12 @@
     ActionURL details = new ActionURL(DatasetDetailsAction.class, c);
     for (DataSet def : datasets)
     {
-        details.replaceParameter("id",String.valueOf(def.getDataSetId()));
+        details.replaceParameter("id",String.valueOf(def.getDatasetId()));
         ViewCategory viewCategory = def.getViewCategory();
         Cohort cohort = def.getCohort();
         boolean isShared = def.isShared();
     %><tr>
-        <td align=right><a href="<%=h(details)%>"><%=def.getDataSetId()%></a></td>
+        <td align=right><a href="<%=h(details)%>"><%=def.getDatasetId()%></a></td>
         <td><a href="<%=h(details)%>"><%= h(def.getName()) %><%=text(isShared?" (shared)":"")%></a></td>
         <td><% if (!def.getName().equals(def.getLabel())) {%><a href="<%=h(details)%>"><%= h(def.getLabel()) %></a><%}%>&nbsp;</td>
         <td><%=h(viewCategory != null ? viewCategory.getLabel() : null) %>&nbsp;</td>

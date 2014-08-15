@@ -142,11 +142,11 @@ public class StudyServiceImpl implements StudyService.Service
             return StudyManager.getInstance().createStudy(user, study);
     }
 
-    public DataSetDefinition getDataSet(Container c, int datasetId)
+    public DataSetDefinition getDataset(Container c, int datasetId)
     {
         Study study = StudyManager.getInstance().getStudy(c);
         if (study != null)
-            return StudyManager.getInstance().getDataSetDefinition(study, datasetId);
+            return StudyManager.getInstance().getDatasetDefinition(study, datasetId);
         return null;
     }
 
@@ -156,9 +156,9 @@ public class StudyServiceImpl implements StudyService.Service
         Study study = StudyManager.getInstance().getStudy(c);
         if (study == null)
             return -1;
-        DataSet def = StudyManager.getInstance().getDataSetDefinitionByLabel(study, datasetLabel);
+        DataSet def = StudyManager.getInstance().getDatasetDefinitionByLabel(study, datasetLabel);
 
-        return def == null ? -1 : def.getDataSetId();
+        return def == null ? -1 : def.getDatasetId();
     }
 
     @Override
@@ -167,9 +167,9 @@ public class StudyServiceImpl implements StudyService.Service
         Study study = StudyManager.getInstance().getStudy(c);
         if (study == null)
             return -1;
-        DataSet def = StudyManager.getInstance().getDataSetDefinitionByName(study, datasetName);
+        DataSet def = StudyManager.getInstance().getDatasetDefinitionByName(study, datasetName);
 
-        return def == null ? -1 : def.getDataSetId();
+        return def == null ? -1 : def.getDatasetId();
     }
 
 
@@ -249,7 +249,7 @@ public class StudyServiceImpl implements StudyService.Service
 
         event.setComment(rowCount + " row(s) were recalled to the assay: " + assayName);
 
-        Map<String,Object> dataMap = Collections.<String,Object>singletonMap(DataSetDefinition.DATASETKEY, def.getDataSetId());
+        Map<String,Object> dataMap = Collections.<String,Object>singletonMap(DataSetDefinition.DATASETKEY, def.getDatasetId());
 
         AuditLogService.get().addEvent(event, dataMap, AuditLogService.get().getDomainURI(AssayPublishManager.ASSAY_PUBLISH_AUDIT_EVENT));
     }
@@ -285,7 +285,7 @@ public class StudyServiceImpl implements StudyService.Service
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
 
-        event.setIntKey1(def.getDataSetId());
+        event.setIntKey1(def.getDatasetId());
 
         // IntKey2 is non-zero because we have details (a previous or new datamap)
         event.setIntKey2(1);
@@ -331,7 +331,7 @@ public class StudyServiceImpl implements StudyService.Service
         if (c.getProject() != null)
             event.setProjectId(c.getProject().getId());
 
-        event.setIntKey1(def.getDataSetId());
+        event.setIntKey1(def.getDatasetId());
 
         event.setEventType(DatasetAuditViewFactory.DATASET_AUDIT_EVENT);
 
@@ -438,17 +438,17 @@ public class StudyServiceImpl implements StudyService.Service
             String containerId = (String)row.get("container");
             int datasetId = ((Number)row.get("datasetid")).intValue();
             Container container = ContainerManager.getForId(containerId);
-            result.add(getDataSet(container, datasetId));
+            result.add(getDataset(container, datasetId));
         }
         return result;
     }
 
     public Map<DataSetDefinition, String> getDatasetsAndSelectNameForAssayProtocol(ExpProtocol protocol)
     {
-        Set<DataSetDefinition> dataSets = getDatasetsForAssayProtocol(protocol);
+        Set<DataSetDefinition> datasets = getDatasetsForAssayProtocol(protocol);
         Map<DataSetDefinition, String> result = new HashMap<>();
-        for (DataSetDefinition dataSet : dataSets)
-            result.put(dataSet, dataSet.getStorageTableInfo().getSelectName());
+        for (DataSetDefinition dataset : datasets)
+            result.put(dataset, dataset.getStorageTableInfo().getSelectName());
         return result;
     }
 
@@ -625,7 +625,7 @@ public class StudyServiceImpl implements StudyService.Service
         Study study = StudyManager.getInstance().getStudy(container);
         if (study != null)
         {
-            DataSet dataset = StudyManager.getInstance().getDataSetDefinitionByName(study, datasetName);
+            DataSet dataset = StudyManager.getInstance().getDatasetDefinitionByName(study, datasetName);
             if (dataset != null)
                 return dataset.getKeyType();
         }

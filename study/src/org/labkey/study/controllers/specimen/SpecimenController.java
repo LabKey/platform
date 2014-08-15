@@ -5012,7 +5012,7 @@ public class SpecimenController extends BaseStudyController
             final Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
             if (form.getParticipantCommentDataSetId() != null && form.getParticipantCommentDataSetId() != -1)
             {
-                DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantCommentDataSetId());
+                DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantCommentDataSetId());
                 if (def != null && !def.isDemographicData())
                 {
                     errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + " comments must be a demographics dataset.");
@@ -5026,7 +5026,7 @@ public class SpecimenController extends BaseStudyController
             {
                 if (form.getParticipantVisitCommentDataSetId() != null && form.getParticipantVisitCommentDataSetId() != -1)
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDataSetDefinition(study, form.getParticipantVisitCommentDataSetId());
+                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantVisitCommentDataSetId());
                     if (def != null && def.isDemographicData())
                     {
                         errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
@@ -5177,11 +5177,11 @@ public class SpecimenController extends BaseStudyController
 
             if (form.getVisitId() != 0)
             {
-                def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantVisitCommentDataSetId());
+                def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDataSetId());
             }
             else
             {
-                def = StudyManager.getInstance().getDataSetDefinition(study, study.getParticipantCommentDataSetId());
+                def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDataSetId());
             }
 
             if (def != null)
@@ -5220,7 +5220,7 @@ public class SpecimenController extends BaseStudyController
                     url = new ActionURL(ParticipantCommentAction.SpecimenCommentInsertAction.class, getContainer()).
                             addParameter(ParticipantCommentForm.params.participantId, form.getParticipantId());
 
-                url.addParameter(ParticipantCommentForm.params.datasetId, def.getDataSetId()).
+                url.addParameter(ParticipantCommentForm.params.datasetId, def.getDatasetId()).
                         addParameter(ParticipantCommentForm.params.comment, form.getComment()).
                         addReturnURL(form.getReturnActionURL()).
                         addParameter(ParticipantCommentForm.params.visitId, form.getVisitId());

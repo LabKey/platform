@@ -53,7 +53,7 @@ import java.util.Set;
  */
 public class VisitMapImporter
 {
-    private boolean _ensureDataSets = true;
+    private boolean _ensureDatasets = true;
 
     public enum Format
     {
@@ -117,14 +117,14 @@ public class VisitMapImporter
         }
     }
 
-    public boolean isEnsureDataSets()
+    public boolean isEnsureDatasets()
     {
-        return _ensureDataSets;
+        return _ensureDatasets;
     }
 
-    public void setEnsureDataSets(boolean ensureDataSets)
+    public void setEnsureDatasets(boolean ensureDatasets)
     {
-        _ensureDataSets = ensureDataSets;
+        _ensureDatasets = ensureDatasets;
     }
 
     public boolean process(User user, StudyImpl study, String content, Format format, List<String> errors, Logger logger) throws SQLException, IOException, ValidationException
@@ -304,10 +304,10 @@ public class VisitMapImporter
             int visitId = record.getVisitRowId();
             assert visitId > 0;
 
-            for (int dataSetId : record.getOptionalPlates())
-                requiredMapNew.put(new VisitMapKey(dataSetId, visitId), Boolean.FALSE);
-            for (int dataSetId : record.getRequiredPlates())
-                requiredMapNew.put(new VisitMapKey(dataSetId, visitId), Boolean.TRUE);
+            for (int datasetId : record.getOptionalPlates())
+                requiredMapNew.put(new VisitMapKey(datasetId, visitId), Boolean.FALSE);
+            for (int datasetId : record.getRequiredPlates())
+                requiredMapNew.put(new VisitMapKey(datasetId, visitId), Boolean.TRUE);
         }
 
         for (Map.Entry<VisitMapKey, Boolean> e : requiredMapNew.entrySet())
@@ -346,10 +346,10 @@ public class VisitMapImporter
 
     private void saveDataSets(User user, Study study, List<VisitMapRecord> records) throws SQLException
     {
-        List<DataSetDefinition> defs = StudyManager.getInstance().getDataSetDefinitions(study);
+        List<DataSetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(study);
         Set<Integer> existingSet = new HashSet<>();
         for (DataSet def : defs)
-            existingSet.add(def.getDataSetId());
+            existingSet.add(def.getDatasetId());
 
         Set<Integer> addDatasetIds = new HashSet<>();
         for (VisitMapRecord record : records)
@@ -360,10 +360,10 @@ public class VisitMapImporter
                 addDatasetIds.add(id);
         }
 
-        for (Integer dataSetId : addDatasetIds)
+        for (Integer datasetId : addDatasetIds)
         {
-            if (dataSetId > 0 && _ensureDataSets && !existingSet.contains(dataSetId))
-                StudyManager.getInstance().createDataSetDefinition(user, study.getContainer(), dataSetId);
+            if (datasetId > 0 && _ensureDatasets && !existingSet.contains(datasetId))
+                StudyManager.getInstance().createDatasetDefinition(user, study.getContainer(), datasetId);
         }
     }
 

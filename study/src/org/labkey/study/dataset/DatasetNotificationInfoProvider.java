@@ -65,8 +65,8 @@ public class DatasetNotificationInfoProvider extends NotificationInfoProvider
                         Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(report.getContainer()));
                         if (null != study)
                         {
-                            DataSetDefinition dataSetDefinition = StudyManager.getInstance().getDataSetDefinition(study, report.getDatasetId());
-                            NotificationInfo notificationInfo = new NotificationInfo(report, !dataSetDefinition.isShowByDefault());
+                            DataSetDefinition datasetDefinition = StudyManager.getInstance().getDatasetDefinition(study, report.getDatasetId());
+                            NotificationInfo notificationInfo = new NotificationInfo(report, !datasetDefinition.isShowByDefault());
                             if (null != notificationInfo.getContainer() && !notificationInfo.isHidden() && notificationInfo.isShared())
                             {
                                 // Don't include hidden reports (or if container was deleted)

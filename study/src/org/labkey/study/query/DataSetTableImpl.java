@@ -33,8 +33,6 @@ import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.exp.DomainDescriptor;
-import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -129,20 +127,20 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
             standardURIs.add(pd.getPropertyURI());
 
         ActionURL updateURL = new ActionURL(DatasetController.UpdateAction.class, dsd.getContainer());
-        updateURL.addParameter("datasetId", dsd.getDataSetId());
+        updateURL.addParameter("datasetId", dsd.getDatasetId());
         setUpdateURL(new DetailsURL(updateURL, Collections.singletonMap("lsid", "lsid")));
 
         ActionURL insertURL = new ActionURL(DatasetController.InsertAction.class, getContainer());
-        insertURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDataSetId());
+        insertURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDatasetId());
         setInsertURL(new DetailsURL(insertURL));
 
         ActionURL gridURL = new ActionURL(StudyController.DatasetAction.class, dsd.getContainer());
-        gridURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDataSetId());
+        gridURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDatasetId());
         setGridURL(new DetailsURL(gridURL));
 
 //        ActionURL importURL = new ActionURL(StudyController.ShowImportDatasetAction.class, dsd.getContainer());
         ActionURL importURL = new ActionURL(StudyController.ImportAction.class, dsd.getContainer());
-        importURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDataSetId());
+        importURL.addParameter(DataSetDefinition.DATASETKEY, dsd.getDatasetId());
         setImportURL(new DetailsURL(importURL));
 
         ActionURL deleteRowsURL = new ActionURL(StudyController.DeleteDatasetRowsAction.class, dsd.getContainer());
@@ -461,7 +459,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     }
 
     @Override
-    public DataSet getDataSet()
+    public DataSet getDataset()
     {
         return _dsd;
     }

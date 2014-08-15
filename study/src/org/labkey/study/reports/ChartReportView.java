@@ -105,7 +105,7 @@ public class ChartReportView extends AbstractReportView
                 Study study = StudyService.get().getStudy(HttpView.currentContext().getContainer());
                 if (study != null)
                 {
-                    DataSet ds = study.getDataSet(datasetId);
+                    DataSet ds = study.getDataset(datasetId);
                     if (ds != null)
                         descriptor.setProperty(ReportDescriptor.Prop.queryName, ds.getName());
                 }
@@ -323,7 +323,7 @@ public class ChartReportView extends AbstractReportView
         {
             final int datasetId = Integer.parseInt(descriptor.getProperty("datasetId"));
             final Study study = StudyService.get().getStudy(context.getContainer());
-            DataSet def = study.getDataSet(datasetId);
+            DataSet def = study.getDataset(datasetId);
 
             return def.getTableInfo(context.getUser());
         }

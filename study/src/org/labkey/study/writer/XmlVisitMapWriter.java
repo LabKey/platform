@@ -16,9 +16,7 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.data.Container;
 import org.labkey.api.study.Study;
-import org.labkey.api.study.StudyService;
 import org.labkey.api.study.Visit;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
@@ -112,7 +110,7 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
                 if (null != visit.getSequenceNumHandling())
                     visitXml.setSequenceNumHandling(visit.getSequenceNumHandling());
 
-                List<VisitDataSet> vds = visit.getVisitDataSets();
+                List<VisitDataSet> vds = visit.getVisitDatasets();
 
                 if (!vds.isEmpty())
                 {
@@ -120,10 +118,10 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
 
                     for (VisitDataSet vd : vds)
                     {
-                        if (ctx.isExportedDataset(vd.getDataSetId()))
+                        if (ctx.isExportedDataset(vd.getDatasetId()))
                         {
                             VisitMap.Visit.Datasets.Dataset datasetXml = datasetsXml.addNewDataset();
-                            datasetXml.setId(vd.getDataSetId());
+                            datasetXml.setId(vd.getDatasetId());
                             datasetXml.setType(vd.isRequired() ? DatasetType.REQUIRED : DatasetType.OPTIONAL);
                         }
                     }

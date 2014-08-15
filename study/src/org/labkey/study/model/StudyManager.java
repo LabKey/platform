@@ -622,29 +622,29 @@ public class StudyManager
         }
     }
 
-    public void createDataSetDefinition(User user, Container container, int dataSetId)
+    public void createDatasetDefinition(User user, Container container, int datasetId)
     {
-        createDataSetDefinition(user, new DataSetDefinition(getStudy(container), dataSetId));
+        createDataSetDefinition(user, new DataSetDefinition(getStudy(container), datasetId));
     }
 
-    public void createDataSetDefinition(User user, DataSetDefinition dataSetDefinition)
+    public void createDataSetDefinition(User user, DataSetDefinition datasetDefinition)
     {
-        if (dataSetDefinition.getDataSetId() <= 0)
+        if (datasetDefinition.getDatasetId() <= 0)
             throw new IllegalArgumentException("datasetId must be greater than zero.");
         DbScope scope = StudySchema.getInstance().getScope();
 
         try (Transaction transaction = scope.ensureTransaction())
         {
-            ensureViewCategory(user, dataSetDefinition);
-            _datasetHelper.create(user, dataSetDefinition);
+            ensureViewCategory(user, datasetDefinition);
+            _datasetHelper.create(user, datasetDefinition);
             // This method call has the side effect of ensuring that we have a domain. If we don't create it here,
             // we're open to a race condition if another thread tries to do something with the dataset's table
             // and ends up attempting to create the domain as well
-            dataSetDefinition.getStorageTableInfo();
+            datasetDefinition.getStorageTableInfo();
 
             transaction.commit();
         }
-        indexDataset(null, dataSetDefinition);
+        indexDataset(null, datasetDefinition);
     }
 
     /**
@@ -672,23 +672,23 @@ public class StudyManager
     }
 
     @Deprecated
-    public void updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition)
+    public void updateDataSetDefinition(User user, DataSetDefinition datasetDefinition)
     {
         List<String> errors = new ArrayList<>();
-        updateDataSetDefinition(user, dataSetDefinition, errors);
+        updateDataSetDefinition(user, datasetDefinition, errors);
         if (!errors.isEmpty())
             throw new IllegalArgumentException(errors.get(0));
     }
 
 
-    public boolean updateDataSetDefinition(User user, DataSetDefinition dataSetDefinition, List<String> errors)
+    public boolean updateDataSetDefinition(User user, DataSetDefinition datasetDefinition, List<String> errors)
     {
-        if (dataSetDefinition.isShared())
+        if (datasetDefinition.isShared())
         {
             // verify that we're updating from the correct container
-            if (!dataSetDefinition.getContainer().equals(dataSetDefinition.getDefinitionContainer()))
+            if (!datasetDefinition.getContainer().equals(datasetDefinition.getDefinitionContainer()))
             {
-                throw new IllegalStateException("Dataset can only be edited from the shared study: " + dataSetDefinition.getName());
+                throw new IllegalStateException("Dataset can only be edited from the shared study: " + datasetDefinition.getName());
             }
         }
 
@@ -696,21 +696,21 @@ public class StudyManager
 
         try (Transaction transaction = scope.ensureTransaction())
         {
-            DataSetDefinition old = getDataSetDefinition(dataSetDefinition.getStudy(), dataSetDefinition.getDataSetId());
+            DataSetDefinition old = getDatasetDefinition(datasetDefinition.getStudy(), datasetDefinition.getDatasetId());
             if (null == old)
                 throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
             // make sure we reload domain and tableinfo
-            dataSetDefinition._domain = null;
+            datasetDefinition._domain = null;
 
-            Domain domain = dataSetDefinition.getDomain();
+            Domain domain = datasetDefinition.getDomain();
 
             // Check if the extra key field has changed
             boolean isProvisioned = domain != null && domain.getStorageTableName() != null;
-            boolean isKeyChanged = old.isDemographicData() != dataSetDefinition.isDemographicData() || !StringUtils.equals(old.getKeyPropertyName(), dataSetDefinition.getKeyPropertyName());
+            boolean isKeyChanged = old.isDemographicData() != datasetDefinition.isDemographicData() || !StringUtils.equals(old.getKeyPropertyName(), datasetDefinition.getKeyPropertyName());
             if (isProvisioned && isKeyChanged)
             {
-                TableInfo storageTableInfo = dataSetDefinition.getStorageTableInfo();
+                TableInfo storageTableInfo = datasetDefinition.getStorageTableInfo();
 
                 // If so, we need to update the _key column and the LSID
 
@@ -718,17 +718,17 @@ public class StudyManager
                 // Change how we build up tableName
                 String tableName = storageTableInfo.toString();
                 SQLFragment updateKeySQL = new SQLFragment("UPDATE " + tableName + " SET _key = ");
-                if (dataSetDefinition.getKeyPropertyName() == null)
+                if (datasetDefinition.getKeyPropertyName() == null)
                 {
                     // No column selected, so set it to be null
                     updateKeySQL.append("NULL");
                 }
                 else
                 {
-                    ColumnInfo col = storageTableInfo.getColumn(dataSetDefinition.getKeyPropertyName());
+                    ColumnInfo col = storageTableInfo.getColumn(datasetDefinition.getKeyPropertyName());
                     if (null == col)
                     {
-                        errors.add("Cannot find 'key' column: " + dataSetDefinition.getKeyPropertyName());
+                        errors.add("Cannot find 'key' column: " + datasetDefinition.getKeyPropertyName());
                         return false;
                     }
                     SQLFragment colFrag = col.getValueSql(tableName);
@@ -743,49 +743,49 @@ public class StudyManager
 
                     // Now update the LSID column. Note - this needs to be the same as DatasetImportHelper.getURI()
                     SQLFragment updateLSIDSQL = new SQLFragment("UPDATE " + tableName + " SET lsid = ");
-                    updateLSIDSQL.append(dataSetDefinition.generateLSIDSQL());
+                    updateLSIDSQL.append(datasetDefinition.generateLSIDSQL());
                     new SqlExecutor(StudySchema.getInstance().getSchema()).execute(updateLSIDSQL);
                 }
                 catch (DataIntegrityViolationException x)
                 {
-                    if (dataSetDefinition.isDemographicData())
+                    if (datasetDefinition.isDemographicData())
                         errors.add("Can not change dataset type to demographic");
                     else
                         errors.add("Changing the dataset key would result in a duplicate keys");
                     return false;
                 }
             }
-            Object[] pk = new Object[]{dataSetDefinition.getContainer().getId(), dataSetDefinition.getDataSetId()};
-            ensureViewCategory(user, dataSetDefinition);
-            _datasetHelper.update(user, dataSetDefinition, pk);
+            Object[] pk = new Object[]{datasetDefinition.getContainer().getId(), datasetDefinition.getDatasetId()};
+            ensureViewCategory(user, datasetDefinition);
+            _datasetHelper.update(user, datasetDefinition, pk);
 
-            if (!old.getName().equals(dataSetDefinition.getName()))
+            if (!old.getName().equals(datasetDefinition.getName()))
             {
                 QueryChangeListener.QueryPropertyChange change = new QueryChangeListener.QueryPropertyChange<>(
-                        QueryService.get().getUserSchema(user, dataSetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(dataSetDefinition.getName()),
+                        QueryService.get().getUserSchema(user, datasetDefinition.getContainer(), StudyQuerySchema.SCHEMA_NAME).getQueryDefForTable(datasetDefinition.getName()),
                         QueryChangeListener.QueryProperty.Name,
                         old.getName(),
-                        dataSetDefinition.getName()
+                        datasetDefinition.getName()
                 );
 
-                QueryService.get().fireQueryChanged(user, dataSetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
+                QueryService.get().fireQueryChanged(user, datasetDefinition.getContainer(), null, new SchemaKey(null, StudyQuerySchema.SCHEMA_NAME),
                         QueryChangeListener.QueryProperty.Name, Collections.singleton(change));
             }
             transaction.commit();
         }
         finally
         {
-            uncache(dataSetDefinition);
+            uncache(datasetDefinition);
         }
-        indexDataset(null, dataSetDefinition);
+        indexDataset(null, datasetDefinition);
         return true;
     }
 
 
-    public boolean isDataUniquePerParticipant(DataSetDefinition dataSet) throws SQLException
+    public boolean isDataUniquePerParticipant(DataSetDefinition dataset) throws SQLException
     {
-        // don't use dataSet.getTableInfo() since this method is called during updateDatasetDefinition`() and may be in an inconsistent state
-        TableInfo t = dataSet.getStorageTableInfo();
+        // don't use dataset.getTableInfo() since this method is called during updateDatasetDefinition`() and may be in an inconsistent state
+        TableInfo t = dataset.getStorageTableInfo();
         SQLFragment sql = new SQLFragment();
         sql.append("SELECT MAX(n) FROM (SELECT COUNT(*) AS n FROM ").append(t.getFromSQL("DS")).append(" GROUP BY ParticipantId) x");
         Integer maxCount = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getObject(Integer.class);
@@ -1382,7 +1382,7 @@ public class StudyManager
 
         try (Transaction transaction = schema.getSchema().getScope().ensureTransaction())
         {
-            for (DataSetDefinition def : study.getDataSets())
+            for (DataSetDefinition def : study.getDatasets())
             {
                 TableInfo t = def.getStorageTableInfo();
                 if (null == t)
@@ -1400,7 +1400,7 @@ public class StudyManager
                 sqlf.add(study.getContainer());
                 int count = new SqlExecutor(schema.getSchema()).execute(sqlf);
                 if (count > 0)
-                    StudyManager.dataSetModified(def, user, true);
+                    StudyManager.datasetModified(def, user, true);
             }
 
             // Delete samples first because we may need ParticipantVisit to figure out which samples
@@ -1434,7 +1434,7 @@ public class StudyManager
 
             transaction.commit();
 
-            getVisitManager(study).updateParticipantVisits(user, study.getDataSets());
+            getVisitManager(study).updateParticipantVisits(user, study.getDatasets());
         }
     }
 
@@ -1605,22 +1605,21 @@ public class StudyManager
         return label;
     }
 
-    public void createVisitDataSetMapping(User user, Container container, int visitId,
-                                          int dataSetId, boolean isRequired) throws SQLException
+    public void createVisitDataSetMapping(User user, Container container, int visitId, int datasetId, boolean isRequired) throws SQLException
     {
-        VisitDataSet vds = new VisitDataSet(container, dataSetId, visitId, isRequired);
+        VisitDataSet vds = new VisitDataSet(container, datasetId, visitId, isRequired);
         Table.insert(user, SCHEMA.getTableInfoVisitMap(), vds);
     }
 
-    public VisitDataSet getVisitDataSetMapping(Container container, int visitRowId, int dataSetId) throws SQLException
+    public VisitDataSet getVisitDataSetMapping(Container container, int visitRowId, int datasetId) throws SQLException
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("VisitRowId"), visitRowId);
-        filter.addCondition(FieldKey.fromParts("DataSetId"), dataSetId);
+        filter.addCondition(FieldKey.fromParts("DataSetId"), datasetId);
 
         Boolean required = new TableSelector(SCHEMA.getTableInfoVisitMap().getColumn("Required"), filter, null).getObject(Boolean.class);
 
-        return (null != required ? new VisitDataSet(container, dataSetId, visitRowId, required) : null);
+        return (null != required ? new VisitDataSet(container, datasetId, visitRowId, required) : null);
     }
 
 
@@ -1795,7 +1794,7 @@ public class StudyManager
     {
         List<VisitImpl> visits = new ArrayList<>();
 
-        DataSetDefinition def = getDataSetDefinition(getStudy(container), datasetId);
+        DataSetDefinition def = getDatasetDefinition(getStudy(container), datasetId);
         TableInfo ds = def.getTableInfo(null, false);
 
         SQLFragment sql = new SQLFragment();
@@ -1822,7 +1821,7 @@ public class StudyManager
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         Study study = getStudy(container);
-        DataSetDefinition def = getDataSetDefinition(study, datasetId);
+        DataSetDefinition def = getDatasetDefinition(study, datasetId);
 
         Map<String, VisitImpl> lsidVisits = null;
         if (!def.isDemographicData())
@@ -1948,7 +1947,7 @@ public class StudyManager
         }
 
         // Automatic cohort assignment -- can the user read the source dataset?
-        DataSetDefinition def = getDataSetDefinition(study, cohortDatasetId);
+        DataSetDefinition def = getDatasetDefinition(study, cohortDatasetId);
 
         if (def != null)
             return def.canRead(user);
@@ -2059,22 +2058,22 @@ public class StudyManager
         return null;
     }
 
-    public List<DataSetDefinition> getDataSetDefinitions(Study study)
+    public List<DataSetDefinition> getDatasetDefinitions(Study study)
     {
-        return getDataSetDefinitions(study, null);
+        return getDatasetDefinitions(study, null);
     }
 
 
 
-    public List<DataSetDefinition> getDataSetDefinitions(Study study, @Nullable CohortImpl cohort, String... types)
+    public List<DataSetDefinition> getDatasetDefinitions(Study study, @Nullable CohortImpl cohort, String... types)
     {
-        List<DataSetDefinition> local = getDataSetDefinitionsLocal(study, cohort, types);
+        List<DataSetDefinition> local = getDatasetDefinitionsLocal(study, cohort, types);
         List<DataSetDefinition> shared = Collections.emptyList();
         List<DataSetDefinition> combined;
 
         Study sharedStudy = getSharedStudy(study);
         if (null != sharedStudy)
-            shared = getDataSetDefinitionsLocal(sharedStudy, cohort, types);
+            shared = getDatasetDefinitionsLocal(sharedStudy, cohort, types);
 
         if (shared.isEmpty())
             combined = local;
@@ -2090,11 +2089,11 @@ public class StudyManager
             {
                 combined.add(dsd);
                 names.add(dsd.getName());
-                ids.add(dsd.getDataSetId());
+                ids.add(dsd.getDatasetId());
             }
             for (DataSetDefinition dsd : shared)
             {
-                if (!names.contains(dsd.getName()) && !ids.contains(dsd.getDataSetId()))
+                if (!names.contains(dsd.getName()) && !ids.contains(dsd.getDatasetId()))
                 {
                     DataSetDefinition wrapped = dsd.createLocalDatasetDefintion((StudyImpl) study);
                     combined.add(wrapped);
@@ -2111,7 +2110,7 @@ public class StudyManager
                     return o1.getDisplayOrder() - o2.getDisplayOrder();
 
                 if (StringUtils.equals(o1.getCategory(), o2.getCategory()))
-                    return o1.getDataSetId() - o2.getDataSetId();
+                    return o1.getDatasetId() - o2.getDatasetId();
 
                 if (o1.getCategory() != null && o2.getCategory() == null)
                     return -1;
@@ -2120,7 +2119,7 @@ public class StudyManager
                 if (o1.getCategory() != null && o2.getCategory() != null)
                     return o1.getCategory().compareTo(o2.getCategory());
 
-                return o1.getDataSetId() - o2.getDataSetId();
+                return o1.getDatasetId() - o2.getDatasetId();
             }
         });
 
@@ -2128,7 +2127,7 @@ public class StudyManager
     }
 
 
-    private List<DataSetDefinition> getDataSetDefinitionsLocal(Study study, @Nullable CohortImpl cohort, String... types)
+    private List<DataSetDefinition> getDatasetDefinitionsLocal(Study study, @Nullable CohortImpl cohort, String... types)
     {
         SimpleFilter filter = null;
         if (cohort != null)
@@ -2162,14 +2161,14 @@ public class StudyManager
 
 
     @Nullable
-    public DataSetDefinition getDataSetDefinition(Study s, int id)
+    public DataSetDefinition getDatasetDefinition(Study s, int id)
     {
         DataSetDefinition ds = _datasetHelper.get(s.getContainer(), id);
         // update old rows w/o entityid
         if (null != ds && null == ds.getEntityId())
         {
             ds.setEntityId(GUID.makeGUID());
-            new SqlExecutor(StudySchema.getInstance().getSchema()).execute("UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL", ds.getEntityId(), ds.getContainer().getId(), ds.getDataSetId());
+            new SqlExecutor(StudySchema.getInstance().getSchema()).execute("UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL", ds.getEntityId(), ds.getContainer().getId(), ds.getDatasetId());
             _datasetHelper.clearCache(ds);
             ds = _datasetHelper.get(s.getContainer(), id);
             // calling updateDataSetDefinition() during load (getDatasetDefinition()) may cause recursion problems
@@ -2182,7 +2181,7 @@ public class StudyManager
         if (null == sharedStudy)
             return null;
 
-        ds = getDataSetDefinition(sharedStudy, id);
+        ds = getDatasetDefinition(sharedStudy, id);
         if (null == ds)
             return null;
         return ds.createLocalDatasetDefintion((StudyImpl) s);
@@ -2190,7 +2189,7 @@ public class StudyManager
 
 
     @Nullable
-    public DataSetDefinition getDataSetDefinitionByLabel(Study s, String label)
+    public DataSetDefinition getDatasetDefinitionByLabel(Study s, String label)
     {
         if (label == null)
         {
@@ -2209,7 +2208,7 @@ public class StudyManager
 
 
     @Nullable
-    public DataSetDefinition getDataSetDefinitionByEntityId(Study s, String entityId)
+    public DataSetDefinition getDatasetDefinitionByEntityId(Study s, String entityId)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
         filter.addCondition(FieldKey.fromParts("EntityId"), entityId);
@@ -2223,7 +2222,7 @@ public class StudyManager
     
 
     @Nullable
-    public DataSetDefinition getDataSetDefinitionByName(Study s, String name)
+    public DataSetDefinition getDatasetDefinitionByName(Study s, String name)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(s.getContainer());
         filter.addWhereClause("LOWER(Name) = ?", new Object[]{name.toLowerCase()}, FieldKey.fromParts("Name"));
@@ -2236,7 +2235,7 @@ public class StudyManager
         if (null == sharedStudy)
             return null;
 
-        DataSetDefinition def = getDataSetDefinitionByName(sharedStudy, name);
+        DataSetDefinition def = getDatasetDefinitionByName(sharedStudy, name);
         if (null == def)
             return null;
         return def.createLocalDatasetDefintion((StudyImpl) s);
@@ -2247,10 +2246,10 @@ public class StudyManager
     public DataSetDefinition getDatasetDefinitionByQueryName(Study study, String queryName)
     {
         // first try resolving the dataset def by name and then by label
-        DataSetDefinition def = getDataSetDefinitionByName(study, queryName);
+        DataSetDefinition def = getDatasetDefinitionByName(study, queryName);
         if (null != def)
             return def;
-        def = StudyManager.getInstance().getDataSetDefinitionByLabel(study, queryName);
+        def = StudyManager.getInstance().getDatasetDefinitionByLabel(study, queryName);
         if (null != def)
             return def;
 
@@ -2262,10 +2261,10 @@ public class StudyManager
             return null;
 
         // first try resolving the dataset def by name and then by label
-        def = StudyManager.getInstance().getDataSetDefinitionByName(shared, queryName);
+        def = StudyManager.getInstance().getDatasetDefinitionByName(shared, queryName);
         if (null != def)
             return def.createLocalDatasetDefintion((StudyImpl) study);
-        def = StudyManager.getInstance().getDataSetDefinitionByLabel(shared, queryName);
+        def = StudyManager.getInstance().getDatasetDefinitionByLabel(shared, queryName);
         if (null != def)
             return def.createLocalDatasetDefintion((StudyImpl) study);
 
@@ -2308,7 +2307,7 @@ public class StudyManager
             Study study = StudyManager.getInstance().getStudy(c);
             if (null != c && null != study)
             {
-                DataSetDefinition ret = StudyManager.getInstance().getDataSetDefinition(study, p.second);
+                DataSetDefinition ret = StudyManager.getInstance().getDatasetDefinition(study, p.second);
                 if (null != ret && null != ret.getDomain() && StringUtils.equalsIgnoreCase(ret.getDomain().getTypeURI(), domainURI))
                     return ret;
             }
@@ -2387,9 +2386,9 @@ public class StudyManager
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
-                int dataSetId = rs.getInt("DataSetId");
+                int datasetId = rs.getInt("DataSetId");
                 boolean isRequired = rs.getBoolean("Required");
-                visitDataSets.add(new VisitDataSet(visit.getContainer(), dataSetId, visit.getRowId(), isRequired));
+                visitDataSets.add(new VisitDataSet(visit.getContainer(), datasetId, visit.getRowId(), isRequired));
             }
         });
 
@@ -2397,19 +2396,19 @@ public class StudyManager
     }
 
 
-    public List<VisitDataSet> getMapping(final DataSet dataSet)
+    public List<VisitDataSet> getMapping(final DataSet dataset)
     {
         final List<VisitDataSet> visitDataSets = new ArrayList<>();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_DATASET,
-                dataSet.getContainer(), dataSet.getDataSetId()).forEach(new Selector.ForEachBlock<ResultSet>()
+                dataset.getContainer(), dataset.getDatasetId()).forEach(new Selector.ForEachBlock<ResultSet>()
         {
             @Override
             public void exec(ResultSet rs) throws SQLException
             {
                 int visitRowId = rs.getInt("VisitRowId");
                 boolean isRequired = rs.getBoolean("Required");
-                visitDataSets.add(new VisitDataSet(dataSet.getContainer(), dataSet.getDataSetId(), visitRowId, isRequired));
+                visitDataSets.add(new VisitDataSet(dataset.getContainer(), dataset.getDatasetId(), visitRowId, isRequired));
 
             }
         });
@@ -2419,23 +2418,23 @@ public class StudyManager
 
 
     public void updateVisitDataSetMapping(User user, Container container, int visitId,
-                                          int dataSetId, VisitDataSetType type) throws SQLException
+                                          int datasetId, VisitDataSetType type) throws SQLException
     {
-        VisitDataSet vds = getVisitDataSetMapping(container, visitId, dataSetId);
+        VisitDataSet vds = getVisitDataSetMapping(container, visitId, datasetId);
         if (vds == null)
         {
             if (type != VisitDataSetType.NOT_ASSOCIATED)
             {
                 // need to insert a new VisitMap entry:
                 createVisitDataSetMapping(user, container, visitId,
-                        dataSetId, type == VisitDataSetType.REQUIRED);
+                        datasetId, type == VisitDataSetType.REQUIRED);
             }
         }
         else if (type == VisitDataSetType.NOT_ASSOCIATED)
         {
             // need to remove an existing VisitMap entry:
             Table.delete(SCHEMA.getTableInfoVisitMap(),
-                    new Object[] { container.getId(), visitId, dataSetId});
+                    new Object[] { container.getId(), visitId, datasetId});
         }
         else if ((VisitDataSetType.OPTIONAL == type && vds.isRequired()) ||
                  (VisitDataSetType.REQUIRED == type && !vds.isRequired()))
@@ -2443,7 +2442,7 @@ public class StudyManager
             Map<String,Object> required = new HashMap<>(1);
             required.put("Required", VisitDataSetType.REQUIRED == type ? Boolean.TRUE : Boolean.FALSE);
             Table.update(user, SCHEMA.getTableInfoVisitMap(), required,
-                    new Object[]{container.getId(), visitId, dataSetId});
+                    new Object[]{container.getId(), visitId, datasetId});
         }
     }
 
@@ -2488,17 +2487,17 @@ public class StudyManager
             throw new RuntimeException(e);
         }
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + SCHEMA.getTableInfoVisitMap() + "\n" +
-                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId());
+                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId());
 
         // UNDONE: This is broken
-        // this._dataSetHelper.delete(ds);
+        // this._datasetHelper.delete(ds);
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute("DELETE FROM " + StudySchema.getInstance().getTableInfoDataSet() + "\n" +
-                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDataSetId());
+                "WHERE Container=? AND DatasetId=?", study.getContainer(), ds.getDatasetId());
         _datasetHelper.clearCache(study.getContainer());
 
         SecurityPolicyManager.deletePolicy(ds);
 
-        if (safeIntegersEqual(ds.getDataSetId(), study.getParticipantCohortDataSetId()))
+        if (safeIntegersEqual(ds.getDatasetId(), study.getParticipantCohortDataSetId()))
             CohortManager.getInstance().setManualCohortAssignment(study, user, Collections.<String, Integer>emptyMap());
 
         if (performStudyResync)
@@ -2558,7 +2557,7 @@ public class StudyManager
         _locationHelper.clearCache(c);
         AssayManager.get().clearProtocolCache();
         if (unmaterializeDatasets && null != study)
-            for (DataSetDefinition def : getDataSetDefinitions(study))
+            for (DataSetDefinition def : getDatasetDefinitions(study))
                 uncache(def);
         _datasetHelper.clearCache(c);
 
@@ -2583,7 +2582,7 @@ public class StudyManager
         if (study == null) // no study in this folder
             dsds = Collections.emptyList();
         else
-            dsds = study.getDataSets();
+            dsds = study.getDatasets();
 
         // get the list of study design tables
         List<TableInfo> studyDesignTables = new ArrayList<>();
@@ -2833,8 +2832,8 @@ public class StudyManager
                 ParticipantDataset pd = new ParticipantDataset();
                 pd.setContainer(container);
                 int datasetId = rs.getInt("DatasetId");
-                if (dataset == null || datasetId != dataset.getDataSetId())
-                    dataset = getDataSetDefinition(getStudy(container), datasetId);
+                if (dataset == null || datasetId != dataset.getDatasetId())
+                    dataset = getDatasetDefinition(getStudy(container), datasetId);
                 pd.setDataSetId(datasetId);
                 pd.setLsid(rs.getString("LSID"));
                 if (!dataset.isDemographicData())
@@ -2864,7 +2863,7 @@ public class StudyManager
         Role restrictedReader = RoleManager.getRole(RestrictedReaderRole.class);
 
         Set<SecurableResource> resources = new HashSet<>();
-        resources.addAll(getDataSetDefinitions(study));
+        resources.addAll(getDatasetDefinitions(study));
 
         Set<UserPrincipal> principals = new HashSet<>();
 
@@ -3379,23 +3378,23 @@ public class StudyManager
         List<Map<String, Object>> mapsImport = reader.getImportMaps();
 
         List<String> importErrors = new LinkedList<>();
-        final Map<String, DataSetDefinitionEntry> dataSetDefEntryMap = new HashMap<>();
+        final Map<String, DataSetDefinitionEntry> datasetDefEntryMap = new HashMap<>();
 
         // Use a factory to ensure domain URI consistency between imported properties and the dataset.  See #7944.
         DomainURIFactory factory = new DomainURIFactory() {
             public Pair<String,Container> getDomainURI(String name)
             {
-                assert dataSetDefEntryMap.containsKey(name);
-                DataSetDefinitionEntry defEntry = dataSetDefEntryMap.get(name);
-                Container defContainer = defEntry.dataSetDefinition.getDefinitionContainer();
-                String domainURI = StudyManager.getDomainURI(defEntry.dataSetDefinition.getDefinitionContainer(), user, name, defEntry.dataSetDefinition.getEntityId());
+                assert datasetDefEntryMap.containsKey(name);
+                DataSetDefinitionEntry defEntry = datasetDefEntryMap.get(name);
+                Container defContainer = defEntry.datasetDefinition.getDefinitionContainer();
+                String domainURI = StudyManager.getDomainURI(defEntry.datasetDefinition.getDefinitionContainer(), user, name, defEntry.datasetDefinition.getEntityId());
                 return new Pair<>(domainURI, defContainer);
             }
         };
 
         // We need to build the datasets (but not save) before we create the property descriptors so that
         // we can use the unique DomainURI for each dataset as part of the PropertyURI
-        populateDataSetDefEntryMap(study, createDatasetStudy, reader, user, errors, dataSetDefEntryMap);
+        populateDataSetDefEntryMap(study, createDatasetStudy, reader, user, errors, datasetDefEntryMap);
         if (errors.hasErrors())
             return false;
 
@@ -3419,10 +3418,10 @@ public class StudyManager
         StudyManager manager = StudyManager.getInstance();
 
         // now actually create the datasets
-        for (Map.Entry<String, DataSetDefinitionEntry> entry : dataSetDefEntryMap.entrySet())
+        for (Map.Entry<String, DataSetDefinitionEntry> entry : datasetDefEntryMap.entrySet())
         {
             DataSetDefinitionEntry d = entry.getValue();
-            DataSetDefinition def = d.dataSetDefinition;
+            DataSetDefinition def = d.datasetDefinition;
 
             if (d.isNew)
                 manager.createDataSetDefinition(user, def);
@@ -3441,10 +3440,10 @@ public class StudyManager
             Domain d = domainsMap.get(ipd.domainURI);
             if (null == d)
             {
-                DataSetDefinitionEntry entry = dataSetDefEntryMap.get(ipd.domainName);
-                d = PropertyService.get().getDomain(entry.dataSetDefinition.getDefinitionContainer(), ipd.domainURI);
+                DataSetDefinitionEntry entry = datasetDefEntryMap.get(ipd.domainName);
+                d = PropertyService.get().getDomain(entry.datasetDefinition.getDefinitionContainer(), ipd.domainURI);
                 if (null == d)
-                    d = PropertyService.get().createDomain(entry.dataSetDefinition.getDefinitionContainer(), ipd.domainURI, ipd.domainName);
+                    d = PropertyService.get().createDomain(entry.datasetDefinition.getDefinitionContainer(), ipd.domainURI, ipd.domainName);
                 domainsMap.put(d.getTypeURI(), d);
                 // add all the properties that exist for the domain
                 List<? extends DomainProperty> existingProperties = new ArrayList<>(d.getProperties());
@@ -3537,23 +3536,23 @@ public class StudyManager
             }
 
             // Check for name conflicts
-            DataSet existingDef = manager.getDataSetDefinitionByLabel(study, label);
+            DataSet existingDef = manager.getDatasetDefinitionByLabel(study, label);
 
-            if (existingDef != null && existingDef.getDataSetId() != id)
+            if (existingDef != null && existingDef.getDatasetId() != id)
             {
                 errors.reject("importDatasetSchemas", "Dataset '" + existingDef.getName() + "' is already using the label '" + label + "'");
                 return false;
             }
 
-            existingDef = manager.getDataSetDefinitionByName(study, name);
+            existingDef = manager.getDatasetDefinitionByName(study, name);
 
-            if (existingDef != null && existingDef.getDataSetId() != id)
+            if (existingDef != null && existingDef.getDatasetId() != id)
             {
                 errors.reject("importDatasetSchemas", "A different dataset already exists with the name " + name);
                 return false;
             }
 
-            DataSetDefinition def = manager.getDataSetDefinition(study, id);
+            DataSetDefinition def = manager.getDatasetDefinition(study, id);
 
             if (def == null)
             {
@@ -3800,16 +3799,16 @@ public class StudyManager
      * Called when a dataset has been modified in order to set the modified time, plus any other related actions.
      * @param fireNotification - true to fire the changed notification.
      */
-    public static void dataSetModified(DataSetDefinition def, User user, boolean fireNotification)
+    public static void datasetModified(DataSetDefinition def, User user, boolean fireNotification)
     {
         // Issue 19285 - run this as a commit task.  This has the benefit of only running per set of batch changes
         // under the same transaction and only running if the transaction is committed.  If no transaction is active then
         // the code is run immediately
         DbScope scope = StudySchema.getInstance().getScope();
-        scope.addCommitTask(getInstance().getDataSetModifiedRunnable(def, user, fireNotification), CommitTaskOption.POSTCOMMIT);
+        scope.addCommitTask(getInstance().getDatasetModifiedRunnable(def, user, fireNotification), CommitTaskOption.POSTCOMMIT);
     }
 
-    public Runnable getDataSetModifiedRunnable(DataSetDefinition def, User user, boolean fireNotification)
+    public Runnable getDatasetModifiedRunnable(DataSetDefinition def, User user, boolean fireNotification)
     {
         return new DataSetModifiedRunnable(def, user, fireNotification);
     }
@@ -3829,7 +3828,7 @@ public class StudyManager
 
         private int getDatasetId()
         {
-            return _def.getDataSetId();
+            return _def.getDatasetId();
         }
 
         private Container getContainer()
@@ -3911,7 +3910,7 @@ public class StudyManager
 
     private void unindexDataset(DataSetDefinition ds)
     {
-        String docid = "dataset:" + new Path(ds.getContainer().getId(),String.valueOf(ds.getDataSetId())).toString();
+        String docid = "dataset:" + new Path(ds.getContainer().getId(),String.valueOf(ds.getDatasetId())).toString();
         SearchService ss = ServiceRegistry.get(SearchService.class);
         if (null != ss)
             ss.deleteResource(docid);
@@ -3942,7 +3941,7 @@ public class StudyManager
                 if (null == c) continue;
                 Study study = StudyManager.getInstance().getStudy(c);
                 if (null == study) continue;
-                DataSetDefinition dsd = StudyManager.getInstance().getDataSetDefinition(study, id);
+                DataSetDefinition dsd = StudyManager.getInstance().getDatasetDefinition(study, id);
                 if (null == dsd) continue;
 
                 indexDataset(task, dsd);
@@ -3966,7 +3965,7 @@ public class StudyManager
             return;
         if (null == task)
             task = ServiceRegistry.get(SearchService.class).defaultTask();
-        String docid = "dataset:" + new Path(dsd.getContainer().getId(), String.valueOf(dsd.getDataSetId())).toString();
+        String docid = "dataset:" + new Path(dsd.getContainer().getId(), String.valueOf(dsd.getDatasetId())).toString();
 
         StringBuilder body = new StringBuilder();
         Map<String, Object> props = new HashMap<>();
@@ -3996,7 +3995,7 @@ public class StudyManager
         }
 
         ActionURL view = new ActionURL(StudyController.DatasetAction.class, null);
-        view.replaceParameter("datasetId", String.valueOf(dsd.getDataSetId()));
+        view.replaceParameter("datasetId", String.valueOf(dsd.getDatasetId()));
         view.setExtraPath(dsd.getContainer().getId());
 
         SimpleDocumentResource r = new SimpleDocumentResource(new Path(docid), docid,
@@ -4240,10 +4239,10 @@ public class StudyManager
         try (Transaction transaction = scope.ensureTransaction())
         {
             // transfer any timepoint requirements from the ghost to target
-            for (VisitDataSet vds : expectationDataset.getVisitDataSets())
+            for (VisitDataSet vds : expectationDataset.getVisitDatasets())
             {
                 VisitDataSetType type = vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.NOT_ASSOCIATED;
-                StudyManager.getInstance().updateVisitDataSetMapping(user, study.getContainer(), vds.getVisitRowId(), targetDataset.getDataSetId(), type);
+                StudyManager.getInstance().updateVisitDataSetMapping(user, study.getContainer(), vds.getVisitRowId(), targetDataset.getDatasetId(), type);
             }
 
             String name = expectationDataset.getName();
@@ -4435,8 +4434,8 @@ public class StudyManager
         DataSet createDataset(Study study, String name, DatasetType type) throws Exception
         {
             int id = counterDatasetId++;
-            _manager.createDataSetDefinition(_context.getUser(), study.getContainer(), id);
-            DataSetDefinition dd = _manager.getDataSetDefinition(study, id);
+            _manager.createDatasetDefinition(_context.getUser(), study.getContainer(), id);
+            DataSetDefinition dd = _manager.getDatasetDefinition(study, id);
             dd = dd.createMutable();
 
             dd.setName(name);
@@ -4490,7 +4489,7 @@ public class StudyManager
             // save
             domain.save(_context.getUser());
 
-            return study.getDataSet(id);
+            return study.getDataset(id);
         }
 
 

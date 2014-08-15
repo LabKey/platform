@@ -267,7 +267,7 @@ public class SequenceVisitManager extends VisitManager
 
         // update ParticipantVisit.VisitDate based on declared Visit.visitDateDatasetId
         ArrayList<DataSetDefinition> defsWithVisitDates = new ArrayList<>();
-        for (DataSetDefinition def : _study.getDataSets())
+        for (DataSetDefinition def : _study.getDatasets())
             if (null != def.getVisitDateColumnName())
                 defsWithVisitDates.add(def);
 
@@ -334,7 +334,7 @@ public class SequenceVisitManager extends VisitManager
         boolean isVisitDateDataset = false;
         for (Visit v : getStudy().getVisits(Visit.Order.SEQUENCE_NUM))
         {
-            if (v.getVisitDateDatasetId() == def.getDataSetId())
+            if (v.getVisitDateDatasetId() == def.getDatasetId())
             {
                 isVisitDateDataset = true;
                 break;
@@ -368,7 +368,7 @@ public class SequenceVisitManager extends VisitManager
                 .append("   SD.ParticipantId = PV.ParticipantId AND SD.SequenceNum = PV.SequenceNum AND\n")   // 'join' SD
                 .append("   ? = V.VisitDateDatasetId AND V.Container=? AND PV.Container=?\n");
 
-        sqlUpdateVisitDates.add(def.getDataSetId());
+        sqlUpdateVisitDates.add(def.getDatasetId());
         sqlUpdateVisitDates.add(container);
         sqlUpdateVisitDates.add(container);
         executor.execute(sqlUpdateVisitDates);
