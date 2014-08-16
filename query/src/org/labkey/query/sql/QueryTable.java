@@ -36,9 +36,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.data.xml.ColumnType;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -128,7 +126,7 @@ public class QueryTable extends QueryRelation
         ColumnInfo ci = _tableInfo.getColumn(name);
         if (ci == null)
             return null;
-        ret = new TableColumn(k, ci, null, null);
+        ret = new TableColumn(k, ci);
         _selectedColumns.put(k,ret);
         return ret;
     }
@@ -166,7 +164,7 @@ public class QueryTable extends QueryRelation
         ColumnInfo lk = parent._col.getFk().createLookupColumn(parent._col, name);
         if (lk == null)
             return null;
-        ret = new TableColumn(k, lk, parent, foreignKey);
+        ret = new TableColumn(k, lk);
         _selectedColumns.put(k,ret);
         return ret;
     }
@@ -193,7 +191,7 @@ public class QueryTable extends QueryRelation
         if (null == qfk)
             return null;
         ColumnInfo lk = qfk.createLookupColumn(parent._col, name);
-        ret = new TableColumn(k, lk, parent, qfk);
+        ret = new TableColumn(k, lk);
         _selectedColumns.put(k,ret);
         return ret;
     }
@@ -352,17 +350,12 @@ public class QueryTable extends QueryRelation
     {
         FieldKey _key;
         ColumnInfo _col;
-        TableColumn _parent;
-        ForeignKey _foreignKey;
         String _alias;
 
-        TableColumn(FieldKey key, ColumnInfo col, TableColumn parent, ForeignKey foreignKey)
+        TableColumn(FieldKey key, ColumnInfo col)
         {
-            assert (null == parent && null == foreignKey) || (null != parent && null != foreignKey);
             _key = key;
             _col = col;
-            _parent = parent;
-            _foreignKey = foreignKey;
             _alias = _aliasManager.decideAlias(col.getAlias());
         }
 
@@ -374,6 +367,8 @@ public class QueryTable extends QueryRelation
         @Override
         public ForeignKey getFk()
         {
+            if (_suggestedColumn)
+                return null;
             return _col.getFk();
         }
 
@@ -423,6 +418,7 @@ public class QueryTable extends QueryRelation
         void copyColumnAttributesTo(ColumnInfo to)
         {
             to.copyAttributesFrom(_col);
+            to.setKeyField(false);
             to.setCalculated(true);
             // always copy format, we don't care about preserving set/unset-ness
             to.setFormat(_col.getFormat());
@@ -464,18 +460,25 @@ public class QueryTable extends QueryRelation
     }
 
 
-    private void addSuggestedColumn(Set<RelationColumn> suggested, FieldKey k)
+    // return column if it is newly added to the suggested list
+    private RelationColumn addSuggestedColumn(Set<RelationColumn> suggested, FieldKey k)
     {
         boolean existed = _selectedColumns.containsKey(k);
 
         RelationColumn tc = _resolve(k);
         if (null == tc)
-            return;
+            return null;
 
         if (!existed && tc instanceof TableColumn)
+        {
             ((TableColumn)tc)._suggestedColumn = true;
+        }
+
+        if (suggested.contains(tc))
+            return null;
 
         suggested.add(tc);
+        return tc;
     }
 
 
