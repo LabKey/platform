@@ -53,6 +53,12 @@ Ext.define('LABKEY.app.controller.View', {
             this.allowAnimations = false; //!Ext.isDefined(params['transition']);
         }
 
+        // by default, just return the title as it is set
+        var el = Ext.DomQuery.select('title');
+        if (Ext.isArray(el) && el.length > 0) {
+            this.defaultTitle = Ext.get(el[0]).getHTML();
+        }
+
         this.application.on('route', this.routeView, this);
     },
 
@@ -291,6 +297,13 @@ Ext.define('LABKEY.app.controller.View', {
             view: view
             // Add viewContext later???
         };
+
+        var title = this.defaultTitle;
+        var controlTitle = this.controllerMap[view].getViewTitle(view, localContext);
+        if (Ext.isString(controlTitle) && controlTitle.length > 0) {
+            title = controlTitle + " - " + title;
+        }
+        document.title = title;
 
         this.fireEvent('afterchangeview', controller, view, viewContext);
     },

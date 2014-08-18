@@ -94,6 +94,10 @@ Ext.define('LABKEY.app.controller.AbstractViewController', {
         console.error('updateView must implemented by subclasses of AbstractViewController:', this.$className);
     },
 
+    getViewTitle : function(xtype) {
+        /* Provided to be overridden in the case of a view/context specific title */
+    },
+
     /**
      * Allows a Controller to override the context that is provided
      * @param urlContext
