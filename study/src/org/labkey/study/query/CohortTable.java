@@ -19,17 +19,21 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.view.ActionURL;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.CohortController;
 import org.labkey.study.model.CohortImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -90,6 +94,12 @@ public class CohortTable extends BaseStudyTable
 
         if (!StudyManager.getInstance().showCohorts(schema.getContainer(), schema.getUser()))
             addCondition(new SQLFragment("0=1"));
+
+        ActionURL updateURL = new ActionURL(CohortController.UpdateAction.class, getContainer());
+        setUpdateURL(new DetailsURL(updateURL, Collections.singletonMap("rowId", "rowId")));
+
+        ActionURL deleteURL = new ActionURL(CohortController.DeleteCohortAction.class, getContainer());
+        setDeleteURL(new DetailsURL(deleteURL, Collections.singletonMap("rowId", "rowId")));
     }
 
     @Override

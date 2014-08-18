@@ -19,10 +19,10 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.User;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -44,17 +44,18 @@ import java.io.Writer;
  */
 public class CohortQueryView extends ExtensibleObjectQueryView
 {
-    public CohortQueryView(User user, StudyImpl study, ViewContext viewContext, boolean allowEditing)
-    {
-        super(user, study, CohortImpl.DOMAIN_INFO, viewContext, allowEditing);
+    boolean canEditDelete = false;
 
-        QuerySettings settings = getSettings();
-        // We don't have many cohorts typically. Let's cut down on the number of buttons,
-        // as this isn't a complex view
-        settings.setAllowChooseView(false);
+    public CohortQueryView(User user, StudyImpl study, ViewContext viewContext)
+    {
+        super(user, study, CohortImpl.DOMAIN_INFO, viewContext, true);
+
+        getSettings().setAllowChooseView(false);
         setShowPagination(false);
         setShowPaginationCount(false);
-        setShowUpdateColumn(false);   // We have a custom update column and a custom update action, thank you very much
+
+        canEditDelete = getUser().isSiteAdmin() && StudyManager.getInstance().showCohorts(getContainer(), getUser());
+        setShowUpdateColumn(canEditDelete);
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
@@ -76,56 +77,42 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         }
     }
 
+    @Override
+    protected boolean canUpdate()
+    {
+        return canEditDelete;
+    }
+
+    @Override
+    protected boolean canDelete()
+    {
+        return canEditDelete;
+    }
+
+    @Override
     public DataView createDataView()
     {
         DataView view = super.createDataView();
 
-        if (allowEditing() &&
-                getUser().isSiteAdmin() &&
-                StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+        if (canEditDelete)
         {
             TableInfo tableInfo = view.getDataRegion().getTable();
             ColumnInfo rowIdColumn = tableInfo.getColumn("rowId");
-
-            Container container = view.getRenderContext().getContainer();
-
-            view.getDataRegion().addDisplayColumn(0, new CohortEditColumn(container, rowIdColumn));
-            view.getDataRegion().addDisplayColumn(1, new CohortDeleteColumn(container, rowIdColumn));
+            ColumnInfo folderColumn = tableInfo.getColumn("Folder");
+            view.getDataRegion().addDisplayColumn(1, new CohortDeleteColumn(rowIdColumn, folderColumn));
         }
         return view;
-    }
-
-    private class CohortEditColumn extends SimpleDisplayColumn
-    {
-        private final ColumnInfo rowIdColumn;
-        private final Container container;
-
-        public CohortEditColumn(Container container, ColumnInfo rowIdColumn)
-        {
-            this.container = container;
-            this.rowIdColumn = rowIdColumn;
-            setWidth(null);
-        }
-
-        public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
-        {
-            Integer rowId = (Integer)rowIdColumn.getValue(ctx);
-            ActionURL actionURL = new ActionURL(CohortController.UpdateAction.class, container);
-            actionURL.addParameter("rowId", rowId);
-
-            out.write(PageFlowUtil.textLink("edit", actionURL.getLocalURIString()));
-         }
     }
 
     private class CohortDeleteColumn extends SimpleDisplayColumn
     {
         private final ColumnInfo rowIdColumn;
-        private final Container container;
+        private final ColumnInfo folderColumn;
 
-        public CohortDeleteColumn(Container container, ColumnInfo rowIdColumn)
+        public CohortDeleteColumn(ColumnInfo rowIdColumn, ColumnInfo folderColumn)
         {
-            this.container = container;
             this.rowIdColumn = rowIdColumn;
+            this.folderColumn = folderColumn;
             setWidth(null);
             setTextAlign("center");
         }
@@ -133,19 +120,24 @@ public class CohortQueryView extends ExtensibleObjectQueryView
         public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
         {
             Integer rowId = (Integer)rowIdColumn.getValue(ctx);
-            CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(getContainer(), getUser(), rowId);
-            if (cohort != null)
-            {
-                if (!cohort.isInUse())
-                {
-                    ActionURL actionURL = new ActionURL(CohortController.DeleteCohortAction.class, container);
-                    actionURL.addParameter("rowId", rowId.toString());
+            Container folder = ContainerManager.getForId((String) folderColumn.getValue(ctx));
 
-                    out.write(PageFlowUtil.textLink("delete", actionURL.getLocalURIString()));
-                }
-                else
+            if (folder != null)
+            {
+                CohortImpl cohort = StudyManager.getInstance().getCohortForRowId(folder, getUser(), rowId);
+                if (cohort != null)
                 {
-                    out.write("in use");
+                    if (!cohort.isInUse())
+                    {
+                        ActionURL actionURL = new ActionURL(CohortController.DeleteCohortAction.class, folder);
+                        actionURL.addParameter("rowId", rowId.toString());
+
+                        out.write(PageFlowUtil.textLink("delete", actionURL.getLocalURIString()));
+                    }
+                    else
+                    {
+                        out.write("in use");
+                    }
                 }
             }
         }

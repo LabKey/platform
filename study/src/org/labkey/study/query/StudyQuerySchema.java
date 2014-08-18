@@ -818,6 +818,11 @@ public class StudyQuerySchema extends UserSchema
                 return SpecimenQueryView.createView(context, settings, SpecimenQueryView.ViewType.VIALS);
             }
 
+            if ("Cohort".equalsIgnoreCase(settings.getQueryName()))
+            {
+                return new CohortQueryView(context.getUser(), getStudy(), context);
+            }
+
             DataSetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());
             // Check for permission before deciding to treat the request as a dataset
             if (dsd != null && dsd.canRead(getUser()))
