@@ -30,6 +30,7 @@
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       resources.add(ClientDependency.fromFilePath("File"));
+      resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
       return resources;
   }
 %>
