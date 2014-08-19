@@ -30,6 +30,7 @@
     Please confirm that you would like to delete this connection.
 </p>
 <form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlDeleteRemoteConnection(c, null) %>" method="post">
+<labkey:csrf/>
 <table>
     <tr>
         <td>Connection Name: </td>

@@ -47,6 +47,7 @@
 <br>
 
 <form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlSaveRemoteConnection(c) %>" method="post">
+<labkey:csrf/>
 <table>
     <tr>
         <td>Connection Name: </td>

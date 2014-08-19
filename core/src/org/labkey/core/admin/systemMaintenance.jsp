@@ -105,7 +105,7 @@
         </tr>
     </table>
 </form>
-<form name="systemMaintenance" action="<%=buildURL(AdminController.SystemMaintenanceAction.class)%>" method="post" target="systemMaintenance"><input type="hidden" name="taskName"/></form>
+<form name="systemMaintenance" action="<%=buildURL(AdminController.SystemMaintenanceAction.class)%>" method="post" target="systemMaintenance"><input type="hidden" name="taskName"/><labkey:csrf></labkey:csrf></form>
 <script type="text/javascript">
 
     // global functions for script calls from this Form
