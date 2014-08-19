@@ -25,6 +25,7 @@ import org.labkey.api.mbean.LabKeyManagement;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * User: adam
@@ -54,6 +55,9 @@ public class CacheManager
     // Swap providers here (if we ever implement another cache provider)
     private static final CacheProvider PROVIDER = EhCacheProvider.getInstance();
     private static final List<TrackingCache> KNOWN_CACHES = new LinkedList<>();
+
+    private static final List<CacheListener> LISTENERS = new CopyOnWriteArrayList<>();
+
     public static final int UNLIMITED = 0;
 
     private static <K, V> TrackingCache<K, V> createCache(int limit, long defaultTimeToLive, String debugName)
@@ -118,6 +122,8 @@ public class CacheManager
             for (TrackingCache cache : KNOWN_CACHES)
                 cache.clear();
         }
+
+        fireClearCaches();
     }
 
     // Return a copy of KNOWN_CACHES for reporting statistics
@@ -132,6 +138,19 @@ public class CacheManager
         }
 
         return copy;
+    }
+
+    private static void fireClearCaches()
+    {
+        for (CacheListener listener : LISTENERS)
+        {
+            listener.clearCaches();
+        }
+    }
+
+    public static void addListener(CacheListener listener)
+    {
+        LISTENERS.add(listener);
     }
 
     public static CacheStats getCacheStats(TrackingCache cache)
