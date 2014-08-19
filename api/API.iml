@@ -552,7 +552,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/picard-1.96.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/picard-1.118.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -561,7 +561,7 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/sam-1.96.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/htsjdk-1.118.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

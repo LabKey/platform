@@ -26,7 +26,11 @@ public interface ReferenceLibraryHelper
 
     public File getIdKeyFile();
 
-    public File getIndexFile();
+    public File getFastaIndexFile(boolean createIfDoesntExist);
+
+    public File getSequenceDictionaryFile(boolean createIfDoesntExist);
 
     public Integer resolveSequenceId(String refName);
+
+    public String resolveAccession(String refName);
 }

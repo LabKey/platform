@@ -16,7 +16,7 @@
 package org.labkey.api.sequenceanalysis;
 
 import com.drew.lang.annotations.Nullable;
-import net.sf.samtools.util.StringUtil;
+import htsjdk.samtools.util.StringUtil;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
@@ -40,6 +40,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -123,6 +124,17 @@ public class RefNtSequenceModel
         }
 
         return null;
+    }
+
+    public boolean hasSequenceFile()
+    {
+        if (_sequenceFile != null)
+        {
+            ExpData d = ExperimentService.get().getExpData(_sequenceFile);
+            return d != null && d.getFile().exists();
+        }
+
+        return false;
     }
 
     public String getLegacySequence()
@@ -412,7 +424,27 @@ public class RefNtSequenceModel
 
     public void writeSequence(Writer writer, int lineLength) throws IOException
     {
+        writeSequence(writer, lineLength, null, null);
+    }
+
+    public void writeSequence(Writer writer, int lineLength, Integer start, Integer end) throws IOException
+    {
         byte[] seq = getSequenceBases();
+        if (start != null || end != null)
+        {
+            if (start == null)
+            {
+                start = 0;
+            }
+
+            if (end == null)
+            {
+                end = seq.length;
+            }
+
+            seq = Arrays.copyOfRange(seq, start, end);
+        }
+
         int len = seq.length;
         int count = 0;
         for (int i = 0; i < len; i++)

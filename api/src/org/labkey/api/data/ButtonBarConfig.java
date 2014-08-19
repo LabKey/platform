@@ -143,6 +143,10 @@ public class ButtonBarConfig
         {
             _onRenderScript = buttonBarOptions.getOnRender();
         }
+        if (buttonBarOptions.isSetAlwaysShowRecordSelectors())
+        {
+            _alwaysShowRecordSelectors = buttonBarOptions.getAlwaysShowRecordSelectors();
+        }
     }
 
     public ButtonBarConfig(ButtonBarConfig cfg)
