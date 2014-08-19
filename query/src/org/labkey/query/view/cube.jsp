@@ -44,8 +44,9 @@
         return resources;
     }
 %>
+<%=textLink("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnURL(getActionURL().clone()))%>
 <%
-    Collection<OlapSchemaDescriptor> list = ServerManager.SCHEMA_DESCRIPTOR_CACHE.getResources(getContainer());
+    Collection<OlapSchemaDescriptor> list = ServerManager.getDescriptors(getContainer());
     for (OlapSchemaDescriptor sd : list)
     {
         %><h3><%=h(sd.getName())%></h3><%
@@ -119,3 +120,4 @@
                 }
             }
         %></div></td></tr></table>
+

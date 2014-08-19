@@ -30,9 +30,13 @@ import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.CustomApiForm;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.BeanViewForm;
+import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
@@ -49,6 +53,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ConfigurationException;
@@ -56,18 +61,24 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.PageConfig;
 import org.labkey.query.olap.BitSetQueryImpl;
+import org.labkey.query.olap.CustomOlapSchemaDescriptor;
 import org.labkey.query.olap.MdxQueryImpl;
 import org.labkey.query.olap.Olap4Js;
+import org.labkey.query.olap.OlapDef;
 import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.QubeQuery;
 import org.labkey.query.olap.ServerManager;
+import org.labkey.query.persist.QueryManager;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
@@ -218,6 +229,84 @@ public class OlapController extends SpringActionController
             response.setContentType("application/json");
             Olap4Js.convertCube(cube, form.isIncludeMembers(), response.getWriter());
             return null;
+        }
+    }
+
+    public static class CustomOlapDescriptorForm extends BeanViewForm<OlapDef>
+    {
+        public CustomOlapDescriptorForm()
+        {
+            super(OlapDef.class, QueryManager.get().getTableInfoOlapDef());
+        }
+
+        public void validate(Errors errors)
+        {
+            OlapDef d = getBean();
+
+            // TODO: validate the xml definition against an xsd
+        }
+    }
+
+    @RequiresPermissionClass(InsertPermission.class)
+    public class CreateDefinitionAction extends FormViewAction<CustomOlapDescriptorForm>
+    {
+
+        @Override
+        public void validateCommand(CustomOlapDescriptorForm form, Errors errors)
+        {
+            form.validate(errors);
+        }
+
+        @Override
+        public ModelAndView getView(CustomOlapDescriptorForm form, boolean reshow, BindException errors) throws Exception
+        {
+            ActionURL createUrl = new ActionURL(OlapController.CreateDefinitionAction.class, getContainer());
+
+            InsertView view = new InsertView(form, errors);
+            //view.setInitialValues();
+            view.getDataRegion().setFormActionUrl(createUrl);
+
+            ActionButton submitButton = new ActionButton("Submit", createUrl);
+            submitButton.setActionType(ActionButton.Action.POST);
+
+            ButtonBar bb = new ButtonBar();
+            bb.setStyle(ButtonBar.Style.separateButtons);
+            bb.add(submitButton);
+
+            bb.add(new ActionButton("Cancel", form.getReturnActionURL() != null ? form.getReturnActionURL() : new ActionURL(TestBrowserAction.class, getContainer())));
+
+            view.getDataRegion().setButtonBar(bb);
+
+            return view;
+        }
+
+        @Override
+        public boolean handlePost(CustomOlapDescriptorForm form, BindException errors) throws Exception
+        {
+            if (errors.hasErrors())
+                return false;
+
+            form.doInsert();
+
+            // Clear the cached descriptors in this container
+            CustomOlapSchemaDescriptor d = new CustomOlapSchemaDescriptor(form.getBean());
+            ServerManager.olapSchemaDescriptorChanged(d);
+
+            return false;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(CustomOlapDescriptorForm form)
+        {
+            return form.getReturnURLHelper();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root
+                    .addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()))
+                    .addChild("Create Custom OLAP Definition");
         }
     }
 

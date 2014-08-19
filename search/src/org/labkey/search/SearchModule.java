@@ -16,11 +16,14 @@
 
 package org.labkey.search;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.SimpleAuditViewFactory;
 import org.labkey.api.audit.query.AuditLogQueryView;
+import org.labkey.api.cache.CacheListener;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -157,6 +160,16 @@ public class SearchModule extends DefaultModule
                         ss.clear();
 
                     DavCrawler.getInstance().start();
+                }
+            });
+
+            CacheManager.addListener(new CacheListener()
+            {
+                @Override
+                public void clearCaches()
+                {
+                    Logger.getLogger(SearchService.class).info("Purging SearchService queues");
+                    ss.purgeQueues();
                 }
             });
         }

@@ -516,6 +516,11 @@ public class QueryManager
         return getDbSchema().getTable("ExternalSchema");
     }
 
+    public TableInfo getTableInfoOlapDef()
+    {
+        return getDbSchema().getTable("OlapDef");
+    }
+
     public void containerDeleted(Container c)
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
@@ -523,6 +528,7 @@ public class QueryManager
         Table.delete(getTableInfoCustomView(), filter);
         Table.delete(getTableInfoQueryDef(), filter);
         Table.delete(getTableInfoExternalSchema(), filter);
+        Table.delete(getTableInfoOlapDef(), filter);
     }
 
     public void addQueryListener(QueryChangeListener listener)

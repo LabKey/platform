@@ -57,7 +57,7 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<String
     @Override
     public String createCacheKey(Module module, String name)
     {
-        return module.getName() + ":/" + name;
+        return createOlapCacheKey(module, name);
     }
 
     private static final Pattern CONFIG_ID_PATTERN = Pattern.compile("("+ ModuleLoader.MODULE_NAME_REGEX + "):/(.+)");
@@ -73,19 +73,29 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<String
         @Override
         public OlapSchemaDescriptor load(String configId, @Nullable Object argument)
         {
-            ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(configId, CONFIG_ID_PATTERN);
+            ModuleResourceCache.CacheId tid = parseOlapCacheKey(configId);
             Module module = tid.getModule();
             String configName = tid.getName();
-
             Path configPath = new Path(DIR_NAME, configName + ".xml");
             Resource config  = module.getModuleResolver().lookup(configPath);
 
             if (config != null && config.isFile())
-                return new OlapSchemaDescriptor(configId, module, config);
+                return new ModuleOlapSchemaDescriptor(configId, module, config);
             else
                 return null;
         }
     };
+
+    public static String createOlapCacheKey(Module module, String name)
+    {
+        return module.getName() + ":/" + name;
+    }
+
+    public static ModuleResourceCache.CacheId parseOlapCacheKey(String schemaId)
+    {
+        ModuleResourceCache.CacheId tid = ModuleResourceCache.parseCacheKey(schemaId, CONFIG_ID_PATTERN);
+        return tid;
+    }
 
 
     private class OlapDirectoryListener implements FileSystemDirectoryListener

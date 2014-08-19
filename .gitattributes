@@ -2389,6 +2389,7 @@ query/resources/schemas/dbscripts/postgresql/query-0.00-12.10.sql -text
 query/resources/schemas/dbscripts/postgresql/query-12.20-12.30.sql -text
 query/resources/schemas/dbscripts/postgresql/query-12.301-13.10.sql -text
 query/resources/schemas/dbscripts/postgresql/query-13.10-13.20.sql -text
+query/resources/schemas/dbscripts/postgresql/query-14.20-14.21.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-10.20.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-11.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-2.00.sql -text
@@ -2438,6 +2439,7 @@ query/resources/schemas/dbscripts/sqlserver/query-0.00-12.10.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-12.20-12.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-12.301-13.10.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-13.10-13.20.sql -text
+query/resources/schemas/dbscripts/sqlserver/query-14.20-14.21.sql -text
 query/resources/schemas/query.xml -text
 query/resources/views/SearchPanel.html -text
 query/resources/views/SearchPanel.view.xml -text
@@ -2523,9 +2525,12 @@ query/src/org/labkey/query/jdbc/QueryStatement.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/olap/BitSetQueryImpl.java -text
 query/src/org/labkey/query/olap/CachedCubeFactory.java -text
+query/src/org/labkey/query/olap/CustomOlapSchemaDescriptor.java -text
 query/src/org/labkey/query/olap/MdxQueryImpl.java -text
 query/src/org/labkey/query/olap/MemberSet.java -text
+query/src/org/labkey/query/olap/ModuleOlapSchemaDescriptor.java -text
 query/src/org/labkey/query/olap/Olap4Js.java -text
+query/src/org/labkey/query/olap/OlapDef.java -text
 query/src/org/labkey/query/olap/OlapSchemaCacheHandler.java -text
 query/src/org/labkey/query/olap/OlapSchemaDescriptor.java -text
 query/src/org/labkey/query/olap/Qube.java -text

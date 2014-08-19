@@ -36,8 +36,11 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.concurrent.CountingSemaphore;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
@@ -49,6 +52,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.query.persist.QueryManager;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.metadata.Cube;
@@ -64,9 +68,12 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -89,14 +96,15 @@ import static org.labkey.api.action.SpringActionController.ERROR_MSG;
 
 public class ServerManager
 {
-    private static final Logger _log = Logger.getLogger(ServerManager.class);
+    private static final Logger LOG = Logger.getLogger(ServerManager.class);
 
-    private static final Map<String, ServerReferenceCount> _servers = new HashMap<>();
-    private static final Object _serverLock = new Object();
+    private static final Map<String, ServerReferenceCount> SERVERS = new HashMap<>();
+    private static final Object SERVERS_LOCK = new Object();
 
-    public static final ModuleResourceCache<OlapSchemaDescriptor> SCHEMA_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube defintions", new OlapSchemaCacheHandler());
+    private static final ModuleResourceCache<OlapSchemaDescriptor> MODULE_DESCRIPTOR_CACHE = ModuleResourceCaches.create(new Path(OlapSchemaCacheHandler.DIR_NAME), "Olap cube defintions (module)", new OlapSchemaCacheHandler());
+    private static final BlockingStringKeyCache<OlapSchemaDescriptor> DB_DESCRIPTOR_CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.HOUR, "Olap cube definitions (db) ", new OlapCacheLoader());
 
-    public static final BlockingStringKeyCache<Cube> _cubes = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "cube cache", null);
+    private static final BlockingStringKeyCache<Cube> CUBES = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.HOUR, "cube cache", null);
 
     private static final String DATA_SOURCE_NAME = "dsn_LABKEY";
 
@@ -128,13 +136,13 @@ public class ServerManager
             @Override
             public void shutdownPre(ServletContextEvent servletContextEvent)
             {
-                _servers.clear();
+                SERVERS.clear();
             }
 
             @Override
             public void shutdownStarted(ServletContextEvent servletContextEvent)
             {
-                _servers.clear();
+                SERVERS.clear();
             }
         });
     }
@@ -145,16 +153,80 @@ public class ServerManager
         return MondrianServer.class.getName() + "/" + c.getId();
     }
 
+    private static class OlapCacheLoader implements CacheLoader<String, OlapSchemaDescriptor>
+    {
+        @Override
+        public OlapSchemaDescriptor load(String key, @Nullable Object argument)
+        {
+            String[] parts = key.split("/");
+            if (parts.length != 2)
+                throw new IllegalStateException("Unrecognized cache key format: " + key);
+
+            String containerId = parts[0];
+            String name = parts[1];
+
+            Container c = ContainerManager.getForId(containerId);
+            if (c == null)
+                throw new IllegalStateException("Container not available: " + containerId);
+
+            SimpleFilter filter = new SimpleFilter();
+            // CONSIDER: cache by module as well?
+            //filter.addCondition(FieldKey.fromParts("module"), module.getName());
+            filter.addCondition(FieldKey.fromParts("container"), containerId);
+            filter.addCondition(FieldKey.fromParts("name"), name);
+
+            TableSelector s = new TableSelector(QueryManager.get().getTableInfoOlapDef(), filter, null);
+            OlapDef def = s.getObject(OlapDef.class);
+            if (def == null)
+                return null;
+
+            return new CustomOlapSchemaDescriptor(def);
+        }
+    }
 
     @Nullable
     public static OlapSchemaDescriptor getDescriptor(@NotNull Container c, @NotNull String schemaId)
     {
-        OlapSchemaDescriptor d = SCHEMA_DESCRIPTOR_CACHE.getResource(schemaId);
+        // crack the schemaId into module and name parts
+        ModuleResourceCache.CacheId id = OlapSchemaCacheHandler.parseOlapCacheKey(schemaId);
+
+        // look for descriptor in database by container and name
+        String olapDefCacheKey = c.getId() + "/" + id.getName();
+        OlapSchemaDescriptor d = DB_DESCRIPTOR_CACHE.get(olapDefCacheKey);
+        if (null != d && d.getModule() == id.getModule() && c.getActiveModules().contains(d.getModule()))
+            return d;
+
+        // look for descriptor in active modules
+        d = MODULE_DESCRIPTOR_CACHE.getResource(schemaId);
         if (null != d && c.getActiveModules().contains(d.getModule()))
             return d;
+
         return null;
     }
 
+    @NotNull
+    public static List<OlapSchemaDescriptor> getDescriptors(@NotNull Container c)
+    {
+        List<OlapSchemaDescriptor> ret = new ArrayList<>();
+
+        // look for descriptor in active modules
+        ret.addAll(MODULE_DESCRIPTOR_CACHE.getResources(c));
+
+        // TODO: add list of all olap descriptors in the container to the cache
+        //List<OlapSchemaDescriptor> descriptors = DB_SCHEMA_DESCRIPTOR_CACHE.get(c.getId());
+        SimpleFilter filter = SimpleFilter.createContainerFilter(c);
+        TableSelector s = new TableSelector(QueryManager.get().getTableInfoOlapDef(), new HashSet<>(Arrays.asList("name")), filter, null);
+        for (String name : s.getArrayList(String.class))
+        {
+            // look for descriptor in database by container and name
+            String olapDefCacheKey = c.getId() + "/" + name;
+            OlapSchemaDescriptor d = DB_DESCRIPTOR_CACHE.get(olapDefCacheKey);
+            if (d != null)
+                ret.add(d);
+        }
+
+        return ret;
+    }
 
     /* Note we pass in OlapConnection here, that's because the connection must stay open in order to use the cube
      * (Unless we create a cached cube)
@@ -205,7 +277,7 @@ public class ServerManager
 
         String cubeCacheKey = c.getId() + "/" + cube.getSchema().getName() + "/" + cube.getUniqueName();
         final SQLException ex[] = new SQLException[1];
-        Cube cachedCube = _cubes.get(cubeCacheKey,cube,new CacheLoader<String,Cube>()
+        Cube cachedCube = CUBES.get(cubeCacheKey,cube,new CacheLoader<String,Cube>()
         {
             @Override
             public Cube load(String key, @Nullable Object src)
@@ -241,13 +313,13 @@ public class ServerManager
     {
         ViewServlet.checkShuttingDown();
 
-        synchronized (_serverLock)
+        synchronized (SERVERS_LOCK)
         {
-            ServerReferenceCount ref = _servers.get(getServerCacheKey(c));
+            ServerReferenceCount ref = SERVERS.get(getServerCacheKey(c));
             MondrianServer s = null != ref ? ref.get() : null;
             if (null == s)
             {
-                Collection<OlapSchemaDescriptor> descriptors = SCHEMA_DESCRIPTOR_CACHE.getResources(c);
+                Collection<OlapSchemaDescriptor> descriptors = getDescriptors(c);
 
                 StringBuilder sb = new StringBuilder();
                 sb.append(
@@ -278,13 +350,13 @@ public class ServerManager
                         "\n</Catalogs>\n" +
                         "</DataSource>\n" +
                         "</DataSources>");
-                _log.debug(sb.toString());
+                LOG.debug(sb.toString());
                 RepositoryContentFinder rcf = new StringRepositoryContentFinder(sb.toString());
-                s = MondrianServer.createWithRepository(rcf, new _CatalogLocator());
-                _log.debug("Create new Mondrian server: " + c.getPath() + " " + s.toString());
+                s = MondrianServer.createWithRepository(rcf, new _CatalogLocator(c));
+                LOG.debug("Create new Mondrian server: " + c.getPath() + " " + s.toString());
 //                MemTracker.getInstance().put(s);
                 ref = new ServerReferenceCount(s, c);
-                _servers.put(getServerCacheKey(c), ref);
+                SERVERS.put(getServerCacheKey(c), ref);
             }
             return ref;
         }
@@ -343,12 +415,12 @@ public class ServerManager
             }
             long end = System.currentTimeMillis();
             result = "Warming the " + cubeName + " in container " + c.getName() + " took: " + DateUtil.formatDuration(end - start);
-            _log.info(result);
+            LOG.info(result);
         }
         catch(Exception e)
         {
             result = "Error trying to warm the " + cubeName + " in container " + c.getName();
-            _log.warn(result, e);
+            LOG.warn(result, e);
         }
 
         return result;
@@ -403,15 +475,45 @@ public class ServerManager
         return wrap;
     }
 
+    public static class CacheListener implements org.labkey.api.cache.CacheListener
+    {
+        @Override
+        public void clearCaches()
+        {
+            ServerManager.clearCaches();
+        }
+    }
+
+    /**
+     * Called from CacheListener to clear non-EhCache caches -- do not call directly.
+     * The DB_SCHEMA_DESCRIPTOR_CACHE and SCHEMA_DESCRIPTOR_CACHE caches are cleared
+     * by CacheManager.clearAllKnownCaches() prior to the module specific caches being cleared.
+     */
+    private static void clearCaches()
+    {
+        synchronized (SERVERS_LOCK)
+        {
+            for (ServerReferenceCount ref : SERVERS.values())
+                ref.decrement();
+            SERVERS.clear();
+            CUBES.clear();
+            BitSetQueryImpl.invalidateCache();
+        }
+    }
 
     public static void olapSchemaDescriptorChanged(OlapSchemaDescriptor d)
     {
-        synchronized (_serverLock)
+        synchronized (SERVERS_LOCK)
         {
-            for (ServerReferenceCount ref : _servers.values())
+            for (ServerReferenceCount ref : SERVERS.values())
                 ref.decrement();
-            _servers.clear();
-            _cubes.clear();
+            SERVERS.clear();
+            CUBES.clear();
+            if (d != null && d.getContainer() != null)
+            {
+                String olapDefCacheKey = d.getContainer().getId() + "/" + d.getName();
+                DB_DESCRIPTOR_CACHE.remove(olapDefCacheKey);
+            }
             BitSetQueryImpl.invalidateCache(d);
         }
     }
@@ -419,12 +521,13 @@ public class ServerManager
 
     public static void cubeDataChanged(Container c)
     {
-        synchronized (_serverLock)
+        synchronized (SERVERS_LOCK)
         {
-            ServerReferenceCount ref = _servers.remove(getServerCacheKey(c));
+            ServerReferenceCount ref = SERVERS.remove(getServerCacheKey(c));
             if (null != ref)
                 ref.decrement();
-            _cubes.clear();
+            CUBES.clear();
+            DB_DESCRIPTOR_CACHE.removeUsingPrefix(c.getId());
             BitSetQueryImpl.invalidateCache(c);
         }
     }
@@ -432,11 +535,11 @@ public class ServerManager
 
     static void closeServer(MondrianServer s, @NotNull Container container)
     {
-        _log.debug("Shutdown Mondrian server: " + s.toString());
+        LOG.debug("Shutdown Mondrian server: " + s.toString());
 
         try
         {
-            Collection<OlapSchemaDescriptor> descriptors = SCHEMA_DESCRIPTOR_CACHE.getResources(container);
+            Collection<OlapSchemaDescriptor> descriptors = getDescriptors(container);
             for (OlapSchemaDescriptor d : descriptors)
             {
                 String catalogName = OlapSchemaDescriptor.makeCatalogName(d, container);
@@ -447,8 +550,8 @@ public class ServerManager
         }
         catch (Exception x)
         {
-            _log.debug("Shutdown Mondrian server flush cache failed: " + s.toString());
-            _log.debug(x.getMessage());
+            LOG.debug("Shutdown Mondrian server flush cache failed: " + s.toString());
+            LOG.debug(x.getMessage());
         }
 
         s.shutdown();
@@ -499,14 +602,21 @@ public class ServerManager
 
     private static class _CatalogLocator implements CatalogLocator
     {
+        private final Container _container;
+
+        public _CatalogLocator(Container c)
+        {
+            _container = c;
+        }
+
         public String locate(String catalogPath)
         {
             try
             {
-                // Need a way to get a URL or something to the resource
-                OlapSchemaDescriptor d = SCHEMA_DESCRIPTOR_CACHE.getResource(catalogPath);
+                OlapSchemaDescriptor d = getDescriptor(_container, catalogPath);
                 if (null == d)
                     throw new IOException("catalog not found: " + catalogPath);
+
                 File f = d.getFile();
                 return f.getAbsolutePath();
             }
@@ -558,13 +668,13 @@ public class ServerManager
         void increment()
         {
             super.increment();
-            _log.debug("increment reference: " + counter.get() + " " + _server.toString());
+            LOG.debug("increment reference: " + counter.get() + " " + _server.toString());
         }
 
         @Override
         void decrement()
         {
-            _log.debug("decrement reference: " + (counter.get()-1) + " " + _server.toString());
+            LOG.debug("decrement reference: " + (counter.get() - 1) + " " + _server.toString());
             super.decrement();
         }
 
@@ -673,9 +783,9 @@ public class ServerManager
         @Override
         public void beforeReport(Set<Object> set)
         {
-            synchronized (_serverLock)
+            synchronized (SERVERS_LOCK)
             {
-                for (ServerReferenceCount ref : _servers.values())
+                for (ServerReferenceCount ref : SERVERS.values())
                 {
                     MondrianServer s = ref.get();
                     if (null != s)

@@ -19,6 +19,7 @@ package org.labkey.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.JdbcType;
@@ -67,6 +68,7 @@ import org.labkey.query.controllers.OlapController;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.jdbc.QueryDriver;
 import org.labkey.query.olap.MemberSet;
+import org.labkey.query.olap.ServerManager;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
@@ -116,7 +118,7 @@ public class QueryModule extends DefaultModule
 
     public double getVersion()
     {
-        return 14.20;
+        return 14.21;
     }
 
     protected void init()
@@ -220,6 +222,8 @@ public class QueryModule extends DefaultModule
         AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());
+
+        CacheManager.addListener(new ServerManager.CacheListener());
     }
 
     @Override
