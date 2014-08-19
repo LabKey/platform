@@ -543,7 +543,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     else
                     {
                         store.filterBy(function(record, id){
-                            return record.get('measure') && !record.get('hidden');
+                            var type = record.get('normalizedType');
+                            return record.get('measure') && !record.get('hidden') && (type == 'int' || type == 'float' || type == 'double');
                         });
                     }
                 },
