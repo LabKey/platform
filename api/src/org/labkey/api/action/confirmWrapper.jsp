@@ -16,7 +16,6 @@
  */
 %>
 <%@ page import="org.labkey.api.action.ConfirmAction"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
