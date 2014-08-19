@@ -28,7 +28,6 @@ import java.io.IOException;
 public class FormTag extends BodyTagSupport
 {
     private String name=null;
-    private String id=null;
     private String method="GET";
     private Object action=null;
     private String enctype = null;
@@ -44,16 +43,6 @@ public class FormTag extends BodyTagSupport
     public void setName(String name)
     {
         this.name = name;
-    }
-
-    public String getId()
-    {
-        return id;
-    }
-
-    public void setId(String id)
-    {
-        this.id = id;
     }
 
     public String getMethod()
@@ -120,8 +109,8 @@ public class FormTag extends BodyTagSupport
     {
         StringBuilder sb = new StringBuilder();
         sb.append("<form");
-        if (StringUtils.isNotEmpty(id))
-            sb.append(" id=\"").append(id).append("\"");
+        if (StringUtils.isNotEmpty(getId()))
+            sb.append(" id=\"").append(getId()).append("\"");
         if (StringUtils.isNotEmpty(name))
             sb.append(" name=\"").append(name).append("\"");
         if (StringUtils.isNotEmpty(method))
@@ -164,8 +153,8 @@ public class FormTag extends BodyTagSupport
             if (StringUtils.equals("POST", method))
             {
                 pageContext.getOut().write("<input type=hidden name='" + CSRFUtil.csrfName + "' value='" + csrf + "'>");
-                pageContext.getOut().write("</form>");
             }
+            pageContext.getOut().write("</form>");
         }
         catch (IOException e)
         {
