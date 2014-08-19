@@ -46,6 +46,8 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -93,6 +95,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
         addContainerColumn(Column.Folder, null);
         addColumn(Column.FileExists);
         addColumn(Column.FileSize);
+        addColumn(Column.FileExtension);
 
         List<FieldKey> defaultCols = new ArrayList<>();
         defaultCols.add(FieldKey.fromParts(Column.Name));
@@ -287,6 +290,36 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
                             protected Object getJsonValue(ExpData data)
                             {
                                 return !(data == null || data.getFile() == null || !data.getFile().exists());
+                            }
+                        };
+                    }
+                });
+                result.setUserEditable(false);
+                result.setShownInUpdateView(false);
+                result.setShownInInsertView(false);
+                return result;
+            }
+            case FileExtension:
+            {
+                ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                result.setJdbcType(JdbcType.VARCHAR);
+                result.setDisplayColumnFactory(new DisplayColumnFactory()
+                {
+                    public DisplayColumn createRenderer(ColumnInfo colInfo)
+                    {
+                        return new ExpDataFileColumn(colInfo)
+                        {
+                            @Override
+                            protected void renderData(Writer out, ExpData data) throws IOException
+                            {
+                                Object val = getJsonValue(data);
+                                out.write(val == null ? "" : PageFlowUtil.filter(val.toString()));
+                            }
+
+                            @Override
+                            protected Object getJsonValue(ExpData data)
+                            {
+                                return data.getFile() == null ? null : FileUtil.getExtension(data.getFile());
                             }
                         };
                     }

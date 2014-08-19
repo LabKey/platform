@@ -21,6 +21,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.io.input.ReaderInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -123,7 +124,7 @@ public class AnalysisController extends SpringActionController
         }
     }
 
-    private AbstractFileAnalysisProtocol getProtocol(PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory, String protocolName)
+    private @Nullable AbstractFileAnalysisProtocol getProtocol(PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory, String protocolName)
     {
         try
         {
@@ -297,6 +298,7 @@ public class AnalysisController extends SpringActionController
                 throw new NotFoundException("No protocol specified");
             }
             AbstractFileAnalysisProtocol protocol = getProtocol(root, dirData, factory, form.getProtocolName());
+            //NOTE: if protocol if null, initFileStatus() will return a result of UNKNOWN
             File dirAnalysis = factory.getAnalysisDir(dirData, form.getProtocolName(), root);
             form.initStatus(protocol, dirData, dirAnalysis);
 
@@ -391,11 +393,16 @@ public class AnalysisController extends SpringActionController
             return new ApiSimpleResponse(result);
         }
 
-        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory)
+        protected JSONObject getProtocolJson(String protocolName, PipeRoot root, File dirData, AbstractFileAnalysisProtocolFactory factory) throws NotFoundException
         {
             JSONObject protocol = new JSONObject();
-            protocol.put("name", protocolName);
             AbstractFileAnalysisProtocol pipelineProtocol = getProtocol(root, dirData, factory, protocolName);
+            if (pipelineProtocol == null)
+            {
+                throw new NotFoundException("Protocol not found: " + protocolName);
+            }
+
+            protocol.put("name", protocolName);
             protocol.put("description", pipelineProtocol.getDescription());
             protocol.put("xmlParameters", pipelineProtocol.getXml());
             protocol.put("containerPath", root.getContainer().getPath());
