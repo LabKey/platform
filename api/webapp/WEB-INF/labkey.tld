@@ -176,6 +176,44 @@
         <body-content>empty</body-content>
     </tag>
     <tag>
+        <name>form</name>
+        <tag-class>org.labkey.api.jsp.taglib.FormTag</tag-class>
+        <body-content>JSP</body-content>
+        <attribute>
+            <name>id</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>name</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>method</name>
+            <rtexprvalue>true</rtexprvalue>
+            <type>java.lang.Object</type>
+        </attribute>
+        <attribute>
+            <name>action</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>enctype</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>target</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>onsubmit</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+        <attribute>
+            <name>style</name>
+            <rtexprvalue>true</rtexprvalue>
+        </attribute>
+    </tag>
+    <tag>
         <name>autoCompleteText</name>
         <tag-class>org.labkey.api.jsp.taglib.AutoCompleteTextTag</tag-class>
         <body-content>empty</body-content>

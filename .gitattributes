@@ -739,6 +739,7 @@ api/src/org/labkey/api/jsp/taglib/ButtonTag.java -text
 api/src/org/labkey/api/jsp/taglib/CheckboxTag.java -text
 api/src/org/labkey/api/jsp/taglib/CsrfInputTag.java -text
 api/src/org/labkey/api/jsp/taglib/ErrorsTag.java -text
+api/src/org/labkey/api/jsp/taglib/FormTag.java -text
 api/src/org/labkey/api/jsp/taglib/HelpPopupTag.java -text
 api/src/org/labkey/api/jsp/taglib/LinkTag.java -text
 api/src/org/labkey/api/jsp/taglib/OptionsTag.java -text
