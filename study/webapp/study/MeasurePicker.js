@@ -825,7 +825,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                             renderCount : function(values) {
                                 var val = "";
                                 if (values['variableType'] == null && Ext.isNumber(values['sourceCount'])) {
-                                    val = " (" + Ext.htmlEncode(values['sourceCount']) + ")";
+                                    val = " <span class='maskit'>(" + Ext.htmlEncode(values['sourceCount']) + ")</span>";
                                 }
                                 return val;
                             },
