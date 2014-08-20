@@ -4436,8 +4436,6 @@ wiki/radeox/lib/asm.jar -text
 wiki/radeox/lib/commons-logging.jar -text
 wiki/radeox/lib/groovy.jar -text
 wiki/radeox/lib/jakarta-oro.jar -text
-wiki/radeox/lib/junit.jar -text
-wiki/radeox/lib/junitperf.jar -text
 wiki/radeox/lib/picocontainer.jar -text
 wiki/radeox/license.txt -text
 wiki/radeox/src/META-INF/manifest.radeox -text
