@@ -32,8 +32,7 @@
     PropertyValues propertyValues = confirmAction.getPropertyValues();
     URLHelper cancelUrl = confirmAction.getCancelUrl();
 %>
-<form action="<%=h(getActionURL().clone().deleteParameters())%>.post" method="POST">
-    <labkey:csrf/>
+<labkey:form action="<%=getActionURL().clone().deleteParameters()%>" method="POST">
     <%
     me.include(me.getBody(), out);
     writePropertyValues(out, propertyValues);
@@ -52,7 +51,7 @@
     {
         %><%= generateBackButton(confirmAction.getCancelText()) %><%
     }
-%></form>
+%></labkey:form>
 <%!
     void writePropertyValues(JspWriter out, PropertyValues pvs) throws IOException
     {

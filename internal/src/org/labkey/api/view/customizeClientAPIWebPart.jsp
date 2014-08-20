@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.api.view.WebPartView" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -62,7 +63,7 @@
     }
 </script>
 
-<form action="<%=postUrl%>" method="post">
+<labkey:form action="<%=postUrl%>" method="post">
 <table>
         <tr>
             <td>
@@ -84,4 +85,4 @@
 <% WebPartView.endTitleFrame(out);%>
 
 <div id="defaultContent" style="visibility:hidden;"><%=h(defaultContent)%></div>
-</form>
+</labkey:form>

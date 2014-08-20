@@ -34,6 +34,7 @@ public class FormTag extends BodyTagSupport
     private String target=null;
     private String onsubmit=null;
     private String style=null;
+    private String _class=null;
 
     public String getName()
     {
@@ -105,6 +106,16 @@ public class FormTag extends BodyTagSupport
         this.style = style;
     }
 
+    public void setClass(String aClass)
+    {
+        _class = aClass;
+    }
+
+    public void setClassName(String aClass)
+    {
+        _class = aClass;
+    }
+
     public int doStartTag() throws JspException
     {
         StringBuilder sb = new StringBuilder();
@@ -132,6 +143,8 @@ public class FormTag extends BodyTagSupport
             sb.append(" onsubmit=\"").append(onsubmit).append("\"");
         if (StringUtils.isNotEmpty(style))
             sb.append(" style=\"").append(style).append("\"");
+        if (StringUtils.isNotEmpty(_class))
+            sb.append(" class=\"").append(_class).append("\"");
         sb.append(">");
         try
         {

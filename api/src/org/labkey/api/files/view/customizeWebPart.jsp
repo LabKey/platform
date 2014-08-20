@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Collections" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     CustomizeFilesWebPartView me = (CustomizeFilesWebPartView) HttpView.currentView();
@@ -57,7 +58,7 @@
         large = true;
 
 %>
-<form action="<%=postUrl%>" method="post">
+<labkey:form action="<%=postUrl%>" method="POST">
     You can configure this web part to show files from the default directory for this folder or
     from a directory configured by a site administrator.<br><br>
 
@@ -103,4 +104,4 @@
         <tr><td></td></tr>
         <tr><td></td><td><%= button("Submit").submit(true) %></td></tr>
     </table>
-</form>
+</labkey:form>

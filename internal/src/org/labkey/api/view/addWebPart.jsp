@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.portal.ProjectUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
