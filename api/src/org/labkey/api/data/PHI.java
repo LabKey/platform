@@ -42,8 +42,8 @@ public enum PHI
     private PHI(int rank) {
         this.rank = rank;
     }
-
     public int getRank() {
         return rank;
     }
+    public boolean isLevelAllowed(PHI level) { return this.rank <= level.getRank(); }
 }
