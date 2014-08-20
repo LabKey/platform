@@ -537,7 +537,9 @@
                                 dataSource: sourceContainerValue,
                                 sourceSchemaName: sourceSchemaValue,
                                 tables: tablesValue,
-                                metaData: metadataValue
+                                metaData: metadataValue,
+                                // Ext form doesn't do the automatic X-LABKEY-CSRF thing
+                                'X-LABKEY-CSRF':LABKEY.CSRF
                             }
                         });
                     }
