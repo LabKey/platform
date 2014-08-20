@@ -226,6 +226,13 @@ public class QueryLookupWrapper extends QueryRelation
 
 
     @Override
+    Collection<String> getKeyColumns()
+    {
+        return _source.getKeyColumns();
+    }
+
+
+    @Override
     public SQLFragment getFromSql()
     {
         if (!_hasLookups)

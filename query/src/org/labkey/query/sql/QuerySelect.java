@@ -1132,10 +1132,18 @@ groupByLoop:
             }
         };
 
+        Collection<String> keys = getKeyColumns();
+        String key = null;
+        if (keys.size() == 1)
+            key = keys.iterator().next();
+
         for (SelectColumn col : _columns.values())
         {
             ColumnInfo aliasedColumn = new RelationColumnInfo(ret, col);
             ret.addColumn(aliasedColumn);
+
+            if (StringUtils.equalsIgnoreCase(aliasedColumn.getName(),key))
+                aliasedColumn.setKeyField(true);
         }
         MemTracker.getInstance().put(ret);
         return ret;
@@ -1620,6 +1628,40 @@ groupByLoop:
             if (null == e.getKey().getParent())
                 ret.put(e.getKey().getName(), e.getValue());
         }
+        return ret;
+    }
+
+
+    @Override
+    Collection<String> getKeyColumns()
+    {
+        if (!this._resolved)
+            throw new IllegalStateException();
+        // TODO handle multi column primary keys
+        // TODO handle group by/distinct
+        if (_tables.size() != 1 || null != _distinct || null != _groupBy || this.isAggregate())
+            return Collections.emptyList();
+        // get the single table
+        QueryRelation in = _tables.values().iterator().next();
+        Collection<String> keys = in.getKeyColumns();
+        if (keys.size() != 1)
+            return Collections.emptyList();
+        List<String> ret = new ArrayList<>(1);
+        String pkName = keys.iterator().next();
+        for (SelectColumn sc : _columns.values())
+        {
+            QExpr expr = (QField)sc.getResolvedField();
+            if (expr instanceof QField)
+            {
+                QField f = (QField) expr;
+                if (f.getName().equalsIgnoreCase(pkName))
+                {
+                    ret.add(sc.getName());
+                    break;
+                }
+            }
+        }
+        // OK find this column in the output and mark it as a key
         return ret;
     }
 

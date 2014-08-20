@@ -36,6 +36,7 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.data.xml.ColumnType;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -146,7 +147,14 @@ public class QueryTable extends QueryRelation
         }
         return map;
     }
-    
+
+
+    @Override
+    Collection<String> getKeyColumns()
+    {
+        return _tableInfo.getPkColumnNames();
+    }
+
 
     RelationColumn getLookupColumn(@NotNull RelationColumn parentRelCol, @NotNull String name)
     {

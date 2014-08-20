@@ -32,6 +32,8 @@ import org.labkey.api.query.QuerySchema;
 import org.labkey.api.util.MemTracker;
 import org.labkey.data.xml.ColumnType;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -125,6 +127,11 @@ public abstract class QueryRelation
     abstract protected Map<String,RelationColumn> getAllColumns();
 
     abstract @Nullable RelationColumn getColumn(@NotNull String name);
+
+    Collection<String> getKeyColumns()
+    {
+        return Collections.emptyList();
+    }
 
     abstract int getSelectedColumnCount();
 
