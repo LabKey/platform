@@ -59,12 +59,12 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.TestContext;
-import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
@@ -72,6 +72,7 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaDocument;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
+import org.labkey.query.audit.SelectQueryAuditEvent;
 import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
 import org.labkey.query.controllers.QueryController;
@@ -1758,6 +1759,45 @@ public class QueryServiceImpl extends QueryService
         Map<FieldKey, ColumnInfo> columnMap = new HashMap<>();
         allColumns = (List<ColumnInfo>)ensureRequiredColumns(table, allColumns, filter, sort, null, columnMap);
 
+        // Check for extra columns needed for logging
+        Set<FieldKey> dataLoggingFieldKeys = new HashSet<>();
+        Set<ColumnLogging> shouldLogNameLoggings = new HashSet<>();
+        String columnLoggingComment = null;
+        for (ColumnInfo column : allColumns)
+        {
+            ColumnLogging columnLogging = column.getColumnLogging();
+            if (columnLogging.shouldLogName())
+            {
+                shouldLogNameLoggings.add(columnLogging);
+                dataLoggingFieldKeys.addAll(columnLogging.getDataLoggingColumns(column.getName()));
+                if (null == columnLoggingComment)
+                    columnLoggingComment = columnLogging.getLoggingComment();
+            }
+        }
+
+        for (FieldKey fieldKey : dataLoggingFieldKeys)
+        {
+            ColumnInfo loggingColumn = getColumnForDataLogging(table, fieldKey);
+            if (null != loggingColumn)
+            {
+                if (null == loggingColumn.getFk())
+                    continue;                           // TODO: certain cases from Argos app obscure FK
+                ColumnInfo lookupColumn = loggingColumn.getFk().createLookupColumn(loggingColumn, loggingColumn.getFk().getLookupDisplayName());
+                if (null != lookupColumn)
+                {
+                    if (!columnMap.containsKey(lookupColumn.getFieldKey()))
+                    {
+                        lookupColumn.setHidden(true);
+                        lookupColumn.setIsUnselectable(true);
+                        allColumns.add(lookupColumn);
+                    }
+                    continue;
+                }
+            }
+
+            throw new UnauthorizedException("Unable to locate required logging column.");
+        }
+
         // Check columns again: ensureRequiredColumns() may have added new columns
         assert Table.checkAllColumns(table, allColumns, "getSelectSQL() results of ensureRequiredColumns()", true);
 
@@ -1863,6 +1903,10 @@ public class QueryServiceImpl extends QueryService
             ret = SQLFragment.prettyPrint(t);
         }
 
+        if (!shouldLogNameLoggings.isEmpty() && null != table.getUserSchema())
+        {
+            AuditLogService.get().addEvent(table.getUserSchema().getUser(), new SelectQueryAuditEvent(table.getUserSchema().getContainer(), columnLoggingComment, shouldLogNameLoggings, dataLoggingFieldKeys, null));
+        }
 	    return ret;
     }
 
@@ -1898,6 +1942,22 @@ public class QueryServiceImpl extends QueryService
 			}
 		}
 	}
+
+    @Nullable
+    private static ColumnInfo getColumnForDataLogging(TableInfo table, FieldKey fieldKey)
+    {
+        ColumnInfo loggingColumn = table.getColumn(fieldKey);
+        if (null != loggingColumn)
+            return loggingColumn;
+
+        // Column names may be mangled by visualization; lookup by original column name
+        for (ColumnInfo column : table.getColumns())
+        {
+            if (0 == column.getColumnLogging().getOriginalColumnFieldKey().compareTo(fieldKey))
+                return column;
+        }
+        return null;
+    }
 
     @Override
     public void addQueryListener(QueryChangeListener listener)
