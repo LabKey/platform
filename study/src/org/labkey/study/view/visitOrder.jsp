@@ -24,6 +24,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     JspView<StudyController.VisitReorderForm> me = (JspView<StudyController.VisitReorderForm>) HttpView.currentView();
@@ -84,7 +85,7 @@ function orderModule(listName, hiddenElName, down)
     return false;
 }
 </script>
-<form method="post" name="reorder" action="<%=h(buildURL(StudyController.VisitOrderAction.class))%>" enctype="multipart/form-data">
+<labkey:form method="post" name="reorder" action="<%=h(buildURL(StudyController.VisitOrderAction.class))%>" enctype="multipart/form-data">
     <table>
         <tr>
             <th>Display Order<%= helpPopup("Display Order", "Display order determines the order in which visits appear in reports and views for all " +
@@ -192,4 +193,4 @@ function orderModule(listName, hiddenElName, down)
         </tr>
     </table>
     <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(returnURL) %>
-</form>
+</labkey:form>

@@ -29,6 +29,7 @@
 <%@ page import="org.labkey.experiment.ConfirmDeleteView" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
 <%@ page import="java.util.Map" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ConfirmDeleteView.ConfirmDeleteBean> me = (JspView<ConfirmDeleteView.ConfirmDeleteBean>) HttpView.currentView();
@@ -155,7 +156,7 @@ else
         </ul>
     <% } %>
 
-    <form action="<%= h(getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
+    <labkey:form action="<%= h(getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
         <%
             if (getViewContext().getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME) != null)
             {
@@ -181,5 +182,5 @@ else
             <%= button("Confirm Delete").submit(true) %>
         <% } %>
         <%= text(bean.getReturnUrl() == null || bean.getReturnUrl().isEmpty()? button("Cancel").href(buildURL(ExperimentController.BeginAction.class)).toString() : button("Cancel").href(bean.getReturnUrl()).toString())%>
-    </form>
+    </labkey:form>
 <% } %>

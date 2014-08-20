@@ -30,7 +30,7 @@
 
     User reloadUser = (allowReload && null != study.getReloadUser() ? UserManager.getUser(study.getReloadUser()) : null);
 %>
-<form action="" method="post">
+<labkey:form action="" method="post">
     <table width="80%">
         <%=formatMissedErrorsInTable("form", 2)%>
         <tr>
@@ -78,7 +78,7 @@
             <td><%= button("Update").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageStudyAction.class, getContainer()) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>
 <script type="text/javascript">
     function updateDisplay()
     {

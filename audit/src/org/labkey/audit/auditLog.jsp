@@ -19,7 +19,7 @@
 <%@ page import="org.labkey.api.audit.AuditTypeProvider" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="java.util.List" %>
-<%@ page import="org.labkey.api.audit.AuditLogService.AuditViewFactory" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String currentView = (String)HttpView.currentModel();
@@ -36,7 +36,7 @@
         currentView = providers.get(0).getEventName();
 
 %>
-<form action="" method="get">
+<labkey:form action="" method="GET">
     <select name="view" onchange="this.form.submit()">
 <%
     for (AuditTypeProvider provider : providers)
@@ -49,7 +49,7 @@
 
 %>
 <%--
-<form action="" method="get">
+<labkey:form action="" method="get">
     <select name="view" onchange="this.form.submit()">
 <%
     for (AuditTypeProvider provider : providers)
@@ -61,4 +61,4 @@
 %>
 --%>
     </select>
-</form>
+</labkey:form>

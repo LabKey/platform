@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.pipeline.api.PipelineStatusFileImpl" %>
 <%@ page import="org.labkey.pipeline.status.StatusController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PipelineStatusFileImpl> me = (JspView<PipelineStatusFileImpl>) HttpView.currentView();
@@ -50,7 +51,7 @@
 </script>
 
 &nbsp;&nbsp;
-<form action="<%= h(escalateURL.getURIString())%>" method="post">
+<labkey:form action="<%= h(escalateURL.getURIString())%>" method="post">
     <input type="hidden" name="detailsUrl" value="<%=cancelUrl.getURIString()%>"/>
     <table width="100%">
         <tr class="labkey-wp-header"><th colspan=2><b>Escalate Pipeline Job Failure</b></th></tr>
@@ -78,4 +79,4 @@
             <%= button("Cancel").href(cancelUrl) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>

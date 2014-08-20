@@ -23,11 +23,12 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
 <%@ page import="java.util.Map" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     int rowId = 0;
 %>
-<form name="mvIndicatorsForm" method="POST" action="<%=text(buildURL(FolderManagementAction.class))%>tabId=mvIndicators">
+<labkey:form name="mvIndicatorsForm" method="POST" action='<%=text(buildURL(FolderManagementAction.class) + "tabId=mvIndicators")%>'>
     <table>
         <tr>
             <td>
@@ -159,7 +160,7 @@
         </tr>
     </table>
     <%= button("Save").submit(true).onClick("return validate();") %>
-</form>
+</labkey:form>
 <script type="text/javascript">
 
     var maxRowId = <%=rowId%>;

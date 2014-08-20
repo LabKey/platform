@@ -44,7 +44,7 @@
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getContainer(), getUser());
 %>
 <labkey:errors/>
-<form action="<%=h(buildURL(StudyController.VisitSummaryAction.class))%>" method="POST">
+<labkey:form action="<%=h(buildURL(StudyController.VisitSummaryAction.class))%>" method="POST">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(visit)%>">
 <input type="hidden" name="id" value="<%=visit.getRowId()%>">
     <table>
@@ -240,4 +240,4 @@
             <td><%= button("Save").submit(true) %>&nbsp;<%= button("Delete visit").href(buildURL(StudyController.ConfirmDeleteVisitAction.class, "id="+visit.getRowId())) %>&nbsp;<%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>

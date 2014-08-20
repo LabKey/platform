@@ -38,7 +38,7 @@
 
 <labkey:errors/>
 
-<form action="<%=h(buildURL(StudyController.ImportAction.class))%>" method=POST>
+<labkey:form action="<%=h(buildURL(StudyController.ImportAction.class))%>" method="POST">
     <%= button("Import Data").submit(true) %>
     <%=generateBackButton("Cancel")%>
     <table width="100%">
@@ -60,4 +60,4 @@
     <p />
     <div id=columnMap>
     </div>
-</form>
+</labkey:form>

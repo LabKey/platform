@@ -40,7 +40,7 @@
 %>
 
 <labkey:errors/>
-<form action="<%=h(buildURL(FilesSiteSettingsAction.class))%>" method="post">
+<labkey:form action="<%=h(buildURL(FilesSiteSettingsAction.class))%>" method="post">
     <input type="hidden" name="upgrade" value="<%=bean.isUpgrade()%>">
     <table width="80%">
         <tr><td colspan="2" class="labkey-announcement-title"><span>Site-Level File Root</span></td></tr>
@@ -83,7 +83,7 @@
         %>
         </tr>
     </table>
-</form>
+</labkey:form>
 
 <script type="text/javascript">
     var isUpgrade = <%=bean.isUpgrade()%>;

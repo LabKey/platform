@@ -39,8 +39,7 @@
         } 
     %>
     </ul>
-<form action="<%=urlPost.getEncodedLocalURIString()%>" method="post">
-    <labkey:csrf/>
+<labkey:form action="<%=urlPost.getEncodedLocalURIString()%>" method="post">
     <input type="hidden" name="redirUrl" value="<%=bean.getRedirUrl().getEncodedLocalURIString()%>"/>
     <%
         for (User user : bean.getUsers())
@@ -50,7 +49,7 @@
     %>
     <%= button(bean.isActivate() ? "Re-activate" : "Deactivate").submit(true) %>
     <%= button("Cancel").href(bean.getRedirUrl()) %>
-</form>
+</labkey:form>
 <% if (bean.isActivate()) { %>
 <p><b>Note:</b> Re-activated users will be able to login normally, and all their previous
     group memberships will be preserved.</p>

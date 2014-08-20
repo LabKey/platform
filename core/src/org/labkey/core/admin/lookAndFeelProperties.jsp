@@ -27,10 +27,9 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
-<%@ page import="java.util.LinkedHashSet" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ProjectSettingsAction.LookAndFeelPropertiesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelPropertiesBean>)HttpView.currentView()).getModelBean();
@@ -41,7 +40,7 @@
 %>
 <%=formatMissedErrors("form")%>
 
-<form name="preferences" method="post" id="form-preferences">
+<labkey:form name="preferences" method="post" id="form-preferences">
 
 <table width="100%" cellpadding=0>
 
@@ -267,7 +266,7 @@
 </tr>
 
 </table>
-</form>
+</labkey:form>
 <script type="text/javascript">
     var _form = new LABKEY.Form({ formElement: 'form-preferences'});
 

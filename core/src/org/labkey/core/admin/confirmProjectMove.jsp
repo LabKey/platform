@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ManageFoldersForm> view = (JspView<ManageFoldersForm>)HttpView.currentView();
@@ -31,7 +32,7 @@
     ActionURL cancelURL = PageFlowUtil.urlProvider(AdminUrls.class).getManageFoldersURL(c);
 %>
 
-<form action="<%=h(buildURL(AdminController.MoveFolderAction.class))%>" method="post">
+<labkey:form action="<%=h(buildURL(AdminController.MoveFolderAction.class))%>" method="post">
 <p>
 You are moving folder '<%=h(c.getName())%>' from one project into another.
 This will remove all permission settings from this folder, any subfolders, and any contained objects.
@@ -44,4 +45,4 @@ This action cannot be undone.
     <input type="hidden" name="confirmed" value="1">
     <%= button("Confirm Move").submit(true) %>
     <%= button("Cancel").href(cancelURL) %>
-</form>
+</labkey:form>

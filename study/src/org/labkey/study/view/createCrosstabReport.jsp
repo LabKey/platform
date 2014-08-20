@@ -28,6 +28,7 @@
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.model.VisitImpl" %>
 <%@ page import="org.labkey.study.reports.StudyCrosstabReport" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<CreateCrosstabBean> me = (JspView<ReportsController.CreateCrosstabBean>) HttpView.currentView();
@@ -35,7 +36,7 @@
 
     ActionURL returnURL = PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(getContainer());
 %>
-<form action="<%=h(buildURL(ReportsController.ParticipantCrosstabAction.class))%>" method="GET">
+<labkey:form action="<%=h(buildURL(ReportsController.ParticipantCrosstabAction.class))%>" method="GET">
 <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=h(StudySchema.getInstance().getSchemaName())%>">
 <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=h(StudyCrosstabReport.TYPE)%>">
 <input type="hidden" name="redirectUrl" value="<%=h(returnURL)%>">
@@ -79,4 +80,4 @@
         </td>
     </tr>
 </table>
-</form>
+</labkey:form>

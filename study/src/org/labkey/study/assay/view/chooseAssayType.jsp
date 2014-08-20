@@ -55,7 +55,7 @@
     To create a new assay design, please choose which assay type you would like to customize with your own settings and input options.
 </p>
 <labkey:errors />
-<form method="POST">
+<labkey:form method="POST">
     <input type="hidden" name="returnURL" value="<%=h(bean.getReturnURL())%>">
     <table>
         <% for (AssayProvider provider : providers) { %>
@@ -89,4 +89,4 @@
             <td><%= button("Next" ).submit(true) %><%= button("Cancel").href(new ActionURL(AssayController.BeginAction.class, getContainer())) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>

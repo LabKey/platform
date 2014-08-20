@@ -23,6 +23,7 @@
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<List<KeywordPicker>> me = (HttpView<List<KeywordPicker>>) HttpView.currentView();
@@ -43,7 +44,7 @@
     <!-- <%=h(kwp.type.getColumnName())%> -->
     <td style="vertical-align:top">
     <div class="labkey-form-label"><b><%=h(kwp.name)%> Options</b></div>
-    <form id="<%=h(formId)%>" method="POST" action="<%=h(buildURL(IssuesController.DeleteKeywordAction.class))%>">
+    <labkey:form id="<%=h(formId)%>" method="POST" action="<%=h(buildURL(IssuesController.DeleteKeywordAction.class))%>">
 <%
     if (kwp.keywords.isEmpty())
     {
@@ -71,7 +72,7 @@
         out.println("\n    </table>");
     }
 %>    <input type="hidden" name="keyword" value=""><input type="hidden" name="type" value="<%=kwp.type.getOrdinal()%>">
-    </form>
+    </labkey:form>
     </td>
 <%
     }
@@ -83,11 +84,11 @@
     {
 %>
 <td align="center">
-    <form method="POST" name="add<%=h(kwp.type.getColumnName())%>" action="<%=h(buildURL(IssuesController.AddKeywordAction.class))%>">
+    <labkey:form method="POST" name="add<%=h(kwp.type.getColumnName())%>" action="<%=h(buildURL(IssuesController.AddKeywordAction.class))%>">
     <input name="keyword" value=""><br>
         <%= button("Add " + kwp.name).submit(true) %><br>
     <input type="hidden" name="type" value="<%=kwp.type.getOrdinal()%>">
-    </form>
+    </labkey:form>
 </td><%
     }
 %>

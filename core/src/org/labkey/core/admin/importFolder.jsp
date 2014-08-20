@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.study.Study" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getViewContext().getContainerNoTab();
@@ -41,7 +42,7 @@
         }
     }
 %>
-<form action="" name="import" enctype="multipart/form-data" method="post">
+<labkey:form action="" name="import" enctype="multipart/form-data" method="post">
 <table cellpadding=0>
     <%=formatMissedErrorsInTable("form", 2)%>
 
@@ -157,5 +158,5 @@
     <td>&nbsp;</td>
 </tr>
 </table>
-</form>
+</labkey:form>
 

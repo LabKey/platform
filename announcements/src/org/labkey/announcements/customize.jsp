@@ -19,13 +19,14 @@
 <%@ page import="org.labkey.api.announcements.DiscussionService" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<CustomizeBean> me = (HttpView<CustomizeBean>) HttpView.currentView();
     CustomizeBean bean = me.getModelBean();
     DiscussionService.Settings settings = bean.settings;
 
-%><form action="<%=h(buildURL(AnnouncementsController.CustomizeAction.class))%>" method="post">
+%><labkey:form action="<%=h(buildURL(AnnouncementsController.CustomizeAction.class))%>" method="post">
 <%=generateReturnUrlFormField(bean.returnURL)%>
 <table>
     <tr>
@@ -106,4 +107,4 @@
         <%= button("Cancel").href(bean.returnURL) %></td>
     </tr>
 </table>
-</form>
+</labkey:form>

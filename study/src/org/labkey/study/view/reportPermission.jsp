@@ -34,6 +34,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%!
 
@@ -111,7 +112,7 @@
     <p>This page enables you to fine-tune permissions for this view.</p>
     <p>You can choose the default behavior as described.  Alternately, you can set custom permissions for each group. As always, if you don't have read permission on this folder, you don't get to see anything, regardless of any other settings.</p>
 
-    <form id=permissionsForm action="" method=POST>
+    <labkey:form id="permissionsForm" action="" method="POST">
         <table>
         <tr><td colspan=2><input id=useDefault name=permissionType type=radio value="<%=org.labkey.study.controllers.security.SecurityController.PermissionType.defaultPermission%>"<%=checked(getPermissionType(bean) == SecurityController.PermissionType.defaultPermission)%> onclick="updateDisplay()"></td><td><b>Default</b> :
           this dynamic view will be readable only by users who have permission to see the source datasets</td></tr>
@@ -160,7 +161,7 @@
 <%--
     <input type=hidden name=reportId value="<%=bean.getDescriptor().getReportId()%>">
 --%>
-    </form>&nbsp;
+    </labkey:form>&nbsp;
 
 <table>
     <tr><td colspan="2">An enabled group indicates that the group already has READ access to the dataset (and to this view) through

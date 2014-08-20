@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ManageRequestInputsBean> me = (JspView<SpecimenController.ManageRequestInputsBean>) HttpView.currentView();
@@ -170,7 +171,7 @@
         return true;
     }
 </script>
-<form action="<%=h(buildURL(SpecimenController.HandleUpdateRequestInputsAction.class))%>" method="POST" onSubmit="return verifyForm()">
+<labkey:form action="<%=h(buildURL(SpecimenController.HandleUpdateRequestInputsAction.class))%>" method="POST" onsubmit="return verifyForm()">
     <table id="inputTable">
         <tr>
             <th valign="bottom">&nbsp;</th>
@@ -202,4 +203,4 @@
     <%= button("Add New Input").submit(true).onClick("return addRow();") %>
     <%= button("Save").submit(true) %>
     <%= button("Cancel").href(new ActionURL(StudyController.ManageStudyAction.class, bean.getContainer())) %>
-</form>
+</labkey:form>

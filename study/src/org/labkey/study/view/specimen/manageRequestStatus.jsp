@@ -30,7 +30,7 @@
     List<SpecimenRequestStatus> statuses = SpecimenManager.getInstance().getRequestStatuses(getContainer(), getUser());
 %>
 <labkey:errors />
-<form action="<%=h(buildURL(SpecimenController.ManageRequestStatusAction.class))%>m" enctype="multipart/form-data" method="POST">
+<labkey:form action="<%=h(buildURL(SpecimenController.ManageRequestStatusAction.class))%>" enctype="multipart/form-data" method="POST">
     <input type="hidden" name="id" value="<%= bean.getSpecimenRequest().getRowId()%>">
     <table  class="labkey-manage-display">
         <tr>
@@ -107,4 +107,4 @@
             </td>
         </tr>
     </table>
-</form>
+</labkey:form>

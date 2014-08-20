@@ -43,6 +43,7 @@
 <%@ page import="org.labkey.study.visitmanager.VisitManager.VisitStatistics" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.OverviewBean> me = (JspView<StudyController.OverviewBean>) HttpView.currentView();
@@ -103,7 +104,7 @@
         out.write(viewLink);
     }
 %>
-<form action="<%=h(buildURL(StudyController.OverviewAction.class))%>" name="changeFilterForm" method="GET">
+<labkey:form action="<%=h(buildURL(StudyController.OverviewAction.class))%>" name="changeFilterForm" method="GET">
     <input type="hidden" name="showAll" value="<%= text(bean.showAll ? "1" : "0") %>">
     <br><br>
     <%
@@ -153,7 +154,7 @@
             out.print(text("<input name=\"visitStatistic\" value=\"" + h(stat.name()) + "\" type=\"checkbox\"" + checked(checked) + " onclick=\"document.changeFilterForm.submit()\">" + h(stat.getDisplayString(study)) + "\n"));
         }
     %>
-</form>
+</labkey:form>
 <br><br>
 <table id="studyOverview" class="labkey-data-region labkey-show-borders" style="border-collapse:collapse;">
     <tr class="labkey-alternate-row">

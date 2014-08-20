@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.core.admin.AdminController.ManageFoldersForm" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.Set" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ManageFoldersForm> me = (JspView<ManageFoldersForm>) HttpView.currentView();
@@ -121,8 +122,8 @@
         </table>
 
         <table><tr>
-            <td><form action="<%=h(buildURL(AdminController.DeleteFolderAction.class))%><%=text(recurse ? "recurse=1" : "")%>" method="post">
-                <%= button("Delete").submit(true) %></form></td>
+            <td><labkey:form action='<%=h(buildURL(AdminController.DeleteFolderAction.class) + (recurse ? "recurse=1" : ""))%>' method="post">
+                <%= button("Delete").submit(true) %></labkey:form></td>
             <td><%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %></td>
         </tr></table><%
     }

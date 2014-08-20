@@ -30,7 +30,7 @@
     Study study = StudyManager.getInstance().getStudy(getContainer());
     assert null != study;
 %>
-<form action="" method="post">
+<labkey:form action="" method="post">
     <table width="70%">
         <tr>
             <td>
@@ -85,4 +85,4 @@ if (snapshot.isRefresh()) { %> This study is currently configured to refresh its
             <td><%= button("Update").submit(true) %>&nbsp;<%= button("Done").href(ManageStudyAction.class, getContainer()) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>

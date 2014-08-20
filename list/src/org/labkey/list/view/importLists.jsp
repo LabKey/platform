@@ -17,8 +17,10 @@
 %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.exp.list.ListService" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<form action="" name="import" enctype="multipart/form-data" method="post">
+
+<labkey:form action="" name="import" enctype="multipart/form-data" method="post">
 <table cellpadding=0>
     <%=formatMissedErrorsInTable("form", 2)%>
 <tr><td>
@@ -42,4 +44,4 @@ list templates.<%
 </tr>
 
 </table>
-</form>
+</labkey:form>

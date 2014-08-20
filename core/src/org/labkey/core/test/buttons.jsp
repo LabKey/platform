@@ -21,13 +21,14 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.test.TestController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ButtonForm> me = (JspView<ButtonForm>) HttpView.currentView();
     ButtonForm form = me.getModelBean();
     ActionURL formURL = new ActionURL(TestController.ButtonAction.class, getContainer());
 %>
-<form method="POST" action="button.view?">
+<labkey:form method="POST" action="button.view?">
     <table>
         <tr>
             <td><label for="buttontext">Text</label></td>
@@ -73,7 +74,7 @@
         </tr>
     </table>
     <%= button("Generate Button").submit(true) %>
-</form>
+</labkey:form>
 <%
     Button.ButtonBuilder button = form.getBuiltButton();
     if (button != null)

@@ -100,7 +100,7 @@
         return false;
     }
 </script>
-<form onsubmit="submitForm()">
+<labkey:form onsubmit="submitForm()">
     <table class="cwb-layout-table">
         <tr>
             <td class="labkey-form-label">Title:</td>
@@ -132,4 +132,4 @@
             </td>
         </tr>
     </table>
-</form>
+</labkey:form>

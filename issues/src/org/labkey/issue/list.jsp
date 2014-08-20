@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getContainer();
@@ -34,7 +35,7 @@
 %>
 
 <table><tr>
-    <td nowrap><form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" method="get">
+    <td nowrap><labkey:form name="jumpToIssue" action="<%= new ActionURL(IssuesController.JumpToIssueAction.class, c) %>" method="get">
     <%
         if (c.hasPermission(getUser(), InsertPermission.class))
         {
@@ -43,14 +44,14 @@
     <%
         }
     %><input type="text" size="5" name="issueId"/>
-        <%= button("Jump to " + names.singularName.getSource()).submit(true).attributes("align=\"top\" vspace=\"2\"") %></form></td>
+        <%= button("Jump to " + names.singularName.getSource()).submit(true).attributes("align=\"top\" vspace=\"2\"") %></labkey:form></td>
     <td width=100%>&nbsp;</td>
     <td align="right" nowrap>
-        <form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="get">
+        <labkey:form action="<%=h(urlProvider(SearchUrls.class).getSearchURL(c, null))%>" method="get">
             <input type="text" size="30" name="q" value="">
             <input type="hidden" name="template" value="<%=h(IssuesController.IssueSearchResultTemplate.NAME)%>">
             <%= button("Search").submit(true).attributes("align=\"top\" vspace=\"2\"")%>
-        </form>
+        </labkey:form>
     </td>
 </tr></table>
 

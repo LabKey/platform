@@ -45,7 +45,7 @@ function showSystemRows(value)
 }
 
 </script>
-<form action="<%=h(buildURL(SpecimenController.ManageStatusesAction.class))%>" name="manageStatuses" method="POST">
+<labkey:form action="<%=h(buildURL(SpecimenController.ManageStatusesAction.class))%>" name="manageStatuses" method="POST">
 <table width="620px">
     <tr>
         <td class="labkey-form-label" style="padding-top:4px;padding-bottom:4px;">Request statuses help a coordinator organize and track requests through the system and
@@ -154,4 +154,4 @@ function showSystemRows(value)
         </td>
     </tr>
 </table>
-</form>
+</labkey:form>

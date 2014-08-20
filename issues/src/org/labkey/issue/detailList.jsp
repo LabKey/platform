@@ -31,6 +31,7 @@
 <%@ page import="org.labkey.issue.model.Issue" %>
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.util.Set" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuePage> me = (JspView<IssuePage>) HttpView.currentView();
@@ -50,14 +51,14 @@
     if (!bean.isPrint())
     {
 %>
-<form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
+<labkey:form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
 <table><tr>
     <td><%= textLink("new " + names.singularName.getSource().toLowerCase(), IssuesController.issueURL(c, IssuesController.InsertAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("view grid", IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"))%></td>
     <td><%= textLink("print", printLink)%></td>
     <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>
 </tr></table>
-</form>
+</labkey:form>
 <%
     }
 

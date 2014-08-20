@@ -21,8 +21,8 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.springframework.validation.Errors" %>
-<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
+<%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.EmailTestForm> me = (JspView<AdminController.EmailTestForm>) HttpView.currentView();
     AdminController.EmailTestForm form = me.getModelBean();
@@ -39,7 +39,7 @@ message to the address specified in the 'To' text box containing the content spe
 </div>
 <% }%>
 
-<form action="<%=new ActionURL(AdminController.EmailTestAction.class, getContainer()).getLocalURIString()%>" method="POST">
+<labkey:form action="<%=new ActionURL(AdminController.EmailTestAction.class, getContainer()).getLocalURIString()%>" method="POST">
     <table>
         <tr>
             <td class="labkey-form-label">To</td>
@@ -57,4 +57,4 @@ message to the address specified in the 'To' text box containing the content spe
             </td>
         </tr>
     </table>
-</form>
+</labkey:form>

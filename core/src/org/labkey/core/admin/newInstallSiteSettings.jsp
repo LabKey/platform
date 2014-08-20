@@ -26,7 +26,7 @@
 
 <labkey:errors/>
 
-<form method="POST" id="newInstallSettingsForm">
+<labkey:form method="POST" id="newInstallSettingsForm">
     <h3 style="margin-bottom: 2px;"><label for="rootPath">Files Location</label></h3>
     <div style="margin-bottom: 10px;">
         This is where LabKey Server stores and looks for data files. The server will
@@ -61,4 +61,4 @@
         <span style="font-size: smaller; font-style: italic;">we strongly recommend this basic level of reporting</span>
     </div>
     <%= button("Next").submit(true) %>
-</form>
+</labkey:form>

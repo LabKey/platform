@@ -1,4 +1,3 @@
-<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
 /*
  * Copyright (c) 2006-2014 LabKey Corporation
@@ -21,6 +20,7 @@
 <%@ page import="org.labkey.study.controllers.StudyController.BulkImportTypesForm"%>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     StudyJspView<BulkImportTypesForm> me = (StudyJspView<BulkImportTypesForm>) HttpView.currentView();
     BulkImportTypesForm bean = me.getModelBean();
@@ -111,7 +111,7 @@ For more information about the schema definition format, see <%=helpLink("Datase
     </tr>
 </table>
 
-<form action="<%=h(buildURL(StudyController.BulkImportDataTypesAction.class))%>" method="POST" enctype="multipart/form-data">
+<labkey:form action="<%=h(buildURL(StudyController.BulkImportDataTypesAction.class))%>" method="POST" enctype="multipart/form-data">
     <table>
         <tr>
             <td class=labkey-form-label>Header of column containing dataset Name (e.g., platename)<span class="labkey-error">*</span></td>
@@ -141,4 +141,4 @@ For more information about the schema definition format, see <%=helpLink("Datase
             <td><%= button("Submit").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>

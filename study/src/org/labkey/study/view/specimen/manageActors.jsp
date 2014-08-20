@@ -47,7 +47,7 @@
     }
 %>
 <labkey:errors/>
-<form action="<%=h(buildURL(SpecimenController.ManageActorsAction.class))%>=" name="manageActors" method="POST">
+<labkey:form action="<%=h(buildURL(SpecimenController.ManageActorsAction.class))%>" name="manageActors" method="POST">
     <table>
         <tr>
             <th>&nbsp;</th>
@@ -136,4 +136,4 @@
             <td>&nbsp;</td>
         </tr>
     </table>
-</form>
+</labkey:form>

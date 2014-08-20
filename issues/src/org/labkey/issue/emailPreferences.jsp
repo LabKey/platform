@@ -25,6 +25,7 @@
 <%@ page import="org.springframework.validation.BindException" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<IssuesController.EmailPrefsBean> me = (JspView<IssuesController.EmailPrefsBean>)HttpView.currentView();
@@ -51,7 +52,7 @@
         }
     }
 %>
-<form action="<%=h(buildURL(IssuesController.EmailPrefsAction.class))%>" method="post">
+<labkey:form action="<%=h(buildURL(IssuesController.EmailPrefsAction.class))%>" method="post">
     <input type="checkbox" value="1" name="emailPreference"<%=checked((emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_OPEN) != 0)%>>
     Send me email when <%=h(indefArticle)%> <%=h(names.singularName)%> is opened and assigned to me<br>
     <input type="checkbox" value="2" name="emailPreference"<%=checked((emailPrefs & IssueManager.NOTIFY_ASSIGNEDTO_UPDATE) != 0)%>>
@@ -74,4 +75,4 @@
         %><%= button("View Grid").href(IssuesController.issueURL(c, IssuesController.ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true")) %><%
     }
 %>
-</form>
+</labkey:form>

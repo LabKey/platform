@@ -145,7 +145,7 @@
 <% } %>
 </ul>
 
-<form action="<%= h(getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
+<labkey:form action="<%= h(getViewContext().cloneActionURL().deleteParameters()) %>" method="post">
 
 <% if (!allRuns.isEmpty()) { %>
 
@@ -194,4 +194,4 @@
 <%= text(form.getReturnUrl() == null || form.getReturnUrl().isEmpty()
         ? button("Cancel").href(buildURL(StatusController.BeginAction.class)).toString()
         : button("Cancel").href(form.getReturnUrl()).toString()) %>
-</form>
+</labkey:form>

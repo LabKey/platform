@@ -67,7 +67,7 @@
 %>
 <labkey:errors/>
 
-<form action="<%=h(buildURL(SpecimenController.ManageSpecimenCommentsAction.class))%>" name="manageComments"
+<labkey:form action="<%=h(buildURL(SpecimenController.ManageSpecimenCommentsAction.class))%>" name="manageComments"
       method="post">
     <table width="70%">
         <tr>
@@ -220,4 +220,4 @@
             WebPartView.endTitleFrame(out);
         }
     %>
-</form>
+</labkey:form>

@@ -27,7 +27,7 @@
 </script>
 <labkey:errors />
 Browse for file and then click submit<br>
-<form method="POST" action="addAttachment.post" enctype="multipart/form-data">
+<labkey:form method="POST" action="addAttachment.post" enctype="multipart/form-data">
   <input type="file" name="formFiles[0]" size="50" onChange="showPathname(this, 'filename')"><br>
   <input type="hidden" name="entityId" value="<%= entityId %>" /><br>
   <table>
@@ -37,4 +37,4 @@ Browse for file and then click submit<br>
       <td style="padding-left:5px;"><label id="filename"></label></td>
     </tr>
   </table>
-</form>
+</labkey:form>

@@ -98,8 +98,7 @@
     }
 </script>
 
-<form enctype="multipart/form-data" method="POST" action="">
-    <labkey:csrf/>
+<labkey:form enctype="multipart/form-data" method="POST" action="">
     <table>
         <tr><td></td></tr>
         <tr><td colspan="10">
@@ -236,4 +235,4 @@
         </tr>
     </table>
     <input type="hidden" name="pipelineRootForm" value="true">
-</form>
+</labkey:form>

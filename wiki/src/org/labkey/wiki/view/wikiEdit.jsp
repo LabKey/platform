@@ -177,13 +177,13 @@
                             </ul>
                             <div id="wiki-tab-strip-spacer" class="labkey-tab-strip-spacer" style="display: none;"></div>
                             <div id="wiki-tab-content" class="labkey-tab-strip-content" style="padding: 0;">
-                                <form action="">
+                                <labkey:form action="">
                                 <textarea rows="30" cols="80" style="width:100%; border:none;" id="<%=ID_PREFIX%>body"
                                           name="body" onkeypress="setWikiDirty()" onchange="setWikiDirty()"></textarea>
                                     <script type="text/javascript">
                                         Ext.EventManager.on('<%=ID_PREFIX%>body', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
                                     </script>
-                                </form>
+                                </labkey:form>
                             </div>
                         </div>
                     </td>
@@ -197,13 +197,13 @@
                                     Show Attached Files</td>
                             </tr>
                         </table>
-                        <form action="<%=h(buildURL(WikiController.AttachFilesAction.class))%>" method="POST" enctype="multipart/form-data" id="form-files">
+                        <labkey:form action="<%=h(buildURL(WikiController.AttachFilesAction.class))%>" method="POST" enctype="multipart/form-data" id="form-files">
                             <table id="wiki-existing-attachments">
                             </table>
                             <table id="wiki-new-attachments">
                             </table>
                             <a onclick="addNewAttachmentInput('wiki-file-link');" id="wiki-file-link"><img src="<%=getWebappURL("_images/paperclip.gif")%>">Attach a file</a>
-                        </form>
+                        </labkey:form>
                     </td>
                 </tr>
             </table>

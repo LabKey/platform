@@ -67,7 +67,7 @@
 </table>
 
 <%WebPartView.startTitleFrame(out, "Timepoint Configuration", null, "600", null);%>
-<form action="<%=h(buildURL(StudyController.ManageVisitsAction.class))%>" method="POST">
+<labkey:form action="<%=h(buildURL(StudyController.ManageVisitsAction.class))%>" method="POST">
    Data in this study is grouped using date-based timepoints rather than visit ids.
     <ul>
        <li>A timepoint is assigned to each dataset row by computing the number of days between a subject's start date and the date supplied in the row.</li>
@@ -97,7 +97,7 @@
             <td><%= button("Update").submit(true) %>&nbsp;<%= generateBackButton() %></td>
         </tr>
     </table>
-</form>
+</labkey:form>
 <%WebPartView.endTitleFrame(out);%>
 <%WebPartView.startTitleFrame(out, "Timepoints", null, "900", null);%>
 <p>NOTE: If you edit the day range of timepoints, use <%= textLink("Recompute Timepoints", UpdateParticipantVisitsAction.class)%> to

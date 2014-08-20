@@ -128,7 +128,7 @@ Use this form to insert or update specimens in the repository.<br>
 </div>
 <br>
 Paste data in the area below
-<form action="<%=h(buildURL(ShowUploadSpecimensAction.class))%>" method="post" enctype="multipart/form-data">
+<labkey:form action="<%=h(buildURL(ShowUploadSpecimensAction.class))%>" method="post" enctype="multipart/form-data">
     <textarea name=tsv id="tsv" rows=20 cols="70"><%=h(bean.getTsv())%></textarea><br>
 
 <%
@@ -152,5 +152,5 @@ Paste data in the area below
 %>
     <p>
     <%= button("Submit").submit(true) %> <%= generateBackButton("Cancel") %>
-</form>
+</labkey:form>
 

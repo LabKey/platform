@@ -53,7 +53,7 @@
 
     NavTree copyButton = createCopyCommentButton(bean.getParticipantVisitMap(), StudyManager.getInstance().getStudy(container), getUser());
 %>
-<form action="<%=h(buildURL(SpecimenController.UpdateCommentsAction.class))%>" name="updateComments" id="updateCommentForm" method="POST">
+<labkey:form action="<%=h(buildURL(SpecimenController.UpdateCommentsAction.class))%>" name="updateComments" id="updateCommentForm" method="POST">
     <input type="hidden" name="copyToParticipant" value="false">
     <input type="hidden" name="deleteVialComment" value="false">
     <input type="hidden" name="copyParticipantId" value="0">
@@ -141,7 +141,7 @@
             </td>
         </tr>
     </table>
-</form>
+</labkey:form>
 <%
     WebPartView.endTitleFrame(out);
     WebPartView.startTitleFrame(out, "Selected Vials", null, null, null);

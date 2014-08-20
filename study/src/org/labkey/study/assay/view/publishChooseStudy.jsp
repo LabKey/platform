@@ -30,8 +30,8 @@
 <%@ page import="org.labkey.study.model.StudyManager" %>
 <%@ page import="java.util.Iterator" %>
 <%@ page import="java.util.Set" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PublishStartAction.PublishBean> me = (JspView<PublishStartAction.PublishBean>) HttpView.currentView();
@@ -67,7 +67,7 @@
 <%
     }
 %>
-<form action="<%= h(postURL.getLocalURIString()) %>" method="POST">
+<labkey:form action="<%= h(postURL.getLocalURIString()) %>" method="POST">
 <%
     for (Pair<String, String> parameter : parameters)
     {
@@ -133,4 +133,4 @@
         </td>
     </tr>
 </table>
-</form>
+</labkey:form>

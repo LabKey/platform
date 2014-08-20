@@ -19,10 +19,9 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyController.CustomizeParticipantViewForm> me = (JspView<StudyController.CustomizeParticipantViewForm>) HttpView.currentView();
@@ -41,7 +40,7 @@
         return true;
     }
 </script>
-<form action="<%=h(buildURL(StudyController.CustomizeParticipantViewAction.class))%>" name="editorForm" method="POST">
+<labkey:form action="<%=h(buildURL(StudyController.CustomizeParticipantViewAction.class))%>" name="editorForm" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl())%>">
     <input type="hidden" name="reshow" value="false">
     <input type="hidden" name="participantId" value="<%= h(bean.getParticipantId()) %>">
@@ -105,7 +104,7 @@
     }
 %>
     </table>
-</form>
+</labkey:form>
 <%
     if (bean.getParticipantId() != null)
     {

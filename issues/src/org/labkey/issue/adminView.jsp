@@ -45,6 +45,7 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.json.JSONArray" %>
 <%@ page import="java.util.LinkedList" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -84,7 +85,7 @@
 <tr><td>&nbsp;</td></tr>
 <%=formatMissedErrorsInTable("form", 1)%>
 </table>
-<form name="entryTypeNames" action="<%=h(buildURL(ConfigureIssuesAction.class))%>" method="POST">
+<labkey:form name="entryTypeNames" action="<%=h(buildURL(ConfigureIssuesAction.class))%>" method="POST">
 
 <table><tr>
     <td valign=top>
@@ -256,7 +257,7 @@
     </td>
 </tr>
 </table>
-</form>
+</labkey:form>
 
 <%!
     public boolean isRequired(String name, String requiredFields)

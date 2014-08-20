@@ -52,7 +52,7 @@
 %>
 <labkey:errors/>
 
-<form action="<%=h(urlFor(StudyController.DeleteVisitAction.class))%>" method=POST>
+<labkey:form action="<%=urlFor(StudyController.DeleteVisitAction.class)%>" method="POST">
     Do you want to delete <%=h(visitManager.getLabel())%> <b><%=h(visit.getDisplayString())%></b>?<p/>
     <%if (datasetRowCount != 0)
     {
@@ -67,4 +67,4 @@
     }%>
     <%= button("Delete").submit(true) %>&nbsp;<%= generateBackButton("Cancel") %>
     <input type=hidden name=id value="<%=visit.getRowId()%>">
-</form>
+</labkey:form>

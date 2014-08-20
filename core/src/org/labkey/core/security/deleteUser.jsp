@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.security.ValidEmail"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<form action="<%=h(buildURL(SecurityController.UpdateMembersAction.class))%>" method="POST">
+<labkey:form action="<%=h(buildURL(SecurityController.UpdateMembersAction.class))%>" method="POST">
 <%
     SecurityController.UpdateMembersBean bean = ((JspView<SecurityController.UpdateMembersBean>)HttpView.currentView()).getModelBean();
 
@@ -46,4 +45,4 @@ have administrative privileges. Are you sure that you want to continue?
 <br><br>
 <%= button("Delete This Account").submit(true) %>&nbsp;
 <%= generateBackButton("Cancel") %>
-</form>
+</labkey:form>

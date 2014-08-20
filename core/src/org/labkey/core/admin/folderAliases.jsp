@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String[] pathAliases = ContainerManager.getAliasesForContainer(getContainer());
@@ -39,7 +40,7 @@
     </tr>
     <tr>
         <td>
-        <form action="<%=h(buildURL(AdminController.FolderAliasesAction.class))%>" method="post">
+        <labkey:form action="<%=h(buildURL(AdminController.FolderAliasesAction.class))%>" method="post">
             <textarea rows="4" cols="40" name="aliases"><%
                 StringBuilder sb = new StringBuilder();
                 String separator = "";
@@ -51,7 +52,7 @@
                 }%><%= sb.toString() %></textarea><br><br>
             <%= button("Save Aliases").submit(true) %>
             <%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
-        </form>
+        </labkey:form>
         </td>
     </tr>
 </table>

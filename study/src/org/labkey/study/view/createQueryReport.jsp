@@ -30,6 +30,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -98,7 +99,7 @@
 
 </script>
 
-<form action="<%=new ActionURL(ReportsController.SaveReportAction.class, container)%>" method="POST">
+<labkey:form action="<%=new ActionURL(ReportsController.SaveReportAction.class, container)%>" method="POST">
 <input type="hidden" name="<%=ReportDescriptor.Prop.reportType%>" value="<%=h(StudyQueryReport.TYPE)%>">
 <input type="hidden" id="redirectToReport" name="redirectToReport" value="true">
 <input type="hidden" id="redirectToDataset" name="redirectToDataset" value="-1">
@@ -144,4 +145,4 @@
         </td>
     </tr>
 </table>
-</form>
+</labkey:form>

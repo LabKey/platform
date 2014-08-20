@@ -26,7 +26,7 @@
     Study study = StudyManager.getInstance().getStudy(getContainer());
     _HtmlString subjectNameFiltered = new _HtmlString(study.getSubjectNounSingular().toLowerCase());
 %>
-<form action="" method="post">
+<labkey:form action="" method="post">
     <table width="80%">
         <tr>
             <td>This study is currently <%=text(demoMode ? "" : "not ")%>in demo mode.</td>
@@ -64,4 +64,4 @@
             <td><input type="hidden" name="mode" value="<%=!demoMode%>"><%= button((demoMode ? "Leave" : "Enter") + " Demo Mode").submit(true) %>&nbsp;<%= button("Done").href(ManageStudyAction.class, getContainer()) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>

@@ -18,11 +18,12 @@
 <%@ page import="org.labkey.api.security.AuthenticationManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AuthenticationManager.AuthLogoBean> me = (HttpView<AuthenticationManager.AuthLogoBean>) HttpView.currentView();
     AuthenticationManager.AuthLogoBean bean = me.getModelBean();
-%><form action="<%=h(bean.postURL)%>" enctype="multipart/form-data" method="post">
+%><labkey:form action="<%=h(bean.postURL)%>" enctype="multipart/form-data" method="post">
 <table>
 <%=formatMissedErrorsInTable("form", 3)%>
 <tr>
@@ -48,7 +49,7 @@
         <%= button(bean.reshow ? "Done" : "Cancel").href(bean.returnURL) %></td>
 </tr>
 </table>
-</form>
+</labkey:form>
 <script type="text/javascript">
     function deleteLogo(prefix)
     {

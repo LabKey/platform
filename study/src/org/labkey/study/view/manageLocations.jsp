@@ -27,7 +27,7 @@
     StudyImpl study = me.getModelBean();
 %>
 <labkey:errors/>
-<form action="<%=h(buildURL(StudyController.ManageLocationsAction.class))%>" method="POST">
+<labkey:form action="<%=h(buildURL(StudyController.ManageLocationsAction.class))%>" method="POST">
     <table id="manageLocationsTable">
         <tr>
             <th>&nbsp;</th>
@@ -72,4 +72,4 @@
             <td>&nbsp;</td>
         </tr>
     </table>
-</form>
+</labkey:form>

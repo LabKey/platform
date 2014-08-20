@@ -30,7 +30,9 @@
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="java.io.IOException" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
+
 <div width="240px" id="pipelineFilesPermissions">
 <%
     PipelineController.PermissionView me = (PipelineController.PermissionView)HttpView.currentView();
@@ -42,7 +44,7 @@
 <b>Pipeline&nbsp;Files&nbsp;Permissions</b><br>
 These permissions control whether pipeline files can be downloaded and updated via the web server.
 <p />
-<form id="permissionsForm" action="updateRootPermissions.post" method="POST">
+<labkey:form id="permissionsForm" action="updateRootPermissions.post" method="POST">
 <input id="enabledCheckbox" type="checkbox" name="enable"<%=checked(enableFTP)%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> Share files via web site<br>
     <%
     Group[] groups = SecurityManager.getGroups(c.getProject(), true);
@@ -88,7 +90,7 @@ These permissions control whether pipeline files can be downloaded and updated v
     %></table><br><%
 %>
 <%= button("Submit").submit(true) %>
-</form>
+</labkey:form>
 <script type="text/javascript">
 toggleEnableFTP(document.getElementById("enabledCheckbox"));
         

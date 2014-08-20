@@ -84,8 +84,7 @@
     });
 </script>
 
-<form action="<%=buildURL(SecurityController.AddUsersAction.class)%>" method=post>
-    <labkey:csrf/>
+<labkey:form action="<%=buildURL(SecurityController.AddUsersAction.class)%>" method="POST">
     <table><%
             if (getErrors("form").hasErrors());
             { %>
@@ -129,5 +128,5 @@
             </td>
         </tr>
     </table>
-</form>
+</labkey:form>
 <script for=window event=onload type="text/javascript">try {document.getElementById("newUsers").focus();} catch(x){}</script>

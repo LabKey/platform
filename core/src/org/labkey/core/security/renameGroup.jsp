@@ -20,6 +20,7 @@
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     Group group = (Group)HttpView.currentModel();
@@ -73,9 +74,9 @@ Ext.onReady(function(){
 <div id="errorDiv" class="labkey-error">&nbsp;</div>
 <div id="renameDiv"></div>
 
-<%--<form action="renameGroup.post" method="POST">
+<%--<labkey:form action="renameGroup.post" method="POST">
 Rename group:
     <input type=hidden name=id value="<%=group.getUserId()%>">
     <input name="newName">
     <input type="submit">
-</form>--%>
+</labkey:form>--%>

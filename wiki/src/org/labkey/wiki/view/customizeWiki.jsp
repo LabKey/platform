@@ -25,6 +25,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -181,7 +182,7 @@ function restoreDefaultPage()
 </script>
 
 
-<form name= "frmCustomize" method="post">
+<labkey:form name= "frmCustomize" method="post">
 <table>
     <tr>
         <td colspan="2">
@@ -262,4 +263,4 @@ function restoreDefaultPage()
     </td>
 </tr>
 </table>
-</form>
+</labkey:form>

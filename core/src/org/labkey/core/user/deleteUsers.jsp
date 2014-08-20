@@ -44,8 +44,7 @@ This action cannot be undone.</p>
         }
     %>
     </ul>
-<form action="<%=urlPost.getEncodedLocalURIString()%>" method="post" name="deleteUsersForm">
-    <labkey:csrf/>
+<labkey:form action="<%=urlPost.getEncodedLocalURIString()%>" method="post" name="deleteUsersForm">
     <%
         for (User user : bean.getUsers())
         {
@@ -54,7 +53,7 @@ This action cannot be undone.</p>
     %>
     <%= button("Permanently Delete").submit(true) %>
     <%= button("Cancel").href(bean.getCancelUrl()) %>
-</form>
+</labkey:form>
 <%
     boolean canDeactivate = false;
 
@@ -69,8 +68,7 @@ This action cannot be undone.</p>
 
     if (canDeactivate) {
 %>
-<form action="<%=deactivateUsersUrl%>" method="post" name="deactivateUsersForm">
-    <labkey:csrf/>
+<labkey:form action="<%=h(deactivateUsersUrl)%>" method="post" name="deactivateUsersForm">
     <%
         for (User user : bean.getUsers())
         {
@@ -84,5 +82,5 @@ This action cannot be undone.</p>
     for display purposes, and their group memberships will be preserved in case
     they are re-activated at a later time.</p>
     <p><%= button(bean.getUsers().size() > 1 ? "Deactivate Users" : "Deactivate User").submit(true) %></p>
-</form>
+</labkey:form>
 <% } %>

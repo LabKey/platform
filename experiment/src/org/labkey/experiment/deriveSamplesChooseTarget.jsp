@@ -28,7 +28,7 @@
     ExperimentController.DeriveSamplesChooseTargetBean bean = me.getModelBean();
 %>
 
-<form action="<%=h(buildURL(ExperimentController.DescribeDerivedSamplesAction.class))%>" method="get">
+<labkey:form action="<%=h(buildURL(ExperimentController.DescribeDerivedSamplesAction.class))%>" method="get">
 
     <table>
         <tr>
@@ -90,4 +90,4 @@
             <td><labkey:button text="Next" /></td>
         </tr>
     </table>
-</form>
+</labkey:form>

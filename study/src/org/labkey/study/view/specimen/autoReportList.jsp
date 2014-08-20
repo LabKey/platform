@@ -36,7 +36,7 @@
 <%@ page import="org.labkey.study.specimen.report.SpecimenVisitReportParameters" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="java.util.Random" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ReportConfigurationBean> me = (JspView<SpecimenController.ReportConfigurationBean>) HttpView.currentView();
@@ -101,7 +101,7 @@ This folder does not contain a study.
             String formName = "form" + showHideSuffix;
 %>
     <tr><td>
-    <form action="<%=h(new ActionURL(factory.getAction(), container))%>" name="<%=h(formName)%>" method="GET">
+    <labkey:form action="<%=new ActionURL(factory.getAction(), container)%>" name="<%=h(formName)%>" method="GET">
         <%
             if (bean.isListView())
             {
@@ -311,7 +311,7 @@ This folder does not contain a study.
         </div>
         <input type="hidden" name="_print" value="">
         <input type="hidden" name="excelExport" value="">
-    </form>
+    </labkey:form>
     </td></tr>
 <%
         }

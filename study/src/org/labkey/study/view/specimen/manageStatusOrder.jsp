@@ -81,7 +81,7 @@ function orderModule(down)
 }
 </script>
 
-<form action="<%=h(buildURL(SpecimenController.ManageStatusOrderAction.class))%>" name="reorder" method="POST">
+<labkey:form action="<%=h(buildURL(SpecimenController.ManageStatusOrderAction.class))%>" name="reorder" method="POST">
 <table>
         <tr>
             <td>
@@ -109,4 +109,4 @@ function orderModule(down)
     </table>
     <input type="hidden" name="order" value="">
     <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(SpecimenController.ManageStatusesAction.class, getContainer()) %>
-</form>
+</labkey:form>

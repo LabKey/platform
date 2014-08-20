@@ -18,8 +18,9 @@
 <%@ page import="org.labkey.announcements.model.AnnouncementManager" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController" %>
 <%@ page extends="org.labkey.announcements.EmailPreferencesPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <b><%=h(message)%></b>
-<form action="<%=h(buildURL(AnnouncementsController.EmailPreferencesAction.class))%>" method="post">
+<labkey:form action="<%=h(buildURL(AnnouncementsController.EmailPreferencesAction.class))%>" method="post">
     <br>Send email notifications for these <%=h(conversationName)%>s<br>
     <input type="radio" value="<%=AnnouncementManager.EMAIL_PREFERENCE_NONE%>" name="emailPreference"<%=checked(emailPreference == AnnouncementManager.EMAIL_PREFERENCE_NONE)%>>
     <b>None</b> - Don't send me any email for this message board<br>
@@ -38,4 +39,4 @@
     <br><input type=hidden name="srcIdentifier" value="<%=h(srcIdentifier)%>"/>
     <%= button("Update").submit(true) %>
     <%= button((message == null ? "Cancel" : "Done")).href(srcURL) %>
-</form>
+</labkey:form>

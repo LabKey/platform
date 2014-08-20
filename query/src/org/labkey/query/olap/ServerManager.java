@@ -399,6 +399,8 @@ public class ServerManager
                         map.put("members", "members");
                         jsonOnRows.put(0, map);
 
+                        if (ViewServlet.isShuttingDown())
+                            return "warm cache stopped because of server shutdown";
                         execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
 
                         // 20975: Ensure we touch specimen queries
@@ -407,6 +409,9 @@ public class ServerManager
                         jsonOnRows.put(0, map);
 
                         jsonQuery.put("countDistinctLevel", "[Specimen].[Specimen]");
+
+                        if (ViewServlet.isShuttingDown())
+                            return "warm cache stopped because of server shutdown";
                         execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
                         jsonQuery.remove("countDistinctLevel");
                     }
@@ -425,6 +430,7 @@ public class ServerManager
 
         return result;
     }
+
 
     private static void execCountDistinct(Container c, OlapSchemaDescriptor sd, OlapConnection conn,  Cube cube, JSONObject jsonQuery, BindException errors) throws Exception
     {

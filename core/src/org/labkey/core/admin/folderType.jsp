@@ -262,7 +262,7 @@ function checkChangedType()
 }
 
 </script>
-<form name="folderModules" id="folderModules" method=POST action="<%=text(buildURL(FolderManagementAction.class))%>" onsubmit="return validate();">
+<labkey:form name="folderModules" id="folderModules" method="POST" action="<%=text(buildURL(FolderManagementAction.class))%>" onsubmit="return validate();">
     <input type="hidden" name="tabId" value="folderType">
     <table width="100%">
         <tr>
@@ -342,7 +342,7 @@ for (Module module : allModules)
     <%WebPartView.endTitleFrame(out);%>
 </td></tr>
 </table>
-</form>
+</labkey:form>
 </div>
 <script type="text/javascript">
 

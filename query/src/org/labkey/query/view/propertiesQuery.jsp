@@ -23,7 +23,7 @@
 <% PropertiesForm form = (PropertiesForm) HttpView.currentModel(); %>
 
 <labkey:errors />
-<form method="POST" action="<%=form.urlFor(QueryAction.propertiesQuery)%>">
+<labkey:form method="POST" action="<%=form.urlFor(QueryAction.propertiesQuery)%>">
     <table width="100%">
         <tr>
             <td class="labkey-form-label">Name:</td>
@@ -56,4 +56,4 @@
             <td><labkey:button text="Save" /></td>
         </tr>
     </table>
-</form>
+</labkey:form>

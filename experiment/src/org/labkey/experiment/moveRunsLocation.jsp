@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.MoveRunsBean" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
 <%
@@ -34,7 +35,7 @@
         document.forms["moveForm"].submit();
     }
 </script>
-<form name="moveForm" action="<%=h(buildURL(ExperimentController.MoveRunsAction.class))%>" method="POST">
+<labkey:form name="moveForm" action="<%=h(buildURL(ExperimentController.MoveRunsAction.class))%>" method="POST">
     <%
         for (String id : DataRegionSelection.getSelected(getViewContext(), false))
         { %>
@@ -54,4 +55,4 @@
 <%=bean.getContainerTree().render()%>
 </table>
 
-</form>
+</labkey:form>

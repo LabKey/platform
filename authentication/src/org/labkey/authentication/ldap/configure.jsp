@@ -27,7 +27,7 @@
     JspView<Config> me = (JspView<Config>)HttpView.currentView();
     Config bean = me.getModelBean();
 %>
-<form action="configure.post" method="post"><labkey:csrf/>
+<labkey:form action="configure.post" method="post">
 <table>
     <%=formatMissedErrorsInTable("form", 2)%>
     <tr>
@@ -61,5 +61,5 @@
         <td colspan=2><%=textLink("Test LDAP settings", urlFor(LdapController.TestLdapAction.class).addReturnURL(getActionURL()))%></td>
     </tr>
 </table>
-</form>
+</labkey:form>
 

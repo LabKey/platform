@@ -42,7 +42,7 @@ if (null == ss)
 }
 else
 {
-    %><p><form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
+    %><p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
         <table>
             <tr>
                 <td colspan="2">Index Format: <%=h(ss.getIndexFormatDescription())%></td>
@@ -55,9 +55,9 @@ else
             <tr><td><input type="hidden" name="path" value="1"></td></tr>
             <tr><td colspan="2" width="500"><%= button("Set Path").submit(true) %></td></tr>
         </table>
-    </form></p>
+    </labkey:form></p>
 
-    <p><form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
+    <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
         <table><%
 
     if (ss.isRunning())
@@ -84,17 +84,17 @@ else
     }
     %>
         </table>
-    </form></p><%
+    </labkey:form></p><%
     if (user.isSiteAdmin())
     {
     %>
-    <p><form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
+    <p><labkey:form method="POST" action="<%=h(buildURL(SearchController.AdminAction.class))%>">
         <table>
             <tr><td>Deleting the search index isn't usually necessary; it causes re-indexing of all data, which can be very expensive.</td></tr>
             <tr><td><input type="hidden" name="delete" value="1"></td></tr>
             <tr><td><%= button("Delete Index").submit(true) %></td></tr>
         </table>
-    </form></p><%
+    </labkey:form></p><%
     }
 }
 %>

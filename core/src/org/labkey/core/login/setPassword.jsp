@@ -27,7 +27,7 @@
     LoginController.SetPasswordBean bean = ((JspView<LoginController.SetPasswordBean>)HttpView.currentView()).getModelBean();
     String errors = formatMissedErrorsStr("form");
 %>
-<form method="POST" id="setPasswordForm" action="<%=h(buildURL(bean.action))%>"><labkey:csrf />
+<labkey:form method="POST" id="setPasswordForm" action="<%=h(buildURL(bean.action))%>">
 <%
     if (errors.length() > 0)
     { %>
@@ -95,4 +95,4 @@
         </div>
     <div style="padding-top: 1em;"><%= button(bean.buttonText).submit(true).attributes("name=\"set\"") %><%=text(bean.cancellable ? button("Cancel").href(bean.form.getReturnURLHelper()).toString() : "")%></div><%
     } %>
-</form>
+</labkey:form>

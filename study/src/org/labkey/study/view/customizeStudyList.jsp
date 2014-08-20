@@ -19,6 +19,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.study.view.StudyListWebPartFactory" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
@@ -26,7 +27,7 @@
     String displayType = webPart.getPropertyMap().get(StudyListWebPartFactory.DISPLAY_TYPE_PROPERTY);
 %>
 <% // Post to current action; URL includes pageId and index parameters %>
-<form name="frmCustomize" method="post">
+<labkey:form name="frmCustomize" method="post">
 <table>
     <tr>
         <td>
@@ -46,4 +47,4 @@
     </td>
 </tr>
 </table>
-</form>
+</labkey:form>

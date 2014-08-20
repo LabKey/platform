@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.view.AssayBaseWebPartFactory.EditViewBean" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AssayBaseWebPartFactory.EditViewBean> me = (JspView<EditViewBean>) HttpView.currentView();
@@ -52,7 +53,7 @@
 %>
 <p><%=bean.description%></p>
 
-<form action="<%=postUrl%>" method="post">
+<labkey:form action="<%=postUrl%>" method="post">
     <table>
         <tr>
             <td class="labkey-form-label">Assay</td>
@@ -79,4 +80,4 @@
             <td><%= button("Submit").submit(true) %> <%= button("Cancel").href(getContainer().getStartURL(getUser())) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>

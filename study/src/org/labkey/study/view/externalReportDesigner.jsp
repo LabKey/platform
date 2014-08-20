@@ -22,13 +22,14 @@
 <%@ page import="org.labkey.study.model.DataSetDefinition" %>
 <%@ page import="org.labkey.study.reports.ExternalReport" %>
 <%@ page import="java.util.Map" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportsController.ExternalReportBean> me = (JspView<ReportsController.ExternalReportBean>) HttpView.currentView();
     ReportsController.ExternalReportBean bean = me.getModelBean();
     ExternalReport report = bean.getExtReport();
 %>
-<form action="" method="GET">
+<labkey:form action="" method="GET">
     Design external view. You can invoke any command line to generate the view. You can use the following
     substitution strings in your command line to identify the source data file and the output file to be generated.
     <ul>
@@ -86,5 +87,5 @@
     </table>
 
     <%= button("Submit").submit(true) %>
-</form>
+</labkey:form>
 

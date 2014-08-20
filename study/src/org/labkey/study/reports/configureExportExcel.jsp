@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.study.reports.ExportExcelReport" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<StudyImpl> view = (JspView<StudyImpl>)HttpView.currentView();
@@ -61,7 +62,7 @@ The saved view can also be secured so that only a subset of users (e.g. users fr
 
 %>
 <%    WebPartView.startTitleFrame(out, "Configure", null, "600", null);%>
-    <form action="<%=h(buildURL(ReportsController.ExportExcelAction.class))%>" method=GET>
+    <labkey:form action="<%=h(buildURL(ReportsController.ExportExcelAction.class))%>" method="GET">
     <table><tr><th class="labkey-form-label">Site</th><td><select <%= text(isAdmin ? "onChange='siteId_onChange(this)'" : "")%> id=locationId name=locationId><option value="0">ALL</option>
 <%
 for (LocationImpl location : locations)
@@ -110,7 +111,7 @@ for (LocationImpl location : locations)
         </script>
         <%}%>
 
-</form>
+</labkey:form>
 <%
 
     WebPartView.endTitleFrame(out);

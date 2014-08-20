@@ -194,7 +194,7 @@
 
     Choose an existing protocol or define a new one.<br />
 
-<form id="analysis_form">
+<labkey:form id="analysis_form">
 <table>
     <tr>
         <td class='labkey-form-label'>Analysis Protocol:</td>
@@ -241,4 +241,4 @@
         </td>
     </tr>
 </table>
-</form>
+</labkey:form>

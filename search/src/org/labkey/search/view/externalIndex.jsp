@@ -37,7 +37,7 @@ String message = getActionURL().getParameter("externalMessage");
 
 if (null != ss)
 {
-    %><p><form method="POST" action="setExternalIndex.post">
+    %><p><labkey:form method="POST" action="setExternalIndex.post">
         <table><%
         if (!StringUtils.isEmpty(message))
         { %>
@@ -82,7 +82,7 @@ if (null != ss)
             }
             %>
         </table>
-    </form>
+    </labkey:form>
 <%
 }
 %>

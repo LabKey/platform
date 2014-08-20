@@ -90,7 +90,7 @@ var submitSystemMaintenance;
 })();
 </script>
 
-<form name="preferences" enctype="multipart/form-data" method="post"><labkey:csrf />
+<labkey:form name="preferences" enctype="multipart/form-data" method="post">
 <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 1 : 0%>" />
 
 <table>
@@ -351,23 +351,23 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><%= button("Save").submit(true) %></td>
 </tr>
 </table>
-</form>
+</labkey:form>
 
-<form name="mascottest" action="mascotTest.view" enctype="multipart/form-data" method="post"  <% if (!bean.testInPage) { %> target="_new" <% } %> >
+<labkey:form name="mascottest" action="mascotTest.view" enctype="multipart/form-data" method="post" target='<%=text(bean.testInPage?"":"_new")%>' >
     <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
     <input type="hidden" name="mascotServer" value="" />
     <input type="hidden" name="mascotUserAccount" value="" />
     <input type="hidden" name="mascotUserPassword" value="" />
     <input type="hidden" name="mascotHTTPProxy" value="" />
-</form>
-<form name="sequesttest" action="sequestTest.view" enctype="multipart/form-data" method="post" <% if (!bean.testInPage) { %> target="_new" <% } %> >
+</labkey:form>
+<labkey:form name="sequesttest" action="sequestTest.view" enctype="multipart/form-data" method="post" target='<%=text(bean.testInPage?"":"_new")%>'>
     <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
     <input type="hidden" name="sequestServer" value="" />
-</form>
-<form name="networkdrivetest" action="<%=h(buildURL(AdminController.ShowNetworkDriveTestAction.class))%>" enctype="multipart/form-data" method="post" target="_new">
+</labkey:form>
+<labkey:form name="networkdrivetest" action="<%=h(buildURL(AdminController.ShowNetworkDriveTestAction.class))%>" enctype="multipart/form-data" method="post" target="_new">
     <input type="hidden" name="upgradeInProgress" value="<%=bean.upgradeInProgress ? 0 : 1%>" />
     <input type="hidden" name="networkDriveLetter" value="" />
     <input type="hidden" name="networkDrivePath" value="" />
     <input type="hidden" name="networkDriveUser" value="" />
     <input type="hidden" name="networkDrivePassword" value="" />
-</form>
+</labkey:form>

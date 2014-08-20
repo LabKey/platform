@@ -63,7 +63,7 @@
     Collections.sort(reportNames, String.CASE_INSENSITIVE_ORDER);
 %>
 
-<form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
+<labkey:form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
     <table>
         <tr>
             <td class="labkey-form-label">Web Part Title:</td>
@@ -111,7 +111,7 @@
         </tr>
     </table>
     <input type="hidden" name="<%=Report.renderParam.showSection.name()%>" id="showSectionHidden">
-</form>
+</labkey:form>
 
 <script type="text/javascript">
 

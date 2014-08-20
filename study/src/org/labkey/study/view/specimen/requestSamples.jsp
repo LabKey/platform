@@ -31,6 +31,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -107,7 +108,7 @@ function setDefaults()
     return true;
 }
 </script>
-<form name="CreateSampleRequest" action="<%=h(buildURL(SpecimenController.HandleCreateSampleRequestAction.class))%>" method="POST">
+<labkey:form name="CreateSampleRequest" action="<%=h(buildURL(SpecimenController.HandleCreateSampleRequestAction.class))%>" method="POST">
     <input type="hidden" name="returnUrl" value="<%= h(bean.getReturnUrl()) %>">
     <%
         if (vials != null)
@@ -233,4 +234,4 @@ function setDefaults()
         %>
 
     </table>
-</form>
+</labkey:form>

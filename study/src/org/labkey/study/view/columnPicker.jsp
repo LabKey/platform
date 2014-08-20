@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.study.model.VisitImpl"%>
 <%@ page import="java.util.HashMap"%>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
 //    Study study;
@@ -36,7 +37,7 @@ PropertyDescriptor[] pds = null;
 String error = null;
 %>
 <p><%=h(bean.caption)%></p>
-<form id="columnPickerForm" action="<%=h(buildURL(ReportsController.RenderConfigureEnrollmentReportAction.class))%>" method="POST">
+<labkey:form id="columnPickerForm" action="<%=h(buildURL(ReportsController.RenderConfigureEnrollmentReportAction.class))%>" method="POST">
 <table>
 <tr><td>Dataset</td><td><select name="<%=text(DataSetDefinition.DATASETKEY)%>" onchange="refreshForm(this.options[this.selectedIndex].value);">
     <option value="-1"></option>
@@ -103,7 +104,7 @@ if (selectedDataset != null)
 %>
 </table>
 <%= button("Submit").submit(true) %>
-</form>
+</labkey:form>
 <span class=labkey-error><%=h(error==null ? "" : error)%></span>
 <script type="text/javascript">
 function refreshForm(value)

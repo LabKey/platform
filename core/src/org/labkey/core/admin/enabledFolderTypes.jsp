@@ -31,7 +31,7 @@ AdminController.FolderTypesBean bean = (AdminController.FolderTypesBean) HttpVie
     If a folder type is disabled, it will not be available as a choice when setting the type for a folder or project.
     Any folders that are already using it will be unaffected.
 </div>
-<form method="post">
+<labkey:form method="post">
     <table>
         <tr><th>Enabled</th><th>Name</th><th>Description</th></tr>
         <% for (FolderType folderType : bean.getAllFolderTypes())
@@ -45,4 +45,4 @@ AdminController.FolderTypesBean bean = (AdminController.FolderTypesBean) HttpVie
     </table>
     <%= button("Save").submit(true) %>
     <%= PageFlowUtil.generateBackButton("Cancel") %>
-</form>
+</labkey:form>

@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.authentication.ldap.LdapController.TestLdapForm" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<TestLdapForm> me = (JspView<TestLdapForm>)HttpView.currentView();
@@ -40,7 +41,7 @@ client browser.
 </ul>
 <br>
 
-<form name="testLdap" method="post" action="testLdap.post">
+<labkey:form name="testLdap" method="post" action="testLdap.post">
 <table>
     <tr><td>LDAP Server URL:</td><td><input id="server" type="text" name="server" style="width:400;" value="<%=h(form.getServer())%>"></td></tr>
     <tr><td>Security Principal:</td><td><input id="principal" type="text" name="principal" style="width:400;" value="<%=h(form.getPrincipal())%>"></td></tr>
@@ -52,5 +53,5 @@ client browser.
         <%= button("Done").href(form.getReturnURLHelper()) %>
     </td></tr>
 </table>
-</form>
+</labkey:form>
 

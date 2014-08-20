@@ -108,7 +108,7 @@
     }
 %>
 
-<form onSubmit="return validateKey();" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="post">
+<labkey:form onsubmit="return validateKey();" action="<%=h(buildURL(ExperimentController.ShowUploadMaterialsAction.class))%>" method="post">
 <labkey:errors />
     <p>If you have an existing sample set definition in the XAR file format (a .xar or .xar.xml file), you can
         <a href="<%= urlProvider(ExperimentUrls.class).getUploadXARURL(getContainer()) %>">upload the XAR file directly</a>
@@ -242,7 +242,7 @@
 </table>
 
 <div style="display:none" id="uploading"><blink>Please wait while data is uploaded.</blink></div>
-</form>
+</labkey:form>
 <script type="text/javascript">
 var fields = [];
 var header = [];

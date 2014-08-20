@@ -46,7 +46,7 @@
 %>
 <p>Each <%= h(subjectNoun.toLowerCase()) %> webpart will display datasets from a single <%= h(subjectNoun.toLowerCase()) %>.</p>
 
-<form action="<%=postUrl%>" method="post">
+<labkey:form action="<%=postUrl%>" method="post">
 <table>
     <tr>
         <td>
@@ -97,4 +97,4 @@
         </td>
     </tr>
 </table>
-</form>
+</labkey:form>

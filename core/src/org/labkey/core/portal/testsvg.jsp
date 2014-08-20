@@ -26,7 +26,7 @@
 <form>
     <textarea id=dot rows=20 cols=120><%=h(form.getDot())%></textarea><br>
     <input type=button value="execute" onclick="executeSvg()">
-</form>
+<form>
 <div id=svg></div>
 <script>
     function executeSvg()

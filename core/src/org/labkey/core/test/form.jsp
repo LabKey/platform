@@ -27,6 +27,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Enumeration" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     void errorRow(JspWriter out, String path) throws IOException
@@ -44,7 +45,7 @@
     assert enctype.equals("multipart/form-data") || enctype.equals("application/x-www-form-urlencoded");
 %>
 <%=formatErrorsForPath("form")%>
-<form enctype="<%=text(enctype)%>" method="POST">
+<labkey:form enctype="<%=text(enctype)%>" method="POST">
     <table>
         <%errorRow(out,"form.a");%>
         <tr><td>a</td><td><input type=checkbox name="a" <%=checked(form.getA())%>><input type=hidden name="<%=h(SpringActionController.FIELD_MARKER)%>a"></td></tr>
@@ -72,7 +73,7 @@
     </table>
     <%=formatMissedErrors("form")%><br>
     <%= button("Submit").submit(true) %>
-</form>
+</labkey:form>
 <%--
 
 

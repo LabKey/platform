@@ -27,7 +27,7 @@
     ActionURL urlCancel = new ActionURL(ManageViewsAction.class, getContainer());
 %>
 <labkey:errors />
-<form method="POST" action="<%=h(urlPost)%>">
+<labkey:form method="POST" action="<%=h(urlPost)%>">
     <p>Create New Custom View</p>
     <p>Schema Name: <br><input type="text" name="ff_schemaName" value="<%=h(form.ff_schemaName)%>"></p>
     <p>Query Name: <br><input type="text" name="ff_queryName" value="<%=h(form.ff_queryName)%>"></p>
@@ -35,4 +35,4 @@
     <p><input type="checkbox" name="ff_share" value="true"<%=checked(form.ff_share)%>> Share with other users</p>
     <p><input type="checkbox" name="ff_inherit" value="true"<%=checked(form.ff_share)%>> Inherit view in sub-projects</p>
     <labkey:button text="Create" /> <labkey:button text="Cancel" href="<%=h(urlCancel)%>" />
-</form>
+</labkey:form>

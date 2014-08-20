@@ -16,21 +16,23 @@
  */
 %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
-<form action="<%=h(buildURL(SecurityController.ExportSecurityPolicyAction.class))%>">
+
+<labkey:form action="<%=h(buildURL(SecurityController.ExportSecurityPolicyAction.class))%>">
     Export Policy As XML File:
     <p></p>
     <%= button("Export").submit(true) %>
-</form>
+</labkey:form>
 <p></p>
 <hr>
 <p></p>
 
-<form action="<%=h(buildURL(SecurityController.ImportSecurityPolicyAction.class))%>" enctype="multipart/form-data" method="post">
+<labkey:form action="<%=h(buildURL(SecurityController.ImportSecurityPolicyAction.class))%>" enctype="multipart/form-data" method="post">
     Import Policy From XML File:
     <p></p>
     <input type="file" name="fileUpload"/>
 
     <p></p>
     <%= button("Import").submit(true) %>
-</form>
+</labkey:form>

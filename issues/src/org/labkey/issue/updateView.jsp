@@ -122,7 +122,7 @@
         return filterRe(e, input, /^[\d,\s]+$/);
     }
 </script>
-<form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" action="<%=IssuesController.issueURL(c, bean.getAction())%>">
+<labkey:form method="POST" onsubmit="LABKEY.setSubmit(true); return true;" enctype="multipart/form-data" action="<%=IssuesController.issueURL(c, bean.getAction())%>">
 
     <table>
     <%
@@ -320,7 +320,7 @@
     <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(bean.getPrevIssue())%>">
     <input type="hidden" name="action" value="<%=h(bean.getAction().getName())%>">
     <input type="hidden" name="issueId" value="<%=issue.getIssueId()%>">
-</form>
+</labkey:form>
 <script type="text/javascript" for="window" event="onload">try {document.getElementById(<%=q(focusId)%>).focus();} catch (x) {}</script>
 <script type="text/javascript">
 

@@ -83,8 +83,7 @@ Each file set is an additional directory that stores files accessible to users o
 <%
     for (AttachmentDirectory attDir : attachmentDirs)
     {%>
-    <form action="deleteAttachmentDirectory.post" method="POST">
-        <labkey:csrf/>
+    <labkey:form action="deleteAttachmentDirectory.post" method="POST">
      <table>
         <tr>
             <td class="labkey-form-label">Name</td>
@@ -98,11 +97,10 @@ Each file set is an additional directory that stores files accessible to users o
             <td colspan=2><%= button("Show Files").href(buildURL(FileContentController.BeginAction.class, "fileSetName=" + h(attDir.getLabel()))) %> <%= button("Remove").submit(true) %> (Files will not be deleted)</td>
         </tr>
     </table>
-        </form>
+        </labkey:form>
 <%  } %>
 
-<form action="addAttachmentDirectory.post" method="POST">
-    <labkey:csrf/>
+<labkey:form action="addAttachmentDirectory.post" method="POST">
 <table>
     <tr>
         <td class="labkey-form-label">Name</td>
@@ -116,7 +114,7 @@ Each file set is an additional directory that stores files accessible to users o
         <td><%= button("Add File Set").submit(true) %> </td>
     </tr>
 </table>
-</form>
+</labkey:form>
 <%
 if (getUser().isSiteAdmin())
 {

@@ -38,7 +38,7 @@
     UploadListItemsForm form = (UploadListItemsForm) __form;
     ActionURL templateURL = PageFlowUtil.urlProvider(QueryUrls.class).urlCreateExcelTemplate(getContainer(), "lists", form.getList().getName());
 %>
-<form action="<%=h(form.getList().urlFor(ListController.UploadListItemsAction.class))%>" method="POST">
+<labkey:form action="<%=h(form.getList().urlFor(ListController.UploadListItemsAction.class))%>" method="POST">
     <table>
         <tr>
             <td class="labkey-form-label" nowrap="true">List Data</td>
@@ -58,4 +58,4 @@
             <td><labkey:button text="Submit" /></td>
         </tr>
     </table>
-</form>
+</labkey:form>

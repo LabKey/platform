@@ -20,13 +20,14 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.search.view.SearchWebPartFactory" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>)HttpView.currentView();
     Portal.WebPart webPart = me.getModelBean();
     boolean includeSubfolders = SearchWebPartFactory.includeSubfolders(webPart);
 %>
-<form name="frmCustomize" method="post">
+<labkey:form name="frmCustomize" method="post">
 <table>
   <tr>
     <td><input type="hidden" name="<%=SpringActionController.FIELD_MARKER%>includeSubfolders"><input type="checkbox" name="includeSubfolders" value="1"<%=checked(includeSubfolders)%>></td>
@@ -39,4 +40,4 @@
     </td>
   </tr>
 </table>
-</form>
+</labkey:form>

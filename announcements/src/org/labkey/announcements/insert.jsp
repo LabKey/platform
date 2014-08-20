@@ -61,7 +61,7 @@ function validateForm(form)
     return false;
 }
 </script>
-<form method=post enctype="multipart/form-data" action="<%=insertUrl%>" onSubmit="return validateForm(this)">
+<labkey:form method="POST" enctype="multipart/form-data" action="<%=insertUrl%>" onsubmit="return validateForm(this)">
 <input type=hidden name=cancelUrl value="<%=h(null != cancelURL ? cancelURL.getLocalURIString() : null)%>">
 <%=generateReturnUrlFormField(cancelURL)%>
 <input type=hidden name=fromDiscussion value="<%=bean.fromDiscussion%>">
@@ -141,7 +141,7 @@ else
 }
 %>
 <input type=hidden name="discussionSrcIdentifier" value="<%=h(form.get("discussionSrcIdentifier"))%>"><input type=hidden name="discussionSrcURL" value="<%=h(form.get("discussionSrcURL"))%>">
-</form>
+</labkey:form>
 <p/>
 <% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>
 <script type="text/javascript">

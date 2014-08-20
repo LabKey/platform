@@ -27,8 +27,8 @@ VisitMap data can be imported to quickly define a study.  VisitMap data generall
     30|T|Termination Visit|9|9 (mm/dd/yy)|21|0| 11 12||
 </pre></p>
 <labkey:errors/>
-<form action="<%=h(buildURL(StudyController.UploadVisitMapAction.class))%>" method="post">
+<labkey:form action="<%=h(buildURL(StudyController.UploadVisitMapAction.class))%>" method="post">
     Paste VisitMap content here:<br>
     <textarea name="content" cols="80" rows="30"></textarea><br>
     <%= button("Import").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
-</form>
+</labkey:form>

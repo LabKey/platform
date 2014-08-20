@@ -21,6 +21,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <script>
 function saveList(listName)
 {
@@ -79,7 +80,7 @@ function orderModule(down)
     return false;
 }
 </script>
-<form method="post" name="reorder" action="<%=h(buildURL(StudyController.DatasetDisplayOrderAction.class))%>" enctype="multipart/form-data">
+<labkey:form method="post" name="reorder" action="<%=h(buildURL(StudyController.DatasetDisplayOrderAction.class))%>" enctype="multipart/form-data">
     <input type="hidden" name="resetOrder" value="false">
     <table>
         <tr>
@@ -123,4 +124,4 @@ function orderModule(down)
     <%= button("Save").submit(true) %>
     <%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %>
     <%= button("Reset Order").href("#").onClick("if (confirm('Resetting will order the datasets by category, and then by their ID numbers within each category.  This cannot be undone.  Continue?')) return submitReset(); else return false;") %>
-</form>
+</labkey:form>

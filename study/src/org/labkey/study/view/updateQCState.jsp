@@ -50,7 +50,7 @@
     WebPartView.startTitleFrame(out, "QC State Change", null, null, null);
 %>
 <labkey:errors/>
-<form action="<%=h(buildURL(StudyController.UpdateQCStateAction.class))%>" method="POST">
+<labkey:form action="<%=h(buildURL(StudyController.UpdateQCStateAction.class))%>" method="POST">
     <input type="hidden" name="update" value="true" />
     <input type="hidden" name="datasetId" value="<%= bean.getDatasetId() %>" />
     <input type="hidden" name="<%= h(DataRegionSelection.DATA_REGION_SELECTION_KEY) %>" value="<%= h(bean.getDataRegionSelectionKey()) %>" />
@@ -85,7 +85,7 @@
                     container).addParameter(DataSetDefinition.DATASETKEY, bean.getDatasetId())) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>
 <%
     WebPartView.endTitleFrame(out);
     WebPartView.startTitleFrame(out, "Selected Data Rows", null, null, null);

@@ -21,11 +21,12 @@
 <%@ page import="org.labkey.api.study.Visit" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getUser());
 %>
-<form action="<%=h(buildURL(StudyController.VisitVisibilityAction.class))%>" method="POST">
+<labkey:form action="<%=h(buildURL(StudyController.VisitVisibilityAction.class))%>" method="POST">
     <table>
         <tr>
             <th align="left">ID</th>
@@ -96,4 +97,4 @@
     %>
     </table>
     <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageVisitsAction.class, getContainer()) %>
-</form>
+</labkey:form>

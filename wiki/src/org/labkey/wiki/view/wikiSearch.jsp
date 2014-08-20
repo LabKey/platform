@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.wiki.model.SearchViewContext" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SearchViewContext> _me = (JspView<SearchViewContext>) HttpView.currentView();
@@ -31,7 +32,7 @@
             frm.submit();
     }
 </script>
-<form action="<%=_ctx.getSearchUrl()%>" id="frmSearch">
+<labkey:form action="<%=_ctx.getSearchUrl()%>" id="frmSearch">
 <input type="hidden" name="includeSubfolders" value="1"/>
 <table width="100%">
     <tr>
@@ -43,4 +44,4 @@
         </td>
     </tr>
 </table>
-</form>
+</labkey:form>

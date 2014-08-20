@@ -53,7 +53,7 @@
 
 
 
-<form action="" method="post" onsubmit="validateForm();">
+<labkey:form action="" method="post" onsubmit="validateForm();">
     <table>
         <tr><th colspan="10" class="labkey-header">Snapshot Name</th></tr>
         <tr><td colspan="10" class="labkey-title-area-line"></td></tr>
@@ -93,7 +93,7 @@
     <%  } %>
     <input type="hidden" name="action" value="<%=StudyController.StudySnapshotForm.CREATE_SNAPSHOT%>" id="action">
     <input type="hidden" name="snapshotDatasetId" value="<%=bean.getSnapshotDatasetId()%>">
-</form>
+</labkey:form>
 
 <script type="text/javascript">
 

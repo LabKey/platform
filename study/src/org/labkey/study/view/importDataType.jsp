@@ -27,7 +27,7 @@
 
 <labkey:errors />
 
-<form id="typeDefForm" name=typeDefForm action="<%=buildURL(StudyController.DefineDatasetTypeAction.class)%>" method="POST" enctype="multipart/form-data">
+<labkey:form id="typeDefForm" name="typeDefForm" action="<%=h(buildURL(StudyController.DefineDatasetTypeAction.class))%>" method="POST" enctype="multipart/form-data">
     <table id=typeDefTable width="100%">
         <tr>
             <td >
@@ -52,7 +52,7 @@
             <td colspan=5><%= button("Next").submit(true) %>&nbsp;<%= button("Cancel").href(StudyController.ManageTypesAction.class, getContainer()) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>
 
 <script type="text/javascript">
 

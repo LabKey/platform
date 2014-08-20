@@ -15,9 +15,9 @@
  * limitations under the License.
  */
 %>
-<%@ page import="org.labkey.api.util.PageFlowUtil"%>
 <%@ page import="org.labkey.experiment.types.TypesController" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     TypesController.ImportVocabularyForm form = (TypesController.ImportVocabularyForm )HttpView.currentModel();
@@ -46,11 +46,11 @@ Specifically it should be a tab-delimited text file with no column headers, and 
 
 <p>&nbsp;</p>
 
-<form action="<%=h(buildURL(TypesController.ImportVocabularyAction.class))%>" method="POST" enctype="multipart/form-data">
+<labkey:form action="<%=h(buildURL(TypesController.ImportVocabularyAction.class))%>" method="POST" enctype="multipart/form-data">
 <table>
 <tr><td class=labkey-form-label>Thesaurus URI<br><small>e.g http://ncicb.nci.nih.gov/xml/owl/EVS/Thesaurus.owl</small></td><td><input name="name" value="<%=h(form.getName())%>"></td></tr>
 <!--<tr><td class=labkey-form-label>Short prefix<br><small>e.g NCI_Thesaurus</small></td><td><input name="prefix" value=""></td></tr> -->
 <tr><td class=labkey-form-label>Upload File</td><td><input type=file name=thesaurus></td></tr>
 </table>
     <%= button("Submit").submit(true) %>
-</form>
+</labkey:form>

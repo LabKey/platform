@@ -26,6 +26,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -43,7 +44,7 @@
     List stats = Arrays.asList(bean.getStats());
 %>
 
-<form action="" method="post">
+<labkey:form action="" method="post">
     Design crosstab view.
 
     <table>
@@ -80,7 +81,7 @@
     </tr>
     </table>
     <%= button("Submit").submit(true) %>
-</form>
+</labkey:form>
 
 <%!
     public String fieldDropDown(String name, String id, Map<String, ColumnInfo> cols, String selected,

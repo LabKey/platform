@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.Portal" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<Portal.WebPart> me = (JspView<Portal.WebPart>) HttpView.currentView();
@@ -30,7 +31,7 @@
     List<Container> containerList = WikiController.populateWikiContainerList(getViewContext());
 %>
 <% // Post to current action; URL includes pageId and index (or webPartId) parameters %>
-<form name="frmCustomize" method="post">
+<labkey:form name="frmCustomize" method="post">
 <table>
     <tr>
         <td>
@@ -69,4 +70,4 @@
     </td>
 </tr>
 </table>
-</form>
+</labkey:form>

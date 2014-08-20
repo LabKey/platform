@@ -123,13 +123,13 @@
     String name = c.isProject() ? "project" : "folder";
     ActionURL url = c.isProject() ? urls.getProjectSettingsURL(c) : urls.getFolderManagementSettingsURL(c);
 %>
-<form id="manageTypesForm" action="<%=h(buildURL(ManageTypesAction.class))%>" method="POST">
+<labkey:form id="manageTypesForm" action="<%=h(buildURL(ManageTypesAction.class))%>" method="POST">
     <table>
         <tr><td>Default date format:</td><td><%=h(StringUtils.trimToEmpty(dateFormat))%></td></tr>
         <tr><td>Default number format:</td><td><%=h(StringUtils.trimToEmpty(numberFormat))%></td></tr>
         <tr><td colspan="2"><br>Default formats can be changed via the <%=textLink(name + " settings page", url)%></td></tr>
     </table>
-</form>
+</labkey:form>
 <% WebPartView.endTitleFrame(out); %>
 
 <% WebPartView.startTitleFrame(out, "Datasets", null, null, "datasets"); %>

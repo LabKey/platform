@@ -15,9 +15,10 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 
-<form action="" name="import" enctype="multipart/form-data" method="post">
+<labkey:form action="" name="import" enctype="multipart/form-data" method="post">
     <table cellpadding=0>
         <tr><td class="labkey-announcement-title" align=left><span>Validate Queries</span></td></tr>
         <tr><td class="labkey-title-area-line"></td></tr>
@@ -27,5 +28,5 @@
         <tr><td><label><input type="checkbox" name="validateQueries" checked value="true">&nbsp;Validate Imported Queries</label></td></tr>
         <tr><td><%= button("Start Import").submit(true) %></td></tr>
     </table>
-</form>
+</labkey:form>
 

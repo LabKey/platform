@@ -30,8 +30,7 @@
     use your server will be sent to Google Analytics.</p>
 
 <labkey:errors/>
-<form action="<%=new ActionURL(AnalyticsController.BeginAction.class, ContainerManager.getRoot())%>" method="POST">
-
+<labkey:form action="<%=h(new ActionURL(AnalyticsController.BeginAction.class, ContainerManager.getRoot()))%>" method="POST">
     <table>
         <tr>
             <td valign=top nowrap><labkey:radio name="ff_trackingStatus" value="<%=AnalyticsServiceImpl.TrackingStatus.disabled%>" currentValue="<%=settingsForm.ff_trackingStatus%>"/>&nbsp;OFF</td>
@@ -62,4 +61,4 @@
     </table>
 
     <labkey:button text="submit"/>
-</form>
+</labkey:form>

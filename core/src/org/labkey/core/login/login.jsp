@@ -54,7 +54,7 @@
     <div class="auth-header">Sign In</div>
     <% } %>
     <labkey:errors />
-    <form name="login" method="POST" action="<%=h(formURL)%>" accept-charset="UTF-8">
+    <form name="login" method="POST" action="<%=h(formURL)%>" accept-charset="UTF-8"><labkey:csrf/>
         <div class="auth-form-body">
             <% if (!agreeOnly) { %>
             <label for="email">Email</label>
@@ -85,7 +85,6 @@
             </div>
         </div>
 
-        <labkey:csrf/>
         <%=generateReturnUrlFormField(returnURL)%>
 
         <% if (bean.form.getSkipProfile()) { %>

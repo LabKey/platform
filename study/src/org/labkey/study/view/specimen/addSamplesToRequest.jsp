@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.api.view.HttpView"%>
 <%@ page import="org.labkey.api.view.JspView"%>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
@@ -35,7 +36,7 @@
     else
     {
 %>
-<form action="<%=h(buildURL(SpecimenController.ShowCreateSampleRequestAction.class))%>" method="POST">
+<labkey:form action="<%=h(buildURL(SpecimenController.ShowCreateSampleRequestAction.class))%>" method="POST">
     Please select a request below to which to add the selected specimens.<br>
     Note that only the creator of a request or an administrator can add specimens to an existing request.<br>
     <br>
@@ -62,7 +63,7 @@
                     me.include(bean.getSpecimenQueryView(), out); %></td>
         </tr>
     </table>
-</form>
+</labkey:form>
 <%
     }
 %>

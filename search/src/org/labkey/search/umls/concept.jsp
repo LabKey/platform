@@ -78,7 +78,7 @@ String CUI = StringUtils.trimToNull(form.getCUI());
 
 Set<String> preferredSAB = PageFlowUtil.set("SNOMEDCT","LCN","MSH","NCI");
 %>
-<form action="<%=h(buildURL(UmlsController.ConceptAction.class))%>" method=GET><input name=CUI value="<%=h(CUI)%>"><input type="submit" value="FIND"></form>
+<labkey:form action="<%=h(buildURL(UmlsController.ConceptAction.class))%>" method="GET"><input name=CUI value="<%=h(CUI)%>"><input type="submit" value="FIND"></labkey:form>
 <%
 if (null != CUI)
 {

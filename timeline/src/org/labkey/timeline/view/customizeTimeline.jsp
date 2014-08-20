@@ -188,7 +188,7 @@ Ext.onReady(function()
     updateFields(settings.schemaName, settings.queryName, settings.viewName);
 });
 </script>
-<form name="frmCustomize" method="post" action="<%=part.getCustomizePostURL(ctx).getEncodedLocalURIString()%>">
+<labkey:form name="frmCustomize" method="post" action="<%=part.getCustomizePostURL(ctx).getEncodedLocalURIString()%>">
     <table>
         <tr>
             <td class="ms-searchform">Web Part Title:</td>
@@ -270,4 +270,4 @@ Ext.onReady(function()
             <td><labkey:button text="Submit" /></td>
         </tr>
     </table>
-</form>
+</labkey:form>

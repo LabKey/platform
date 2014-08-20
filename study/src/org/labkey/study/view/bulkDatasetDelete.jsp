@@ -37,7 +37,7 @@
 %>
 
 <p>Please select the datasets you want to delete:</p>
-<form action="<%=h(buildURL(DatasetController.BulkDatasetDeleteAction.class))%>" name="bulkDatasetDelete" method="POST">
+<labkey:form action="<%=h(buildURL(DatasetController.BulkDatasetDeleteAction.class))%>" name="bulkDatasetDelete" method="POST">
 <table class="labkey-data-region labkey-show-borders">
     <tr>
         <th><input type="checkbox" onchange="toggleAllRows(this);"></th>
@@ -82,7 +82,7 @@
             "else return false;")%>
 <%= button("Cancel").href(cancelURL) %>
 
-</form>
+</labkey:form>
 
 <script type="text/javascript">
     function toggleAllRows(checkbox)

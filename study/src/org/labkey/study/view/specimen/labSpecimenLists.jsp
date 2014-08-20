@@ -21,13 +21,14 @@
 <%@ page import="org.labkey.study.model.LocationImpl"%>
 <%@ page import="org.labkey.study.model.Vial"%>
 <%@ page import="org.labkey.study.specimen.notifications.ActorNotificationRecipientSet" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.LabSpecimenListsBean> me = (JspView<SpecimenController.LabSpecimenListsBean>) HttpView.currentView();
     SpecimenController.LabSpecimenListsBean bean = me.getModelBean();
     boolean originating = bean.getType() == SpecimenController.LabSpecimenListsBean.Type.ORIGINATING;
 %>
-<form action="<%=h(buildURL(SpecimenController.EmailLabSpecimenListsAction.class))%>" method="POST" enctype="multipart/form-data">
+<labkey:form action="<%=h(buildURL(SpecimenController.EmailLabSpecimenListsAction.class))%>" method="POST" enctype="multipart/form-data">
 <input type="hidden" name="id" value="<%= bean.getSpecimenRequest().getRowId() %>">
 <input type="hidden" name="listType" value="<%= h(bean.getType().toString()) %>">
 
@@ -194,4 +195,4 @@
         <td><%= button("Send Email").submit(true) %> <%= button("Cancel").href(buildURL(SpecimenController.ManageRequestAction.class) + "id=" + bean.getSpecimenRequest().getRowId()) %></td>
     </tr>
 </table>
-</form>
+</labkey:form>

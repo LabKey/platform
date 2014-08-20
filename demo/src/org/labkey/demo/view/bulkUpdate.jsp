@@ -24,6 +24,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.demo.DemoController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<List<Person>> me = (JspView<List<Person>>) HttpView.currentView();
@@ -47,7 +48,7 @@
     if (people.size() > 0)
     {
 %>
-    <form action="bulkUpdate.post" method="POST">
+    <labkey:form action="bulkUpdate.post" method="POST">
         <table>
             <tr>
                 <th>First Name</th>
@@ -78,7 +79,7 @@
             %>
         </table>
         <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(DemoController.BeginAction.class, getContainer()) %>
-    </form>
+    </labkey:form>
 <%
     }
     else

@@ -75,7 +75,7 @@
 
 <labkey:errors/>
 
-<form action="" method="post">
+<labkey:form action="" method="post">
     <%
         WebPartView.startTitleFrame(out, "Configure File Root ");
     %>
@@ -170,7 +170,7 @@
     <%
         WebPartView.endTitleFrame(out);
     %>
-</form>
+</labkey:form>
 
 <script type="text/javascript">
 

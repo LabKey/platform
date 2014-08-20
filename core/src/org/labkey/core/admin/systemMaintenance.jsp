@@ -26,6 +26,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Set" %>
 <%@ page import="org.labkey.api.settings.AppProps" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -41,7 +42,7 @@
     String initalTime = SystemMaintenance.formatSystemMaintenanceTime(props.getSystemMaintenanceTime());
     Set<String> disabled = props.getDisabledTasks();
 %>
-<form name="systemMaintenanceSettings" method="post">
+<labkey:form name="systemMaintenanceSettings" method="post">
     <table width="1000">
         <tr>
             <td colspan="2">The follow tasks are (typically) run every night to clear unused data, update database statistics, perform nightly data refreshes,
@@ -104,8 +105,8 @@
             <td style="padding-top: 10px;"><%= button("Save").submit(true).onClick("return validateForm();") %><%= button("Cancel").href(new AdminController.AdminUrlsImpl().getAdminConsoleURL()) %></td>
         </tr>
     </table>
-</form>
-<form name="systemMaintenance" action="<%=buildURL(AdminController.SystemMaintenanceAction.class)%>" method="post" target="systemMaintenance"><input type="hidden" name="taskName"/><labkey:csrf></labkey:csrf></form>
+</labkey:form>
+<labkey:form name="systemMaintenance" action="<%=buildURL(AdminController.SystemMaintenanceAction.class)%>" method="post" target="systemMaintenance"><input type="hidden" name="taskName"/></labkey:form>
 <script type="text/javascript">
 
     // global functions for script calls from this Form

@@ -71,7 +71,7 @@ LABKEY.requiresExt3(true, function() {
     });
 });
 </script>
-<form method=post enctype="multipart/form-data" action="<%=respondUrl%>" onSubmit="return validateForm(this)">
+<labkey:form method="POST" enctype="multipart/form-data" action="<%=respondUrl%>" onsubmit="return validateForm(this)">
 <input type="hidden" name="cancelUrl" value="<%=h(bean.cancelURL)%>">
 <%=generateReturnUrlFormField(bean.cancelURL)%>
 <input type="hidden" name="fromDiscussion" value="<%=bean.fromDiscussion%>">
@@ -170,6 +170,6 @@ else
     <%
 }
 %>
-</form>
+</labkey:form>
 <br>
 <% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>

@@ -18,6 +18,7 @@
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView me = HttpView.currentView();
@@ -30,14 +31,14 @@
     }
 </style>
 <div>
-    <form action="" method="POST">
+    <labkey:form action="" method="POST">
         <div class="section">
             <span>The menu bar can be customized to provide quick access to LabKey features.</span>
         </div>
         <div class="section">
             <span>The menu bar is populated by web parts. You can add and remove webparts here.</span>
         </div>
-    </form>
+    </labkey:form>
     <div class="section">
         <%= button("Refresh Menu Bar").href(refreshURL) %>
     </div>

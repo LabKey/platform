@@ -31,7 +31,7 @@
         new ActionURL(StudyController.ManageStudyAction.class, getContainer());
 %>
 <labkey:errors/><br>
-<form action="<%=h(buildURL(StudyController.ManageQCStatesAction.class))%>" name="manageQCStates" method="POST">
+<labkey:form action="<%=h(buildURL(StudyController.ManageQCStatesAction.class))%>" name="manageQCStates" method="POST">
 <%= button("Done").submit(true).onClick("document.manageQCStates.reshowPage.value='false'; return true;") %>
 <%= button("Cancel").href(cancelUrl.getLocalURIString()) %>
 <input type="hidden" name="reshowPage" value="true">
@@ -193,4 +193,4 @@
         </td>
     </tr>
 </table>
-</form>
+</labkey:form>

@@ -29,7 +29,7 @@
         return resources;
     }
 %>
-<form action="" method="post">
+<labkey:form action="" method="post">
     <table width="80%">
         <%=formatMissedErrorsInTable("form", 1)%>
         <tr>
@@ -48,7 +48,7 @@
             <td><%= button("Submit").submit(true) %>&nbsp;<%= button("Cancel").href(ShowVisitImportMappingAction.class, getContainer()) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>
 <script type="text/javascript">
     Ext.EventManager.on('tsv', 'keydown', LABKEY.ext.Utils.handleTabsInTextArea);
 </script>

@@ -21,13 +21,14 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.ChooseExperimentTypeBean" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ChooseExperimentTypeBean> me = (JspView<ChooseExperimentTypeBean>) HttpView.currentView();
     ChooseExperimentTypeBean bean = me.getModelBean();
     ActionURL baseURL = bean.getUrl().clone().deleteParameters();
 %>
-<form method="get" action="<%= baseURL %>">
+<labkey:form method="get" action="<%= baseURL %>">
     <% for (Pair<String, String> params : bean.getUrl().getParameters())
     {
         if (!"experimentRunFilter".equals(params.getKey()))
@@ -40,4 +41,4 @@
             <option <% if (type == bean.getSelectedFilter()) { %>selected <% } %> value="<%=h(type.getDescription())%>"><%=h(type.getDescription())%></option>
         <% } %>
     </select>
-</form>
+</labkey:form>

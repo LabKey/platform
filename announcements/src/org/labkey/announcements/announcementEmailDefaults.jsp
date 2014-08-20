@@ -15,6 +15,7 @@
  * limitations under the License.
  */
 %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page import="org.labkey.announcements.AnnouncementsController.AnnouncementEmailDefaults.EmailDefaultsBean"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.message.settings.MessageConfigService" %>
@@ -24,7 +25,7 @@
     HttpView<EmailDefaultsBean> me = (HttpView<EmailDefaultsBean>) HttpView.currentView();
     EmailDefaultsBean bean = me.getModelBean();
 %>
-<form action="<%=h(buildURL(AnnouncementsController.SetDefaultEmailOptionsAction.class))%>">
+<labkey:form action="<%=h(buildURL(AnnouncementsController.SetDefaultEmailOptionsAction.class))%>">
 <table width="50%">
 <tr>
     <td align="left" style="padding-top:2px;padding-bottom:4px;"><b>Folder default settings</b></td>
@@ -57,5 +58,5 @@
     </td>
 </tr>
 </table>
-</form>
+</labkey:form>
 <br>

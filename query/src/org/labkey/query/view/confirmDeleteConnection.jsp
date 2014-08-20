@@ -29,8 +29,7 @@
 <p>
     Please confirm that you would like to delete this connection.
 </p>
-<form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlDeleteRemoteConnection(c, null) %>" method="post">
-<labkey:csrf/>
+<labkey:form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlDeleteRemoteConnection(c, null) %>" method="post">
 <table>
     <tr>
         <td>Connection Name: </td>
@@ -39,5 +38,5 @@
 </table>
     <%= button("delete").submit(true) %>
     <%= button("cancel").href(QueryController.ManageRemoteConnectionsAction.class, getContainer()) %>
-</form>
+</labkey:form>
 

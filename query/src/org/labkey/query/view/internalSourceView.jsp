@@ -49,7 +49,7 @@
     CstmView view = form.getViewAndCheckPermission();
 %>
 <labkey:errors />
-<form method = "POST" action="<%=h(urlPost)%>">
+<labkey:form method = "POST" action="<%=h(urlPost)%>">
     <p>Schema: <%=h(view.getSchema())%><br>
         Query: <%=h(view.getQueryName())%><br>
         Name: <%=h(view.getName())%><br>
@@ -72,4 +72,4 @@
     </table>
 
     <labkey:button text="Save" /> <labkey:button text="Cancel" href="<%=urlCancel%>" />
-</form>
+</labkey:form>

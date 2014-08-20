@@ -82,7 +82,7 @@
         else
         {
 %>
-    <form action="<%=h(buildURL(SpecimenController.SubmitSpecimenBatchImport.class))%>" method=POST>
+    <labkey:form action="<%=h(buildURL(SpecimenController.SubmitSpecimenBatchImport.class))%>" method="POST">
         <input type="hidden" name="path" value="<%= h(bean.getPath()) %>">
         <%
             for (String file : bean.getFiles())
@@ -113,7 +113,7 @@
         <p>
 
         <%= button("Start Import").submit(true) %>
-    </form>
+    </labkey:form>
 <%
         }
     %>

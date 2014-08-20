@@ -25,6 +25,7 @@
 <%@ page import="org.labkey.wiki.WikiController.VersionBean" %>
 <%@ page import="org.labkey.wiki.WikiSelectManager" %>
 <%@ page import="org.labkey.wiki.model.WikiVersion" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<VersionBean> me = (JspView<VersionBean>) HttpView.currentView();
@@ -68,8 +69,8 @@ else
 
         if (fOutputMakeCurrent)
         {
-            %><tr><td align=right colspan="2"><form method=POST action="<%=h(bean.makeCurrentURL)%>">
-                <%= button("Make Current").submit(true) %></form></td></tr><%
+            %><tr><td align=right colspan="2"><labkey:form method="POST" action="<%=h(bean.makeCurrentURL)%>">
+                <%= button("Make Current").submit(true) %></labkey:form></td></tr><%
         }%>
 
        <tr><td colspan=2 class="labkey-title-area-line"></td></tr>

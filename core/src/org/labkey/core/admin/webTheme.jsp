@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.WebTheme" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     String contextPath = request.getContextPath();
@@ -34,7 +35,7 @@
     LABKEY.requiresScript('color_functions.js');
     LABKEY.requiresScript('js_color_picker_v2.js');
 </script>
-<form name="themeForm" action="<%=h(buildURL(AdminController.SaveWebThemeAction.class))%>" enctype="multipart/form-data" method="post">
+<labkey:form name="themeForm" action="<%=h(buildURL(AdminController.SaveWebThemeAction.class))%>" enctype="multipart/form-data" method="post">
 <input type="hidden" name="upgradeInProgress" value="<%=bean.form.isUpgradeInProgress()%>" />
 <table width="100%">
 <%
@@ -189,7 +190,7 @@ New themes will not be visible to other users until you save changes on the Look
 
 </table>
 
-</form>
+</labkey:form>
 <script type="text/javascript">
 function changeTheme(sel)
 {

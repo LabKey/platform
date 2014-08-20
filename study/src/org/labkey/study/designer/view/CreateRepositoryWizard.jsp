@@ -29,6 +29,7 @@
 <%@ page import="java.util.Set" %>
 <%@ page import="java.util.SortedSet" %>
 <%@ page import="java.util.TreeSet" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     DesignerController.CreateRepositoryForm form = (DesignerController.CreateRepositoryForm) HttpView.currentModel();
@@ -43,7 +44,7 @@
 Use this wizard to create a folder that will contain all of the assay results and information about each <%=h(species)%> (subject) within
 the vaccine study.
 
-<form name="createRepositoryForm" action="<%=h(buildURL(DesignerController.CreateRepository.class))%>" method="post">
+<labkey:form name="createRepositoryForm" action="<%=h(buildURL(DesignerController.CreateRepository.class))%>" method="post">
     <input type="hidden" name="studyId" value="<%=form.getStudyId()%>">
     <input type="hidden" name="studyName" value="<%=h(form.getStudyName())%>">
     <input type="hidden" name="wizardStepNumber" value="<%=form.getWizardStepNumber()%>">
@@ -264,7 +265,7 @@ if (form.getWizardStep() != DesignerController.WizardStep.UPLOAD_PARTICIPANTS &&
 }
 %>
 
-</form>
+</labkey:form>
 
 <!-- Allows us to override the form destination, so that other actions can receive the form -->
 <script type="text/javascript">

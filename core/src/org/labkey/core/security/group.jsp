@@ -115,8 +115,7 @@
 
 </script>
 
-<form id="groupMembersForm" action="<%=h(buildURL(SecurityController.UpdateMembersAction.class))%>" method="POST">
-<labkey:csrf />
+<labkey:form id="groupMembersForm" action="<%=h(buildURL(SecurityController.UpdateMembersAction.class))%>" method="POST">
 <%
 if (bean.messages.size() > 0)
 {
@@ -269,7 +268,7 @@ if (null != bean.ldapDomain && bean.ldapDomain.length() != 0 && !org.labkey.api.
 <input type="hidden" name="group" value="<%= bean.groupName %>">
 <%= button("Update Group Membership").submit(true).onClick("return confirmRemoveUsers();") %>
 </div>
-</form>
+</labkey:form>
 <%
 if (!bean.isSystemGroup)
 {
@@ -277,11 +276,10 @@ if (!bean.isSystemGroup)
     if (bean.members.size() == 0)
     {
         %>
-        <form action="<%=h(buildURL(SecurityController.StandardDeleteGroupAction.class))%>" method="POST">
-        <labkey:csrf/>
+        <labkey:form action="<%=h(buildURL(SecurityController.StandardDeleteGroupAction.class))%>" method="POST">
         <%= button("Delete Empty Group").submit(true).onClick("return confirm('Permanently delete group " + bean.groupName + "?')") %>
         <input type="hidden" name="group" value="<%= bean.groupName %>">
-        </form>
+        </labkey:form>
         <%
     }
     else

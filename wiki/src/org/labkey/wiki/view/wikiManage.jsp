@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.wiki.model.WikiTree" %>
 <%@ page import="org.labkey.wiki.WikiController" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     ManageBean bean = ((HttpView<ManageBean>)HttpView.currentView()).getModelBean();
@@ -94,7 +95,7 @@
     }
 </script>
 
-<form method="post" name="manage" action="<%=h(buildURL(WikiController.ManageAction.class))%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
+<labkey:form method="post" name="manage" action="<%=h(buildURL(WikiController.ManageAction.class))%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
 <input type="hidden" name="containerPath" value="<%=h(c.getPath())%>">
 
 <table><tr>
@@ -220,4 +221,4 @@
         return true;
     }
 </script>
-</form>
+</labkey:form>

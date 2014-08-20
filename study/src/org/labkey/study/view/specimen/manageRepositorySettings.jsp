@@ -31,7 +31,7 @@
    if (study != null && !study.isAncillaryStudy() && !study.isSnapshotStudy())
    {
 %>
-<form action="<%=h(buildURL(SpecimenController.ManageRepositorySettingsAction.class))%>" method="POST">
+<labkey:form action="<%=h(buildURL(SpecimenController.ManageRepositorySettingsAction.class))%>" method="POST">
     <table width="100%">
         <tr><td class="labkey-announcement-title" align="left"><span>Repository Type</span></td></tr>
         <tr><td class="labkey-title-area-line"></td></tr>
@@ -81,7 +81,7 @@
     <div>
         <%= button("Submit").submit(true) %>&nbsp;<%= button("Back").href(buildURL(SpecimenController.ManageRepositorySettingsAction.class)).onClick("window.history.back();return false;") %>
     </div>
-</form>
+</labkey:form>
 <%
    }
    else

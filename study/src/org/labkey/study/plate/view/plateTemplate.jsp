@@ -25,13 +25,14 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<PlateController.TemplateViewBean> me = (JspView<PlateController.TemplateViewBean>) HttpView.currentView();
     PlateController.TemplateViewBean bean = me.getModelBean();
     PlateTemplate template = bean.getTemplate();
 %>
-<form action="plateTemplate.view" method="GET">
+<labkey:form action="plateTemplate.view" method="GET">
     <input type="hidden" name="name" value="<%= h(template.getName()) %>">
     <select name="type" onChange="form.submit();">
         <%
@@ -43,7 +44,7 @@
             }
         %>
     </select>
-</form>
+</labkey:form>
 <table>
     <tr>
         <td>&nbsp;</td>

@@ -1,4 +1,3 @@
-<%@ taglib prefix="form" uri="http://www.springframework.org/tags/form" %>
 <%
 /*
  * Copyright (c) 2007-2014 LabKey Corporation
@@ -32,6 +31,7 @@
 <%@ page import="java.util.Formatter" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -51,7 +51,7 @@
 %>
 <%=text(errorHTML)%>
 
-<form action="<%=h(buildURL(AdminController.CustomizeEmailAction.class))%>" method="post">
+<labkey:form action="<%=h(buildURL(AdminController.CustomizeEmailAction.class))%>" method="post">
     <% if (bean.getReturnUrl() != null) { %>
         <input type="hidden" name="returnUrl" value="<%= bean.getReturnUrl()%>" />
     <% } %>
@@ -107,7 +107,7 @@
         </tr>
     </table>
     <input id="emailDescriptionFF" type="hidden" name="templateDescription" value="<%=h(bean.getTemplateDescription())%>"/>
-</form><br/><br/>
+</labkey:form><br/><br/>
 
 <script type="text/javascript">
 

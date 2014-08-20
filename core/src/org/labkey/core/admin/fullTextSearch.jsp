@@ -18,11 +18,12 @@
 <%@ page import="org.labkey.api.action.SpringActionController" %>
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.core.admin.FolderManagementAction" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container c = getContainer();
 %>
-<form name="fullTextSearch" method="POST" action="<%=text(buildURL(FolderManagementAction.class))%>tabId=fullTextSearch">
+<labkey:form name="fullTextSearch" method="POST" action='<%=text(buildURL(FolderManagementAction.class)+"tabId=fullTextSearch")%>'>
     <table>
         <tr>
             <td>
@@ -37,9 +38,9 @@
                 <label>
                     <input type="checkbox" id="searchable" name="searchable"<%=checked(c.isSearchable())%>>
                 Include this folder's content in multi-folder search results</label>
-                <input type="hidden" name="<%=SpringActionController.FIELD_MARKER%>searchable">
+                <input type="hidden" name="<%=text(SpringActionController.FIELD_MARKER)%>searchable">
             </td>
         </tr>
     </table>
     <%= button("Save").submit(true) %>
-</form>
+</labkey:form>

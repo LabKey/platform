@@ -147,7 +147,7 @@
     <%
         if (study.isManualCohortAssignment())
         {
-            %><%= button("Save").submit(true) %><%
+            %><%= button("Save").submit(true) %>
+            <form><%
         }
     %>
-</form>

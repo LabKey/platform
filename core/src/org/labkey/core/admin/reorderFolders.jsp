@@ -19,10 +19,10 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="java.util.List" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ViewContext> me = (JspView<ViewContext>) HttpView.currentView();
@@ -116,7 +116,7 @@ function toggleItemSelector()
 }
 
 </script>
-<form action="<%=h(buildURL(AdminController.ReorderFoldersAction.class))%>" name="reorder" method="POST" onSubmit="saveList()">
+<labkey:form action="<%=h(buildURL(AdminController.ReorderFoldersAction.class))%>" name="reorder" method="POST" onsubmit="saveList()">
 <p>
     <input type="radio" name="resetToAlphabetical" value="true"<%=checked(!isCustomOrder)%> onChange="toggleItemSelector();"/> Sort <%= reorderingProjects ? "projects" : "folders" %> alphabetically<br>
     <input type="radio" name="resetToAlphabetical" value="false"<%=checked(isCustomOrder)%> onChange="toggleItemSelector();" /> Use custom <%= reorderingProjects ? "project" : "folder" %> order
@@ -145,4 +145,4 @@ function toggleItemSelector()
 </p>
     <input type="hidden" name="order" value="">
     <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(reorderingProjects ? urlProvider(AdminUrls.class).getAdminConsoleURL() : urlProvider(AdminUrls.class).getManageFoldersURL(getContainer())) %>
-</form>
+</labkey:form>

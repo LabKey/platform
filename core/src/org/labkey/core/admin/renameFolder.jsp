@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="org.labkey.api.admin.AdminUrls" %>
 <%@ page import="org.labkey.api.data.ContainerManager" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<AdminController.ManageFoldersForm> me = (JspView<AdminController.ManageFoldersForm>) HttpView.currentView();
@@ -39,7 +40,7 @@
     if (ContainerManager.isRenameable(c))
     {
 %>
-<form action="<%=h(buildURL(AdminController.RenameFolderAction.class))%>" method="post">
+<labkey:form action="<%=h(buildURL(AdminController.RenameFolderAction.class))%>" method="post">
     <table>
         <%=formatMissedErrors("form", "<tr><td>", "</td></tr>")%>
         <tr><td>Rename <%=h(containerType)%> <b><%=h(name)%></b> to:&nbsp;<input id="name" name="name" value="<%=h(name)%>"/></td></tr>
@@ -53,7 +54,7 @@
             <td><%= button("Cancel").href(urlProvider(AdminUrls.class).getManageFoldersURL(c)) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>
 <%
     }
     else

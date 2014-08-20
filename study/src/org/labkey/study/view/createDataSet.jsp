@@ -27,7 +27,7 @@
     StudyController.DatasetForm form = me.getModelBean();
 %>
 <labkey:errors/>
-<form action="createDataSet.post" method="POST">
+<labkey:form action="createDataSet.post" method="POST">
     <input type="hidden" name="action" value="create">
     <table>
         <tr>
@@ -57,4 +57,4 @@
             </td>
         </tr>
     </table>
-</form>
+</labkey:form>

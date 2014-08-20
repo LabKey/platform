@@ -46,8 +46,7 @@
 
 <br>
 
-<form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlSaveRemoteConnection(c) %>" method="post">
-<labkey:csrf/>
+<labkey:form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlSaveRemoteConnection(c) %>" method="post">
 <table>
     <tr>
         <td>Connection Name: </td>
@@ -73,4 +72,4 @@
     <%= button("save").submit(true) %>
     <%= button("cancel").href(QueryController.ManageRemoteConnectionsAction.class, getContainer()) %>
     <input type="text" name="connectionName"  value="<%=h(name)%>" hidden><br>
-</form>
+</labkey:form>

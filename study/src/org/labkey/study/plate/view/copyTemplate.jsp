@@ -36,12 +36,12 @@
     <tr>
         <td>
             <br>
-            <form action="<%=h(buildURL(PlateController.HandleCopyAction.class))%>" method="POST">
+            <labkey:form action="<%=h(buildURL(PlateController.HandleCopyAction.class))%>" method="POST">
                 <input type="hidden" name="destination" value="<%= h(bean.getSelectedDestination()) %>">
                 <input type="hidden" name="templateName" value="<%= h(bean.getTemplateName()) %>">
                 <%= button("Cancel").href(PlateController.PlateTemplateListAction.class, getContainer()) %>
                 <%= bean.getSelectedDestination() != null ? button("Copy").submit(true) : button("Copy").submit(true).onClick("alert('Please select a destination folder.'); return false;") %>
-            </form>
+            </labkey:form>
         </td>
     </tr>
 <%

@@ -113,7 +113,7 @@ LABKEY.requiresExt3(true, function() {
     });
 });
 </script>
-<form method="post" action="<%=h(baseUrl.setAction("update.post").getLocalURIString())%>" enctype="multipart/form-data" onSubmit="return validateForm(this)">
+<labkey:form method="post" action='<%=baseUrl.setAction("update.post")%>' enctype="multipart/form-data" onsubmit="return validateForm(this)">
 <input type="hidden" name="rowId" value="<%=ann.getRowId()%>">
 <input type="hidden" name="entityId" value="<%=h(ann.getEntityId())%>">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>">
@@ -218,6 +218,6 @@ if (settings.hasExpires())
     </td>
   </tr>
 </table>
-</form>
+</labkey:form>
 <p/>
 <% me.include(bean.currentRendererType.getSyntaxHelpView(), out); %>

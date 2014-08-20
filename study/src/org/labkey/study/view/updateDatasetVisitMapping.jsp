@@ -57,7 +57,7 @@
     ActionURL updateDatasetURL = new ActionURL(StudyController.UpdateDatasetVisitMappingAction.class, container);
 %>
 
-<form action="<%=h(updateDatasetURL.getLocalURIString())%>" method="POST">
+<labkey:form action="<%=h(updateDatasetURL.getLocalURIString())%>" method="POST">
 <%= button("Save").submit(true) %>&nbsp;<%= text(button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDatasetId())).toString()) %>
 <% WebPartView.startTitleFrame(out, "Dataset Properties", null, "100%", null); %>
     <table>
@@ -151,4 +151,4 @@
     </table>
 <% WebPartView.endTitleFrame(out); %>
 <%= button("Save").submit(true) %>&nbsp;<%= button("Cancel").href(buildURL(StudyController.DatasetDetailsAction.class, "id=" + dataset.getDatasetId())) %>
-</form>
+</labkey:form>

@@ -55,7 +55,7 @@ for (StorageProvisioner.ProvisioningReport.ColumnStatus st : report.getColumns()
     }
     if (hasFix)
     {
-        %><td><form method=POST><%= button("Fix!").submit(true) %></form></td><%
+        %><td><labkey:form method="POST"><%= button("Fix!").submit(true) %></labkey:form></td><%
     }
 %></tr></table></td></tr></table>
 <labkey:errors/>

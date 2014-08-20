@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -42,7 +43,7 @@
     Container c = getContainer();
 %>
 <%=formatMissedErrors("form")%>
-<form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
+<labkey:form name="preferences" enctype="multipart/form-data" method="post" id="form-preferences">
 
 <table cellpadding=0>
 <tr>
@@ -107,7 +108,7 @@
 </tr>
 
 </table>
-</form>
+</labkey:form>
 <script type="text/javascript">
     var _form = new LABKEY.Form({
         formElement: 'form-preferences'

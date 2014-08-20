@@ -22,12 +22,13 @@
 <%@ page import="org.labkey.core.login.LoginController" %>
 <%@ page import="org.labkey.core.login.LoginController.Config" %>
 <%@ page import="org.labkey.core.login.PasswordRule" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<LoginController.Config> me = (JspView<Config>)HttpView.currentView();
     Config bean = me.getModelBean();
 %>
-<form action="<%=h(buildURL(LoginController.ConfigureDbLoginAction.class))%>" method="post">
+<labkey:form action="<%=h(buildURL(LoginController.ConfigureDbLoginAction.class))%>" method="post">
 <table>
     <tr>
         <td class="labkey-form-label">Password Strength</td>
@@ -64,4 +65,4 @@
         <td colspan=2><%=helpLink("configDbLogin", "More information about database authentication")%></td>
     </tr>
 </table>
-</form>
+</labkey:form>

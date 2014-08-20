@@ -27,7 +27,7 @@
     StudyController.ImportMappingBean bean = me.getModelBean();
     boolean hasCustomMapping = !bean.getCustomMapping().isEmpty();
 %>
-<form action="" method="post">
+<labkey:form action="" method="post">
     <table id="customMapping" width="80%">
         <tr><th colspan="2" align="left">Custom Mapping</th></tr>
         <tr><td colspan="2">&nbsp;</td></tr><%
@@ -94,4 +94,4 @@
             <td colspan="2"><%= button("Done").href(ManageVisitsAction.class, getContainer()) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>

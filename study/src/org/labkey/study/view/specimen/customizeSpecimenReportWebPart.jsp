@@ -21,6 +21,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.ReportConfigurationBean" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.SpecimenReportWebPartFactory" %>
 <%@ page import="org.labkey.study.specimen.report.SpecimenVisitReportParameters" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<WebPart> me = (JspView<WebPart>) HttpView.currentView();
@@ -29,7 +30,7 @@
 
     ReportConfigurationBean bean = new ReportConfigurationBean(getViewContext());
 %>
-<form method="post">
+<labkey:form method="post">
 <table>
     <tr>
         <td>
@@ -67,4 +68,4 @@
         </td>
     </tr>
 </table>
-</form>
+</labkey:form>

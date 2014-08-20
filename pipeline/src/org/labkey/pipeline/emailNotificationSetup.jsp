@@ -115,7 +115,7 @@
 
 </script>
 
-<form action="<%=h(buildURL(PipelineController.UpdateEmailNotificationAction.class))%>" method="post">
+<labkey:form action="<%=h(buildURL(PipelineController.UpdateEmailNotificationAction.class))%>" method="post">
     <table>
         <tr><td colspan=2>Check the appropriate box(es) to configure notification emails to be sent
             when a pipeline job succeeds and/or fails.<br/><%=text(c.isRoot() ? "" : "<span class=\"labkey-error\">*</span>&nbsp;Indicates that the field value has been inherited from the site wide configuration.")%>
@@ -187,4 +187,4 @@
         </tr>
         <tr><td></td></tr>
     </table>
-</form>
+</labkey:form>

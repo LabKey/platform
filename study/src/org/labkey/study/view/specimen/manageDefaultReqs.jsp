@@ -22,6 +22,7 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController"%>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<SpecimenController.ManageReqsBean> me = (JspView<SpecimenController.ManageReqsBean>) HttpView.currentView();
@@ -52,7 +53,7 @@ function verifyNewRequirement(prefix)
     return true;
 }
 </script>
-<form action="<%=h(buildURL(SpecimenController.ManageDefaultReqsAction.class))%>" name="manageDefaultReqs" method="POST">
+<labkey:form action="<%=h(buildURL(SpecimenController.ManageDefaultReqsAction.class))%>" name="manageDefaultReqs" method="POST">
     <table class="labkey-manage-default-reqs">
     <tr class="labkey-wp-header">
         <th align="left">Requirements of Each Originating Lab</th>
@@ -242,5 +243,5 @@ function verifyNewRequirement(prefix)
         </tr>
     </table>
     <input type="hidden" name="nextPage" value="<%=new ActionURL(SpecimenController.ManageDefaultReqsAction.class, getContainer()).getLocalURIString()%>">
-</form>
+</labkey:form>
 <%= textLink("manage study", new ActionURL(StudyController.ManageStudyAction.class, getContainer())) %>

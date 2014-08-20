@@ -20,12 +20,13 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.experiment.ExperimentRunWebPartFactory" %>
 <%@ page import="org.labkey.experiment.controllers.exp.ExperimentController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ExperimentRunWebPartFactory.Bean> me = (JspView<ExperimentRunWebPartFactory.Bean>) HttpView.currentView();
     ExperimentRunWebPartFactory.Bean bean = me.getModelBean();
 %>
-<form method="POST">
+<labkey:form method="POST">
 
     <table>
         <tr>
@@ -46,4 +47,4 @@
             </td>
         </tr>
     </table>
-</form>
+</labkey:form>

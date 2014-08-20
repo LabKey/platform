@@ -44,6 +44,7 @@
 <%@ page import="java.util.regex.Matcher" %>
 <%@ page import="java.util.regex.Pattern" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -103,7 +104,7 @@
 </script>
 
 <%--<script src="<%=contextPath%>/issues/hashbang.js" type="text/javascript"></script>--%>
-<form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
+<labkey:form name="jumpToIssue" action="<%=h(buildURL(IssuesController.JumpToIssueAction.class))%>" method="get">
     <table><tr><%
 
     if (bean.getHasUpdatePermissions())
@@ -150,7 +151,7 @@
     %>
     <td>&nbsp;&nbsp;&nbsp;Jump to <%=h(names.singularName)%>: <input type="text" size="5" name="issueId"/></td>
     </tr></table>
-</form><%
+</labkey:form><%
 }
 %>
 
@@ -262,7 +263,7 @@
     String commentTextStr = commentText.toString().replaceAll("<br>", "");
 %>
 
-<form method="POST" id="CreateIssue" action="<%=insertURL%>">
+<labkey:form method="POST" id="CreateIssue" action="<%=insertURL%>">
     <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/>
     <input type="hidden" name="body" value="<%=h(commentTextStr)%>"/>
     <input type="hidden" name="title" value="<%=h(issue.getTitle())%>"/>
@@ -270,4 +271,4 @@
     <input type="hidden" name="assignedTo" value="<%=issue.getAssignedTo()%>"/>
     <input type="hidden" name="priority" tabindex="2" value="<%=issue.getPriority()%>"/>
     <input type="hidden" name="related" value="<%=issue.getIssueId()%>"/>
-</form>
+</labkey:form>

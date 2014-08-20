@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
-<%@ page import="java.util.Set" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
@@ -32,7 +31,7 @@
 
 <labkey:errors/>
 
-<form action="<%=h(buildURL(AdminController.GetSchemaXmlDocAction.class))%>" method="get">
+<labkey:form action="<%=h(buildURL(AdminController.GetSchemaXmlDocAction.class))%>" method="get">
     <table>
         <tr class="labkey-wp-header"><th colspan=2 align=center>Database Tools</th></tr>
         <tr><td>Check table consistency:&nbsp;</td>
@@ -61,5 +60,5 @@
         <%= button("Cancel").href(urlProvider(AdminUrls.class).getAdminConsoleURL()) %>  </td></tr>
         <tr><td></td><td></td></tr>
     </table>
-</form><br/><br/>
+</labkey:form><br/><br/>
 

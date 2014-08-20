@@ -59,7 +59,7 @@
 </table>
 <%  } %>
 
-<form action="" method="post" onsubmit="return confirm('Updating will replace all existing data with a new set of data. Continue?');">
+<labkey:form action="" method="post" onsubmit="return confirm('Updating will replace all existing data with a new set of data. Continue?');">
     <input type="hidden" name="updateSnapshot" value="true">
     <table>
         <tr><td>&nbsp;</td></tr>
@@ -74,4 +74,4 @@
 <%      } %>
         </tr>
     </table>
-</form>
+</labkey:form>

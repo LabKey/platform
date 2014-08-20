@@ -36,6 +36,7 @@
 <%@ page import="java.util.Comparator" %>
 <%@ page import="java.util.List" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
     String groupName(Group g)
     {
@@ -132,7 +133,7 @@ else
 }
 %>
 
-<form id="datasetSecurityForm" action="<%=h(buildURL(SecurityController.ApplyDatasetPermissionsAction.class))%>" method="POST">
+<labkey:form id="datasetSecurityForm" action="<%=h(buildURL(SecurityController.ApplyDatasetPermissionsAction.class))%>" method="POST">
 <%
     String redir = (String)getViewContext().get("redirect");
     if (redir != null)
@@ -257,7 +258,7 @@ else
             %>
             <td><%= button("Clear All").href("#").onClick("return setAllSelections('None');") %></td>
         </tr></table>
-</form>
+</labkey:form>
 
 <script type="text/javascript">
 function setAllSelections(value)

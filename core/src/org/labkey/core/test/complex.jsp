@@ -26,6 +26,7 @@
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Enumeration" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
     void errorRow(JspWriter out, String path) throws IOException
@@ -48,7 +49,7 @@
     assert enctype.equals("multipart/form-data") || enctype.equals("application/x-www-form-urlencoded");
 %>
 
-<form enctype="<%=text(enctype)%>" method="POST">
+<labkey:form enctype="<%=text(enctype)%>" method="POST">
 
     <%=formatErrorsForPath("form")%>
 
@@ -90,7 +91,7 @@
     <% } %>
     <%=formatMissedErrors("form")%><br>
     <%= button("Submit").submit(true) %>
-</form>
+</labkey:form>
 <%--
 
 

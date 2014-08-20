@@ -36,7 +36,7 @@
     </p>
 </div>
 
-<form method="post">
+<labkey:form method="post">
     <table>
         <tr>
             <td class="labkey-form-label"><label for="shortURLTextField">Short URL</label><%= helpPopup("Short URL", "The unique name for this short URL")%></td>
@@ -51,4 +51,4 @@
             <td><%= button("Submit").submit(true) %></td>
         </tr>
     </table>
-</form>
+</labkey:form>

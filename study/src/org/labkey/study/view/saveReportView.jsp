@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.study.controllers.reports.ReportsController" %>
 <%@ page import="org.springframework.validation.ObjectError" %>
 <%@ page import="java.util.List" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <!-- saveReportView.jsp -->
 
@@ -64,7 +65,7 @@
 %>
 </table>
 
-<form method="post" action="<%=h(new ActionURL(ReportsController.SaveReportViewAction.class, getContainer()))%>" onsubmit="return validateForm();">
+<labkey:form method="post" action="<%=new ActionURL(ReportsController.SaveReportViewAction.class, getContainer())%>" onsubmit="return validateForm();">
     <input type="hidden" name="<%=QueryParam.schemaName%>" value="<%=StringUtils.trimToEmpty(bean.getSchemaName())%>">
     <input type="hidden" name="<%=QueryParam.queryName%>" value="<%=StringUtils.trimToEmpty(bean.getQueryName())%>">
     <input type="hidden" name="<%=QueryParam.viewName%>" value="<%=StringUtils.trimToEmpty(bean.getViewName())%>">
@@ -134,4 +135,4 @@
     }
 %>
     </table>
-</form><hr/>
+</labkey:form><hr/>

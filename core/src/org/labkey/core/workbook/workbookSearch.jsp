@@ -18,23 +18,24 @@
 <%@ page import="org.labkey.api.data.Container" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.core.CoreController" %>
+<%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     Container container = getContainer();
 %>
 <table><tr>
 <td>
-<form method="GET" action="<%=new ActionURL(CoreController.LookupWorkbookAction.class, container)%>">
+<labkey:form method="GET" action="<%=new ActionURL(CoreController.LookupWorkbookAction.class, container)%>">
     Jump To Workbook: <input type="text" id="wbsearch-id" name="id" size="10" value=""/>
     <%= button("Go").submit(true) %>
-</form>
+</labkey:form>
 </td><td style="padding-left:20px;">
-<form method="GET" action="<%=new ActionURL("search", "search", container)%>">
+<labkey:form method="GET" action='<%=new ActionURL("search", "search", container)%>'>
     Search Workbooks: <input type="text" id="wbtextsearch-id" name="q" size="40" value=""/>
     <input type="hidden" name="container" value="<%=h(container.getId())%>"/>
     <input type="hidden" name="includeSubfolders" value="1"/>
     <%= button("Search").submit(true) %>
-</form>
+</labkey:form>
 </td></tr></table>
 <script type="text/javascript">
     Ext.onReady(function(){
