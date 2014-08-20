@@ -262,7 +262,12 @@ var f = new LABKEY.ext.FormPanel({
         <% } %>
         grid,
         metaDataTextArea,
-        tableText
+        tableText,
+        {
+            inputType: 'hidden',
+            name: 'X-LABKEY-CSRF',
+            value: LABKEY.CSRF
+        }
     ],
     buttons:[
         {text:'<%=text(bean.isInsert() ? "Create" : "Update")%>', type:'submit', handler:submit},
