@@ -1650,7 +1650,7 @@ groupByLoop:
         String pkName = keys.iterator().next();
         for (SelectColumn sc : _columns.values())
         {
-            QExpr expr = (QField)sc.getResolvedField();
+            QExpr expr = sc.getResolvedField();
             if (expr instanceof QField)
             {
                 QField f = (QField) expr;
