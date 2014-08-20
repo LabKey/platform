@@ -58,7 +58,7 @@
         {
             boolean selected = keyword.isDefault();
 %>
-        <tr><td><%=selected ? "<b>" + h(keyword.getKeyword()) + "</b>" : h(keyword.getKeyword())%></td><td><%=textLink("delete", "javascript:callAction('deleteKeyword', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", null, delete)%>&nbsp;<%
+        <tr><td><%=text(selected ? "<b>" + h(keyword.getKeyword()) + "</b>" : h(keyword.getKeyword()))%></td><td><%=textLink("delete", "javascript:callAction('deleteKeyword', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", null, delete)%>&nbsp;<%
             if (selected)
             {
                 %><%=textLink("clear", "javascript:callAction('clearKeywordDefault', '" + formId + "', " + PageFlowUtil.jsString(keyword.getKeyword()) + ")", "", null, clear)%><%
@@ -84,7 +84,7 @@
     {
 %>
 <td align="center">
-    <labkey:form method="POST" name="add<%=h(kwp.type.getColumnName())%>" action="<%=h(buildURL(IssuesController.AddKeywordAction.class))%>">
+    <labkey:form method="POST" name='<%=h("add" + kwp.type.getColumnName())%>' action="<%=h(buildURL(IssuesController.AddKeywordAction.class))%>">
     <input name="keyword" value=""><br>
         <%= button("Add " + kwp.name).submit(true) %><br>
     <input type="hidden" name="type" value="<%=kwp.type.getOrdinal()%>">
