@@ -155,33 +155,41 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private boolean _isMvIndicatorColumn = false;
     private boolean _isRawValueColumn = false;
 
+    // Default column logging is no logging;
+    private ColumnLogging _columnLogging;
+
+    // Always call this constructor
+    public ColumnInfo(FieldKey key, TableInfo parentTable)
+    {
+        this.fieldKey = key;
+        this.parentTable = parentTable;
+        this._columnLogging = new ColumnLogging(key, parentTable);
+    }
 
     public ColumnInfo(FieldKey key)
     {
-        this.fieldKey = key;
+        this(key, null);
         this.name = null;
     }
 
     public ColumnInfo(String name)
     {
-        if (null == name)
-            return;
+        this(null != name ? new FieldKey(null,name) : null, null);
 //        assert -1 == name.indexOf('/');
-        this.fieldKey = new FieldKey(null,name);
     }
 
     public ColumnInfo(String name, JdbcType t)
     {
+        this(null != name ? new FieldKey(null,name) : null, null);
         if (null == name)
             return;
 //        assert -1 == name.indexOf('/');
-        this.fieldKey = new FieldKey(null,name);
         jdbcType = t;
     }
     
     public ColumnInfo(ResultSetMetaData rsmd, int col) throws SQLException
     {
-        this.fieldKey = new FieldKey(null, rsmd.getColumnLabel(col));
+        this(new FieldKey(null, rsmd.getColumnLabel(col)), null);
         this.setSqlTypeName(rsmd.getColumnTypeName(col));
         this.jdbcType = JdbcType.valueOf(rsmd.getColumnType(col));
     }
@@ -189,20 +197,12 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public ColumnInfo(String name, TableInfo parentTable)
     {
 //        assert -1 == name.indexOf('/');
-        this.fieldKey = new FieldKey(null, name);
-        this.parentTable = parentTable;
+        this(new FieldKey(null, name), parentTable);
     }
 
-    public ColumnInfo(FieldKey key, TableInfo parentTable)
-    {
-        this.fieldKey = key;
-        this.parentTable = parentTable;
-    }
-    
     public ColumnInfo(FieldKey key, TableInfo parentTable, JdbcType type)
     {
-        this.fieldKey = key;
-        this.parentTable = parentTable;
+        this(key, parentTable);
         this.setJdbcType(type);
     }
 
@@ -309,6 +309,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         // Consider: it does not always make sense to preserve the "isKeyField" property.
         setKeyField(col.isKeyField());
+        setColumnLogging(col.getColumnLogging());
     }
 
 
@@ -1817,6 +1818,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         checkLocked();
         this.parentTable = parentTable;
+        this._columnLogging.setOriginalTableName(null != parentTable ? parentTable.getName() : "");
     }
 
     public String getColumnName()
@@ -2002,5 +2004,15 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     public boolean isAdditionalQueryColumn()
     {
         return false;
+    }
+
+    protected void setColumnLogging(ColumnLogging columnLogging)
+    {
+        _columnLogging = columnLogging;
+    }
+
+    public ColumnLogging getColumnLogging()
+    {
+        return _columnLogging;
     }
 }

@@ -230,6 +230,7 @@ api/src/org/labkey/api/data/CacheableWriter.java -text
 api/src/org/labkey/api/data/CachedResultSet.java -text
 api/src/org/labkey/api/data/CachedResultSetMetaData.java -text
 api/src/org/labkey/api/data/CachedResultSets.java -text
+api/src/org/labkey/api/data/ColumnLogging.java -text
 api/src/org/labkey/api/data/ColumnRenderProperties.java -text
 api/src/org/labkey/api/data/CompareType.java -text
 api/src/org/labkey/api/data/ConditionalFormat.java -text

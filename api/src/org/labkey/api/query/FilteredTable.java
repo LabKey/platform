@@ -415,12 +415,7 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
     {
         assert column.getParentTable() == getRealTable() : "Column is not from the same \"real\" table";
         ColumnInfo ret = new AliasedColumn(this, name, column);
-        // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
-        // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table
-        if (column.isKeyField() && getColumnNameSet().contains(column.getName()))
-        {
-            ret.setKeyField(false);
-        }
+        propagateKeyField(column, ret);
         addColumn(ret);
         return ret;
     }
@@ -430,6 +425,15 @@ public class FilteredTable<SchemaType extends UserSchema> extends AbstractTableI
         return addWrapColumn(column.getName(), column);
     }
 
+    public void propagateKeyField(ColumnInfo orig, ColumnInfo wrapped)
+    {
+        // Use getColumnNameSet() instead of getColumn() because we don't want to go through the resolveColumn()
+        // codepath, which is potentially expensive and doesn't reflect the "real" columns that are part of this table
+        if (orig.isKeyField() && getColumnNameSet().contains(orig.getName()))
+        {
+            wrapped.setKeyField(false);
+        }
+    }
 
     protected TableInfo getFromTable()
     {

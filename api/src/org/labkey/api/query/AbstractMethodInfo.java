@@ -53,6 +53,12 @@ abstract public class AbstractMethodInfo implements MethodInfo
             {
                 return getSQL(tableAlias, getParentTable().getSchema(), getSQLFragments(arguments));
             }
+
+            @Override
+            public ColumnLogging getColumnLogging()
+            {
+                return arguments.length > 0 ? arguments[0].getColumnLogging() : super.getColumnLogging();
+            }
         };
     }
 
