@@ -18,7 +18,6 @@
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.data.Container" %>
-<%@ page import="org.labkey.api.data.ContainerManager" %>
 <%@ page import="org.labkey.api.reports.Report" %>
 <%@ page import="org.labkey.api.reports.report.JavaScriptReport" %>
 <%@ page import="org.labkey.api.reports.report.RReport" %>
@@ -28,6 +27,7 @@
 <%@ page import="org.labkey.api.reports.report.view.AjaxScriptReportView.Mode" %>
 <%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page import="org.labkey.api.reports.report.view.ScriptReportBean" %>
+<%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.thumbnail.DynamicThumbnailProvider" %>
@@ -43,7 +43,6 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
-<%@ page import="org.labkey.api.security.User" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -63,47 +62,12 @@
     User user = getUser();
     ScriptReportBean bean = me.getModelBean();
     ScriptReport report = (ScriptReport) bean.getReport(ctx);
-//    List<Report> sharedReports = report.getAvailableSharedScripts(ctx, bean);
     List<String> includedReports = bean.getIncludedReports();
     String helpHtml = report.getDesignerHelpHtml();
     boolean readOnly = bean.isReadOnly() || !report.canEdit(user, c);
     Mode mode = bean.getMode();
-//    boolean sourceAndHelp = mode.showSourceAndHelp(user) || bean.isSourceTabVisible();
-
-    // a report is inherited if it has been shared from a parent (or shared) folder
-    boolean inherited = report.getReportId() != null ? report.getDescriptor().isInherited(c) : false;
-    StringBuilder inheritedWarningMsg = new StringBuilder();
-    boolean isSharedFolder = c.equals(ContainerManager.getSharedContainer());
-
-    if (inherited)
-    {
-        Container srcContainer = ContainerManager.getForId(report.getContainerId());
-        ActionURL url = null;
-        if (srcContainer != null)
-            url = ctx.cloneActionURL().setContainer(srcContainer);
-
-        inheritedWarningMsg.append("<div class='labkey-warning-messages'>This view has been made available from a different ");
-        if (url != null)
-            inheritedWarningMsg.append("<a href='").append(url.getLocalURIString()).append("'>folder</a>");
-        else
-            inheritedWarningMsg.append("folder");
-
-        inheritedWarningMsg.append(" and cannot be edited here. The view can only be edited from the ");
-        if (url != null)
-            inheritedWarningMsg.append("<a href='").append(url.getLocalURIString()).append("'>folder</a>");
-        else
-            inheritedWarningMsg.append("folder");
-        inheritedWarningMsg.append(" it was created in.</div>");
-    }
-
-    // Mode determines whether we need unique IDs on all the HTML elements
-//    String uid = mode.getUniqueID();
-//    String scriptId = "script" + uid;
-//    String viewDivId = "viewDiv" + uid;
-
     String knitrFormat = bean.getKnitrFormat() != null ? bean.getKnitrFormat() : "None";
     boolean useGetDataApi = report.getReportId() == null || bean.isUseGetDataApi();
-
     ActionURL saveURL = urlProvider(ReportUrls.class).urlAjaxSaveScriptReport(c);
     ActionURL initialViewURL = urlProvider(ReportUrls.class).urlViewScriptReport(c);
     ActionURL baseViewURL = initialViewURL.clone();
@@ -132,10 +96,10 @@
     String renderId = "report-design-panel-" + UniqueID.getRequestScopedUID(HttpView.currentRequest());
     ObjectMapper jsonMapper = new ObjectMapper();
 
-    List<Map<String, Object>> sharedScripts = new ArrayList<Map<String, Object>>();
+    List<Map<String, Object>> sharedScripts = new ArrayList<>();
     for (Report r : report.getAvailableSharedScripts(ctx, bean))
     {
-        Map<String, Object> script = new HashMap<String, Object>();
+        Map<String, Object> script = new HashMap<>();
         ReportDescriptor desc = r.getDescriptor();
 
         script.put("name", desc.getReportName());
@@ -146,7 +110,7 @@
     }
 
     // TODO, add an action to get this information
-    Map<String, Object> reportConfig = new HashMap<String, Object>();
+    Map<String, Object> reportConfig = new HashMap<>();
 
     reportConfig.put("schemaName", bean.getSchemaName());
     reportConfig.put("queryName", bean.getQueryName());
@@ -182,7 +146,7 @@
 
 %>
 <labkey:scriptDependency/>
-
+<div id="<%= h(renderId)%>" class="script-report-editor"></div>
 <script type="text/javascript">
     Ext4.onReady(function(){
 
@@ -217,5 +181,3 @@
         Ext4.EventManager.onWindowResize(_resize);
     });
 </script>
-
-<div id="<%= h(renderId)%>" class="script-report-editor"></div>
