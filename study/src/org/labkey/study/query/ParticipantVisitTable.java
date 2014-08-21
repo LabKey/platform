@@ -43,7 +43,7 @@ public class ParticipantVisitTable extends BaseStudyTable
 {
     Map<String, ColumnInfo> _demographicsColumns;
 
-    public ParticipantVisitTable(StudyQuerySchema schema, boolean hideDataSets)
+    public ParticipantVisitTable(StudyQuerySchema schema, boolean hideDatasets)
     {
         super(schema, StudySchema.getInstance().getTableInfoParticipantVisit());
         _setContainerFilter(schema.getDefaultContainerFilter());
@@ -137,8 +137,8 @@ public class ParticipantVisitTable extends BaseStudyTable
             if (dataset.getKeyPropertyName() != null)
                 continue;
 
-            ColumnInfo datasetColumn = createDataSetColumn(name, dataset, participantSequenceNumColumn);
-            datasetColumn.setHidden(hideDataSets);
+            ColumnInfo datasetColumn = createDatasetColumn(name, dataset, participantSequenceNumColumn);
+            datasetColumn.setHidden(hideDatasets);
 
             // Don't add demographics datasets, but stash it for backwards compatibility with <11.3 queries if needed.
             if (dataset.isDemographicData())
@@ -149,7 +149,7 @@ public class ParticipantVisitTable extends BaseStudyTable
     }
 
 
-    protected ColumnInfo createDataSetColumn(String name, final DataSetDefinition dsd, ColumnInfo participantSequenceNumColumn)
+    protected ColumnInfo createDatasetColumn(String name, final DataSetDefinition dsd, ColumnInfo participantSequenceNumColumn)
     {
         ColumnInfo ret = new AliasedColumn(name, participantSequenceNumColumn);
         ret.setFk(new PVForeignKey(dsd));

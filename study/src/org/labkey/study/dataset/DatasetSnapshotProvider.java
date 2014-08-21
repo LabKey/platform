@@ -119,7 +119,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
     private DatasetSnapshotProvider()
     {
-        DatasetManager.addDataSetListener(this);
+        DatasetManager.addDatasetListener(this);
         ParticipantGroupManager.addCategoryListener(this);
     }
 

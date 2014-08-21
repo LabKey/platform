@@ -4946,20 +4946,20 @@ public class SpecimenController extends BaseStudyController
 
     public static class ManageCommentsForm
     {
-        private Integer participantCommentDataSetId;
+        private Integer participantCommentDatasetId;
         private String participantCommentProperty;
-        private Integer participantVisitCommentDataSetId;
+        private Integer participantVisitCommentDatasetId;
         private String participantVisitCommentProperty;
         private boolean _reshow;
 
-        public Integer getParticipantCommentDataSetId()
+        public Integer getParticipantCommentDatasetId()
         {
-            return participantCommentDataSetId;
+            return participantCommentDatasetId;
         }
 
-        public void setParticipantCommentDataSetId(Integer participantCommentDataSetId)
+        public void setParticipantCommentDatasetId(Integer participantCommentDatasetId)
         {
-            this.participantCommentDataSetId = participantCommentDataSetId;
+            this.participantCommentDatasetId = participantCommentDatasetId;
         }
 
         public String getParticipantCommentProperty()
@@ -4972,14 +4972,14 @@ public class SpecimenController extends BaseStudyController
             this.participantCommentProperty = participantCommentProperty;
         }
 
-        public Integer getParticipantVisitCommentDataSetId()
+        public Integer getParticipantVisitCommentDatasetId()
         {
-            return participantVisitCommentDataSetId;
+            return participantVisitCommentDatasetId;
         }
 
-        public void setParticipantVisitCommentDataSetId(Integer participantVisitCommentDataSetId)
+        public void setParticipantVisitCommentDatasetId(Integer participantVisitCommentDatasetId)
         {
-            this.participantVisitCommentDataSetId = participantVisitCommentDataSetId;
+            this.participantVisitCommentDatasetId = participantVisitCommentDatasetId;
         }
 
         public String getParticipantVisitCommentProperty()
@@ -5010,9 +5010,9 @@ public class SpecimenController extends BaseStudyController
         {
             String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
             final Study study = BaseStudyController.getStudyRedirectIfNull(getContainer());
-            if (form.getParticipantCommentDataSetId() != null && form.getParticipantCommentDataSetId() != -1)
+            if (form.getParticipantCommentDatasetId() != null && form.getParticipantCommentDatasetId() != -1)
             {
-                DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantCommentDataSetId());
+                DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantCommentDatasetId());
                 if (def != null && !def.isDemographicData())
                 {
                     errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + " comments must be a demographics dataset.");
@@ -5024,9 +5024,9 @@ public class SpecimenController extends BaseStudyController
 
             if (study.getTimepointType() != TimepointType.CONTINUOUS)
             {
-                if (form.getParticipantVisitCommentDataSetId() != null && form.getParticipantVisitCommentDataSetId() != -1)
+                if (form.getParticipantVisitCommentDatasetId() != null && form.getParticipantVisitCommentDatasetId() != -1)
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantVisitCommentDataSetId());
+                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, form.getParticipantVisitCommentDatasetId());
                     if (def != null && def.isDemographicData())
                     {
                         errors.reject(ERROR_MSG, "The Dataset specified to contain " + subjectNoun + "/Visit comments cannot be a demographics dataset.");
@@ -5048,12 +5048,12 @@ public class SpecimenController extends BaseStudyController
 
             if (!form.isReshow())
             {
-                form.setParticipantCommentDataSetId(study.getParticipantCommentDataSetId());
+                form.setParticipantCommentDatasetId(study.getParticipantCommentDatasetId());
                 form.setParticipantCommentProperty(study.getParticipantCommentProperty());
 
                 if (study.getTimepointType() != TimepointType.CONTINUOUS)
                 {
-                    form.setParticipantVisitCommentDataSetId(study.getParticipantVisitCommentDataSetId());
+                    form.setParticipantVisitCommentDatasetId(study.getParticipantVisitCommentDatasetId());
                     form.setParticipantVisitCommentProperty(study.getParticipantVisitCommentProperty());
                 }
             }
@@ -5070,13 +5070,13 @@ public class SpecimenController extends BaseStudyController
             StudyImpl study = getStudy().createMutable();
 
             // participant comment dataset
-            study.setParticipantCommentDataSetId(form.getParticipantCommentDataSetId());
+            study.setParticipantCommentDatasetId(form.getParticipantCommentDatasetId());
             study.setParticipantCommentProperty(form.getParticipantCommentProperty());
 
             // participant/visit comment dataset
             if (study.getTimepointType() != TimepointType.CONTINUOUS)
             {
-                study.setParticipantVisitCommentDataSetId(form.getParticipantVisitCommentDataSetId());
+                study.setParticipantVisitCommentDatasetId(form.getParticipantVisitCommentDatasetId());
                 study.setParticipantVisitCommentProperty(form.getParticipantVisitCommentProperty());
             }
 
@@ -5177,11 +5177,11 @@ public class SpecimenController extends BaseStudyController
 
             if (form.getVisitId() != 0)
             {
-                def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDataSetId());
+                def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDatasetId());
             }
             else
             {
-                def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDataSetId());
+                def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDatasetId());
             }
 
             if (def != null)

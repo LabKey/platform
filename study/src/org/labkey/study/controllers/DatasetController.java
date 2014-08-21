@@ -325,7 +325,7 @@ public class DatasetController extends BaseStudyController
                 StudyManager.getInstance().getVisitManager(getStudyRedirectIfNull()).updateParticipantVisits(getUser());
             }
 
-            if (safeEquals(form.getDatasetId(), getStudyRedirectIfNull().getParticipantCohortDataSetId()))
+            if (safeEquals(form.getDatasetId(), getStudyRedirectIfNull().getParticipantCohortDatasetId()))
                 CohortManager.getInstance().updateParticipantCohorts(getUser(), getStudyRedirectIfNull());
 
             return true;

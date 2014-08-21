@@ -94,7 +94,7 @@ public class ReportManager implements DatasetManager.DatasetListener
 
     private ReportManager()
     {
-        DatasetManager.addDataSetListener(this);
+        DatasetManager.addDatasetListener(this);
     }
 
     private DbSchema getSchema()

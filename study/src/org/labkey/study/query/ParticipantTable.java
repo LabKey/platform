@@ -63,7 +63,7 @@ public class ParticipantTable extends BaseStudyTable
 
     private static final String ALIAS_INNER_QUERY_ALIAS = "X";
 
-    public ParticipantTable(StudyQuerySchema schema, boolean hideDataSets)
+    public ParticipantTable(StudyQuerySchema schema, boolean hideDatasets)
     {
         super(schema, StudySchema.getInstance().getTableInfoParticipant());
         setName(StudyService.get().getSubjectTableName(schema.getContainer()));
@@ -97,7 +97,7 @@ public class ParticipantTable extends BaseStudyTable
             }
         });
         addColumn(datasetColumn);
-        datasetColumn.setHidden(hideDataSets);
+        datasetColumn.setHidden(hideDatasets);
 
         addContainerColumn();
 

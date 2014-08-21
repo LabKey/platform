@@ -266,7 +266,7 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
                 }
             }
 
-            studyManager.updateDataSetDefinition(getUser(), updated, errors);
+            studyManager.updateDatasetDefinition(getUser(), updated, errors);
 
             return errors;
         }

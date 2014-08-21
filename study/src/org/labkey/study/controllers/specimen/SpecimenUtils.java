@@ -259,9 +259,9 @@ public class SpecimenUtils
                 StudyImpl study = StudyManager.getInstance().getStudy(getContainer());
                 String subjectNoun = StudyService.get().getSubjectNounSingular(getContainer());
                 boolean addSep = true;
-                if (study.getParticipantCommentDataSetId() != null && study.getParticipantCommentDataSetId() != -1)
+                if (study.getParticipantCommentDatasetId() != null && study.getParticipantCommentDatasetId() != -1)
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDataSetId());
+                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDatasetId());
                     if (def != null && def.canWrite(getUser()))
                     {
                         if (addSep)
@@ -270,14 +270,14 @@ public class SpecimenUtils
                             addSep = false;
                         }
                         NavTree ptidComments = commentsMenuButton.addMenuItem("Manage " + PageFlowUtil.filter(subjectNoun) + " Comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
-                                addParameter("datasetId", study.getParticipantCommentDataSetId()));
+                                addParameter("datasetId", study.getParticipantCommentDatasetId()));
                         ptidComments.setId("Comments:SetParticipant");
                     }
                 }
 
-                if (study.getParticipantVisitCommentDataSetId() != null && study.getParticipantVisitCommentDataSetId() != -1)
+                if (study.getParticipantVisitCommentDatasetId() != null && study.getParticipantVisitCommentDatasetId() != -1)
                 {
-                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDataSetId());
+                    DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDatasetId());
                     if (def != null && def.canWrite(getUser()))
                     {
                         if (addSep)
@@ -286,7 +286,7 @@ public class SpecimenUtils
                             addSep = false;
                         }
                         NavTree ptidComments = commentsMenuButton.addMenuItem("Manage " + PageFlowUtil.filter(subjectNoun) + "/Visit Comments", new ActionURL(StudyController.DatasetAction.class, getContainer()).
-                                addParameter("datasetId", study.getParticipantVisitCommentDataSetId()));
+                                addParameter("datasetId", study.getParticipantVisitCommentDatasetId()));
                         ptidComments.setId("Comments:SetParticipantVisit");
                     }
                 }

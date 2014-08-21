@@ -1043,7 +1043,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 //        if (!canUpdateDefinition(user))
         if (!getDefinitionContainer().getId().equals(getContainer().getId()))
             throw new IllegalStateException("Can't save dataset in this folder...");
-        StudyManager.getInstance().updateDataSetDefinition(user, this);
+        StudyManager.getInstance().updateDatasetDefinition(user, this);
         modifiedDates.remove(getEntityId());
     }
 

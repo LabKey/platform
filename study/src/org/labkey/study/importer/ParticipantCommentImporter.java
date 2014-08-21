@@ -18,7 +18,6 @@ package org.labkey.study.importer;
 
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.model.StudyImpl;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.xml.StudyDocument;
 import org.springframework.validation.BindException;
 
@@ -42,13 +41,13 @@ public class ParticipantCommentImporter implements InternalStudyImporter
         {
             if (commentsXml.isSetParticipantCommentDatasetId())
             {
-                study.setParticipantCommentDataSetId(commentsXml.getParticipantCommentDatasetId());
+                study.setParticipantCommentDatasetId(commentsXml.getParticipantCommentDatasetId());
                 study.setParticipantCommentProperty(commentsXml.getParticipantCommentDatasetProperty());
             }
 
             if (commentsXml.isSetParticipantVisitCommentDatasetId())
             {
-                study.setParticipantVisitCommentDataSetId(commentsXml.getParticipantVisitCommentDatasetId());
+                study.setParticipantVisitCommentDatasetId(commentsXml.getParticipantVisitCommentDatasetId());
                 study.setParticipantVisitCommentProperty(commentsXml.getParticipantVisitCommentDatasetProperty());
             }
         }

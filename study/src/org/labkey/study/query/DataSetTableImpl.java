@@ -123,7 +123,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
         List<FieldKey> defaultVisibleCols = new ArrayList<>();
 
         HashSet<String> standardURIs = new HashSet<>();
-        for (PropertyDescriptor pd :  DataSetDefinition.getStandardPropertiesSet())
+        for (PropertyDescriptor pd : DataSetDefinition.getStandardPropertiesSet())
             standardURIs.add(pd.getPropertyURI());
 
         ActionURL updateURL = new ActionURL(DatasetController.UpdateAction.class, dsd.getContainer());

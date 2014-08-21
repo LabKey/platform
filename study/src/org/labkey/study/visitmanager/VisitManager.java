@@ -135,7 +135,7 @@ public abstract class VisitManager
         }
         updateVisitTable(user);
 
-        Integer cohortDatasetId = _study.getParticipantCohortDataSetId();
+        Integer cohortDatasetId = _study.getParticipantCohortDatasetId();
         // Only bother updating cohort assignment if we're doing automatic cohort assignment and there's an edit
         // to the dataset that specifies the cohort
         if (!_study.isManualCohortAssignment() &&

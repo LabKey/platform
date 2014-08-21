@@ -202,8 +202,8 @@
 
             //Alias mapping components start here
 
-            var aliasDataSetId = <%=aliasDatasetId%>;
-            var previousValue = (aliasDataSetId != -1);
+            var aliasDatasetId = <%=aliasDatasetId%>;
+            var previousValue = (aliasDatasetId != -1);
             Ext4.define('datasetModel',{
                 extend : 'Ext.data.Model',
                 fields : [
@@ -342,7 +342,7 @@
                 text : 'Import Aliases',
                 disabled : !previousValue,
                 handler : function() {
-                    document.location = LABKEY.ActionURL.buildURL('study', 'import', null, {datasetId : aliasDataSetId});
+                    document.location = LABKEY.ActionURL.buildURL('study', 'import', null, {datasetId : aliasDatasetId});
                 }
             });
             var manageButton = Ext4.create('Ext.button.Button', {
@@ -372,7 +372,7 @@
                                 displayDoneChangingMessage("Save Alias Settings", <%=q(subjectNounSingular)%> + " alias settings saved successfully.");
                             else
                                 displayDoneChangingMessage("Clear Alias Settings", <%=q(subjectNounSingular)%> + " alias settings cleared.")
-                            aliasDataSetId = datasetId;
+                            aliasDatasetId = datasetId;
                             if(datasetId != -1)
                                 importButton.setDisabled(false);
 
@@ -399,7 +399,7 @@
                 text : 'Clear Alias Settings',
                 handler :  function(){
                     changeIdMapping(-1, "", "");
-                    aliasDataSetId = -1;
+                    aliasDatasetId = -1;
                     importButton.setDisabled(true);
                     dataCombo.setValue(null);
                     aliasCombo.setValue(null);

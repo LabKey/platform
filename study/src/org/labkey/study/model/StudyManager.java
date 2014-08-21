@@ -389,7 +389,7 @@ public class StudyManager
 
     private class DatasetHelper
     {
-        // NOTE: We really don't want to have multiple instances of DataSetDefinition's in-memory, only return the
+        // NOTE: We really don't want to have multiple instances of DataSetDefinitions in-memory, only return the
         // datasets that are cached under container.containerId/ds.entityId
 
         private QueryHelper<DataSetDefinition> helper = new QueryHelper<DataSetDefinition>(
@@ -672,16 +672,16 @@ public class StudyManager
     }
 
     @Deprecated
-    public void updateDataSetDefinition(User user, DataSetDefinition datasetDefinition)
+    public void updateDatasetDefinition(User user, DataSetDefinition datasetDefinition)
     {
         List<String> errors = new ArrayList<>();
-        updateDataSetDefinition(user, datasetDefinition, errors);
+        updateDatasetDefinition(user, datasetDefinition, errors);
         if (!errors.isEmpty())
             throw new IllegalArgumentException(errors.get(0));
     }
 
 
-    public boolean updateDataSetDefinition(User user, DataSetDefinition datasetDefinition, List<String> errors)
+    public boolean updateDatasetDefinition(User user, DataSetDefinition datasetDefinition, List<String> errors)
     {
         if (datasetDefinition.isShared())
         {
@@ -1605,13 +1605,13 @@ public class StudyManager
         return label;
     }
 
-    public void createVisitDataSetMapping(User user, Container container, int visitId, int datasetId, boolean isRequired) throws SQLException
+    public void createVisitDatasetMapping(User user, Container container, int visitId, int datasetId, boolean isRequired) throws SQLException
     {
         VisitDataSet vds = new VisitDataSet(container, datasetId, visitId, isRequired);
         Table.insert(user, SCHEMA.getTableInfoVisitMap(), vds);
     }
 
-    public VisitDataSet getVisitDataSetMapping(Container container, int visitRowId, int datasetId) throws SQLException
+    public VisitDataSet getVisitDatasetMapping(Container container, int visitRowId, int datasetId) throws SQLException
     {
         SimpleFilter filter = SimpleFilter.createContainerFilter(container);
         filter.addCondition(FieldKey.fromParts("VisitRowId"), visitRowId);
@@ -1938,7 +1938,7 @@ public class StudyManager
         if (study == null)
             return false;
 
-        Integer cohortDatasetId = study.getParticipantCohortDataSetId();
+        Integer cohortDatasetId = study.getParticipantCohortDatasetId();
         if (study.isManualCohortAssignment() || null == cohortDatasetId || -1 == cohortDatasetId)
         {
             // If we're not reading from a dataset for cohort definition,
@@ -2171,8 +2171,8 @@ public class StudyManager
             new SqlExecutor(StudySchema.getInstance().getSchema()).execute("UPDATE study.dataset SET entityId=? WHERE container=? and datasetid=? and entityid IS NULL", ds.getEntityId(), ds.getContainer().getId(), ds.getDatasetId());
             _datasetHelper.clearCache(ds);
             ds = _datasetHelper.get(s.getContainer(), id);
-            // calling updateDataSetDefinition() during load (getDatasetDefinition()) may cause recursion problems
-            //updateDataSetDefinition(null, ds);
+            // calling updateDatasetDefinition() during load (getDatasetDefinition()) may cause recursion problems
+            //updateDatasetDefinition(null, ds);
         }
         if (null != ds)
             return ds;
@@ -2378,7 +2378,7 @@ public class StudyManager
         if (visit.getContainer() == null)
             throw new IllegalStateException("Visit has no container");
 
-        final List<VisitDataSet> visitDataSets = new ArrayList<>();
+        final List<VisitDataSet> visitDatasets = new ArrayList<>();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_VISIT,
                 visit.getContainer(), visit.getRowId()).forEach(new Selector.ForEachBlock<ResultSet>()
@@ -2388,17 +2388,17 @@ public class StudyManager
             {
                 int datasetId = rs.getInt("DataSetId");
                 boolean isRequired = rs.getBoolean("Required");
-                visitDataSets.add(new VisitDataSet(visit.getContainer(), datasetId, visit.getRowId(), isRequired));
+                visitDatasets.add(new VisitDataSet(visit.getContainer(), datasetId, visit.getRowId(), isRequired));
             }
         });
 
-        return visitDataSets;
+        return visitDatasets;
     }
 
 
     public List<VisitDataSet> getMapping(final DataSet dataset)
     {
-        final List<VisitDataSet> visitDataSets = new ArrayList<>();
+        final List<VisitDataSet> visitDatasets = new ArrayList<>();
 
         new SqlSelector(StudySchema.getInstance().getSchema(), VISITMAP_JOIN_BY_DATASET,
                 dataset.getContainer(), dataset.getDatasetId()).forEach(new Selector.ForEachBlock<ResultSet>()
@@ -2408,25 +2408,25 @@ public class StudyManager
             {
                 int visitRowId = rs.getInt("VisitRowId");
                 boolean isRequired = rs.getBoolean("Required");
-                visitDataSets.add(new VisitDataSet(dataset.getContainer(), dataset.getDatasetId(), visitRowId, isRequired));
+                visitDatasets.add(new VisitDataSet(dataset.getContainer(), dataset.getDatasetId(), visitRowId, isRequired));
 
             }
         });
 
-        return visitDataSets;
+        return visitDatasets;
     }
 
 
-    public void updateVisitDataSetMapping(User user, Container container, int visitId,
+    public void updateVisitDatasetMapping(User user, Container container, int visitId,
                                           int datasetId, VisitDataSetType type) throws SQLException
     {
-        VisitDataSet vds = getVisitDataSetMapping(container, visitId, datasetId);
+        VisitDataSet vds = getVisitDatasetMapping(container, visitId, datasetId);
         if (vds == null)
         {
             if (type != VisitDataSetType.NOT_ASSOCIATED)
             {
                 // need to insert a new VisitMap entry:
-                createVisitDataSetMapping(user, container, visitId,
+                createVisitDatasetMapping(user, container, visitId,
                         datasetId, type == VisitDataSetType.REQUIRED);
             }
         }
@@ -2497,7 +2497,7 @@ public class StudyManager
 
         SecurityPolicyManager.deletePolicy(ds);
 
-        if (safeIntegersEqual(ds.getDatasetId(), study.getParticipantCohortDataSetId()))
+        if (safeIntegersEqual(ds.getDatasetId(), study.getParticipantCohortDatasetId()))
             CohortManager.getInstance().setManualCohortAssignment(study, user, Collections.<String, Integer>emptyMap());
 
         if (performStudyResync)
@@ -3394,7 +3394,7 @@ public class StudyManager
 
         // We need to build the datasets (but not save) before we create the property descriptors so that
         // we can use the unique DomainURI for each dataset as part of the PropertyURI
-        populateDataSetDefEntryMap(study, createDatasetStudy, reader, user, errors, datasetDefEntryMap);
+        populateDatasetDefEntryMap(study, createDatasetStudy, reader, user, errors, datasetDefEntryMap);
         if (errors.hasErrors())
             return false;
 
@@ -3426,7 +3426,7 @@ public class StudyManager
             if (d.isNew)
                 manager.createDataSetDefinition(user, def);
             else if (d.isModified)
-                manager.updateDataSetDefinition(user, def);
+                manager.updateDatasetDefinition(user, def);
 
             if (d.tags != null)
                 ReportPropsManager.get().importProperties(def.getEntityId(), def.getDefinitionContainer(), user, d.tags);
@@ -3517,7 +3517,7 @@ public class StudyManager
     }
 
 
-    private boolean populateDataSetDefEntryMap(StudyImpl study, StudyImpl createDatasetStudy, SchemaReader reader, User user, BindException errors, Map<String, DataSetDefinitionEntry> defEntryMap)
+    private boolean populateDatasetDefEntryMap(StudyImpl study, StudyImpl createDatasetStudy, SchemaReader reader, User user, BindException errors, Map<String, DataSetDefinitionEntry> defEntryMap)
     {
         StudyManager manager = StudyManager.getInstance();
         Container c = study.getContainer();
@@ -4242,7 +4242,7 @@ public class StudyManager
             for (VisitDataSet vds : expectationDataset.getVisitDatasets())
             {
                 VisitDataSetType type = vds.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.NOT_ASSOCIATED;
-                StudyManager.getInstance().updateVisitDataSetMapping(user, study.getContainer(), vds.getVisitRowId(), targetDataset.getDatasetId(), type);
+                StudyManager.getInstance().updateVisitDatasetMapping(user, study.getContainer(), vds.getVisitRowId(), targetDataset.getDatasetId(), type);
             }
 
             String name = expectationDataset.getName();
@@ -4447,7 +4447,7 @@ public class StudyManager
             String domainURI = StudyManager.getInstance().getDomainURI(study.getContainer(), null, dd);
             dd.setTypeURI(domainURI);
             OntologyManager.ensureDomainDescriptor(domainURI, dd.getName(), study.getContainer());
-            StudyManager.getInstance().updateDataSetDefinition(null, dd);
+            StudyManager.getInstance().updateDatasetDefinition(null, dd);
 
             // validator
             Lsid lsidValidator = DefaultPropertyValidator.createValidatorURI(PropertyValidatorType.Range);

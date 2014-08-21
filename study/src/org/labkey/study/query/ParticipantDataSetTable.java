@@ -58,11 +58,11 @@ public class ParticipantDataSetTable extends VirtualTable
             // duplicate labels! see BUG 2206
             if (getColumn(name) != null)
                 continue;
-            addColumn(createDataSetColumn(name, dataset));
+            addColumn(createDatasetColumn(name, dataset));
         }
     }
 
-    protected ColumnInfo createDataSetColumn(String name, final DataSetDefinition def)
+    protected ColumnInfo createDatasetColumn(String name, final DataSetDefinition def)
     {
         ColumnInfo column;
         if (_colParticipantId == null)

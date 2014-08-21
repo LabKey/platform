@@ -36,15 +36,15 @@ public class ParticipantCommentWriter implements InternalStudyWriter
         StudyDocument.Study studyXml = ctx.getXml();
         StudyDocument.Study.Comments comment = studyXml.addNewComments();
 
-        if (study.getParticipantCommentDataSetId() != null && study.getParticipantCommentDataSetId() != -1)
+        if (study.getParticipantCommentDatasetId() != null && study.getParticipantCommentDatasetId() != -1)
         {
-            comment.setParticipantCommentDatasetId(study.getParticipantCommentDataSetId());
+            comment.setParticipantCommentDatasetId(study.getParticipantCommentDatasetId());
             comment.setParticipantCommentDatasetProperty(study.getParticipantCommentProperty());
         }
 
-        if (study.getParticipantVisitCommentDataSetId() != null && study.getParticipantVisitCommentDataSetId() != -1)
+        if (study.getParticipantVisitCommentDatasetId() != null && study.getParticipantVisitCommentDatasetId() != -1)
         {
-            comment.setParticipantVisitCommentDatasetId(study.getParticipantVisitCommentDataSetId());
+            comment.setParticipantVisitCommentDatasetId(study.getParticipantVisitCommentDatasetId());
             comment.setParticipantVisitCommentDatasetProperty(study.getParticipantVisitCommentProperty());
         }
     }

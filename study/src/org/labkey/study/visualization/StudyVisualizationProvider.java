@@ -158,26 +158,26 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         if (!first.isVisitTagQuery() && ! second.isVisitTagQuery())
         {
             // attempt to lookup the dataset using the queryName by label and then by name
-            DataSet firstDataSet = StudyService.get().resolveDataset(first.getContainer(), first.getQueryName());
-            DataSet secondDataSet = StudyService.get().resolveDataset(second.getContainer(), second.getQueryName());
+            DataSet firstDataset = StudyService.get().resolveDataset(first.getContainer(), first.getQueryName());
+            DataSet secondDataset = StudyService.get().resolveDataset(second.getContainer(), second.getQueryName());
 
             boolean subjectJoinOnly = isGroupByQuery || first.isSkipVisitJoin() || second.isSkipVisitJoin();
 
             // if either query is a demographic dataset, it's sufficient to join on subject only:
-            if (!subjectJoinOnly && (firstDataSet == null || firstDataSet.getKeyType() != DataSet.KeyType.SUBJECT) &&
-                    (secondDataSet == null || secondDataSet.getKeyType() != DataSet.KeyType.SUBJECT))
+            if (!subjectJoinOnly && (firstDataset == null || firstDataset.getKeyType() != DataSet.KeyType.SUBJECT) &&
+                    (secondDataset == null || secondDataset.getKeyType() != DataSet.KeyType.SUBJECT))
             {
                 VisualizationSourceColumn firstSequenceCol = getVisitJoinColumn(factory, first, firstSubjectNounSingular);
                 VisualizationSourceColumn secondSequenceCol = getVisitJoinColumn(factory, second, secondSubjectNounSingular);
                 joinCols.add(new Pair<>(firstSequenceCol, secondSequenceCol));
 
                 // for datasets with matching 3rd keys, join on subject/visit/key (if neither are pivoted), allowing null results for this column so as to follow the lead of the primary measure column for this query:
-                if (firstDataSet != null && firstDataSet.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER &&
-                        secondDataSet != null && secondDataSet.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER &&
-                        first.getPivot() == null && second.getPivot() == null && firstDataSet.hasMatchingExtraKey(secondDataSet))
+                if (firstDataset != null && firstDataset.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER &&
+                        secondDataset != null && secondDataset.getKeyType() == DataSet.KeyType.SUBJECT_VISIT_OTHER &&
+                        first.getPivot() == null && second.getPivot() == null && firstDataset.hasMatchingExtraKey(secondDataset))
                 {
-                    VisualizationSourceColumn firstKeyCol = factory.create(first.getSchema(), first.getQueryName(), firstDataSet.getKeyPropertyName(), true);
-                    VisualizationSourceColumn secondKeyCol = factory.create(second.getSchema(), second.getQueryName(), secondDataSet.getKeyPropertyName(), true);
+                    VisualizationSourceColumn firstKeyCol = factory.create(first.getSchema(), first.getQueryName(), firstDataset.getKeyPropertyName(), true);
+                    VisualizationSourceColumn secondKeyCol = factory.create(second.getSchema(), second.getQueryName(), secondDataset.getKeyPropertyName(), true);
                     joinCols.add(new Pair<>(firstKeyCol, secondKeyCol));
                 }
             }

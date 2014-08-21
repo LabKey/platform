@@ -440,7 +440,7 @@ public class StudyDesignManager
 
         DataSet subjectDataset = AssayPublishManager.getInstance().createAssayDataset(user, study, "Subjects", null, null, true, null);
         study = study.createMutable();
-        study.setParticipantCohortDataSetId(subjectDataset.getDatasetId());
+        study.setParticipantCohortDatasetId(subjectDataset.getDatasetId());
         study.setParticipantCohortProperty("Cohort");
         StudyManager.getInstance().updateStudy(user, study);
         
@@ -451,7 +451,7 @@ public class StudyDesignManager
         //Need to make the dataset at least optional for some visit
 //        DataSetDefinition[] dsds = StudyManager.getInstance().getDatasetDefinitions(study);
 //        for (DataSetDefinition dsd : dsds)
-//            StudyManager.getInstance().updateVisitDataSetMapping(user, study.getContainer(), 1, dsd.getDatasetId(), VisitDataSetType.OPTIONAL);
+//            StudyManager.getInstance().updateVisitDatasetMapping(user, study.getContainer(), 1, dsd.getDatasetId(), VisitDataSetType.OPTIONAL);
 
         SimpleSpecimenImporter importer = new SimpleSpecimenImporter(study.getContainer(), user);
         importer.process(specimens, false);

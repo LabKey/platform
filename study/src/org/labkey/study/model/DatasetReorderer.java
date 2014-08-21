@@ -90,7 +90,7 @@ public class DatasetReorderer
             {
                 def = def.createMutable();
                 def.setDisplayOrder(displayOrderIndex);
-                StudyManager.getInstance().updateDataSetDefinition(_user, def);
+                StudyManager.getInstance().updateDatasetDefinition(_user, def);
             }
         }
     }

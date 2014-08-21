@@ -3868,7 +3868,6 @@ study/src/org/labkey/study/view/columnPicker.jsp -text
 study/src/org/labkey/study/view/confirmDeleteStudy.jsp -text
 study/src/org/labkey/study/view/confirmDeleteVisit.jsp -text
 study/src/org/labkey/study/view/createCrosstabReport.jsp -text
-study/src/org/labkey/study/view/createDataSet.jsp -text
 study/src/org/labkey/study/view/createDatasetSnapshot.jsp -text
 study/src/org/labkey/study/view/createQueryReport.jsp -text
 study/src/org/labkey/study/view/createStudy.jsp -text

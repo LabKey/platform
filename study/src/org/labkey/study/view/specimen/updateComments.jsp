@@ -154,18 +154,18 @@
 <%!
     private NavTree createCopyCommentButton(Map<String, Map<String, Long>> pvMap, StudyImpl study, User user)
     {
-        boolean hasParticipantMenu = study.getParticipantCommentDataSetId() != null && study.getParticipantCommentDataSetId() != -1;
-        boolean hasParticipantVisitMenu = study.getParticipantVisitCommentDataSetId() != null && study.getParticipantVisitCommentDataSetId() != -1;
+        boolean hasParticipantMenu = study.getParticipantCommentDatasetId() != null && study.getParticipantCommentDatasetId() != -1;
+        boolean hasParticipantVisitMenu = study.getParticipantVisitCommentDatasetId() != null && study.getParticipantVisitCommentDatasetId() != -1;
 
         if (hasParticipantMenu)
         {
-            DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDataSetId());
+            DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantCommentDatasetId());
             hasParticipantMenu = def != null && def.canWrite(user);
         }
 
         if (hasParticipantVisitMenu)
         {
-            DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDataSetId());
+            DataSetDefinition def = StudyManager.getInstance().getDatasetDefinition(study, study.getParticipantVisitCommentDatasetId());
             hasParticipantVisitMenu = def != null && def.canWrite(user);
         }
 

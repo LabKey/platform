@@ -103,7 +103,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private Date _endDate;
     private SecurityType _securityType = SecurityType.BASIC_READ; // Default value. Not allowed to be null
     private String _participantCohortProperty;
-    private Integer _participantCohortDataSetId;
+    private Integer _participantCohortDatasetId;
     private boolean _manualCohortAssignment;
     private String _lsid;
     private Integer _defaultPipelineQCState;
@@ -116,9 +116,9 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private Date _lastReload;
     private Integer _reloadUser;
     private boolean _advancedCohorts;
-    private Integer _participantCommentDataSetId;
+    private Integer _participantCommentDatasetId;
     private String _participantCommentProperty;
-    private Integer _participantVisitCommentDataSetId;
+    private Integer _participantVisitCommentDatasetId;
     private String _participantVisitCommentProperty;
     private String _subjectNounSingular;
     private String _subjectNounPlural;
@@ -426,14 +426,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     }
 
     @Nullable
-    public Integer getParticipantCohortDataSetId()
+    public Integer getParticipantCohortDatasetId()
     {
-        return _participantCohortDataSetId;
+        return _participantCohortDatasetId;
     }
 
-    public void setParticipantCohortDataSetId(@Nullable Integer participantCohortDataSetId)
+    public void setParticipantCohortDatasetId(@Nullable Integer participantCohortDatasetId)
     {
-        _participantCohortDataSetId = participantCohortDataSetId;
+        _participantCohortDatasetId = participantCohortDatasetId;
     }
 
     public boolean isManualCohortAssignment()
@@ -595,14 +595,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _advancedCohorts = advancedCohorts;
     }
 
-    public Integer getParticipantCommentDataSetId()
+    public Integer getParticipantCommentDatasetId()
     {
-        return _participantCommentDataSetId;
+        return _participantCommentDatasetId;
     }
 
-    public void setParticipantCommentDataSetId(Integer participantCommentDataSetId)
+    public void setParticipantCommentDatasetId(Integer participantCommentDatasetId)
     {
-        _participantCommentDataSetId = participantCommentDataSetId;
+        _participantCommentDatasetId = participantCommentDatasetId;
     }
 
     public String getParticipantCommentProperty()
@@ -615,14 +615,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         _participantCommentProperty = participantCommentProperty;
     }
 
-    public Integer getParticipantVisitCommentDataSetId()
+    public Integer getParticipantVisitCommentDatasetId()
     {
-        return _participantVisitCommentDataSetId;
+        return _participantVisitCommentDatasetId;
     }
 
-    public void setParticipantVisitCommentDataSetId(Integer participantVisitCommentDataSetId)
+    public void setParticipantVisitCommentDatasetId(Integer participantVisitCommentDatasetId)
     {
-        _participantVisitCommentDataSetId = participantVisitCommentDataSetId;
+        _participantVisitCommentDatasetId = participantVisitCommentDatasetId;
     }
 
     public String getParticipantVisitCommentProperty()

@@ -204,7 +204,7 @@ public class CohortController extends BaseStudyController
                 // Note: we need to do this even if no changes have been made to
                 // this setting, as it's possible that the user manually set some cohorts previously
                 boolean updateNow = form.isUpdateParticipants() || (study.isAdvancedCohorts() != form.isAdvancedCohortSupport());
-                CohortManager.getInstance().setAutomaticCohortAssignment(study, getUser(), form.getParticipantCohortDataSetId(),
+                CohortManager.getInstance().setAutomaticCohortAssignment(study, getUser(), form.getParticipantCohortDatasetId(),
                         form.getParticipantCohortProperty(), form.isAdvancedCohortSupport(), updateNow);
             }
 
@@ -224,7 +224,7 @@ public class CohortController extends BaseStudyController
         private boolean manualCohortAssignment;
         private String[] participantId;
         private int[] cohortId;
-        private Integer participantCohortDataSetId;
+        private Integer participantCohortDatasetId;
         private String participantCohortProperty;
         private boolean reshow;
         private boolean clearParticipants;
@@ -240,8 +240,8 @@ public class CohortController extends BaseStudyController
         public boolean isAdvancedCohortSupport() {return advancedCohortSupport;}
         public void setAdvancedCohortSupport(boolean advancedCohortSupport) {this.advancedCohortSupport = advancedCohortSupport;}
 
-        public Integer getParticipantCohortDataSetId() {return participantCohortDataSetId;}
-        public void setParticipantCohortDataSetId(Integer participantCohortDataSetId) {this.participantCohortDataSetId = participantCohortDataSetId;}
+        public Integer getParticipantCohortDatasetId() {return participantCohortDatasetId;}
+        public void setParticipantCohortDatasetId(Integer participantCohortDatasetId) {this.participantCohortDatasetId = participantCohortDatasetId;}
 
         public String getParticipantCohortProperty() {return participantCohortProperty;}
         public void setParticipantCohortProperty(String participantCohortProperty) {this.participantCohortProperty = participantCohortProperty;}

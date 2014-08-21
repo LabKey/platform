@@ -112,14 +112,14 @@
                                 "If set, cohort assignments will be reloaded for all " + subjectNounPlural + " every time this dataset is re-imported.")%>
             </th>
             <td>
-                <select name="participantCohortDataSetId"
+                <select name="participantCohortDatasetId"
                         onchange="document.manageCohorts.participantCohortProperty.value=''; document.manageCohorts.submit()">
                     <option value="-1">[None]</option>
                     <%
                         for (DataSet dataset : manager.getDatasetDefinitions(study))
                         {
-                            boolean selected = (study.getParticipantCohortDataSetId() != null &&
-                                    dataset.getDatasetId() == study.getParticipantCohortDataSetId());
+                            boolean selected = (study.getParticipantCohortDatasetId() != null &&
+                                    dataset.getDatasetId() == study.getParticipantCohortDatasetId());
                     %>
                     <option value="<%= dataset.getDatasetId() %>"<%=selected(selected)%>><%= h(dataset.getLabel()) %>
                     </option>
@@ -136,12 +136,12 @@
                     <option value="">[None]</option>
                     <%
                         PropertyDescriptor[] descriptors;
-                        Integer participantCohortDataSetId = study.getParticipantCohortDataSetId();
-                        if (participantCohortDataSetId == null || participantCohortDataSetId < 0)
+                        Integer participantCohortDatasetId = study.getParticipantCohortDatasetId();
+                        if (participantCohortDatasetId == null || participantCohortDatasetId < 0)
                             descriptors = new PropertyDescriptor[0];
                         else
                         {
-                            DataSet dataset = StudyManager.getInstance().getDatasetDefinition(study, participantCohortDataSetId.intValue());
+                            DataSet dataset = StudyManager.getInstance().getDatasetDefinition(study, participantCohortDatasetId);
                             if (dataset != null)
                                 descriptors = OntologyManager.getPropertiesForType(dataset.getTypeURI(), study.getContainer());
                             else

@@ -199,7 +199,7 @@ public class VisitMapImporter
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            saveDataSets(user, study, records);
+            saveDatasets(user, study, records);
             saveVisits(user, study, records);
             saveVisitMap(user, study, records);
             saveImportAliases(user, study, aliases);
@@ -319,7 +319,7 @@ public class VisitMapImporter
             // CREATE
             if (null == isRequiredCurrent)
             {
-                StudyManager.getInstance().createVisitDataSetMapping(user, container, key.visitRowId, key.datasetId, isRequiredNew);
+                StudyManager.getInstance().createVisitDatasetMapping(user, container, key.visitRowId, key.datasetId, isRequiredNew);
             }
             // UPDATE
             else
@@ -328,7 +328,7 @@ public class VisitMapImporter
                 if (isRequiredCurrent != isRequiredNew)
                 {
                     // this does a bit too much work...
-                    StudyManager.getInstance().updateVisitDataSetMapping(user, container, key.visitRowId, key.datasetId, isRequiredNew ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
+                    StudyManager.getInstance().updateVisitDatasetMapping(user, container, key.visitRowId, key.datasetId, isRequiredNew ? VisitDataSetType.REQUIRED : VisitDataSetType.OPTIONAL);
                 }
             }
         }
@@ -339,12 +339,12 @@ public class VisitMapImporter
             VisitMapKey key = e.getKey();
             Boolean isRequiredCurrent = e.getValue();
             if (isRequiredCurrent)
-                StudyManager.getInstance().updateVisitDataSetMapping(user, container, key.visitRowId, key.datasetId, VisitDataSetType.OPTIONAL);
+                StudyManager.getInstance().updateVisitDatasetMapping(user, container, key.visitRowId, key.datasetId, VisitDataSetType.OPTIONAL);
         }
     }
 
 
-    private void saveDataSets(User user, Study study, List<VisitMapRecord> records) throws SQLException
+    private void saveDatasets(User user, Study study, List<VisitMapRecord> records) throws SQLException
     {
         List<DataSetDefinition> defs = StudyManager.getInstance().getDatasetDefinitions(study);
         Set<Integer> existingSet = new HashSet<>();

@@ -65,12 +65,12 @@ public class CohortWriter implements InternalStudyWriter
             cohortsXml.setType(CohortType.AUTOMATIC);
             cohortsXml.setMode(study.isAdvancedCohorts() ? CohortMode.ADVANCED : CohortMode.SIMPLE);
 
-            Integer datasetId = study.getParticipantCohortDataSetId();
+            Integer datasetId = study.getParticipantCohortDatasetId();
             String datasetProperty = study.getParticipantCohortProperty();
 
             if (null != datasetId && null != datasetProperty)
             {
-                cohortsXml.setDatasetId(study.getParticipantCohortDataSetId());
+                cohortsXml.setDatasetId(study.getParticipantCohortDatasetId());
                 cohortsXml.setDatasetProperty(study.getParticipantCohortProperty());
             }
         }

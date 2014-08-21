@@ -130,7 +130,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                 String label = visit.getLabel();
                 if (!uniqueLabel || hasSequenceRange)
                     label += " (" + VisitImpl.formatSequenceNum(seq) + ")";
-                ColumnInfo colSeq = createVisitDataSetColumn(name, seq, visit);
+                ColumnInfo colSeq = createVisitDatasetColumn(name, seq, visit);
                 colSeq.setLabel(label);
 //                colSeq.setHidden(!hasSequenceRange);
                 addColumn(colSeq);
@@ -143,7 +143,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
                 String name = _schema.decideTableName(visit);
                 if (getColumn(name) != null)        // unlikely (label that looks like seq###.#)
                     continue;
-                ColumnInfo colLabel = createVisitDataSetColumn(name, Visit.formatSequenceNum(visit.getSequenceNumMin()));
+                ColumnInfo colLabel = createVisitDatasetColumn(name, Visit.formatSequenceNum(visit.getSequenceNumMin()));
                 colLabel.setHidden(hasSequenceRange);
                 addColumn(colLabel);
             }
@@ -210,7 +210,7 @@ public class ParticipantVisitDataSetTable extends VirtualTable
     }
 
     
-    protected ColumnInfo createVisitDataSetColumn(String name, final double sequenceNum, @NotNull final VisitImpl visit)
+    protected ColumnInfo createVisitDatasetColumn(String name, final double sequenceNum, @NotNull final VisitImpl visit)
     {
         ColumnInfo ret;
         if (_colParticipantId == null)
@@ -305,6 +305,6 @@ public class ParticipantVisitDataSetTable extends VirtualTable
         ColumnInfo col = _seqColumnMap.get(seq);
         if (col != null)
             return col;
-        return createVisitDataSetColumn(name, seq, visitMatch);
+        return createVisitDatasetColumn(name, seq, visitMatch);
     }
 }

@@ -77,10 +77,10 @@ public class CohortManager
     //
     // used when importing a folder with automatic cohorts without an exported cohort.xml file
     //
-    public void setAutomaticCohortAssignment(StudyImpl study, User user, Integer participantCohortDataSetId, String participantCohortProperty, boolean advancedCohorts, boolean reassignParticipants) throws SQLException
+    public void setAutomaticCohortAssignment(StudyImpl study, User user, Integer participantCohortDatasetId, String participantCohortProperty, boolean advancedCohorts, boolean reassignParticipants) throws SQLException
     {
         study = study.createMutable();
-        setCohortProperties(study, user, false, advancedCohorts, participantCohortDataSetId, participantCohortProperty );
+        setCohortProperties(study, user, false, advancedCohorts, participantCohortDatasetId, participantCohortProperty );
         if (reassignParticipants)
             updateParticipantCohorts(user, study);
     }
@@ -88,13 +88,13 @@ public class CohortManager
     //
     // used when importing a folder with automatic cohorts with an exported cohort.xml file.
     //
-    public void setAutomaticCohortAssignment(StudyImpl study, User user, Integer participantCohortDataSetId, String participantCohortProperty, boolean advancedCohorts, Map<String, Integer> p2c)
+    public void setAutomaticCohortAssignment(StudyImpl study, User user, Integer participantCohortDatasetId, String participantCohortProperty, boolean advancedCohorts, Map<String, Integer> p2c)
     {
         DbScope scope = StudySchema.getInstance().getSchema().getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             study = study.createMutable();
-            setCohortProperties(study, user, false, advancedCohorts, participantCohortDataSetId, participantCohortProperty );
+            setCohortProperties(study, user, false, advancedCohorts, participantCohortDatasetId, participantCohortProperty );
             setCohortAssignment(study, user, p2c);
 
             transaction.commit();
@@ -118,7 +118,7 @@ public class CohortManager
         }
     }
 
-    private void setCohortProperties(StudyImpl study, User user, boolean isManual, boolean isAdvanced, Integer participantCohortDataSetId, String participantCohortProperty)
+    private void setCohortProperties(StudyImpl study, User user, boolean isManual, boolean isAdvanced, Integer participantCohortDatasetId, String participantCohortProperty)
     {
         assert(study.isMutable());
 
@@ -127,7 +127,7 @@ public class CohortManager
 
         if (!isManual)
         {
-            study.setParticipantCohortDataSetId(participantCohortDataSetId);
+            study.setParticipantCohortDatasetId(participantCohortDatasetId);
             study.setParticipantCohortProperty(participantCohortProperty);
         }
 
@@ -315,7 +315,7 @@ public class CohortManager
     public void updateParticipantCohorts(User user, StudyImpl study) throws SQLException, UnauthorizedException
     {
         if (study.isManualCohortAssignment() ||
-                study.getParticipantCohortDataSetId() == null ||
+                study.getParticipantCohortDatasetId() == null ||
                 study.getParticipantCohortProperty() == null)
         {
             return;
@@ -324,8 +324,8 @@ public class CohortManager
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             DataSetDefinition dataset = null;
-            if (study.getParticipantCohortDataSetId() != null)
-                dataset = study.getDataset(study.getParticipantCohortDataSetId().intValue());
+            if (study.getParticipantCohortDatasetId() != null)
+                dataset = study.getDataset(study.getParticipantCohortDatasetId().intValue());
 
             if (null != dataset)
             {

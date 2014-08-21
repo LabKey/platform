@@ -1850,7 +1850,7 @@ public class StudyController extends BaseStudyController
                         oldType = VisitDataSetType.NOT_ASSOCIATED;
                     if (type != oldType)
                     {
-                        StudyManager.getInstance().updateVisitDataSetMapping(getUser(), getContainer(),
+                        StudyManager.getInstance().updateVisitDatasetMapping(getUser(), getContainer(),
                                 postedVisit.getRowId(), datasetId, type);
                     }
                 }
@@ -2115,7 +2115,7 @@ public class StudyController extends BaseStudyController
                     VisitDataSetType type = VisitDataSetType.valueOf(form.getVisitStatus()[i]);
                     if (modified.getVisitType(visitRowId) != type)
                     {
-                        StudyManager.getInstance().updateVisitDataSetMapping(getUser(), getContainer(),
+                        StudyManager.getInstance().updateVisitDatasetMapping(getUser(), getContainer(),
                                 visitRowId, form.getDatasetId(), type);
                     }
                 }
@@ -4409,7 +4409,7 @@ public class StudyController extends BaseStudyController
                     def.setCategoryId(categoryId);
                     def.setCohortId(cohortId);
                     def.setLabel(label);
-                    StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
+                    StudyManager.getInstance().updateDatasetDefinition(getUser(), def);
                 }
                 ReportPropsManager.get().setPropertyValue(def.getEntityId(), getContainer(), "status", statuses[i]);
             }
@@ -4774,13 +4774,13 @@ public class StudyController extends BaseStudyController
                         {
                             dataset = dataset.createMutable();
                             dataset.setKeyManagementType(DataSet.KeyManagementType.RowId);
-                            StudyManager.getInstance().updateDataSetDefinition(getUser(), dataset);
+                            StudyManager.getInstance().updateDatasetDefinition(getUser(), dataset);
                         }
 
                         if (dataset.getName().equals(cohortDatasetName))
                         {
                             study = study.createMutable();
-                            study.setParticipantCohortDataSetId(dataset.getDatasetId());
+                            study.setParticipantCohortDatasetId(dataset.getDatasetId());
                             study.setParticipantCohortProperty(cohortProperty);
                             StudyManager.getInstance().updateStudy(getUser(), study);
                         }
@@ -5001,7 +5001,7 @@ public class StudyController extends BaseStudyController
                         def = def.createMutable();
                         def.setKeyManagementType(keyManagementType);
 
-                        StudyManager.getInstance().updateDataSetDefinition(getUser(), def);
+                        StudyManager.getInstance().updateDatasetDefinition(getUser(), def);
                     }
 
                     // NOTE getDisplayColumns() indirectly causes a query of the datasets,
@@ -6846,7 +6846,7 @@ public class StudyController extends BaseStudyController
                         {
                             VisitDataSetType type = visit.isRequired() ? VisitDataSetType.REQUIRED : VisitDataSetType.NOT_ASSOCIATED;
 
-                            StudyManager.getInstance().updateVisitDataSetMapping(getUser(), getContainer(),
+                            StudyManager.getInstance().updateVisitDatasetMapping(getUser(), getContainer(),
                                     visit.getVisitRowId(), ds.getDatasetId(), type);
                         }
                     }

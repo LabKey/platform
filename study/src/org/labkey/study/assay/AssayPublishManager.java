@@ -295,7 +295,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 if (datasetProtocolId == null)
                 {
                     dataset.setProtocolId(protocol.getRowId());
-                    StudyManager.getInstance().updateDataSetDefinition(user, dataset, errors);
+                    StudyManager.getInstance().updateDatasetDefinition(user, dataset, errors);
                 }
                 else if (!datasetProtocolId.equals(protocol.getRowId()))
                 {
@@ -308,7 +308,7 @@ public class AssayPublishManager implements AssayPublishService.Service
                 if (!keyPropertyName.equals(dataset.getKeyPropertyName()))
                 {
                     dataset.setKeyPropertyName(keyPropertyName);
-                    StudyManager.getInstance().updateDataSetDefinition(user, dataset, errors);
+                    StudyManager.getInstance().updateDatasetDefinition(user, dataset, errors);
                 }
             }
 
@@ -608,22 +608,22 @@ public class AssayPublishManager implements AssayPublishService.Service
         {
             if (null == datasetId)
                 datasetId = new SqlSelector(schema, "SELECT MAX(n) + 1 AS id FROM (SELECT Max(datasetid) AS n FROM study.dataset WHERE container=? UNION SELECT ? As n) x", study.getContainer().getId(), MIN_ASSAY_ID).getObject(Integer.class);
-            DataSetDefinition newDataSet = new DataSetDefinition(study, datasetId.intValue(), name, name, null, null, null);
-            newDataSet.setShowByDefault(true);
-            newDataSet.setType(type);
+            DataSetDefinition newDataset = new DataSetDefinition(study, datasetId.intValue(), name, name, null, null, null);
+            newDataset.setShowByDefault(true);
+            newDataset.setType(type);
 
             if (categoryId != null)
-                newDataSet.setCategoryId(categoryId);
+                newDataset.setCategoryId(categoryId);
             if (keyPropertyName != null)
-                newDataSet.setKeyPropertyName(keyPropertyName);
-            newDataSet.setDemographicData(isDemographicData);
+                newDataset.setKeyPropertyName(keyPropertyName);
+            newDataset.setDemographicData(isDemographicData);
             if (protocol != null)
-                newDataSet.setProtocolId(protocol.getRowId());
+                newDataset.setProtocolId(protocol.getRowId());
 
-            StudyManager.getInstance().createDataSetDefinition(user, newDataSet);
+            StudyManager.getInstance().createDataSetDefinition(user, newDataset);
 
             transaction.commit();
-            return newDataSet;
+            return newDataset;
         }
     }
 

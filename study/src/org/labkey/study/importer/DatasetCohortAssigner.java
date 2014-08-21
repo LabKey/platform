@@ -79,7 +79,7 @@ public class DatasetCohortAssigner implements InternalStudyImporter
                         CohortImpl newCohort = studyManager.getCohortByLabel(c, user, props.getCohort());
                         def = def.createMutable();
                         def.setCohortId(newCohort.getRowId());
-                        StudyManager.getInstance().updateDataSetDefinition(user, def);
+                        StudyManager.getInstance().updateDatasetDefinition(user, def);
                     }
                 }
             }
