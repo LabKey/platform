@@ -1360,3 +1360,245 @@ Ext4.define('LABKEY.query.olap.MDX', {
         }
     }
 });
+
+Ext4.define('LABKEY.query.olap.AppContext', {
+    singleton: true,
+
+    applyContext : function(mdx, defaults, values) {
+
+        var _context = Ext4.clone(values);
+
+        this.setDefaults(defaults);
+        this.applyPerspectives(mdx, _context);
+        this.applyDimensions(mdx, _context);
+        this.clearDefaults();
+
+        return mdx;
+    },
+
+    applyPerspectives : function(mdx, context) {
+        if (Ext4.isObject(context.perspectives)) {
+            var p = context.perspectives, _defaultP;
+            Ext4.iterate(p, function(name, properties) {
+                if (properties._default === true) {
+                    _defaultP = name;
+                }
+            });
+            mdx.perspectives = p;
+            mdx.defaultPerspective = _defaultP;
+        }
+    },
+
+    applyDimensions : function(mdx, context) {
+
+        var dims = mdx.getDimensions();
+        var dimDefaults = this.getDimensionDefaults();
+
+        if (Ext4.isObject(dimDefaults) && Ext4.isArray(dims)) {
+            var c_dims = context.dimensions, c_idx = -1, config, dd;
+            var keysStr = this.getKeyString(dimDefaults);
+
+            for (var d=0; d < dims.length; d++) {
+
+                //
+                // map the dimension defaults
+                //
+                dd = this.processDefaults(dims[d], dimDefaults, undefined);
+
+                //
+                // lookup if there is a context definition
+                //
+                c_idx = -1;
+                if (Ext4.isArray(c_dims)) {
+                    for (var c = 0; c < c_dims.length; c++) {
+                        if (c_dims[c].uniqueName === dims[d].uniqueName) {
+                            c_idx = c;
+                            break;
+                        }
+                    }
+                }
+
+                config = Ext4.applyIf((c_idx >= 0 ? c_dims[c_idx] : {}), dd);
+                Ext4.copyTo(dims[d], config, keysStr, true);
+
+                //
+                // Apply this dimensions context hierarchies
+                //
+                this.applyHierarchies(mdx, dims[d], config);
+            }
+        }
+    },
+
+    applyHierarchies : function(mdx, dim, context) {
+
+        var hierarchies = dim.hierarchies;
+        var hierDefaults = this.getHierarchyDefaults();
+
+        if (Ext4.isObject(hierDefaults) && Ext4.isArray(hierarchies))
+        {
+            var c_hierarchies = context.hierarchies, c_idx = -1, config, hh;
+            var keysStr = this.getKeyString(hierDefaults);
+
+            for (var h=0; h < hierarchies.length; h++) {
+
+                //
+                // map the hierarchy defaults
+                //
+                hh = this.processDefaults(hierarchies[h], hierDefaults, dim);
+
+                //
+                // lookup if there is a context definition
+                //
+                c_idx = -1;
+                if (Ext4.isArray(c_hierarchies)) {
+                    for (var c=0; c < c_hierarchies.length; c++) {
+                        if (c_hierarchies[c].uniqueName === hierarchies[h].uniqueName) {
+                            c_idx = c;
+                            break;
+                        }
+                    }
+                }
+
+                config = Ext4.applyIf((c_idx >= 0 ? c_hierarchies[c_idx] : {}), hh);
+                Ext4.copyTo(hierarchies[h], config, keysStr, true);
+
+                //
+                // Apply this hierarchy's context levels
+                //
+                this.applyLevels(mdx, hierarchies[h], config);
+            }
+        }
+    },
+
+    applyLevels : function(mdx, hierarchy, context) {
+
+        var levels = hierarchy.levels;
+        var levelDefaults = this.getLevelDefaults();
+
+        if (Ext4.isObject(levelDefaults) && Ext4.isArray(levels))
+        {
+            var c_levels = context.levels, c_idx = -1, config, ll;
+            var keysStr = this.getKeyString(levelDefaults);
+
+            for (var l=0; l < levels.length; l++) {
+
+                //
+                // map the level defaults
+                //
+                ll = this.processDefaults(levels[l], levelDefaults, hierarchy);
+
+                //
+                // lookup if there is a context definition
+                //
+                c_idx = -1;
+                if (Ext4.isArray(c_levels)) {
+                    for (var c=0; c < c_levels.length; c++) {
+                        if (c_levels[c].uniqueName === levels[l].uniqueName) {
+                            c_idx = c;
+                            break;
+                        }
+                    }
+                }
+
+                config = Ext4.applyIf((c_idx >= 0 ? c_levels[c_idx] : {}), ll);
+                Ext4.copyTo(levels[l], config, keysStr, true);
+            }
+        }
+    },
+
+    processDefaults: function(object, defaults, parent) {
+        var dd = Ext4.clone(defaults), k;
+
+        Ext4.iterate(defaults, function(key, value) {
+            if (Ext4.isString(value))
+            {
+                if (value.indexOf('parent::') === 0)
+                {
+                    if (Ext.isObject(parent))
+                    {
+                        k = value.replace('parent::', '');
+                        dd[key] = parent[k];
+                    }
+                    else if (LABKEY.devMode)
+                    {
+                        console.warn("Invalid 'parent::' configuration for:", key);
+                    }
+                }
+                else if (value.indexOf('prop::') === 0)
+                {
+                    k = value.replace('prop::', '');
+                    dd[key] = object[k];
+                }
+                else if (value.indexOf('path::') === 0)
+                {
+                    var path = value.replace('path::', '').split("|"), vv = undefined;
+                    if (path.length == 2)
+                    {
+                        if (Ext4.isArray(object.hierarchies))
+                        {
+                            var h = object.hierarchies[path[0]];
+                            if (h && Ext4.isArray(h.levels) && h.levels.length > parseInt(path[1]))
+                            {
+                                var lvl = h.levels[path[1]];
+                                if (Ext4.isObject(lvl) && Ext4.isString(lvl.uniqueName)) {
+                                    vv = lvl.uniqueName;
+                                }
+                            }
+                        }
+                    }
+
+                    if (LABKEY.devMode && !Ext4.isDefined(vv))
+                    {
+                        console.warn("Invalid 'path::' for key (value):", key, "(" + value + ")");
+                    }
+                    dd[key] = vv;
+                }
+                else if (value.indexOf('label::') === 0 && Ext4.isString(object.name))
+                {
+                    dd[key] = this.parseLabel(object);
+                }
+            }
+        }, this);
+
+        return dd;
+    },
+
+    parseLabel : function(hierarchy) {
+        var label = hierarchy.name.split('.');
+        return label[label.length-1];
+    },
+
+    getKeyString : function(map) {
+        var str = '', sep = '';
+        Ext4.iterate(map, function(k) { str += sep + k; sep = ','});
+        return str;
+    },
+
+    setDefaults : function(defaults) {
+        this._defaults = Ext4.clone(defaults);
+    },
+
+    clearDefaults : function() {
+        if (this._defaults) {
+            delete this._defaults;
+        }
+    },
+
+    /**
+     * Requires that this.defaults be set when called
+     */
+    getDimensionDefaults : function() {
+        return this._defaults.dimension;
+    },
+
+    /**
+     * Requires that this.defaults be set when called
+     */
+    getHierarchyDefaults : function() {
+        return this._defaults.hierarchy;
+    },
+
+    getLevelDefaults : function() {
+        return this._defaults.level;
+    }
+});
