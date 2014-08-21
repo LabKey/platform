@@ -385,6 +385,8 @@ public class ServerManager
             jsonQuery.put("showEmpty", false);
             jsonQuery.put("onRows", jsonOnRows);
 
+            result = "Starting warm of " + cubeName + " in container " + c.getName();
+            LOG.info(result);
             long start = System.currentTimeMillis();
             for (Dimension d : cube.getDimensions())
             {
