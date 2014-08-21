@@ -17,23 +17,17 @@ package org.labkey.api.ehr.dataentry;
 
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.ehr.EHRService;
 import org.labkey.api.ehr.security.AbstractEHRPermission;
 import org.labkey.api.ehr.security.EHRDataEntryPermission;
-import org.labkey.api.query.QueryService;
-import org.labkey.api.query.UserSchema;
-import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.DataSetTable;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -59,7 +53,7 @@ abstract public class AbstractFormSection implements FormSection
     private boolean _allowBulkAdd = true;
     private boolean _supportFormSort = true;
 
-    private List<String> _configSources = new ArrayList<String>();
+    private List<String> _configSources = new ArrayList<>();
 
     private LinkedHashSet<ClientDependency> _clientDependencies = new LinkedHashSet<>();
 
@@ -204,13 +198,13 @@ abstract public class AbstractFormSection implements FormSection
 
     public boolean hasPermission(DataEntryFormContext ctx, Class<? extends Permission> perm)
     {
-        Map<String, DataSet> dataSetMap = ctx.getDatasetMap();
+        Map<String, DataSet> datasetMap = ctx.getDatasetMap();
         for (Pair<String, String> pair : getTableNames())
         {
             //datasets can be tested directly
-            if ("study".equalsIgnoreCase(pair.first) && dataSetMap.containsKey(pair.second))
+            if ("study".equalsIgnoreCase(pair.first) && datasetMap.containsKey(pair.second))
             {
-                DataSet ds = dataSetMap.get(pair.second);
+                DataSet ds = datasetMap.get(pair.second);
                 if (!ds.getPermissions(ctx.getUser()).contains(perm))
                     return false;
 
@@ -301,7 +295,7 @@ abstract public class AbstractFormSection implements FormSection
 
     public List<String> getTbarButtons()
     {
-        List<String> defaultButtons = new ArrayList<String>();
+        List<String> defaultButtons = new ArrayList<>();
         defaultButtons.add("ADDRECORD");
 
         if (_allowBulkAdd)
@@ -325,7 +319,7 @@ abstract public class AbstractFormSection implements FormSection
 
     public List<String> getTbarMoreActionButtons()
     {
-        List<String> defaultButtons = new ArrayList<String>();
+        List<String> defaultButtons = new ArrayList<>();
 
         //omit the template btn from any formtype with specialized parent->child inheritance
         List<String> sources = getConfigSources();

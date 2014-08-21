@@ -34,21 +34,21 @@ import java.util.Map;
 public class StudyDataSetColumn extends ExprColumn
 {
     private AssayProvider _provider;
-    private final DataSet _assayDataSet;
+    private final DataSet _assayDataset;
     private final User _user;
 
-    public StudyDataSetColumn(TableInfo parent, String name, AssayProvider provider, DataSet assayDataSet, User user)
+    public StudyDataSetColumn(TableInfo parent, String name, AssayProvider provider, DataSet assayDataset, User user)
     {
-        super(parent, name, new SQLFragment("(CASE WHEN " + getDatasetIdAlias(assayDataSet.getContainer()) +
-                "._key IS NOT NULL THEN " + assayDataSet.getDatasetId() + " ELSE NULL END)"), JdbcType.INTEGER);
+        super(parent, name, new SQLFragment("(CASE WHEN " + getDatasetIdAlias(assayDataset.getContainer()) +
+                "._key IS NOT NULL THEN " + assayDataset.getDatasetId() + " ELSE NULL END)"), JdbcType.INTEGER);
         _provider = provider;
-        _assayDataSet = assayDataSet;
+        _assayDataset = assayDataset;
         _user = user;
     }
 
     public Container getStudyContainer()
     {
-        return _assayDataSet.getContainer();
+        return _assayDataset.getContainer();
     }
 
     public static String getDatasetIdAlias(Container studyContainer)
@@ -68,11 +68,11 @@ public class StudyDataSetColumn extends ExprColumn
         SQLFragment joinSql = new SQLFragment();
         String datasetAlias = getDatasetIdAlias();
         Container studyContainer = getStudyContainer();
-        TableInfo dataSetTable = _assayDataSet.getTableInfo(_user);
-        ExpProtocol protocol = _assayDataSet.getAssayProtocol();
+        TableInfo datasetTable = _assayDataset.getTableInfo(_user);
+        ExpProtocol protocol = _assayDataset.getAssayProtocol();
 
         joinSql.appendComment("<StudyDataSetColumn.join " + studyContainer.getPath() + ">", getSqlDialect());
-        joinSql.append(" LEFT OUTER JOIN ").append(dataSetTable.getFromSQL(datasetAlias)).append(" ON ");
+        joinSql.append(" LEFT OUTER JOIN ").append(datasetTable.getFromSQL(datasetAlias)).append(" ON ");
         joinSql.append(datasetAlias).append("._key = CAST(" + parentAlias + "." + _provider.getTableMetadata(protocol).getResultRowIdFieldKey().getName() + " AS ");
         joinSql.append(getSqlDialect().sqlTypeNameFromSqlType(Types.VARCHAR)).append("(200))");
         joinSql.appendComment("</StudyDataSetColumn.join>", getSqlDialect());

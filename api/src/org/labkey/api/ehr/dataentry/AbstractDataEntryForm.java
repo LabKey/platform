@@ -17,7 +17,6 @@ package org.labkey.api.ehr.dataentry;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
@@ -25,14 +24,10 @@ import org.labkey.api.module.ModuleProperty;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
-import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.study.DataSet;
-import org.labkey.api.study.DataSetTable;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.template.ClientDependency;
 
@@ -276,7 +271,7 @@ public class AbstractDataEntryForm implements DataEntryForm
     private Map<String, Map<String, Map<String, String>>> getPermissionMap()
     {
         Map<String, Map<String, Map<String, String>>> permissionMap = new HashMap<>();
-        Map<String, DataSet> dataSetMap = getCtx().getDatasetMap();
+        Map<String, DataSet> datasetMap = getCtx().getDatasetMap();
 
         for (Pair<String, String> pair : getTableNames())
         {
@@ -294,9 +289,9 @@ public class AbstractDataEntryForm implements DataEntryForm
             SecurityPolicy policy = null;
 
             //test if this is a dataset
-            if ("study".equalsIgnoreCase(schemaName) && dataSetMap.get(queryName) != null)
+            if ("study".equalsIgnoreCase(schemaName) && datasetMap.get(queryName) != null)
             {
-                policy = SecurityPolicyManager.getPolicy(dataSetMap.get(queryName));
+                policy = SecurityPolicyManager.getPolicy(datasetMap.get(queryName));
             }
             else
             {

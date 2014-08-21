@@ -623,15 +623,15 @@ public abstract class AssayProtocolSchema extends AssaySchema
         Set<String> visibleColumnNames = new HashSet<>();
         int datasetIndex = 0;
         Set<String> usedColumnNames = new HashSet<>();
-        for (final DataSet assayDataSet : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
+        for (final DataSet assayDataset : StudyService.get().getDatasetsForAssayProtocol(getProtocol()))
         {
-            if (!assayDataSet.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataSet.canRead(getUser()))
+            if (!assayDataset.getContainer().hasPermission(getUser(), ReadPermission.class) || !assayDataset.canRead(getUser()))
             {
                 continue;
             }
 
             String datasetIdColumnName = "dataset" + datasetIndex++;
-            final StudyDataSetColumn datasetColumn = new StudyDataSetColumn(table, datasetIdColumnName, getProvider(), assayDataSet, getUser());
+            final StudyDataSetColumn datasetColumn = new StudyDataSetColumn(table, datasetIdColumnName, getProvider(), assayDataset, getUser());
             datasetColumn.setHidden(true);
             datasetColumn.setUserEditable(false);
             datasetColumn.setShownInInsertView(false);
@@ -642,7 +642,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             String studyCopiedSql = "(SELECT CASE WHEN " + datasetColumn.getDatasetIdAlias() +
                 "._key IS NOT NULL THEN 'copied' ELSE NULL END)";
 
-            String studyName = assayDataSet.getStudy().getLabel();
+            String studyName = assayDataset.getStudy().getLabel();
             if (studyName == null)
                 continue; // No study in that folder
             String studyColumnName = "copied_to_" + PropertiesEditorUtil.sanitizeName(studyName);
@@ -663,7 +663,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
             studyCopiedColumn.setReadOnly(true);
             studyCopiedColumn.setShownInInsertView(false);
             studyCopiedColumn.setShownInUpdateView(false);
-            studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataSet.getContainer(), assayDataSet.getDatasetId())));
+            studyCopiedColumn.setURL(StringExpressionFactory.createURL(StudyService.get().getDatasetURL(assayDataset.getContainer(), assayDataset.getDatasetId())));
 
             table.addColumn(studyCopiedColumn);
 
