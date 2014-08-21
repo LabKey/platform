@@ -22,10 +22,9 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
     initComponent : function() {
 
-        this.items = [];
         this.reportConfig.script = this.script;
+        this.items = [this.createViewPanel()];
 
-        this.items.push(this.createViewPanel());
         if (this.reportConfig.schemaName && this.reportConfig.queryName) {
             this.items.push(this.createDataPanel());
         }
@@ -162,7 +161,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
     createDataPanel : function() {
 
-        var config = {
+        return {
             xtype       : 'box',
             title       : 'Data',
             autoScroll  : true,
@@ -173,11 +172,13 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             }
         };
 
-        return config;
     },
 
     renderDataGrid : function(cmp) {
+        LABKEY.requiresExt3ClientAPI(true, function() { this._doRenderGrid(cmp); }, this);
+    },
 
+    _doRenderGrid : function(cmp) {
         var filters = LABKEY.Filter.getFiltersFromUrl(this.initialURL, this.dataRegionName);
         var sort = LABKEY.Filter.getSortFromUrl(this.initialURL, this.dataRegionName);
 
@@ -213,12 +214,12 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 scope  : this
             },
             success : this.onDataSuccess,
-            failure : function(cmp) {this.onDataFailure(cmp);},
+            failure : this.onDataFailure,
             scope   : this
         };
 
         if (this.viewName)
-            config['viewName'] = this.viewName;
+            config.viewName = this.viewName;
 
         var wp = new LABKEY.QueryWebPart(config);
 
@@ -284,7 +285,6 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
                         if (code) {
 
-                            var me = this;
                             this.codeMirror = CodeMirror.fromTextArea(code.dom, {
                                 mode            : this.reportConfig.editAreaSyntax ? this.reportConfig.editAreaSyntax : 'text/plain',
                                 lineNumbers     : true,

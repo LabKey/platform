@@ -61,6 +61,9 @@
         }
     }
     Collections.sort(reportNames, String.CASE_INSENSITIVE_ORDER);
+
+    String sectionName = Report.renderParam.showSection.name();
+    String showTabs = Report.renderParam.showTabs.name();
 %>
 
 <labkey:form name="frmCustomize" method="post" action="<%=h(webPart.getCustomizePostURL(context))%>">
@@ -79,13 +82,13 @@
                             if (reportMap.get(reportName).equals(pm.get(Report.renderParam.reportId.name())))
                             {
                                 %>
-                                    <option value="<%=reportMap.get(reportName)%>" selected><%=reportName%></option>
+                                    <option value="<%=h(reportMap.get(reportName))%>" selected><%=h(reportName)%></option>
                                 <%
                             }
                             else
                             {
                                 %>
-                                    <option value="<%=reportMap.get(reportName)%>"><%=reportName%></option>
+                                    <option value="<%=h(reportMap.get(reportName))%>"><%=h(reportName)%></option>
                                 <%
                             }
                         }
@@ -97,7 +100,7 @@
         <tr>
             <td class="labkey-form-label">Show View Tabs:<%=PageFlowUtil.helpPopup("Show tabs",
                     "Some views may be rendered with multiple tabs showing. Select this option to only show the primary view.")%></td>
-            <td><input id='showTabs' type="checkbox" name="<%=Report.renderParam.showTabs.name()%>"<%=checked(BooleanUtils.toBoolean(pm.get(Report.renderParam.showTabs.name())))%> onclick="onShowTabs(this.checked);"></td>
+            <td><input id='showTabs' type="checkbox" name="<%=h(showTabs)%>" <%=checked(BooleanUtils.toBoolean(pm.get(showTabs)))%> onclick="onShowTabs(this.checked);"></td>
         </tr>
         <tr id="visibleSections">
             <td class="labkey-form-label">Visible Report Sections:<%=PageFlowUtil.helpPopup("Show Report sections",
@@ -110,7 +113,7 @@
             <td><labkey:button text="Submit" /></td>
         </tr>
     </table>
-    <input type="hidden" name="<%=Report.renderParam.showSection.name()%>" id="showSectionHidden">
+    <input type="hidden" name="<%=h(sectionName)%>" id="showSectionHidden">
 </labkey:form>
 
 <script type="text/javascript">
@@ -123,12 +126,11 @@
         {
             var url = "<%=urlProvider(ReportUrls.class).urlReportSections(c)%>";
 
-            url = url.concat("&<%=ReportDescriptor.Prop.reportId.name()%>=");
+            url = url.concat("&<%=PageFlowUtil.encode(ReportDescriptor.Prop.reportId.name())%>=");
             url = url.concat(element.value);
-            url = url.concat("&<%=Report.renderParam.showSection.name()%>=<%=PageFlowUtil.encode(pm.get(Report.renderParam.showSection.name()))%>");
+            url = url.concat("&<%=PageFlowUtil.encode(sectionName)%>=<%=PageFlowUtil.encode(pm.get(sectionName))%>");
 
-            Ext.Ajax.request({
-                method: "GET",
+            LABKEY.Ajax.request({
                 url: url,
                 success : handleSuccess
             });
@@ -188,6 +190,6 @@
             showSection.disabled = checked;
     }
 
-    Ext.onReady(getSectionNames);
+    getSectionNames();
 
 </script>
