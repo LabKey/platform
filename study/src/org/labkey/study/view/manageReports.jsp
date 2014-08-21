@@ -116,10 +116,10 @@
                 <tr>
                     <td>
                         <%
-                        if (view.getIcon() != null)
+                        if (view.getIconUrl() != null)
                         {
                         %>
-                        <img src="<%= h(view.getIcon())%>" alt="">
+                        <img src="<%= h(view.getIconUrl())%>" alt="">
                         <%
                         }
                         %>

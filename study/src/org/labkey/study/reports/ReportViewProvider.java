@@ -34,11 +34,9 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.reports.report.ModuleRReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
-import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -234,12 +232,14 @@ public class ReportViewProvider implements DataViewProvider
                         iconPath = ReportService.get().getIconPath(r);
 
                     if (!StringUtils.isEmpty(iconPath))
-                        info.setIcon(iconPath);
+                        info.setIconUrl(iconPath);
 
                     // see to-do below regarding static vs. dynamic thumbnail providers
                     info.setAllowCustomThumbnail(r instanceof DynamicThumbnailProvider);
 
-                    info.setThumbnailUrl(PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r));
+                    // TODO: Switch static image link vs. action url based on thumbnail type
+                    ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r);
+                    info.setThumbnailUrl(url.toString());
                     info.setTags(ReportPropsManager.get().getProperties(descriptor.getEntityId(), context.getContainer()));
 
                     views.add(info);

@@ -1036,31 +1036,6 @@ public class StudyController extends BaseStudyController
     }
 
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ThumbnailAction extends BaseThumbnailAction
-    {
-        @Override
-        public StaticThumbnailProvider getProvider(Object o) throws Exception
-        {
-            return new StaticThumbnailProvider()
-            {
-                @Override
-                public Thumbnail getStaticThumbnail()
-                {
-                    InputStream is = StudyController.class.getResourceAsStream("dataset.png");
-                    return new Thumbnail(is, "image/png");
-                }
-
-                @Override
-                public String getStaticThumbnailCacheKey()
-                {
-                    return "Dataset";
-                }
-            };
-        }
-    }
-
-
     @RequiresNoPermission
     public class ExpandStateNotifyAction extends SimpleViewAction
     {

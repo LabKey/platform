@@ -111,14 +111,15 @@ public class DatasetViewProvider implements DataViewProvider
                         }
                         view.setType("Dataset");
                         view.setDescription(ds.getDescription());
-                        view.setIcon(AppProps.getInstance().getContextPath() + "/reports/grid.gif");
+                        view.setIconUrl(AppProps.getInstance().getContextPath() + "/reports/grid.gif");
                         view.setVisible(ds.isShowByDefault());
 
                         ActionURL runUrl = new ActionURL(StudyController.DefaultDatasetReportAction.class, container).addParameter("datasetId", ds.getDatasetId());
                         view.setRunUrl(runUrl);
                         view.setDetailsUrl(runUrl);
 
-                        view.setThumbnailUrl(new ActionURL(StudyController.ThumbnailAction.class, container));
+                        // Always return link to a static image for now. See ReportViewProvider for an example of a dynamic thumbnail provider.
+                        view.setThumbnailUrl(AppProps.getInstance().getContextPath() + "/study/dataset.png");
                         view.setModified(ds.getModified());
 
                         view.setTags(ReportPropsManager.get().getProperties(ds.getEntityId(), container));

@@ -15,6 +15,7 @@
  */
 package org.labkey.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.CustomViewInfo;
@@ -154,6 +155,7 @@ public class ModuleCustomViewInfo implements CustomViewInfo
         return _customViewDef.getCustomIconUrl();
     }
 
+    @NotNull
     @Override
     public List<FieldKey> getColumns()
     {
@@ -165,6 +167,7 @@ public class ModuleCustomViewInfo implements CustomViewInfo
         return ret;
     }
 
+    @NotNull
     @Override
     public List<Map.Entry<FieldKey, Map<CustomView.ColumnProperty,String>>> getColumnProperties()
     {

@@ -3221,7 +3221,7 @@ public class ReportsController extends SpringActionController
                 JSONObject viewJson = DataViewService.get().toJSON(getContainer(), getUser(), view);
                 viewJson.put("name", view.getName());
                 viewJson.put("leaf", true);
-                viewJson.put("icon", view.getIcon());
+                viewJson.put("icon", view.getIconUrl());
                 children.put(viewJson);
             }
 

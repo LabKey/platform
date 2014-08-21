@@ -17,6 +17,7 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.query.CustomViewInfo;
@@ -53,6 +54,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return null == _cstmView ? null : _cstmView.getName();
     }
 
+    @NotNull
     @Override
     public String getLabel()
     {
@@ -66,7 +68,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         Integer userId = _cstmView.getCustomViewOwner();
         if (userId == null)
             return null;
-        return UserManager.getUser(userId.intValue());
+        return UserManager.getUser(userId);
     }
 
     public boolean isShared()
@@ -79,6 +81,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return UserManager.getUser(_cstmView.getCreatedBy());
     }
 
+    @NotNull
     @Override
     public Date getCreated()
     {
@@ -91,6 +94,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return UserManager.getUser(_cstmView.getModifiedBy());
     }
 
+    @NotNull
     @Override
     public Date getModified()
     {
@@ -108,6 +112,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return _cstmView.getEntityId();
     }
 
+    @NotNull
     public List<FieldKey> getColumns()
     {
         List<FieldKey> ret = new ArrayList<>();
@@ -151,6 +156,7 @@ public class CustomViewInfoImpl implements CustomViewInfo
         return Collections.unmodifiableList(ret);
     }
 
+    @NotNull
     public List<Map.Entry<FieldKey, Map<ColumnProperty, String>>> getColumnProperties()
     {
         return decodeProperties(_cstmView.getColumns());

@@ -68,9 +68,6 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.DataSetTable;
-import org.labkey.api.thumbnail.BaseThumbnailAction;
-import org.labkey.api.thumbnail.StaticThumbnailProvider;
-import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -141,7 +138,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.MalformedURLException;
@@ -606,12 +602,6 @@ public class QueryController extends SpringActionController
             return new ActionURL(ExportExcelTemplateAction.class, c)
                     .addParameter(QueryParam.schemaName, schemaName)
                     .addParameter("query.queryName", queryName);
-        }
-
-        @Override
-        public ActionURL urlThumbnail(Container c)
-        {
-            return new ActionURL(ThumbnailAction.class, c);
         }
     }
 
@@ -5675,30 +5665,6 @@ public class QueryController extends SpringActionController
         }
     }
 
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ThumbnailAction extends BaseThumbnailAction
-    {
-        @Override
-        public StaticThumbnailProvider getProvider(Object o) throws Exception
-        {
-            return new StaticThumbnailProvider()
-            {
-                @Override
-                public Thumbnail getStaticThumbnail()
-                {
-                    InputStream is = QueryController.class.getResourceAsStream("query.png");
-                    return new Thumbnail(is, "image/png");
-                }
-
-                @Override
-                public String getStaticThumbnailCacheKey()
-                {
-                    return "Query";
-                }
-            };
-        }
-    }
 
     @RequiresPermissionClass(ReadPermission.class)
     @Action(ActionType.SelectMetaData)

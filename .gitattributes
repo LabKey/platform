@@ -2518,7 +2518,6 @@ query/src/org/labkey/query/controllers/TableInfoForm.java -text
 query/src/org/labkey/query/controllers/ValidateQueriesAction.java -text
 query/src/org/labkey/query/controllers/ValidateQueryAction.java -text
 query/src/org/labkey/query/controllers/ViewQuerySourceAction.java -text
-query/src/org/labkey/query/controllers/query.png -text
 query/src/org/labkey/query/data/ExternalSchemaTable.java -text
 query/src/org/labkey/query/jdbc/QueryConnection.java -text
 query/src/org/labkey/query/jdbc/QueryDatabaseMetaData.java -text
@@ -2716,6 +2715,7 @@ query/webapp/query/movedown.gif -text
 query/webapp/query/moveup.gif -text
 query/webapp/query/olap.js -text
 query/webapp/query/olap_junit.js -text
+query/webapp/query/query.png -text
 query/webapp/query/queryDesigner.js -text
 query/webapp/query/sql.gif -text
 query/webapp/query/validateQueries.js -text
@@ -3454,7 +3454,6 @@ study/src/org/labkey/study/controllers/assay/actions/AbstractAssayAPIAction.java
 study/src/org/labkey/study/controllers/assay/actions/GetAssayBatchAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/ImportRunApiAction.java -text
 study/src/org/labkey/study/controllers/assay/actions/SaveAssayBatchAction.java -text
-study/src/org/labkey/study/controllers/dataset.png -text
 study/src/org/labkey/study/controllers/designer/DesignerController.java -text
 study/src/org/labkey/study/controllers/plate/PlateController.java -text
 study/src/org/labkey/study/controllers/reports/ReportsController.java -text
@@ -4042,6 +4041,7 @@ study/webapp/study/StudyVaccineDesign.css -text
 study/webapp/study/StudyVaccineDesign.js -text
 study/webapp/study/StudyWizard.js -text
 study/webapp/study/assay/SampleLookupTemplate.xls -text
+study/webapp/study/dataset.png -text
 study/webapp/study/redesignUtils.js -text
 study/webapp/study/tools/participant_list.png -text
 study/webapp/study/tools/participant_report.png -text
