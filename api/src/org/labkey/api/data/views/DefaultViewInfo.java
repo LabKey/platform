@@ -51,10 +51,10 @@ public class DefaultViewInfo implements DataViewInfo
 
     private ActionURL _runUrl;
     private String _runTarget;
-    private ActionURL _thumbnailUrl;
+    private String _thumbnailUrl;
     private ActionURL _detailsUrl;
 
-    private String _icon;
+    private String _iconUrl;
     private ViewCategory _category;
     private boolean _visible = true;
     private boolean _shared = true;
@@ -197,12 +197,12 @@ public class DefaultViewInfo implements DataViewInfo
         _runTarget = target;
     }
 
-    public ActionURL getThumbnailUrl()
+    public String getThumbnailUrl()
     {
         return _thumbnailUrl;
     }
 
-    public void setThumbnailUrl(ActionURL thumbnailUrl)
+    public void setThumbnailUrl(String thumbnailUrl)
     {
         _thumbnailUrl = thumbnailUrl;
     }
@@ -217,14 +217,14 @@ public class DefaultViewInfo implements DataViewInfo
         _detailsUrl = detailsUrl;
     }
 
-    public String getIcon()
+    public String getIconUrl()
     {
-        return _icon;
+        return _iconUrl;
     }
 
-    public void setIcon(String icon)
+    public void setIconUrl(String iconUrl)
     {
-        _icon = icon;
+        _iconUrl = iconUrl;
     }
 
     public ViewCategory getCategory()
