@@ -399,7 +399,7 @@ public class CachedCubeFactory
     {
         Property keyProperty = l.getProperties().get("KEY");
         Comparator<_Member> comp = new MemberComparator(keyProperty);
-        list.sort(comp);
+        list._sort(comp);
         for (int i = 0; i < list.size(); i++)
             list.get(i).ordinal = i;
     }
@@ -853,12 +853,13 @@ public class CachedCubeFactory
             assert indexMap.size() == this.size();
         }
 
-        public void sort(Comparator<? super T> c)
+        // cant call this sort() and be safe in both java 7 and 8
+        private void _sort(Comparator<? super T> c)
         {
             if (readonly)
                 throw new IllegalStateException();
             indexMap = null;
-            Collections.sort(this, c);
+            super.sort(c);
         }
 
         @Override
