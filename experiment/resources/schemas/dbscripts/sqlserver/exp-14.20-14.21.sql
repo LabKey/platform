@@ -17,6 +17,7 @@
 --ALTER TABLE exp.PropertyDescriptor DROP StorageColumnName;
 
 ALTER TABLE exp.PropertyDescriptor ADD StorageColumnName NVARCHAR(100) NULL;
+GO
 
 UPDATE exp.propertydescriptor
 SET storagecolumnname=name
