@@ -70,6 +70,7 @@ import org.labkey.query.controllers.QueryController;
 import org.labkey.query.jdbc.QueryDriver;
 import org.labkey.query.olap.MemberSet;
 import org.labkey.query.olap.ServerManager;
+import org.labkey.query.olap.rolap.RolapReader;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
@@ -241,7 +242,8 @@ public class QueryModule extends DefaultModule
     {
         return new HashSet<Class>(Arrays.asList(
                 Query.QueryTestCase.class,
-                QueryServiceImpl.TestCase.class
+                QueryServiceImpl.TestCase.class,
+                RolapReader.RolapTest.class
         ));
     }
 

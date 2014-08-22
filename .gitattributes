@@ -2539,6 +2539,8 @@ query/src/org/labkey/query/olap/QubeCellSet.java -text
 query/src/org/labkey/query/olap/QubeQuery.java -text
 query/src/org/labkey/query/olap/ServerManager.java -text
 query/src/org/labkey/query/olap/SqlQueryImpl.java -text
+query/src/org/labkey/query/olap/rolap/RolapCubeDef.java -text
+query/src/org/labkey/query/olap/rolap/RolapReader.java -text
 query/src/org/labkey/query/persist/AbstractExternalSchemaDef.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
 query/src/org/labkey/query/persist/ExternalSchemaDef.java -text

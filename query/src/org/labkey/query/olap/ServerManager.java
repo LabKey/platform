@@ -442,9 +442,10 @@ public class ServerManager
         if (errors.hasErrors())
             return;
 
-        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, sd, conn, qquery, errors);
+        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, sd, cube, conn, qquery, errors);
         try(CellSet ignored = bitsetquery.executeQuery()){}
     }
+
 
     private static BindException getDummyBindException()
     {
@@ -758,25 +759,20 @@ public class ServerManager
         @Override
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable
         {
-            if ("getGUID".equals(method.getName()))
+            switch (method.getName())
             {
-                return _guid;
-            }
-            else if ("shutdown".equals(method.getName()))
-            {
-                _count.decrement();
-                return null;
-            }
-            else if ("executeOlapQuery".equals(method.getName()))
-            {
-                try (AutoCloseable permit = _semaphore.acquire())
-                {
-                    return method.invoke(_inner,args);
-                }
-            }
-            else
-            {
-                return method.invoke(_inner, args);
+                case "getGUID":
+                    return _guid;
+                case "shutdown":
+                    _count.decrement();
+                    return null;
+                case "executeOlapQuery":
+                    try (AutoCloseable permit = _semaphore.acquire())
+                    {
+                        return method.invoke(_inner,args);
+                    }
+                default:
+                    return method.invoke(_inner, args);
             }
         }
     }

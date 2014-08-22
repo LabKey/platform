@@ -15,6 +15,7 @@
  */
 package org.labkey.query.olap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -24,9 +25,15 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.security.User;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
 import org.olap4j.OlapException;
@@ -44,6 +51,8 @@ import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Property;
 import org.springframework.validation.BindException;
 
+import java.io.IOException;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,9 +76,11 @@ public class BitSetQueryImpl
 {
     static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
 
+    final Container container;
     final Cube cube;
     final CaseInsensitiveHashMap<Level> levelMap = new CaseInsensitiveHashMap<>();
     final QubeQuery qq;
+    final RolapCubeDef rolap;
     final BindException errors;
     MeasureDef measure;
     OlapConnection connection;
@@ -77,12 +88,24 @@ public class BitSetQueryImpl
 
     MemberSet containerMembers = null;  // null == all
 
-    public BitSetQueryImpl(Container c, OlapSchemaDescriptor sd, OlapConnection connection, QubeQuery qq, BindException errors) throws SQLException
+    public BitSetQueryImpl(Container c, OlapSchemaDescriptor sd, Cube cube, OlapConnection connection, QubeQuery qq, BindException errors) throws SQLException, IOException
     {
+        this.container = c;
         this.connection = connection;
         this.qq = qq;
         this.cube = qq.getCube();
         this.errors = errors;
+
+        RolapCubeDef r = null;
+        List<RolapCubeDef> defs = sd.getRolapCubeDefinitions();
+        for (RolapCubeDef d : defs)
+        {
+            if (d.getName().equals(cube.getName()))
+                r = d;
+        }
+        rolap = r;
+        if (null == rolap)
+            throw new IllegalStateException("Rolap definition not found: " + cube.getName());
 
         String cubeId = cube.getUniqueName() +
                 ((cube instanceof CachedCubeFactory.CachedCube)?"@" + ((CachedCubeFactory.CachedCube)cube).getLongHashCode() : "");
@@ -622,9 +645,9 @@ public class BitSetQueryImpl
             Result subquery = processExpr(expr.membersQuery);
             Result filtered;
             if (subquery instanceof MemberSetResult)
-                filtered = _cubeHelper.membersQuery(outer, (MemberSetResult)subquery);
+                filtered = _dataSourceHelper.membersQuery(outer, (MemberSetResult)subquery);
             else if (subquery instanceof CrossResult)
-                filtered = _cubeHelper.membersQuery(outer, (CrossResult)subquery);
+                filtered = _dataSourceHelper.membersQuery(outer, (CrossResult)subquery);
             else
                 throw new IllegalStateException("unsupported query, did not expect " + subquery.getClass().getName());
             return filtered;
@@ -725,9 +748,9 @@ public class BitSetQueryImpl
         }
 
         if (null != colsExpr)
-            _cubeHelper.populateCache(measureLevel, colsExpr);
+            _dataSourceHelper.populateCache(measureLevel, colsExpr);
         if (null != rowsExpr)
-            _cubeHelper.populateCache(measureLevel, rowsExpr);
+            _dataSourceHelper.populateCache(measureLevel, rowsExpr);
 
         Collection<Member> rowMembers = null==rowsExpr ? null : rowsExpr.getCollection();
         Collection<Member> colMembers = null==colsExpr ? null : colsExpr.getCollection();
@@ -746,7 +769,7 @@ public class BitSetQueryImpl
                 }
                 else
                 {
-                    MemberSet memberSet = _cubeHelper.membersQuery(measureLevel, m);
+                    MemberSet memberSet = _dataSourceHelper.membersQuery(measureLevel, m);
                     if (null == filterSet)
                         count = memberSet.size();
                     else
@@ -789,12 +812,12 @@ public class BitSetQueryImpl
                     else
                     {
                         if (null == rowMemberSet)
-                            rowMemberSet = _cubeHelper.membersQuery(measureLevel, rowMember);
+                            rowMemberSet = _dataSourceHelper.membersQuery(measureLevel, rowMember);
 
                         MemberSet colMemberSet = quickCache.get(colMember.getUniqueName());
                         if (null == colMemberSet)
                         {
-                            colMemberSet = _cubeHelper.membersQuery(measureLevel, colMember);
+                            colMemberSet = _dataSourceHelper.membersQuery(measureLevel, colMember);
                             quickCache.put(colMember.getUniqueName(),colMemberSet);
                         }
                         if (null == filterSet)
@@ -831,7 +854,7 @@ public class BitSetQueryImpl
         if (null != containerMembers)
         {
             // this doesn't work because we're in the same hierarchy, we can just iterate over the children
-            //MemberSetResult r = _cubeHelper.membersQuery(new MemberSetResult(measureLevel), new MemberSetResult(containerMembers));
+            //MemberSetResult r = _dataSourceHelper.membersQuery(new MemberSetResult(measureLevel), new MemberSetResult(containerMembers));
             int size = containerMembers.size();
             Level level = containerMembers.getLevel();
             if (0 < size && null != level && size == level.getMembers().size())
@@ -891,7 +914,7 @@ public class BitSetQueryImpl
                 // because we only support COUNT DISTINCT, we can treat this filter like
                 // NON EMPTY distinctLevel.members WHERE <filter>,
                 // for SUM() or COUNT() this wouldn't work
-                intersectSet = _cubeHelper.membersQuery(new MemberSetResult(measureLevel), (MemberSetResult)result);
+                intersectSet = _dataSourceHelper.membersQuery(new MemberSetResult(measureLevel), (MemberSetResult)result);
             }
             if (null == filteredSet)
                 filteredSet = new MemberSet(intersectSet.getCollection());
@@ -1055,8 +1078,20 @@ public class BitSetQueryImpl
     }
 
 
+    interface IDataSourceHelper
+    {
+            MemberSetResult membersQuery(MemberSetResult outer, MemberSetResult sub) throws SQLException;
+
+            MemberSet membersQuery(Level outer, Member sub) throws SQLException;
+
+            MemberSetResult membersQuery(MemberSetResult outer, CrossResult sub) throws SQLException;
+
+            void populateCache(Level outerLevel, Result inner) throws SQLException;
+   }
+
+
     // return sets/counts from the cube,
-    class CubeDataSourceHelper
+    class CubeDataSourceHelper implements IDataSourceHelper
     {
         CellSet execute(String query)
         {
@@ -1175,7 +1210,7 @@ public class BitSetQueryImpl
          * return a set of members in <MemberSetResult=outer> that intersect (non empty cross join) with <MemberSetResult=sub>.
          * Note that this basically gives OR or UNION semantics w/respect to the sub members.
          */
-        MemberSetResult membersQuery(MemberSetResult outer, MemberSetResult sub) throws SQLException
+        public MemberSetResult membersQuery(MemberSetResult outer, MemberSetResult sub) throws SQLException
         {
             MemberSet set;
 
@@ -1232,7 +1267,7 @@ public class BitSetQueryImpl
         /**
          * return a set of members in <Level=outer> that intersect (non empty cross join) with <Member=sub>
          */
-        MemberSet membersQuery(Level outer, Member sub) throws SQLException
+        public MemberSet membersQuery(Level outer, Member sub) throws SQLException
         {
             if (same(sub.getHierarchy(), outer.getHierarchy()))
             {
@@ -1264,7 +1299,7 @@ public class BitSetQueryImpl
         }
 
 
-        MemberSetResult membersQuery(MemberSetResult outer, CrossResult sub) throws SQLException
+        public MemberSetResult membersQuery(MemberSetResult outer, CrossResult sub) throws SQLException
         {
             String query = queryWhere(outer, sub);
             MemberSet s = resultsCacheGet(query);
@@ -1290,7 +1325,7 @@ public class BitSetQueryImpl
 
 
 
-        void populateCache(Level outerLevel, Result inner) throws SQLException
+        public void populateCache(Level outerLevel, Result inner) throws SQLException
         {
             // MDX doesn't allow union across different hierarchies, but I do, so here I iterate over
             // the union components
@@ -1398,14 +1433,292 @@ public class BitSetQueryImpl
         return a==b || a.getUniqueName().equalsIgnoreCase(b.getUniqueName());
     }
 
-    CubeDataSourceHelper _cubeHelper = new CubeDataSourceHelper();
 
 
-    // TODO SqlHelper requires some sort of mapping to the sql schema
-    class SqlDataSourceHelper
+    class SqlDataSourceHelper implements IDataSourceHelper
     {
 
+        RolapCubeDef.LevelDef getRolapFromCube(Level level)
+        {
+            RolapCubeDef.LevelDef ret = rolap.getRolapDef(level);
+            if (null == ret)
+                return null;
+            return ret;
+        }
+        RolapCubeDef.HierarchyDef getRolapFromCube(Hierarchy h)
+        {
+            RolapCubeDef.HierarchyDef ret = rolap.getRolapDef(h);
+            if (null == ret)
+                return null;
+            return ret;
+        }
+
+
+        ResultSet execute(String query) throws SQLException
+        {
+            _log.debug("SqlDataSourceHelper.execute(" + query + ")");
+            try
+            {
+                QuerySchema qs = DefaultSchema.get(User.getSearchUser(), container, "core");
+                return QueryService.get().select(qs, query);
+            }
+            catch (SQLException|QueryParseException|AssertionError x)
+            {
+                _log.error("SqlDataSourceHelper.execute(" + query + ")", x);
+                throw x;
+            }
+        }
+
+        String queryCrossjoin(Result from, Result to)
+        {
+            StringBuilder sb = new StringBuilder();
+//            sb.append(
+//                    "SELECT\n" +
+//                            "  [Measures].DefaultMember ON COLUMNS,\n" +
+//                            "  NON EMPTY CROSSJOIN(");
+//            from.toMdxSet(sb);
+//            sb.append(",");
+//            to.toMdxSet(sb);
+//            sb.append(") ON ROWS\n");
+//            sb.append("FROM ").append(cube.getUniqueName());
+            return sb.toString();
+        }
+
+
+        String queryCrossjoin(Level from, Result to)
+        {
+            StringBuilder sb = new StringBuilder();
+//            sb.append(
+//                    "SELECT\n" +
+//                            "  [Measures].DefaultMember ON COLUMNS,\n" +
+//                            "  NON EMPTY CROSSJOIN(");
+//            sb.append(from.getUniqueName()).append(".members");
+//            sb.append(",");
+//            to.toMdxSet(sb);
+//            sb.append(") ON ROWS\n");
+//            sb.append("FROM ").append(cube.getUniqueName());
+            return sb.toString();
+        }
+
+
+        String queryCrossjoin(Level from, Level to)
+        {
+            RolapCubeDef.LevelDef defFrom = getRolapFromCube(from);
+
+            if (to.getLevelType() == Level.Type.ALL)
+            {
+                StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
+                sb.append(defFrom.getKeyColumnsSQL());
+                sb.append("\nFROM ");
+                sb.append(rolap.getFromSQL());
+                sb.append(" ");
+                String clauseFromJoin = defFrom.getFromJoin();
+                sb.append(clauseFromJoin);
+                return sb.toString();
+            }
+            else
+            {
+                RolapCubeDef.LevelDef defTo = getRolapFromCube(to);
+                StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
+                sb.append(defFrom.getKeyColumnsSQL());
+                sb.append(", ");
+                sb.append(defTo.getKeyColumnsSQL());
+                sb.append("\nFROM ");
+                sb.append(rolap.getFromSQL());
+                sb.append(" ");
+                String clauseFromJoin = defFrom.getFromJoin();
+                String clauseToJoin = defTo.getFromJoin();
+                sb.append(clauseFromJoin);
+                if (!StringUtils.equalsIgnoreCase(clauseFromJoin, clauseToJoin))
+                    sb.append(" ").append(clauseToJoin);
+                return sb.toString();
+            }
+        }
+
+
+        String queryIsNotEmpty(Level from, Member m)
+        {
+            RolapCubeDef.LevelDef defFrom = getRolapFromCube(from);
+            RolapCubeDef.HierarchyDef defMember = getRolapFromCube(m.getHierarchy());
+
+            StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
+            sb.append(defFrom.getKeyColumnsSQL());
+            sb.append("\nFROM ");
+            sb.append(rolap.getFromSQL());
+            sb.append(" ");
+            String clauseFromJoin = defFrom.getFromJoin();
+            String clauseMemberJoin = defMember.getFromJoin();
+            sb.append(clauseFromJoin);
+            if (!StringUtils.equalsIgnoreCase(clauseFromJoin,clauseMemberJoin))
+                sb.append(" " ).append(clauseMemberJoin);
+            if (!m.isAll())
+            {
+                sb.append("\nWHERE ");
+                sb.append(defMember.getMemberFilter(m));
+            }
+            return sb.toString();
+        }
+
+
+        @Override
+        public MemberSetResult membersQuery(MemberSetResult outer, MemberSetResult sub) throws SQLException
+        {
+            return null;
+        }
+
+        @Override
+        public MemberSet membersQuery(Level outer, Member sub) throws SQLException
+        {
+            getRolapFromCube(outer);
+            getRolapFromCube(sub.getLevel());
+            return null;
+        }
+
+        @Override
+        public MemberSetResult membersQuery(MemberSetResult outer, CrossResult sub) throws SQLException
+        {
+            return null;
+        }
+
+        @Override
+        public void populateCache(Level outerLevel, Result inner) throws SQLException
+        {
+            // MDX doesn't allow union across different hierarchies, but I do, so here I iterate over
+            // the union components
+            if (inner instanceof UnionResult)
+            {
+                for (Result r : ((UnionResult) inner).results)
+                    populateCache(outerLevel, r);
+                return;
+            }
+
+            // MDX doesn't allow union across different hierarchies, but I do, so here I iterate over
+            // the union components
+            if (inner instanceof UnionResult)
+            {
+                for (Result r : ((UnionResult) inner).results)
+                    populateCache(outerLevel, r);
+                return;
+            }
+
+
+            boolean cacheMiss = false;
+
+            // We cache by individual members, but we don't necessaryily want to load the cache one set at a time
+            // we could find just the members that are not yet cached, but I'm just going to check if ANY are missing
+            for (Member sub : inner.getCollection())
+            {
+                if (same(sub.getHierarchy(), outerLevel.getHierarchy()))
+                    continue;
+                String query = queryIsNotEmpty(outerLevel, sub);
+                MemberSet s = resultsCacheGet(query);
+                if (null == s)
+                {
+                    cacheMiss = true;
+                    break;
+                }
+            }
+            if (!cacheMiss)
+                return;
+
+            CaseInsensitiveHashMap<MemberSet> sets = new CaseInsensitiveHashMap<>();
+            Collection<Member> innerCollection = inner.getCollection();
+            for (Member sub : innerCollection)
+                sets.put(sub.getUniqueName(), new MemberSet());
+
+            boolean isShortList = false;
+            if (inner instanceof MemberSetResult)
+            {
+                MemberSetResult msr = (MemberSetResult)inner;
+                if (msr.members != null && msr.members.size() <= 20)
+                    isShortList = true;
+            }
+
+            String queryXjoin;
+            if (isShortList || null == inner.getLevel())
+            {
+                queryXjoin=queryCrossjoin(outerLevel, inner);
+            }
+            else
+            {
+                // just cache for all members of the level
+                queryXjoin = queryCrossjoin(outerLevel, inner.getLevel());
+            }
+
+            try (ResultSet cs = execute(queryXjoin))
+            {
+//                List<Position> rowPositions = cs.getAxes().get(1).getPositions();
+//                for (int row=0 ; row<rowPositions.size() ; row++)
+//                {
+//                    Position p = rowPositions.get(row);
+//                    Member outerMember = p.getMembers().get(0);
+//                    Member sub = p.getMembers().get(1);
+//                    double value = cs.getCell(row).getDoubleValue();
+//                    if (0.0 != value)
+//                    {
+//                        assert same(outerMember.getLevel(), outerLevel);
+//                        MemberSet s = sets.get(sub.getUniqueName());
+//                        if (null == s)
+//                        {
+//                            s = new MemberSet();
+//                            sets.put(sub.getUniqueName(),s);
+//                        }
+//                        Member m = getCubeMember(outerMember);
+//                        if (null == m)
+//                            _log.warn("Unexpected member in cellset result: " + outerMember.getUniqueName());
+//                        else
+//                            s.add(m);
+//                    }
+//                }
+            }
+            for (Member sub : inner.getCollection())
+            {
+                String query = queryIsNotEmpty(outerLevel, sub);
+                MemberSet s = sets.get(sub.getUniqueName());
+                if (null != s)
+                    resultsCachePut(query,s);
+            }
+        }
     }
+
+
+    class DoubleDownHelper implements IDataSourceHelper
+    {
+        @Override
+        public MemberSetResult membersQuery(MemberSetResult outer, MemberSetResult sub) throws SQLException
+        {
+            _sdsh.membersQuery(outer,sub);
+            return _cdsh.membersQuery(outer,sub);
+        }
+
+        @Override
+        public MemberSet membersQuery(Level outer, Member sub) throws SQLException
+        {
+            _sdsh.membersQuery(outer,sub);
+            return _cdsh.membersQuery(outer,sub);
+        }
+
+        @Override
+        public MemberSetResult membersQuery(MemberSetResult outer, CrossResult sub) throws SQLException
+        {
+            _sdsh.membersQuery(outer,sub);
+            return _cdsh.membersQuery(outer,sub);
+        }
+
+        @Override
+        public void populateCache(Level outerLevel, Result inner) throws SQLException
+        {
+            _sdsh.populateCache(outerLevel,inner);
+            _cdsh.populateCache(outerLevel,inner);
+        }
+    }
+
+
+    CubeDataSourceHelper _cdsh = new CubeDataSourceHelper();
+    SqlDataSourceHelper _sdsh = new SqlDataSourceHelper();
+//    IDataSourceHelper _dataSourceHelper = new DoubleDownHelper();
+    IDataSourceHelper _dataSourceHelper = new CubeDataSourceHelper();
+
 
 
     class _CellSet extends QubeCellSet

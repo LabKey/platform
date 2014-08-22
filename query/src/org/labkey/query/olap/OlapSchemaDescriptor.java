@@ -8,7 +8,8 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.OlapSchemaInfo;
 import org.labkey.api.security.User;
-import org.labkey.api.util.GUID;
+import org.labkey.query.olap.rolap.RolapCubeDef;
+import org.labkey.query.olap.rolap.RolapReader;
 import org.olap4j.OlapConnection;
 import org.olap4j.impl.Named;
 import org.olap4j.impl.NamedListImpl;
@@ -20,7 +21,10 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * This maps to a mondrian schema definition file.
@@ -112,6 +116,24 @@ public abstract class OlapSchemaDescriptor
     public abstract boolean isEditable();
 
     public abstract String getDefinition();
+
+
+    List<RolapCubeDef> rolapCubes = null;
+
+    public synchronized List<RolapCubeDef> getRolapCubeDefinitions() throws IOException
+    {
+        if (null == rolapCubes)
+        {
+            try (InputStream is = getInputStream(); Reader r = new InputStreamReader(is))
+            {
+                RolapReader rr = new RolapReader(r);
+                return rr.getCubes();
+                //TODO rolapCubes = rr.getCubes();
+            }
+        }
+        return rolapCubes;
+    }
+
 
     protected abstract InputStream getInputStream() throws IOException;
 

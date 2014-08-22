@@ -560,7 +560,7 @@ public class OlapController extends SpringActionController
                 try
                 {
                     start = System.currentTimeMillis();
-                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), sd, getConnection(sd), qquery, errors);
+                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), sd, cube, getConnection(sd), qquery, errors);
                     if (null != cf)
                         bitsetquery.setContainerFilter(getContainerCollection(cf));
                     cs = bitsetquery.executeQuery();
