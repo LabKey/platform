@@ -52,7 +52,10 @@ public class AliasedColumn extends ColumnInfo
 
         if (!forceKeepLabel && !key.getName().equalsIgnoreCase(column.getFieldKey().getName()))
             setLabel(null);
+
         _column = column;
+        metaDataName = column.getMetaDataName();
+        selectName = column.getSelectName();
     }
 
     public AliasedColumn(TableInfo parent, String name, ColumnInfo column)

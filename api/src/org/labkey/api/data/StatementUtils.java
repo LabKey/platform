@@ -291,9 +291,7 @@ public class StatementUtils
         UpdateableTableInfo updatable = (UpdateableTableInfo)t;
         TableInfo table = updatable.getSchemaTableInfo();
 
-        if (!(table instanceof SchemaTableInfo))
-            throw new IllegalArgumentException();
-        if (null == ((SchemaTableInfo)table).getMetaDataName())
+        if (table.getTableType() != DatabaseTableType.TABLE || null == table.getMetaDataName())
             throw new IllegalArgumentException();
 
         if (operation.merge == op)

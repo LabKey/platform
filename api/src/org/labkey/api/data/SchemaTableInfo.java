@@ -184,12 +184,14 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return _title;
     }
 
-     public String getMetaDataName()
+    @Override
+    public String getMetaDataName()
     {
         return _metaDataName;
     }
 
 
+    @Override
     public String getSelectName()
     {
         return _selectName.getSQL();

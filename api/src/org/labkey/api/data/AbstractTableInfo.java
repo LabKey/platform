@@ -1123,11 +1123,19 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         }
     }
 
+    @Nullable
+    @Override
     public String getSelectName()
     {
         return null;
     }
 
+    @Nullable
+    @Override
+    public String getMetaDataName()
+    {
+        return null;
+    }
 
     public ColumnInfo getLookupColumn(ColumnInfo parent, String name)
     {

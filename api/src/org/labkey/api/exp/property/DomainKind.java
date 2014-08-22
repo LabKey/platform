@@ -198,8 +198,12 @@ abstract public class DomainKind implements Handler<String>
         return null;
     }
 
-    // Called for provisioned tables after StorageProvisioner has loaded them from JDBC but before they are locked and
-    // cached. Use this to decorate the SchemaTableInfo with additional meta data, for example.
+    /** Called for provisioned tables after StorageProvisioner has loaded them from JDBC but before they are locked and
+     * cached. Use this to decorate the SchemaTableInfo with additional meta data, for example.
+     *
+     * NOTE: this is the raw-cached SchemaTableInfo, some column names may not match expected property names
+     * see PropertyDescriptor.getName(), PropertyDescriptor.getStorageColumnName()
+     */
     public void afterLoadTable(SchemaTableInfo ti, Domain domain)
     {
         // Most DomainKinds do nothing here

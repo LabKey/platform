@@ -114,7 +114,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
         if (_selectIds)
         {
-            SchemaTableInfo t = (SchemaTableInfo)((UpdateableTableInfo)table).getSchemaTableInfo();
+            TableInfo t = ((UpdateableTableInfo)table).getSchemaTableInfo();
             // check that there is actually an autoincrement column in schema table (List has fake auto increment)
             for (ColumnInfo col : t.getColumns())
             {

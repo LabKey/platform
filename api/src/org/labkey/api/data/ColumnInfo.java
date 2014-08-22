@@ -130,8 +130,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private boolean isUserEditable = true;
     private boolean isUnselectable = false;
     private TableInfo parentTable = null;
-    private String metaDataName = null;
-    private String selectName = null;
+    protected String metaDataName = null;
+    protected String selectName = null;
     protected ColumnInfo displayField;
     private String propertyURI = null;
     private String conceptURI = null;

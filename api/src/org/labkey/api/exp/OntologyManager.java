@@ -1366,7 +1366,7 @@ public class OntologyManager
         TableInfo t = getTinfoPropertyDescriptor();
         SQLFragment sql = new SQLFragment();
         sql.append("INSERT INTO exp.propertydescriptor (" +
-                "propertyuri, ontologyuri, name, description, rangeuri, concepturi, label, searchterms, semantictype, " +
+                "propertyuri, ontologyuri, name, storagecolumnname, description, rangeuri, concepturi, label, searchterms, semantictype, " +
                 "format, container, project, lookupcontainer, lookupschema, lookupquery, defaultvaluetype, hidden, " +
                 "mvenabled, importaliases, url, shownininsertview, showninupdateview, shownindetailsview, dimension, " +
                 "measure, scale, keyvariable, defaultscale, createdby, created, modifiedby, modified, facetingbehaviortype, " +
@@ -1375,6 +1375,7 @@ public class OntologyManager
                 "? as propertyuri, " +
                 "? as ontolotyuri, " +
                 "? as name, " +
+                "? as storagecolumnname, " +
                 "? as description, " +
                 "? as rangeuri, " +
                 "? as concepturi, " +
@@ -1412,6 +1413,7 @@ public class OntologyManager
         sql.add(pd.getPropertyURI());
         sql.add(pd.getOntologyURI());
         sql.add(pd.getName());
+        sql.add(pd.getStorageColumnName());
         sql.add(pd.getDescription());
         sql.add(pd.getRangeURI());
         sql.add(pd.getConceptURI());

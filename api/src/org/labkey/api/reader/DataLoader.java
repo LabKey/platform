@@ -841,6 +841,7 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 IOUtils.closeQuietly(_it);
             }
             _it = iterator();
+            _rowNumber = 0;
         }
 
         @Override

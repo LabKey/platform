@@ -131,7 +131,11 @@ public class PropertyStorageSpec
 
     public PropertyStorageSpec(PropertyDescriptor propertyDescriptor)
     {
-        setName(propertyDescriptor.getName());
+        setName(propertyDescriptor.getStorageColumnName());
+        if (null == getName())
+        {
+            throw new IllegalStateException();
+        }
         setJdbcType(propertyDescriptor.getJdbcType());
         _setSize(propertyDescriptor.getScale(), propertyDescriptor.getJdbcType());
         setNullable(propertyDescriptor.isNullable());

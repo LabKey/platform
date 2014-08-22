@@ -36,6 +36,7 @@ import java.util.Map;
 public class PropertyDescriptor extends ColumnRenderProperties implements ParameterDescription, Serializable, Cloneable
 {                           
     private String name;
+    private String storageColumnName;
     private int propertyId;
     private String propertyURI;
     private String ontologyURI;
@@ -163,6 +164,16 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
         }
 
         return name;
+    }
+
+    public String getStorageColumnName()
+    {
+        return storageColumnName;
+    }
+
+    public void setStorageColumnName(String storageColumnName)
+    {
+        this.storageColumnName = storageColumnName;
     }
 
     public String getOntologyURI()

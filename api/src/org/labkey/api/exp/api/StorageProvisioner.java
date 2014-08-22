@@ -15,6 +15,7 @@
  */
 package org.labkey.api.exp.api;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -23,9 +24,11 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DatabaseTableType;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSchemaType;
 import org.labkey.api.data.DbScope;
@@ -40,6 +43,7 @@ import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
@@ -52,6 +56,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.query.AliasManager;
+import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.security.User;
 import org.labkey.api.test.TestTimeout;
 import org.labkey.api.util.CPUTimer;
@@ -438,8 +443,9 @@ public class StorageProvisioner
             {
                 PropertyStorageSpec prop = new PropertyStorageSpec(rename.getKey().getPropertyDescriptor());
                 String oldPropName = rename.getValue().getName();
-                renamePropChange.addColumnRename(oldPropName, prop.getName());
+                String oldColumnName = rename.getValue().getStorageColumnName();
 
+                renamePropChange.addColumnRename(oldColumnName, prop.getName());
 
                 if (!allowRenameOfColumnsDuringUpgrade)
                 {
@@ -489,7 +495,7 @@ public class StorageProvisioner
      * Return a TableInfo for this domain, creating if necessary. This method uses the DbSchema caching layer.
      */
     @NotNull
-    public static SchemaTableInfo createTableInfo(Domain domain)
+    public static TableInfo createTableInfo(Domain domain)
     {
         DomainKind kind = domain.getDomainKind();
         if (null == kind)
@@ -508,7 +514,100 @@ public class StorageProvisioner
         DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
         ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
 
-        return schema.getTable(options);
+        SchemaTableInfo sti = schema.getTable(options);
+        boolean needsAliases = false;
+
+        // check for any columns where storagecolumnname != name
+        for (DomainProperty dp : domain.getProperties())
+        {
+            String scn = dp.getPropertyDescriptor().getStorageColumnName();
+            String name = dp.getName();
+            if (null != scn && !scn.equalsIgnoreCase(name))
+                needsAliases = true;
+        }
+
+//  FOR TESTING/VERIFICATION always return wrapped table
+//        if (!needsAliases)
+//            return sti;
+
+        // NOTE we could handl ethis in ProvisionedSchemaOptions.afterLoadTable(), but that would require
+        // messing with renaming columns etc, and since this is pretty rare, we'll just do this with an aliased table
+
+        CaseInsensitiveHashMap<String> map = new CaseInsensitiveHashMap<>();
+        for (DomainProperty dp : domain.getProperties())
+        {
+            String scn = dp.getPropertyDescriptor().getStorageColumnName();
+            String name = dp.getName();
+            if (null != scn && !scn.equals(name))
+                map.put(scn,name);
+        }
+
+        if (1==0 && !needsAliases)
+            return sti;
+
+        final SchemaTableInfo inner = sti;
+        VirtualTable wrapper = new VirtualTable(schema, sti.getName())
+        {
+            @Override
+            public String toString()
+            {
+                // really shouldn't be doing this any more, use getSelectName()?
+                return inner.toString();
+            }
+
+            @Override
+            public Path getNotificationKey()
+            {
+                return inner.getNotificationKey();
+            }
+
+            @Override
+            public DatabaseTableType getTableType()
+            {
+                return inner.getTableType();
+            }
+
+            @Override
+            public String getSelectName()
+            {
+                return inner.getSelectName();
+            }
+
+            @Nullable
+            @Override
+            public String getMetaDataName()
+            {
+                return inner.getMetaDataName();
+            }
+
+            @NotNull
+            @Override
+            public SQLFragment getFromSQL(String alias)
+            {
+                return inner.getFromSQL(alias);
+            }
+        };
+        for (ColumnInfo from : sti.getColumns())
+        {
+            String name = StringUtils.defaultString(map.get(from.getName()), from.getName());
+            ColumnInfo to = new AliasedColumn(wrapper, name, from)
+            {
+                @Override
+                public String getSelectName()
+                {
+                    return super.getSelectName();
+                }
+
+                @Override
+                public SQLFragment getValueSql(String tableAlias)
+                {
+                    return super.getValueSql(tableAlias);
+                }
+            };
+            wrapper.addColumn(to);
+        }
+
+        return wrapper;
     }
 
     private static final Object ENSURE_LOCK = new Object();
@@ -1187,15 +1286,20 @@ public class StorageProvisioner
         {
             addPropertyB();
             DomainProperty propB = domain.getPropertyByName(propNameB);
+            String oldColumnName = propB.getPropertyDescriptor().getStorageColumnName();
             String newName = "new_" + propNameB;
             propB.setName(newName);
             domain.save(new User());
+
             Assert.assertNull("renamed column is not present in old name",
                     getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
-                            domain.getStorageTableName(), propNameB));
+                            domain.getStorageTableName(), oldColumnName));
+
+            propB = domain.getPropertyByName(newName);
+            String newColumnName = propB.getPropertyDescriptor().getStorageColumnName();
             Assert.assertNotNull("renamed column is provisioned in new name",
                     getJdbcColumnMetadata(domain.getDomainKind().getStorageSchemaName(),
-                            domain.getStorageTableName(), newName));
+                            domain.getStorageTableName(), newColumnName));
         }
 /*
 

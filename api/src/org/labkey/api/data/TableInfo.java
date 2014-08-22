@@ -75,6 +75,10 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
     @Nullable
     String getSelectName();
 
+
+    @Nullable
+    String getMetaDataName();
+
     /**
      * SQL representing this table, e.g.
      *     "Issues.Issues <alias>"

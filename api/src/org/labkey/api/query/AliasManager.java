@@ -194,6 +194,23 @@ public class AliasManager
         return ret;
     }
 
+    public String decideAlias(String name, String preferred)
+    {
+        if (!_aliases.containsKey(preferred))
+        {
+            _aliases.put(preferred, name);
+            return preferred;
+        }
+        String legalName = makeLegalName(name);
+        String ret = legalName;
+        for (int i = 1; _aliases.containsKey(ret); i ++)
+        {
+            ret = legalName + i;
+        }
+        _aliases.put(ret, name);
+        return ret;
+    }
+
 
 /*
     public String decideAlias(FieldKey key)
