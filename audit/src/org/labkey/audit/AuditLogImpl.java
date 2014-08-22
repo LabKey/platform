@@ -715,7 +715,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
 
         // Get the new audit provisioned table
         DbSchema dbSchema = AuditSchema.getInstance().getSchema();
-        SchemaTableInfo targetTable = StorageProvisioner.createTableInfo(domain);
+        TableInfo targetTable = StorageProvisioner.createTableInfo(domain);
 
         // Create list of sourceColumns on sourceTable
         List<FieldKey> sourceFields = new ArrayList<>();
@@ -837,6 +837,8 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         else if (dialect.isPostgreSQL())
         {
             String pkCol = targetTable.getPkColumnNames().get(0);
+            ColumnInfo c = targetTable.getColumn(pkCol);
+            pkCol = c.getMetaDataName();
             _log.info(String.format("Updating sequence for %s.%s", targetTable, pkCol));
 
             SQLFragment resetSeq = new SQLFragment();

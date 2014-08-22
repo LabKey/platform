@@ -372,6 +372,7 @@
       <ns:column columnName="OntologyURI"/>
       <ns:column columnName="RangeURI"/>
       <ns:column columnName="Name"/>
+      <ns:column columnName="StorageColumnName"/>
       <ns:column columnName="Description"/>
       <ns:column columnName="ConceptURI"/>
       <ns:column columnName="Label"/>

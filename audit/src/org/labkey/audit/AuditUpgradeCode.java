@@ -23,6 +23,7 @@ import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.exp.property.Domain;
@@ -70,7 +71,7 @@ public class AuditUpgradeCode implements UpgradeCode
 
                     Domain domain = provider.getDomain();
                     DbSchema dbSchema = AuditSchema.getInstance().getSchema();
-                    SchemaTableInfo table = StorageProvisioner.createTableInfo(domain);
+                    TableInfo table = StorageProvisioner.createTableInfo(domain);
 
                     SQLFragment sql = new SQLFragment();
                     sql.append("UPDATE ").append(table.getSelectName()).append(" SET \"user\" = NULL WHERE \"user\" = 0");

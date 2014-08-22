@@ -574,7 +574,7 @@ public abstract class VisitManager
             if (null == sti)
                 continue;
             f.append(union);
-            f.append("SELECT DISTINCT participantid FROM ").append(sti.toString());
+            f.append("SELECT DISTINCT participantid FROM ").append(sti.getFromSQL("_"));
             if (d.isShared())
                 f.append(" WHERE container=?").add(d.getContainer().getId());
             union = " UNION\n";

@@ -24,6 +24,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.ConditionalFormat;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
 import org.labkey.api.data.MVDisplayColumnFactory;
@@ -48,6 +49,7 @@ import org.labkey.api.exp.property.DomainAuditViewFactory;
 import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateServiceException;
@@ -76,6 +78,11 @@ public class DomainImpl implements Domain
     List<DomainPropertyImpl> _properties;
     private Set<PropertyStorageSpec.ForeignKey> _propertyForeignKeys = Collections.emptySet();
     private boolean _shouldDeleteAllData = false;
+
+    // NOTE we could put responsibilty for generating column names on the StorageProvisioner
+    // But then we'd have the situation of StorageProvisioner knowing about/updating Domains, which seems fraught
+    transient AliasManager _aliasManager = null;
+
 
     public DomainImpl(DomainDescriptor dd)
     {
@@ -340,6 +347,10 @@ public class DomainImpl implements Domain
             {
                 if (!impl._deleted)
                 {
+                    // make sure all properties have storageColumnName
+                    if (null == impl._pd.getStorageColumnName())
+                        generateStorageColumnName(impl._pd);
+
                     if (impl.isRecreateRequired())
                     {
                         impl.markAsNew();
@@ -373,7 +384,9 @@ public class DomainImpl implements Domain
                                 finalNames.put(impl, new Pair<>(impl.getName(), sortOrder));
                                 // Save any fields whose name changed with a temp, guaranteed unique name. This is important in case a single save
                                 // is renaming "Field1"->"Field2" and "Field2"->"Field1". See issue 17020
-                                impl.setName(new GUID().toStringNoDashes());
+                                String tmpName = "~tmp" + new GUID().toStringNoDashes();
+                                impl.setName(tmpName);
+                                impl._pd.setStorageColumnName(tmpName);
                             }
                         }
                     }
@@ -388,6 +401,7 @@ public class DomainImpl implements Domain
                 String name = entry.getValue().getKey();
                 int order = entry.getValue().getValue().intValue();
                 domainProperty.setName(name);
+                generateStorageColumnName(domainProperty._pd);
                 domainProperty.save(user, _dd, order);
             }
 
@@ -607,5 +621,37 @@ public class DomainImpl implements Domain
             return true;
         }
         else return false;
+    }
+
+
+    public void generateStorageColumnName(PropertyDescriptor pd)
+    {
+        if (null == _aliasManager)
+        {
+            _aliasManager = new AliasManager(DbSchema.get("exp"));
+            DomainKind k = getDomainKind();
+            if (null != k)
+            {
+                for (PropertyStorageSpec s : k.getBaseProperties())
+                {
+                    _aliasManager.claimAlias(s.getName(),s.getName());
+                }
+            }
+            for (DomainPropertyImpl dp : this.getProperties())
+            {
+                if (null != dp._pd && null != dp._pd.getStorageColumnName())
+                    _aliasManager.claimAlias(dp._pd.getStorageColumnName(), dp.getName());
+            }
+        }
+
+        // we could just call _aliasManager.decideAlias(pd.getName()) here, however the StorageProvisioner
+        // indexes, and foreignkeys still reply on storage names matching prooperty names.  So try to keep the
+        // names the same if at all possible (especially short names)
+        String storage = null;
+        if (pd.getName().length() < 60)
+            storage = _aliasManager.decideAlias(pd.getName(), pd.getName());
+        else
+            storage = _aliasManager.decideAlias(pd.getName());
+        pd.setStorageColumnName(storage);
     }
 }

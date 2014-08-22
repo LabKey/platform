@@ -711,7 +711,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             CPUTimer time = new CPUTimer("purge");
             time.start();
 
-            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM " + table + "\n");
+            SQLFragment studyDataFrag = new SQLFragment("DELETE FROM " + table.getSelectName() + "\n");
             studyDataFrag.append("WHERE container=?");
             studyDataFrag.add(getContainer());
             if (cutoff != null)
@@ -1479,7 +1479,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
     static ColumnInfo newDatasetColumnInfo(TableInfo tinfo, final ColumnInfo from, final String propertyURI)
     {
-        ColumnInfo result = new ColumnInfo(from, tinfo);
+        ColumnInfo result = new AliasedColumn(tinfo, from.getName(), from);
         if (null != propertyURI)
             result.setPropertyURI(propertyURI);
         // Hidden doesn't get copied with the default set of properties
@@ -2810,7 +2810,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     {
         TableInfo tInfo = getStorageTableInfo();
         Integer newKey = new SqlSelector(tInfo.getSchema(),
-                "SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM " + tInfo).getObject(Integer.class);
+                "SELECT COALESCE(MAX(CAST(_key AS INTEGER)), 0) FROM " + tInfo.getFromSQL("_")).getObject(Integer.class);
         return newKey.intValue();
     }
 

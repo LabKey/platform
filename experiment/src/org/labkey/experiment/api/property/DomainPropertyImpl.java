@@ -40,6 +40,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 

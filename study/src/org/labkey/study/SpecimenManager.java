@@ -1832,7 +1832,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteVialSql);
 
-        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tableInfoSpecimen + " WHERE ").append(visitRangeSql1);
+        SQLFragment specimenRowIdSelectSql = new SQLFragment("FROM " + tableInfoSpecimen.getSelectName() + " WHERE ").append(visitRangeSql1);
         SQLFragment deleteSpecimenSql = new SQLFragment("DELETE ");
         deleteSpecimenSql.append(specimenRowIdSelectSql);
 
