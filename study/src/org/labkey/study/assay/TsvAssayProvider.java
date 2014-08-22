@@ -131,7 +131,7 @@ public class TsvAssayProvider extends AbstractTsvAssayProvider
     @Override
     public AssaySaveHandler getSaveHandler()
     {
-        AssaySaveHandler saveHandler = new DefaultAssaySaveHandler();
+        AssaySaveHandler saveHandler = new TsvAssaySaveHandler();
         saveHandler.setProvider(this);
         return saveHandler;
     }

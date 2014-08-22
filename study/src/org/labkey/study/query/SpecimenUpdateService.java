@@ -351,6 +351,10 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
         for (int i = 0; i < rows.size(); i++)
         {
             Map<String, Object> row = rows.get(i);
+            if (null == row.get("SequenceNum"))
+            {
+                row.put("SequenceNum", 0);      // fake one; value won't be kept for date-based
+            }
             Vial vial = vials.get(i);
             Map<String, Object> rowMap = prepareRowMap(container, row, vial, importer);
             newRows.add(rowMap);
@@ -393,6 +397,12 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             throw new IllegalArgumentException("No specimen found for rowId: " + rowId);
 
         checkEditability(container, vial);
+
+        if (null == row.get("SequenceNum"))
+        {
+            row.put("SequenceNum", 0);      // fake one; value won't be kept for date-based
+        }
+
         EditableSpecimenImporter importer = new EditableSpecimenImporter(container, user, false);
         Map<String, Object> rowMap = prepareRowMap(container, row, vial, importer);
 

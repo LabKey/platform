@@ -46,7 +46,7 @@ import java.util.Map;
  * User: klum
  * Date: Apr 29, 2009
  */
-public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider> implements ModuleRunUploadContext<ModuleAssayProvider>
+public class ModuleRunUploadForm extends AssayRunUploadForm<TsvAssayProvider> implements ModuleRunUploadContext<TsvAssayProvider>
 {
     // required fields
     private final JSONObject _runJsonObject;
@@ -170,14 +170,14 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider>
             outputMaterials.putAll(getOutputMaterials());
     }
 
-    public static class Factory extends ModuleRunUploadContext.Factory<ModuleAssayProvider, Factory>
+    public static class Factory extends ModuleRunUploadContext.Factory<TsvAssayProvider, Factory>
     {
-        public Factory(@NotNull ExpProtocol protocol, @NotNull ModuleAssayProvider provider, @NotNull ViewContext context, @NotNull JSONObject jsonObject, @NotNull List<Map<String, Object>> rawData)
+        public Factory(@NotNull ExpProtocol protocol, @NotNull TsvAssayProvider provider, @NotNull ViewContext context, @NotNull JSONObject jsonObject, @NotNull List<Map<String, Object>> rawData)
         {
             super(protocol, provider, context, jsonObject, rawData);
         }
 
-        public Factory(@NotNull ExpProtocol protocol, @NotNull ModuleAssayProvider provider, @NotNull ViewContext context)
+        public Factory(@NotNull ExpProtocol protocol, @NotNull TsvAssayProvider provider, @NotNull ViewContext context)
         {
             super(protocol, provider, context);
         }
@@ -189,7 +189,7 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider>
         }
 
         @Override
-        public AssayRunUploadContext<ModuleAssayProvider> create()
+        public AssayRunUploadContext<TsvAssayProvider> create()
         {
             if (_jsonObject == null)
                 throw new IllegalStateException("jsonObject required");
@@ -198,11 +198,28 @@ public class ModuleRunUploadForm extends AssayRunUploadForm<ModuleAssayProvider>
                 throw new IllegalStateException("rawData required");
 
             ModuleRunUploadForm form = new ModuleRunUploadForm(_context, _protocol.getRowId(), _jsonObject, _rawData);
+            form.setName(_name);
+            form.setComments(_comments);
 
-            form.inputDatas = Collections.unmodifiableMap(this._inputDatas);
-            form.inputMaterials = Collections.unmodifiableMap(this._inputMaterials);
-            form.outputDatas = Collections.unmodifiableMap(this._outputDatas);
-            form.outputMaterials = Collections.unmodifiableMap(this._outputMaterials);
+            if (this._inputDatas == null)
+                form.inputDatas = Collections.emptyMap();
+            else
+                form.inputDatas = Collections.unmodifiableMap(this._inputDatas);
+
+            if (this._inputMaterials == null)
+                form.inputMaterials = Collections.emptyMap();
+            else
+                form.inputMaterials = Collections.unmodifiableMap(this._inputMaterials);
+
+            if (this._outputDatas == null)
+                form.outputDatas = Collections.emptyMap();
+            else
+                form.outputDatas = Collections.unmodifiableMap(this._outputDatas);
+
+            if (this._outputMaterials == null)
+                form.outputMaterials = Collections.emptyMap();
+            else
+                form.outputMaterials = Collections.unmodifiableMap(this._outputMaterials);
 
             return form;
         }
