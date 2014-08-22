@@ -1215,6 +1215,7 @@ groupByLoop:
             if (null != ((QJoin)qt)._on)
                 resolveFields(((QJoin)qt)._on, null, qt);
             resolveFields(((QJoin)qt)._left);
+            resolveFields(((QJoin)qt)._right);
         }
         else if (qt instanceof QTable)
         {
