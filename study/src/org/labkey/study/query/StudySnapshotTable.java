@@ -2,17 +2,23 @@ package org.labkey.study.query;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerDisplayColumn;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.RenderContext;
-import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
 import org.labkey.api.query.UserIdForeignKey;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.study.StudySchema;
 
@@ -26,7 +32,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
 {
     public StudySnapshotTable(StudyQuerySchema schema)
     {
-        super(StudySchema.getInstance().getTableInfoStudySnapshot(), schema);
+        super(StudySchema.getInstance().getTableInfoStudySnapshot(), schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
 
         setDescription("Contains a row for each Ancillary or Published Study that was created from the study in this folder." +
                 " Only users with administrator permissions will see any data.");
@@ -42,6 +48,28 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
 
         ColumnInfo destination = new AliasedColumn(this, "Destination", _rootTable.getColumn("destination"));
         ContainerForeignKey.initColumn(destination, getUserSchema());
+        final User user = schema.getUser();
+        destination.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                return new ContainerDisplayColumn(colInfo, false, true){
+                    @Override
+                    public String renderURL(RenderContext ctx)
+                    {
+                        Object o = getValue(ctx);
+                        Container c = ContainerManager.getForId(String.valueOf(o));
+                        if (c != null)
+                        {
+                            if (!c.hasPermission(user, ReadPermission.class))
+                                return null;
+                        }
+                        return super.renderURL(ctx);
+                    }
+                };
+            }
+        });
         addColumn(destination);
 
         ColumnInfo createdBy = addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("CreatedBy")));
@@ -73,14 +101,13 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
                 };
             }
         });
-
-        if (!getContainer().hasPermission(schema.getUser(), AdminPermission.class))
-        {
-            // non-admins see no data
-            addCondition(new SQLFragment("1=2"), FieldKey.fromParts("CreatedBy"));
-        }
     }
 
+    @Override
+    protected SimpleFilter.FilterClause getContainerFilterClause(ContainerFilter filter, FieldKey fieldKey)
+    {
+        return filter.createFilterClause(getSchema(), fieldKey, getContainer(), AdminPermission.class, null);
+    }
 
     @Override
     protected String getContainerFilterColumn()
