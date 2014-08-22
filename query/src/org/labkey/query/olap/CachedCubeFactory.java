@@ -859,7 +859,7 @@ public class CachedCubeFactory
             if (readonly)
                 throw new IllegalStateException();
             indexMap = null;
-            super.sort(c);
+            Collections.sort(this, c);
         }
 
         @Override
