@@ -967,7 +967,6 @@ public class CachedCubeFactory
     static final NamedList<Property> emptyPropertyList = (new _EmptyNamedList<Property>()).recast();
     static final NamedList<NamedSet> emptyNamedSetList = (new _EmptyNamedList<NamedSet>()).recast();
     static final NamedList<Member> emptyMemberList = (new _EmptyNamedList<Member>() {
-        @Override
         public void sort(Comparator<? super Named> c)
         {
         }
