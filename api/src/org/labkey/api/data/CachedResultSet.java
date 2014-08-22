@@ -101,17 +101,17 @@ public class CachedResultSet implements ResultSet, TableResultSet
 
         try
         {
+            // SAS/SHARE needs to use ResultSetMetaData.getColumnName(), #21259
+            boolean useColumnNames = "com.sas.net.sharenet.ShareNetResultSetMetaData".equals(md.getClass().getName());
+
             _md = cacheMetaData ? new CachedResultSetMetaData(md) : md;
             _columns = new HashMap<>(_md.getColumnCount() * 2);
 
             for (int col = _md.getColumnCount(); col >= 1; col--)
             {
                 // Use getColumnLabel() (not getColumnName()) to better match JDBC 4.0 and to work on MySQL, #19869
-                String label = _md.getColumnLabel(col);
-
-                // #21259 SAS/SHARE needs to use ResultSetMetaData.getColumnName()
-                if (label.isEmpty())
-                    label = _md.getColumnName(col);
+                // But SAS/SHARE needs to use ResultSetMetaData.getColumnName(), #21259
+                String label = useColumnNames ? _md.getColumnName(col) : _md.getColumnLabel(col);
 
                 String colLabel = label.toLowerCase();
                 assert !_columns.containsKey(colLabel) : "Duplicate column label: " + colLabel;

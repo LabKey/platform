@@ -17,6 +17,7 @@
 package org.labkey.api.study.assay;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -42,7 +43,6 @@ import org.labkey.api.exp.api.ExperimentJSONConverter;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
-import org.labkey.api.qc.DataTransformer;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.view.NotFoundException;
@@ -414,7 +414,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
     {
         if (runDataArray != null)
         {
-            AssayRunUploadContext.Factory factory = getProvider().createRunUploadFactory(protocol, context);
+            AssayRunUploadContext.Factory factory = createRunUploadContext(protocol, context);
             factory.setInputDatas(inputData);
 
             if (factory instanceof ModuleRunUploadContext.Factory)
@@ -432,6 +432,13 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
             return factory.create();
         }
         return null;
+    }
+
+    @NotNull
+    protected AssayRunUploadContext.Factory createRunUploadContext(ExpProtocol protocol, ViewContext context)
+    {
+        AssayProvider provider = getProvider();
+        return provider.createRunUploadFactory(protocol, context);
     }
 
     protected ExpExperiment saveExperimentRun(AssayRunUploadContext context, ExpExperiment batch, ExpRun run) throws ExperimentException, ValidationException
