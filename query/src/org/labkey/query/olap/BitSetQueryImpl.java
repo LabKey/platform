@@ -1460,7 +1460,7 @@ public class BitSetQueryImpl
             try
             {
                 QuerySchema qs = DefaultSchema.get(User.getSearchUser(), container, "core");
-                return QueryService.get().select(qs, query);
+                return QueryService.get().select(qs, query, true, false);
             }
             catch (SQLException|QueryParseException|AssertionError x)
             {
@@ -1508,7 +1508,7 @@ public class BitSetQueryImpl
             if (to.getLevelType() == Level.Type.ALL)
             {
                 StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
-                sb.append(defFrom.getKeyColumnsSQL());
+                sb.append(defFrom.getAllColumnsSQL());
                 sb.append("\nFROM ");
                 sb.append(rolap.getFromSQL());
                 sb.append(" ");
@@ -1520,9 +1520,9 @@ public class BitSetQueryImpl
             {
                 RolapCubeDef.LevelDef defTo = getRolapFromCube(to);
                 StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
-                sb.append(defFrom.getKeyColumnsSQL());
+                sb.append(defFrom.getAllColumnsSQL());
                 sb.append(", ");
-                sb.append(defTo.getKeyColumnsSQL());
+                sb.append(defTo.getAllColumnsSQL());
                 sb.append("\nFROM ");
                 sb.append(rolap.getFromSQL());
                 sb.append(" ");
@@ -1542,7 +1542,7 @@ public class BitSetQueryImpl
             RolapCubeDef.HierarchyDef defMember = getRolapFromCube(m.getHierarchy());
 
             StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
-            sb.append(defFrom.getKeyColumnsSQL());
+            sb.append(defFrom.getAllColumnsSQL());
             sb.append("\nFROM ");
             sb.append(rolap.getFromSQL());
             sb.append(" ");
@@ -1569,9 +1569,36 @@ public class BitSetQueryImpl
         @Override
         public MemberSet membersQuery(Level outer, Member sub) throws SQLException
         {
-            getRolapFromCube(outer);
-            getRolapFromCube(sub.getLevel());
-            return null;
+            if (same(sub.getHierarchy(), outer.getHierarchy()))
+            {
+                MemberSet s = new MemberSet();
+                addMemberAndChildrenInLevel(sub, outer, s);
+                return s;
+            }
+
+            String query = queryIsNotEmpty(outer, sub);
+            MemberSet s = resultsCacheGet(query);
+            if (null != s)
+                return s;
+
+            try (ResultSet rs = execute(query))
+            {
+                RolapCubeDef.LevelDef ldef = getRolapFromCube(outer);
+                MemberSet set = new MemberSet();
+                while (rs.next())
+                {
+                    String uniqueName = ldef.getMemberUniqueNameFromResult(rs);
+                    Member m = ((NamedList<Member>)outer.getMembers()).get(uniqueName);
+                    if (null == m)
+                    {
+                        _log.warn("member not found: " + uniqueName);
+                        continue;
+                    }
+                    set.add(m);
+                }
+                resultsCachePut(query, set);
+                return set;
+            }
         }
 
         @Override
@@ -1645,31 +1672,36 @@ public class BitSetQueryImpl
                 queryXjoin = queryCrossjoin(outerLevel, inner.getLevel());
             }
 
-            try (ResultSet cs = execute(queryXjoin))
+            try (ResultSet rs = execute(queryXjoin))
             {
-//                List<Position> rowPositions = cs.getAxes().get(1).getPositions();
-//                for (int row=0 ; row<rowPositions.size() ; row++)
-//                {
-//                    Position p = rowPositions.get(row);
-//                    Member outerMember = p.getMembers().get(0);
-//                    Member sub = p.getMembers().get(1);
-//                    double value = cs.getCell(row).getDoubleValue();
-//                    if (0.0 != value)
-//                    {
-//                        assert same(outerMember.getLevel(), outerLevel);
-//                        MemberSet s = sets.get(sub.getUniqueName());
-//                        if (null == s)
-//                        {
-//                            s = new MemberSet();
-//                            sets.put(sub.getUniqueName(),s);
-//                        }
-//                        Member m = getCubeMember(outerMember);
-//                        if (null == m)
-//                            _log.warn("Unexpected member in cellset result: " + outerMember.getUniqueName());
-//                        else
-//                            s.add(m);
-//                    }
-//                }
+                RolapCubeDef.LevelDef ldefOuter = getRolapFromCube(outerLevel);
+                RolapCubeDef.LevelDef ldefInner = getRolapFromCube(inner.getLevel());
+
+                //int[] getMemberIndexes(rs,leveldef);
+                while (rs.next())
+                {
+                    String outerUniqueName = ldefOuter.getMemberUniqueNameFromResult(rs);
+                    Member outerMember = ((NamedList<Member>) outerLevel.getMembers()).get(outerUniqueName);
+                    if (null == outerMember)
+                    {
+                        _log.warn("member not found: " + outerUniqueName);
+                        continue;
+                    }
+                    String subUniqueName = ldefInner.getMemberUniqueNameFromResult(rs);
+                    Member sub = ((NamedList<Member>)inner.getLevel().getMembers()).get(subUniqueName);
+                    if (null == sub)
+                    {
+                        _log.warn("member not found: " + subUniqueName);
+                        continue;
+                    }
+                    MemberSet s = sets.get(sub.getUniqueName());
+                    if (null == s)
+                    {
+                        s = new MemberSet();
+                        sets.put(sub.getUniqueName(),s);
+                    }
+                    s.add(outerMember);
+                }
             }
             for (Member sub : inner.getCollection())
             {
@@ -1694,8 +1726,10 @@ public class BitSetQueryImpl
         @Override
         public MemberSet membersQuery(Level outer, Member sub) throws SQLException
         {
-            _sdsh.membersQuery(outer,sub);
-            return _cdsh.membersQuery(outer,sub);
+            MemberSet sql = _sdsh.membersQuery(outer,sub);
+            MemberSet mdx = _cdsh.membersQuery(outer,sub);
+            assert(sql.equals(mdx));
+            return mdx;
         }
 
         @Override

@@ -3,11 +3,15 @@ package org.labkey.query.olap.rolap;
 import org.apache.commons.lang3.StringUtils;
 import static org.apache.commons.lang3.StringUtils.*;
 
+import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
+import org.olap4j.OlapException;
 import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Member;
+import org.olap4j.metadata.Property;
 
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,6 +29,7 @@ public class RolapCubeDef
     protected final ArrayList<MeasureDef> measures = new ArrayList<>();
     protected final Map<String,String> annotations = new TreeMap<>();
     protected final Map<String,Object> uniqueNameMap = new TreeMap<>();
+    protected final AliasManager aliases = new AliasManager(null);
 
 
     public String getName()
@@ -244,8 +249,13 @@ public class RolapCubeDef
 
             if (null != join)
                 join.validate();
+            LevelDef prev = null;
             for (LevelDef l : levels)
+            {
+                l.parent = prev;
                 l.validate();
+                prev = l;
+            }
             if (null == primaryKeyTable && null != join)
                 primaryKeyTable = join.tableName;
         }
@@ -299,16 +309,24 @@ public class RolapCubeDef
     {
         protected RolapCubeDef cube;
         protected HierarchyDef hierarchy;
+        protected LevelDef parent;
 
         protected String uniqueName;
         protected String name;
         protected String table;
+
         protected String keyColumn;
         protected String nameColumn;
         protected String ordinalColumn;
+
         protected String keyExpression;
         protected String nameExpression;
         protected String ordinalExpression;
+
+        protected String keyAlias;
+        protected String nameAlias;
+        protected String ordinalAlias;
+
         protected boolean uniqueMembers = false;
         protected ArrayList<PropertyDef> properties = new ArrayList<>();
 
@@ -323,12 +341,59 @@ public class RolapCubeDef
             return uniqueName;
         }
 
-
-        public String getKeyColumnsSQL()
+        public String getAllColumnsSQL()
         {
-            // TODO parent key columns
-            return keyExpression;
+            String comma = "";
+            StringBuilder sb = new StringBuilder();
+
+            if (null != parent)
+            {
+                sb.append(parent.getAllColumnsSQL());
+                comma = ", ";
+            }
+            if (null != ordinalExpression)
+            {
+                sb.append(comma).append(ordinalExpression);
+                sb.append(" AS ").append(ordinalAlias);
+                comma = ", ";
+            }
+            if (null != keyExpression)
+            {
+                sb.append(comma).append(keyExpression);
+                sb.append(" AS ").append(keyAlias);
+                comma = ", ";
+            }
+            if (null != nameExpression)
+            {
+                sb.append(comma).append(nameExpression);
+                sb.append(" AS ").append(nameAlias);
+            }
+            return sb.toString();
         }
+
+
+        public String getMemberUniqueNameFromResult(ResultSet rs)
+        {
+            StringBuilder sb = new StringBuilder();
+            if (null == parent)
+                sb.append(hierarchy.uniqueName);
+            else
+                sb.append(parent.getMemberUniqueNameFromResult(rs));
+            try
+            {
+                String s = rs.getString(nameAlias);
+                // TODO null member name
+                if (StringUtils.isEmpty(s))
+                    s = "#null";
+                sb.append(".[").append(s).append("]");
+                return sb.toString();
+            }
+            catch (Exception x)
+            {
+                throw new RuntimeException(x);
+            }
+        }
+
 
         public String getFromJoin()
         {
@@ -338,25 +403,40 @@ public class RolapCubeDef
 
         public String getMemberFilter(Member m)
         {
-            // TODO parent keys
-            // TODO nameType, keyType, ordinalType
-            if (null != keyExpression)
+            try
             {
-                String key = m.getName();  // TODO KEY value
-                if (key.equals("NULL"))
-                    return "(" + keyExpression + " IS NULL OR " + keyExpression + "='')";
+                // TODO parent keys
+                // TODO nameType, keyType, ordinalType
+                if (null != keyExpression)
+                {
+                    Property keyProperty = m.getLevel().getProperties().get("KEY");
+                    Object key = m.getPropertyValue(keyProperty);
+                    if (null == key)
+                        return "(" + keyExpression + " IS NULL OR " + keyExpression + "='')";
+                    else if (key instanceof String)
+                        return keyExpression + "=" + string_quote((String) key);
+                    else
+                        return keyExpression + "=" + String.valueOf(key);
+                }
                 else
-                    return keyExpression + "=" + string_quote(key);
+                {
+                    Property captionProperty = m.getLevel().getProperties().get("CAPTION");
+                    Object name = m.getPropertyValue(captionProperty);
+                    // TODO null member name
+                    if (name.equals("#null"))
+                        return "(" + nameExpression + " IS NULL OR " + name + "='')";
+                    else if (name instanceof String)
+                        return nameExpression + "=" + string_quote((String) name);
+                    else
+                        return nameExpression + "=" + String.valueOf(name);
+                }
             }
-            else
+            catch (OlapException x)
             {
-                String name = m.getName();  // TODO KEY value
-                if (name.equals("NULL"))
-                    return "(" + nameExpression + " IS NULL OR " + nameExpression + "='')";
-                else
-                    return nameExpression + "=" + string_quote(name);
+                throw new RuntimeException(x);
             }
         }
+
 
         public String getOrderBy()
         {
@@ -380,17 +460,37 @@ public class RolapCubeDef
                     table = cube.factTable.tableName;
             }
 
+            // key
             if (null == keyExpression && null != keyColumn)
             {
                 keyExpression = id_quote(table, keyColumn);
             }
+            if (null == keyAlias)
+            {
+                keyAlias = cube.aliases.decideAlias((hierarchy.getName() + "_" + getName() + "_key").toLowerCase());
+            }
+
+            // name
             if (null == nameExpression && null != nameColumn)
             {
                 nameExpression = id_quote(table, nameColumn);
             }
+            if (null == nameAlias)
+            {
+                if (null != nameExpression)
+                    nameAlias = cube.aliases.decideAlias((hierarchy.getName() + "_" + getName() + "_name").toLowerCase());
+                else
+                    nameAlias = keyAlias;
+            }
+
+            // ordinal
             if (null == ordinalExpression && null != ordinalColumn)
             {
                 ordinalExpression = id_quote(table, ordinalColumn);
+            }
+            if (null == ordinalAlias)
+            {
+                ordinalAlias = cube.aliases.decideAlias((hierarchy.getName() + "_" + getName() + "_ord").toLowerCase());
             }
         }
     }

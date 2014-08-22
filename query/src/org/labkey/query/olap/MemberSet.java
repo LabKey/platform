@@ -426,7 +426,7 @@ public class MemberSet extends AbstractSet<Member>
     @Override
     public boolean containsAll(Collection<?> c)
     {
-        throw new UnsupportedOperationException();
+        return super.containsAll(c);
     }
 
 
