@@ -392,6 +392,12 @@ public class RolapReader
                     ++i;
                     return _nl.item(i);
                 }
+
+                @Override
+                public void remove()
+                {
+                    throw new UnsupportedOperationException();
+                }
             };
         }
     }
