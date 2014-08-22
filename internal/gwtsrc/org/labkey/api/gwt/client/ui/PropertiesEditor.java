@@ -585,6 +585,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
             {
                 Element e = _table.getRowFormatter().getElement(row);
                 DOM.setStyleAttribute(e, "backgroundColor", null);
+                e.removeClassName("selected-field-row");
             }
         }
 
@@ -608,6 +609,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
 
             Element e = _table.getRowFormatter().getElement(tableRow);
             DOM.setStyleAttribute(e, "backgroundColor", "#eeeeee");
+            e.addClassName("selected-field-row");
 
             if (isPropertiesEditable(getRow(index)))
             {
@@ -758,6 +760,7 @@ public class PropertiesEditor<DomainType extends GWTDomain<FieldType>, FieldType
         HTMLTable.CellFormatter formatter = _table.getCellFormatter();
         int tableRow = index+1;
 
+        _table.getRowFormatter().setStylePrimaryName(tableRow, "editor-field-row");
         int cellCount = _table.getCellCount(0);
         for (int c=0 ; c<cellCount ; c++)
             formatter.setHeight(tableRow, c, "23");
