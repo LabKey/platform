@@ -26,9 +26,12 @@ import org.labkey.api.nab.NabUrls;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.reader.ColumnDescriptor;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.DataLoaderService;
 import org.labkey.api.reader.ExcelLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.study.PlateTemplate;
+import org.labkey.api.study.WellGroup;
 import org.labkey.api.study.WellGroupTemplate;
 import org.labkey.api.study.actions.AssayRunUploadForm;
 import org.labkey.api.study.actions.PlateUploadForm;
@@ -44,10 +47,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -57,9 +62,15 @@ import java.util.Set;
 public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 {
     private static final String SAMPLE_FILE_INPUT_NAME = "__sampleMetadataFile";
+    private static final int BUFFER_SIZE = 2048;
+    public static final String SAMPLE_WELLGROUP_COLUMN = "SampleWellGroup";
+    public static final String PLATELOCATION_COLUMN = "PlateLocation";
+
     protected ExpProtocol _protocol;
-    private Container _container;
     protected Map<String, Map<DomainProperty, String>> _sampleProperties;
+    protected String _metadataNoun = "Sample";
+    protected String _wellGroupColumnName = SAMPLE_WELLGROUP_COLUMN;
+    private Container _container;
     private File _metadataFile;
     private SampleMetadataInputFormat _metadataInputFormat;
 
@@ -107,7 +118,7 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         Map<String, Map<DomainProperty, String>> result = new HashMap<>();
         Map<String, Map<DomainProperty, String>> sampleProperties = getSampleProperties(request);
         if (sampleProperties == null || sampleProperties.isEmpty())
-            throw new ExperimentException("Sample metadata must be provided.");
+            throw new ExperimentException(_metadataNoun + " metadata must be provided.");
         for (Map.Entry<String, Map<DomainProperty, String>> entry : sampleProperties.entrySet())
             result.put(entry.getKey(), entry.getValue());
         return result;
@@ -192,9 +203,6 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         }
     }
 
-    private static final int BUFFER_SIZE = 2048;
-    public static final String WELLGROUP_COLUMN = "SampleWellGroup";
-    public static final String PLATELOCATION_COLUMN = "PlateLocation";
     @Override
     public Map<String, Map<DomainProperty, String>> getSampleProperties(HttpServletRequest request) throws ExperimentException
     {
@@ -208,36 +216,28 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         Map<String, Map<DomainProperty, String>> allProperties = new HashMap<>();
         try
         {
-            List<WellGroupTemplate> sampleGroups = getSampleWellGroups();
-            Map<String, WellGroupTemplate> sampleGroupNames = new HashMap<>(sampleGroups.size());
-            for (WellGroupTemplate sampleGroup : sampleGroups)
-                sampleGroupNames.put(sampleGroup.getName(), sampleGroup);
+            Map<String, WellGroupTemplate> sampleGroupNames = getSampleWellGroupNameMap();
 
-            ExcelLoader loader = new ExcelLoader(metadataFile, true);
+            DataLoader loader = DataLoaderService.get().createLoader(metadataFile, null, true, null, ExcelLoader.FILE_TYPE);
+
             boolean hasSampleNameCol = false;
             ColumnDescriptor[] columns = loader.getColumns();
             for (int col = 0; col < columns.length && !hasSampleNameCol; col++)
-                hasSampleNameCol = WELLGROUP_COLUMN.equals(columns[col].name);
+                hasSampleNameCol = _wellGroupColumnName.equals(columns[col].name);
             if (!hasSampleNameCol)
-                throw new ExperimentException("Sample metadata file does not contain required column \"" + WELLGROUP_COLUMN + "\".");
+                throw new ExperimentException("Sample metadata file does not contain required column \"" + _wellGroupColumnName + "\".");
+
             for (Map<String, Object> row : loader)
             {
-                String wellGroupName = (String) row.get(WELLGROUP_COLUMN);
+                String wellGroupName = (String) row.get(_wellGroupColumnName);
                 WellGroupTemplate wellgroup = wellGroupName != null ? sampleGroupNames.get(wellGroupName) : null;
                 if (wellgroup == null)
                 {
                     throw new ExperimentException("Well group name \"" + (wellGroupName != null ? wellGroupName : "") +
-                            "\" does not match any sample well groups defined in plate template \"" + _template.getName() + "\"");
-                }
-                String plateLocation = (String) row.get(PLATELOCATION_COLUMN);
-                if (plateLocation != null && !plateLocation.equals(wellgroup.getPositionDescription()))
-                {
-                    throw new ExperimentException("Well group \"" + wellGroupName + "\" is listed in plate location " +
-                            plateLocation + ", but the stored plate template indicates that this group should be in location " +
-                            wellgroup.getPositionDescription() + ".  Please contact an administrator to correct the saved template " +
-                            "if sample locations have changed on the plate.");
+                            "\" does not match any " + _metadataNoun + " well groups defined in plate template \"" + _template.getName() + "\"");
                 }
 
+                validateMetadataRow(row, wellGroupName, wellgroup);
 
                 Map<DomainProperty, String> sampleProperties = allProperties.get(wellgroup.getName());
                 if (sampleProperties == null)
@@ -245,23 +245,38 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
                     sampleProperties = new HashMap<>();
                     allProperties.put(wellgroup.getName(), sampleProperties);
                 }
-                else
-                {
-                    throw new ExperimentException("Well group \"" + wellGroupName + "\" was specified more than once in the sample metadata file.");
-                }
+
                 for (DomainProperty property : _domainProperties)
                 {
                     Object value = getValue(row, property);
-                    sampleProperties.put(property, value != null ? value.toString() : null);
+                    String strVal = value != null ? value.toString() : null;
+
+                    if (sampleProperties.containsKey(property) && !Objects.equals(sampleProperties.get(property), strVal)) {
+                        throw new ExperimentException("Well group \"" + wellGroupName + "\" was specified more than once in the sample metadata file.");
+                    }
+
+                    sampleProperties.put(property, strVal);
                 }
             }
         }
         catch (IOException e)
         {
-            throw new ExperimentException("Unable to parse sample properties file.  Please verify that the file is a valid Excel workbook.", e);
+            throw new ExperimentException("Unable to parse sample properties file.  Please verify that the file is a valid TSV, CSV or Excel file.", e);
         }
         _sampleProperties = allProperties;
         return _sampleProperties;
+    }
+
+    protected void validateMetadataRow(Map<String, Object> row, String wellGroupName, WellGroupTemplate wellgroup) throws ExperimentException
+    {
+        String plateLocation = (String) row.get(PLATELOCATION_COLUMN);
+        if (plateLocation != null && !plateLocation.equals(wellgroup.getPositionDescription()))
+        {
+            throw new ExperimentException("Well group \"" + wellGroupName + "\" is listed in plate location " +
+                    plateLocation + ", but the stored plate template indicates that this group should be in location " +
+                    wellgroup.getPositionDescription() + ".  Please contact an administrator to correct the saved template " +
+                    "if sample locations have changed on the plate.");
+        }
     }
 
     public File getMetadataFile()
@@ -307,6 +322,8 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
         else
             reshowFile = null;
 
+        final boolean includesViruses = _template.getWellGroupCount(WellGroup.Type.VIRUS) > 0;
+
         DataRegion region = view.getDataRegion();
         region.addDisplayColumn(new SimpleDisplayColumn()
         {
@@ -321,10 +338,14 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             {
                 if (_metadataInputFormat == SampleMetadataInputFormat.FILE_BASED)
                 {
-                    out.write("<td class='labkey-form-label'>Sample Metadata");
-                    out.write(PageFlowUtil.helpPopup("Sample Metadata", "Sample metadata should be provided in an Excel file with " +
-                            "one row per sample.  This information is used to determine data processing and to map " +
-                            "samples to plate locations."));
+                    String nounV1 = includesViruses ? "Sample/Virus" : "Sample";
+                    String nounV2 = includesViruses ? "Sample and virus" : "Sample";
+
+                    out.write("<td class='labkey-form-label'>" + nounV1 + " Metadata");
+                    out.write(PageFlowUtil.helpPopup(nounV1 + " Metadata", nounV2 + " metadata should be " +
+                            "provided in a TSV, CSV or Excel file with one row per " + nounV1.toLowerCase() +
+                            ".  This information is used to determine data processing and to map " + nounV2.toLowerCase() +
+                            " values to plate locations."));
                     out.write(" *</td>");
                 }
             }
@@ -334,7 +355,10 @@ public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
             {
                 if(_metadataInputFormat == SampleMetadataInputFormat.FILE_BASED)
                 {
-                    out.write("Sample metadata should be uploaded in an Excel file with one row per specimen.  ");
+                    String nounV1 = includesViruses ? "Sample/Virus" : "Sample";
+                    String nounV2 = includesViruses ? "Sample and virus" : "Sample";
+
+                    out.write(nounV2 + " metadata should be uploaded in a TSV, CSV or Excel file with one row per " + nounV1.toLowerCase() + ".  ");
                     out.write(PageFlowUtil.textLink("Download template", PageFlowUtil.urlProvider(NabUrls.class).getSampleXLSTemplateURL(_container, _protocol)));
                     out.write("<br>");
                     if (reshowFile != null)

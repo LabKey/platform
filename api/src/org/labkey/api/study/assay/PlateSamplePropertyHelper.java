@@ -22,6 +22,7 @@ import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.WellGroupTemplate;
 import org.labkey.api.study.WellGroup;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -73,12 +74,21 @@ public class PlateSamplePropertyHelper extends SamplePropertyHelper<String>
         return samples;
     }
 
+    protected Map<String, WellGroupTemplate> getSampleWellGroupNameMap()
+    {
+        List<WellGroupTemplate> sampleGroups = getSampleWellGroups();
+        Map<String, WellGroupTemplate> sampleGroupNames = new HashMap<>(sampleGroups.size());
+        for (WellGroupTemplate sampleGroup : sampleGroups)
+            sampleGroupNames.put(sampleGroup.getName(), sampleGroup);
+        return sampleGroupNames;
+    }
+
     protected String getObject(int index, Map<DomainProperty, String> sampleProperties)
     {
         List<WellGroupTemplate> samples = getSampleWellGroups();
         if (index >= samples.size())
             throw new IndexOutOfBoundsException("Requested #" + index + " but there were only " + samples.size() + " well group templates");
-        return getSampleWellGroups().get(index).getName();
+        return samples.get(index).getName();
     }
 
     protected boolean isCopyable(DomainProperty pd)

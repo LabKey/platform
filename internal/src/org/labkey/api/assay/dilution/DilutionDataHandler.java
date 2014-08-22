@@ -393,7 +393,7 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         {
             ExpMaterial material = nameToMaterial.get(wellgroup.getName());
             if (material == null)
-                throw new MissingMaterialException("Wellgroup " + wellgroup.getName() + " does not have a matching input material. Was plate template edited?");
+                throw new MissingMaterialException("Wellgroup " + wellgroup.getName() + " does not have a matching input material. Was the plate template edited?");
             mapping.put(material, Collections.singletonList(wellgroup));
         }
         return mapping;
