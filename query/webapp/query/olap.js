@@ -574,7 +574,11 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
         var defaults = context ? context.defaults : null;
         var values   = context ? context.values : null;
 
-        var applyContext = this.applyContext || LABKEY.query.olap.AppContext.applyContext;
+        // Use provided applyContext function.  Use the AppContext.applyContext only if server provided context is available.
+        var applyContext = this.applyContext;
+        if (!applyContext && context)
+            applyContext = LABKEY.query.olap.AppContext.applyContext;
+
         if (Ext4.isFunction(applyContext)) {
             this.mdx = applyContext.call(this, this.mdx, defaults, values);
             if (!this.mdx) {
