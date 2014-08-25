@@ -494,11 +494,10 @@ public class ServerManager
     }
 
     /**
-     * Called from CacheListener to clear non-EhCache caches -- do not call directly.
-     * The DB_SCHEMA_DESCRIPTOR_CACHE and SCHEMA_DESCRIPTOR_CACHE caches are cleared
-     * by CacheManager.clearAllKnownCaches() prior to the module specific caches being cleared.
+     * Called from CacheListener to clear cube related caches.
+     * Also called by CacheManager.clearAllKnownCaches() prior to the module specific caches being cleared.
      */
-    private static void clearCaches()
+    public static void clearCaches()
     {
         synchronized (SERVERS_LOCK)
         {
@@ -506,6 +505,7 @@ public class ServerManager
                 ref.decrement();
             SERVERS.clear();
             CUBES.clear();
+            DB_DESCRIPTOR_CACHE.clear();
             BitSetQueryImpl.invalidateCache();
         }
     }

@@ -132,11 +132,18 @@ LABKEY.query.olap._private = new function() {
     {
         if (!('includeMembers' in config))
             config.includeMembers = true;
+
         Ext4.Ajax.request({
             url : LABKEY.ActionURL.buildURL("olap", "getCubeDefinition", config.containerPath),
             method : 'POST',
-            jsonData: { cubeName:config.name, configId:config.configId, schemaName:config.schemaName, includeMembers:config.includeMembers },
-            success: function(r){postProcessGetCubeDefinition(r,config);},
+            jsonData: {
+                cubeName:config.name,
+                configId:config.configId,
+                contextName:config.contextName,
+                schemaName:config.schemaName,
+                includeMembers:config.includeMembers
+            },
+            success: function(r){postProcessGetCubeDefinition(r, config);},
             failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true)
         });
     };
@@ -217,10 +224,12 @@ LABKEY.query.olap._private = new function() {
 
     var postProcessGetCubeDefinition = function(response,config)
     {
-        var cube = Ext4.decode(response.responseText);
+        var o = Ext4.decode(response.responseText);
+        var cube = o.cube;
+        var context = o.context;
         postProcessCube(cube);
         if (Ext4.isFunction(config.success))
-            config.success.apply(config.scope||window, [cube, config]);
+            config.success.apply(config.scope||window, [cube, context, config]);
     };
 
     var removeStale = function()
@@ -547,9 +556,11 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
         return this.name;
     },
 
-    onDefinition : function(cubeDef)
+    onDefinition : function(cubeDef, context, config)
     {
         this._def = cubeDef;
+        this._context = context;
+
         this.mdx = new LABKEY.query.olap.MDX(this);
 
         this._isReady = true;
@@ -560,8 +571,12 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
             this.dimensions.push(dimension);
         }
 
-        if (Ext4.isFunction(this.applyContext)) {
-            this.mdx = this.applyContext.call(this, this.mdx);
+        var defaults = context ? context.defaults : null;
+        var values   = context ? context.values : null;
+
+        var applyContext = this.applyContext || LABKEY.query.olap.AppContext.applyContext;
+        if (Ext4.isFunction(applyContext)) {
+            this.mdx = applyContext.call(this, this.mdx, defaults, values);
             if (!this.mdx) {
                 this.raiseError('Failed to apply application context.');
             }
@@ -587,6 +602,7 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
                 name: this.name,
                 configId: this.configId,
                 schemaName: this.schemaName,
+                contextName: this.contextName,
                 success: this.onDefinition,
                 scope: this
             };
@@ -595,7 +611,7 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
         }
         else
         {
-            this.onDefinition(this._def);
+            this.onDefinition(this._def, this._context);
         }
     },
 

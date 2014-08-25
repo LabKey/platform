@@ -4,6 +4,8 @@ import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
+import org.labkey.api.view.ActionURL;
+import org.labkey.query.controllers.OlapController;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,27 +21,18 @@ import java.io.InputStream;
  */
 public class CustomOlapSchemaDescriptor extends OlapSchemaDescriptor
 {
-    final Container _container;
-    final String _definition;
-
-    public CustomOlapSchemaDescriptor(@NotNull String id, @NotNull Module module, @NotNull Container c, @NotNull String definition)
-    {
-        super(id, module);
-        _container = c;
-        _definition = definition;
-    }
+    final OlapDef _olapDef;
 
     public CustomOlapSchemaDescriptor(@NotNull OlapDef olapDef)
     {
         super(olapDef.getConfigId(), olapDef.lookupModule());
-        _container = olapDef.lookupContainer();
-        _definition = olapDef.getDefinition();
+        _olapDef = olapDef;
     }
 
     @Override
     public Container getContainer()
     {
-        return _container;
+        return _olapDef.lookupContainer();
     }
 
     @Override
@@ -51,12 +44,22 @@ public class CustomOlapSchemaDescriptor extends OlapSchemaDescriptor
     @Override
     public String getDefinition()
     {
-        return _definition;
+        return _olapDef.getDefinition();
     }
 
     @Override
     protected InputStream getInputStream() throws IOException
     {
-        return IOUtils.toInputStream(_definition);
+        return IOUtils.toInputStream(getDefinition());
+    }
+
+    public ActionURL urlEdit()
+    {
+        return new ActionURL(OlapController.EditDefinitionAction.class, getContainer()).addParameter("rowId", _olapDef.getRowId());
+    }
+
+    public ActionURL urlDelete()
+    {
+        return new ActionURL(OlapController.DeleteDefinitionAction.class, getContainer()).addParameter("rowId", _olapDef.getRowId());
     }
 }

@@ -30,6 +30,7 @@
 <%@ page import="org.olap4j.metadata.Schema" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedHashSet" %>
+<%@ page import="org.labkey.query.olap.CustomOlapSchemaDescriptor" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -50,6 +51,11 @@
     for (OlapSchemaDescriptor sd : list)
     {
         %><h3><%=h(sd.getName())%></h3><%
+        if (sd.isEditable())
+        {
+            %><%=textLink("edit", ((CustomOlapSchemaDescriptor)sd).urlEdit())%>
+              <%=textLink("delete", ((CustomOlapSchemaDescriptor)sd).urlDelete())%><%
+        }
         try (OlapConnection conn = sd.getConnection(getContainer(), getUser()))
         {
             for (Schema s : sd.getSchemas(conn,getContainer(), getUser()))

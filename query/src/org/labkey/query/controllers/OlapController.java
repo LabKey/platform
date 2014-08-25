@@ -22,6 +22,7 @@ import mondrian.olap.MondrianServer;
 import mondrian.xmla.impl.MondrianXmlaServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
@@ -29,8 +30,12 @@ import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.Marshal;
+import org.labkey.api.action.Marshaller;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.cache.CacheLoader;
@@ -38,9 +43,12 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.PropertyManager;
+import org.labkey.api.data.PropertyStore;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
@@ -48,12 +56,12 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseExceptionUnresolvedField;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.AdminReadPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.Compress;
 import org.labkey.api.util.ConfigurationException;
@@ -63,10 +71,13 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.DataView;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UpdateView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.template.PageConfig;
@@ -78,6 +89,8 @@ import org.labkey.query.olap.OlapDef;
 import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.QubeQuery;
 import org.labkey.query.olap.ServerManager;
+import org.labkey.query.olap.rolap.RolapCubeDef;
+import org.labkey.query.olap.rolap.RolapReader;
 import org.labkey.query.persist.QueryManager;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
@@ -91,15 +104,21 @@ import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.io.Writer;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Dictionary;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 
 
@@ -166,6 +185,7 @@ public class OlapController extends SpringActionController
     public static class CubeForm extends OlapForm
     {
         private boolean includeMembers = true;
+        private String contextName;
 
         public boolean isIncludeMembers()
         {
@@ -175,6 +195,16 @@ public class OlapController extends SpringActionController
         public void setIncludeMembers(boolean includeMembers)
         {
             this.includeMembers = includeMembers;
+        }
+
+        public String getContextName()
+        {
+            return contextName;
+        }
+
+        public void setContextName(String contextName)
+        {
+            this.contextName = contextName;
         }
     }
 
@@ -225,9 +255,37 @@ public class OlapController extends SpringActionController
                 return null;
             }
 
+            Map<String, Object> context = null;
+            if (StringUtils.isNotBlank(form.getContextName()))
+            {
+                context = getSinglePageAppContext(getContainer(), form.getContextName());
+            }
+
+            // Write out a response in this format:
+            // {
+            //   cube: { ... },
+            //   context: {
+            //     defaults: { },
+            //     values: { }
+            //   }
+            // }
             HttpServletResponse response = getViewContext().getResponse();
             response.setContentType("application/json");
-            Olap4Js.convertCube(cube, form.isIncludeMembers(), response.getWriter());
+            Writer writer = response.getWriter();
+            writer.write("{");
+            writer.write("\"cube\":");
+            Olap4Js.convertCube(cube, form.isIncludeMembers(), writer);
+
+            if (context != null)
+            {
+                writer.write(",");
+
+                writer.write("\"context\": ");
+                writer.write(JSONObject.valueToString(context));
+            }
+
+            writer.write("}");
+
             return null;
         }
     }
@@ -243,30 +301,39 @@ public class OlapController extends SpringActionController
         {
             OlapDef d = getBean();
 
-            // TODO: validate the xml definition against an xsd
+            try
+            {
+                // Instantiating the RolapReader will validate the definition and throw IllegalArgumentException
+                RolapReader rr = new RolapReader(new StringReader(d.getDefinition()));
+            }
+            catch (IllegalArgumentException | IOException e)
+            {
+                errors.rejectValue("definition", ERROR_MSG, e.getMessage());
+            }
         }
     }
 
-    @RequiresPermissionClass(InsertPermission.class)
-    public class CreateDefinitionAction extends FormViewAction<CustomOlapDescriptorForm>
+    protected abstract class InsertUpdateDefinitionAction extends FormViewAction<CustomOlapDescriptorForm>
     {
-
         @Override
         public void validateCommand(CustomOlapDescriptorForm form, Errors errors)
         {
             form.validate(errors);
         }
 
+        protected abstract DataView createView(CustomOlapDescriptorForm form, Errors errors);
+
         @Override
         public ModelAndView getView(CustomOlapDescriptorForm form, boolean reshow, BindException errors) throws Exception
         {
-            ActionURL createUrl = new ActionURL(OlapController.CreateDefinitionAction.class, getContainer());
-
-            InsertView view = new InsertView(form, errors);
+            DataView view = createView(form, errors);
             //view.setInitialValues();
-            view.getDataRegion().setFormActionUrl(createUrl);
 
-            ActionButton submitButton = new ActionButton("Submit", createUrl);
+            // The hidden rowId parameter in the update form is good enough
+            ActionURL insertUpdateURL = getViewContext().getActionURL().clone().deleteParameter("rowId");
+            view.getDataRegion().setFormActionUrl(insertUpdateURL);
+
+            ActionButton submitButton = new ActionButton("Submit", insertUpdateURL);
             submitButton.setActionType(ActionButton.Action.POST);
 
             ButtonBar bb = new ButtonBar();
@@ -280,25 +347,44 @@ public class OlapController extends SpringActionController
             return view;
         }
 
+        protected abstract void doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException;
+
         @Override
         public boolean handlePost(CustomOlapDescriptorForm form, BindException errors) throws Exception
         {
             if (errors.hasErrors())
                 return false;
 
-            form.doInsert();
+            doAction(form, errors);
 
             // Clear the cached descriptors in this container
             CustomOlapSchemaDescriptor d = new CustomOlapSchemaDescriptor(form.getBean());
             ServerManager.olapSchemaDescriptorChanged(d);
 
-            return false;
+            return true;
         }
 
         @Override
         public URLHelper getSuccessURL(CustomOlapDescriptorForm form)
         {
-            return form.getReturnURLHelper();
+            return form.getReturnURLHelper() != null ? form.getReturnActionURL() : new ActionURL(TestBrowserAction.class, getContainer());
+        }
+
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class CreateDefinitionAction extends InsertUpdateDefinitionAction
+    {
+        @Override
+        protected DataView createView(CustomOlapDescriptorForm form, Errors errors)
+        {
+            return new InsertView(form, (BindException)errors);
+        }
+
+        @Override
+        protected void doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException
+        {
+            form.doInsert();
         }
 
         @Override
@@ -310,6 +396,70 @@ public class OlapController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(AdminPermission.class)
+    public class EditDefinitionAction extends InsertUpdateDefinitionAction
+    {
+        @Override
+        protected DataView createView(CustomOlapDescriptorForm form, Errors errors)
+        {
+            return new UpdateView(form, (BindException)errors);
+        }
+
+        @Override
+        protected void doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException
+        {
+            form.doUpdate();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root
+                    .addChild("OLAP Browser", new ActionURL(TestBrowserAction.class, getContainer()))
+                    .addChild("Update Custom OLAP Definition");
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DeleteDefinitionAction extends ConfirmAction<CustomOlapDescriptorForm>
+    {
+        @Override
+        public void validateCommand(CustomOlapDescriptorForm form, Errors errors)
+        {
+            OlapDef def = form.getBean();
+            if (def == null)
+                throw new NotFoundException("Custom olap definition not found");
+
+            if (getContainer().equals(def.lookupContainer()))
+                throw new IllegalArgumentException("Incorrect container");
+        }
+
+        @Override
+        public ModelAndView getConfirmView(CustomOlapDescriptorForm form, BindException errors) throws Exception
+        {
+            return new HtmlView("Are you sure you want do delete the custom olap definition '" + PageFlowUtil.filter(form.getBean().getName()) + "'?");
+        }
+
+        @Override
+        public boolean handlePost(CustomOlapDescriptorForm form, BindException errors) throws Exception
+        {
+            form.doDelete();
+
+            // Clear the cached descriptors in this container
+            ServerManager.cubeDataChanged(getContainer());
+
+            return true;
+        }
+
+        @NotNull
+        @Override
+        public URLHelper getSuccessURL(CustomOlapDescriptorForm form)
+        {
+            return form.getReturnURLHelper() != null ?
+                    form.getReturnURLHelper() :
+                    new ActionURL(TestBrowserAction.class, getContainer());
+        }
+    }
 
     public static class ExecuteMdxForm extends OlapForm
     {
@@ -886,6 +1036,232 @@ public class OlapController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root;
+        }
+    }
+
+
+    // TODO: Move all this app stuff somewhere else out of olap land
+    //
+    // AppContext actions
+    //
+
+    private static final String APP_CONTEXT_CATEGORY = "appcontext";
+    private static final String APP_CONTEXT_TYPE = "type";
+    private static final String APP_CONTEXT_DEFAULTS = "defaults";
+    private static final String APP_CONTEXT_VALUES = "values";
+
+    public static final int APP_CONTEXT_JSON_INDENT = 2;
+
+    /**
+     * Returns an app context object:
+     * {
+     *     name: "context name"
+     *     defaults: { },
+     *     values: { }
+     * }
+     */
+    @Nullable
+    private Map<String, Object> getSinglePageAppContext(Container c, String contextName)
+    {
+        PropertyStore store = PropertyManager.getNormalStore();
+        Map<String, String> context = store.getProperties(c, APP_CONTEXT_CATEGORY + ":" + contextName);
+        if (!context.isEmpty())
+        {
+            String defaults = context.get(APP_CONTEXT_DEFAULTS);
+            JSONObject defaultsJSON = null;
+            if (defaults != null)
+                defaultsJSON = new JSONObject(defaults);
+
+            String values = context.get(APP_CONTEXT_VALUES);
+            JSONObject valuesJSON = null;
+            if (values != null)
+                valuesJSON = new JSONObject(values);
+
+            Map<String, Object> ret = new HashMap<>();
+            ret.put("name", contextName);
+            ret.put("defaults", defaultsJSON);
+            ret.put("values", valuesJSON);
+            return ret;
+        }
+
+        return null;
+    }
+
+    private void updateSinglePageAppContext(Container c, String contextName, JSONObject defaults, JSONObject values)
+    {
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(c, APP_CONTEXT_CATEGORY + ":" + contextName, true);
+        if (defaults != null)
+            map.put(APP_CONTEXT_DEFAULTS, defaults.toString(APP_CONTEXT_JSON_INDENT));
+
+        if (values != null)
+            map.put(APP_CONTEXT_VALUES, values.toString(APP_CONTEXT_JSON_INDENT));
+
+        PropertyManager.saveProperties(map);
+
+        PropertyManager.PropertyMap allContexts = PropertyManager.getWritableProperties(c, APP_CONTEXT_CATEGORY, true);
+        allContexts.put(contextName, contextName);
+        PropertyManager.saveProperties(allContexts);
+    }
+
+    @NotNull
+    private void deleteSinglePageAppContexts(Container c, String contextName)
+    {
+        // Delete the context settings
+        PropertyManager.getNormalStore().deletePropertySet(c, APP_CONTEXT_CATEGORY + ":" + contextName);
+    }
+
+    @NotNull
+    private List<String> getSinglePageAppContexts(Container c)
+    {
+        List<String> contextNames = new ArrayList<>();
+        for (String category : PropertyManager.getCategoriesByPrefix(PropertyManager.SHARED_USER, c, APP_CONTEXT_CATEGORY + ":"))
+        {
+            assert category.startsWith(APP_CONTEXT_CATEGORY + ":");
+            contextNames.add(category.substring((APP_CONTEXT_CATEGORY + ":").length()));
+        }
+        return contextNames;
+    }
+
+    @RequiresPermissionClass(AdminReadPermission.class)
+    public class ListAppsAction extends ApiAction<Object>
+    {
+        @Override
+        public Object execute(Object o, BindException errors) throws Exception
+        {
+            return Collections.singletonMap("apps", getSinglePageAppContexts(getContainer()));
+        }
+    }
+
+    public static class AppForm
+    {
+        private String contextName;
+
+        public String getContextName()
+        {
+            return contextName;
+        }
+
+        public void setContextName(String contextName)
+        {
+            this.contextName = contextName;
+        }
+    }
+
+    public static class InsertUpdateAppForm extends AppForm
+    {
+        private JSONObject defaults;
+        private JSONObject values;
+
+        public JSONObject getDefaults()
+        {
+            return defaults;
+        }
+
+        public void setDefaults(JSONObject defaults)
+        {
+            this.defaults = defaults;
+        }
+
+        public JSONObject getValues()
+        {
+            return values;
+        }
+
+        public void setValues(JSONObject values)
+        {
+            this.values = values;
+        }
+    }
+
+    @Marshal(Marshaller.Jackson)
+    @RequiresPermissionClass(AdminPermission.class)
+    @ActionNames("insertApp,updateApp")
+    public class InsertAppAction extends MutatingApiAction<InsertUpdateAppForm>
+    {
+        @Override
+        public void validateForm(InsertUpdateAppForm form, Errors errors)
+        {
+            if (form == null)
+                return;
+
+            if (StringUtils.isBlank(form.getContextName()))
+                errors.rejectValue("contextName", ERROR_MSG, "contextName is requried");
+        }
+
+        @Override
+        public Object execute(InsertUpdateAppForm form, BindException errors) throws Exception
+        {
+            updateSinglePageAppContext(getContainer(), form.getContextName(), form.getDefaults(), form.getValues());
+            return getSinglePageAppContext(getContainer(), form.getContextName());
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class DeleteAppAction extends MutatingApiAction<AppForm>
+    {
+        @Override
+        public void validateForm(AppForm form, Errors errors)
+        {
+            if (StringUtils.isBlank(form.getContextName()))
+                errors.rejectValue("contextName", ERROR_MSG, "contextName is requried");
+        }
+
+        @Override
+        public Object execute(AppForm form, BindException errors) throws Exception
+        {
+            deleteSinglePageAppContexts(getContainer(), form.getContextName());
+            return Collections.singletonMap("success", true);
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class ManageAppsAction extends SimpleViewAction<Object>
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            List<String> contextNames = getSinglePageAppContexts(getContainer());
+            return new JspView<>("/org/labkey/query/view/manageApps.jsp", contextNames, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root.addChild("Manage Apps");
+        }
+    }
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class EditAppAction extends SimpleViewAction<AppForm>
+    {
+        String _contextName;
+
+        @Override
+        public ModelAndView getView(AppForm form, BindException errors) throws Exception
+        {
+            _contextName = StringUtils.trimToNull(form.getContextName());
+
+            Map<String, Object> context = null;
+            if (_contextName != null)
+                context = getSinglePageAppContext(getContainer(), form.getContextName());
+
+            // Create a default app context
+            if (context == null)
+            {
+                context = new HashMap<>();
+                if (_contextName != null)
+                    context.put("name", _contextName);
+            }
+
+            return new JspView<>("/org/labkey/query/view/editApp.jsp", context, errors);
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root
+                    .addChild("Manage Apps", new ActionURL(ManageAppsAction.class, getContainer()))
+                    .addChild(_contextName == null ? "Insert New App Context" : "Update App Context '" + _contextName + "'");
         }
     }
 

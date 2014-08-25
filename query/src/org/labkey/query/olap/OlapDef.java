@@ -15,10 +15,21 @@ import org.labkey.query.persist.QueryManager;
  */
 public class OlapDef extends Entity
 {
+    private int _rowId;
     private String _name;
     private String _module;
     private String _description;
     private String _definition;
+
+    public int getRowId()
+    {
+        return _rowId;
+    }
+
+    public void setRowId(int rowId)
+    {
+        _rowId = rowId;
+    }
 
     public String getName()
     {

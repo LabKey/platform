@@ -2688,6 +2688,7 @@ query/src/org/labkey/query/view/confirmDeleteConnection.jsp -text
 query/src/org/labkey/query/view/createRemoteConnection.jsp -text
 query/src/org/labkey/query/view/cube.jsp -text
 query/src/org/labkey/query/view/deleteQuery.jsp -text
+query/src/org/labkey/query/view/editApp.jsp -text
 query/src/org/labkey/query/view/editQueryWebPart.jsp -text
 query/src/org/labkey/query/view/exportTables.jsp -text
 query/src/org/labkey/query/view/externalSchema.jsp -text
@@ -2696,6 +2697,7 @@ query/src/org/labkey/query/view/internalNewView.jsp -text
 query/src/org/labkey/query/view/internalSourceView.jsp -text
 query/src/org/labkey/query/view/json.jsp -text
 query/src/org/labkey/query/view/linkedSchema.jsp -text
+query/src/org/labkey/query/view/manageApps.jsp -text
 query/src/org/labkey/query/view/manageRemoteConnections.jsp -text
 query/src/org/labkey/query/view/manageViews.jsp -text
 query/src/org/labkey/query/view/mdx.jsp -text
