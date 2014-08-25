@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -70,31 +71,35 @@ public class PropertyManager
     }
 
 
-    // For global system properties that are attached to the root container
-    // Returns an empty map if property set hasn't been created
+    /**
+     * For global system properties that are attached to the root container
+     * Returns an empty map if property set hasn't been created
+     */
     public static @NotNull Map<String, String> getProperties(String category)
     {
         return STORE.getProperties(category);
     }
 
-
-    // For shared properties that are attached to a specific container
-    // Returns an empty map if property set hasn't been created
+    /**
+     * For shared properties that are attached to a specific container
+     * Returns an empty map if property set hasn't been created
+     */
     public static @NotNull Map<String, String> getProperties(Container container, String category)
     {
         return STORE.getProperties(container, category);
     }
 
-
-    // For shared properties that are attached to a specific container and user
-    // Returns an empty map if property set hasn't been created
+    /**
+     * For shared properties that are attached to a specific container and user
+     * Returns an empty map if property set hasn't been created
+     */
     public static @NotNull Map<String, String> getProperties(User user, Container container, String category)
     {
         return STORE.getProperties(user, container, category);
     }
 
 
-    // For global system properties that get attached to the root container
+    /** For global system properties that get attached to the root container. */
     public static PropertyMap getWritableProperties(String category, boolean create)
     {
         return STORE.getWritableProperties(category, create);
@@ -204,6 +209,30 @@ public class PropertyManager
     }
 
     /**
+     * Get a list of categories optionally filtered by user, container, and category prefix.
+     * eturns entries from unencrypted store only.
+     *
+     * @param user   User of the property. If null properties for all users (NOT JUST THE NULL USER) will be found.
+     * @param container Container to search for. If null properties of all containers will be found
+     * @param categoryPrefix Prefix to search for. If null properties of all categories will be found
+     * @return list of categories array containing found properties
+     */
+    public static List<String> getCategoriesByPrefix(@Nullable User user, @Nullable Container container, @Nullable String categoryPrefix)
+    {
+        SimpleFilter filter = new SimpleFilter();
+        if (null != user)
+            filter.addCondition(FieldKey.fromString("UserId"), user.getUserId());
+        if (null != container)
+            filter.addCondition(FieldKey.fromString("ObjectId"), container.getId());
+        if (null != categoryPrefix)
+            filter.addCondition(FieldKey.fromString("Category"), categoryPrefix, CompareType.STARTS_WITH);
+
+        Sort sort = new Sort("UserId,ObjectId,Category,Name");
+
+        return new TableSelector(prop.getTableInfoPropertyEntries(), Collections.singleton("Category"), filter, sort).getArrayList(String.class);
+    }
+
+    /**
      * Return full property entries. Use this function to return property entries that are part
      * of multiple property sets. Returns entries from unencrypted store only.
      *
@@ -213,7 +242,7 @@ public class PropertyManager
      * @param key      key to search for. If null all keys will be returned
      * @return array containing found properties
      */
-    public static PropertyEntry[] findPropertyEntries(User user, Container container, String category, String key)
+    public static PropertyEntry[] findPropertyEntries(@Nullable User user, @Nullable Container container, @Nullable String category, @Nullable String key)
     {
         SimpleFilter filter = new SimpleFilter();
         if (null != user)
