@@ -32,6 +32,7 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.LinkedHashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -48,16 +49,20 @@
     ReportUtil.ReportFilter filter = new ReportUtil.DefaultReportFilter();
     Container c = getContainer();
     User u = getUser();
+    boolean showHidden = c.hasPermission(u, AdminPermission.class);
 
     for (Report report : ReportUtil.getReports(c, u, null, true))
     {
-        if (!filter.accept(report, c, u) || report.getDescriptor().isHidden())
+        if (!filter.accept(report, c, u) || (report.getDescriptor().isHidden() && !showHidden))
             continue;
 
-        if (!StringUtils.isEmpty(report.getDescriptor().getReportName()))
+        String reportName = report.getDescriptor().getReportName();
+        if (!StringUtils.isEmpty(reportName))
         {
-            reportMap.put(report.getDescriptor().getReportName(), report.getDescriptor().getReportId().toString());
-            reportNames.add(report.getDescriptor().getReportName().toString());
+            if (report.getDescriptor().isHidden())
+                reportName = reportName + " (hidden)";
+            reportMap.put(reportName, report.getDescriptor().getReportId().toString());
+            reportNames.add(reportName);
         }
     }
     Collections.sort(reportNames, String.CASE_INSENSITIVE_ORDER);
