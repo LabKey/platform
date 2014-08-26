@@ -17,9 +17,6 @@ package org.labkey.query.reports;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.reports.Report;
-import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.ImageUtil;
@@ -28,7 +25,6 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.UnknownHostException;
 
@@ -36,7 +32,7 @@ import java.net.UnknownHostException;
  * User: kevink
  * Date: 6/21/12
  */
-public class LinkReport extends BaseRedirectReport implements DynamicThumbnailProvider
+public class LinkReport extends BaseRedirectReport
 {
     public static final String TYPE = "ReportService.linkReport";
 
@@ -51,20 +47,13 @@ public class LinkReport extends BaseRedirectReport implements DynamicThumbnailPr
     }
 
     @Override
-    public Thumbnail getStaticThumbnail()
+    public String getStaticThumbnailPath()
     {
-        InputStream is = LinkReport.class.getResourceAsStream("web.png");
-        return new Thumbnail(is, "image/png");
+        return "/reports/web.png";
     }
 
     @Override
-    public String getStaticThumbnailCacheKey()
-    {
-        return "Reports:LinkReportStatic";
-    }
-
-    @Override
-    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
+    public Thumbnail generateThumbnail(@Nullable ViewContext context)
     {
         URL url = getURL();
         try
@@ -84,12 +73,6 @@ public class LinkReport extends BaseRedirectReport implements DynamicThumbnailPr
     }
 
     @Override
-    public String getDynamicThumbnailCacheKey()
-    {
-        return "Reports:" + getReportId();
-    }
-
-    @Override
     public ActionURL getEditReportURL(ViewContext context)
     {
         ActionURL url = new ActionURL(ReportsController.UpdateLinkReportAction.class, context.getContainer());
@@ -102,6 +85,6 @@ public class LinkReport extends BaseRedirectReport implements DynamicThumbnailPr
     public boolean hasContentModified(ContainerUser context)
     {
         // Content modified if change to the link URL string property
-        return hasDescriptorPropertyChanged(context, REDIRECT_URL);
+        return hasDescriptorPropertyChanged(REDIRECT_URL);
     }
 }

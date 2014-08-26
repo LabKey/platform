@@ -30,7 +30,6 @@ import org.labkey.api.reports.report.view.DefaultReportUIProvider;
 import org.labkey.api.reports.report.view.RReportBean;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.URLHelper;
@@ -56,7 +55,9 @@ import java.util.Map;
 public class StudyReportUIProvider extends DefaultReportUIProvider
 {
     private static Map<String, String> _typeToIconMap = new HashMap<>();
-    static {
+
+    static
+    {
         _typeToIconMap.put(StudyRReport.TYPE, "/reports/r.gif");
         _typeToIconMap.put(ChartReportView.TYPE, "/reports/chart.gif");
         _typeToIconMap.put(StudyQueryReport.TYPE, "/reports/grid.gif");
@@ -210,9 +211,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
 
     private String _getIconPath(String type)
     {
-        if (_typeToIconMap.containsKey(type))
-            return AppProps.getInstance().getContextPath() + _typeToIconMap.get(type);
-        return null;
+        return _typeToIconMap.get(type);
     }
 
     public String getIconPath(Report report)

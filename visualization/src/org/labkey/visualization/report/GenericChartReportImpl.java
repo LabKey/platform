@@ -36,8 +36,6 @@ import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.visualization.VisualizationController;
 
-import java.io.InputStream;
-
 /**
  * User: klum
  * Date: May 31, 2012
@@ -76,7 +74,7 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
     }
 
     @Override
-    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
+    public Thumbnail generateThumbnail(@Nullable ViewContext context)
     {
         // SVG is provided by the client code at save time and then stashed in the report by the save action. That's
         // the only way thumbnails can be generated from these reports.
@@ -92,27 +90,12 @@ public class GenericChartReportImpl extends GenericChartReport implements SvgThu
     }
 
     @Override
-    public String getDynamicThumbnailCacheKey()
-    {
-        return "Reports:" + getReportId();
-    }
-
-    @Override
-    public String getStaticThumbnailCacheKey()
+    public String getStaticThumbnailPath()
     {
         RenderType type = getRenderType();
-        String suffix = (null != type ? type.getId() : RenderType.AUTO_PLOT.getId());
+        String name = null != type ? type.getThumbnailName() : RenderType.AUTO_PLOT.getThumbnailName();
 
-        return "Reports:" + suffix;
-    }
-
-    @Override
-    public Thumbnail getStaticThumbnail()
-    {
-        RenderType type = getRenderType();
-        String name = null != type ? type.getThumbnailName() : RenderType.AUTO_PLOT.getName();
-        InputStream is = GenericChartReportImpl.class.getResourceAsStream(name);
-        return new Thumbnail(is, "image/png");
+        return "/visualization/report/" + name;
     }
 
     @Override

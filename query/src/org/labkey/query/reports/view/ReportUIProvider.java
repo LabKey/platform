@@ -15,7 +15,7 @@
  */
 package org.labkey.query.reports.view;
 
-import org.labkey.api.admin.CoreUrls;
+import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -40,10 +40,8 @@ import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewContext;
 import org.labkey.query.reports.AttachmentReport;
@@ -204,9 +202,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
 
     private String _getIconPath(String type)
     {
-        if (_typeToIconMap.containsKey(type))
-            return AppProps.getInstance().getContextPath() + _typeToIconMap.get(type);
-        return null;
+        return _typeToIconMap.get(type);
     }
 
     public String getIconPath(Report report)
@@ -225,10 +221,7 @@ public class ReportUIProvider extends DefaultReportUIProvider
                     filename = attachment == null ? null : attachment.getName();
                 }
 
-                if (null != filename)
-                {
-                    return PageFlowUtil.urlProvider(CoreUrls.class).getAttachmentIconURL(c, filename).toString();
-                }
+                return Attachment.getFileIcon(StringUtils.trimToEmpty(filename));
             }
 
             if (report instanceof LinkReport)
@@ -241,15 +234,17 @@ public class ReportUIProvider extends DefaultReportUIProvider
                 {
                     // XXX: Is there a better way to check if a link is local to this server?
                     if (linkReport.isInternalLink())
-                        return AppProps.getInstance().getContextPath() + "/reports/internal-link.png";
+                        return "/reports/internal-link.png";
                     else if (linkReport.isLocalLink())
-                        return AppProps.getInstance().getContextPath() + "/reports/local-link.png";
+                        return "/reports/local-link.png";
                     else
-                        return AppProps.getInstance().getContextPath() + "/reports/external-link.png";
+                        return "/reports/external-link.png";
                 }
             }
+
             return _getIconPath(report.getType());
         }
+
         return super.getIconPath(report);
     }
 }

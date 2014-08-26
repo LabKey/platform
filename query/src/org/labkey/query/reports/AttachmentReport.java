@@ -31,7 +31,6 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService;
@@ -61,7 +60,7 @@ import java.util.ListIterator;
  * Date: Jul 6, 2006
  * Time: 5:08:19 PM
  */
-public class AttachmentReport extends BaseRedirectReport implements DynamicThumbnailProvider
+public class AttachmentReport extends BaseRedirectReport
 {
     public static final String TYPE = "Study.attachmentReport";     // Misnomer (it's no longer part of study), but keep this for backward compatibility
     public static final String FILE_PATH = "filePath";
@@ -359,22 +358,14 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
     }
 
     @Override
-    public Thumbnail getStaticThumbnail()
+    public String getStaticThumbnailPath()
     {
         Type type = Type.getForContentType(getContentType());
-        InputStream is = AttachmentReport.class.getResourceAsStream(type.getStaticThumbnailName() + ".png");
-        return new Thumbnail(is, "image/png");
+        return "/reports/" + type.getStaticThumbnailName() + ".png";
     }
 
     @Override
-    public String getStaticThumbnailCacheKey()
-    {
-        Type type = Type.getForContentType(getContentType());
-        return "AttachmentReport:" + type.name();
-    }
-
-    @Override
-    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
+    public Thumbnail generateThumbnail(@Nullable ViewContext context)
     {
         Type type = Type.getForContentType(getContentType());
 
@@ -465,12 +456,6 @@ public class AttachmentReport extends BaseRedirectReport implements DynamicThumb
             return latest.getFileExtension();
 
         return null;
-    }
-
-    @Override
-    public String getDynamicThumbnailCacheKey()
-    {
-        return "Reports:" + getReportId();
     }
 
     @Override

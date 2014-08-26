@@ -21,15 +21,14 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.CacheableWriter;
+import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.thumbnail.DynamicThumbnailProvider;
-import org.labkey.api.thumbnail.StaticThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ExceptionUtil;
-import org.labkey.api.util.Pair;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.view.ViewContext;
 
@@ -47,7 +46,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class ThumbnailServiceImpl implements ThumbnailService
 {
     private static final Logger LOG = Logger.getLogger(ThumbnailServiceImpl.class);
-    private static final BlockingQueue<Pair<DynamicThumbnailProvider, ImageType>> QUEUE = new LinkedBlockingQueue<>(1000);
+    private static final BlockingQueue<ThumbnailRenderingBean> QUEUE = new LinkedBlockingQueue<>(1000);
     private static final ThumbnailGeneratingThread THREAD = new ThumbnailGeneratingThread();
 
     static
@@ -60,52 +59,80 @@ public class ThumbnailServiceImpl implements ThumbnailService
     }
 
     @Override
-    public CacheableWriter getThumbnailWriter(StaticThumbnailProvider provider, ImageType type)
+    public CacheableWriter getThumbnailWriter(ThumbnailProvider provider, ImageType type)
     {
-        if (provider instanceof DynamicThumbnailProvider)
-            return ThumbnailCache.getThumbnailWriter((DynamicThumbnailProvider)provider, type);
-        else
-            return ThumbnailCache.getThumbnailWriter(provider, type);
+        return ThumbnailCache.getThumbnailWriter(provider, type);
+    }
+
+    private static class ThumbnailRenderingBean
+    {
+        private final ThumbnailProvider _provider;
+        private final ImageType _imageType;
+        private final ThumbnailType _thumbnailType;
+
+        private ThumbnailRenderingBean(ThumbnailProvider provider, ImageType imageType, ThumbnailType thumbnailType)
+        {
+            _provider = provider;
+            _imageType = imageType;
+            _thumbnailType = thumbnailType;
+        }
+
+        public ThumbnailProvider getProvider()
+        {
+            return _provider;
+        }
+
+        public ImageType getImageType()
+        {
+            return _imageType;
+        }
+
+        public ThumbnailType getThumbnailType()
+        {
+            return _thumbnailType;
+        }
     }
 
     @Override
-    public void queueThumbnailRendering(DynamicThumbnailProvider provider, ImageType type)
+    public void queueThumbnailRendering(ThumbnailProvider provider, ImageType imageType, ThumbnailType thumbnailType)
     {
-        QUEUE.offer(new Pair<>(provider, type));
+        QUEUE.offer(new ThumbnailRenderingBean(provider, imageType, thumbnailType));
     }
 
     @Override
-    public void deleteThumbnail(DynamicThumbnailProvider provider, ImageType type)
+    public void deleteThumbnail(ThumbnailProvider provider, ImageType type)
     {
         AttachmentService.Service svc = AttachmentService.get();
         svc.deleteAttachment(provider, type.getFilename(), null);
+        provider.afterThumbnailDelete(type);
         ThumbnailCache.remove(provider, type);
     }
 
     @Override
     // Deletes existing thumbnail and then saves
-    public void replaceThumbnail(DynamicThumbnailProvider provider, ImageType type, @Nullable ViewContext context) throws IOException
+    public void replaceThumbnail(ThumbnailProvider provider, ImageType imageType, ThumbnailType thumbnailType, @Nullable ViewContext context) throws IOException
     {
         // TODO: Shouldn't need this check... but file-based reports don't have entityid??
         if (null == provider.getEntityId())
             return;
 
-        Thumbnail thumbnail = provider.generateDynamicThumbnail(context);
-        deleteThumbnail(provider, type);
+        Thumbnail thumbnail = provider.generateThumbnail(context);
+        deleteThumbnail(provider, imageType);
 
         if (null != thumbnail)
         {
             AttachmentService.Service svc = AttachmentService.get();
-            AttachmentFile thumbnailFile = new InputStreamAttachmentFile(thumbnail.getInputStream(), type.getFilename(), thumbnail.getContentType());
+            AttachmentFile thumbnailFile = new InputStreamAttachmentFile(thumbnail.getInputStream(), imageType.getFilename(), thumbnail.getContentType());
 
             try
             {
                 svc.addAttachments(provider, Collections.singletonList(thumbnailFile), User.guest);
+                provider.afterThumbnailSave(imageType, thumbnailType);
             }
             finally
             {
-                // Delete already cleared the cache, but another request could have already cached a miss
-                ThumbnailCache.remove(provider, type);
+                // Delete already cleared the cache, but another request could have cached a miss in the mean time
+                ThumbnailCache.remove(provider, imageType);
             }
         }
     }
@@ -135,14 +162,14 @@ public class ThumbnailServiceImpl implements ThumbnailService
                 //noinspection InfiniteLoopStatement
                 while (!interrupted())
                 {
-                    Pair<DynamicThumbnailProvider, ImageType> pair = QUEUE.take();
-                    DynamicThumbnailProvider provider = pair.getKey();
-                    ImageType type = pair.getValue();
+                    ThumbnailRenderingBean bean = QUEUE.take();
+                    ThumbnailProvider provider = bean.getProvider();
+                    ImageType type = bean.getImageType();
 
                     try
                     {
                         // TODO: Real ViewContext
-                        svc.replaceThumbnail(provider, type, null);
+                        svc.replaceThumbnail(provider, type, bean.getThumbnailType(), null);
                     }
                     catch (Throwable e)  // Make sure throwables don't kill the background thread
                     {

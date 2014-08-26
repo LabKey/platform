@@ -56,7 +56,7 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.views.DataViewProvider;
+import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
@@ -1107,7 +1107,7 @@ public class VisualizationController extends SpringActionController
         public String getThumbnailType()
         {
             if (_thumbnailType == null)
-                _thumbnailType = DataViewProvider.EditInfo.ThumbnailType.AUTO.name();
+                _thumbnailType = ThumbnailType.AUTO.name();
             return _thumbnailType;
         }
 
@@ -1304,7 +1304,7 @@ public class VisualizationController extends SpringActionController
             resp.put("ownerId", !vizDescriptor.isShared() ? vizDescriptor.getOwner() : null);
             resp.put("createdBy", vizDescriptor.getCreatedBy());
             resp.put("reportProps", vizDescriptor.getReportProps());
-            resp.put("thumbnailURL", PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(getContainer(), getReport(form)));
+            resp.put("thumbnailURL", ReportUtil.getThumbnailUrl(getContainer(), getReport(form)));
             return resp;
         }
     }
@@ -1432,7 +1432,6 @@ public class VisualizationController extends SpringActionController
                     boxView.addView(discussion);
                 }
             }
-
 
             return boxView;
         }
@@ -1600,7 +1599,6 @@ public class VisualizationController extends SpringActionController
             }
             return report;
         }
-
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -1802,7 +1800,7 @@ public class VisualizationController extends SpringActionController
         public String getThumbnailType()
         {
             if (_thumbnailType == null)
-                _thumbnailType = DataViewProvider.EditInfo.ThumbnailType.AUTO.name();
+                _thumbnailType = ThumbnailType.AUTO.name();
             return _thumbnailType;
         }
 
@@ -1844,7 +1842,7 @@ public class VisualizationController extends SpringActionController
             json.put("renderType", descriptor.getProperty(GenericChartReportDescriptor.Prop.renderType));
             json.put("dataRegionName", descriptor.getProperty(ReportDescriptor.Prop.dataRegionName));
             json.put("jsonData", descriptor.getProperty(ReportDescriptor.Prop.json));
-            json.put("thumbnailURL", PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(container, report));
+            json.put("thumbnailURL", ReportUtil.getThumbnailUrl(container, report));
 
             try
             {
@@ -1865,22 +1863,24 @@ public class VisualizationController extends SpringActionController
 
         if (null != svc)
         {
-            if (thumbnailType.equals(DataViewProvider.EditInfo.ThumbnailType.NONE.name()))
+            if (thumbnailType.equals(ThumbnailType.NONE.name()))
             {
                 // User checked the "no thumbnail" checkbox... need to proactively delete the thumbnail
                 svc.deleteThumbnail(generator, ImageType.Large);
-                ReportPropsManager.get().setPropertyValue(generator.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.NONE.name());
+                ReportPropsManager.get().setPropertyValue(generator.getEntityId(), getContainer(), "thumbnailType", ThumbnailType.NONE.name());
             }
-            else if (thumbnailType.equals(DataViewProvider.EditInfo.ThumbnailType.AUTO.name()) && svg != null)
+            else if (thumbnailType.equals(ThumbnailType.AUTO.name()) && svg != null)
             {
                 // Generate and save the thumbnail (in the background)
                 generator.setSvg(svg);
-                svc.queueThumbnailRendering(generator, ImageType.Large);
-                ReportPropsManager.get().setPropertyValue(generator.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
+                svc.queueThumbnailRendering(generator, ImageType.Large, ThumbnailType.AUTO);
+                ReportPropsManager.get().setPropertyValue(generator.getEntityId(), getContainer(), "thumbnailType", ThumbnailType.AUTO.name());
             }
         }
     }
+
     private static Logger logDebug = Logger.getLogger(VisualizationController.class);
+
     public static class TestCase extends Assert
     {
         ViewContext _viewContext;

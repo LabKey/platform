@@ -2588,11 +2588,6 @@ query/src/org/labkey/query/reports/getdata/ReportDataSource.java -text
 query/src/org/labkey/query/reports/getdata/ReportDataTransform.java -text
 query/src/org/labkey/query/reports/getdata/SchemaQueryReportDataSource.java -text
 query/src/org/labkey/query/reports/getdata/SchemaQueryReportDataSourceBuilder.java -text
-query/src/org/labkey/query/reports/image.png -text
-query/src/org/labkey/query/reports/pdf.png -text
-query/src/org/labkey/query/reports/presentation.png -text
-query/src/org/labkey/query/reports/spreadsheet.png -text
-query/src/org/labkey/query/reports/unknown.png -text
 query/src/org/labkey/query/reports/view/ReportAndDatasetChangeDigestEmailTemplate.java -text
 query/src/org/labkey/query/reports/view/ReportUIProvider.java -text
 query/src/org/labkey/query/reports/view/ReportsWebPart.java -text
@@ -2607,8 +2602,6 @@ query/src/org/labkey/query/reports/view/rReportTabHeader.jsp -text
 query/src/org/labkey/query/reports/view/reportAndDatasetChangeDigestNotify.txt -text
 query/src/org/labkey/query/reports/view/reportDetails.jsp -text
 query/src/org/labkey/query/reports/view/reportsWebPartConfig.jsp -text
-query/src/org/labkey/query/reports/web.png -text
-query/src/org/labkey/query/reports/wordprocessing.png -text
 query/src/org/labkey/query/sql/AbstractQueryMethodInfo.java -text
 query/src/org/labkey/query/sql/Builder.java -text
 query/src/org/labkey/query/sql/ConvertType.java -text
@@ -2740,6 +2733,7 @@ query/webapp/reports/icon_final.png -text
 query/webapp/reports/icon_locked.png -text
 query/webapp/reports/icon_query_view.png -text
 query/webapp/reports/icon_unlocked.png -text
+query/webapp/reports/image.png -text
 query/webapp/reports/internal-link.png -text
 query/webapp/reports/js.png -text
 query/webapp/reports/link_data.png -text
@@ -2754,8 +2748,14 @@ query/webapp/reports/output_text.jpg -text
 query/webapp/reports/paging_arrow_next.gif -text
 query/webapp/reports/paging_arrow_prev.gif -text
 query/webapp/reports/participantReport.png -text
+query/webapp/reports/pdf.png -text
+query/webapp/reports/presentation.png -text
 query/webapp/reports/r.gif -text
 query/webapp/reports/rowExpander.js -text
+query/webapp/reports/spreadsheet.png -text
+query/webapp/reports/unknown.png -text
+query/webapp/reports/web.png -text
+query/webapp/reports/wordprocessing.png -text
 query/webapp/reports/xls.gif -text
 query/webapp/scriptreporteditor.lib.xml -text
 search/Search.iml -text
@@ -4369,9 +4369,6 @@ visualization/src/org/labkey/visualization/VisualizationUpgradeCode.java -text
 visualization/src/org/labkey/visualization/report/GenericChartReportImpl.java -text
 visualization/src/org/labkey/visualization/report/TimeChartReportImpl.java -text
 visualization/src/org/labkey/visualization/report/VisualizationUIProvider.java -text
-visualization/src/org/labkey/visualization/report/box_plot.png -text
-visualization/src/org/labkey/visualization/report/scatter_plot.png -text
-visualization/src/org/labkey/visualization/report/timechart.png -text
 visualization/src/org/labkey/visualization/sql/OuterJoinSourceQuery.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSQLGenerator.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSourceQuery.java -text

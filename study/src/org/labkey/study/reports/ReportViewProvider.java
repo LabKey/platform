@@ -42,8 +42,8 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
-import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.ImageStreamThumbnailProvider;
+import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.MimeMap;
@@ -90,7 +90,9 @@ public class ReportViewProvider implements DataViewProvider
         ReportPropsManager.get().ensureProperty(c, user, "author", "Author", PropertyType.INTEGER);
         ReportPropsManager.get().ensureProperty(c, user, "refreshDate", "RefreshDate", PropertyType.DATE_TIME);
         ReportPropsManager.get().ensureProperty(c, user, "thumbnailType", "ThumbnailType", PropertyType.STRING);
+        ReportPropsManager.get().ensureProperty(c, user, "thumbnailRevision", "ThumbnailRevision", PropertyType.INTEGER);
         ReportPropsManager.get().ensureProperty(c, user, "iconType", "IconType", PropertyType.STRING);
+        ReportPropsManager.get().ensureProperty(c, user, "iconRevision", "IconRevision", PropertyType.INTEGER);
     }
 
     @Override
@@ -222,25 +224,13 @@ public class ReportViewProvider implements DataViewProvider
                     String showInDashboard = descriptor.getProperty(ReportDescriptor.Prop.showInDashboard);
                     info.setShowInDashboard(showInDashboard == null || Boolean.valueOf(showInDashboard));
 
-                    // This icon is the small icon -- not the same as thumbnail
-                    String iconPath;
-                    String iconType = (String)ReportPropsManager.get().getPropertyValue(r.getEntityId(), context.getContainer(), "iconType");
+                    // This is the small icon
+                    info.setIconUrl(ReportUtil.getIconUrl(c, r));
+                    // This is the thumbnail
+                    info.setAllowCustomThumbnail(true);
+                    info.setThumbnailUrl(ReportUtil.getThumbnailUrl(c, r));
 
-                    if(iconType != null && iconType.equals(EditInfo.ThumbnailType.CUSTOM.name()))
-                        iconPath = PageFlowUtil.urlProvider(ReportUrls.class).urlIcon(c, r).toString();
-                    else
-                        iconPath = ReportService.get().getIconPath(r);
-
-                    if (!StringUtils.isEmpty(iconPath))
-                        info.setIconUrl(iconPath);
-
-                    // see to-do below regarding static vs. dynamic thumbnail providers
-                    info.setAllowCustomThumbnail(r instanceof DynamicThumbnailProvider);
-
-                    // TODO: Switch static image link vs. action url based on thumbnail type
-                    ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(c, r);
-                    info.setThumbnailUrl(url.toString());
-                    info.setTags(ReportPropsManager.get().getProperties(descriptor.getEntityId(), context.getContainer()));
+                    info.setTags(ReportPropsManager.get().getProperties(descriptor.getEntityId(), c));
 
                     views.add(info);
                 }
@@ -367,41 +357,34 @@ public class ReportViewProvider implements DataViewProvider
 
                     if (props.containsKey(Property.customThumbnail.name()))
                     {
-                        // TODO: I don't like this... need to rethink static vs. dynamic providers. Reports that aren't dynamic providers should still allow custom thumbnails
-                        if (report instanceof DynamicThumbnailProvider)
+                        // custom thumbnail file provided by the user is stored in the properties map as an InputStream
+                        InputStream is = (InputStream)props.get(Property.customThumbnail.name());
+                        String filename = (String)props.get(Property.customThumbnailFileName.name());
+                        String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
+                        ThumbnailProvider wrapper = new ImageStreamThumbnailProvider(report, is, contentType, ImageType.Large);
+
+                        ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+                        if (null != svc)
                         {
-                            // custom thumbnail file provided by the user is stored in the properties map as an InputStream
-                            InputStream is = (InputStream)props.get(Property.customThumbnail.name());
-                            String filename = (String)props.get(Property.customThumbnailFileName.name());
-                            String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
-                            DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is, contentType, ImageType.Large);
-
-                            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
-
-                            if (null != svc)
-                            {
-                                svc.replaceThumbnail(wrapper, ImageType.Large, context);
-                                ReportPropsManager.get().setPropertyValue(report.getEntityId(), context.getContainer(), "thumbnailType", ThumbnailType.CUSTOM.name());
-                            }
+                            // Note: afterSave() callback handles updating the imageType, thumbnailType, and image revision properties
+                            svc.replaceThumbnail(wrapper, ImageType.Large, ThumbnailType.CUSTOM, context);
                         }
                     }
 
                     if (props.containsKey(Property.customIcon.name()))
                     {
-                        if (report instanceof DynamicThumbnailProvider)
+                        InputStream is = (InputStream)props.get(Property.customIcon.name());
+                        String filename = (String)props.get(Property.customIconFileName.name());
+                        String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
+                        ThumbnailProvider wrapper = new ImageStreamThumbnailProvider(report, is, contentType, ImageType.Small);
+
+                        ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+                        if (null != svc)
                         {
-                            InputStream is = (InputStream)props.get(Property.customIcon.name());
-                            String filename = (String)props.get(Property.customIconFileName);
-                            String contentType = null != filename ? new MimeMap().getContentTypeFor(filename) : null;
-                            DynamicThumbnailProvider wrapper = new ImageStreamThumbnailProvider((DynamicThumbnailProvider)report, is, contentType, ImageType.Small);
-
-                            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
-
-                            if (null != svc)
-                            {
-                                svc.replaceThumbnail(wrapper, ImageType.Small, context);
-                                ReportPropsManager.get().setPropertyValue(report.getEntityId(), context.getContainer(), "iconType", ThumbnailType.CUSTOM.name());
-                            }
+                            // Note: afterSave() callback handles updating the "iconType" property and image revision number
+                            svc.replaceThumbnail(wrapper, ImageType.Small, ThumbnailType.CUSTOM, context);
                         }
                     }
 

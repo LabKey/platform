@@ -30,6 +30,7 @@ import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -80,13 +81,11 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
 
             if (!StringUtils.isEmpty(view.getCustomIconUrl()))
             {
-                URLHelper url = new URLHelper(view.getCustomIconUrl());
-                url.setContextPath(AppProps.getInstance().getParsedContextPath());
-                info.setIconUrl(url.toString());
+                info.setIconUrl(new ResourceURL(view.getCustomIconUrl()));
             }
 
             // Always return link to a static image for now. See ReportViewProvider for an example of a dynamic thumbnail provider.
-            info.setThumbnailUrl(AppProps.getInstance().getContextPath() + "/query/query.png");
+            info.setThumbnailUrl(new ResourceURL("/query/query.png"));
 
             dataViews.add(info);
         }

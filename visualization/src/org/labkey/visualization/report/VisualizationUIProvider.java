@@ -48,7 +48,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
         {
             ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer(), context.getUser(), settings);
             info.add(new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", null, designerURL,
-                    context.getContextPath() + "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION));
+                    "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION));
         }
 
         GenericChartReport.RenderType boxType = GenericChartReport.RenderType.BOX_PLOT;
@@ -81,7 +81,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
             ActionURL designerURL = urlProvider.getTimeChartDesignerURL(context.getContainer());
 
             DesignerInfoImpl info = new DesignerInfoImpl(TimeChartReport.TYPE, "Time Chart", null, designerURL,
-                    context.getContextPath() + "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION);
+                    "/visualization/report/timechart.gif", ReportService.DesignerType.VISUALIZATION);
             info.setId("create_timeChart");
             designers.add(info);
         }
@@ -107,7 +107,7 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
         String type = report.getType();
 
         if (TimeChartReport.TYPE.equals(type))
-            return contextPath + "/visualization/report/timechart.gif";
+            return "/visualization/report/timechart.gif";
         if (GenericChartReport.TYPE.equals(type))
         {
             GenericChartReport.RenderType renderType = ((GenericChartReport)report).getRenderType();

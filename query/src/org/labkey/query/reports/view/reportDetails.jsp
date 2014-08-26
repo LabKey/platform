@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="java.util.Date" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<ReportDesignBean> me = (JspView<ReportDesignBean>) HttpView.currentView();
@@ -50,7 +51,6 @@
     ActionURL editReportURL = report.getEditReportURL(context, getActionURL());
     String reportURLAttributes = report.getRunReportTarget() != null ? "target=\"" + report.getRunReportTarget() + "\"": "";
 
-    ActionURL thumbnailUrl = urlProvider(ReportUrls.class).urlThumbnail(bean.getContainer(), report);
     String type = report.getTypeDescription();
     String category = "";
     String status = "";
@@ -240,7 +240,7 @@
             Thumbnail:
         </td>
         <td>
-            <img src="<%=h(thumbnailUrl)%>">
+            <img src="<%=h(ReportUtil.getThumbnailUrl(getContainer(), report))%>">
         </td>
     </tr>
 

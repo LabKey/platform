@@ -29,7 +29,6 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
@@ -46,7 +45,6 @@ import org.labkey.study.model.ParticipantGroup;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.StudyManager;
 
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -89,7 +87,7 @@ public class ParticipantReport extends AbstractReport
         JspView<ReportsController.ParticipantReportForm> view = new JspView<>("/org/labkey/study/view/participantReport.jsp", form);
 
         String rwp = (String)context.get("reportWebPart");
-        form.setExpanded(!(rwp != null));
+        form.setExpanded(rwp == null);
 
         form.setAllowOverflow(!BooleanUtils.toBoolean(rwp));
 
@@ -112,16 +110,9 @@ public class ParticipantReport extends AbstractReport
     }
 
     @Override
-    public Thumbnail getStaticThumbnail()
+    public String getStaticThumbnailPath()
     {
-        InputStream is = ParticipantReport.class.getResourceAsStream("participantThumbnail.gif");
-        return new Thumbnail(is, "image/gif");
-    }
-
-    @Override
-    public String getStaticThumbnailCacheKey()
-    {
-        return "Reports:ParticipantReportStatic";
+        return "/study/participantThumbnail.gif";
     }
 
     /**

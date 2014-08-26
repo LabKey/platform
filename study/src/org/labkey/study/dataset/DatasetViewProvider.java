@@ -34,6 +34,7 @@ import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -111,7 +112,7 @@ public class DatasetViewProvider implements DataViewProvider
                         }
                         view.setType("Dataset");
                         view.setDescription(ds.getDescription());
-                        view.setIconUrl(AppProps.getInstance().getContextPath() + "/reports/grid.gif");
+                        view.setIconUrl(new ResourceURL("/reports/grid.gif"));
                         view.setVisible(ds.isShowByDefault());
 
                         ActionURL runUrl = new ActionURL(StudyController.DefaultDatasetReportAction.class, container).addParameter("datasetId", ds.getDatasetId());
@@ -119,7 +120,7 @@ public class DatasetViewProvider implements DataViewProvider
                         view.setDetailsUrl(runUrl);
 
                         // Always return link to a static image for now. See ReportViewProvider for an example of a dynamic thumbnail provider.
-                        view.setThumbnailUrl(AppProps.getInstance().getContextPath() + "/study/dataset.png");
+                        view.setThumbnailUrl(new ResourceURL("/study/dataset.png"));
                         view.setModified(ds.getModified());
 
                         view.setTags(ReportPropsManager.get().getProperties(ds.getEntityId(), container));

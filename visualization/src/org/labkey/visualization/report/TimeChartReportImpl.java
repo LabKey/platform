@@ -33,8 +33,6 @@ import org.labkey.api.visualization.TimeChartReportDescriptor;
 import org.labkey.api.writer.ContainerUser;
 import org.labkey.visualization.VisualizationController;
 
-import java.io.InputStream;
-
 /*
  * User: brittp
  * Date: Feb 7, 2011 11:23:05 AM
@@ -67,20 +65,13 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
     }
 
     @Override
-    public Thumbnail getStaticThumbnail()
+    public String getStaticThumbnailPath()
     {
-        InputStream is = TimeChartReportImpl.class.getResourceAsStream("timechart.png");
-        return new Thumbnail(is, "image/png");
+        return "visualization/report/timechart.png";
     }
 
     @Override
-    public String getStaticThumbnailCacheKey()
-    {
-        return "Reports:TimeChartStatic";
-    }
-
-    @Override
-    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
+    public Thumbnail generateThumbnail(@Nullable ViewContext context)
     {
         // SVG is provided by the client code at save time and then stashed in the report by the save action. That's
         // the only way thumbnails can be generated from these reports.
@@ -95,12 +86,6 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
         }
     }
 
-    @Override
-    public String getDynamicThumbnailCacheKey()
-    {
-        return "Reports:" + getReportId();
-    }
-
     public void setSvg(String svg)
     {
         _svg = svg;
@@ -112,6 +97,6 @@ public class TimeChartReportImpl extends TimeChartReport implements SvgThumbnail
         // TODO: need to trim the JSON content to just relevant properties (i.e. don't need group IDs or categoryIDs which are currently also include in export/import)
 
         // Content modified if change to the JSON config property
-        return hasDescriptorPropertyChanged(context, ReportDescriptor.Prop.json.name());
+        return hasDescriptorPropertyChanged(ReportDescriptor.Prop.json.name());
     }
 }

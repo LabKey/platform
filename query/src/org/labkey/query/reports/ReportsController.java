@@ -54,6 +54,7 @@ import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.views.DataViewInfo;
 import org.labkey.api.data.views.DataViewProvider;
+import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.message.digest.DailyMessageDigest;
@@ -123,8 +124,7 @@ import org.labkey.api.settings.AdminConsole.SettingsLinkType;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.thumbnail.BaseThumbnailAction;
-import org.labkey.api.thumbnail.DynamicThumbnailProvider;
-import org.labkey.api.thumbnail.StaticThumbnailProvider;
+import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.DateUtil;
@@ -274,19 +274,17 @@ public class ReportsController extends SpringActionController
         }
 
         @Override
-        public ActionURL urlThumbnail(Container c, Report r)
+        public ActionURL urlImage(Container c, Report r, ImageType type, @Nullable Integer revision)
         {
             ActionURL url = new ActionURL(ThumbnailAction.class, c);
             url.addParameter("reportId", r.getDescriptor().getReportId().toString());
-            return url;
-        }
 
-        @Override
-        public ActionURL urlIcon(Container c, Report r)
-        {
-            ActionURL url = new ActionURL(ThumbnailAction.class, c);
-            url.addParameter("reportId", r.getDescriptor().getReportId().toString());
-            url.addParameter("imageType", "Small");
+            if (ImageType.Small == type)
+                url.addParameter("imageType", "Small");
+
+            // Add "revision" to defeat client-side caching
+            url.addParameter("revision", null != revision ? revision : 0);
+
             return url;
         }
 
@@ -1458,25 +1456,18 @@ public class ReportsController extends SpringActionController
             int newId = ReportService.get().saveReport(getViewContext(), ReportUtil.getReportQueryKey(report.getDescriptor()), report);
             report = ReportService.get().getReport(newId);  // Re-select saved report so we get EntityId, etc.
 
-            if (report instanceof DynamicThumbnailProvider)
+            ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
+
+            if (null != svc)
             {
-                ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
-
-                if (null != svc)
+                if (form.getThumbnailType().equals(ThumbnailType.NONE.name()))
                 {
-                    DynamicThumbnailProvider provider = (DynamicThumbnailProvider) report;
-
-                    if (form.getThumbnailType().equals(DataViewProvider.EditInfo.ThumbnailType.NONE.name()))
-                    {
-                        // User checked the "no thumbnail" radio... need to proactively delete the thumbnail
-                        svc.deleteThumbnail(provider, ImageType.Large);
-                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.NONE.name());
-                    }
-                    else if (form.getThumbnailType().equals(DataViewProvider.EditInfo.ThumbnailType.AUTO.name()))
-                    {
-                        svc.replaceThumbnail(provider, ImageType.Large, getViewContext());
-                        ReportPropsManager.get().setPropertyValue(report.getEntityId(), getContainer(), "thumbnailType", DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
-                    }
+                    // User checked the "no thumbnail" radio... need to proactively delete the thumbnail
+                    svc.deleteThumbnail(report, ImageType.Large);
+                }
+                else if (form.getThumbnailType().equals(ThumbnailType.AUTO.name()))
+                {
+                    svc.replaceThumbnail(report, ImageType.Large, ThumbnailType.AUTO, getViewContext());
                 }
             }
 
@@ -1707,7 +1698,7 @@ public class ReportsController extends SpringActionController
         return url;
     }
 
-    protected abstract class BaseReportAction<F extends DataViewEditForm, R extends AbstractReport & DynamicThumbnailProvider> extends FormViewAction<F>
+    protected abstract class BaseReportAction<F extends DataViewEditForm, R extends AbstractReport> extends FormViewAction<F>
     {
         protected void initialize(F form) throws Exception
         {
@@ -1850,7 +1841,7 @@ public class ReportsController extends SpringActionController
                 ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 
                 if (null != svc)
-                    svc.queueThumbnailRendering(report, ImageType.Large);
+                    svc.queueThumbnailRendering(report, ImageType.Large, ThumbnailType.AUTO);
 
                 return true;
             }
@@ -2592,7 +2583,7 @@ public class ReportsController extends SpringActionController
     public class ThumbnailAction extends BaseThumbnailAction<ThumbnailForm>
     {
         @Override
-        public StaticThumbnailProvider getProvider(ThumbnailForm form) throws Exception
+        public ThumbnailProvider getProvider(ThumbnailForm form) throws Exception
         {
             return form.getReportId().getReport(getViewContext());
         }
@@ -3221,7 +3212,7 @@ public class ReportsController extends SpringActionController
                 JSONObject viewJson = DataViewService.get().toJSON(getContainer(), getUser(), view);
                 viewJson.put("name", view.getName());
                 viewJson.put("leaf", true);
-                viewJson.put("icon", view.getIconUrl());
+                viewJson.put("icon", view.getIconUrl().getLocalURIString());
                 children.put(viewJson);
             }
 
