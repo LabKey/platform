@@ -22,7 +22,9 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.InputStreamAttachmentFile;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryView;
@@ -31,12 +33,15 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.permissions.EditSharedReportPermission;
 import org.labkey.api.reports.permissions.ShareReportPermission;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.thumbnail.Thumbnail;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -95,7 +100,7 @@ public abstract class AbstractReport implements Report
         return false;
     }
 
-    protected boolean hasDescriptorPropertyChanged(ContainerUser context, String descriptorPropName)
+    protected boolean hasDescriptorPropertyChanged(String descriptorPropName)
     {
         // Content modified if change to the specified descriptor property
         String newPropStr = getDescriptor().getProperty(descriptorPropName);
@@ -280,23 +285,83 @@ public abstract class AbstractReport implements Report
     }
 
     @Override
-    public Thumbnail getStaticThumbnail()
+    public String getStaticThumbnailPath()
     {
-        InputStream is = AbstractReport.class.getResourceAsStream("report.jpg");
-        return new Thumbnail(is, "image/jpeg");
+        return "/report/report.jpg";
     }
 
     @Override
-    public String getStaticThumbnailCacheKey()
+    public String getThumbnailCacheKey()
     {
-        return "Reports:ReportStatic";
+        return "Reports:" + getReportId();
     }
 
+    @Override
+    public boolean supportsDynamicThumbnail()
+    {
+        return false;
+    }
+
+    @Nullable
+    @Override
+    public Thumbnail generateThumbnail(@Nullable ViewContext context)
+    {
+        throw new IllegalStateException("Should call supportsDynamicThumbnail() before calling this");
+    }
+
+    @Override
+    public void afterThumbnailSave(ImageType imageType, ThumbnailType thumbnailType)
+    {
+        Container c = ContainerManager.getForId(getContainerId());
+
+        if (null != c)
+        {
+            try
+            {
+                String entityId = getEntityId();
+                String typePropertyName = imageType.getPropertyNamePrefix() + "Type";
+                ReportPropsManager.get().setPropertyValue(entityId, c, typePropertyName, thumbnailType.name());
+
+                String revisionPropertyName = imageType.getPropertyNamePrefix() + "Revision";
+                Double revision = (Double) ReportPropsManager.get().getPropertyValue(entityId, c, revisionPropertyName);
+                ReportPropsManager.get().setPropertyValue(entityId, c, revisionPropertyName, null == revision ? 1 : revision.intValue() + 1);
+            }
+            catch (ValidationException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
+    }
+
+    @Override
+    public void afterThumbnailDelete(ImageType imageType)
+    {
+        Container c = ContainerManager.getForId(getContainerId());
+
+        if (null != c)
+        {
+            try
+            {
+                String propertyName = imageType.getPropertyNamePrefix() + "Type";
+                ReportPropsManager.get().setPropertyValue(getEntityId(), c, propertyName, ThumbnailType.NONE.name());
+
+                // Note: we don't modify or delete "revision" property on delete; we want the sequence to continue if
+                // another thumbnail is uploaded or generated, so clients don't render an old images.
+            }
+            catch (ValidationException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
+    }
+
+
+    @Override
     public boolean canEdit(User user, Container container, List<ValidationError> errors)
     {
         if (getDescriptor().isInherited(container))
         {
-            errors.add(new SimpleValidationError("An inherited report can only be edited from it's source folder."));
+            errors.add(new SimpleValidationError("An inherited report can only be edited from its source folder."));
             return false;
         }
 
@@ -323,10 +388,8 @@ public abstract class AbstractReport implements Report
 
     public boolean canEdit(User user, Container container)
     {
-        if (getDescriptor().isModuleBased())
-            return false;
+        return !getDescriptor().isModuleBased() && canEdit(user, container, new ArrayList<ValidationError>());
 
-        return canEdit(user, container, new ArrayList<ValidationError>());
     }
 
     public boolean canShare(User user, Container container, List<ValidationError> errors)

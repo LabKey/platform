@@ -48,7 +48,7 @@ public abstract class BaseThumbnailAction<FORM> extends ExportAction<FORM>
     }
 
     // Do any additional permissions checks and return the provider (or null, if no thumbnail should be sent)
-    public abstract @Nullable StaticThumbnailProvider getProvider(FORM form) throws Exception;
+    public abstract @Nullable ThumbnailProvider getProvider(FORM form) throws Exception;
 
     @Override
     public void export(FORM form, HttpServletResponse response, BindException errors) throws Exception
@@ -58,15 +58,14 @@ public abstract class BaseThumbnailAction<FORM> extends ExportAction<FORM>
         if (null == svc)
             return;
 
-        StaticThumbnailProvider provider = getProvider(form);
+        ThumbnailProvider provider = getProvider(form);
 
         if (null != provider)
         {
             CacheableWriter writer = svc.getThumbnailWriter(provider, getImageType(form));
 
-            // TODO: need to handle client caching better -- use long expiration and _dc to defeat caching
             Calendar expiration = new GregorianCalendar();
-            expiration.add(Calendar.SECOND, 5);
+            expiration.add(Calendar.YEAR, 1);
 
             writer.writeToResponse(response, expiration);
         }

@@ -196,7 +196,7 @@ public class DataViewService
             o.put("queryName", info.getQueryName());
 
         if (info.getIconUrl() != null)
-            o.put("icon", info.getIconUrl());
+            o.put("icon", info.getIconUrl().getLocalURIString());
 
         ViewCategory vc = info.getCategory();
         if (vc == null)
@@ -239,7 +239,7 @@ public class DataViewService
         if (info.getRunTarget() != null)
             o.put("runTarget", info.getRunTarget());
         if (info.getThumbnailUrl() != null)
-            o.put("thumbnail", info.getThumbnailUrl());
+            o.put("thumbnail", info.getThumbnailUrl().getLocalURIString());
 
         if (info.getDetailsUrl() != null)
             o.put("detailsUrl", info.getDetailsUrl().getLocalURIString());

@@ -35,7 +35,6 @@ import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
@@ -55,14 +54,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class RReport extends ExternalScriptEngineReport implements DynamicThumbnailProvider
+public class RReport extends ExternalScriptEngineReport
 {
     public static final String TYPE = "ReportService.rReport";
     private static String DEFAULT_APP_PATH;
@@ -571,31 +569,18 @@ public class RReport extends ExternalScriptEngineReport implements DynamicThumbn
     }
 
     @Override
-    public Thumbnail getStaticThumbnail()
+    public String getStaticThumbnailPath()
     {
-        InputStream is = RReport.class.getResourceAsStream("Rlogo.jpg");
-        return new Thumbnail(is, "image/jpeg");
+        return "/report/RLogo.jpg";
     }
 
     @Override
-    public String getStaticThumbnailCacheKey()
-    {
-        return "Reports:RReportStatic";
-    }
-
-    @Override
-    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
+    public Thumbnail generateThumbnail(@Nullable ViewContext context)
     {
         if (null != context)
             return getThumbnail(context);
         else
             return null;
-    }
-
-    @Override
-    public String getDynamicThumbnailCacheKey()
-    {
-        return "Reports:" + getReportId();
     }
 
     @Override

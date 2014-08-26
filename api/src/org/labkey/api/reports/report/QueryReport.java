@@ -30,7 +30,6 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.reports.Report;
-import org.labkey.api.thumbnail.DynamicThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
@@ -39,19 +38,16 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
-import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BindException;
 import org.springframework.validation.ObjectError;
 
-import javax.servlet.http.HttpServletRequest;
-import java.io.InputStream;
 import java.util.List;
 
 /**
  * User: Karl Lum
  * Date: Oct 6, 2006
  */
-public class QueryReport extends AbstractReport implements DynamicThumbnailProvider
+public class QueryReport extends AbstractReport
 {
     public static final String TYPE = "ReportService.queryReport";
 
@@ -205,53 +201,19 @@ public class QueryReport extends AbstractReport implements DynamicThumbnailProvi
 */
 
     @Override
-    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
+    public Thumbnail generateThumbnail(@Nullable ViewContext context)
     {
-        return getStaticThumbnail();
+        return null;
     }
 
     @Override
-    public String getDynamicThumbnailCacheKey()
+    public String getStaticThumbnailPath()
     {
-        return getStaticThumbnailCacheKey();
-    }
-
-    @Override
-    public String getStaticThumbnailCacheKey()
-    {
-        return "Query";
-    }
-
-    @Override
-    public Thumbnail getStaticThumbnail()
-    {
-        InputStream is = AbstractReport.class.getResourceAsStream("query.png");
-        return new Thumbnail(is, "image/png");
+        return "/query/query.png";
     }
 
     public ActionURL getRunReportURL(ViewContext context)
     {
         return PageFlowUtil.urlProvider(ReportUrls.class).urlQueryReport(context.getContainer(), this);
     }
-/*
-    public ActionURL getRunReportURL(ViewContext context)
-    {
-        String schemaName = getDescriptor().getProperty(ReportDescriptor.Prop.schemaName);
-        UserSchema schema = getSchema(context, schemaName);
-
-        if (schema != null)
-        {
-            String queryName = getDescriptor().getProperty(ReportDescriptor.Prop.queryName);
-            String viewName = getDescriptor().getProperty(ReportDescriptor.Prop.viewName);
-            ActionURL url = schema.urlFor(QueryAction.executeQuery);
-
-            url.addParameter(QueryParam.queryName, queryName);
-            if (viewName != null)
-                url.addParameter(QueryParam.viewName, viewName);
-
-            return url;
-        }
-        return super.getRunReportURL(context);
-    }
-*/
 }

@@ -17,11 +17,14 @@ package org.labkey.api.thumbnail;
 
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CacheableWriter;
+import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.util.Set;
+
+import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 
 /**
  * User: adam
@@ -34,15 +37,17 @@ public interface ThumbnailService
 
     public enum ImageType
     {
-        Large("Thumbnail", 256.0f),
-        Small("SmallThumbnail", 16.0f);
+        Large("Thumbnail", "thumbnail", 256.0f),
+        Small("SmallThumbnail", "icon", 16.0f);
 
         private final String _filename;
+        private final String _propertyNamePrefix;
         private final float _height;
 
-        ImageType(String filename, float height)
+        ImageType(String filename, String propertyNamePrefix, float height)
         {
             _filename = filename;
+            _propertyNamePrefix = propertyNamePrefix;
             _height = height;
         }
 
@@ -55,10 +60,15 @@ public interface ThumbnailService
         {
             return _height;
         }
+
+        public String getPropertyNamePrefix()
+        {
+            return _propertyNamePrefix;
+        }
     }
 
-    CacheableWriter getThumbnailWriter(StaticThumbnailProvider provider, ImageType type);
-    void queueThumbnailRendering(DynamicThumbnailProvider provider, ImageType type);
-    void deleteThumbnail(DynamicThumbnailProvider provider, ImageType type);
-    void replaceThumbnail(DynamicThumbnailProvider provider, ImageType type, @Nullable ViewContext context) throws IOException;
+    CacheableWriter getThumbnailWriter(ThumbnailProvider provider, ImageType imageType);
+    void deleteThumbnail(ThumbnailProvider provider, ImageType imageType);
+    void queueThumbnailRendering(ThumbnailProvider provider, ImageType imageType, ThumbnailType thumbnailType);
+    void replaceThumbnail(ThumbnailProvider provider, ImageType imageType, ThumbnailType thumbnailType, @Nullable ViewContext context) throws IOException;
 }

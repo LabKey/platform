@@ -30,7 +30,6 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.roles.ProjectAdminRole" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
-<%@ page import="org.labkey.api.thumbnail.DynamicThumbnailProvider" %>
 <%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.util.UniqueID" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
@@ -45,7 +44,6 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
@@ -135,7 +133,7 @@
     reportConfig.put("javascriptOptions", report instanceof JavaScriptReport);
     reportConfig.put("useGetDataApi", useGetDataApi);
 
-    reportConfig.put("thumbnailOptions", report instanceof DynamicThumbnailProvider);
+    reportConfig.put("thumbnailOptions", true);
     reportConfig.put("thumbnailType", bean.getThumbnailType());
 
     reportConfig.put("studyOptions", (report instanceof RReport) && (StudyService.get().getStudy(c) != null));

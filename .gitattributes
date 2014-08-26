@@ -1144,13 +1144,11 @@ api/src/org/labkey/api/reports/report/ReportThumbnail.java -text
 api/src/org/labkey/api/reports/report/ReportThumbnailLarge.java -text
 api/src/org/labkey/api/reports/report/ReportThumbnailSmall.java -text
 api/src/org/labkey/api/reports/report/ReportUrls.java -text
-api/src/org/labkey/api/reports/report/Rlogo.jpg -text
 api/src/org/labkey/api/reports/report/ScriptEngineReport.java -text
 api/src/org/labkey/api/reports/report/ScriptOutput.java -text
 api/src/org/labkey/api/reports/report/ScriptReport.java -text
 api/src/org/labkey/api/reports/report/ScriptReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ViewCategoryConverter.java -text
-api/src/org/labkey/api/reports/report/query.png -text
 api/src/org/labkey/api/reports/report/r/AbstractParamReplacement.java -text
 api/src/org/labkey/api/reports/report/r/ParamReplacement.java -text
 api/src/org/labkey/api/reports/report/r/ParamReplacementSvc.java -text
@@ -1169,7 +1167,6 @@ api/src/org/labkey/api/reports/report/r/view/ROutputView.java -text
 api/src/org/labkey/api/reports/report/r/view/SvgOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/TextOutput.java -text
 api/src/org/labkey/api/reports/report/r/view/TsvOutput.java -text
-api/src/org/labkey/api/reports/report/report.jpg -text
 api/src/org/labkey/api/reports/report/view/AjaxRunScriptReportView.java -text
 api/src/org/labkey/api/reports/report/view/AjaxScriptReportView.java -text
 api/src/org/labkey/api/reports/report/view/ChartDesignerBean.java -text
@@ -1504,11 +1501,10 @@ api/src/org/labkey/api/survey/model/SurveyMetadataBuilder.java -text
 api/src/org/labkey/api/survey/model/SurveyStatus.java -text
 api/src/org/labkey/api/test/TestTimeout.java -text
 api/src/org/labkey/api/thumbnail/BaseThumbnailAction.java -text
-api/src/org/labkey/api/thumbnail/DynamicThumbnailProvider.java -text
 api/src/org/labkey/api/thumbnail/ImageStreamThumbnailProvider.java -text
-api/src/org/labkey/api/thumbnail/StaticThumbnailProvider.java -text
 api/src/org/labkey/api/thumbnail/Thumbnail.java -text
 api/src/org/labkey/api/thumbnail/ThumbnailOutputStream.java -text
+api/src/org/labkey/api/thumbnail/ThumbnailProvider.java -text
 api/src/org/labkey/api/thumbnail/ThumbnailService.java -text
 api/src/org/labkey/api/util/BreakpointThread.java -text
 api/src/org/labkey/api/util/Button.java -text
@@ -6966,6 +6962,8 @@ api/webapp/gtheme/img/lkbtn.png -text
 api/webapp/gtheme/img/lkbtn2.png -text
 api/webapp/gtheme/img/rct.png -text
 api/webapp/gtheme/img/rdr.png -text
+api/webapp/report/Rlogo.jpg -text
+api/webapp/report/report.jpg -text
 internal/gwtsrc/org/labkey/api/gwt/Internal.gwt.xml -text
 internal/gwtsrc/org/labkey/api/gwt/client/AuditBehaviorType.java -text
 internal/gwtsrc/org/labkey/api/gwt/client/DefaultScaleType.java -text

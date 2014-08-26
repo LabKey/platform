@@ -21,6 +21,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Collections;
@@ -51,10 +52,10 @@ public class DefaultViewInfo implements DataViewInfo
 
     private ActionURL _runUrl;
     private String _runTarget;
-    private String _thumbnailUrl;
+    private URLHelper _thumbnailUrl;
     private ActionURL _detailsUrl;
 
-    private String _iconUrl;
+    private URLHelper _iconUrl;
     private ViewCategory _category;
     private boolean _visible = true;
     private boolean _shared = true;
@@ -197,12 +198,12 @@ public class DefaultViewInfo implements DataViewInfo
         _runTarget = target;
     }
 
-    public String getThumbnailUrl()
+    public URLHelper getThumbnailUrl()
     {
         return _thumbnailUrl;
     }
 
-    public void setThumbnailUrl(String thumbnailUrl)
+    public void setThumbnailUrl(URLHelper thumbnailUrl)
     {
         _thumbnailUrl = thumbnailUrl;
     }
@@ -217,12 +218,12 @@ public class DefaultViewInfo implements DataViewInfo
         _detailsUrl = detailsUrl;
     }
 
-    public String getIconUrl()
+    public URLHelper getIconUrl()
     {
         return _iconUrl;
     }
 
-    public void setIconUrl(String iconUrl)
+    public void setIconUrl(URLHelper iconUrl)
     {
         _iconUrl = iconUrl;
     }

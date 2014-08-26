@@ -29,6 +29,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.query.CustomViewInfo;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryDefinition;
@@ -39,6 +40,7 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.ChartReportDescriptor;
 import org.labkey.api.reports.report.DbReportIdentifier;
@@ -54,10 +56,14 @@ import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ThumbnailUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.TabStripView;
@@ -185,6 +191,51 @@ public class ReportUtil
             }
         }
         return url;
+    }
+
+    public static URLHelper getThumbnailUrl(Container c, Report r)
+    {
+        URLHelper dynamicURL = getDynamicImageUrl(c, r, ThumbnailService.ImageType.Large);
+
+        if (null != dynamicURL)
+        {
+            return dynamicURL;
+        }
+        else
+        {
+            return ThumbnailUtil.getStaticThumbnailURL(r);
+        }
+    }
+
+    public static URLHelper getIconUrl(Container c, Report r)
+    {
+        URLHelper dynamicURL = getDynamicImageUrl(c, r, ThumbnailService.ImageType.Small);
+
+        if (null != dynamicURL)
+        {
+            return dynamicURL;
+        }
+        else
+        {
+            String path = ReportService.get().getIconPath(r);
+            return new ResourceURL(path);
+        }
+    }
+
+    private static @Nullable URLHelper getDynamicImageUrl(Container c, Report r, ThumbnailService.ImageType type)
+    {
+        String prefix = type.getPropertyNamePrefix();
+        String imageType = (String) ReportPropsManager.get().getPropertyValue(r.getEntityId(), c, prefix + "Type");
+
+        if (imageType != null && !imageType.equals(ThumbnailType.NONE.name()))
+        {
+            Double revision = (Double)ReportPropsManager.get().getPropertyValue(r.getEntityId(), c, prefix + "Revision");
+            Integer iconRevision = (null == revision ? null : revision.intValue());
+
+            return PageFlowUtil.urlProvider(ReportUrls.class).urlImage(c, r, type, iconRevision);
+        }
+
+        return null;
     }
 
     public static String getReportQueryKey(ReportDescriptor descriptor)

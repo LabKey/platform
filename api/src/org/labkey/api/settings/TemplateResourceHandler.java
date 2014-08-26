@@ -138,11 +138,7 @@ public enum TemplateResourceHandler
 
             return new ResourceURL(getResourceName(), settingsContainer);
         }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-        catch (ServletException e)
+        catch (IOException | ServletException e)
         {
             throw new RuntimeException(e);
         }

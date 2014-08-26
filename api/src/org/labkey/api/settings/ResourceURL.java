@@ -16,6 +16,7 @@
 package org.labkey.api.settings;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 
@@ -38,10 +39,14 @@ public class ResourceURL extends URLHelper
     public ResourceURL(String resource, Container c)
     {
         setContextPath(AppProps.getInstance().getParsedContextPath());
-        _path = c.getParsedPath().append(resource,false);
+        _path = c.getParsedPath().append(Path.parse(resource));
         addParameter("revision", String.valueOf(AppProps.getInstance().getLookAndFeelRevision()));
     }
 
+    public ResourceURL(String resource)
+    {
+        this(resource, ContainerManager.getRoot());
+    }
 
     public ResourceURL(HttpServletRequest request) throws ServletException
     {

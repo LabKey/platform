@@ -20,6 +20,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.CheckedInputStream;
@@ -36,16 +37,17 @@ import java.io.InputStream;
  * Date: 6/13/12
  * Time: 4:14 PM
  */
-public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
+public class ImageStreamThumbnailProvider implements ThumbnailProvider
 {
     private static final Logger LOG = Logger.getLogger(ImageStreamThumbnailProvider.class);
-    private final DynamicThumbnailProvider _provider;
+
+    private final ThumbnailProvider _provider;
     private final @Nullable String _contentType;
     private final ImageType _type;
     private final InputStream _is;
 
     // Generates a thumbnail from the image in the inputstream and associates it with the provider
-    public ImageStreamThumbnailProvider(DynamicThumbnailProvider provider, InputStream is, @Nullable String contentType, ImageType type)
+    public ImageStreamThumbnailProvider(ThumbnailProvider provider, InputStream is, @Nullable String contentType, ImageType type)
     {
         _provider = provider;
         _contentType = contentType;
@@ -54,8 +56,26 @@ public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
     }
 
     @Override
+    public String getStaticThumbnailPath()
+    {
+        return _provider.getStaticThumbnailPath();
+    }
+
+    @Override
+    public String getThumbnailCacheKey()
+    {
+        return _provider.getThumbnailCacheKey();
+    }
+
+    @Override
+    public boolean supportsDynamicThumbnail()
+    {
+        return _provider.supportsDynamicThumbnail();
+    }
+
+    @Override
     @Nullable
-    public Thumbnail generateDynamicThumbnail(@Nullable ViewContext context)
+    public Thumbnail generateThumbnail(@Nullable ViewContext context)
     {
         try
         {
@@ -98,21 +118,15 @@ public class ImageStreamThumbnailProvider implements DynamicThumbnailProvider
     }
 
     @Override
-    public String getDynamicThumbnailCacheKey()
+    public void afterThumbnailSave(ImageType type, ThumbnailType thumbnailType)
     {
-        return _provider.getDynamicThumbnailCacheKey();
+        _provider.afterThumbnailSave(type, thumbnailType);
     }
 
     @Override
-    public Thumbnail getStaticThumbnail()
+    public void afterThumbnailDelete(ImageType type)
     {
-        return _provider.getStaticThumbnail();
-    }
-
-    @Override
-    public String getStaticThumbnailCacheKey()
-    {
-        return _provider.getStaticThumbnailCacheKey();
+        _provider.afterThumbnailDelete(type);
     }
 
     @Override

@@ -185,7 +185,8 @@ public class ReportService
         public List<DesignerInfo> getDesignerInfo(ViewContext context, QuerySettings settings);
 
         /**
-         * Returns the icon path to display for the specified report
+         * Returns simple path to browser accessible static icon image in the webapp, e.g., "/reports/chart.gif". Callers must
+         * turn this into a valid URL by pre-pending context path and adding look-and-feel revision (e.g., use ResourceURL).
          */
         public String getIconPath(Report report);
     }

@@ -24,7 +24,6 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.report.ReportDescriptor;
-import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.util.Pair;
 import org.labkey.api.writer.ContainerUser;
 

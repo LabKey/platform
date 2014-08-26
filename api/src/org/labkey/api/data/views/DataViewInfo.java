@@ -21,6 +21,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 import java.util.Date;
@@ -45,7 +46,7 @@ public interface DataViewInfo
     @Nullable
     String getDescription();            // an optional description
     @Nullable
-    String getIconUrl();                   // the server relative path to the display icon
+    URLHelper getIconUrl();             // the server relative path to the display icon
     @Nullable
     ViewCategory getCategory();         // an optional view category
 
@@ -80,7 +81,7 @@ public interface DataViewInfo
     String    getRunTarget();           // Anchor target (e.g., "_blank") use when rendering run report href.
 
     @Nullable
-    String getThumbnailUrl();     // the url to display a thumbnail image
+    URLHelper getThumbnailUrl();        // the url to display a thumbnail image
     @Nullable
     ActionURL getDetailsUrl();          // the url to display extra details about a view
 

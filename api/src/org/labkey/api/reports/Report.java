@@ -25,7 +25,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ScriptOutput;
 import org.labkey.api.security.User;
-import org.labkey.api.thumbnail.StaticThumbnailProvider;
+import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -42,7 +42,7 @@ import java.util.Map;
  * Date: May 10, 2006
  * Time: 1:01:50 PM
  */
-public interface Report extends AttachmentParent, StaticThumbnailProvider
+public interface Report extends AttachmentParent, ThumbnailProvider
 {
     String getType();
     String getTypeDescription();

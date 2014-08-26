@@ -24,7 +24,7 @@ import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.report.AbstractReport;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -38,7 +38,7 @@ import java.util.List;
  */
 
 /**
- * Generic javascript report which uses the client side api's developed over d3/raphael to
+ * Generic javascript report which uses the client side apis developed over d3/raphael to
  * create box, scatter, bar charts.
  */
 public abstract class GenericChartReport extends AbstractReport
@@ -67,7 +67,7 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public String getIconPath()
             {
-                return AppProps.getInstance().getContextPath() + "/visualization/report/box_plot.gif";
+                return "/visualization/report/box_plot.gif";
             }
             @Override
             public String getThumbnailName()
@@ -95,7 +95,7 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public String getIconPath()
             {
-                return AppProps.getInstance().getContextPath() + "/visualization/report/scatter_plot.gif";
+                return "/visualization/report/scatter_plot.gif";
             }
             @Override
             public String getThumbnailName()
@@ -123,7 +123,7 @@ public abstract class GenericChartReport extends AbstractReport
             @Override
             public String getIconPath()
             {
-                return AppProps.getInstance().getContextPath() + "/visualization/report/box_plot.gif";
+                return "/visualization/report/box_plot.gif";
             }
             @Override
             public String getThumbnailName()
@@ -206,7 +206,7 @@ public abstract class GenericChartReport extends AbstractReport
 
                         NavTree navItem = new NavTree("Quick Chart");
 
-                        navItem.setImageSrc(type.getIconPath());
+                        navItem.setImageSrc(new ResourceURL(type.getIconPath()).getLocalURIString());
                         navItem.setHref(plotURL.getLocalURIString());
 
                         return navItem;

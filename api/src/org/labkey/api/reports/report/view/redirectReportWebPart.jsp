@@ -20,9 +20,10 @@
 <%@ page import="org.labkey.api.reports.report.ReportUrls" %>
 <%@ page import="org.labkey.api.security.UserManager" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.reports.report.view.ReportUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -33,7 +34,7 @@
             Collections.singletonMap("target", report.getRunReportTarget()) :
             Collections.<String, String>emptyMap();
 
-    ActionURL thumbnailURL = PageFlowUtil.urlProvider(ReportUrls.class).urlThumbnail(getContainer(), report);
+    URLHelper thumbnailURL = ReportUtil.getThumbnailUrl(getContainer(), report);
 
     String name = report.getDescriptor().getReportName();
     String description = report.getDescriptor().getReportDescription();
@@ -47,7 +48,7 @@
             authorId = ((Double)o).intValue();
     }
     String author = null;
-    if (authorId != null && authorId.intValue() > 0)
+    if (authorId != null && authorId > 0)
         author = UserManager.getDisplayNameOrUserId(authorId, getUser());
 
     String category = null;

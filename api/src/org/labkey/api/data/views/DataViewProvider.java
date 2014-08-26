@@ -69,13 +69,15 @@ public interface DataViewProvider
     public interface EditInfo
     {
         // the list of actions that are allowed
-        enum Actions {
+        enum Actions
+        {
             update,
-            delete,
+            delete
         }
 
         // a list of standard properties
-        enum Property {
+        enum Property
+        {
             name,
             viewName,
             description,
@@ -95,8 +97,9 @@ public interface DataViewProvider
         }
 
         // a list of thumbnail types
-        enum ThumbnailType {
-            AUTO, // auto-generated
+        enum ThumbnailType
+        {
+            AUTO,   // auto-generated
             CUSTOM, // custom thumbnail provided by Data Views edit properties page
             NONE 
         }

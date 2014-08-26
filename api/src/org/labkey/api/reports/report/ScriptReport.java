@@ -193,6 +193,6 @@ public abstract class ScriptReport extends AbstractReport
     public boolean hasContentModified(ContainerUser context)
     {
         // Content modified if change to the "script" config property
-        return hasDescriptorPropertyChanged(context, ScriptReportDescriptor.Prop.script.name());
+        return hasDescriptorPropertyChanged(ScriptReportDescriptor.Prop.script.name());
     }
 }

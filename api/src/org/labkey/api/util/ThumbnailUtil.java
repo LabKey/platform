@@ -18,6 +18,8 @@ package org.labkey.api.util;
 import org.apache.batik.transcoder.TranscoderException;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.ResourceURL;
+import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
@@ -52,5 +54,10 @@ public class ThumbnailUtil
         }
 
         return null;
+    }
+
+    public static URLHelper getStaticThumbnailURL(ThumbnailProvider provider)
+    {
+        return new ResourceURL(provider.getStaticThumbnailPath());
     }
 }
