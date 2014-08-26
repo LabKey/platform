@@ -40,7 +40,6 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
@@ -1266,7 +1265,7 @@ public class AssayController extends SpringActionController
             if (null == form.getColumnName())
                 throw new NotFoundException();
             AssayResultTable assayResultTable = (AssayResultTable) table;
-            SchemaTableInfo sti = (SchemaTableInfo)assayResultTable.getSchemaTableInfo();
+            TableInfo ti = assayResultTable.getSchemaTableInfo();
             String comment = StringUtils.trimToNull(form.getComment());
 
             ColumnInfo flagCol = assayResultTable.getColumn(form.getColumnName());
@@ -1275,14 +1274,14 @@ public class AssayController extends SpringActionController
             if (!org.labkey.api.gwt.client.ui.PropertyType.expFlag.getURI().equals(flagCol.getConceptURI()))
                 throw new NotFoundException();
 
-            DbScope scope = sti.getSchema().getScope();
+            DbScope scope = ti.getSchema().getScope();
             int rowsAffected  = 0 ;
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
                 for (Integer id : form.getRowList())
                 {
                     // assuming that column in storage table has same name
-                    Table.update(getUser(), sti, Collections.singletonMap(flagCol.getColumnName(),comment), id);
+                    Table.update(getUser(), ti, Collections.singletonMap(flagCol.getColumnName(),comment), id);
                     rowsAffected++;
                 }
                 transaction.commit();
