@@ -802,6 +802,7 @@ public class SpecimenImporter
 
     // SpecimenEvent columns that form a psuedo-unqiue constraint
     private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE, DRAW_TIMESTAMP;
+    private static final SpecimenColumn VISIT_VALUE;
 
     private static final Collection<SpecimenColumn> BASE_SPECIMEN_COLUMNS = Arrays.asList(
             new SpecimenColumn(EVENT_ID_COL, "ExternalId", "BIGINT NOT NULL", TargetTable.SPECIMEN_EVENTS, true),
@@ -818,7 +819,7 @@ public class SpecimenImporter
             new SpecimenColumn("sal_receipt_date", "SalReceiptDate", DATETIME_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn(SPEC_NUMBER_TSV_COL, "SpecimenNumber", "VARCHAR(50)", true, TargetTable.SPECIMEN_EVENTS),
             new SpecimenColumn("class_id", "ClassId", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
-            new SpecimenColumn(VISIT_COL, "VisitValue", NUMERIC_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
+            VISIT_VALUE = new SpecimenColumn(VISIT_COL, "VisitValue", NUMERIC_TYPE, TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("protocol_number", "ProtocolNumber", "VARCHAR(20)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("visit_description", "VisitDescription", "VARCHAR(10)", TargetTable.SPECIMENS_AND_SPECIMEN_EVENTS),
             new SpecimenColumn("other_specimen_id", "OtherSpecimenId", "VARCHAR(50)", TargetTable.SPECIMEN_EVENTS),
@@ -1244,12 +1245,19 @@ public class SpecimenImporter
             info("Complete.");
         }
 
+        boolean seenVisitValue = false;
+        for (SpecimenColumn col : info.getAvailableColumns())
+        {
+            if (VISIT_VALUE.getDbColumnName().equalsIgnoreCase(col.getDbColumnName()))
+                seenVisitValue = true;
+        }
+
         _iTimer.setPhase(ImportPhases.PopulateMaterials);
         populateMaterials(info, merge);
         _iTimer.setPhase(ImportPhases.PopulateSpecimens);
-        populateSpecimens(info, merge);
+        populateSpecimens(info, merge, seenVisitValue);
         _iTimer.setPhase(ImportPhases.PopulateVials);
-        populateVials(info, merge);
+        populateVials(info, merge, seenVisitValue);
         _iTimer.setPhase(ImportPhases.PopulateSpecimenEvents);
         populateSpecimenEvents(info, merge);
 
@@ -1860,7 +1868,7 @@ public class SpecimenImporter
         return _specimenCols;
     }
 
-    private String getSpecimenColsSql(List<SpecimenColumn> availableColumns)
+    private String getSpecimenColsSql(List<SpecimenColumn> availableColumns, boolean seenVisitValue)
     {
         if (_specimenColsSql == null)
         {
@@ -1871,6 +1879,8 @@ public class SpecimenImporter
                 cols.append(sep).append(col.getDbColumnName());
                 sep = ",\n   ";
             }
+            if (!seenVisitValue)
+                cols.append(sep).append(VISIT_VALUE.getDbColumnName());
             _specimenColsSql = cols.toString();
         }
         return _specimenColsSql;
@@ -2089,7 +2099,7 @@ public class SpecimenImporter
     }
 
 
-    private void populateSpecimens(SpecimenLoadInfo info, boolean merge) throws IOException, SQLException, ValidationException
+    private void populateSpecimens(SpecimenLoadInfo info, boolean merge, boolean seenVisitValue) throws IOException, SQLException, ValidationException
     {
         String participantSequenceNumExpr = VisitManager.getParticipantSequenceNumExpr(info._schema, "PTID", "VisitValue");
 
@@ -2099,10 +2109,10 @@ public class SpecimenImporter
         insertSelectSql.append(", SpecimenHash, ");
         insertSelectSql.append(DRAW_DATE.getDbColumnName()).append(", ");
         insertSelectSql.append(DRAW_TIME.getDbColumnName()).append(", ");
-        insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns())).append(" FROM (\n");
-        insertSelectSql.append(getVialListFromTempTableSql(info, true)).append(") VialList\n");
+        insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns(), seenVisitValue)).append(" FROM (\n");
+        insertSelectSql.append(getVialListFromTempTableSql(info, true, seenVisitValue)).append(") VialList\n");
         insertSelectSql.append("GROUP BY ").append("SpecimenHash, ");
-        insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns()));
+        insertSelectSql.append(getSpecimenColsSql(info.getAvailableColumns(), seenVisitValue));
         insertSelectSql.append(", ").append(DRAW_DATE.getDbColumnName());
         insertSelectSql.append(", ").append(DRAW_TIME.getDbColumnName());
 
@@ -2133,7 +2143,7 @@ public class SpecimenImporter
             insertSql.append("INSERT INTO ").append(specimenTableSelectName).append("\n(").append("ParticipantSequenceNum, SpecimenHash, ");
             insertSql.append(DRAW_DATE.getDbColumnName()).append(", ");
             insertSql.append(DRAW_TIME.getDbColumnName()).append(", ");
-            insertSql.append(getSpecimenColsSql(info.getAvailableColumns())).append(")\n");
+            insertSql.append(getSpecimenColsSql(info.getAvailableColumns(), seenVisitValue)).append(")\n");
             insertSql.append(insertSelectSql);
 
             if (DEBUG)
@@ -2145,7 +2155,7 @@ public class SpecimenImporter
         }
     }
 
-    private SQLFragment getVialListFromTempTableSql(SpecimenLoadInfo info, boolean forSpecimenTable)
+    private SQLFragment getVialListFromTempTableSql(SpecimenLoadInfo info, boolean forSpecimenTable, boolean seenVisitValue)
     {
         String prefix = "";
         SQLFragment vialListSql = new SQLFragment();
@@ -2166,6 +2176,10 @@ public class SpecimenImporter
                 appendConflictResolvingSQL(info.getSchema().getSqlDialect(), vialListSql, col, info.getTempTableName(), null);
             }
         }
+        if (!seenVisitValue)
+        {
+            vialListSql.append(prefix).append("0.0 AS ").append(VISIT_VALUE.getDbColumnName());
+        }
 
         // DrawDate and DrawTime are a little different;
         // we need to do the conflict count on DrawTimeStamp and then cast to Date or Time
@@ -2184,7 +2198,7 @@ public class SpecimenImporter
         return vialListSql;
     }
 
-    private void populateVials(SpecimenLoadInfo info, boolean merge) throws SQLException, ValidationException
+    private void populateVials(SpecimenLoadInfo info, boolean merge, boolean seenVisitValue) throws SQLException, ValidationException
     {
         TableInfo specimenTable = getTableInfoSpecimen();
         String specimenTableSelectName = specimenTable.getSelectName();
@@ -2202,8 +2216,10 @@ public class SpecimenImporter
 
         for (SpecimenColumn col : getVialCols(info.getAvailableColumns()))
             insertSelectSql.append(prefix).append("VialList.").append(col.getDbColumnName());
+        if (!seenVisitValue)
+            insertSelectSql.append(prefix).append("VialList.").append(VISIT_VALUE.getDbColumnName());
 
-        insertSelectSql.append(" FROM (").append(getVialListFromTempTableSql(info, false)).append(") VialList");
+        insertSelectSql.append(" FROM (").append(getVialListFromTempTableSql(info, false, seenVisitValue)).append(") VialList");
 
         // join to material:
         insertSelectSql.append("\n    JOIN exp.Material ON (");
