@@ -70,7 +70,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
         this._parent = new AtomicReference<>();
         int hash = 0;
         for (int i=0 ; i<length ; i++)
-            hash = hash*37 + _path[i].hashCode();
+            hash = hash*37 + _path[i].toLowerCase().hashCode();
         this._hash = hash;
         this._isAbsolute = abs;
         this._isDirectory = dir;
@@ -167,7 +167,7 @@ public class Path implements Serializable, Comparable, Iterable<String>
         if (this.getClass() != other.getClass())
             return false;
         Path that = (Path)other;
-        if (this._length != that._length)
+        if (this._hash != that._hash || this._length != that._length)
             return false;
         for (int i=this._length-1 ; i>=0 ; i--)
         {
