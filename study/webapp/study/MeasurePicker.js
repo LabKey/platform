@@ -728,6 +728,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     // the "select all" column header for the measures grid
     measuresAllHeader : null,
 
+    // group the 'selected' measures as a separate group from which the user can modify the current set
+    supportSelectionGroup: false,
+    supportSelectionLabel: 'Current Columns',
+
     constructor : function(config) {
 
         Ext4.apply(this, config, {
@@ -840,7 +844,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 )
             });
 
-            this.sourcesView.getSelectionModel().on('select', this.onSourceRowSelection, this);
+            this.sourcesView.getSelectionModel().on('select', this.onSourceSelect, this);
         }
 
         return this.sourcesView;
@@ -961,6 +965,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
             if (this.multiSelect)
             {
+                MM = this;
                 this.measuresGrid = Ext4.create('Ext.grid.Panel', Ext4.apply(measuresGridConfig, {
                     store: this.measuresStore,
                     viewConfig : { stripeRows : false },
@@ -975,12 +980,19 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                         id: 'measuresGridGrouping',
                         collapsible: false,
                         groupHeaderTpl: new Ext4.XTemplate(
-                            '<div class="groupheader groupheaderline" style="padding: 3px 6px 4px 6px; color: #808080">',
+                            '<div class="groupheader groupheaderline" style="padding: 3px 6px 4px 6px; color: #808080;">',
                                 '{groupValue:this.renderHeader}',
                             '</div>',
                             {
                                 renderHeader : function(value) {
-                                    return value == '0' ? 'Recommended' : 'Additional';
+                                    var hdr = value;
+                                    if (value === '0') {
+                                        hdr = 'Recommended';
+                                    }
+                                    else if (value === '1') {
+                                        hdr = 'Additional';
+                                    }
+                                    return hdr;
                                 }
                             }
                         )
@@ -1054,6 +1066,17 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 this.sourcesStoreKeys = [];
                 this.sourcesStoreData = [];
 
+                if (this.supportSelectionGroup === true && this.multiSelect) {
+                    this.measuresStoreData.measures.push({
+                        sortOrder: -100,
+                        schemaName: '_current',
+                        name: '',
+                        queryName: null,
+                        queryLabel: this.supportSelectionLabel,
+                        variableType: 'SELECTION'
+                    });
+                }
+
                 Ext4.each(this.getAdditionalMeasuresArray(), function(measure) {
                     this.measuresStoreData.measures.push(measure);
                 }, this);
@@ -1115,18 +1138,69 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         return [];
     },
 
-    onSourceRowSelection : function(rowModel, sourceRecord, index) {
+    onSourceSelect : function(rowModel, sourceRecord, index) {
         // filter the measure grid based on the selected source query
         this.getEl().mask("filtering measures...", "x-mask-loading");
         this.getMeasuresGrid().getSelectionModel().deselectAll(true);
         this.measuresStore.clearFilter();
-        this.measuresStore.filter([{
-            filterFn: function(measureRecord) {
-                return (sourceRecord.get("schemaName") == measureRecord.get("schemaName")
-                        && sourceRecord.get("queryName") == measureRecord.get("queryName"));
-            },
-            scope: this
-        }]);
+
+        var columns, grid = this.getMeasuresGrid(),
+                usingSelectionSource = this.supportSelectionGroup === true && sourceRecord.get('variableType') === 'SELECTION';
+
+        if (grid && this.multiSelect && Ext4.isDefined(grid.columnManager)) {
+            columns = grid.columnManager.getColumns();
+        }
+
+        if (usingSelectionSource) {
+
+            // Update the column header for 'Select All'
+            if (Ext4.isArray(columns)) {
+                Ext4.each(columns, function(col) {
+                    if (col.dataIndex === 'label') {
+                        col.setText('Select All');
+                        return false;
+                    }
+                });
+            }
+
+
+            var ids = {};
+            Ext4.each(this.selectedMeasures, function(sm) {
+                if (Ext4.isDefined(sm.id))
+                {
+                    ids[sm.id] = true;
+                }
+            });
+
+            this.measuresStore.filter({
+                filterFn: function(measureRecord) {
+                    return Ext4.isDefined(measureRecord.id) && ids[measureRecord.id] === true;
+                },
+                scope: this
+            });
+        }
+        else
+        {
+            if (Ext4.isArray(columns)) {
+                Ext4.each(columns, function(col) {
+                    if (col.dataIndex === 'label') {
+                        col.setText(this.measuresAllHeader);
+                        return false;
+                    }
+                }, this);
+            }
+
+            this.measuresStore.filter([
+                {
+                    filterFn: function (measureRecord)
+                    {
+                        return (sourceRecord.get("schemaName") == measureRecord.get("schemaName")
+                                && sourceRecord.get("queryName") == measureRecord.get("queryName"));
+                    },
+                    scope: this
+                }
+            ]);
+        }
 
         // since selections aren't remembered after filters are applied, reselect any of the selected measure that are visible for this filter
         Ext4.each(this.selectedMeasures, function(measure) {
@@ -1136,11 +1210,25 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         this.getEl().unmask();
 
-        // enable or disable the measure grid grouping feature based on the presence of a key variable
-        if (this.groupingFeature)
-        {
-            var hasKeyVar = this.measuresStore.find('isKeyVariable', true) > -1;
-            hasKeyVar ? this.groupingFeature.enable() : this.groupingFeature.disable();
+        // apply grouping
+        if (this.groupingFeature) {
+            if (usingSelectionSource) {
+                // Always enable grouping if available and change to 'queryLabel' based grouping
+                this.groupingFeature.enable();
+                this.measuresStore.groupers.first().property = "queryLabel";
+                this.measuresStore.group();
+            }
+            else {
+                // enable or disable the measure grid grouping feature based on the presence of a key variable
+                if (this.measuresStore.find('isKeyVariable', true) > -1) {
+                    this.groupingFeature.enable();
+                    this.measuresStore.groupers.first().property = "keyVariableGrouper";
+                    this.measuresStore.group();
+                }
+                else {
+                    this.groupingFeature.disable();
+                }
+            }
         }
 
         // show the grid
@@ -1159,7 +1247,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             // JS error message : Uncaught TypeError: Cannot read property 'setDirty' of undefined
             if (record.store.groups && record.store.groups.keys.length > 1)
             {
-                record.set("selected", true);
                 record.commit(); // to remove the dirty state
             }
 
@@ -1177,7 +1264,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             // JS error message : Uncaught TypeError: Cannot read property 'setDirty' of undefined
             if (record.store.groups && record.store.groups.keys.length > 1)
             {
-                record.set("selected", false);
                 record.commit(); // to remove the dirty state
             }
 
@@ -1257,9 +1343,9 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                     {name   : 'schemaName'},
                     {name   : 'lookup', defaultValue: {}},
                     {name   : 'type'},
-                    {name   : 'selected'},
+//                    {name   : 'selected', type: 'boolean', defaultValue: false},
                     {name   : 'alias'},
-                    {name   : 'isKeyVariable'},
+                    {name   : 'isKeyVariable', type: 'boolean', defaultValue: false},
                     {name   : 'keyVariableGrouper', convert: function(val, rec){ return rec.data.isKeyVariable ? '0' : '1'; }},
                     {name   : 'defaultScale'},
                     {name   : 'sortOrder', defaultValue: 0},
@@ -1288,12 +1374,13 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
         this.addEvents("measureStoreSorted");
 
         this.on('load', function(store) {
-            var sortArr = [];
-            sortArr.push({property: 'sortOrder'});
-            sortArr.push({property: 'schemaName'});
-            sortArr.push({property: 'queryLabel'});
-            sortArr.push({property: 'isKeyVariable', direction: 'DESC'});
-            sortArr.push({property: 'label'});
+            var sortArr = [
+                {property: 'sortOrder'},
+                {property: 'schemaName'},
+                {property: 'queryLabel'},
+                {property: 'isKeyVariable', direction: 'DESC'},
+                {property: 'label'}
+            ];
 
             store.sort(sortArr);
             store.fireEvent("measureStoreSorted", store);
