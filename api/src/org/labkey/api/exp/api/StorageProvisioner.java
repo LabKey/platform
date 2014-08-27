@@ -595,7 +595,14 @@ public class StorageProvisioner
                 @Override
                 public String getSelectName()
                 {
-                    return super.getSelectName();
+                    return _column.getSelectName();
+                }
+
+                @Override
+                public String getAlias()
+                {
+                    // it seems that alias like selectname in some places (CompareClause.toSQLFragment())
+                    return _column.getAlias();
                 }
 
                 @Override
@@ -604,6 +611,7 @@ public class StorageProvisioner
                     return super.getValueSql(tableAlias);
                 }
             };
+            to.setHidden(from.isHidden());
             wrapper.addColumn(to);
         }
 

@@ -26,7 +26,7 @@ import java.util.Map;
 
 public class AliasedColumn extends ColumnInfo
 {
-    ColumnInfo _column;
+    protected ColumnInfo _column;
 
     /** Usually defer to the column we're aliasing for its concept URI, but allow explicit overrides */
     private String _overriddenConceptURI;
