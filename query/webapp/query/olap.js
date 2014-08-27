@@ -1534,7 +1534,7 @@ Ext4.define('LABKEY.query.olap.AppContext', {
             {
                 if (value.indexOf('parent::') === 0)
                 {
-                    if (Ext.isObject(parent))
+                    if (Ext4.isObject(parent))
                     {
                         k = value.replace('parent::', '');
                         dd[key] = parent[k];
@@ -1569,7 +1569,7 @@ Ext4.define('LABKEY.query.olap.AppContext', {
 
                     if (LABKEY.devMode && !Ext4.isDefined(vv))
                     {
-                        console.warn("Invalid 'path::' for key (value):", key, "(" + value + ")");
+                        console.warn("Invalid 'path::' for (key -- value): (" + key + " -- " + value + ") on", object.uniqueName);
                     }
                     dd[key] = vv;
                 }
