@@ -730,7 +730,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     // group the 'selected' measures as a separate group from which the user can modify the current set
     supportSelectionGroup: false,
-    supportSelectionLabel: 'Current Columns',
+    supportSelectionLabel: 'Current columns',
+
+    supportSessionGroup: false,
+    supportSessionLabel: 'All variables from this session',
 
     constructor : function(config) {
 
@@ -1076,6 +1079,17 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     });
                 }
 
+                if (this.supportSessionGroup === true && this.multiSelect) {
+                    this.measuresStoreData.measures.push({
+                        sortOrder: -99,
+                        schemaName: '_session',
+                        name: '',
+                        queryName: null,
+                        queryLabel: this.supportSessionLabel,
+                        variableType: 'SESSION'
+                    });
+                }
+
                 Ext4.each(this.getAdditionalMeasuresArray(), function(measure) {
                     this.measuresStoreData.measures.push(measure);
                 }, this);
@@ -1144,12 +1158,19 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         this.measuresStore.clearFilter();
 
         var columns, grid = this.getMeasuresGrid(),
-                usingSelectionSource = this.supportSelectionGroup === true && sourceRecord.get('variableType') === 'SELECTION';
+                usingSelectionSource = this.supportSelectionGroup === true && sourceRecord.get('variableType') === 'SELECTION',
+                usingSessionSource = this.supportSessionGroup === true && sourceRecord.get('variableType') === 'SESSION';
 
         if (grid && this.multiSelect && Ext4.isDefined(grid.columnManager)) {
             columns = grid.columnManager.getColumns();
         }
 
+        //
+        // There are three different types of sources to choose from:
+        // 1. Selection Source - Show the user the set of measures they currently have selected
+        // 2. Session Source - Any measures that have been selected in the app.
+        // 3. Data Source - Any measure that comes from a standard query source.
+        //
         if (usingSelectionSource) {
 
             // Update the column header for 'Select All'
@@ -1174,6 +1195,33 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             this.measuresStore.filter({
                 filterFn: function(measureRecord) {
                     return Ext4.isDefined(measureRecord.id) && ids[measureRecord.id] === true;
+                },
+                scope: this
+            });
+        }
+        else if (usingSessionSource) {
+
+            // Update the column header for 'Select All'
+            if (Ext4.isArray(columns)) {
+                Ext4.each(columns, function(col) {
+                    if (col.dataIndex === 'label') {
+                        col.setText('Select All');
+                        return false;
+                    }
+                });
+            }
+
+            var sessionIDs = {};
+            Ext4.each(this.getSessionMeasures(), function(sm) {
+                if (Ext4.isString(sm.alias))
+                {
+                    sessionIDs[sm.alias] = true;
+                }
+            });
+
+            this.measuresStore.filter({
+                filterFn: function(measureRecord) {
+                    return Ext4.isString(measureRecord.data.alias) && sessionIDs[measureRecord.data.alias] === true;
                 },
                 scope: this
             });
@@ -1211,7 +1259,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
         // apply grouping
         if (this.groupingFeature) {
-            if (usingSelectionSource) {
+            if (usingSelectionSource || usingSessionSource) {
                 // Always enable grouping if available and change to 'queryLabel' based grouping
                 this.groupingFeature.enable();
                 this.measuresStore.groupers.first().property = "queryLabel";
@@ -1318,6 +1366,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     clearSelection : function() {
         this.getMeasuresGrid().getSelectionModel().deselectAll();
+    },
+
+    getSessionMeasures : function() {
+        return [];
     }
 });
 
