@@ -288,6 +288,7 @@ public class RolapReader
         _currentLevel.nameColumn = getStringAttribute(levelNode, "nameColumn");
         _currentLevel.ordinalColumn = getStringAttribute(levelNode, "ordinalColumn");
         _currentLevel.uniqueMembers = getBooleanAttribute(levelNode, "uniqueMembers", false);
+        _currentLevel.keyType = getStringAttribute(levelNode,"type");
 
         for (Node node : it(levelNode.getChildNodes()))
         {

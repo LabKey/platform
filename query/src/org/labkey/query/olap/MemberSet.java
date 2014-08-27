@@ -416,24 +416,15 @@ public class MemberSet extends AbstractSet<Member>
     }
 
 
+    /* this is only used for debugging */
     @Override
     public boolean remove(Object o)
     {
-        throw new UnsupportedOperationException();
-    }
-
-
-    @Override
-    public boolean containsAll(Collection<?> c)
-    {
-        return super.containsAll(c);
-    }
-
-
-    @Override
-    public boolean removeAll(Collection<?> c)
-    {
-        throw new UnsupportedOperationException();
+        if (!(o instanceof Member))
+            return false;
+        Member m = (Member)o;
+        LevelMemberSet s = levelMap.get(m.getLevel().getUniqueName());
+        return s != null && s.remove(m);
     }
 
 

@@ -3,8 +3,15 @@ package org.labkey.query.olap.rolap;
 import org.apache.commons.lang3.StringUtils;
 import static org.apache.commons.lang3.StringUtils.*;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.Path;
 import org.olap4j.OlapException;
 import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
@@ -13,13 +20,21 @@ import org.olap4j.metadata.Property;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
 /**
  * Created by matthew on 8/16/14.
+ *
+ * Loads a relational olap cube definition (ala Mondrian), for use by the CountDistinct api
  */
 public class RolapCubeDef
 {
@@ -29,7 +44,8 @@ public class RolapCubeDef
     protected final ArrayList<MeasureDef> measures = new ArrayList<>();
     protected final Map<String,String> annotations = new TreeMap<>();
     protected final Map<String,Object> uniqueNameMap = new TreeMap<>();
-    protected final AliasManager aliases = new AliasManager(null);
+
+    private final AliasManager columnAliases = new AliasManager(null);
 
 
     public String getName()
@@ -37,13 +53,87 @@ public class RolapCubeDef
         return name;
     }
 
-    public String getFromSQL()
+    public String getSchemaName() { return factTable.schemaName; }
+
+    public String getFromSQL(LevelDef... levels)
     {
-        return factTable.getFromEntry();
+        LinkedHashSet<Join> joins = new LinkedHashSet<>();
+        for (LevelDef l : levels)
+        {
+            if (null != l)
+                l.addJoins(joins);
+        }
+        return _getFromSQL(joins);
     }
+
+    public String getFromSQL(Collection<HierarchyDef> hierarchyDefs)
+    {
+        LinkedHashSet<Join> joins = new LinkedHashSet<>();
+        for (HierarchyDef h : hierarchyDefs)
+        {
+            h.addJoins(joins);
+        }
+        return _getFromSQL(joins);
+    }
+
+    private String _getFromSQL(Collection<Join> joinsIn)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append(id_quote(factTable.schemaName, factTable.tableName));
+
+        if (joinsIn.size() == 0)
+            return sb.toString();
+
+        LinkedList<Join> list = new LinkedList(joinsIn);
+
+        // CONSIDER should we use LOJ for some joins??? when?
+        Set<String> includedTables = new CaseInsensitiveTreeSet();
+        includedTables.add(factTable.tableName);
+
+        for (int i=0 ; i<100 && !list.isEmpty(); i++)
+        {
+            Join j = list.removeFirst();
+            Path a = j.left;
+            Path b = j.right;
+
+            // is left table incldued already
+            if (!includedTables.contains(a.getParent().get(1)))
+            {
+                if (includedTables.contains(b.getParent().get(1)))
+                {
+                    a = j.right;
+                    b = j.left;
+                }
+                else
+                {
+                    // throw it back
+                    list.addLast(j);
+                    continue;
+                }
+            }
+
+            sb.append(" INNER JOIN ");
+            sb.append(id_quote(b.get(0), b.get(1)));
+            sb.append(" ON " );
+            sb.append(id_quote(a.get(1), a.get(2)));
+            sb.append("=");
+            sb.append(id_quote(b.get(1), b.get(2)));
+
+            // add new table name
+            includedTables.add(b.get(1));
+        }
+
+        if (!list.isEmpty())
+            throw new IllegalStateException("Couldn't write join expression");
+
+        return sb.toString();
+    }
+
 
     public LevelDef getRolapDef(Level l)
     {
+        if (null == l)
+            return null;
         return (LevelDef)uniqueNameMap.get(l.getUniqueName());
     }
 
@@ -78,6 +168,7 @@ public class RolapCubeDef
             throw new IllegalArgumentException("No measures defined in cube: " + name);
         if (dimensions.isEmpty())
             throw new IllegalArgumentException("No dimensions defined in cube: " + name);
+        factTable.validate();
 
         for (DimensionDef d : dimensions)
         {
@@ -131,29 +222,47 @@ public class RolapCubeDef
     static public class JoinOrTable
     {
         protected RolapCubeDef cube;
+        protected Map<String,JoinOrTable> tables;
 
         // table
         protected String tableName;
+//        protected String tableAlias;
         protected String schemaName;
 
         // join
-        protected String leftKey;
-        protected String leftAlias;
-        protected String rightKey;
-        protected String rightAlias;
         protected JoinOrTable left;
         protected JoinOrTable right;
+
+        protected String leftKey;
+        protected String leftAlias;         // declared alias
+        protected String rightKey;
+        protected String rightAlias;        // declared alias
 
 
         private void validate()
         {
+            Map<String,JoinOrTable> tables = new HashMap<>();
+            _validate(tables);
+        }
+
+
+        private void _validate(Map<String,JoinOrTable> tables)
+        {
+            this.tables = tables;
+
             if (null != left)
-                left.validate();
+                left._validate(tables);
             if (null != right)
-                right.validate();
+                right._validate(tables);
 
             if (null == schemaName && null != cube.factTable)
                 schemaName = cube.factTable.schemaName;
+
+            if (null != tableName)
+            {
+                this.tables.put(tableName,this);
+            }
+
             if (null == leftAlias && null != left)
                 leftAlias = StringUtils.defaultString(left.tableName, left.rightAlias);
             if (null != right && null == rightAlias)
@@ -165,26 +274,91 @@ public class RolapCubeDef
                 throw new IllegalArgumentException("Could not infer rightAlias for join");
         }
 
-        public String getFromEntry()
+
+        public void addJoins(Set<Join> set)
         {
             if (null != tableName)
             {
-                return id_quote(schemaName, tableName);
+                /* */
             }
             else
-            {
-                String lhs = left.getFromEntry();
-                String rhs = right.getFromEntry();
-                StringBuilder sb = new StringBuilder();
-                sb.append("(");
-                sb.append(lhs).append(" INNER JOIN ").append(rhs).append(" ON ");
-                sb.append(id_quote(leftAlias, leftKey));
-                sb.append("=");
-                sb.append(id_quote(rightAlias, rightKey));
-                sb.append(")");
-                return sb.toString();
+            {   /* we purposely ignore nesting, these are all INNER JOIN */
+                left.addJoins(set);
+                right.addJoins(set);
+
+                JoinOrTable leftTable = tables.get(leftAlias);
+                assert null != leftTable.tableName;
+                JoinOrTable rightTable = tables.get(rightAlias);
+                assert null != rightTable.tableName;
+
+                Join j = new Join(
+                        new Path(leftTable.schemaName, leftTable.tableName, this.leftKey),
+                        new Path(rightTable.schemaName, rightTable.tableName, this.rightKey));
+                set.add(j);
             }
         }
+
+
+//        public String getFromEntry()
+//        {
+//            if (null != tableName)
+//            {
+//                return id_quote(schemaName, tableName);
+//            }
+//            else
+//            {
+//                String lhs = left.getFromEntry();
+//                String rhs = right.getFromEntry();
+//                StringBuilder sb = new StringBuilder();
+//                sb.append("(");
+//                sb.append(lhs).append(" INNER JOIN ").append(rhs).append(" ON ");
+//                sb.append(id_quote(leftAlias, leftKey));
+//                sb.append("=");
+//                sb.append(id_quote(rightAlias, rightKey));
+//                sb.append(")");
+//                return sb.toString();
+//            }
+//        }
+    }
+
+
+    /* these are unique instances of joins shared across the cube, used to collapse duplicate joins during
+     * sql generation
+     */
+    public static class Join
+    {
+        final Path left;  // schema/table/column
+        final Path right; // schema/table/column
+//        Join requires = null;
+
+        Join(@NotNull Path left, @NotNull Path right)
+        {
+            this.left = left;
+            this.right = right;
+        }
+
+        @Override
+        public boolean equals(Object obj)
+        {
+            if (!(obj instanceof Join))
+                throw new IllegalStateException();
+            Join a = this;
+            Join b = (Join)obj;
+            return a.left.equals(b.left) && a.right.equals(b.right);
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return left.hashCode() * 31 + right.hashCode();
+        }
+
+        //        public void addRequiredJoins(Set<Join> set)
+//        {
+//            if (null != requires)
+//                requires.addRequiredJoins(set);
+//            set.add(this);
+//        }
     }
 
 
@@ -207,6 +381,26 @@ public class RolapCubeDef
         else
             return id_quote(b);
     }
+
+
+    static private String toSqlLiteral(JdbcType type, Object value)
+    {
+        value = type.convert(value);
+
+        if (value instanceof String)
+            return string_quote((String)value);
+
+        if (value instanceof Date)
+        {
+            if (type == JdbcType.DATE)
+                return "{d '" + DateUtil.toISO((Date)value).substring(0, 10) + "'}";
+            else
+                return "{ts '" + DateUtil.toISO((Date)value) + "'}";
+        }
+
+        return String.valueOf(value);
+    }
+
 
 
     static public class HierarchyDef
@@ -261,46 +455,26 @@ public class RolapCubeDef
         }
 
 
-        public String getMemberFilter(Member m)
+        public String getMemberFilter(Member m, @Nullable SqlDialect d)
         {
             LevelDef l = (LevelDef)cube.uniqueNameMap.get(m.getLevel().getUniqueName());
             if (null == l || l.hierarchy != this)
                 throw new IllegalStateException();
-            return l.getMemberFilter(m);
+            return l.getMemberFilter(m, d);
         }
 
 
-        public String getFullJoin()
+        public void addJoins(Set<Join> joins)
         {
-            JoinOrTable fact = cube.factTable;
-            String factTable = fact.getFromEntry();
-
+            cube.factTable.addJoins(joins);
             if (null == join)
-            {
-                if (factTable.startsWith("(") && factTable.endsWith(")"))
-                    return factTable.substring(1, factTable.length() - 2);
-                return factTable;
-            }
-
-            String joinClause = getFromJoin();
-            return fact + joinClause;
-        }
-
-
-        public String getFromJoin()
-        {
-            if (null == join)
-                return "";
-
-            String levelTable = join.getFromEntry();
-
-            StringBuilder sb = new StringBuilder(" INNER JOIN ");
-            sb.append(levelTable);
-            sb.append(" ON " );
-            sb.append(id_quote(cube.factTable.tableName,dimension.foreignKey));
-            sb.append("=");
-            sb.append(id_quote(primaryKeyTable, primaryKey));
-            return sb.toString();
+                return;
+            join.addJoins(joins);
+            JoinOrTable pkTable = join.tables.get(primaryKeyTable);
+            Join j = new Join(
+                    new Path(cube.factTable.schemaName, cube.factTable.tableName, dimension.foreignKey),
+                    new Path(pkTable.schemaName, pkTable.tableName, primaryKey));
+            joins.add(j);
         }
     }
 
@@ -316,15 +490,17 @@ public class RolapCubeDef
         protected String table;
 
         protected String keyColumn;
-        protected String nameColumn;
-        protected String ordinalColumn;
-
         protected String keyExpression;
-        protected String nameExpression;
-        protected String ordinalExpression;
-
         protected String keyAlias;
+        protected String keyType="String";
+        protected JdbcType jdbcType;
+
+        protected String nameColumn;
+        protected String nameExpression;
         protected String nameAlias;
+
+        protected String ordinalColumn;
+        protected String ordinalExpression;
         protected String ordinalAlias;
 
         protected boolean uniqueMembers = false;
@@ -395,14 +571,17 @@ public class RolapCubeDef
         }
 
 
-        public String getFromJoin()
+        public void addJoins(Set<Join> joins)
         {
-            return hierarchy.getFromJoin();
+            hierarchy.addJoins(joins);
         }
 
 
-        public String getMemberFilter(Member m)
+
+        public String getMemberFilter(Member m, @Nullable SqlDialect d)
         {
+            boolean toUpper = null==d || d.isCaseSensitive();
+
             try
             {
                 // TODO parent keys
@@ -410,20 +589,22 @@ public class RolapCubeDef
                 if (null != keyExpression)
                 {
                     Property keyProperty = m.getLevel().getProperties().get("KEY");
-                    Object key = m.getPropertyValue(keyProperty);
-                    if (null == key)
+                    Object value = m.getPropertyValue(keyProperty);
+                    if (null == value || !(value instanceof String) && "#null".equals(value.toString()))
                         return "(" + keyExpression + " IS NULL OR " + keyExpression + "='')";
-                    else if (key instanceof String)
-                        return keyExpression + "=" + string_quote((String) key);
+
+                    String literal = toSqlLiteral(jdbcType, value);
+                    if (jdbcType.isText() && toUpper)
+                        return "UPPER("+keyExpression + ")=UPPER(" + literal + ")";
                     else
-                        return keyExpression + "=" + String.valueOf(key);
+                        return keyExpression + "=" + literal;
                 }
                 else
                 {
                     Property captionProperty = m.getLevel().getProperties().get("CAPTION");
                     Object name = m.getPropertyValue(captionProperty);
                     // TODO null member name
-                    if (name.equals("#null"))
+                    if ("#null".equals(name))
                         return "(" + nameExpression + " IS NULL OR " + name + "='')";
                     else if (name instanceof String)
                         return nameExpression + "=" + string_quote((String) name);
@@ -452,33 +633,42 @@ public class RolapCubeDef
             uniqueName = hierarchy.uniqueName + ".[" + getName() + "]";
             cube.uniqueNameMap.put(uniqueName,this);
 
-            if (null == table)
+            String tableAlias = null;
+
+            if (null != hierarchy.join)
             {
-                if (null != hierarchy.join)
+                if (null == table)
                     table = hierarchy.join.tableName;
-                else if (null != cube.factTable)
+                if (null != table)
+                    tableAlias = table; //hierarchy.join.tableAliases.get(table);
+            }
+            else if (null != cube.factTable)
+            {
+                if (null == table)
                     table = cube.factTable.tableName;
+                if (null != table)
+                    tableAlias = table; // cube.factTable.tableAliases.get(table);
             }
 
             // key
             if (null == keyExpression && null != keyColumn)
             {
-                keyExpression = id_quote(table, keyColumn);
+                keyExpression = id_quote(tableAlias, keyColumn);
             }
             if (null == keyAlias)
             {
-                keyAlias = cube.aliases.decideAlias((hierarchy.getName() + "_" + getName() + "_key").toLowerCase());
+                keyAlias = cube.columnAliases.decideAlias((hierarchy.getName() + "_" + getName() + "_key").toLowerCase());
             }
 
             // name
             if (null == nameExpression && null != nameColumn)
             {
-                nameExpression = id_quote(table, nameColumn);
+                nameExpression = id_quote(tableAlias, nameColumn);
             }
             if (null == nameAlias)
             {
                 if (null != nameExpression)
-                    nameAlias = cube.aliases.decideAlias((hierarchy.getName() + "_" + getName() + "_name").toLowerCase());
+                    nameAlias = cube.columnAliases.decideAlias((hierarchy.getName() + "_" + getName() + "_name").toLowerCase());
                 else
                     nameAlias = keyAlias;
             }
@@ -486,11 +676,27 @@ public class RolapCubeDef
             // ordinal
             if (null == ordinalExpression && null != ordinalColumn)
             {
-                ordinalExpression = id_quote(table, ordinalColumn);
+                ordinalExpression = id_quote(tableAlias, ordinalColumn);
             }
             if (null == ordinalAlias)
             {
-                ordinalAlias = cube.aliases.decideAlias((hierarchy.getName() + "_" + getName() + "_ord").toLowerCase());
+                ordinalAlias = cube.columnAliases.decideAlias((hierarchy.getName() + "_" + getName() + "_ord").toLowerCase());
+            }
+
+            if (null == keyType)
+                keyType = "String";
+            switch (keyType)
+            {
+                case "String": jdbcType = JdbcType.VARCHAR; break;
+                case "Numeric": jdbcType = JdbcType.DOUBLE; break;
+                case "Integer": jdbcType = JdbcType.INTEGER; break;
+                case "Boolean": jdbcType = JdbcType.BOOLEAN; break;
+                case "Date": jdbcType = JdbcType.DATE; break;
+                case "Timestamp": jdbcType = JdbcType.TIMESTAMP; break;
+
+                case "Time":
+                default:
+                    throw new UnsupportedOperationException("type attribute is not supported: " + keyType);
             }
         }
     }

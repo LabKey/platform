@@ -90,9 +90,9 @@ public class QubeCellSet implements CellSet
         else
             _axes.add(new _MemberAxis(Axis.COLUMNS, columns));
         if (null == rows)
-            _axes.add(new _MeasureAxis(Axis.COLUMNS, measure));
+            _axes.add(new _MeasureAxis(Axis.ROWS, measure));
         else
-            _axes.add(new _MemberAxis(Axis.COLUMNS, rows));
+            _axes.add(new _MemberAxis(Axis.ROWS, rows));
         _columnCount = _axes.get(0).getPositionCount();
         _results = results;
         assert MemTracker.getInstance().put(this);

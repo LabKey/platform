@@ -125,6 +125,12 @@ public class CachedCubeFactory
         {
             return true;
         }
+
+        @Override
+        public String toString()
+        {
+            return getClass().getSimpleName() + " " + getUniqueName();
+        }
     }
 
 

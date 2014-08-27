@@ -127,8 +127,7 @@ public abstract class OlapSchemaDescriptor
             try (InputStream is = getInputStream(); Reader r = new InputStreamReader(is))
             {
                 RolapReader rr = new RolapReader(r);
-                return rr.getCubes();
-                //TODO rolapCubes = rr.getCubes();
+                rolapCubes = rr.getCubes();
             }
         }
         return rolapCubes;

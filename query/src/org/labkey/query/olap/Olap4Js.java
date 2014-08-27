@@ -296,7 +296,7 @@ public class Olap4Js
                 if (!showAll && null == idFor(Hierarchy.class, h, false))
                     continue;
                 indent(comma, out); comma = ",";
-                write(h, out);
+                write(h, showAll, out);
             }
             _indent--;
             indent(out, "]");
@@ -313,7 +313,7 @@ public class Olap4Js
         }
 
 
-        void write(Hierarchy h, Writer out) throws IOException
+        void write(Hierarchy h, boolean showAll, Writer out) throws IOException
         {
             indent(out);
             out.write("{");
@@ -328,8 +328,10 @@ public class Olap4Js
             String comma = "";
             for (Level l : h.getLevels())
             {
+                if (!showAll && null == idFor(Level.class, l, false))
+                    continue;
                 indent(comma, out); comma = ",";
-                write(l, true, out);
+                write(l, showAll, out);
             }
             _indent--;
             indent(out, "]");

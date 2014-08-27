@@ -390,6 +390,8 @@ public class ServerManager
             long start = System.currentTimeMillis();
             for (Dimension d : cube.getDimensions())
             {
+                if (d.getDimensionType() == Dimension.Type.MEASURE)
+                    continue;
                 for (org.olap4j.metadata.Hierarchy h : d.getHierarchies())
                 {
                     try
@@ -442,7 +444,7 @@ public class ServerManager
         if (errors.hasErrors())
             return;
 
-        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, sd, cube, conn, qquery, errors);
+        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, sd, cube, conn, qquery, errors, false);
         try(CellSet ignored = bitsetquery.executeQuery()){}
     }
 
