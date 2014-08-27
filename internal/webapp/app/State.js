@@ -42,6 +42,8 @@ Ext.define('LABKEY.app.controller.State', {
 
     _ready: false,
 
+    supportColumnServices: false,
+
     init : function() {
 
         if (LABKEY.devMode) {
@@ -61,6 +63,10 @@ Ext.define('LABKEY.app.controller.State', {
         this.customState = {};
         this.filters = []; this.selections = [];
         this.privatefilters = {};
+
+        if (this.supportColumnServices) {
+            this.initColumnService();
+        }
 
         this.state.load();
 
@@ -884,5 +890,27 @@ Ext.define('LABKEY.app.controller.State', {
 
     setSelections : function(selections, skipState) {
         this.addSelection(selections, skipState);
+    },
+
+    /*** Column Services ***/
+    initColumnService : function() {
+
+        this.SESSION_COLUMNS = {};
+
+        this.initColumnListeners();
+    },
+
+    /* Meant to be overridden with listeners specific to the app */
+    initColumnListeners : function() {},
+
+    addSessionColumn : function(column) {
+        if (column && Ext.isString(column.alias) && !this.SESSION_COLUMNS[column.alias]) {
+            this.SESSION_COLUMNS[column.alias] = column;
+        }
+    },
+
+    /* WARNING: Not currently clone safe */
+    getSessionColumns : function() {
+        return this.SESSION_COLUMNS;
     }
 });
