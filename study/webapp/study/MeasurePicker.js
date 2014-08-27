@@ -965,7 +965,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
             if (this.multiSelect)
             {
-                MM = this;
                 this.measuresGrid = Ext4.create('Ext.grid.Panel', Ext4.apply(measuresGridConfig, {
                     store: this.measuresStore,
                     viewConfig : { stripeRows : false },
@@ -1343,7 +1342,6 @@ Ext4.define('LABKEY.ext4.MeasuresStore', {
                     {name   : 'schemaName'},
                     {name   : 'lookup', defaultValue: {}},
                     {name   : 'type'},
-//                    {name   : 'selected', type: 'boolean', defaultValue: false},
                     {name   : 'alias'},
                     {name   : 'isKeyVariable', type: 'boolean', defaultValue: false},
                     {name   : 'keyVariableGrouper', convert: function(val, rec){ return rec.data.isKeyVariable ? '0' : '1'; }},
