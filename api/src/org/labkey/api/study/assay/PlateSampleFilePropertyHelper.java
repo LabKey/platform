@@ -61,7 +61,7 @@ import java.util.Set;
  */
 public class PlateSampleFilePropertyHelper extends PlateSamplePropertyHelper
 {
-    private static final String SAMPLE_FILE_INPUT_NAME = "__sampleMetadataFile";
+    private static final String SAMPLE_FILE_INPUT_NAME = "__sampleMetadataFile__";
     private static final int BUFFER_SIZE = 2048;
     public static final String SAMPLE_WELLGROUP_COLUMN = "SampleWellGroup";
     public static final String PLATELOCATION_COLUMN = "PlateLocation";

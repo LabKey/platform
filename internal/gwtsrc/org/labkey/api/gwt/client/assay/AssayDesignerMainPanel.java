@@ -128,6 +128,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
 
         _autoCopyTargetListBox = new ListBox();
         DOM.setStyleAttribute(_autoCopyTargetListBox.getElement(), "width", "500px");
+        DOM.setElementAttribute(_autoCopyTargetListBox.getElement(), "id", "autoCopyTarget");
         _autoCopyTargetListBox.setEnabled(false);
 
         _autoCopyCheckBox = new CheckBox();
