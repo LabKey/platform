@@ -1199,7 +1199,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 scope: this
             });
         }
-        else if (usingSessionSource) {
+        else if (usingSessionSource && Ext4.isFunction(this.getSessionMeasures)) {
 
             // Update the column header for 'Select All'
             if (Ext4.isArray(columns)) {
@@ -1212,7 +1212,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             }
 
             var sessionIDs = {};
-            Ext4.each(this.getSessionMeasures(), function(sm) {
+            var sessionMeasures = this.getSessionMeasures.call(this);
+            Ext4.each(sessionMeasures, function(sm) {
                 if (Ext4.isString(sm.alias))
                 {
                     sessionIDs[sm.alias] = true;
@@ -1366,10 +1367,6 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     clearSelection : function() {
         this.getMeasuresGrid().getSelectionModel().deselectAll();
-    },
-
-    getSessionMeasures : function() {
-        return [];
     }
 });
 
