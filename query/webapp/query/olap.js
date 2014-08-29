@@ -716,6 +716,19 @@ Ext4.define('LABKEY.query.olap.MDX', {
         return this._cube.getDimensions();
     },
 
+    getPerspectiveObj: function(name)
+    {
+        if (!Ext4.isObject(this.perspectives))
+            this._cube.raiseError('Failed to provide \'persepectives\'. Provide an \'applyContext\' function to set the \'perspectives\' appropriately.');
+
+        return this.perspectives[name];
+    },
+
+    getDefaultPerspective : function()
+    {
+        return this.defaultPerspective;
+    },
+
     getDimension : function(name)
     {
         return this._cube.getDimension(name);
