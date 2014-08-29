@@ -103,7 +103,6 @@ public class VisualizationUIProvider extends DefaultReportUIProvider
 
     public String getIconPath(Report report)
     {
-        String contextPath = AppProps.getInstance().getContextPath();
         String type = report.getType();
 
         if (TimeChartReport.TYPE.equals(type))

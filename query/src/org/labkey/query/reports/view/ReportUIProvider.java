@@ -63,8 +63,9 @@ import java.util.Map;
 public class ReportUIProvider extends DefaultReportUIProvider
 {
     private static Map<String, String> _typeToIconMap = new HashMap<>();
-    static {
 
+    static
+    {
         _typeToIconMap.put(RReport.TYPE, "/reports/r.gif");
         _typeToIconMap.put(ChartQueryReport.TYPE, "/reports/chart.gif");
         _typeToIconMap.put(JavaScriptReport.TYPE, "/reports/js.png");

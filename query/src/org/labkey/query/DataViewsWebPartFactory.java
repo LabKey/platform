@@ -26,6 +26,7 @@ import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.JspView;
@@ -89,7 +90,8 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
 
             for (ReportService.DesignerInfo info : designers)
             {
-                NavTree item = new NavTree(info.getLabel(), info.getDesignerURL().getLocalURIString(), info.getIconPath());
+                URLHelper iconURL = info.getIconURL();
+                NavTree item = new NavTree(info.getLabel(), info.getDesignerURL().getLocalURIString(), null != iconURL ? iconURL.getLocalURIString() : null);
 
                 item.setId(info.getId());
                 item.setDisabled(info.isDisabled());

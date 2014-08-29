@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011-2013 LabKey Corporation
+ * Copyright (c) 2011-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import org.labkey.api.thumbnail.ThumbnailProvider;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ThumbnailUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.RedirectException;
 
 /**
@@ -40,17 +41,22 @@ public class ThumbnailCache
     // Get the thumbnail for a DynamicThumbnailProvider. Returns the dynamic thumbnail if it has already been created
     // and persisted in the attachments table. If it hasn't, it falls back to the static thumbnail, though this likely
     // indicates a report in a bad state.
-    public static CacheableWriter getThumbnailWriter(ThumbnailProvider provider, ImageType type)
+    public static CacheableWriter getThumbnailWriter(ThumbnailProvider provider, ImageType imageType)
     {
-        CacheableWriter dynamic = _cache.get(getCacheKey(provider, type), new Pair<>(provider, type), _dynamicLoader);
+        CacheableWriter dynamic = _cache.get(getCacheKey(provider, imageType), new Pair<>(provider, imageType), _dynamicLoader);
 
-        if (CacheableWriter.noDocument == dynamic && ImageType.Large.equals(type))
+        if (CacheableWriter.noDocument == dynamic)
+        {
             // Something went wrong... provider claimed we'd have a saved thumbnail, but it was missing. Just redirect
             // to the static thumbnail link.
             // TODO: Probably an old report that's gotten out-of-sync; consider deleting the thumbnail to clean things up
-            throw new RedirectException(ThumbnailUtil.getStaticThumbnailURL(provider));
-        else
-            return dynamic;
+            URLHelper redirectURL = ThumbnailUtil.getStaticThumbnailURL(provider, imageType);
+
+            if (null != redirectURL)
+                throw new RedirectException(redirectURL);
+        }
+
+        return dynamic;
     }
 
     public static void remove(ThumbnailProvider provider, ImageType type)

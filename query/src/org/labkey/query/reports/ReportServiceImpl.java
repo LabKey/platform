@@ -1096,5 +1096,4 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
             ReportService.get().maintenance();
         }
     }
-
 }

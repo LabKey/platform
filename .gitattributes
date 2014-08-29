@@ -2720,6 +2720,7 @@ query/webapp/query/sql.gif -text
 query/webapp/query/validateQueries.js -text
 query/webapp/reports/ScriptReportPanel.css -text
 query/webapp/reports/ScriptReportPanel.js -text
+query/webapp/reports/advanced.png -text
 query/webapp/reports/attachment.png -text
 query/webapp/reports/chart.gif -text
 query/webapp/reports/crosstab.png -text

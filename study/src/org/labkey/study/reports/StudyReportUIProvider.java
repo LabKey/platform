@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2013 LabKey Corporation
+ * Copyright (c) 2008-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,6 +63,7 @@ public class StudyReportUIProvider extends DefaultReportUIProvider
         _typeToIconMap.put(StudyQueryReport.TYPE, "/reports/grid.gif");
         _typeToIconMap.put(StudyChartQueryReport.TYPE, "/reports/chart.gif");
         _typeToIconMap.put(ExportExcelReport.TYPE, "/reports/xls.gif");
+        _typeToIconMap.put(ExternalReport.TYPE, "/reports/advanced.png");
         _typeToIconMap.put(ParticipantReport.TYPE, "/reports/participantReport.png");
         _typeToIconMap.put(StudyCrosstabReport.TYPE, "/reports/crosstab.png");
         _typeToIconMap.put(CrosstabReport.TYPE, "/reports/crosstab.png");
