@@ -30,6 +30,7 @@ import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
 import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.FormViewAction;
@@ -1119,7 +1120,9 @@ public class OlapController extends SpringActionController
         for (String category : PropertyManager.getCategoriesByPrefix(PropertyManager.SHARED_USER, c, APP_CONTEXT_CATEGORY + ":"))
         {
             assert category.startsWith(APP_CONTEXT_CATEGORY + ":");
-            contextNames.add(category.substring((APP_CONTEXT_CATEGORY + ":").length()));
+            String contextName = category.substring((APP_CONTEXT_CATEGORY + ":").length());
+            if (!contextNames.contains(contextName))
+                contextNames.add(contextName);
         }
         return contextNames;
     }
@@ -1130,13 +1133,23 @@ public class OlapController extends SpringActionController
         @Override
         public Object execute(Object o, BindException errors) throws Exception
         {
-            return Collections.singletonMap("apps", getSinglePageAppContexts(getContainer()));
+            List<Map<String, String>> appContexts = new ArrayList<>();
+            for (String name : getSinglePageAppContexts(getContainer()))
+            {
+                Map<String, String> props = new HashMap<>();
+                props.put("name", name);
+                appContexts.add(props);
+            }
+            return Collections.singletonMap("apps", appContexts);
         }
     }
 
     public static class AppForm
     {
         private String contextName;
+        private String configId;
+        private String name;
+        private String schemaName;
 
         public String getContextName()
         {
@@ -1146,6 +1159,36 @@ public class OlapController extends SpringActionController
         public void setContextName(String contextName)
         {
             this.contextName = contextName;
+        }
+
+        public String getConfigId()
+        {
+            return configId;
+        }
+
+        public void setConfigId(String configId)
+        {
+            this.configId = configId;
+        }
+
+        public String getName()
+        {
+            return name;
+        }
+
+        public void setName(String name)
+        {
+            this.name = name;
+        }
+
+        public String getSchemaName()
+        {
+            return schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            this.schemaName = schemaName;
         }
     }
 
@@ -1172,6 +1215,20 @@ public class OlapController extends SpringActionController
         public void setValues(JSONObject values)
         {
             this.values = values;
+        }
+    }
+
+    public static class ManageAppForm extends AppForm{
+        private List<String> allContextNames;
+
+        public List<String> getAllContextNames()
+        {
+            return allContextNames;
+        }
+
+        public void setAllContextNames(List<String> allContextNames)
+        {
+            this.allContextNames = allContextNames;
         }
     }
 
@@ -1217,13 +1274,22 @@ public class OlapController extends SpringActionController
     }
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class ManageAppsAction extends SimpleViewAction<Object>
+    public class ManageAppsAction extends SimpleViewAction<ManageAppForm>
     {
         @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
+        public ModelAndView getView(ManageAppForm form, BindException errors) throws Exception
         {
-            List<String> contextNames = getSinglePageAppContexts(getContainer());
-            return new JspView<>("/org/labkey/query/view/manageApps.jsp", contextNames, errors);
+            Map<String, String> activeAppConfig = getActiveAppConfig(getContainer());
+            if (activeAppConfig != null && !activeAppConfig.isEmpty())
+            {
+                form.setName(activeAppConfig.get("name"));
+                form.setSchemaName(activeAppConfig.get("schemaName"));
+                form.setConfigId(activeAppConfig.get("configId"));
+                form.setContextName(activeAppConfig.get("contextName"));
+            }
+            form.setAllContextNames(getSinglePageAppContexts(getContainer()));
+
+            return new JspView<>("/org/labkey/query/view/manageApps.jsp", form, errors);
         }
 
         @Override
@@ -1267,4 +1333,49 @@ public class OlapController extends SpringActionController
         }
     }
 
+    private static final String APP_ACTIVE_CONFIG_CATEGORY = "appActiveConfig";
+
+    @RequiresPermissionClass(AdminPermission.class)
+    public class SetActiveAppConfigAction extends MutatingApiAction<AppForm>
+    {
+        @Override
+        public Object execute(AppForm form, BindException errors) throws Exception
+        {
+            PropertyManager.PropertyMap activeAppConfig = PropertyManager.getWritableProperties(getContainer(), APP_ACTIVE_CONFIG_CATEGORY, true);
+            activeAppConfig.put("configId", form.getConfigId());
+            activeAppConfig.put("name", form.getName());
+            activeAppConfig.put("schemaName", form.getSchemaName());
+            activeAppConfig.put("contextName", form.getContextName());
+            PropertyManager.saveProperties(activeAppConfig);
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("config", getActiveAppConfig(getContainer()));
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetActiveAppConfigAction extends ApiAction
+    {
+        @Override
+        public ApiResponse execute(Object o, BindException errors) throws Exception
+        {
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("config", getActiveAppConfig(getContainer()));
+            response.put("success", true);
+            return response;
+        }
+    }
+
+    private Map<String, String> getActiveAppConfig(Container c)
+    {
+        PropertyStore store = PropertyManager.getNormalStore();
+        Map<String, String> activeAppConfig = store.getProperties(c, APP_ACTIVE_CONFIG_CATEGORY);
+        if (!activeAppConfig.isEmpty())
+        {
+            return activeAppConfig;
+        }
+        return null;
+    }
 }

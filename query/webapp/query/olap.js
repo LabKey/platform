@@ -515,7 +515,7 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
      */
     useServerMemberCache: false,
 
-    applyContext: undefined,
+    defaultContext: {},
 
     dimensions: [],
 
@@ -571,16 +571,12 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
             this.dimensions.push(dimension);
         }
 
-        var defaults = context ? context.defaults : null;
-        var values   = context ? context.values : null;
+        var defaults = context ? context.defaults : this.defaultContext.defaults;
+        var values   = context ? context.values : this.defaultContext.values;
 
-        // Use provided applyContext function.  Use the AppContext.applyContext only if server provided context is available.
-        var applyContext = this.applyContext;
-        if (!applyContext && context)
-            applyContext = LABKEY.query.olap.AppContext.applyContext;
+        if (Ext4.isDefined(defaults) && Ext4.isDefined(values)) {
+            this.mdx = LABKEY.query.olap.AppContext.applyContext(this.mdx, defaults, values);
 
-        if (Ext4.isFunction(applyContext)) {
-            this.mdx = applyContext.call(this, this.mdx, defaults, values);
             if (!this.mdx) {
                 this.raiseError('Failed to apply application context.');
             }
@@ -589,7 +585,7 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
             }
         }
         else if (this.usePerspectives === true) {
-            this.raiseError('Failed to provide \'persepectives\'. Provide an \'applyContext\' function to set the \'perspectives\' appropriately.');
+            this.raiseError('Failed to provide \'persepectives\'. Provide a \'defaultContext\' config to set the \'perspectives\' appropriately.');
         }
 
         if (this._isReady === true) {
@@ -658,30 +654,26 @@ LABKEY.query.olap.CubeManager = new function()
 
     var getCube = function(config)
     {
-        var c = Ext4.apply({ scope: this }, config);
-
-        if (!c)
+        if (!config)
         {
             console.error('OLAP: A cube configuration must be supplied to LABKEY.query.olap.Cube.getCube()');
         }
-        else if (!c.name)
+
+        var c = Ext4.apply({ scope: this, defaultCube: {} }, config);
+        c.name = c.name || c.defaultCube.name;
+        c.schemaName = c.schemaName || c.defaultCube.schemaName;
+        c.configId = c.configId || c.defaultCube.configId;
+
+        if (!c.name || !c.configId || !c.schemaName)
         {
-            console.error('OLAP: A cube \'name\' must be supplied to LABKEY.query.olap.Cube.getCube() configuration');
+            console.error('OLAP: A \'name\', \'configId\', and \'schemaName\' must be supplied to LABKEY.query.olap.Cube.getCube() configuration');
         }
 
-        var cube;
-
-        if (_cubes[c.name])
+        if (!_cubes[c.name])
         {
-            cube = _cubes[c.name];
+            _cubes[c.name] = Ext4.create('LABKEY.query.olap.metadata.Cube', c);
         }
-        else
-        {
-            cube = Ext4.create('LABKEY.query.olap.metadata.Cube', config);
-            _cubes[c.name] = cube;
-        }
-
-        return cube;
+        return _cubes[c.name];
     };
 
     return {
