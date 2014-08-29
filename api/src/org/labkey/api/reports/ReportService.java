@@ -17,6 +17,7 @@
 package org.labkey.api.reports;
 
 import org.apache.xmlbeans.XmlObject;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
@@ -118,7 +119,7 @@ public class ReportService
 
         public Report createFromQueryString(String queryString) throws Exception;
 
-        public String getIconPath(Report report);
+        public @NotNull String getIconPath(Report report);
 
         /**
          * Imports a serialized report into the database using the specified user and container
