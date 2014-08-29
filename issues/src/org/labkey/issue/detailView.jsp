@@ -220,7 +220,7 @@
     }
 
     StringBuilder commentText = new StringBuilder();
-    boolean hasAttachements = false;
+    boolean hasAttachments = false;
     for (Issue.Comment comment : commentLinkedList)
     {
         if (!issue.getComments().contains(comment))
@@ -246,8 +246,8 @@
         <%=bean.renderAttachments(context, comment)%>
         </div><%
 
-        // Determine if the comment has attachements
-        hasAttachements = hasAttachements ? true : !bean.renderAttachments(context, comment).isEmpty();
+        // Determine if the comment has attachments
+        hasAttachments = hasAttachments ? true : !bean.renderAttachments(context, comment).isEmpty();
 
         // Extract the string value from the last comment entry
         Pattern pattern = Pattern.compile("(?s)(" + WikiService.WIKI_PREFIX + ")(.*?)(" + WikiService.WIKI_SUFFIX + ")");
@@ -258,8 +258,8 @@
             commentText.append("\n\n");
         }
     }
-    if (hasAttachements)
-        commentText.append("** The related issue has attachements.");
+    if (hasAttachments)
+        commentText.append("** The related issue has attachments.");
     String commentTextStr = commentText.toString().replaceAll("<br>", "");
 %>
 
