@@ -847,14 +847,23 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
         return Collections.unmodifiableList(_uiProviders);
     }
 
-    public String getIconPath(Report report)
+    public @NotNull String getIconPath(Report report)
     {
         if (report != null)
         {
             String reportType = report.getType();
 
-            if (_typeToProviderMap.containsKey(reportType))
-                return _typeToProviderMap.get(reportType).getIconPath(report);
+            ReportService.UIProvider claimingProvider = _typeToProviderMap.get(reportType);
+
+            if (null != claimingProvider)
+            {
+                String iconPath = claimingProvider.getIconPath(report);
+
+                if (null == iconPath)
+                    throw new IllegalStateException(reportType + " is claimed by " + claimingProvider + " but iconPath is null");
+
+                return iconPath;
+            }
 
             for (ReportService.UIProvider provider : _uiProviders)
             {
@@ -867,7 +876,9 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
                 }
             }
         }
-        return null;
+
+        // No UIPRovider claimed this report type... so fall-back on blank image
+        return "/_.gif";
     }
 
     private static final Report[] EMPTY_REPORT = new Report[0];

@@ -37,7 +37,6 @@ import java.util.Set;
 public class VisualizationModule extends DefaultModule
 {
     public static final String NAME = "Visualization";
-    public static final String EXPERIMENTAL_BOXPLOT = "experimental-boxplot";
 
     public String getName()
     {
