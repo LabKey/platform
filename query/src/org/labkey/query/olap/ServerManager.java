@@ -419,7 +419,11 @@ public class ServerManager
                         execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
                         jsonQuery.remove("countDistinctLevel");
                     }
-                    catch (Exception ignore) {}
+                    catch (Exception ignore)
+                    {
+
+                        LOG.warn("Error trying to warm the " + cubeName + " in container " + c.getName(), ignore);
+                    }
                 }
             }
             long end = System.currentTimeMillis();
