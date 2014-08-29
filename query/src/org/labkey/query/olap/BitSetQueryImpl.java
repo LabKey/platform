@@ -29,7 +29,11 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
@@ -76,6 +80,13 @@ import static org.labkey.query.olap.QubeQuery.OP;
 public class BitSetQueryImpl
 {
     static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
+    final static User serviceUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+    static
+    {
+        serviceUser.setPrincipalType(PrincipalType.SERVICE);
+        serviceUser.setDisplayName("Internal JDBC Service User");
+        serviceUser.setEmail("internaljdbc@labkey.org");
+    }
 
     final Container container;
     final Cube cube;
@@ -87,6 +98,7 @@ public class BitSetQueryImpl
     OlapConnection connection;
     final String cachePrefix;
     SqlDialect dialect = null;
+    final User user;
 
     CubeDataSourceHelper _cdsh = new CubeDataSourceHelper();
     SqlDataSourceHelper _sdsh = new SqlDataSourceHelper();
@@ -99,6 +111,7 @@ public class BitSetQueryImpl
            BindException errors, boolean useSQL /* for testing */
            ) throws SQLException, IOException
     {
+        this.user = serviceUser;
         this.container = c;
         this.connection = connection;
         this.qq = qq;
@@ -118,7 +131,7 @@ public class BitSetQueryImpl
         if (null == rolap)
             throw new IllegalStateException("Rolap definition not found: " + cube.getName());
         String schemaName = rolap.getSchemaName();
-        QuerySchema s = DefaultSchema.get(User.getSearchUser(), c).getSchema(schemaName);
+        QuerySchema s = DefaultSchema.get(user, c).getSchema(schemaName);
         if (null != s)
             dialect = s.getDbSchema().getSqlDialect();
 
@@ -1473,7 +1486,7 @@ public class BitSetQueryImpl
             _log.debug("SqlDataSourceHelper.execute(" + query + ")");
             try
             {
-                QuerySchema qs = DefaultSchema.get(User.getSearchUser(), container, "core");
+                QuerySchema qs = DefaultSchema.get(user, container, "core");
                 return QueryService.get().select(qs, query, true, false);
             }
             catch (SQLException|QueryParseException|AssertionError x)
