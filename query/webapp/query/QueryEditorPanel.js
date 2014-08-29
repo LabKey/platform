@@ -412,7 +412,7 @@ LABKEY.query.MetadataXMLEditorPanel = Ext.extend(Ext.Panel, {
                             mode            : 'text/xml',
                             lineNumbers     : true,
                             lineWrapping    : true,
-                            indentUnit      : 3
+                            indentUnit      : 2
                         });
 
                         this.codeMirror.setSize(null, size.height + 'px');
