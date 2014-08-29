@@ -53,6 +53,7 @@ import java.util.TreeMap;
  */
 public class RolapCubeDef
 {
+    final boolean emptyEqualsNull = false;
     protected String name;
     protected JoinOrTable factTable;
     protected final ArrayList<DimensionDef> dimensions = new ArrayList<>();
@@ -574,7 +575,9 @@ public class RolapCubeDef
             {
                 String s = rs.getString(nameAlias);
                 // TODO null member name
-                if (StringUtils.isEmpty(s))
+                if (null == s)
+                    s = "#null";
+                else if (cube.emptyEqualsNull && StringUtils.isEmpty(s))
                     s = "#null";
                 sb.append(".[").append(s).append("]");
                 return sb.toString();
@@ -606,11 +609,16 @@ public class RolapCubeDef
                     Property keyProperty = m.getLevel().getProperties().get("KEY");
                     Object value = m.getPropertyValue(keyProperty);
                     if (null == value || !(value instanceof String) && "#null".equals(value.toString()))
-                        return "(" + keyExpression + " IS NULL OR " + keyExpression + "='')";
+                    {
+                        if (cube.emptyEqualsNull)
+                            return "(" + keyExpression + " IS NULL) OR " + keyExpression + "='')";
+                        else
+                            return "(" + keyExpression + " IS NULL)";
+                    }
 
                     String literal = toSqlLiteral(jdbcType, value);
                     if (jdbcType.isText() && toUpper)
-                        return "UPPER("+keyExpression + ")=UPPER(" + literal + ")";
+                        return "UPPER(" + keyExpression + ")=UPPER(" + literal + ")";
                     else
                         return keyExpression + "=" + literal;
                 }
@@ -620,7 +628,12 @@ public class RolapCubeDef
                     Object name = m.getPropertyValue(captionProperty);
                     // TODO null member name
                     if ("#null".equals(name))
-                        return "(" + nameExpression + " IS NULL OR " + name + "='')";
+                    {
+                        if (cube.emptyEqualsNull)
+                            return "(" + nameExpression + " IS NULL OR " + name + "='')";
+                        else
+                            return "(" + nameExpression + " IS NULL)";
+                    }
                     else if (name instanceof String)
                         return nameExpression + "=" + string_quote((String) name);
                     else
