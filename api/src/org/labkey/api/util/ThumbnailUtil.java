@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012-2013 LabKey Corporation
+ * Copyright (c) 2012-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,10 @@
 package org.labkey.api.util;
 
 import org.apache.batik.transcoder.TranscoderException;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.DocumentConversionService;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.thumbnail.ThumbnailProvider;
@@ -56,8 +59,20 @@ public class ThumbnailUtil
         return null;
     }
 
-    public static URLHelper getStaticThumbnailURL(ThumbnailProvider provider)
+    public static @Nullable URLHelper getStaticThumbnailURL(ThumbnailProvider provider, ImageType imageType)
     {
-        return new ResourceURL(provider.getStaticThumbnailPath());
+        if (ImageType.Large == imageType)
+            return new ResourceURL(provider.getStaticThumbnailPath());
+
+        // HACK for ThumbnailCacheImpl.getThumbnailWriter()... should clean this up (add provider.getStaticIconPath()?)
+        if (provider instanceof Report)
+        {
+            Report report = (Report)provider;
+            String path = ReportService.get().getIconPath(report);
+
+            return new ResourceURL(path);
+        }
+
+        return null;
     }
 }

@@ -42,6 +42,7 @@ import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.PageFlowUtil;
@@ -65,7 +66,6 @@ import org.labkey.api.writer.ContainerUser;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedOutputStream;
@@ -395,7 +395,7 @@ public class QueryView extends WebPartView<Object>
                     // which can be expensive for some schemas
                     if (name.equals(current))
                         item.setStrong(true);
-                    item.setImageSrc(getViewContext().getContextPath() + "/reports/grid.gif");
+                    item.setImageSrc(new ResourceURL("/reports/grid.gif"));
                     addMenuItem(item);
                 }
             }
@@ -1180,7 +1180,7 @@ public class QueryView extends WebPartView<Object>
 
                     NavTree item = new NavTree(designer.getLabel(), designer.getDesignerURL().getLocalURIString());
                     item.setId(getBaseMenuId() + ":Views:Create:" + designer.getLabel());
-                    item.setImageSrc(designer.getIconPath());
+                    item.setImageSrc(designer.getIconURL());
 
                     submenu.addChild(item);
                 }
@@ -1238,7 +1238,7 @@ public class QueryView extends WebPartView<Object>
             {
                 NavTree item = new NavTree("Create " + designer.getLabel(), designer.getDesignerURL().getLocalURIString());
                 item.setId(getBaseMenuId() + ":Charts:Create" + designer.getLabel());
-                item.setImageSrc(designer.getIconPath());
+                item.setImageSrc(designer.getIconURL());
 
                 button.addMenuItem(item);
             }
@@ -1448,7 +1448,7 @@ public class QueryView extends WebPartView<Object>
                 else
                     iconUrl = new URLHelper(view.isShared() ? "/reports/grid_shared.gif" : "/reports/grid.gif");
                 iconUrl.setContextPath(AppProps.getInstance().getParsedContextPath());
-                item.setImageSrc(iconUrl.getLocalURIString());
+                item.setImageSrc(iconUrl);
             }
             catch (URISyntaxException e)
             {
@@ -1514,7 +1514,7 @@ public class QueryView extends WebPartView<Object>
                 item.setId(getBaseMenuId() + ":Views:" + PageFlowUtil.filter(report.getDescriptor().getReportName()));
                 if (report.getDescriptor().getReportId().equals(getSettings().getReportId()))
                     item.setStrong(true);
-                item.setImageSrc(ReportService.get().getIconPath(report));
+                item.setImageSrc(ReportUtil.getIconUrl(getContainer(), report));
                 item.setScript(getChangeReportScript(reportId));
                 menu.addMenuItem(item);
             }
@@ -1572,7 +1572,7 @@ public class QueryView extends WebPartView<Object>
             {
                 String chartId = chart.getDescriptor().getReportId().toString();
                 NavTree item = new NavTree(chart.getDescriptor().getReportName(), (String) null);
-                item.setImageSrc(ReportService.get().getIconPath(chart));
+                item.setImageSrc(ReportUtil.getIconUrl(getContainer(), chart));
                 item.setScript(getChangeReportScript(chartId));
 
                 if (chart.getDescriptor().getReportId().equals(getSettings().getReportId()))

@@ -206,7 +206,7 @@ public abstract class GenericChartReport extends AbstractReport
 
                         NavTree navItem = new NavTree("Quick Chart");
 
-                        navItem.setImageSrc(new ResourceURL(type.getIconPath()).getLocalURIString());
+                        navItem.setImageSrc(new ResourceURL(type.getIconPath()));
                         navItem.setHref(plotURL.getLocalURIString());
 
                         return navItem;

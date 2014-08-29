@@ -59,7 +59,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.thumbnail.ThumbnailService;
+import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.ThumbnailUtil;
@@ -193,9 +193,10 @@ public class ReportUtil
         return url;
     }
 
+    // Consider: combine these two methods... need standard way to get static thumbnail and icon url
     public static URLHelper getThumbnailUrl(Container c, Report r)
     {
-        URLHelper dynamicURL = getDynamicImageUrl(c, r, ThumbnailService.ImageType.Large);
+        URLHelper dynamicURL = getDynamicImageUrl(c, r, ImageType.Large);
 
         if (null != dynamicURL)
         {
@@ -203,13 +204,13 @@ public class ReportUtil
         }
         else
         {
-            return ThumbnailUtil.getStaticThumbnailURL(r);
+            return ThumbnailUtil.getStaticThumbnailURL(r, ImageType.Large);
         }
     }
 
     public static URLHelper getIconUrl(Container c, Report r)
     {
-        URLHelper dynamicURL = getDynamicImageUrl(c, r, ThumbnailService.ImageType.Small);
+        URLHelper dynamicURL = getDynamicImageUrl(c, r, ImageType.Small);
 
         if (null != dynamicURL)
         {
@@ -222,7 +223,7 @@ public class ReportUtil
         }
     }
 
-    private static @Nullable URLHelper getDynamicImageUrl(Container c, Report r, ThumbnailService.ImageType type)
+    private static @Nullable URLHelper getDynamicImageUrl(Container c, Report r, ImageType type)
     {
         String prefix = type.getPropertyNamePrefix();
         String imageType = (String) ReportPropsManager.get().getPropertyValue(r.getEntityId(), c, prefix + "Type");
@@ -597,7 +598,7 @@ public class ReportUtil
             o.put("text", info.getLabel());
             o.put("id", info.getId());
             o.put("disabled", info.isDisabled());
-            o.put("icon", info.getIconPath());
+            o.put("icon", info.getIconURL().getLocalURIString());
             o.put("redirectUrl", info.getDesignerURL().getLocalURIString());
 
             json.put(o);

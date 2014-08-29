@@ -94,7 +94,6 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
     public HttpView renderReport(ViewContext context)
     {
         ReportDescriptor reportDescriptor = getDescriptor();
-        ResultSet rs = null;
 
         if (reportDescriptor instanceof CrosstabReportDescriptor)
         {
@@ -115,10 +114,6 @@ public class CrosstabReport extends AbstractReport implements Report.ResultSetGe
             catch (Exception e)
             {
                 throw new RuntimeException(e);
-            }
-            finally
-            {
-                ResultSetUtil.close(rs);
             }
         }
         else

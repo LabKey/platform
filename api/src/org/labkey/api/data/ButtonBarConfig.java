@@ -20,8 +20,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.settings.AppProps;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
+import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.view.NavTree;
 import org.labkey.data.xml.ButtonBarItem;
 import org.labkey.data.xml.ButtonBarOptions;
@@ -312,7 +317,7 @@ public class ButtonBarConfig
         if (item.getOnClick() != null && item.getOnClick().length() > 0)
             tree.setScript(item.getOnClick());
         if (item.getIcon() != null && item.getIcon().length() > 0)
-            tree.setImageSrc(AppProps.getInstance().getContextPath() + item.getIcon());
+            tree.setImageSrc(new ResourceURL(item.getIcon()));
         if (item.getItemArray() != null && item.getItemArray().length > 0)
         {
             for (ButtonMenuItem child : item.getItemArray())

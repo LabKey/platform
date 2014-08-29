@@ -62,6 +62,7 @@ public class NavTree implements Collapsible
     private Integer _imageWidth;
     private String _target = null;
     private String _tip;
+    private URLHelper _imageURL;
 
     private final @NotNull List<NavTree> _children = new LinkedList<>();
 
@@ -331,12 +332,21 @@ public class NavTree implements Collapsible
 
     public String getImageSrc()
     {
+        if (null != _imageURL)
+            return _imageURL.getLocalURIString();
+
         return _imageSrc;
     }
 
+    @Deprecated  // TODO: Delete
     public void setImageSrc(String imageSrc)
     {
         _imageSrc = imageSrc;
+    }
+
+    public void setImageSrc(@Nullable URLHelper imageURL)
+    {
+        _imageURL = imageURL;
     }
 
     public Integer getImageHeight()

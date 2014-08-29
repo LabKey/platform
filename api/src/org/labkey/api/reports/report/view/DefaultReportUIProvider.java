@@ -15,9 +15,12 @@
  */
 package org.labkey.api.reports.report.view;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.settings.ResourceURL;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
@@ -41,7 +44,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
         return Collections.emptyList();
     }
 
-    public String getIconPath(Report report)
+    public @Nullable String getIconPath(Report report)
     {
         return null;
     }
@@ -76,14 +79,15 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
 
     public static class DesignerInfoImpl implements ReportService.DesignerInfo
     {
-        private String _reportType;
+        private final String _reportType;
+        private final ReportService.DesignerType _type;
+        private final URLHelper _iconURL;
+
         private String _label;
         private ActionURL _designerURL;
         private String _description;
         private boolean _disabled;
         private String _id;
-        private String _iconPath;
-        private ReportService.DesignerType _type;
 
         public DesignerInfoImpl(String reportType, String label, ActionURL designerURL, String iconPath)
         {
@@ -104,7 +108,7 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
             _label = label;
             _description = description;
             _designerURL = designerURL;
-            _iconPath = iconPath;
+            _iconURL = null != iconPath ? new ResourceURL(iconPath) : null;
             _type = type;
         }
 
@@ -163,9 +167,10 @@ public class DefaultReportUIProvider implements ReportService.UIProvider
             return _id;
         }
 
-        public String getIconPath()
+        @Override
+        public @Nullable URLHelper getIconURL()
         {
-            return _iconPath;
+            return _iconURL;
         }
 
         public ReportService.DesignerType getType()

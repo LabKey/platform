@@ -29,6 +29,7 @@ import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportIdentifier;
 import org.labkey.api.reports.report.view.ScriptReportBean;
 import org.labkey.api.security.User;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
@@ -162,12 +163,13 @@ public class ReportService
         /** returns an id for automated testing purposes */
         public String getId();
 
-        public String getIconPath();
+        public @Nullable URLHelper getIconURL();
 
         public DesignerType getType();
     }
 
-    public enum DesignerType {
+    public enum DesignerType
+    {
         DEFAULT, VISUALIZATION
     }
 
@@ -187,8 +189,9 @@ public class ReportService
         /**
          * Returns simple path to browser accessible static icon image in the webapp, e.g., "/reports/chart.gif". Callers must
          * turn this into a valid URL by pre-pending context path and adding look-and-feel revision (e.g., use ResourceURL).
+         * Returns null if this UIProvider does not support this report.
          */
-        public String getIconPath(Report report);
+        public @Nullable String getIconPath(Report report);
     }
 
     public interface ItemFilter
