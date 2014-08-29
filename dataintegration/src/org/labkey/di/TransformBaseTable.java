@@ -32,6 +32,7 @@ import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.HString;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.di.pipeline.TransformRun;
@@ -218,11 +219,6 @@ abstract public class TransformBaseTable extends VirtualTable
         return null;
     }
 
-    private String hq(String s)
-    {
-        return PageFlowUtil.filter(PageFlowUtil.jsString(s));
-    }
-
     public static class StatusColumn extends DataColumn
     {
         private final ColumnInfo _statusColumn;
@@ -307,18 +303,9 @@ abstract public class TransformBaseTable extends VirtualTable
                     ActionURL jobAction = new ActionURL("pipeline-status", "showFile", ctx.getContainer());
                     jobAction.addParameter("rowId", jobId);
                     jobAction.addParameter("filename", filename);
-
-                    StringBuilder text = new StringBuilder();
-                    text.append("<a href=\"#viewLog\" onclick=\"");
-                    text.append(dataRegionName + ShowLog);
-                    text.append("(");
-                    text.append(hq(jobAction.toString()));
-                    text.append(",");
-                    text.append(hq(filename));
-                    text.append(")\">");
-                    text.append(statusValue);
-                    text.append("</a>");
-                    out.write(text.toString());
+                    String onClickScript = dataRegionName + ShowLog + "(" + hq(jobAction.toString()) + "," + hq(filename) + ")";
+                    String link = PageFlowUtil.textLink(statusValue, new HString("#viewLog"), onClickScript, null /*id*/);
+                    out.write(link);
                     return;
                 }
             }

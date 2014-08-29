@@ -24,6 +24,7 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 
 import java.io.IOException;
@@ -116,16 +117,7 @@ public class TransformHistoryTable extends TransformBaseTable
                 ActionURL detailsAction = new ActionURL("pipeline-status", "details", ctx.getContainer());
                 detailsAction.addParameter("rowId", jobId);
                 String href = detailsAction.toString();
-
-                // create a link to the job details
-                StringBuilder text = new StringBuilder();
-                text.append("<a href=\"");
-                text.append(href);
-                text.append("\"");
-                text.append(">");
-                text.append("Job Details");
-                text.append("</a>");
-                out.write(text.toString());
+                out.write(PageFlowUtil.textLink("Job Details", href));
             }
         }
     }
@@ -156,16 +148,7 @@ public class TransformHistoryTable extends TransformBaseTable
                 ActionURL detailsAction = new ActionURL("experiment", "showRunText", ctx.getContainer());
                 detailsAction.addParameter("rowId", runId);
                 String href = detailsAction.toString();
-
-                // create a link to the job details
-                StringBuilder text = new StringBuilder();
-                text.append("<a href=\"");
-                text.append(href);
-                text.append("\"");
-                text.append(">");
-                text.append("Run Details");
-                text.append("</a>");
-                out.write(text.toString());
+                out.write(PageFlowUtil.textLink("Run Details", href));
             }
         }
     }
