@@ -39,6 +39,7 @@ import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.app.SinglePageAppUrls;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
@@ -1055,6 +1056,16 @@ public class OlapController extends SpringActionController
 
     public static final int APP_CONTEXT_JSON_INDENT = 2;
 
+    public static class SinglePageAppUrlsImpl implements SinglePageAppUrls
+    {
+        @Override
+        public ActionURL getManageAppURL(Container container)
+        {
+            return new ActionURL(ManageAppsAction.class, container);
+        }
+    }
+
+
     /**
      * Returns an app context object:
      * {
@@ -1295,7 +1306,7 @@ public class OlapController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Manage Apps");
+            return root.addChild("Manage Application");
         }
     }
 
@@ -1328,7 +1339,7 @@ public class OlapController extends SpringActionController
         public NavTree appendNavTrail(NavTree root)
         {
             return root
-                    .addChild("Manage Apps", new ActionURL(ManageAppsAction.class, getContainer()))
+                    .addChild("Manage Application", new ActionURL(ManageAppsAction.class, getContainer()))
                     .addChild(_contextName == null ? "Insert New App Context" : "Update App Context '" + _contextName + "'");
         }
     }

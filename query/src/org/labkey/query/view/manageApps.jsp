@@ -26,6 +26,8 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="org.olap4j.metadata.Schema" %>
 <%@ page import="org.olap4j.metadata.Cube" %>
+<%@ page import="org.labkey.query.olap.CustomOlapSchemaDescriptor" %>
+<%@ page import="org.olap4j.OlapConnection" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -94,17 +96,6 @@
             },
             items: [{
                 xtype: 'combo',
-                name: 'cubeDef',
-                editable: false,
-                fieldLabel: 'Cube Definition',
-                displayField: 'name',
-                value: <%=q(bean.getName())%>,
-                store: Ext4.create('Ext.data.ArrayStore', {
-                    fields: ['name', 'schemaName', 'configId'],
-                    data: cubeDefs
-                })
-            },{
-                xtype: 'combo',
                 name: 'contextName',
                 editable: false,
                 fieldLabel: 'Context Name',
@@ -121,6 +112,17 @@
                         }
                     },
                     autoLoad: true
+                })
+            },{
+                xtype: 'combo',
+                name: 'cubeDef',
+                editable: false,
+                fieldLabel: 'Cube Definition',
+                displayField: 'name',
+                value: <%=q(bean.getName())%>,
+                store: Ext4.create('Ext.data.ArrayStore', {
+                    fields: ['name', 'schemaName', 'configId'],
+                    data: cubeDefs
                 })
             }],
             buttonAlign: 'left',
@@ -178,7 +180,7 @@
 
 <labkey:errors/>
 
-<h3>Active application configuration for this folder:</h3>
+<h3>Active application configuration:</h3>
 <div id="message"></div>
 <div id="applicationConfiguration"></div>
 </br>
@@ -195,4 +197,38 @@
     </tr>
 <% } %>
 </table>
+</br>
+<h3>OLAP Cube definitions in this folder:</h3>
+<p>
+<%=textLink("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnURL(getActionURL().clone()))%>
+</p>
+<%
+    Collection<OlapSchemaDescriptor> list = ServerManager.getDescriptors(getContainer());
+    %><table><%
+    for (OlapSchemaDescriptor sd : list)
+    {
+        if (sd.isEditable())
+        {
+            %><tr>
+                <td><%=h(sd.getName())%></td>
+                <td><%=textLink("edit", ((CustomOlapSchemaDescriptor) sd).urlEdit().addReturnURL(getActionURL().clone()))%></td>
+                <td><%=textLink("delete", ((CustomOlapSchemaDescriptor)sd).urlDelete().addReturnURL(getActionURL().clone()))%></td>
+            </tr><%
+
+            try (OlapConnection conn = sd.getConnection(getContainer(), getUser()))
+            {
+                for (Schema s : sd.getSchemas(conn,getContainer(), getUser()))
+                {
+                    %><tr><td colspan="3"><ul><%
+                    for (Cube c : s.getCubes())
+                    {
+                        %><li><%=h(c.getName())%></li><%
+                    }
+                    %></ul></td></tr><%
+                }
+            }
+        }
+    }
+    %></table><%
+%>
 
