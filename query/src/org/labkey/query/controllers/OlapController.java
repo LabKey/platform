@@ -60,6 +60,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseExceptionUnresolvedField;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.permissions.AdminPermission;
@@ -1366,7 +1367,7 @@ public class OlapController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
+    @RequiresNoPermission
     public class GetActiveAppConfigAction extends ApiAction
     {
         @Override
