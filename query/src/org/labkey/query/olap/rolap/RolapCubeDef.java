@@ -128,7 +128,7 @@ public class RolapCubeDef
                 }
             }
 
-            sb.append(" INNER JOIN ");
+            sb.append(" LEFT OUTER JOIN ");
             sb.append(id_quote(b.get(0), b.get(1)));
             sb.append(" ON " );
             sb.append(id_quote(a.get(1), a.get(2)));
@@ -595,13 +595,25 @@ public class RolapCubeDef
         }
 
 
-
         public String getMemberFilter(Member m, @Nullable SqlDialect d)
+        {
+            StringBuilder sb = new StringBuilder();
+            makeMemberFilter(m,d,sb);
+            return sb.toString();
+        }
+
+        private void makeMemberFilter(Member m, @Nullable SqlDialect d, StringBuilder sb)
         {
             boolean toUpper = null==d || d.isCaseSensitive();
 
             try
             {
+                if (null != parent && !uniqueMembers)
+                {
+                    parent.makeMemberFilter(m, d, sb);
+                    sb.append(" AND ");
+                }
+
                 // TODO parent keys
                 // TODO nameType, keyType, ordinalType
                 if (null != keyExpression)
@@ -611,16 +623,18 @@ public class RolapCubeDef
                     if (null == value || !(value instanceof String) && "#null".equals(value.toString()))
                     {
                         if (cube.emptyEqualsNull)
-                            return "(" + keyExpression + " IS NULL) OR " + keyExpression + "='')";
+                            sb.append("(" + keyExpression + " IS NULL) OR " + keyExpression + "='')");
                         else
-                            return "(" + keyExpression + " IS NULL)";
+                            sb.append("(" + keyExpression + " IS NULL)");
                     }
-
-                    String literal = toSqlLiteral(jdbcType, value);
-                    if (jdbcType.isText() && toUpper)
-                        return "UPPER(" + keyExpression + ")=UPPER(" + literal + ")";
                     else
-                        return keyExpression + "=" + literal;
+                    {
+                        String literal = toSqlLiteral(jdbcType, value);
+                        if (jdbcType.isText() && toUpper)
+                            sb.append("UPPER(" + keyExpression + ")=UPPER(" + literal + ")");
+                        else
+                            sb.append(keyExpression + "=" + literal);
+                    }
                 }
                 else
                 {
@@ -630,14 +644,14 @@ public class RolapCubeDef
                     if ("#null".equals(name))
                     {
                         if (cube.emptyEqualsNull)
-                            return "(" + nameExpression + " IS NULL OR " + name + "='')";
+                            sb.append("(" + nameExpression + " IS NULL OR " + name + "='')");
                         else
-                            return "(" + nameExpression + " IS NULL)";
+                            sb.append("(" + nameExpression + " IS NULL)");
                     }
                     else if (name instanceof String)
-                        return nameExpression + "=" + string_quote((String) name);
+                        sb.append(nameExpression + "=" + string_quote((String) name));
                     else
-                        return nameExpression + "=" + String.valueOf(name);
+                        sb.append(nameExpression + "=" + String.valueOf(name));
                 }
             }
             catch (OlapException x)

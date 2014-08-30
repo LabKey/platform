@@ -88,13 +88,24 @@ public class MemberSet extends AbstractSet<Member>
         levelMap.put(s._level.getUniqueName(), s);
     }
 
+    public void seal()
+    {
+        for (Map.Entry<String,LevelMemberSet> entry : levelMap.entrySet())
+        {
+            LevelMemberSet s = entry.getValue();
+            s._set.seal();
+        }
+    }
 
-    // TODO : don't need to do this if the cube is a CachedCube
-    // NOTE we can't hang onto cube metadata when sitting in a cache (e.g. Level objects)
+    // NOTE : Don't need to do this if the cube is a CachedCube.
+    // For olap4j cube we can't hang onto metadata when sitting in a cache (e.g. Level objects)
     // we need a way to detach and reattch a MemberSet to a cube
 
     MemberSet detach()
     {
+        seal();
+        return this;
+        /*
         MemberSet detach = new MemberSet();
         detach.levelMap.putAll(this.levelMap);
         for (Map.Entry<String,LevelMemberSet> entry : levelMap.entrySet())
@@ -105,11 +116,14 @@ public class MemberSet extends AbstractSet<Member>
             detach.levelMap.put(entry.getKey(), copy);
         }
         return detach;
+        */
     }
 
 
     MemberSet attach(Map<String,Level> levelNameMap)
     {
+        return this;
+        /*
         MemberSet attach = new MemberSet();
         for (Map.Entry<String,LevelMemberSet> entry : levelMap.entrySet())
         {
@@ -121,6 +135,7 @@ public class MemberSet extends AbstractSet<Member>
             attach.levelMap.put(entry.getKey(), copy);
         }
         return attach;
+        */
     }
 
 
@@ -620,6 +635,7 @@ public class MemberSet extends AbstractSet<Member>
         class _Iterator implements Iterator<Member>
         {
             int _bit = 0;
+            Member _current;
             Member _nextMember;
 
             @Override
@@ -649,15 +665,15 @@ public class MemberSet extends AbstractSet<Member>
             @Override
             public Member next()
             {
-                Member ret = _nextMember;
+                _current = _nextMember;
                 _nextMember = null;
-                return ret;
+                return _current;
             }
 
             @Override
             public void remove()
             {
-                throw new UnsupportedOperationException();
+                _set.clear(_current.getOrdinal());
             }
         }
     }

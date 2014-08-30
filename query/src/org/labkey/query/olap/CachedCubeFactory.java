@@ -19,6 +19,7 @@ import mondrian.olap.Annotated;
 import mondrian.olap.Annotation;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.ArrayListMap;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.util.Pair;
 import org.olap4j.OlapException;
 import org.olap4j.OlapWrapper;
@@ -849,7 +850,7 @@ public class CachedCubeFactory
         {
             if (readonly)
                 throw new IllegalStateException();
-            indexMap = new HashMap<>();
+            indexMap = new CaseInsensitiveHashMap<>();
             for (int i=0 ; i<size() ; i++)
             {
                 T t = get(i);
