@@ -116,18 +116,22 @@ public class ParticipantGroupWriter implements InternalStudyWriter
                         // _groupsToCopy will contain a list of groups for creating an ancillary study
                         if (_groupsToCopy.isEmpty() || _groupsToCopy.contains(group))
                         {
-                            GroupType pg = pc.addNewGroup();
-
-                            pg.setLabel(group.getLabel());
-                            pg.setCategoryLabel(group.getCategoryLabel());
-
+                            // issue 21433: don't try to export an empty group
                             String [] participantIds = group.getParticipantIds();
-                            if (participantMapper.isAlternateIds())
+                            if (participantIds != null && participantIds.length > 0)
                             {
-                                for (int i = 0; i < participantIds.length; i += 1)
-                                    participantIds[i] = participantMapper.getMappedParticipantId(participantIds[i]);
+                                GroupType pg = pc.addNewGroup();
+
+                                pg.setLabel(group.getLabel());
+                                pg.setCategoryLabel(group.getCategoryLabel());
+
+                                if (participantMapper.isAlternateIds())
+                                {
+                                    for (int i = 0; i < participantIds.length; i += 1)
+                                        participantIds[i] = participantMapper.getMappedParticipantId(participantIds[i]);
+                                }
+                                pg.setParticipantIdArray(participantIds);
                             }
-                            pg.setParticipantIdArray(participantIds);
                         }
                     }
                 }

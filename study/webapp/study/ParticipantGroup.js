@@ -305,6 +305,12 @@ Ext4.define('Study.window.ParticipantGroup', {
 
         var groupData = me.getGroupData();
 
+        if (groupData.participantIds.length == 0)
+        {
+            Ext4.Msg.alert("Error", "One or more " + me.subject.nounSingular + " Identifiers required");
+            return false;
+        }
+
         Ext4.Ajax.request({
             url : (LABKEY.ActionURL.buildURL("participant-group", "saveParticipantGroup")),
             method : 'POST',
