@@ -37,11 +37,11 @@
     StudyManager manager = StudyManager.getInstance();
 %>
 <labkey:errors/>
+<labkey:form action="<%=h(buildURL(CohortController.ManageCohortsAction.class))%>" name="manualAssignment" method="POST">
 <%
     if (study.isManualCohortAssignment()) // Need to create a form for submitting the assignments
     {
 %>
-<form action="<%=h(buildURL(CohortController.ManageCohortsAction.class))%>" name="manualAssignment" method="POST">
     <input type="hidden" name="reshow" value="false">
     <input type="hidden" name="manualCohortAssignment" value="true">
 <%
@@ -148,6 +148,7 @@
         if (study.isManualCohortAssignment())
         {
             %><%= button("Save").submit(true) %>
-            <form><%
+            <%
         }
     %>
+</labkey:form>
