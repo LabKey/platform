@@ -1272,6 +1272,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     this.groupingFeature.enable();
                     this.measuresStore.groupers.first().property = "keyVariableGrouper";
                     this.measuresStore.group();
+                    this.measuresStore.sort('keyVariableGrouper', 'ASC');
                 }
                 else {
                     this.groupingFeature.disable();
