@@ -116,24 +116,29 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
 
     public GWTChartRenderer[] getChartRenderers(GWTChart chart)
     {
-        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), chart.getSchemaName());
-        QuerySettings qs = schema.getSettings(_context, null, chart.getQueryName());
-        qs.setViewName(chart.getViewName());
-
-        QueryView view = new QueryView(schema, qs, null);
         List<GWTChartRenderer> gwtRenderers = new ArrayList<>();
 
-        for (ChartRenderer renderer : ChartRendererFactory.get().getChartRenderers())
+        UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), chart.getSchemaName());
+        if (schema != null)
         {
-            GWTChartRenderer cr = new GWTChartRenderer();
+            QuerySettings qs = schema.getSettings(_context, null, chart.getQueryName());
+            qs.setViewName(chart.getViewName());
 
-            cr.setName(renderer.getName());
-            cr.setType(renderer.getType());
-            cr.setColumnX(createColumnList(renderer.getDisplayColumns(view, true)));
-            cr.setColumnY(createColumnList(renderer.getDisplayColumns(view, false)));
+            QueryView view = new QueryView(schema, qs, null);
 
-            gwtRenderers.add(cr);
+            for (ChartRenderer renderer : ChartRendererFactory.get().getChartRenderers())
+            {
+                GWTChartRenderer cr = new GWTChartRenderer();
+
+                cr.setName(renderer.getName());
+                cr.setType(renderer.getType());
+                cr.setColumnX(createColumnList(renderer.getDisplayColumns(view, true)));
+                cr.setColumnY(createColumnList(renderer.getDisplayColumns(view, false)));
+
+                gwtRenderers.add(cr);
+            }
         }
+
         return gwtRenderers.toArray(new GWTChartRenderer[0]);
     }
 
