@@ -846,6 +846,7 @@ public class CachedCubeFactory
             return true;
         }
 
+
         private void recompute()
         {
             if (readonly)
@@ -855,10 +856,30 @@ public class CachedCubeFactory
             {
                 T t = get(i);
                 Integer prev = indexMap.put(getName(t), i);
+                if (null != prev)
+                {
+                    recomputeCaseSensitive();
+                    return;
+                }
+            }
+            assert indexMap.size() == this.size();
+        }
+
+
+        private void recomputeCaseSensitive()
+        {
+            if (readonly)
+                throw new IllegalStateException();
+            indexMap = new HashMap<>();
+            for (int i=0 ; i<size() ; i++)
+            {
+                T t = get(i);
+                Integer prev = indexMap.put(getName(t), i);
                 assert null == prev : getName(t) + " found twice" ;
             }
             assert indexMap.size() == this.size();
         }
+
 
         // cant call this sort() and be safe in both java 7 and 8
         private void _sort(Comparator<? super T> c)
