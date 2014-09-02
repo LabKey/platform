@@ -374,6 +374,7 @@ public class SparseBitSet implements Cloneable, Serializable
 
     public void seal()
     {
+        statisticsUpdate();
         this.sealed = true;
     }
 
