@@ -33,7 +33,9 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.InvalidFileException;
+import org.labkey.api.admin.StaticLoggerGetter;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentParent;
@@ -47,6 +49,7 @@ import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Table;
@@ -77,6 +80,7 @@ import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DetailsView;
@@ -100,6 +104,7 @@ import org.labkey.list.model.ListAuditViewFactory;
 import org.labkey.list.model.ListEditorServiceImpl;
 import org.labkey.list.model.ListImporter;
 import org.labkey.list.model.ListManager;
+import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListWriter;
 import org.labkey.list.view.ListDefinitionForm;
 import org.labkey.list.view.ListImportServiceImpl;
@@ -119,6 +124,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -126,6 +132,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TreeSet;
 
 /**
@@ -203,11 +210,15 @@ public class ListController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class BeginAction extends SimpleViewAction
+    public class BeginAction extends SimpleViewAction<QueryForm>
     {
-        public ModelAndView getView(Object form, BindException errors) throws Exception
+        @Override
+        public ModelAndView getView(QueryForm queryForm, BindException errors) throws Exception
         {
-            return new JspView<>("/org/labkey/list/view/begin.jsp", null, errors);
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), ListManagerSchema.SCHEMA_NAME);
+            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, ListManagerSchema.LIST_MANAGER);
+            QueryView queryView = schema.createView(getViewContext(), settings, errors);
+            return queryView;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -309,20 +320,48 @@ public class ListController extends SpringActionController
 
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
         {
-            try
+            if(form.getListId() == null)
             {
-                form.getList().delete(getUser());
+                try
+                {
+                    Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
+                    for(String s : listIDs)
+                    {
+                        int ID = Integer.parseInt(s.substring(0, s.indexOf(',')));
+                        ListService.get().getList(getContainer(), ID).delete(getUser());
+                    }
+                }
+                catch (Table.OptimisticConflictException e)
+                {
+                    //bug 11729: if someone else already deleted the list, no need to throw exception
+                }
             }
-            catch (Table.OptimisticConflictException e)
+            else
             {
-                //bug 11729: if someone else already deleted the list, no need to throw exception
+                //Accessed from the edit list page, where selection is not possible
+                form.getList().delete(getUser());
             }
             return true;
         }
 
         public URLHelper getSuccessURL(ListDefinitionForm form)
         {
-            return getBeginURL(getContainer());     // Always go back to manage views page
+            try
+            {
+                ReturnURLString ret = form.getReturnUrl();
+                if(ret != null)
+                {
+                    return new URLHelper(ret);
+                }
+                else
+                {
+                    return getBeginURL(getContainer());
+                }
+            }
+            catch (URISyntaxException e)
+            {
+                throw new RuntimeException();
+            }
         }
     }
 
@@ -1028,32 +1067,43 @@ public class ListController extends SpringActionController
 
 
     @RequiresPermissionClass(DesignListPermission.class)
-    public class ExportListArchiveAction extends ExportAction
+    public class ExportListArchiveAction extends ExportAction<ListDefinitionForm>
     {
-        public void export(Object o, HttpServletResponse response, BindException errors) throws Exception
+        public void export(ListDefinitionForm form, HttpServletResponse response, BindException errors) throws Exception
         {
+            Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
+            Integer[] IDs = new Integer[listIDs.size()];
+            int i = 0;
+            for(String s : listIDs)
+            {
+                IDs[i] = Integer.parseInt(s.substring(0, s.indexOf(',')));
+                i++;
+            }
             Container c = getContainer();
+            String datatype = ("lists");
+            FolderExportContext ctx = new FolderExportContext(getUser(), c, PageFlowUtil.set(datatype), "List Export", new StaticLoggerGetter(Logger.getLogger(ListController.class)));
+            ctx.setListIds(IDs);
             ListWriter writer = new ListWriter();
             ZipFile zip = new ZipFile(response, FileUtil.makeFileNameWithTimestamp(c.getName(), "lists.zip"));
-            writer.write(c, getUser(), zip);
+            writer.write(c, getUser(), zip, ctx);
             zip.close();
         }
     }
 
 
     @RequiresPermissionClass(DesignListPermission.class)
-    public class ImportListArchiveAction extends FormViewAction<Object>
+    public class ImportListArchiveAction extends FormViewAction<ListDefinitionForm>
     {
-        public void validateCommand(Object target, Errors errors)
+        public void validateCommand(ListDefinitionForm target, Errors errors)
         {
         }
 
-        public ModelAndView getView(Object o, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ListDefinitionForm form, boolean reshow, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/list/view/importLists.jsp", null, errors);
         }
 
-        public boolean handlePost(Object o, BindException errors) throws Exception
+        public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
         {
             Map<String, MultipartFile> map = getFileMap();
 
@@ -1101,9 +1151,9 @@ public class ListController extends SpringActionController
             return !errors.hasErrors();
         }
 
-        public ActionURL getSuccessURL(Object o)
+        public ActionURL getSuccessURL(ListDefinitionForm form)
         {
-            return getBeginURL(getContainer());
+            return new ActionURL(form.getReturnUrl());
         }
 
         public NavTree appendNavTrail(NavTree root)

@@ -42,6 +42,7 @@ import org.labkey.list.model.ListAuditViewFactory;
 import org.labkey.list.model.ListDef;
 import org.labkey.list.model.ListDomainType;
 import org.labkey.list.model.ListManager;
+import org.labkey.list.model.ListManagerSchema;
 import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListServiceImpl;
@@ -89,6 +90,7 @@ public class ListModule extends DefaultModule
         addController("list", ListController.class);
         ListService.setInstance(new ListServiceImpl());
         ListQuerySchema.register(this);
+        ListManagerSchema.register(this);
 
         // NOTE: This domain kind is only maintained for purposes of migrating lists to hard tables.
         PropertyService.get().registerDomainKind(new ListDomainType());

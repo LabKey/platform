@@ -189,15 +189,34 @@
     <ns:description>Contains a row per experiment run in this folder.</ns:description>
   </ns:table>
   <ns:table tableName="List" tableDbType="TABLE">
+      <ns:buttonBarOptions position="top" includeStandardButtons="true">
+      </ns:buttonBarOptions>
+      <ns:description>Contains one row for every list managered in this container.</ns:description>
+      <ns:tableUrl>/list/grid.view?listId=${ListId}</ns:tableUrl>
+      <ns:titleColumn>Name</ns:titleColumn>
+      <ns:pkColumnName>ListId</ns:pkColumnName>
       <ns:columns>
-          <ns:column columnName="ListId" />
+          <ns:column columnName="ListId" >
+            <ns:isKeyField>true</ns:isKeyField>
+            <ns:isHidden>true</ns:isHidden>
+          </ns:column>
           <ns:column columnName="EntityId" />
-          <ns:column columnName="Created" />
-          <ns:column columnName="CreatedBy" />
-          <ns:column columnName="Modified" />
-          <ns:column columnName="ModifiedBy" />
+          <ns:column columnName="Created" >
+              <ns:isHidden>true</ns:isHidden>
+          </ns:column>
+          <ns:column columnName="CreatedBy" >
+              <ns:isHidden>true</ns:isHidden>
+          </ns:column>
+          <ns:column columnName="Modified" >
+              <ns:isHidden>true</ns:isHidden>
+          </ns:column>
+          <ns:column columnName="ModifiedBy" >
+              <ns:isHidden>true</ns:isHidden>
+          </ns:column>
           <ns:column columnName="Container" />
-          <ns:column columnName="Name" />
+          <ns:column columnName="Name" >
+              <ns:url>/list/grid.view?listId=${ListId}</ns:url>
+          </ns:column>
           <ns:column columnName="DomainId" />
           <ns:column columnName="KeyName" />
           <ns:column columnName="KeyType" />
