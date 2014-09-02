@@ -1599,6 +1599,10 @@ Ext4.define('File.panel.Browser', {
                         }
                     }
                 }
+                var hiddenField = document.createElement("input");
+                hiddenField.setAttribute("name", "X-LABKEY-CSRF");
+                hiddenField.setAttribute("value", LABKEY.CSRF);
+                form.appendChild(hiddenField);
                 document.body.appendChild(form);
                 form.submit();
             }

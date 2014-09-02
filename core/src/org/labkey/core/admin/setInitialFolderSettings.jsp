@@ -63,7 +63,9 @@
             url: LABKEY.ActionURL.buildURL('admin','setInitialFolderSettings.view'),
             method: 'POST',
             standardSubmit: true,
-            items: [{
+            items: [
+            { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF },
+            {
                 html: 'Choose File Location:',
                 style: 'padding-bottom: 5px;'
             },{

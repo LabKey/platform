@@ -81,7 +81,7 @@ This webpart displays a list of survey instances created by the end user. Select
             renderTo : <%=q(divId)%>,
             bodyStyle : 'background-color: transparent;',
             standardSubmit: true,
-            items : [surveyDesignCombo],
+            items : [{ xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF }, surveyDesignCombo],
             dockedItems: [{
                 xtype: 'toolbar',
                 dock: 'bottom',

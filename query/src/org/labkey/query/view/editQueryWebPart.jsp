@@ -106,7 +106,9 @@
                 xtype : 'radiogroup',
                 fieldLabel: 'Query and View',
                 columns : 1,
-                items : [{
+                items : [
+                    { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF },
+                    {
                     id : 'selectQueryList',
                     name : 'selectQuery',
                     boxLabel : 'Show the list of queries in this schema.',

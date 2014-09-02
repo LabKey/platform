@@ -481,6 +481,7 @@
                 width: 600
             },
             items: [
+                { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF },
                 schemaTypeField,
                 schemaNameField,
                 sourceContainerCombo,

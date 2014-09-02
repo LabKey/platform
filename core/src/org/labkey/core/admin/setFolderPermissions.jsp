@@ -83,7 +83,9 @@
                         }
                     }
                 },
-                items: [{
+                items: [
+                    { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF },
+                    {
                     //note: folders cant inherit permissions from a parent
                     boxLabel: 'Inherit From Parent ' + containerNoun,
                     checked: !isProject,

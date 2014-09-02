@@ -74,11 +74,11 @@
         var moduleTypes;
         var moduleTypesMap = {};
         var templateFolders = [];
-        <%="var selectedModules = " + modulesOut + ";"%>
-        <%="var hasLoaded = " + form.getHasLoaded() + ";"%>
-        <%="var defaultTab = '" + form.getDefaultModule() + "';"%>
-        <%="var selectedTemplateFolder = '" + form.getTemplateSourceId() + "';"%>
-        <%="var selectedTemplateWriters = '" + templateWriterTypes + "';"%>
+        var selectedModules = <%=modulesOut%>;
+        var hasLoaded = <%=text(form.getHasLoaded()?"true":"false")%>;
+        var defaultTab = <%=q(form.getDefaultModule())%>;
+        var selectedTemplateFolder = <%=q(form.getTemplateSourceId())%>;
+        var selectedTemplateWriters = <%=templateWriterTypes%>;
         var userHasEnableRestrictedModulesPermission = <%=userHasEnableRestrictedModulesPermission%>;
         var isParentRoot = <%=isContainerRoot%>;
         var dataspaceName = "<%=text(StudyService.DATASPACE_FOLDERTYPE_NAME)%>";
@@ -141,7 +141,9 @@
                             panel.renderTemplateInfo();
                     }
                 },
-                items: [{
+                items: [
+                { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF },
+                {
                     html: 'Name:',
                     cls: 'labkey-wizard-header',
                     style: 'padding-bottom: 5px;'

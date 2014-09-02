@@ -63,6 +63,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.settings.WriteableAppProps;
 import org.labkey.api.settings.WriteableLookAndFeelProperties;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
@@ -1825,6 +1826,7 @@ public class LoginController extends SpringActionController
             res.put("id", user.getUserId());
             res.put("displayName", user.getDisplayName(user));
             res.put("email", user.getEmail());
+            res.put("CSRF", CSRFUtil.getExpectedToken(getViewContext()));
             res.put("success", true);
             return res;
         }

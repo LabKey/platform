@@ -114,7 +114,7 @@ If you want to let users change the list that's displayed or customize the view 
             renderTo : 'SQVPicker',
             bodyStyle : 'background-color: transparent;',
             standardSubmit: true,
-            items : [title, queryCombo, viewCombo, submitButton]
+            items : [title, queryCombo, viewCombo, submitButton, { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF }]
         });
 
     });

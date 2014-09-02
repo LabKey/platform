@@ -40,6 +40,9 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
             this.data = config.record.data;
         }
 
+        if (Ext4.isArray(config.items))
+            config.items.push({ xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF });
+
         this.callParent([config]);
     },
 
