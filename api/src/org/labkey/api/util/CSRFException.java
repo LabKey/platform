@@ -26,6 +26,6 @@ public class CSRFException extends UnauthorizedException
 {
     CSRFException()
     {
-        super("This form has an invalid security context.  You may have signed in or signed out of this session.  Try again by using the 'back' and 'refresh' button in your browser.");
+        super("This request has an invalid security context.  You may have signed in or signed out of this session.  Try again by using the 'back' and 'refresh' button in your browser.");
     }
 }

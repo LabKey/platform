@@ -27,6 +27,7 @@ import com.google.gwt.user.client.ui.FormPanel;
 import com.google.gwt.user.client.ui.FormSubmitCompleteEvent;
 import com.google.gwt.user.client.ui.FormSubmitEvent;
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.Hidden;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Panel;
 import com.google.gwt.user.client.ui.VerticalPanel;
@@ -38,6 +39,7 @@ import org.labkey.api.gwt.client.ui.ImageButton;
 import org.labkey.api.gwt.client.ui.incubator.ProgressBar;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
+import org.labkey.api.gwt.client.util.ServiceUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -108,6 +110,8 @@ public class DomainImporter
         }
 
         VerticalPanel panel = new VerticalPanel();
+        Hidden hidden = new Hidden("X-LABKEY-CSRF", ServiceUtil.getCsrfToken());
+        panel.add(hidden);
 
         final FormPanel form = new FormPanel();
 

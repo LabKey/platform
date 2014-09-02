@@ -652,10 +652,12 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             throw new ForbiddenProjectException();
 
         RequiresPermissionClass requiresPerm = actionClass.getAnnotation(RequiresPermissionClass.class);
+        boolean requiresAdmin = false;
         Set<Class<? extends Permission>> permissionsRequired = null;
         if (null != requiresPerm)
         {
             permissionsRequired = RoleManager.permSet(requiresPerm.value());
+            requiresAdmin = permissionsRequired.contains(AdminPermission.class);
         }
 
         ContextualRoles rolesAnnotation = actionClass.getAnnotation(ContextualRoles.class);
@@ -706,7 +708,7 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
 
         if (isPOST)
         {
-            boolean csrfCheck = requiresSiteAdmin || actionClass.isAnnotationPresent(CSRF.class);
+            boolean csrfCheck = requiresSiteAdmin || requiresAdmin || actionClass.isAnnotationPresent(CSRF.class);
             if (csrfCheck)
                 CSRFUtil.validate(context);
         }

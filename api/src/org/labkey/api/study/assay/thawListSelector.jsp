@@ -114,7 +114,7 @@
             renderTo : 'SQVPicker',
             standardSubmit: true,
             width: 600,
-            items : [sourceContainerCombo, schemaCombo, queryCombo]
+            items : [sourceContainerCombo, schemaCombo, queryCombo, { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF } ]
         });
     });
 

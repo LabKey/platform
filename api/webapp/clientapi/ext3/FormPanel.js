@@ -93,6 +93,8 @@ LABKEY.ext.FormPanel = Ext.extend(Ext.form.FormPanel,
     constructor : function(config)
     {
         this.allFields = this.initFieldDefaults(config);
+        if (Ext.isArray(config.items))
+            config.items.push({ xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF });
         return LABKEY.ext.FormPanel.superclass.constructor.call(this, config);
     },
 
