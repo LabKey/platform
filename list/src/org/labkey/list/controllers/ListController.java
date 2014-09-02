@@ -360,7 +360,7 @@ public class ListController extends SpringActionController
             }
             catch (URISyntaxException e)
             {
-                throw new RuntimeException();
+                throw new RuntimeException(e);
             }
         }
     }
