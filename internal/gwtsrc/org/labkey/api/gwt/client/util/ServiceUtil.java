@@ -16,7 +16,9 @@
 
 package org.labkey.api.gwt.client.util;
 
+import com.google.gwt.http.client.RequestBuilder;
 import com.google.gwt.http.client.URL;
+import com.google.gwt.user.client.rpc.RpcRequestBuilder;
 import com.google.gwt.user.client.rpc.ServiceDefTarget;
 import com.google.gwt.user.client.ui.RootPanel;
 
@@ -43,6 +45,7 @@ public class ServiceUtil
     public static Object configureEndpoint(Object remoteService, String actionName, String controllerName, Map<String, String> urlParams)
     {
         ServiceDefTarget endpoint = (ServiceDefTarget) remoteService;
+
         String url;
         if (controllerName == null)
         {
@@ -61,6 +64,18 @@ public class ServiceUtil
             url += URL.encodePathSegment(key) + "=" + URL.encodePathSegment(urlParams.get(key));
         }
         endpoint.setServiceEntryPoint(url);
+
+        RpcRequestBuilder rpc = new RpcRequestBuilder()
+        {
+            @Override
+            protected void doFinish(RequestBuilder rb)
+            {
+                rb.setHeader("X-LABKEY-CSRF",getCsrfToken());
+                super.doFinish(rb);
+            }
+        };
+        endpoint.setRpcRequestBuilder(rpc);
+
         return remoteService;
     }
 
@@ -73,4 +88,8 @@ public class ServiceUtil
         }
         return RootPanel.get(classname + "-Root");
     }
+
+    public static native String getCsrfToken() /*-{
+        return $wnd.LABKEY.CSRF;
+    }-*/;
 }
