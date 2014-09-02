@@ -192,7 +192,7 @@ public class StudyService
     public static Service get()
     {
         if (_serviceImpl == null)
-            throw new IllegalStateException("Service has not been set.");
+            throw new IllegalStateException("Service has not been set. You need to call register() first.");
         return _serviceImpl;
     }
 }

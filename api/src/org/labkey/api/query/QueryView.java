@@ -2406,7 +2406,7 @@ public class QueryView extends WebPartView<Object>
         return ret;
     }
 
-    private void addDetailsAndUpdateColumns(List<DisplayColumn> ret, TableInfo table)
+    protected void addDetailsAndUpdateColumns(List<DisplayColumn> ret, TableInfo table)
     {
         if (_showDetailsColumn && !isPrintView() && !isExportView() && (table.hasDetailsURL() || isShowExperimentalGenericDetailsURL()))
         {
