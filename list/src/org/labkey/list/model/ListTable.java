@@ -172,6 +172,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                 ColumnInfo folderColumn = wrapColumn(baseColumn);
                 folderColumn.setFk(new ContainerForeignKey(schema));
                 folderColumn.setUserEditable(false);
+                folderColumn.setShownInInsertView(false);
+                folderColumn.setShownInUpdateView(false);
                 folderColumn.setLabel("Folder");
                 addColumn(folderColumn);
             }

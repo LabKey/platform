@@ -47,6 +47,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
 
         ColumnInfo guid = addWrapColumn(_rootTable.getColumn(GLOBAL_UNIQUE_ID_COLUMN_NAME));
         guid.setDisplayColumnFactory(ColumnInfo.NOWRAP_FACTORY);
+        setTitleColumn(GLOBAL_UNIQUE_ID_COLUMN_NAME);
 
         ColumnInfo pvColumn = new AliasedColumn(this, StudyService.get().getSubjectVisitColumnName(schema.getContainer()),
                                                 _rootTable.getColumn("ParticipantSequenceNum"));//addWrapColumn(baseColumn);
