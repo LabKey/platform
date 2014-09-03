@@ -285,8 +285,6 @@
 </tr>
 
 <%
-    response.flushBuffer();
-
     for (DataSetDefinition dataset : datasets)
     {
         // Do not display demographic data here. That goes in a separate web part,
