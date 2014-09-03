@@ -418,6 +418,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 {header: 'Measure', dataIndex: 'label', flex: 1, renderer: function(value){return Ext4.util.Format.htmlEncode(value)}}
             ],
             listeners: {
+                render : function(grid) {
+                    if (grid.getStore().getCount() == 0)
+                        grid.getEl().mask("loading...");
+                },
                 viewready: function(grid) {
                     if(this.measures.x){
                         var measure = grid.getStore().findRecord('name', this.measures.x.name, 0, false, true, true);
@@ -562,6 +566,10 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 {header: 'Measure', dataIndex: 'label', flex: 1, renderer: function(value){return Ext4.util.Format.htmlEncode(value)}}
             ],
             listeners: {
+                render : function(grid) {
+                    if (grid.getStore().getCount() == 0)
+                        grid.getEl().mask("loading...");
+                },
                 viewready: function(grid) {
                     if (this.measures.y) {
                         var measure = grid.getStore().findRecord('name', this.measures.y.name, 0, false, true, true);
@@ -760,6 +768,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 scope: this,
                 show: function(){
                     this.centerPanel.getEl().mask();
+                    this.helpWindow.alignTo(this.helpBtn, 'tl-tr', [-275, 30]);
                 },
                 hide: function(){
                     this.centerPanel.getEl().unmask();
@@ -772,9 +781,9 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
 
     getHelpPanel: function(){
         var helpHtml = '<ul>';
-        helpHtml += '<li>- <a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reportsAndViews">Reports, Views, and Charts</a></li>';
-        helpHtml += '<li>- <a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=boxplot">Box Plots</a></li>';
-        helpHtml += '<li>- <a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=scatterplot">Scatter Plots</a></li>';
+        helpHtml += '<li><a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=reportsAndViews">Reports, Views, and Charts</a></li>';
+        helpHtml += '<li><a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=boxplot">Box Plots</a></li>';
+        helpHtml += '<li><a target="_blank" href="https://www.labkey.org/wiki/home/Documentation/page.view?name=scatterplot">Scatter Plots</a></li>';
         helpHtml += '</ul>';
 
         this.helpPanel = Ext4.create('Ext.panel.Panel', {
@@ -1340,11 +1349,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             });
 
             queryStore.addListener('beforeload', function(){
-                saveQuerySettingsBtn.setDisabled(true);
+                selectQuerySettingsBtn.setDisabled(true);
             }, this);
 
-            var saveQuerySettingsBtn = Ext4.create('Ext.button.Button', {
-                text : 'Save',
+            var selectQuerySettingsBtn = Ext4.create('Ext.button.Button', {
+                text : 'Ok',
                 formBind: true,
                 handler : function(btn) {
                     var form = btn.up('form').getForm();
@@ -1361,29 +1370,28 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 border  : false,
                 frame   : false,
                 fieldDefaults  : {
-                    labelWidth : 100,
+                    labelWidth : 75,
                     width      : 375,
                     style      : 'padding: 4px 0',
                     labelSeparator : ''
                 },
                 items   : formItems,
                 buttonAlign : 'right',
-                buttons     : [ saveQuerySettingsBtn, {
+                buttons     : [ selectQuerySettingsBtn, {
                     text : 'Cancel',
                     handler : function(btn) {window.history.back()}
                 }]
             });
 
             var dialog = Ext4.create('Ext.window.Window', {
-                width  : 450,
-                height : 200,
                 layout : 'fit',
                 border : false,
                 frame  : false,
                 closable : false,
                 draggable : false,
                 modal  : true,
-                title  : 'Select Chart Query',
+                cls: 'data-window',
+                title  : 'Select Query',
                 bodyPadding : 20,
                 items : formPanel,
                 scope : this
