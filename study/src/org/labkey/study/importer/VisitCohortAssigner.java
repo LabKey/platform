@@ -80,7 +80,7 @@ public class VisitCohortAssigner implements InternalStudyImporter
 
             try
             {
-                records = vmFormat.getReader(root, visitMapName).getVisitMapRecords(study.getTimepointType());
+                records = vmFormat.getReader(root, visitMapName, ctx.getLogger()).getVisitMapRecords(study.getTimepointType());
             }
             catch (Exception e)
             {

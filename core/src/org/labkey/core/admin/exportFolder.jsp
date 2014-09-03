@@ -90,19 +90,6 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
                 }
             }
 %>
-        formItems.push({xtype: "spacer", height: 20, hidden: <%=!showStudyOptions%>});
-        formItems.push({xtype: "label", text: "Export file formats:", hidden: <%=!showStudyOptions%>});
-        formItems.push({
-            xtype: 'radiogroup',
-            hideLabel: true,
-            columns: 1,
-            hidden: <%=!showStudyOptions%>,
-            items: [
-                {boxLabel: 'XML file formats<%=PageFlowUtil.helpPopup("XML file formats","Selecting this option will export study meta data using XML file formats (e.g., visit_map.xml and datasets_metadata.xml). This is the recommended setting.")%>', name: "format", inputValue: "new", checked: true},
-                {boxLabel: 'Legacy file formats<%=PageFlowUtil.helpPopup("Legacy File Formats", "Selecting this option will export some meta data using older, non-XML file formats (e.g, visit_map.txt and schema.tsv). This setting is not recommended since the non-XML formats contain less information than the XML formats. This option is provided to support older studies that haven't switched to XML file formats yet.")%>', name: "format", inputValue: "old"}
-            ]
-        });
-
         formItems.push({xtype: "spacer", height: 20});
         formItems.push({xtype: "label", text: "Options:"});
         formItems.push({xtype: 'checkbox', hideLabel: true, hidden: <%=!c.hasChildren()%>, boxLabel: 'Include Subfolders<%=PageFlowUtil.helpPopup("Include Subfolders", "Recursively export subfolders.")%>', name: 'includeSubfolders', objectType: 'otherOptions'});

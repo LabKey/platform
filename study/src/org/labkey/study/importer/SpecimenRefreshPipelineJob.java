@@ -91,7 +91,7 @@ public class SpecimenRefreshPipelineJob extends AbstractStudyPipelineJob
             Set<DataSetDefinition> datasets = Collections.emptySet();
 
             StudyExportContext studyCtx = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(),
-                    false, dataTypes, _settings.isRemoveProtectedColumns(),
+                    dataTypes, _settings.isRemoveProtectedColumns(),
                     new ParticipantMapper(_sourceStudy, _settings.isShiftDates(), _settings.isUseAlternateParticipantIds()),
                     _settings.isMaskClinic(), datasets, new PipelineJobLoggerGetter(this)
             );

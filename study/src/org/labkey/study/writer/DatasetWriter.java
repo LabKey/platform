@@ -134,18 +134,9 @@ public class DatasetWriter implements InternalStudyWriter
             ReportPropsManager.get().exportProperties(def.getEntityId(), ctx.getContainer(), propList);
         }
 
-        if (ctx.useOldFormats())
-        {
-            // Write out the schema.tsv file and add reference & attributes to study.xml
-            SchemaTsvWriter schemaTsvWriter = new SchemaTsvWriter();
-            schemaTsvWriter.write(datasets, ctx, vf);
-        }
-        else
-        {
-            SchemaXmlWriter schemaXmlWriter = new SchemaXmlWriter();
-            schemaXmlWriter.write(datasets, ctx, vf);
-            dsXml.setMetaDataFile(SchemaXmlWriter.SCHEMA_FILENAME);
-        }
+        SchemaXmlWriter schemaXmlWriter = new SchemaXmlWriter();
+        schemaXmlWriter.write(datasets, ctx, vf);
+        dsXml.setMetaDataFile(SchemaXmlWriter.SCHEMA_FILENAME);
 
         vf.saveXmlBean(MANIFEST_FILENAME, manifestXml);
 

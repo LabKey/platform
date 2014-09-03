@@ -42,15 +42,7 @@ public class VisitMapWriter implements InternalStudyWriter
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
             return;
 
-        if (ctx.useOldFormats())
-        {
-            DataFaxVisitMapWriter writer = new DataFaxVisitMapWriter();
-            writer.write(study, ctx, vf);
-        }
-        else
-        {
-            XmlVisitMapWriter writer = new XmlVisitMapWriter();
-            writer.write(study, ctx, vf);
-        }
+        XmlVisitMapWriter writer = new XmlVisitMapWriter();
+        writer.write(study, ctx, vf);
     }
 }

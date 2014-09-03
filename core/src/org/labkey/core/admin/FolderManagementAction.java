@@ -646,7 +646,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
         // folder export settings
         private String[] types;
         private int location;
-        private String format;
+        private String format = "new"; // As of 14.3, this is the only supported format. But leave in place for the future.
         private String exportType;
         private boolean includeSubfolders;
         private boolean removeProtected;

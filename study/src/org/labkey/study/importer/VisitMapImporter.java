@@ -18,6 +18,7 @@ package org.labkey.study.importer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.labkey.api.annotations.RefactorIn15_1;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.query.ValidationException;
@@ -57,22 +58,27 @@ public class VisitMapImporter
 
     public enum Format
     {
+        @Deprecated
+        @RefactorIn15_1   // Remove DataFax enum in 15.1
         DataFax
                 {
-                    public VisitMapReader getReader(String contents)
+                    public VisitMapReader getReader(String contents, Logger logger)
                     {
+                        logWarning(logger);
                         return new DataFaxVisitMapReader(contents);
                     }
 
-                    public VisitMapReader getReader(VirtualFile file, String name) throws IOException
+                    public VisitMapReader getReader(VirtualFile file, String name, Logger logger) throws IOException
                     {
                         InputStream is = file.getInputStream(name);
 
                         if (is != null)
                         {
+                            logWarning(logger);
                             String contents = PageFlowUtil.getStreamContentsAsString(is);
                             return new DataFaxVisitMapReader(contents);
                         }
+
                         return null;
                     }
 
@@ -80,17 +86,22 @@ public class VisitMapImporter
                     {
                         return ".txt";
                     }
+
+                    private void logWarning(Logger logger)
+                    {
+                        logger.warn("DataFax visit map format is deprecated and scheduled for removal in LabKey release 15.1. Contact LabKey immediately if your organization requires this support.");
+                    }
                 },
 
         @SuppressWarnings({"UnusedDeclaration"})
         Xml
                 {
-                    public VisitMapReader getReader(String contents) throws VisitMapParseException
+                    public VisitMapReader getReader(String contents, Logger logger) throws VisitMapParseException
                     {
                         return new XmlVisitMapReader(contents);
                     }
 
-                    public VisitMapReader getReader(VirtualFile file, String name) throws VisitMapParseException, IOException
+                    public VisitMapReader getReader(VirtualFile file, String name, Logger logger) throws VisitMapParseException, IOException
                     {
                         return new XmlVisitMapReader(file.getXmlBean(name));  //To change body of implemented methods use File | Settings | File Templates.
                     }
@@ -101,9 +112,9 @@ public class VisitMapImporter
                     }
                 };
 
-        abstract public VisitMapReader getReader(String contents) throws VisitMapParseException;
+        abstract public VisitMapReader getReader(String contents, Logger logger) throws VisitMapParseException;
 
-        abstract public VisitMapReader getReader(VirtualFile file, String name) throws VisitMapParseException, IOException;
+        abstract public VisitMapReader getReader(VirtualFile file, String name, Logger logger) throws VisitMapParseException, IOException;
 
         abstract public String getExtension();
 
@@ -137,7 +148,7 @@ public class VisitMapImporter
 
         try
         {
-            VisitMapReader reader = format.getReader(content);
+            VisitMapReader reader = format.getReader(content, logger);
             return _process(user, study, reader, errors, logger);
         }
         catch (VisitMapParseException x)
@@ -156,7 +167,7 @@ public class VisitMapImporter
         }
         try
         {
-            VisitMapReader reader = format.getReader(file, name);
+            VisitMapReader reader = format.getReader(file, name, logger);
             return _process(user, study, reader, errors, logger);
         }
         catch (VisitMapParseException x)

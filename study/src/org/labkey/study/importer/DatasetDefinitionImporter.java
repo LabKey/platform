@@ -21,6 +21,7 @@ import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
+import org.labkey.api.annotations.RefactorIn15_1;
 import org.labkey.api.data.Container;
 import org.labkey.api.settings.WriteableFolderLookAndFeelProperties;
 import org.labkey.api.util.XmlBeansUtil;
@@ -54,6 +55,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
         return "Dataset Definition Importer";
     }
 
+    @RefactorIn15_1 // Remove SchemaXmlReader in 15.1
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
     {
         StudyImpl study = ctx.getStudy();
@@ -128,6 +130,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
                     String typeIdColumn = schema.getTypeIdColumn();
 
                     ctx.getLogger().info("Loading dataset schema from " + schemaTsvSource);
+                    ctx.getLogger().warn("DataFax schema definition format is deprecated and scheduled for removal in LabKey release 15.1. Contact LabKey immediately if your organization requires this support.");
                     reader = new SchemaTsvReader(study, datasetDir, schemaTsvSource, labelColumn, typeNameColumn, typeIdColumn, extraProps, errors);
                 }
             }

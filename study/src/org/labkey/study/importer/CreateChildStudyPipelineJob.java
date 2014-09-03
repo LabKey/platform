@@ -217,7 +217,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                     folderExportContext.setReportIds(_form.getReports());
 
                 StudyExportContext studyExportContext = new StudyExportContext(_sourceStudy, user, _sourceStudy.getContainer(),
-                        false, dataTypes, _form.isRemoveProtectedColumns(),
+                        dataTypes, _form.isRemoveProtectedColumns(),
                         new ParticipantMapper(_sourceStudy, _form.isShiftDates(), _form.isUseAlternateParticipantIds()),
                         _form.isMaskClinic(), _datasets, new PipelineJobLoggerGetter(this)
                 );
