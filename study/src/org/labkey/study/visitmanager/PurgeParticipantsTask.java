@@ -22,6 +22,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.springframework.dao.ConcurrencyFailureException;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -77,7 +78,7 @@ public class PurgeParticipantsTask extends TimerTask
                             StudyManager.getInstance().getVisitManager(study).updateParticipantVisitTable(null);
                         }
                     }
-                    catch (RuntimeSQLException x)
+                    catch (RuntimeSQLException|ConcurrencyFailureException x)
                     {
                         if (SqlDialect.isTransactionException(x) || SqlDialect.isObjectNotFoundException(x))
                         {
