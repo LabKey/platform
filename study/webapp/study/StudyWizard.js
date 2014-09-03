@@ -503,6 +503,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         }
 
         var formItems = [
+            { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF },
             {
                 xtype: 'textfield',
                 fieldLabel: 'Name',
