@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.jsp.JspBase;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.action.HasViewContext;
@@ -30,6 +31,7 @@ import org.springframework.validation.Errors;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.servlet.jsp.HttpJspPage;
 import java.util.Map;
 import java.util.Set;
@@ -132,7 +134,26 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
         if (isDebugHtml)
             response.getWriter().print("<!--" + _page.getClass() + "-->");
 
-        _page._jspService(request, response);
+        try
+        {
+            _page._jspService(request, response);
+        }
+        catch (IllegalStateException x)
+        {
+            StringBuilder sb = new StringBuilder();
+            try
+            {
+                sb.append("request: " + request.getClass().getName() + "\n");
+                HttpSession s = request.getSession(false);
+                sb.append("session: " + (null == s ? "null" : s.getClass().getName()) + "\n");
+                sb.append("user: " + (null == request.getUserPrincipal() ? "null" : request.getUserPrincipal().getName()));
+            }
+            catch (Exception extra)
+            {/* */}
+
+            ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.ExtraMessage, sb.toString(), true);
+            throw x;
+        }
 
         if (isDebugHtml)
             response.getWriter().print("<!--/" + _page.getClass() + "-->");
