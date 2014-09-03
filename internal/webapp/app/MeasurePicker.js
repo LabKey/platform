@@ -7,6 +7,8 @@ Ext.define('LABKEY.app.panel.MeasurePicker', {
 
     extend : 'Ext.panel.Panel',
 
+    border : false,
+
     constructor : function(config) {
         this.initConfig = config; // passthrough the initial config for the measure picker to the core SplitPanels component
         this.callParent([{}]);
