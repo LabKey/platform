@@ -342,7 +342,6 @@ public class CachedCubeFactory
                 _Level thisLevel = new _Level(this, l, parentLevel, hash);
                 list.add(thisLevel);
                 parentLevel = thisLevel;
-                Collections.reverse(list);
             }
 
             for (_Level l : list)
@@ -352,7 +351,7 @@ public class CachedCubeFactory
             _Level defaultMemberLevel = levels.get(h.getDefaultMember().getLevel().getName());
             defaultMember = defaultMemberLevel.getMembers().get(h.getDefaultMember().getUniqueName());
 
-            for (int lnum = 2 ; lnum < levels.size() ; lnum ++)
+            for (int lnum = 1 ; lnum < levels.size() ; lnum ++)
             {
                 for (Member M : levels.get(lnum).getMembers())
                 {
@@ -360,6 +359,7 @@ public class CachedCubeFactory
                     if (null != m.childMembers)
                         m.childMembers.trimToSize();
                     assert null != m._parent;
+                    assert ((_Member)m._parent).childMembers.contains(m);
                 }
             }
 
