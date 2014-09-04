@@ -635,7 +635,7 @@ public class CachedCubeFactory
         @Override
         public Member getParentMember()
         {
-            return null;
+            return _parent;
         }
 
         @Override
