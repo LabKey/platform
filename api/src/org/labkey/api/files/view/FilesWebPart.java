@@ -257,7 +257,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
         if (policy.hasPermission(user, InsertPermission.class))
         {
             FilesAdminOptions options = svc.getAdminOptions(container);
-            boolean expandUpload = BooleanUtils.toBooleanDefaultIfNull(options.getExpandFileUpload(), true);
+            boolean expandUpload = BooleanUtils.toBooleanDefaultIfNull(options.getExpandFileUpload(), false);
             form.setExpandFileUpload(expandUpload);
         }
 
