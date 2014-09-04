@@ -1360,7 +1360,14 @@ public class UserController extends SpringActionController
             }
 
             UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
-            QueryUpdateForm quf = new QueryUpdateForm(schema.getTable(CoreQuerySchema.SITE_USERS_TABLE_NAME), getViewContext());
+            if (schema == null)
+                throw new NotFoundException(CoreQuerySchema.NAME + " schema");
+
+            TableInfo table = schema.getTable(CoreQuerySchema.SITE_USERS_TABLE_NAME);
+            if (table == null)
+                throw new NotFoundException(CoreQuerySchema.SITE_USERS_TABLE_NAME + " table");
+
+            QueryUpdateForm quf = new QueryUpdateForm(table, getViewContext());
             DetailsView detailsView = new DetailsView(quf);
             DataRegion rgn = detailsView.getDataRegion();
 
