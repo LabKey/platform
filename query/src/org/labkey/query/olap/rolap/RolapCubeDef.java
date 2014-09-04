@@ -34,6 +34,8 @@ import org.olap4j.metadata.Member;
 import org.olap4j.metadata.Property;
 
 import java.sql.ResultSet;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -53,7 +55,10 @@ import java.util.TreeMap;
  */
 public class RolapCubeDef
 {
-    final boolean emptyEqualsNull = false;
+    final boolean emptyEqualsNull = false;            // treat '' and NULL as the same value
+    final boolean useOuterJoin = true;                // use LOJ for dimensions joins
+    final boolean memberFilterUsesJoinKey = true;     // effectively create INNER JOIN if there is a member filter
+
     protected String name;
     protected JoinOrTable factTable;
     protected final ArrayList<DimensionDef> dimensions = new ArrayList<>();
@@ -128,7 +133,10 @@ public class RolapCubeDef
                 }
             }
 
-            sb.append(" LEFT OUTER JOIN ");
+            if (useOuterJoin)
+                sb.append(" LEFT OUTER JOIN ");
+            else
+                sb.append(" INNER JOIN ");
             sb.append(id_quote(b.get(0), b.get(1)));
             sb.append(" ON " );
             sb.append(id_quote(a.get(1), a.get(2)));
@@ -564,6 +572,8 @@ public class RolapCubeDef
         }
 
 
+        NumberFormat df = new DecimalFormat("0.#");
+
         public String getMemberUniqueNameFromResult(ResultSet rs)
         {
             StringBuilder sb = new StringBuilder();
@@ -573,12 +583,16 @@ public class RolapCubeDef
                 sb.append(parent.getMemberUniqueNameFromResult(rs));
             try
             {
-                String s = rs.getString(nameAlias);
-                // TODO null member name
-                if (null == s)
+                String s;
+                Object o = rs.getObject(nameAlias);
+                if (null == o)
                     s = "#null";
-                else if (cube.emptyEqualsNull && StringUtils.isEmpty(s))
+                else if (o instanceof Number)
+                    s = df.format((Number)o);
+                else if (cube.emptyEqualsNull && o instanceof String && StringUtils.isEmpty((String)o))
                     s = "#null";
+                else
+                    s = String.valueOf(o);
                 sb.append(".[").append(s).append("]");
                 return sb.toString();
             }
@@ -608,9 +622,16 @@ public class RolapCubeDef
 
             try
             {
+                if (null == parent && cube.memberFilterUsesJoinKey)
+                {
+                    if (null != hierarchy.primaryKey)
+                    {
+                        sb.append( "(" + id_quote(hierarchy.primaryKeyTable, hierarchy.primaryKey) + " IS NOT NULL) AND ");
+                    }
+                }
                 if (null != parent && !uniqueMembers)
                 {
-                    parent.makeMemberFilter(m, d, sb);
+                    parent.makeMemberFilter(m.getParentMember(), d, sb);
                     sb.append(" AND ");
                 }
 

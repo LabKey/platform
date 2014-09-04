@@ -82,7 +82,7 @@ public class BitSetQueryImpl
     // mondrian compatibility, ignore NULL associations if member is associated with any non-null members
     // e.g. Will will ignore the fact that Subject has a row with BMI IS NULL, if there is a row where BMI IS NOT NULL
     // NOTE: this is for validation against Mondrian only, the current implementation is NOT robust!
-    final boolean mondrianCompatibleNullHandling = true;
+    final boolean mondrianCompatibleNullHandling = false;
 
     static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
     final static User serviceUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
@@ -123,8 +123,8 @@ public class BitSetQueryImpl
         this.cube = qq.getCube();
         this.errors = errors;
 
-//        this._dataSourceHelper = useSQL ? _sdsh : _cdsh;
-        this._dataSourceHelper = new DoubleDownHelper();
+        this._dataSourceHelper = useSQL ? _sdsh : _cdsh;
+//        this._dataSourceHelper = new DoubleDownHelper();
 
         RolapCubeDef r = null;
         List<RolapCubeDef> defs = sd.getRolapCubeDefinitions();
