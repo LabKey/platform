@@ -49,35 +49,19 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
         this(container, comment);
 
         List<ColumnLogging> sortedLoggings = new ArrayList<>(loggings);
-        Collections.sort(sortedLoggings, new Comparator<ColumnLogging>()
-        {
-            @Override
-            public int compare(ColumnLogging o1, ColumnLogging o2)
-            {
-                int ret = o1.getOriginalTableName().compareToIgnoreCase(o2.getOriginalTableName());
-                if (ret < 0) return -1;
-                if (ret > 0) return 1;
-                return o1.getOriginalColumnFieldKey().compareTo(o2.getOriginalColumnFieldKey());
-            }
-        });
+        Collections.sort(sortedLoggings);
 
         StringBuilder loggedColumns = new StringBuilder();
         String sep = "";
         for (ColumnLogging logging : sortedLoggings)
         {
-            loggedColumns.append(sep).append(logging.getOriginalTableName() + "." + logging.getOriginalColumnFieldKey());
+            loggedColumns.append(sep).append(logging.getOriginalTableName())
+                    .append(".").append(logging.getOriginalColumnFieldKey());
             sep = ", ";
         }
 
-        List<FieldKey> sortedFieldKeys = new ArrayList(idDataFieldKeys);
-        Collections.sort(sortedFieldKeys, new Comparator<FieldKey>()
-        {
-            @Override
-            public int compare(FieldKey o1, FieldKey o2)
-            {
-                return o1.compareTo(o2);
-            }
-        });
+        List<FieldKey> sortedFieldKeys = new ArrayList<>(idDataFieldKeys);
+        Collections.sort(sortedFieldKeys);
 
         StringBuilder dataColumns = new StringBuilder();
         sep = "";

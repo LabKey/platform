@@ -1953,7 +1953,7 @@ public class QueryServiceImpl extends QueryService
         // Column names may be mangled by visualization; lookup by original column name
         for (ColumnInfo column : table.getColumns())
         {
-            if (0 == column.getColumnLogging().getOriginalColumnFieldKey().compareTo(fieldKey))
+            if (column.getColumnLogging().getOriginalColumnFieldKey().equals(fieldKey))
                 return column;
         }
         return null;

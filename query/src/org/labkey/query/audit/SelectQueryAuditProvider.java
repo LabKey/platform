@@ -35,7 +35,7 @@ import java.util.Set;
 
 public class SelectQueryAuditProvider extends AbstractAuditTypeProvider
 {
-    public static final String EVENT_NAME = "PHIQuery";
+    public static final String EVENT_NAME = "SelectQuery";
 
     static final List<FieldKey> DEFAULT_VISIBLE_COLUMNS = new ArrayList<>();
 
@@ -67,13 +67,13 @@ public class SelectQueryAuditProvider extends AbstractAuditTypeProvider
     @Override
     public String getLabel()
     {
-        return "Logged query events";
+        return "Logged select query events";
     }
 
     @Override
     public String getDescription()
     {
-        return "Information about queries that have logged columns";
+        return "Information about select queries that have logged columns";
     }
 
     @Override
