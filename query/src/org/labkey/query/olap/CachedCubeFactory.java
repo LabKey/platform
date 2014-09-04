@@ -42,7 +42,6 @@ import org.olap4j.metadata.Schema;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -322,22 +321,47 @@ public class CachedCubeFactory
             hash.add(getUniqueName());
             this.dimension = dimension;
 
-            _Level lowerLevel = null;
             ArrayList<_Level> list = new ArrayList<>();
+
+            /*  getChildMembers() doesn't always seem to work, so we can't build bottom up
+            _Level lowerLevel = null;
             for (int i = h.getLevels().size()-1 ; i>= 0 ; i--)
             {
                 Level l = h.getLevels().get(i);
                 _Level thisLevel = new _Level(this, l, lowerLevel, hash);
                 list.add(thisLevel);
                 lowerLevel = thisLevel;
+                Collections.reverse(list);
             }
-            Collections.reverse(list);
+            */
+            // try top down
+            _Level parentLevel = null;
+            for (int i =0 ; i < h.getLevels().size() ; i++)
+            {
+                Level l = h.getLevels().get(i);
+                _Level thisLevel = new _Level(this, l, parentLevel, hash);
+                list.add(thisLevel);
+                parentLevel = thisLevel;
+                Collections.reverse(list);
+            }
+
             for (_Level l : list)
                 this.levels.add(l);
             this.levels.seal();
 
             _Level defaultMemberLevel = levels.get(h.getDefaultMember().getLevel().getName());
             defaultMember = defaultMemberLevel.getMembers().get(h.getDefaultMember().getUniqueName());
+
+            for (int lnum = 2 ; lnum < levels.size() ; lnum ++)
+            {
+                for (Member M : levels.get(lnum).getMembers())
+                {
+                    _Member m = (_Member)M;
+                    if (null != m.childMembers)
+                        m.childMembers.trimToSize();
+                    assert null != m._parent;
+                }
+            }
 
             // NOTE: the cube configuration related to ordering members (ordinalColumn etc)
             // only apply to the results of MDX queries.  It seems that ordering of members
@@ -416,7 +440,7 @@ public class CachedCubeFactory
     {
         for (_Member m : list)
             if (null != m.childMembers)
-                Arrays.sort(m.childMembers,ORDINAL_COMPARATOR);
+                Collections.sort(m.childMembers,ORDINAL_COMPARATOR);
     }
 
 
@@ -432,7 +456,7 @@ public class CachedCubeFactory
         // temporary pointer
         Level orig;
 
-        _Level(_Hierarchy h, Level l, @Nullable _Level lowerLevel, _Hash hash) throws OlapException
+/*        _Level(_Hierarchy h, Level l, @Nullable _Level lowerLevel, _Hash hash) throws OlapException
         {
             super(l);
             hash.add(getUniqueName());
@@ -465,6 +489,45 @@ public class CachedCubeFactory
                 for (Member m : l.getMembers())
                 {
                     list.add(new _Member(this, lowerLevel, m, hash));
+                }
+            }
+            members.addAll(list);
+        }*/
+
+        _Level(_Hierarchy h, Level l, @Nullable _Level parentLevel, _Hash hash) throws OlapException
+        {
+            super(l);
+            hash.add(getUniqueName());
+
+            this.depth = l.getDepth();
+            this.hierarchy = h;
+            this.levelType = l.getLevelType();
+            this.orig = l;
+
+            for (Property p : l.getProperties())
+            {
+                String n = p.getName();
+                if (n.endsWith("_NAME") || n.startsWith("LEVEL_") || n.startsWith("PARENT_"))
+                    continue;
+                if (n.equals("MEMBER_ORDINAL") || n.equals("MEMBER_TYPE") || n.equals("CHILDREN_CARDINALITY"))
+                    continue;
+                memberProperties.add(new _Property(p));
+            }
+
+            ArrayList<_Member> list = new ArrayList<>(l.getMembers().size());
+            if ("[Measures]".equals(getDimension().getUniqueName()))
+            {
+                for (Member m : l.getMembers())
+                {
+                    list.add(new _Measure(this, parentLevel, (Measure) m, hash));
+                }
+            }
+            else
+            {
+                boolean isLeaf = l.getDepth() == l.getHierarchy().getLevels().size();
+                for (Member m : l.getMembers())
+                {
+                    list.add(new _Member(this, parentLevel, m, hash, isLeaf));
                 }
             }
             members.addAll(list);
@@ -559,7 +622,7 @@ public class CachedCubeFactory
         final boolean all;
         final _Level level;
         final Member.Type memberType;
-        final Member[] childMembers;
+        final ArrayList<Member> childMembers;
         Member _parent;
         final Map<String,Pair<Object,String>> _properties;
 
@@ -567,6 +630,7 @@ public class CachedCubeFactory
         Member orig = null;
         int ordinal = -1;
 
+/*
         _Member(_Level level, _Level lowerLevel, Member m, _Hash hash) throws OlapException
         {
             super(m);
@@ -579,7 +643,7 @@ public class CachedCubeFactory
             _Member[] arr = null;
 
             List<? extends Member> list = m.getChildMembers();
-            if (null != lowerLevel && 0 < list.size())
+            if (null != lowerLevel && !list.isEmpty())
             {
                 arr = new _Member[list.size()];
                 for (int i=0 ; i<list.size() ; i++)
@@ -602,11 +666,41 @@ public class CachedCubeFactory
             }
             _properties = map.isEmpty() ? null : map;
         }
+*/
+        _Member(_Level level, _Level parentLevel, Member m, _Hash hash, boolean isLeaf) throws OlapException
+        {
+            super(m);
+            hash.add(getUniqueName());
+            this.level = level;
+            this.all = m.isAll();
+            this.memberType = m.getMemberType();
+            this.orig = m;
+            // don't allocate array for lowest level
+            this.childMembers = isLeaf ? null : new ArrayList<Member>(m.getChildMemberCount());
+
+            if (null != parentLevel)
+            {
+                _parent = parentLevel.members.get(m.getParentMember().getUniqueName());
+                assert null != _parent;
+                ((_Member)_parent).childMembers.add(this);
+            }
+
+            ArrayListMap<String,Pair<Object,String>> map = new ArrayListMap<>(level.memberPropertiesFindMap);
+            for (Property p : level.memberProperties)
+            {
+                Object value = m.getPropertyValue(p);
+                if (null == value)
+                    continue;
+                String formatted = m.getPropertyFormattedValue(p);
+                map.put(p.getUniqueName(), new Pair<>(value,formatted));
+            }
+            _properties = map.isEmpty() ? null : map;
+        }
 
 
         public List<? extends Member> getChildMembersArray() // well not array actually, but fast list
         {
-            List<? extends Member> list = Arrays.asList(childMembers);
+            List<? extends Member> list = childMembers;
             assert null != (list = Collections.unmodifiableList(list));
             return list;
         }
@@ -629,7 +723,7 @@ public class CachedCubeFactory
         @Override
         public int getChildMemberCount() throws OlapException
         {
-            return null == childMembers ? 0 : childMembers.length;
+            return childMembers.size();
         }
 
         @Override
@@ -766,9 +860,13 @@ public class CachedCubeFactory
 
     static class _Measure extends _Member implements Measure
     {
-        _Measure(_Level l, _Level lowerLevel, Measure m, _Hash hash) throws OlapException
+//        _Measure(_Level l, _Level lowerLevel, Measure m, _Hash hash) throws OlapException
+//        {
+//            super(l,lowerLevel,m,hash);
+//        }
+        _Measure(_Level l, _Level parentLevel, Measure m, _Hash hash) throws OlapException
         {
-            super(l,lowerLevel,m,hash);
+            super(l,parentLevel,m,hash,true);
         }
 
         @Override
@@ -1021,13 +1119,36 @@ public class CachedCubeFactory
         @Override
         public int compare(_Member m1, _Member m2)
         {
+            int ret = _compare(m1,m2);
+//            if (ret < 0)
+//            {
+//                System.err.println(m1.getUniqueName() + " < " + m2.getUniqueName());
+//            }
+//            else if (ret > 0)
+//            {
+//                System.err.println(m2.getUniqueName() + " < " + m1.getUniqueName());
+//            }
+//            else
+//            {
+//                System.err.println( m1.getUniqueName() + " = " + m2.getUniqueName() + " *** ");
+//            }
+            return ret;
+        }
+
+        public int _compare(_Member m1, _Member m2)
+        {
             try
             {
                 // we sort parent levels first, so parent.ordinal should already be set
                 _Member p1 = (_Member)m1.getParentMember();
                 _Member p2 = (_Member)m2.getParentMember();
-                if (null != p1 && null != p2 && p1.ordinal != p2.ordinal)
-                    return p1.ordinal - p2.ordinal;
+                assert (null==p1) == (null==p2);
+                if (null != p1 && null != p2)
+                {
+                    int p = _compare(p1,p2);
+                    if (0 != p)
+                        return p;
+                }
 
                 int o = m1.orig.getOrdinal() - m2.orig.getOrdinal();
                 if (0 != o)
@@ -1064,9 +1185,8 @@ public class CachedCubeFactory
         {
             return k1.compareTo(k2);
         }
-        // handle special classes (e.g. #null)
 
-        // check for special classes (e.g. #null)
+        // check for special classes (e.g. #null wrapper)
         if (!(k1 instanceof Number) && !(k1 instanceof String) && !(k1 instanceof Date))
             return k1.compareTo(k2);
         else
