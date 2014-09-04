@@ -21,7 +21,7 @@ import org.labkey.api.query.FieldKey;
 import java.util.Collections;
 import java.util.Set;
 
-public class ColumnLogging
+public class ColumnLogging implements Comparable<ColumnLogging>
 {
     private final boolean _shouldLogName;
     private final Set<FieldKey> _dataLoggingColumns;
@@ -40,7 +40,7 @@ public class ColumnLogging
 
     public ColumnLogging(FieldKey columnFieldKey, TableInfo parentTable)
     {
-        this(false, columnFieldKey, parentTable, Collections.EMPTY_SET, "");
+        this(false, columnFieldKey, parentTable, Collections.<FieldKey>emptySet(), "");
     }
 
     // If true, then this column's name should be logged when used in a query
@@ -74,5 +74,14 @@ public class ColumnLogging
     public void setOriginalTableName(String originalTableName)
     {
         _originalTableName = originalTableName;
+    }
+
+    @Override
+    public int compareTo(ColumnLogging o)
+    {
+        int ret = this.getOriginalTableName().compareToIgnoreCase(o.getOriginalTableName());
+        if (0 == ret)
+            ret = this.getOriginalColumnFieldKey().compareTo(o.getOriginalColumnFieldKey());
+        return ret;
     }
 }

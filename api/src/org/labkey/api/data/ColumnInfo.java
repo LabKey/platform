@@ -163,7 +163,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         this.fieldKey = key;
         this.parentTable = parentTable;
-        this._columnLogging = new ColumnLogging(key, parentTable);
+        _columnLogging = new ColumnLogging(key, parentTable);
     }
 
     public ColumnInfo(FieldKey key)
@@ -1818,7 +1818,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         checkLocked();
         this.parentTable = parentTable;
-        this._columnLogging.setOriginalTableName(null != parentTable ? parentTable.getName() : "");
+        _columnLogging.setOriginalTableName(null != parentTable ? parentTable.getName() : "");
     }
 
     public String getColumnName()
