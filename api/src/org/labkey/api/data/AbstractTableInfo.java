@@ -409,6 +409,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         return null;
     }
 
+    @NotNull
     public List<ColumnInfo> getColumns()
     {
         return Collections.unmodifiableList(new ArrayList<>(_columnMap.values()));

@@ -23,6 +23,7 @@ import org.apache.commons.beanutils.DynaClass;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.HasBindParameters;
 import org.labkey.api.action.NullSafeBindException;
@@ -689,19 +690,19 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         setDataLoaded(false);
     }
 
-    public String getFormFieldName(ColumnInfo column)
+    public String getFormFieldName(@NotNull ColumnInfo column)
     {
         return column.getPropertyName();
     }
 
-    public ColumnInfo getColumnByFormFieldName(String name)
+    public ColumnInfo getColumnByFormFieldName(@NotNull String name)
     {
         return null == getTable() ? null : getTable().getColumn(name);
     }
 
 
     @Override
-    public void setViewContext(ViewContext context)
+    public void setViewContext(@NotNull ViewContext context)
     {
         super.setViewContext(context);
 

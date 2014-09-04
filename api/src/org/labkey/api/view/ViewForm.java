@@ -59,7 +59,7 @@ public class ViewForm extends ReturnUrlForm implements HasViewContext
     }
 
 
-    public void setViewContext(ViewContext context)
+    public void setViewContext(@NotNull ViewContext context)
     {
         _context = context;
         _request = context.getRequest();

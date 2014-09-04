@@ -432,6 +432,7 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
      }
 
 
+    @NotNull
     public List<ColumnInfo> getColumns()
     {
         return Collections.unmodifiableList(getColumnMetaData().getColumns());

@@ -16,6 +16,8 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableViewForm;
@@ -34,12 +36,12 @@ public class QueryUpdateForm extends TableViewForm
      */
     public static final String PREFIX = "quf_";
 
-    public QueryUpdateForm(TableInfo table, ViewContext ctx)
+    public QueryUpdateForm(@NotNull TableInfo table, @NotNull ViewContext ctx)
     {
         this(table, ctx, null);
     }
 
-    public QueryUpdateForm(TableInfo table, ViewContext ctx, BindException errors)
+    public QueryUpdateForm(@NotNull TableInfo table, @NotNull ViewContext ctx, @Nullable BindException errors)
     {
         _tinfo = table;
         _dynaClass = new QueryWrapperDynaClass(this);
@@ -59,7 +61,7 @@ public class QueryUpdateForm extends TableViewForm
         }
     }
 
-    public ColumnInfo getColumnByFormFieldName(String name)
+    public ColumnInfo getColumnByFormFieldName(@NotNull String name)
     {
         if (name.length() < PREFIX.length())
             return null;
@@ -71,7 +73,7 @@ public class QueryUpdateForm extends TableViewForm
 //        return col;
     }
 
-    public String getFormFieldName(ColumnInfo column)
+    public String getFormFieldName(@NotNull ColumnInfo column)
     {
         // 6962 : ExternalSchema update problems on PostgreSQL 8.3
         // Some controllers depend on this form's TableViewForm.getPkNamesList() matching the

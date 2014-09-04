@@ -16,11 +16,13 @@
 
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.MultiValuedForeignKey;
 import org.labkey.api.data.StringWrapperDynaClass;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.apache.commons.beanutils.DynaBean;
+import org.labkey.api.data.TableInfo;
 
 import java.lang.reflect.Array;
 import java.util.Map;
@@ -28,13 +30,17 @@ import java.util.Map;
 public class QueryWrapperDynaClass extends StringWrapperDynaClass
 {
     QueryUpdateForm _form;
-    public QueryWrapperDynaClass(QueryUpdateForm form)
+
+    public QueryWrapperDynaClass(@NotNull QueryUpdateForm form)
     {
         _form = form;
+        TableInfo table = form.getTable();
+        if (table == null)
+            throw new IllegalArgumentException();
 
         // CONSIDER: Handle MultiValueFK in column.getJavaClass() directly
         Map<String, Class> propMap = new CaseInsensitiveHashMap<>();
-        for (ColumnInfo column : _form.getTable().getColumns())
+        for (ColumnInfo column : table.getColumns())
         {
             boolean multiValued = column.getFk() instanceof MultiValuedForeignKey;
             if (multiValued)
