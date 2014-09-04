@@ -1397,7 +1397,13 @@ public class FileContentController extends SpringActionController
                 options.setGridConfig(null);
             }
             else if (form.getType().equalsIgnoreCase("actions"))
+            {
                 options.setPipelineConfig(Collections.<PipelineActionConfig>emptyList());
+            }
+            else if (form.getType().equalsIgnoreCase("general"))
+            {
+                options.setExpandFileUpload(null);
+            }
 
             svc.setAdminOptions(getContainer(), options);
 

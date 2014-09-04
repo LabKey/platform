@@ -107,11 +107,11 @@ Ext4.define('File.panel.Admin', {
         if (!this.generalSettingsPanel) {
 
             //
-            // We default to opening the upload panel. If the user never set the property,
+            // We default to not showing the upload panel. If the user never set the property,
             // then it will not be present in the pipelineFileProperties.
             //
             var pfp = this.pipelineFileProperties;
-            var checked = pfp.hasOwnProperty('expandFileUpload') ? pfp.expandFileUpload : true;
+            var checked = pfp.hasOwnProperty('expandFileUpload') ? pfp.expandFileUpload : false;
 
             this.showUploadCheckBox = Ext4.create('Ext.form.field.Checkbox', {
                 boxLabel: 'Show the file upload panel by default.',
@@ -131,7 +131,7 @@ Ext4.define('File.panel.Admin', {
                     border: false
                 }, this.showUploadCheckBox],
                 listeners: {
-                    activate: function() { this.resetDefaultsButton.hide(); },
+                    activate: function() { this.resetDefaultsButton.show(); },
                     scope: this
                 },
                 scope: this
@@ -196,12 +196,17 @@ Ext4.define('File.panel.Admin', {
         var tab = this.getActiveTab(),
             type,
             msg;
-        if(tab.title === "Toolbar and Grid Settings"){
+        if (tab.title === "Toolbar and Grid Settings") {
             type = 'tbar';
             msg = 'All grid and toolbar button customizations on this page will be deleted, continue?';
-        } else if(tab.title === "Actions"){
+        }
+        else if (tab.title === "Actions") {
             type = 'actions';
             msg = 'All action customizations on this page will be deleted, continue?';
+        }
+        else if (tab.title === "General Settings") {
+            type = 'general';
+            msg = 'All general settings on this page will be reset, continue?';
         }
 
         var requestConfig = {

@@ -187,7 +187,7 @@ Ext4.define('File.panel.Actions', {
         // check whether the import data button is enabled
         this.importDataEnabled = config.importDataEnabled ? config.importDataEnabled : false;
         this.fileConfig = config.fileConfig ? config.fileConfig : 'useDefault';
-        this.expandFileUpload = config.expandFileUpload != undefined ? config.expandFileUpload : true;
+        this.expandFileUpload = config.expandFileUpload != undefined ? config.expandFileUpload : false;
         this.showFolderTree = config.showFolderTree;
         this.inheritedTbarConfig = config.inheritedTbarConfig;
 
