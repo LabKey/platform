@@ -79,6 +79,11 @@ import static org.labkey.query.olap.QubeQuery.OP;
  */
 public class BitSetQueryImpl
 {
+    // mondrian compatibility, ignore NULL associations if member is associated with any non-null members
+    // e.g. Will will ignore the fact that Subject has a row with BMI IS NULL, if there is a row where BMI IS NOT NULL
+    // NOTE: this is for validation against Mondrian only, the current implementation is NOT robust!
+    final boolean mondrianCompatibleNullHandling = true;
+
     static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
     final static User serviceUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
     static
@@ -102,7 +107,7 @@ public class BitSetQueryImpl
 
     CubeDataSourceHelper _cdsh = new CubeDataSourceHelper();
     SqlDataSourceHelper _sdsh = new SqlDataSourceHelper();
-    IDataSourceHelper _dataSourceHelper = new DoubleDownHelper();
+    IDataSourceHelper _dataSourceHelper = _cdsh;
 
 
     MemberSet containerMembers = null;  // null == all
@@ -118,7 +123,8 @@ public class BitSetQueryImpl
         this.cube = qq.getCube();
         this.errors = errors;
 
-        this._dataSourceHelper = useSQL ? _sdsh : _cdsh;
+//        this._dataSourceHelper = useSQL ? _sdsh : _cdsh;
+        this._dataSourceHelper = new DoubleDownHelper();
 
         RolapCubeDef r = null;
         List<RolapCubeDef> defs = sd.getRolapCubeDefinitions();
@@ -762,7 +768,7 @@ public class BitSetQueryImpl
             {
                 sb.append("\n\teval      ").append(filterSet.toString());
             }
-            _log.debug(sb);
+            logDebug(sb.toString());
         }
 
         ArrayList<Number> measureValues = new ArrayList<>();
@@ -1095,7 +1101,7 @@ public class BitSetQueryImpl
         if (_log.isDebugEnabled())
         {
             long size = m.getMemorySizeInBytes();
-            _log.debug("cached object size: " + size);
+            logDebug("cached object size: " + size);
         }
     }
 
@@ -1130,12 +1136,12 @@ public class BitSetQueryImpl
             {
                 OlapConnection conn = getOlapConnection();
                 stmt = conn.createStatement();
-                _log.debug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n" + query);
+                logDebug("\nSTART executeOlapQuery: --------------------------    --------------------------    --------------------------\n" + query);
                 long ms = System.currentTimeMillis();
                 cs = stmt.executeOlapQuery(query);
                 long d = System.currentTimeMillis() - ms;
                 QueryProfiler.getInstance().track(null, "-- MDX\n" + query, null, d, null, true);
-                _log.debug("\nEND executeOlapQuery: " + DateUtil.formatDuration(d) + " --------------------------    --------------------------    --------------------------\n");
+                logDebug("\nEND executeOlapQuery: " + DateUtil.formatDuration(d) + " --------------------------    --------------------------    --------------------------\n");
                 return cs;
             }
             catch (RuntimeException x)
@@ -1428,7 +1434,7 @@ public class BitSetQueryImpl
                         }
                         Member m = getCubeMember(outerMember);
                         if (null == m)
-                            _log.warn("Unexpected member in cellset result: " + outerMember.getUniqueName());
+                            logWarn("Unexpected member in cellset result: " + outerMember.getUniqueName());
                         else
                             s.add(m);
                     }
@@ -1483,7 +1489,7 @@ public class BitSetQueryImpl
 
         ResultSet execute(String query) throws SQLException
         {
-            _log.debug("SqlDataSourceHelper.execute(" + query + ")");
+            logDebug("SqlDataSourceHelper.execute(" + query + ")");
             try
             {
                 QuerySchema qs = DefaultSchema.get(user, container, "core");
@@ -1491,7 +1497,7 @@ public class BitSetQueryImpl
             }
             catch (SQLException|QueryParseException|AssertionError x)
             {
-                _log.error("SqlDataSourceHelper.execute(" + query + ")", x);
+                logError("SqlDataSourceHelper.execute(" + query + ")", x);
                 throw x;
             }
         }
@@ -1734,7 +1740,16 @@ public class BitSetQueryImpl
             {
                 return new MemberSet(outer, outer.getMembers());
             }
-            else
+            else if (mondrianCompatibleNullHandling && "#null".equals(sub.getName()))
+            {
+                // there's no particularly easy way to compute this, compute the whole dang level..
+                populateCache(outer, new MemberSetResult(sub.getLevel()));
+                String query = queryIsNotEmpty(outer, sub);
+                MemberSet s = resultsCacheGet(query);
+                if (null != s)
+                    return s;
+            }
+//            else
             {
                 String query = queryIsNotEmpty(outer, sub);
                 MemberSet s = resultsCacheGet(query);
@@ -1752,7 +1767,7 @@ public class BitSetQueryImpl
                         Member m = ((NamedList<Member>) outer.getMembers()).get(uniqueName);
                         if (null == m)
                         {
-                            _log.warn("member not found: " + uniqueName);
+                            logWarn("member not found: " + uniqueName);
                             continue;
                         }
                         set.add(m);
@@ -1783,7 +1798,7 @@ public class BitSetQueryImpl
                     Member m = ((NamedList<Member>)level.getMembers()).get(uniqueName);
                     if (null == m)
                     {
-                        _log.warn("member not found: " + uniqueName);
+                        logWarn("member not found: " + uniqueName);
                         continue;
                     }
                     set.add(m);
@@ -1863,6 +1878,10 @@ public class BitSetQueryImpl
                 queryXjoin = queryCrossjoin(outerLevel, inner.getLevel());
             }
 
+            Member nullMember = null;
+            MemberSet nullMemberSet = null;
+            String nullQuery = null;
+
             try (ResultSet rs = execute(queryXjoin))
             {
                 RolapCubeDef.LevelDef ldefOuter = getRolapFromCube(outerLevel);
@@ -1875,14 +1894,15 @@ public class BitSetQueryImpl
                     Member outerMember = ((NamedList<Member>) outerLevel.getMembers()).get(outerUniqueName);
                     if (null == outerMember)
                     {
-                        _log.warn("member not found: " + outerUniqueName);
+                        logWarn("member not found: " + outerUniqueName);
                         continue;
                     }
                     String subUniqueName = ldefInner.getMemberUniqueNameFromResult(rs);
                     Member sub = ((NamedList<Member>)inner.getLevel().getMembers()).get(subUniqueName);
                     if (null == sub)
                     {
-                        _log.warn("member not found: " + subUniqueName);
+                        if (!subUniqueName.endsWith("[#null]"))
+                            logWarn("member not found: " + subUniqueName);
                         continue;
                     }
                     MemberSet s = sets.get(sub.getUniqueName());
@@ -1891,15 +1911,40 @@ public class BitSetQueryImpl
                         s = new MemberSet();
                         sets.put(sub.getUniqueName(),s);
                     }
+                    if ("#null".equals(sub.getName()))
+                    {
+                        nullMember = sub;
+                        nullMemberSet = s;
+                    }
                     s.add(outerMember);
                 }
             }
+
             for (Member sub : inner.getCollection())
             {
                 String query = queryIsNotEmpty(outerLevel, sub);
                 MemberSet s = sets.get(sub.getUniqueName());
-                if (null != s)
-                    resultsCachePut(query,s);
+                if (null == s)
+                    continue;
+                if (mondrianCompatibleNullHandling)
+                {
+                    if (sub == nullMember)
+                    {
+                        nullQuery = query;
+                        continue;
+                    }
+                    if (null != nullMember)
+                    {
+                        nullMemberSet.removeAll(s);
+                    }
+                }
+                resultsCachePut(query,s);
+            }
+
+            // if we skipped null member, add it now
+            if (mondrianCompatibleNullHandling && null != nullMember)
+            {
+                resultsCachePut(nullQuery,nullMemberSet);
             }
         }
     }
@@ -1914,7 +1959,7 @@ public class BitSetQueryImpl
             MemberSet sql = _sdsh.membersQuery(outer,sub);
             if (!sql.equals(mdx))
             {
-                _log.error(outer + " x " + sub);
+                logWarn(outer + " x " + sub);
             }
             return sql;
         }
@@ -1926,7 +1971,14 @@ public class BitSetQueryImpl
             MemberSet sql = _sdsh.membersQuery(outer,sub);
             if (!sql.equals(mdx))
             {
-                _log.error(outer.getUniqueName() + " x " + sub.getUniqueName());
+                MemberSet inMdxButNotSql = new MemberSet(mdx);
+                inMdxButNotSql.removeAll(sql);
+
+                MemberSet inSqlButNotMdx = new MemberSet(sql);
+                inSqlButNotMdx.removeAll(mdx);
+
+                if (!"#null".equals(sub.getName()))
+                    logWarn(outer.getUniqueName() + " x " + sub.getUniqueName());
             }
             return sql;
         }
@@ -1938,7 +1990,7 @@ public class BitSetQueryImpl
             MemberSet sql = _sdsh.membersQuery(outer,sub);
             if (!sql.equals(mdx))
             {
-                _log.error(outer + " x " + sub);
+                logWarn(outer + " x " + sub);
             }
             return sql;
         }
@@ -2144,5 +2196,19 @@ public class BitSetQueryImpl
     static public void invalidateCache()
     {
         _resultsCache.clear();
+    }
+
+
+    static void logDebug(String msg)
+    {
+        _log.debug(msg);
+    }
+    static void logWarn(String msg)
+    {
+        _log.warn(msg);
+    }
+    static void logError(String msg, Throwable x)
+    {
+        _log.error(msg, x);
     }
 }
