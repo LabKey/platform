@@ -106,7 +106,7 @@
     });
 
     /**
-     * Called by Server to handle cusomization actions. NOTE: The panel must be set to allow customization
+     * Called by Server to handle customization actions. NOTE: The panel must be set to allow customization
      * See LABKEY.ext4.DataViewsPanel.isCustomizable()
      */
     function customizeDataViews(webpartId, pageId, index) {

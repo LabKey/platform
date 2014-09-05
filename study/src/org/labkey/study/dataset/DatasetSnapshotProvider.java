@@ -258,7 +258,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         if (optionsId != null)
             snapshot = StudyManager.getInstance().getRefreshStudySnapshot(optionsId);
 
-        boolean  removeProtected = (snapshot != null) ? snapshot.getSnapshotSettings().isRemoveProtectedColumns() : false;
+        boolean  removeProtected = (snapshot != null) && snapshot.getSnapshotSettings().isRemoveProtectedColumns();
         Collection<ColumnInfo> columns = DatasetWriter.getColumnsToExport(tinfo, def, false, removeProtected);
 
         if (snapshot != null && snapshot.getSnapshotSettings().isShiftDates())

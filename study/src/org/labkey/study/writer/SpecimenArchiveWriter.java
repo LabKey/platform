@@ -101,7 +101,7 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
 
             Domain domain = tablesProvider.getDomain(entry.getKey(), false);
             TableInfo table = entry.getValue();
-            List columns = new ArrayList();
+            List<ColumnInfo> columns = new ArrayList<>();
 
             for (ColumnInfo col : table.getColumns())
             {
