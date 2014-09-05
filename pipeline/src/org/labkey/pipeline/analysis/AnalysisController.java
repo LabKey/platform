@@ -367,7 +367,7 @@ public class AnalysisController extends SpringActionController
                 {
                     if (c.isWorkbook())
                     {
-                        PipeRoot wbRoot = PipelineService.get().findPipelineRoot(getContainer());
+                        PipeRoot wbRoot = PipelineService.get().findPipelineRoot(c);
                         if (wbRoot == null || !wbRoot.isValid())
                             continue;
 
