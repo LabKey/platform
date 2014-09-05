@@ -130,7 +130,13 @@ public class HttpUtil
         Document document = TidyUtil.convertHtmlToDocument(content, true, errors);
         if (!errors.isEmpty())
         {
-            LOG.warn("Error converting to XHTML document: " + errors.get(0));
+            LOG.warn("Error converting to XHTML document: " + uri + "\n" + errors.get(0));
+            return null;
+        }
+
+        if (document == null)
+        {
+            LOG.warn("Error converting to XHTML document: " + uri);
             return null;
         }
 
@@ -151,6 +157,9 @@ public class HttpUtil
     // I hate the DOM.
     private static String metaRefresh(Document document)
     {
+        if (document == null)
+            return null;
+
         Element html = document.getDocumentElement();
         if (html == null || !"html".equalsIgnoreCase(html.getTagName()))
             return null;
