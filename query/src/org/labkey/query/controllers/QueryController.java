@@ -5171,6 +5171,11 @@ public class QueryController extends SpringActionController
                 else
                     schema = DefaultSchema.get(user, container);
 
+                if (schema == null)
+                {
+                    throw new NotFoundException("Could not find schema: " + form.getSchemaName());
+                }
+
                 // Create the JSON response by visiting the schema children.  The parent schema information isn't included.
                 JSONObject ret = new JSONObject();
                 visitor.visitTop(schema.getSchemas(includeHidden), ret);
