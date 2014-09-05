@@ -1795,7 +1795,7 @@ public class QueryServiceImpl extends QueryService
                 }
             }
 
-            throw new UnauthorizedException("Unable to locate required logging column.");
+//            throw new UnauthorizedException("Unable to locate required logging column.");
         }
 
         // Check columns again: ensureRequiredColumns() may have added new columns
