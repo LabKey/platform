@@ -233,6 +233,8 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             case FileSize:
             {
                 ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
+                result.setTextAlign("left");
+                result.setJdbcType(JdbcType.VARCHAR);
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -273,6 +275,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             {
                 ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setJdbcType(JdbcType.BOOLEAN);
+                result.setTextAlign("left");
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -303,6 +306,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
             {
                 ColumnInfo result = wrapColumn(alias, _rootTable.getColumn("RowId"));
                 result.setJdbcType(JdbcType.VARCHAR);
+                result.setTextAlign("left");
                 result.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)

@@ -83,6 +83,12 @@ abstract class ExpDataFileColumn extends DataColumn
     protected abstract Object getJsonValue(ExpData data);
 
     @Override
+    public Object getDisplayValue(RenderContext ctx)
+    {
+        return getJsonValue(ctx);
+    }
+
+    @Override
     public boolean isFilterable()
     {
         return false;
