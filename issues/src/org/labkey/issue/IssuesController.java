@@ -1340,20 +1340,6 @@ public class IssuesController extends SpringActionController
         }
     }
 
-    public class UpdateEmailPage
-    {
-        public UpdateEmailPage(String url, Issue issue, boolean isPlain)
-        {
-            this.url = url;
-            this.issue = issue;
-            this.isPlain = isPlain;
-        }
-        public String url;
-        public Issue issue;
-        public boolean isPlain;
-    }
-
-
     private void sendUpdateEmail(Issue issue, Issue prevIssue, String fieldChanges, String summary, String comment, ActionURL detailsURL, String change, List<AttachmentFile> attachments, Class<? extends Controller> action) throws ServletException
     {
         // Skip the email if no comment and no public fields have changed, #17304
@@ -1384,11 +1370,7 @@ public class IssuesController extends SpringActionController
                     MailHelper.send(m, getUser(), getContainer());
                 }
             }
-            catch (ConfigurationException e)
-            {
-                _log.error("error sending update email to " + to, e);
-            }
-            catch (AddressException e)
+            catch (ConfigurationException | AddressException e)
             {
                 _log.error("error sending update email to " + to, e);
             }

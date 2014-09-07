@@ -1655,7 +1655,6 @@ issues/src/org/labkey/issue/query/IssuesQueryView.java -text
 issues/src/org/labkey/issue/query/IssuesTable.java -text
 issues/src/org/labkey/issue/rss.jsp -text
 issues/src/org/labkey/issue/summaryWebpart.jsp -text
-issues/src/org/labkey/issue/updateEmail.jsp -text
 issues/src/org/labkey/issue/updateView.jsp -text
 issues/webapp/issues/admin.js -text
 issues/webapp/issues/detail.js -text
