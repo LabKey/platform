@@ -138,6 +138,7 @@ import org.labkey.api.wiki.WikiService;
 import org.labkey.api.writer.MemoryVirtualFile;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.ProjectController;
+import org.labkey.core.security.SecurityController;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.folder.xml.FolderDocument;
 import org.springframework.validation.BindException;
@@ -4084,7 +4085,7 @@ public class AdminController extends SpringActionController
             if (Container.isLegalName(folderName, error))
             {
                 if (c.getParent().hasChild(folderName))
-                    error.append("The parent folder already has a folder with this name.");
+                    error.append("The " + (c.isProject() ? "project " : "folder ") + c.getParent().getPath() + " already has a folder with this name.");
                 else
                 {
                     ContainerManager.rename(c, getUser(), folderName);
@@ -4311,7 +4312,7 @@ public class AdminController extends SpringActionController
             if (Container.isLegalName(folderName, error))
             {
                 if (parent.hasChild(folderName))
-                    error.append("The parent folder already has a folder with this name.");
+                    error.append("The " + (parent.isProject() ? "project " : "folder ") + parent.getPath() + " already has a folder with this name.");
                 else
                 {
                     Container c;
@@ -4468,7 +4469,14 @@ public class AdminController extends SpringActionController
                 List<NavTree> extraSteps = getContainer().getFolderType().getExtraSetupSteps(getContainer());
                 if (extraSteps.isEmpty())
                 {
-                    _successURL = getContainer().getStartURL(getUser());
+                    if (form.isAdvanced())
+                    {
+                        _successURL = new SecurityController.SecurityUrlsImpl().getPermissionsURL(getContainer());
+                    }
+                    else
+                    {
+                        _successURL = getContainer().getStartURL(getUser());
+                    }
                 }
                 else
                 {
@@ -4481,7 +4489,7 @@ public class AdminController extends SpringActionController
                 return false;
             }
 
-            if(permissionType.equals("CurrentUser") | permissionType.equals("Advanced"))
+            if(permissionType.equals("CurrentUser"))
             {
                 MutableSecurityPolicy policy = new MutableSecurityPolicy(c);
                 Role role = RoleManager.getRole(c.isProject() ? ProjectAdminRole.class : FolderAdminRole.class);
@@ -4556,6 +4564,7 @@ public class AdminController extends SpringActionController
     {
         private String targetProject;
         private String permissionType;
+        private boolean advanced;
 
         public String getPermissionType()
         {
@@ -4575,6 +4584,16 @@ public class AdminController extends SpringActionController
         public void setTargetProject(String targetProject)
         {
             this.targetProject = targetProject;
+        }
+
+        public boolean isAdvanced()
+        {
+            return advanced;
+        }
+
+        public void setAdvanced(boolean advanced)
+        {
+            this.advanced = advanced;
         }
     }
 

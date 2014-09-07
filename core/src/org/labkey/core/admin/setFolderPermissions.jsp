@@ -37,6 +37,9 @@
     Container c = getContainer();
 %>
 <%=formatMissedErrors("form")%>
+
+<p>Please choose the initial security configuration for the new <%= h(c.isProject() ? "project" : (c.isWorkbook() ? "workbook" : "folder"))%>.</p>
+
 <div id="folderPermissionsDiv"></div>
 <script type="text/javascript">
     Ext4.onReady(function() {
@@ -44,6 +47,25 @@
         var hasNext = isProject || <%= h(!c.getFolderType().getExtraSetupSteps(c).isEmpty()) %>;
         var containerNoun = isProject ? 'Project' : 'Folder';
 
+        var buttons = [];
+        if (!hasNext) {
+            buttons.push({
+                xtype: 'button',
+                cls: 'labkey-button',
+                text: ('Finish and Configure Permissions'),
+                handler: function(b) {
+                    var f = b.up('form');
+                    f.getForm().setValues({advanced: true});
+                    checkSubmit(b);
+                }
+            });
+        }
+        buttons.push({
+            xtype: 'button',
+            cls: 'labkey-button',
+            text: (hasNext ? 'Next' : 'Finish'),
+            handler: function(b) { checkSubmit(b); }
+        });
         Ext4.FocusManager.enable(false);
         Ext4.tip.QuickTipManager.init();
 
@@ -162,28 +184,14 @@
                         itemId: 'usersArea'
                     }]
                 },{
-                    xtype: 'radio',
+                    xtype: 'checkbox',
                     boxLabel: 'Configure Later',
+                    hidden: true,
                     checked: false,
-                    name: 'permissionType',
-                    inputValue: 'Advanced',
-                    listeners: {
-                        scope: this,
-                        single: true,
-                        afterrender: function(radio){
-                            radio.boxLabelEl.set({
-                                'data-qtip': 'If selected, on the final page of the wizard there will be a link allowing you to set permissions using the default security policy editor.  This option is the most powerful, yet most complex to use.'
-                            })
-                        }
-                    }
+                    name: 'advanced'
                 }]
             }],
-            buttons: [{
-                xtype: 'button',
-                cls: 'labkey-button',
-                text: (hasNext ? 'Next' : 'Finish'),
-                handler: function(b) { checkSubmit(b); }
-            }],
+            buttons: buttons,
             renderAdvanced: function(target){
                 //nothing needed
             },
