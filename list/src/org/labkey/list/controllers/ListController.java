@@ -19,6 +19,7 @@ package org.labkey.list.controllers;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.Action;
@@ -315,7 +316,7 @@ public class ListController extends SpringActionController
         @Override
         public ModelAndView getConfirmView(ListDefinitionForm form, BindException errors) throws Exception
         {
-            return new JspView("/org/labkey/list/view/deleteListDefinition.jsp", form, errors);
+            return new JspView<>("/org/labkey/list/view/deleteListDefinition.jsp", form, errors);
         }
 
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
@@ -344,6 +345,7 @@ public class ListController extends SpringActionController
             return true;
         }
 
+        @NotNull
         public URLHelper getSuccessURL(ListDefinitionForm form)
         {
             try
@@ -592,7 +594,7 @@ public class ListController extends SpringActionController
             {
                 URLHelper url = form.getReturnURLHelper();
                 String text = "Return";
-                if(gridUrl.getPath().equalsIgnoreCase(url.getPath()))
+                if(url != null && gridUrl.getPath().equalsIgnoreCase(url.getPath()))
                     text = "Show Grid";
 
                 gridButton = new ActionButton(text, url);
@@ -842,7 +844,6 @@ public class ListController extends SpringActionController
             String comment = null;
             String oldRecord = null;
             String newRecord = null;
-            boolean isEncoded = false;
 
             if (AuditLogService.get().isMigrateComplete() || AuditLogService.get().hasEventTypeMigrated(ListManager.LIST_AUDIT_EVENT))
             {
@@ -853,7 +854,6 @@ public class ListController extends SpringActionController
                     comment = event.getComment();
                     oldRecord = event.getOldRecordMap();
                     newRecord = event.getNewRecordMap();
-                    isEncoded = true;
                 }
             }
             else
@@ -868,7 +868,6 @@ public class ListController extends SpringActionController
                         if (dataMap.containsKey(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.OLD_RECORD_PROP_NAME)) ||
                                 dataMap.containsKey(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.NEW_RECORD_PROP_NAME)))
                         {
-                            isEncoded = true;
                             oldRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.OLD_RECORD_PROP_NAME));
                             newRecord = (String)dataMap.get(AuditLogService.get().getPropertyURI(ListManager.LIST_AUDIT_EVENT, ListAuditViewFactory.NEW_RECORD_PROP_NAME));
                         }

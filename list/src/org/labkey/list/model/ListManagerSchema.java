@@ -6,9 +6,8 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
-import org.labkey.list.view.ViewDesignColumn;
-import org.labkey.list.view.ViewHistoryColumn;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.module.Module;
@@ -23,6 +22,8 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.list.controllers.ListController;
+import org.labkey.list.view.ViewDesignColumn;
+import org.labkey.list.view.ViewHistoryColumn;
 import org.springframework.validation.BindException;
 
 import java.util.Collections;
@@ -84,6 +85,18 @@ public class ListManagerSchema extends UserSchema
             return null;
         }
     }
+
+    @Override
+    protected QuerySettings createQuerySettings(String dataRegionName, String queryName, String viewName)
+    {
+        QuerySettings settings = super.createQuerySettings(dataRegionName, queryName, viewName);
+        if (LIST_MANAGER.equalsIgnoreCase(queryName))
+        {
+            settings.setBaseSort(new Sort("Name"));
+        }
+        return settings;
+    }
+
     @Override
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {

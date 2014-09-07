@@ -18,20 +18,16 @@ package org.labkey.list.view;
 
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
+import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.URLException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.ViewForm;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.list.controllers.ListController;
-
-import java.net.URISyntaxException;
 
 public class ListDefinitionForm extends ViewForm
 {
     protected ListDefinition _listDef;
-    private ReturnURLString _returnUrl;
     private String[] _deletedAttachments;
     private boolean _showHistory = false;
     private Integer _listId = null;
@@ -61,39 +57,15 @@ public class ListDefinitionForm extends ViewForm
         return _listDef;
     }
 
-    public ReturnURLString getReturnUrl()
-    {
-        return _returnUrl;
-    }
-
     // alias to support both returnUrl and srcURL parameters
     public void setSrcURL(ReturnURLString srcUrl)
     {
-        _returnUrl = srcUrl;
+        setReturnUrl(srcUrl);
     }
     
-    public void setReturnUrl(ReturnURLString returnUrl)
+    public URLHelper getDefaultReturnURLHelper()
     {
-        _returnUrl = returnUrl;
-    }
-
-    public URLHelper getReturnURLHelper()
-    {
-        try
-        {
-            if (null == _returnUrl)
-                return new ActionURL(ListController.BeginAction.class, getContainer());
-
-            return new URLHelper(_returnUrl);
-        }
-        catch(URISyntaxException e)
-        {
-            throw new URLException(_returnUrl.getSource(), "returnUrl parameter", e);
-        }
-        catch(NullPointerException e)
-        {
-            throw new URLException(null, "returnUrl parameter", e);
-        }
+            return new ActionURL(ListController.BeginAction.class, getContainer());
     }
 
     public boolean isShowHistory()

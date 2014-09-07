@@ -373,6 +373,8 @@ public class ListDefinitionImpl implements ListDefinition
                 _def.setDomainId(_domain.getTypeId());
                 _def = ListManager.get().insert(user, _def, _preferredListIds);
                 _new = false;
+
+                ListManager.get().addAuditEvent(this, user, String.format("The list %s was created", _def.getName()));
             }
             else
             {
@@ -497,7 +499,7 @@ public class ListDefinitionImpl implements ListDefinition
             qus = table.getUpdateService();
 
         // In certain cases we may create a list that is not viable (i.e., one in which a table was never created becase
-        // the metadata wasn't valid).  Still allow deleting the list since
+        // the metadata wasn't valid).  Still allow deleting the list
         try (DbScope.Transaction transaction = (table != null) ? table.getSchema().getScope().ensureTransaction() :
              ExperimentService.get().ensureTransaction())
         {
@@ -509,6 +511,8 @@ public class ListDefinitionImpl implements ListDefinition
             Table.delete(ListManager.get().getListMetadataTable(), new Object[] {getContainer(), getListId()});
             Domain domain = getDomain();
             domain.delete(user);
+
+            ListManager.get().addAuditEvent(this, user, String.format("The list %s was deleted", _def.getName()));
 
             transaction.commit();
         }
