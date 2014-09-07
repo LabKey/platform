@@ -21,6 +21,8 @@ import com.google.gwt.user.client.rpc.SerializableException;
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.model.GWTChartRenderer;
 
+import java.util.List;
+
 /**
  * User: Karl Lum
  * Date: Dec 3, 2007
@@ -33,5 +35,5 @@ public interface ChartService extends RemoteService
 
     public String getDisplayURL(GWTChart chart);
     
-    public GWTChartRenderer[] getChartRenderers(GWTChart chart);
+    public List<GWTChartRenderer> getChartRenderers(GWTChart chart);
 }

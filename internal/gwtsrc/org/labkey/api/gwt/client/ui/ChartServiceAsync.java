@@ -20,6 +20,8 @@ import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.model.GWTChart;
 import org.labkey.api.gwt.client.model.GWTChartRenderer;
 
+import java.util.List;
+
 /**
  * User: Karl Lum
  * Date: Dec 3, 2007
@@ -32,5 +34,5 @@ public interface ChartServiceAsync
 
     void getDisplayURL(GWTChart chart, AsyncCallback<String> async);
     
-    void getChartRenderers(GWTChart chart, AsyncCallback<GWTChartRenderer[]> async);
+    void getChartRenderers(GWTChart chart, AsyncCallback<List<GWTChartRenderer>> async);
 }

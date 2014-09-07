@@ -72,12 +72,17 @@ public class ReturnUrlForm
         _returnUrl = returnUrl;
     }
 
+    protected URLHelper getDefaultReturnURLHelper()
+    {
+        return null;
+    }
+
     @Nullable
     public URLHelper getReturnURLHelper()
     {
         try
         {
-            return (null == _returnUrl ? null : new URLHelper(_returnUrl));
+            return (null == _returnUrl ? getDefaultReturnURLHelper() : new URLHelper(_returnUrl));
         }
         catch (URISyntaxException e)
         {

@@ -1163,7 +1163,7 @@ public class Portal
     public static Map<String, String> getPartsToAdd(Container c, String location)
     {
         //TODO: Cache these?
-        Map<String, String> webPartNames = new TreeMap<>();
+        Map<String, String> webPartNames = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         for (Module module : ModuleLoader.getInstance().getModules())
         {

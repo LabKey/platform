@@ -33,7 +33,6 @@ import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -44,7 +43,7 @@ import java.util.Map;
 public class ChartMeasurementsPanel extends AbstractChartPanel
 {
     // map of types to GWTChartRenderer
-    private Map _renderers;
+    private Map<String, GWTChartRenderer> _renderers;
 
     private Label _loading;
     private FlexTable _panel;
@@ -85,10 +84,9 @@ public class ChartMeasurementsPanel extends AbstractChartPanel
             hp.add(new HelpPopup("X Axis", "More than one measurement for the vertical axis may be selected."));
             _panel.setWidget(row++, 2, hp);
 
-            Map types = new HashMap();
-            for (Iterator it = _renderers.values().iterator(); it.hasNext();)
+            Map<String, String> types = new HashMap<String, String>();
+            for (GWTChartRenderer renderer : _renderers.values())
             {
-                GWTChartRenderer renderer = (GWTChartRenderer)it.next();
                 types.put(renderer.getName(), renderer.getType());
             }
 
@@ -105,7 +103,7 @@ public class ChartMeasurementsPanel extends AbstractChartPanel
                 }
             });
             chartType.setColumns(types);
-            GWTChartRenderer renderer = (GWTChartRenderer)_renderers.get(getChart().getChartType());
+            GWTChartRenderer renderer = _renderers.get(getChart().getChartType());
             if (renderer != null)
                 chartType.setSelected(new String[]{renderer.getName()});
             _panel.setWidget(row, 0, chartType);
@@ -129,7 +127,7 @@ public class ChartMeasurementsPanel extends AbstractChartPanel
                 public void update(Widget widget)
                 {
                     ListBox lb = (ListBox)widget;
-                    List selected = new ArrayList();
+                    List<String> selected = new ArrayList<String>();
 
                     if (lb.getSelectedIndex() != -1)
                     {
@@ -139,7 +137,7 @@ public class ChartMeasurementsPanel extends AbstractChartPanel
                                 selected.add(lb.getValue(i));
                         }
                     }
-                    getChart().setColumnYName((String[])selected.toArray(new String[0]));
+                    getChart().setColumnYName(selected.toArray(new String[selected.size()]));
                 }
             });
             _columnsY.setName("columnsY");
@@ -149,7 +147,7 @@ public class ChartMeasurementsPanel extends AbstractChartPanel
 
     private void reset()
     {
-        GWTChartRenderer renderer = (GWTChartRenderer)_renderers.get(getChart().getChartType());
+        GWTChartRenderer renderer = _renderers.get(getChart().getChartType());
         if (renderer != null)
         {
             setColumns(_columnsX, renderer.getColumnX());
@@ -159,32 +157,31 @@ public class ChartMeasurementsPanel extends AbstractChartPanel
         }
     }
 
-    private void setColumns(BoundListBox list, List columns)
+    private void setColumns(BoundListBox list, List<GWTChartColumn> columns)
     {
         list.clear();
 
-        for (Iterator it = columns.iterator(); it.hasNext();)
+        for (GWTChartColumn col : columns)
         {
-            GWTChartColumn col = (GWTChartColumn)it.next();
             list.addItem(col.getCaption(), col.getAlias());
         }
     }
 
     private void asyncGetChartRenderers()
     {
-        getService().getChartRenderers(getChart(), new ErrorDialogAsyncCallback<GWTChartRenderer[]>()
+        getService().getChartRenderers(getChart(), new ErrorDialogAsyncCallback<List<GWTChartRenderer>>()
         {
             public void handleFailure(String message, Throwable caught)
             {
                 _loading.setText("ERROR: " + message);
             }
 
-            public void onSuccess(GWTChartRenderer[] renderers)
+            public void onSuccess(List<GWTChartRenderer> renderers)
             {
-                _renderers = new HashMap();
-                for (int i=0; i < renderers.length; i++)
+                _renderers = new HashMap<String, GWTChartRenderer>();
+                for (GWTChartRenderer renderer : renderers)
                 {
-                    _renderers.put(renderers[i].getType(), renderers[i]);
+                    _renderers.put(renderer.getType(), renderer);
                 }
                 showUI();
                 reset();

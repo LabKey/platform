@@ -49,7 +49,7 @@ public abstract class DefaultValueService
 
     public abstract boolean hasDefaultValues(Container container, Domain domain, User user, boolean inherit);
 
-    public abstract boolean hasDefaultValues(Container container, Domain domain, User user, String scope, boolean inherit);
+    public abstract boolean hasDefaultValues(Container container, Domain domain, User user, @Nullable String scope, boolean inherit);
 
     public abstract Map<DomainProperty, Object> getDefaultValues(Container container, Domain domain);
 

@@ -15,6 +15,7 @@
  */
 package org.labkey.api.protein;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.QueryView;
@@ -67,6 +68,7 @@ public interface ProteinService
     public interface QueryViewProvider<FormType>
     {
         public String getDataRegionName();
+        @Nullable
         public QueryView createView(ViewContext viewContext, FormType form, BindException errors);
     }
 
