@@ -218,27 +218,30 @@ public class ButtonBar extends DisplayElement
 
     private void applyConfig(RenderContext ctx, ButtonBarConfig config)
     {
-        if (config == null || null == config.getItems() || config.getItems().size() == 0)
+        if (config == null)
             return;
+
+        if (config.isAlwaysShowRecordSelectors())
+            _alwaysShowRecordSelectors = true;
 
         List<DisplayElement> originalButtons = _elementList;
         _elementList = new ArrayList<>();
 
         List<Pair<ButtonConfig, DisplayElement>> mergedItems = new ArrayList<>();
-        for (ButtonConfig item : config.getItems())
+        if (config.getItems() != null)
         {
-            DisplayElement elem = item.createButton(ctx, originalButtons);
-            if (null == elem)
-                continue;
+            for (ButtonConfig item : config.getItems())
+            {
+                DisplayElement elem = item.createButton(ctx, originalButtons);
+                if (null == elem)
+                    continue;
 
-            if (item.getInsertAfter() != null || item.getInsertBefore() != null || item.getInsertPosition() != null)
-                mergedItems.add(new Pair<>(item, elem));
-            else
-                _elementList.add(elem);
+                if (item.getInsertAfter() != null || item.getInsertBefore() != null || item.getInsertPosition() != null)
+                    mergedItems.add(new Pair<>(item, elem));
+                else
+                    _elementList.add(elem);
+            }
         }
-
-        if (config.isAlwaysShowRecordSelectors())
-            _alwaysShowRecordSelectors = true;
 
         if (config.isIncludeStandardButtons())
         {

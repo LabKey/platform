@@ -166,6 +166,7 @@ public class ButtonBarConfig
 
         this._hiddenStandardButtons = new HashSet<>(cfg._hiddenStandardButtons);
         this._onRenderScript = cfg._onRenderScript;
+        this.setAlwaysShowRecordSelectors(cfg.isAlwaysShowRecordSelectors());
 
         if (cfg.getItems() != null)
         {
