@@ -218,7 +218,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
         }
     }
 
-    public GWTChartRenderer[] getChartRenderers(GWTChart chart)
+    public List<GWTChartRenderer> getChartRenderers(GWTChart chart)
     {
         UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), chart.getSchemaName());
         QuerySettings qs = schema.getSettings(_context, null, chart.getQueryName());
@@ -238,7 +238,7 @@ public class StudyChartServiceImpl extends BaseRemoteService implements StudyCha
 
             gwtRenderers.add(cr);
         }
-        return gwtRenderers.toArray(new GWTChartRenderer[gwtRenderers.size()]);
+        return gwtRenderers;
     }
 
     private List<GWTChartColumn> createColumnList(Map<String, String> columnMap)

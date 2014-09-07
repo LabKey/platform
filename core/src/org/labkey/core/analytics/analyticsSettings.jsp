@@ -28,6 +28,9 @@
 %>
 <p>Your LabKey Server can be configured to add JavaScript to your HTML pages, so that information about how your users
     use your server will be sent to Google Analytics.</p>
+<p>When enabled, the project/folder path will only be reported when it is accessible to Guest users. When a project/folder is secure,
+    LabKey Server will report a GUID instead (which can be translated to the human-readable path). Additionally, HTTP GET parameters will
+    be stripped. Both are efforts to ensure that sensitive data is not sent to Google Analytics.</p>
 
 <labkey:errors/>
 <labkey:form action="<%=h(new ActionURL(AnalyticsController.BeginAction.class, ContainerManager.getRoot()))%>" method="POST">

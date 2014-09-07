@@ -773,7 +773,7 @@ public class StatusController extends SpringActionController
             }
             catch (PipelineProvider.HandlerException e)
             {
-                errors.addError(new LabkeyError(e.getMessage() == null ? "Failed to delete at least one job" : e.getMessage()));
+                errors.addError(new LabkeyError(e.getMessage() == null ? "Failed to delete at least one job. It may be referenced by other jobs" : e.getMessage()));
                 return false;
             }
             return true;

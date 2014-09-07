@@ -19,6 +19,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Lsid;
+import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.property.AbstractDomainKind;
 import org.labkey.api.exp.property.Domain;
 
@@ -53,7 +54,11 @@ public abstract class BaseStudyDomainKind extends AbstractDomainKind
         Container container = domain.getContainer();
 
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT o.ObjectId FROM " + getTableInfo() + " c, exp.object o WHERE c.LSID = o.ObjectURI AND c.container = ?");
+        sql.append("SELECT o.ObjectId FROM ");
+        sql.append(getTableInfo(), "c");
+        sql.append(", ");
+        sql.append(OntologyManager.getTinfoObject(), "o");
+        sql.append(" WHERE c.LSID = o.ObjectURI AND c.container = ?");
         sql.add(container.getId());
         return sql;
     }

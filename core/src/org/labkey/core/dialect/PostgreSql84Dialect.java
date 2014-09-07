@@ -1566,7 +1566,7 @@ public class PostgreSql84Dialect extends SqlDialect
         // Only fiddle with the Connection settings if we're fairly certain that it's a read-only statement (starting
         // with SELECT) and we're not inside of a transaction, so we won't mess up any state the caller is relying on.
 
-        // !scope.isTransactionActive() is apparenlty not sufficient for a few isolated cases, like DbSequenceManager test. TODO: Figure out this descrepancy
+        // !scope.isTransactionActive() is apparently not sufficient for a few isolated cases, like DbSequenceManager test. TODO: Figure out this descrepancy
         if (Table.isSelect(sql.getSQL()) && !scope.isTransactionActive() && connection.getAutoCommit())
         {
             connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);

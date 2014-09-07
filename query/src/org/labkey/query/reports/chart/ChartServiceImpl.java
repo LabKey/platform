@@ -114,7 +114,7 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
         }
     }
 
-    public GWTChartRenderer[] getChartRenderers(GWTChart chart)
+    public List<GWTChartRenderer> getChartRenderers(GWTChart chart)
     {
         List<GWTChartRenderer> gwtRenderers = new ArrayList<>();
 
@@ -139,7 +139,7 @@ public class ChartServiceImpl extends BaseRemoteService implements ChartService
             }
         }
 
-        return gwtRenderers.toArray(new GWTChartRenderer[0]);
+        return gwtRenderers;
     }
 
     private List<GWTChartColumn> createColumnList(Map<String, String> columnMap)

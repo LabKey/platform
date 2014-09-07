@@ -752,7 +752,6 @@ public class SpecimenController extends BaseStudyController
         }
 
         private String _specimenIds;
-        private ReturnURLString _returnUrl;
 
         public String getSpecimenIds()
         {
@@ -772,16 +771,6 @@ public class SpecimenController extends BaseStudyController
             if (_specimenIds != null)
                 builder.append("<input type=\"hidden\" name=\"specimenIds\" value=\"").append(PageFlowUtil.filter(_specimenIds)).append("\">");
             return builder.toString();
-        }
-
-        public ReturnURLString getReturnUrl()
-        {
-            return _returnUrl;
-        }
-
-        public void setReturnUrl(ReturnURLString returnUrl)
-        {
-            _returnUrl = returnUrl;
         }
     }
 
@@ -840,7 +829,6 @@ public class SpecimenController extends BaseStudyController
         private String _newDescription;
         private String _export;
         private Boolean _submissionResult;
-        private ReturnURLString _returnUrl;
 
         public Integer getNewActor()
         {
@@ -890,16 +878,6 @@ public class SpecimenController extends BaseStudyController
         public void setSubmissionResult(Boolean submissionResult)
         {
             _submissionResult = submissionResult;
-        }
-
-        public ReturnURLString getReturnUrl()
-        {
-            return _returnUrl;
-        }
-
-        public void setReturnUrl(ReturnURLString returnUrl)
-        {
-            _returnUrl = returnUrl;
         }
     }
 

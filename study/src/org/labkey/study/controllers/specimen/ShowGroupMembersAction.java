@@ -191,7 +191,6 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         private String[] _delete;
         private boolean _sendEmail;
         private String _names;
-        private ReturnURLString _returnUrl;
 
         public Integer getLocationId()
         {
@@ -231,16 +230,6 @@ public class ShowGroupMembersAction extends FormViewAction<ShowGroupMembersActio
         public void setDelete(String[] delete)
         {
             _delete = delete;
-        }
-
-        public ReturnURLString getReturnUrl()
-        {
-            return _returnUrl;
-        }
-
-        public void setReturnUrl(ReturnURLString returnUrl)
-        {
-            _returnUrl = returnUrl;
         }
     }
 

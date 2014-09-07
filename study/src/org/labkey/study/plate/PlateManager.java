@@ -634,8 +634,10 @@ public class PlateManager implements PlateService.Service
 
         public String getDisplayURL(Lsid lsid)
         {
-            WellGroup wellGroup = getWellGroup(lsid);
             if (lsid == null)
+                return null;
+            WellGroup wellGroup = getWellGroup(lsid);
+            if (wellGroup == null)
                 return null;
             return PlateManager.get().getDetailsURL(wellGroup.getPlate()).getLocalURIString();
         }
