@@ -35,7 +35,6 @@
 <%
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
-    String contextPath = request.getContextPath();
     ActionURL url = getActionURL();
     ActionURL base = url.clone();
     base.setAction((String)null);
@@ -75,8 +74,8 @@
     <title><%=h(bean.getTitle()) %></title>
     <!-- <%=h(url.getURIString())%> -->
     <!-- <base href="<%=h(base.getURIString())%>" /> -->
-    <%= bean.getMetaTags(url) %>
-    <%= PageFlowUtil.getStandardIncludes(getViewContext(), bean.getClientDependencies()) %>
+<%= bean.getMetaTags(url) %>
+<%= PageFlowUtil.getStandardIncludes(getViewContext(), bean.getClientDependencies()) %>
     <%
         if (null != bean.getRssUrl())
         {
@@ -94,12 +93,12 @@
             {
     %>      <!-- see <%=new ActionURL("analytics","begin",ContainerManager.getRoot()).getURIString()%> -->
     <%
-        }
+            }
     %>
     <%=script%>
     <%
-            }
         }
+    }
     %>
 </head>
 

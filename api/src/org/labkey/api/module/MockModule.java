@@ -396,7 +396,7 @@ public class MockModule implements Module
     }
 
     @Override
-    public @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u)
+    public @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c)
     {
         return new LinkedHashSet<>();
     }

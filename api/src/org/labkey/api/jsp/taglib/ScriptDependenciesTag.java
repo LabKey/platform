@@ -16,7 +16,6 @@
 package org.labkey.api.jsp.taglib;
 
 import org.labkey.api.jsp.JspBase;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.template.ClientDependency;
@@ -58,12 +57,12 @@ public class ScriptDependenciesTag extends SimpleTagBase
 
                     LinkedHashSet<String> includes = new LinkedHashSet<>();
                     LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
-                    PageFlowUtil.getJavaScriptFiles(context.getContainer(), context.getUser(), dependencies, includes, implicitIncludes);
+                    PageFlowUtil.getJavaScriptFiles(context.getContainer(), dependencies, includes, implicitIncludes);
 
                     LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
                     for (ClientDependency d : dependencies)
                     {
-                        cssScripts.addAll(d.getCssPaths(context.getContainer(), context.getUser(), AppProps.getInstance().isDevMode()));
+                        cssScripts.addAll(d.getCssPaths(context.getContainer()));
                     }
 
                     if (!includes.isEmpty() || !cssScripts.isEmpty())

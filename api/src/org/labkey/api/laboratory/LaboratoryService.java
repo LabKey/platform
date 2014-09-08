@@ -104,7 +104,7 @@ abstract public class LaboratoryService
 
     abstract public void registerClientDependency(ClientDependency cd, Module owner);
 
-    abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c, User u);
+    abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c);
 
     abstract public void registerQueryButton(ButtonConfigFactory btn, String schema, String query);
 

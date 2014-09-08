@@ -323,7 +323,7 @@ public interface Module extends Comparable<Module>
      */
     public @NotNull JSONObject getPageContextJson(ViewContext context);
 
-    public @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u);
+    public @NotNull LinkedHashSet<ClientDependency> getClientDependencies(Container c);
 
     public @Nullable UpgradeCode getUpgradeCode();
 

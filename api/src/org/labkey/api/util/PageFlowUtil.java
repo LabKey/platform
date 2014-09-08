@@ -796,7 +796,8 @@ public class PageFlowUtil
      */
     public static MediaType getMediaTypeFor(File file)
     {
-        try {
+        try
+        {
             DefaultDetector detector = new DefaultDetector();
             Metadata metaData = new Metadata();
 
@@ -1519,18 +1520,15 @@ public class PageFlowUtil
     public static String getStandardIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         Container c = context.getContainer();
-        User u = context.getUser();
 
         // Better handling for odd cases... bootstrap, background?
         if (null == c)
             c = ContainerManager.getRoot();
-        if (null == u)
-            u = User.guest;  //NOTE: should this use the upgrade user?
 
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS(context, resources));
-        sb.append(getStylesheetIncludes(c, u, resources));
-        sb.append(getJavaScriptIncludes(c, u, resources));
+        sb.append(getStylesheetIncludes(c, resources, true));
+        sb.append(getJavaScriptIncludes(c, resources));
         return sb.toString();
     }
 
@@ -1540,17 +1538,14 @@ public class PageFlowUtil
     public static String getCoreClientApiIncludes(ViewContext context, @Nullable LinkedHashSet<ClientDependency> resources)
     {
         Container c = context.getContainer();
-        User u = context.getUser();
 
         if (null == c)
             c = ContainerManager.getRoot();
-        if (null == u)
-            u = User.guest;
 
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS(context, resources));
-        sb.append(getStylesheetIncludes(c, u, resources));
-        sb.append(getJavaScriptIncludes(c, u, resources, true, true));
+        sb.append(getStylesheetIncludes(c, resources, false));
+        sb.append(getJavaScriptIncludes(c, resources, true, true));
         return sb.toString();
     }
 
@@ -1572,12 +1567,16 @@ public class PageFlowUtil
     }
 
 
-    public static String getStylesheetIncludes(Container c, User u)
+    // Outputs <link> elements for standard stylesheets (but not Ext stylesheets). Note hrefs are relative, so callers may
+    // need to output a <base> element prior to calling.
+    public static String getStylesheetIncludes(Container c)
     {
-        return getStylesheetIncludes(c, u, null);
+        return getStylesheetIncludes(c, null, false);
     }
 
-    public static String getStylesheetIncludes(Container c, User u, @Nullable LinkedHashSet<ClientDependency> resources)
+    // Outputs <link> elements for standard stylesheets, Ext stylesheets, and client dependency stylesheets, as required.
+    // Note that hrefs are relative, so callers may need to output a <base> element prior to calling.
+    private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeExtStylesheets)
     {
         boolean useLESS = null != HttpView.currentRequest().getParameter("less");
         WebTheme theme = WebThemeManager.getTheme(c);
@@ -1588,10 +1587,14 @@ public class PageFlowUtil
         Formatter F = new Formatter(sb);
         String link = useLESS ? "    <link href=\"%s\" type=\"text/x-less\" rel=\"stylesheet\">\n" : "    <link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
 
-        // TODO: Migrate to be dependent on ext 3 loading
-        /* Stylesheets for Ext 3.x -- order matters as overriddes are in stylesheet.css and themeStylesheet.view */
-        F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot() + "/resources/css/ext-all.css");
-        F.format(link, Path.parse(AppProps.getInstance().getContextPath() + resolveExtThemePath(c)));
+        if (includeExtStylesheets)
+        {
+            // TODO: Migrate to be dependent on ext 3 loading
+            /* Stylesheets for Ext 3.x -- order matters as overriddes are in stylesheet.css and themeStylesheet.view */
+            F.format(link, AppProps.getInstance().getContextPath() + "/" + extJsRoot() + "/resources/css/ext-all.css");
+            F.format(link, Path.parse(AppProps.getInstance().getContextPath() + resolveExtThemePath(c)));
+        }
+
         F.format(link, PageFlowUtil.filter(new ResourceURL(theme.getStyleSheet(), ContainerManager.getRoot())));
 
         ActionURL rootCustomStylesheetURL = coreUrls.getCustomStylesheetURL();
@@ -1635,19 +1638,19 @@ public class PageFlowUtil
         sb.append("\" type=\"text/css\" rel=\"stylesheet\" media=\"print\">\n");
 
         if (resources != null)
-            writeCss(c, u, sb, resources);
+            writeCss(c, sb, resources);
 
         return sb.toString();
     }
 
-    public static void writeCss(Container c, User u, StringBuilder sb, LinkedHashSet<ClientDependency> resources)
+    private static void writeCss(Container c, StringBuilder sb, LinkedHashSet<ClientDependency> resources)
     {
         Set<String> cssFiles = new HashSet<>();
         if (resources != null)
         {
             for (ClientDependency r : resources)
             {
-                for (String script : (r.getCssPaths(c, u, AppProps.getInstance().isDevMode())))
+                for (String script : (r.getCssPaths(c)))
                 {
                     sb.append("<link href=\"");
                     if (ClientDependency.isExternalDependency(script))
@@ -1774,18 +1777,12 @@ public class PageFlowUtil
         return sb.toString();
     }
 
-    public static String getJavaScriptIncludes(Container c, User u, LinkedHashSet<ClientDependency> extraResources)
+    public static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> extraResources)
     {
-        return getJavaScriptIncludes(c, u, extraResources, true);
+        return getJavaScriptIncludes(c, extraResources, true, false);
     }
 
-    public static String getJavaScriptIncludes(Container c, User u, LinkedHashSet<ClientDependency> extraResources, boolean includeDefaultResources)
-    {
-        return getJavaScriptIncludes(c, u, extraResources, true, false);
-    }
-
-    public static String getJavaScriptIncludes(Container c, User u, LinkedHashSet<ClientDependency> extraResources, boolean includeDefaultResources,
-                                               boolean coreClientApiOnly)
+    public static String getJavaScriptIncludes(Container c, LinkedHashSet<ClientDependency> extraResources, boolean includeDefaultResources, boolean coreClientApiOnly)
     {
         String contextPath = AppProps.getInstance().getContextPath();
         String serverHash = getServerSessionHash();
@@ -1804,7 +1801,7 @@ public class PageFlowUtil
         if (extraResources != null)
             resources.addAll(extraResources);
 
-        getJavaScriptFiles(c, u, resources, includes, implicitIncludes);
+        getJavaScriptFiles(c, resources, includes, implicitIncludes);
 
         StringBuilder sb = new StringBuilder();
 
@@ -2402,7 +2399,7 @@ public class PageFlowUtil
 
             for (ClientDependency cd : resources)
             {
-                modules.addAll(cd.getRequiredModuleContexts(c, u));
+                modules.addAll(cd.getRequiredModuleContexts(c));
             }
 
             for (Module m : c.getActiveModules(u))
@@ -2418,24 +2415,24 @@ public class PageFlowUtil
         return ret;
     }
 
-    public static void getJavaScriptFiles(Container c, User u, LinkedHashSet<ClientDependency> dependencies, LinkedHashSet<String> includes, LinkedHashSet<String> implicitIncludes)
+    public static void getJavaScriptFiles(Container c, LinkedHashSet<ClientDependency> dependencies, LinkedHashSet<String> includes, LinkedHashSet<String> implicitIncludes)
     {
         for (ClientDependency r : dependencies)
         {
             HttpServletRequest request = HttpView.currentRequest();
             Boolean debugScriptMode = null != request && Boolean.parseBoolean(request.getParameter("debugScripts"));
 
-            if(AppProps.getInstance().isDevMode() || debugScriptMode)
+            if (AppProps.getInstance().isDevMode() || debugScriptMode)
             {
-                includes.addAll(r.getJsPaths(c, u, true));
-                implicitIncludes.addAll(r.getJsPaths(c, u, true));
+                includes.addAll(r.getJsPaths(c, true));
+                implicitIncludes.addAll(r.getJsPaths(c, true));
             }
             else
             {
-                includes.addAll(r.getJsPaths(c, u, false));
+                includes.addAll(r.getJsPaths(c, false));
                 //include both production and devmode scripts for requiresScript()
-                implicitIncludes.addAll(r.getJsPaths(c, u, true));
-                implicitIncludes.addAll(r.getJsPaths(c, u, false));
+                implicitIncludes.addAll(r.getJsPaths(c, true));
+                implicitIncludes.addAll(r.getJsPaths(c, false));
             }
         }
     }

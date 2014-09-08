@@ -23,7 +23,6 @@ import org.labkey.api.data.TableCustomizer;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.ehr.dataentry.DataEntryForm;
 import org.labkey.api.ehr.dataentry.DataEntryFormFactory;
-import org.labkey.api.ehr.dataentry.FormSection;
 import org.labkey.api.ehr.dataentry.SingleQueryFormProvider;
 import org.labkey.api.ehr.demographics.DemographicsProvider;
 import org.labkey.api.ehr.history.HistoryDataSource;
@@ -89,7 +88,7 @@ abstract public class EHRService
      */
     abstract public void registerClientDependency(ClientDependency cd, Module owner);
 
-    abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c, User u);
+    abstract public Set<ClientDependency> getRegisteredClientDependencies(Container c);
 
     abstract public void setDateFormat(Container c, String format);
 

@@ -23,7 +23,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
@@ -403,10 +402,9 @@ public class ClientDependency
                 }
             }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             _log.error("Invalid client library XML file: " + _filePath + ". " + e.getMessage());
-            return;
         }
     }
 
@@ -491,7 +489,7 @@ public class ClientDependency
 //        return set;
 //    }
 
-    private LinkedHashSet<ClientDependency> getUniqueDependencySet(Container c, User u)
+    private LinkedHashSet<ClientDependency> getUniqueDependencySet(Container c)
     {
         LinkedHashSet<ClientDependency> cd = new LinkedHashSet<>();
 
@@ -501,62 +499,67 @@ public class ClientDependency
         if(TYPE.context.equals(_primaryType))
         {
             if (_module != null)
-                cd.addAll(_module.getClientDependencies(c, u));
+                cd.addAll(_module.getClientDependencies(c));
         }
 
         return cd;
     }
 
-    private LinkedHashSet<String> getProductionScripts(Container c, User u, TYPE type)
+    private LinkedHashSet<String> getProductionScripts(Container c, TYPE type)
     {
         LinkedHashSet<String> scripts = new LinkedHashSet<>();
         if (_primaryType.equals(type) && _prodModePath != null)
             scripts.add(_prodModePath);
 
-        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet(c, u);
+        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet(c);
         for (ClientDependency r : cd)
-            scripts.addAll(r.getProductionScripts(c, u, type));
+            scripts.addAll(r.getProductionScripts(c, type));
 
         return scripts;
     }
 
-    private LinkedHashSet<String> getDevModeScripts(Container c, User u, TYPE type)
+    private LinkedHashSet<String> getDevModeScripts(Container c, TYPE type)
     {
         LinkedHashSet<String> scripts = new LinkedHashSet<>();
         if (_primaryType.equals(type) && _devModePath != null)
             scripts.add(_devModePath);
 
-        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet(c, u);
+        LinkedHashSet<ClientDependency> cd = getUniqueDependencySet(c);
         for (ClientDependency r : cd)
-            scripts.addAll(r.getDevModeScripts(c, u, type));
+            scripts.addAll(r.getDevModeScripts(c, type));
 
         return scripts;
     }
 
-    public LinkedHashSet<String> getCssPaths(Container c, User u, boolean devMode)
+    public LinkedHashSet<String> getCssPaths(Container c)
     {
-        if (devMode)
-            return getDevModeScripts(c, u, TYPE.css);
-        else
-            return getProductionScripts(c, u, TYPE.css);
+        return getCssPaths(c, AppProps.getInstance().isDevMode());
     }
 
-    public LinkedHashSet<String> getJsPaths(Container c, User u, boolean devMode)
+    public LinkedHashSet<String> getCssPaths(Container c, boolean devMode)
     {
         if (devMode)
-            return getDevModeScripts(c, u, TYPE.js);
+            return getDevModeScripts(c, TYPE.css);
         else
-            return getProductionScripts(c, u, TYPE.js);
+            return getProductionScripts(c, TYPE.css);
     }
 
-    public Set<Module> getRequiredModuleContexts(Container c, User u)
+    public LinkedHashSet<String> getJsPaths(Container c, boolean devMode)
+    {
+        if (devMode)
+            return getDevModeScripts(c, TYPE.js);
+        else
+            return getProductionScripts(c, TYPE.js);
+    }
+
+    public Set<Module> getRequiredModuleContexts(Container c)
     {
         HashSet<Module> modules = new HashSet<>();
         if(_module != null)
             modules.add(_module);
 
-        for (ClientDependency r : getUniqueDependencySet(c, u))
-            modules.addAll(r.getRequiredModuleContexts(c, u));
+        for (ClientDependency r : getUniqueDependencySet(c))
+            modules.addAll(r.getRequiredModuleContexts(c));
 
         return modules;
     }

@@ -1285,7 +1285,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     }
 
     @NotNull
-    public LinkedHashSet<ClientDependency> getClientDependencies(Container c, User u)
+    public LinkedHashSet<ClientDependency> getClientDependencies(Container c)
     {
         return _clientDependencies;
     }

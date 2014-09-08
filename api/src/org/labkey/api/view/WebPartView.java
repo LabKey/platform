@@ -23,7 +23,6 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.data.Container;
 import org.labkey.api.portal.ProjectUrls;
-import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ErrorRenderer;
 import org.labkey.api.util.ExceptionUtil;
@@ -84,22 +83,20 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     public ApiResponse renderToApiResponse() throws Exception
     {
         Container container = getViewContext().getContainer();
-        User user = getViewContext().getUser();
         final HttpServletRequest request = getViewContext().getRequest();
 
         final LinkedHashSet<ClientDependency> dependencies = getClientDependencies();
         final LinkedHashSet<String> includes = new LinkedHashSet<>();
         final LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
-        PageFlowUtil.getJavaScriptFiles(container, user, dependencies, includes, implicitIncludes);
+        PageFlowUtil.getJavaScriptFiles(container, dependencies, includes, implicitIncludes);
 
         final LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
         final LinkedHashSet<String> implicitCssScripts = new LinkedHashSet<>();
         for (ClientDependency d : dependencies)
         {
-            cssScripts.addAll(d.getCssPaths(container, user, AppProps.getInstance().isDevMode()));
-            implicitCssScripts.addAll(d.getCssPaths(container, user, AppProps.getInstance().isDevMode()));
-
-            implicitCssScripts.addAll(d.getCssPaths(container, user, !AppProps.getInstance().isDevMode()));
+            cssScripts.addAll(d.getCssPaths(container));
+            implicitCssScripts.addAll(d.getCssPaths(container));
+            implicitCssScripts.addAll(d.getCssPaths(container, !AppProps.getInstance().isDevMode()));
         }
 
         getViewContext().getResponse().setContentType(ApiJsonWriter.CONTENT_TYPE_JSON);
