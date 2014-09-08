@@ -143,40 +143,8 @@ public class TempTableTracker extends WeakReference<Object>
     private boolean sqlDelete()
     {
         DbSchema schema = getSchema();
-        Connection conn = null;
-        Statement stmt = null;
-        boolean success = false;
-        try
-        {
-            // Using direct JDBC to avoid logging errors. However, SqlExecutor provides a way to suppress logging.
-            conn = schema.getScope().getConnection();
-            MemTracker.getInstance().remove(conn);         // we're a bg thread, so we can cause memTracker.view to fail
-            stmt = conn.createStatement();
-            MemTracker.getInstance().remove(stmt);
-            stmt.execute("DROP TABLE " + tableName);
-            success = true;
-        }
-        catch (SQLException x)
-        {
-            // 42P01    postgres: UNDEFINED TABLE
-            // 42S02    sqlserver: Base table or view not found
-            if (SqlDialect.isObjectNotFoundException(x))
-                success = true;
-            else
-                _log.warn("Error deleting temp table '" + tableName + "'", x);
-        }
-        finally
-        {
-            if (null != stmt)
-            {
-                try { stmt.close(); } catch (Exception x) {_log.error("unexpected error", x);}
-            }
-            if (null != conn)
-            {
-                try { schema.getScope().releaseConnection(conn); } catch (Exception x) {_log.error("unexpected error", x);}
-            }
-        }
-        return success;
+        schema.dropTableIfExists(tableName);
+        return true;
     }
 
 
