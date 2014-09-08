@@ -1174,7 +1174,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 // If x or y isn't a valid value then we just don't translate the node.
                 return null;
             }
-            return 'translate(' + xAcc(row) + ',' + yAcc(row) + ')';
+            return 'translate(' + x + ',' + y + ')';
         };
         colorAcc = geom.colorAes && geom.colorScale ? function(row) {
             return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);
