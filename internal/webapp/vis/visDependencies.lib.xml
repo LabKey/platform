@@ -7,5 +7,7 @@
         <script path="/vis/lib/d3-3.3.9.min.js" mode="production"/>
         <script path="/vis/lib/raphael-2.1.0.js" mode="dev"/>
         <script path="/vis/lib/raphael-min-2.1.0.js" mode="production"/>
+        <script path="/vis/lib/hexbin.js" mode="dev"/>
+        <script path="/vis/lib/hexbin.min.js" mode="production"/>
     </library>
 </libraries>

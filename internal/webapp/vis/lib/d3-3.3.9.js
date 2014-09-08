@@ -1,3 +1,5 @@
+// Copyright (c) 2010-2014, Michael Bostock
+// All rights reserved.
 d3 = function() {
   var d3 = {
     version: "3.3.9"
