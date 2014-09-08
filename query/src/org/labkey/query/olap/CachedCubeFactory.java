@@ -676,7 +676,7 @@ public class CachedCubeFactory
             this.memberType = m.getMemberType();
             this.orig = m;
             // don't allocate array for lowest level
-            this.childMembers = isLeaf ? null : new ArrayList<Member>(m.getChildMemberCount());
+            this.childMembers = isLeaf ? null : new ArrayList<Member>();
 
             if (null != parentLevel)
             {

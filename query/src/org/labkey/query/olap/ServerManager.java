@@ -362,11 +362,16 @@ public class ServerManager
         }
     }
 
+
     public static String warmCube(User u, Container c, String schemaName, String configId, String cubeName)
     {
         String result;
         try
         {
+            result = "Starting warm of " + cubeName + " in container " + c.getName();
+            LOG.info(result);
+            long start = System.currentTimeMillis();
+
             OlapSchemaDescriptor sd  = getDescriptor(c, configId);
             if (null == sd)
                 return "Error: No cached descriptor found for " + configId + " in container " + c.getName();
@@ -375,19 +380,18 @@ public class ServerManager
             if (null == conn)
                 return "Error: No olap connection for " + cubeName + " in container " + c.getName();
 
+            long s = System.currentTimeMillis();
             Cube cube = getCachedCube(sd, conn, c, u, schemaName, cubeName, getDummyBindException());
             if (null == cube)
                 return "Error: No cached cube for " + cubeName + " in container " + c.getName();
+            long e = System.currentTimeMillis();
+            LOG.debug(DateUtil.formatDuration(e-s) + " CUBE DEFINITION");
 
-            JSONArray jsonOnRows = new JSONArray();
             JSONObject jsonQuery = new JSONObject();
             jsonQuery.put("filter", new JSONArray());
             jsonQuery.put("showEmpty", false);
-            jsonQuery.put("onRows", jsonOnRows);
+            jsonQuery.put("onRows", new JSONObject());
 
-            result = "Starting warm of " + cubeName + " in container " + c.getName();
-            LOG.info(result);
-            long start = System.currentTimeMillis();
             for (Dimension d : cube.getDimensions())
             {
                 if (d.getDimensionType() == Dimension.Type.MEASURE)
@@ -396,28 +400,40 @@ public class ServerManager
                 {
                     try
                     {
-                        Map<String, Object> map = new HashMap<>();
-
                         Level l = h.getLevels().get(h.getLevels().size()-1);
-                        map.put("level", l.getUniqueName());
-                        map.put("members", "members");
-                        jsonOnRows.put(0, map);
 
-                        if (ViewServlet.isShuttingDown())
-                            return "warm cache stopped because of server shutdown";
-                        execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
+                        ((JSONObject)jsonQuery.get("onRows")).put("level", l.getUniqueName());
+                        ((JSONObject)jsonQuery.get("onRows")).put("members", "members");
+
+                        // TODO: what is the countDistinctLevel???
+                        boolean isCountDistinctLevel = l.getUniqueName().equals("[Patient].[Patient]");
+                        if (!isCountDistinctLevel)
+                        {
+
+                            if (ViewServlet.isShuttingDown())
+                                return "warm cache stopped because of server shutdown";
+                            s = System.currentTimeMillis();
+                            execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
+                            e = System.currentTimeMillis();
+                            LOG.info(DateUtil.formatDuration(e - s) + " " + jsonQuery.toString());
+                        }
+
 
                         // 20975: Ensure we touch specimen queries
-                        map.remove("level");
-                        map.put("hierarchy", h.getUniqueName());
-                        jsonOnRows.put(0, map);
+                        if (l.getUniqueName().equals("[Specimen].[Specimen]"))
+                        {
+                            jsonQuery.put("countDistinctLevel", "[Specimen].[Specimen]");
 
-                        jsonQuery.put("countDistinctLevel", "[Specimen].[Specimen]");
+                            if (ViewServlet.isShuttingDown())
+                                return "warm cache stopped because of server shutdown";
 
-                        if (ViewServlet.isShuttingDown())
-                            return "warm cache stopped because of server shutdown";
-                        execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
-                        jsonQuery.remove("countDistinctLevel");
+                            s = System.currentTimeMillis();
+                            execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
+                            e = System.currentTimeMillis();
+                            LOG.info(DateUtil.formatDuration(e - s) + " " + jsonQuery.toString());
+
+                            jsonQuery.remove("countDistinctLevel");
+                        }
                     }
                     catch (Exception ignore)
                     {
