@@ -487,6 +487,7 @@ public class MothershipSchema extends UserSchema
         result.getColumn("ServerSessionId").setURL(StringExpressionFactory.createURL("/mothership/showServerSessionDetail.view?serverSessionId=${ServerSessionId}"));
         result.getColumn("ServerSessionId").setLabel("Session");
         result.getColumn("ServerSessionId").setFormat("'#'0");
+        result.getColumn("ServerSessionId").setExcelFormatString("0");
         LookupForeignKey fk = new LookupForeignKey("ServerSessionId")
         {
             public TableInfo getLookupTableInfo()
