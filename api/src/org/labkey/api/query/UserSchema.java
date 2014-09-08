@@ -333,7 +333,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     /** Override this method to return a schema specific QueryView for the given QuerySettings. */
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
-//        // HACK: until I figure out a better way to create QueryView subclasses based upon TableInfo type
         QueryDefinition qdef = settings.getQueryDef(this);
         if (qdef != null)
         {
