@@ -3544,3 +3544,10 @@ div.facet_header .x4-panel-header-text
 a.x4-menu-item-link {
     width: 100%;
 }
+
+/* Visualization Library */
+.hexagon {
+    fill: none;
+    stroke: #000;
+    stroke-width: .5px;
+}

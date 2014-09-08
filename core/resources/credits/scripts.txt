@@ -2,11 +2,14 @@
 Library|Version|Source|License|LabKey Dev|Purpose
 CodeMirror|4.20|{link:codemirror.net|http://www.codemirror.net}|{link:MIT|http://www.codemirror.net/LICENSE}|klum|browser based code editor
 Crystal Project icons||{link:everaldo.com|http://www.everaldo.com/crystal/}|{link:LGPL|http://www.everaldo.com/crystal/?action=license}|matthewb|document, action, and other icons
+d3|3.3.9|{link:d3js.org|http://d3js.org/}|{link:Michael Bostock|https://github.com/mbostock/d3/blob/master/LICENSE}|alanv|A JavaScript visualization library for HTML and SVG.
 Ext JS|3.4|{link:Ext JS|http://www.sencha.com/products/extjs/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS Exception|http://www.sencha.com/legal/open-source-faq/open-source-license-exception-for-applications/}|nicka|Ajax Support, Various UI widgets
 Ext JS|4.2.1|{link:Ext JS|http://www.sencha.com/products/extjs/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS Exception|http://www.sencha.com/legal/open-source-faq/open-source-license-exception-for-applications/}|nicka|Ajax Support, Various UI widgets
-js_color_picker|v2|{link:dhtmlgoodies.com|http://www.dhtmlgoodies.com/index.html?whichScript=js_color_picker_v2}|{link:LGPL|http://www.dhtmlgoodies.com/index.html?page=termsOfUse}|jeckels|Color picker for web themes
+hexbin||{link:Hexagonal Binning|https://github.com/d3/d3-plugins/tree/master/hexbin}|{link:Michael Bostock|https://github.com/d3/d3-plugins/blob/master/LICENSE}|nicka|Implements hexagonal binning, useful for aggregating data into a more coarse representation suitable for display
+js_color_picker|2|{link:dhtmlgoodies.com|http://www.dhtmlgoodies.com/index.html?whichScript=js_color_picker_v2}|{link:LGPL|http://www.dhtmlgoodies.com/index.html?page=termsOfUse}|jeckels|Color picker for web themes
 LovCombo|1.3|{link:Ext.ux.form.LovCombo|http://lovcombo.extjs.eu/}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|kevink|Multi-select ("List Of Values") combo box widget for Ext JS
 MultiSelectTreePanel|1.1|{link:Ext.ux.MultiSelectTreePanel|http://www.users.on.net/~clear/ext/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS Exception|http://www.sencha.com/legal/open-source-faq/open-source-license-exception-for-applications/}|nicka|Multi-select tree panel that includes "drag and drop" capabilites for Ext JS.
+Raphaël|2.1.0|{link:raphael.js|http://raphaeljs.com/}|{link:MIT|http://raphaeljs.com/license.html}|alanv|Library helping simplify work with vector graphics on the web
 Slider|1.0|{link:Slider|http://webfx.eae.net/dhtml/slider/slider.html}|{link:Apache 2.0|http://webfx.eae.net/license/asl2}|daves|Basis for the range slider used for m/z range filter
 TinyMCE|3.4|{link:TinyMCE|http://tinymce.moxiecode.com/}|{link:LGPL|http://tinymce.moxiecode.com/js/tinymce/jscripts/tiny_mce/license.txt}|georgesn|HTML WYSIWYG editor
 TinyMCE PDW|1.2|{link:PDW|http://www.neele.name/pdw_toggle_toolbars/}|{link:LGPL|http://tinymce.moxiecode.com/js/tinymce/jscripts/tiny_mce/license.txt}|georgesn|TinyMCE plugin to hide toolbars
