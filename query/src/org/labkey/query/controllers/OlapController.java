@@ -51,9 +51,11 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryParseException;
@@ -304,6 +306,16 @@ public class OlapController extends SpringActionController
         {
             OlapDef d = getBean();
 
+            // Validate the module is installed
+            try
+            {
+                Module m = d.lookupModule();
+            }
+            catch (NotFoundException e)
+            {
+                errors.rejectValue("module", ERROR_MSG, e.getMessage());
+            }
+
             try
             {
                 // Instantiating the RolapReader will validate the definition and throw IllegalArgumentException
@@ -350,7 +362,7 @@ public class OlapController extends SpringActionController
             return view;
         }
 
-        protected abstract void doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException;
+        protected abstract boolean doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException;
 
         @Override
         public boolean handlePost(CustomOlapDescriptorForm form, BindException errors) throws Exception
@@ -358,7 +370,8 @@ public class OlapController extends SpringActionController
             if (errors.hasErrors())
                 return false;
 
-            doAction(form, errors);
+            if (!doAction(form, errors))
+                return false;
 
             // Clear the cached descriptors in this container
             CustomOlapSchemaDescriptor d = new CustomOlapSchemaDescriptor(form.getBean());
@@ -385,9 +398,24 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        protected void doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException
+        protected boolean doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException
         {
-            form.doInsert();
+            try
+            {
+                form.doInsert();
+            }
+            catch (RuntimeSQLException e)
+            {
+                if (e.isConstraintException())
+                {
+                    errors.reject(ERROR_MSG, "A cube by that name is already defined in this folder");
+                    return false;
+                }
+
+                throw e;
+            }
+
+            return true;
         }
 
         @Override
@@ -409,9 +437,10 @@ public class OlapController extends SpringActionController
         }
 
         @Override
-        protected void doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException
+        protected boolean doAction(CustomOlapDescriptorForm form, Errors errors) throws ServletException, SQLException
         {
             form.doUpdate();
+            return true;
         }
 
         @Override

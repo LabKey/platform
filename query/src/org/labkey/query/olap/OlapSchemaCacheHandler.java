@@ -16,6 +16,7 @@
 
 package org.labkey.query.olap;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.files.FileSystemDirectoryListener;
@@ -86,8 +87,14 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<String
         }
     };
 
-    public static String createOlapCacheKey(Module module, String name)
+    public static String createOlapCacheKey(@NotNull Module module, @NotNull String name)
     {
+        if (module == null)
+            throw new IllegalArgumentException("module required");
+
+        if (name == null)
+            throw new IllegalArgumentException("name required");
+
         return module.getName() + ":/" + name;
     }
 

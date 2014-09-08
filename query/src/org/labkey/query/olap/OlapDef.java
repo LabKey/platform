@@ -15,10 +15,12 @@
  */
 package org.labkey.query.olap;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Entity;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.query.persist.QueryManager;
 
 /**
@@ -86,10 +88,13 @@ public class OlapDef extends Entity
         _definition = definition;
     }
 
-    @Nullable
+    @NotNull
     public final Module lookupModule()
     {
-        return ModuleLoader.getInstance().getModule(_module);
+        Module m = ModuleLoader.getInstance().getModule(_module);
+        if (m == null)
+            throw new NotFoundException("Module '" + _module + "' not found");
+        return m;
     }
 
     public String getConfigId()
