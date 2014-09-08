@@ -1548,6 +1548,39 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
+    var renderHexBinGeom = function(data, geom) {
+
+        var hexbin = d3.hexbin().radius(5);
+
+        var xAcc = function(row) {return geom.getX(row);};
+        var yAcc = function(row) {return geom.getY(row);};
+
+        // translate points
+        var points = [], x, y;
+        for (var d=0; d < data.length; d++) {
+            x = xAcc(data[d]); y = yAcc(data[d]);
+            if (x != null && !isNaN(x) && y != null && !isNaN(y)) {
+                points.push([x, y]);
+            }
+        }
+
+        var color = d3.scale.linear()
+                .domain([0, 5])
+                .range(["white", "orange"])
+                .interpolate(d3.interpolateLab);
+
+        var layer = getLayer.call(this, geom);
+        var hexSel = layer.selectAll('.hexagon').data(hexbin(points));
+        hexSel.exit().remove();
+        hexSel.enter().append("path")
+                .attr("class", "hexagon")
+                .attr("d", hexbin.hexagon())
+                .attr("transform", function(d) {
+                    return "translate(" + d.x + "," + d.y + ")";
+                })
+                .style("fill", function(d) { return color(d.length); });
+    };
+
     var renderDataspaceBoxes = function(selection, plot, geom) {
         var xBinWidth, padding, boxWidth, boxWrappers, rects, medians, whiskers, xAcc, yAcc, hAcc, whiskerAcc,
                 medianAcc, hoverAcc;
@@ -1739,6 +1772,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderPathGeom: renderPathGeom,
         renderErrorBarGeom: renderErrorBarGeom,
         renderBoxPlotGeom: renderBoxPlotGeom,
-        renderDataspaceBoxPlotGeom: renderDataspaceBoxPlotGeom
+        renderDataspaceBoxPlotGeom: renderDataspaceBoxPlotGeom,
+        renderHexBinGeom: renderHexBinGeom
     };
 };

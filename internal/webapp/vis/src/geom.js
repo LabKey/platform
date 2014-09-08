@@ -137,6 +137,39 @@ LABKEY.vis.Geom.Point.prototype.render = function(renderer, grid, scales, data, 
 };
 
 /**
+ * @private
+ * @class The HexBin geom, used to bin a set of data and generate a hexagonal plot of binned points. Currently, under development and not for external use. Normally, this is used for scatter x-y based data.
+ * @param config
+ * @returns {LABKEY.vis.Geom.HexBin}
+ * @constructor
+ */
+LABKEY.vis.Geom.HexBin = function(config) {
+    this.type = "HexBin";
+
+    if (!config) {
+        config = {};
+    }
+
+    // The following configurations were copied from 'Point' geom and most likely not all (none?) of them are needed
+    this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
+    this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 5;
+    this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
+    this.plotNullPoints = ('plotNullPoints' in config && config.plotNullPoints != null && config.plotNullPoints != undefined) ? config.plotNullPoints : false;
+    this.position = ('position' in config && config.position != null && config.position != undefined) ? config.position : null;
+
+    return this;
+};
+LABKEY.vis.Geom.HexBin.prototype = new LABKEY.vis.Geom.XY();
+LABKEY.vis.Geom.HexBin.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name, index){
+    if(!this.initAesthetics(scales, layerAes, parentAes, name, index)){
+        return false;
+    }
+
+    renderer.renderHexBinGeom(data, this);
+    return true;
+};
+
+/**
  * @class The path geom, used to draw paths in a plot. In order to get multiple lines for a set of data the user must define an
  * accessor with the name "group" in the config.aes object of the {LABKEY.vis.Plot} or {LABKEY.vis.Layer} object. For
  * example if the data looked like {x: 12, y: 35, name: "Alan"} the config.aes.group accessor could be "Alan", or a
