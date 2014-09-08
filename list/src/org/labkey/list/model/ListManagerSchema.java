@@ -5,27 +5,32 @@ import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.Sort;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.data.SimpleDisplayColumn;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.lists.permissions.DesignListPermission;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.list.controllers.ListController;
-import org.labkey.list.view.ViewDesignColumn;
-import org.labkey.list.view.ViewHistoryColumn;
 import org.springframework.validation.BindException;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -104,10 +109,10 @@ public class ListManagerSchema extends UserSchema
         {
             return new QueryView(this, settings, errors)
             {
+                QuerySettings s = getSettings();
                 @Override
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
-//                    populateButtonBar(view, bar, false);
                     bar.add(super.createViewButton(getViewItemFilter()));
                     bar.add(super.createPrintButton());
                     bar.add(createExportButton());
@@ -120,28 +125,20 @@ public class ListManagerSchema extends UserSchema
                 {
                     ActionURL urlCreate = new ActionURL(ListController.EditListDefinitionAction.class, getContainer());
                     urlCreate.addReturnURL(getReturnURL());
-                    if(urlCreate != null)
-                    {
-                        ActionButton btnCreate = new ActionButton(urlCreate, "Create New List");
-                        btnCreate.setActionType(ActionButton.Action.POST);
-                        btnCreate.setDisplayPermission(DesignListPermission.class);
-                        return btnCreate;
-                    }
-                    return null;
+                    ActionButton btnCreate = new ActionButton(urlCreate, "Create New List");
+                    btnCreate.setActionType(ActionButton.Action.POST);
+                    btnCreate.setDisplayPermission(DesignListPermission.class);
+                    return btnCreate;
                 }
 
                 private ActionButton createImportListArchiveButton()
                 {
                     ActionURL urlImport = new ActionURL(ListController.ImportListArchiveAction.class, getContainer());
                     urlImport.addReturnURL(getReturnURL());
-                    if(urlImport != null)
-                    {
-                        ActionButton btnImport = new ActionButton(urlImport, "Import List Archive");
-                        btnImport.setActionType(ActionButton.Action.POST);
-                        btnImport.setDisplayPermission(DesignListPermission.class);
-                        return btnImport;
-                    }
-                    return null;
+                    ActionButton btnImport = new ActionButton(urlImport, "Import List Archive");
+                    btnImport.setActionType(ActionButton.Action.POST);
+                    btnImport.setDisplayPermission(DesignListPermission.class);
+                    return btnImport;
                 }
 
                 @Override
@@ -149,30 +146,33 @@ public class ListManagerSchema extends UserSchema
                 {
                     ActionURL urlDelete = new ActionURL(ListController.DeleteListDefinitionAction.class, getContainer());
                     urlDelete.addReturnURL(getReturnURL());
-                    if (urlDelete != null)
-                    {
-                        ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
-                        btnDelete.setActionType(ActionButton.Action.POST);
-                        btnDelete.isLocked();
-                        btnDelete.setDisplayPermission(DeletePermission.class);
-                        btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
-                        return btnDelete;
-                    }
-                    return null;
+                    ActionButton btnDelete = new ActionButton(urlDelete, "Delete");
+                    btnDelete.setActionType(ActionButton.Action.POST);
+                    btnDelete.isLocked();
+                    btnDelete.setDisplayPermission(DeletePermission.class);
+                    btnDelete.setRequiresSelection(true, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
+                    return btnDelete;
                 }
 
                 private ActionButton createExportButton()
                 {
-                    ActionURL urlExport = new ActionURL(ListController.ExportListArchiveAction.class, getContainer());
-                    if(urlExport != null)
+                    ActionURL urlExport;
+                    ActionButton btnExport;
+                    if(s.getContainerFilterName() != null && s.getContainerFilterName().equals("CurrentAndSubfolders"))
                     {
-                        ActionButton btnExport = new ActionButton(urlExport, "Export Archives");
-                        btnExport.setActionType(ActionButton.Action.POST);
-                        btnExport.setDisplayPermission(DesignListPermission.class);
-                        btnExport.setRequiresSelection(true);
-                        return btnExport;
+                        urlExport = new ActionURL(getReturnURL().toString());
+                        btnExport = new ActionButton(urlExport, "Export Archives");
+                        btnExport.setRequiresSelection(true, 1, 0, "You cannot export while viewing subFolders", "You cannot export while viewing subFolders", null);
                     }
-                    return null;
+                    else
+                    {
+                        urlExport = new ActionURL(ListController.ExportListArchiveAction.class, getContainer());
+                        btnExport = new ActionButton(urlExport, "Export Archives");
+                        btnExport.setRequiresSelection(true);
+                    }
+                    btnExport.setActionType(ActionButton.Action.POST);
+                    btnExport.setDisplayPermission(DesignListPermission.class);
+                    return btnExport;
                 }
 
                 @Override
@@ -181,15 +181,33 @@ public class ListManagerSchema extends UserSchema
                     super.addDetailsAndUpdateColumns(ret, table);
                     if (getContainer().hasPermission(getUser(), DesignListPermission.class))
                     {
-                        ActionURL urlDesign = new ActionURL(ListController.EditListDefinitionAction.class, getContainer());
-                        urlDesign.addParameter("listId", "${ListId}");
-                        ret.add(new ViewDesignColumn(urlDesign));
+                        SimpleDisplayColumn designColumn = new SimpleDisplayColumn()
+                        {
+                            @Override
+                            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                            {
+                                Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
+                                ActionURL designUrl = new ActionURL(ListController.EditListDefinitionAction.class, c);
+                                designUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
+                                out.write(PageFlowUtil.textLink("View Design", designUrl));
+                            }
+                        };
+                        ret.add(designColumn);
                     }
                     if (AuditLogService.get().isViewable())
                     {
-                        ActionURL urlHistory = new ActionURL(ListController.HistoryAction.class, getContainer());
-                        urlHistory.addParameter("listId", "${ListId}");
-                        ret.add(new ViewHistoryColumn(urlHistory));
+                        SimpleDisplayColumn historyColumn = new SimpleDisplayColumn()
+                        {
+                            @Override
+                            public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                            {
+                                Container c = ContainerManager.getForId(ctx.get(FieldKey.fromParts("container")).toString());
+                                ActionURL historyUrl = new ActionURL(ListController.HistoryAction.class, c);
+                                historyUrl.addParameter("listId", ctx.get(FieldKey.fromParts("listId")).toString());
+                                out.write(PageFlowUtil.textLink("View History", historyUrl));
+                            }
+                        };
+                        ret.add(historyColumn);
                     }
                 }
             };

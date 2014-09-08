@@ -309,8 +309,37 @@ public class ListController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
     {
+        private ArrayList<Integer> _listIDs = new ArrayList<Integer>();
+        private ArrayList<Container> _containers = new ArrayList<Container>();
+
         public void validateCommand(ListDefinitionForm form, Errors errors)
         {
+            if(form.getListId() == null)
+            {
+                String failMessage = "You do not have permission to delete: \n";
+                Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
+                for(String s : listIDs)
+                {
+                    String[] parts = s.split(",");
+                    Container c = ContainerManager.getForId(parts[1]);
+                    if(c.hasPermission(getUser(), AdminPermission.class)){
+                        _listIDs.add(Integer.parseInt(parts[0]));
+                        _containers.add(c);
+                    }
+                    else
+                    {
+                        failMessage = failMessage + "\t" + ListService.get().getList(c, Integer.parseInt(parts[0])).getName() + " in Container: " + c.getName() +"\n";
+                    }
+                }
+                if(!failMessage.equals("You do not have permission to delete: \n"))
+                    errors.reject("DELETE PERMISSION ERROR", failMessage);
+            }
+            else
+            {
+                //Accessed from the edit list page, where selection is not possible
+                _listIDs.add(form.getListId());
+                _containers.add(getContainer());
+            }
         }
 
         @Override
@@ -321,26 +350,9 @@ public class ListController extends SpringActionController
 
         public boolean handlePost(ListDefinitionForm form, BindException errors) throws Exception
         {
-            if(form.getListId() == null)
+            for(int i = 0; i < _listIDs.size(); i++)
             {
-                try
-                {
-                    Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
-                    for(String s : listIDs)
-                    {
-                        int ID = Integer.parseInt(s.substring(0, s.indexOf(',')));
-                        ListService.get().getList(getContainer(), ID).delete(getUser());
-                    }
-                }
-                catch (Table.OptimisticConflictException e)
-                {
-                    //bug 11729: if someone else already deleted the list, no need to throw exception
-                }
-            }
-            else
-            {
-                //Accessed from the edit list page, where selection is not possible
-                form.getList().delete(getUser());
+                ListService.get().getList(_containers.get(i), _listIDs.get(i)).delete(getUser());
             }
             return true;
         }

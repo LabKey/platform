@@ -1715,8 +1715,6 @@ list/src/org/labkey/list/view/ListQueryView.java -text
 list/src/org/labkey/list/view/ListWebPart.java -text
 list/src/org/labkey/list/view/SingleListWebPartFactory.java -text
 list/src/org/labkey/list/view/UploadListItemsForm.java -text
-list/src/org/labkey/list/view/ViewDesignColumn.java -text
-list/src/org/labkey/list/view/ViewHistoryColumn.java -text
 list/src/org/labkey/list/view/begin.jsp -text
 list/src/org/labkey/list/view/customizeSingleListWebPart.jsp -text
 list/src/org/labkey/list/view/deleteListDefinition.jsp -text
