@@ -23,8 +23,9 @@
 <%@ page extends="org.labkey.announcements.DailyDigestPage" %>
 <html>
 <head>
-<%=PageFlowUtil.getStylesheetIncludes(c, getUser())%>
-</head>
+    <base href="<%=h(ActionURL.getBaseServerURL())%>">
+<%=PageFlowUtil.getStylesheetIncludes(c)
+%></head>
 
 <body>
 <table width=100%>

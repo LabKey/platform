@@ -19,7 +19,6 @@
 <%@ page import="org.labkey.api.files.FileContentEmailPref" %>
 <%@ page import="org.labkey.api.files.FileUrls" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.settings.AppProps" %>
 <%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.util.Path" %>
@@ -32,7 +31,6 @@
 <%@ page import="java.util.Map" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
-
 <%
     org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm form = ((JspView<org.labkey.filecontent.message.FileContentDigestProvider.FileDigestForm>)HttpView.currentView()).getModelBean();
     int pref = FileContentEmailPref.FOLDER_DEFAULT;//NumberUtils.stringToInt(EmailService.get().getEmailPref(user, c, new FileContentEmailPref()), -1);
@@ -41,61 +39,62 @@
     ActionURL fileBrowser = PageFlowUtil.urlProvider(FileUrls.class).urlBegin(form.getContainer());
 %>
 <html>
-    <head>
-        <base href="<%=h(AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath())%>"/>
-        <%=PageFlowUtil.getStylesheetIncludes(form.getContainer(), form.getUser())%>
-    </head>
-    <body>
-        <table width="100%">
-            <tr><td>Summary of notifications of files at <a href="<%=h(fileBrowser.getURIString())%>"><%=h(form.getContainer().getPath())%></a>.</td></tr>
-        </table>
-        <hr size="1"/>
-        <br>
+<head>
+    <base href="<%=h(ActionURL.getBaseServerURL())%>">
+<%=PageFlowUtil.getStylesheetIncludes(form.getContainer())
+%></head>
 
-        <table width="100%">
-            <tr><th>Time</th><th>User</th><th>Comment</th></tr>
-        <%
-            for (Map.Entry<Path, List<AuditLogEvent>> record : form.getRecords().entrySet())
+<body>
+    <table width="100%">
+        <tr><td>Summary of notifications of files at <a href="<%=h(fileBrowser.getURIString())%>"><%=h(form.getContainer().getPath())%></a>.</td></tr>
+    </table>
+    <hr size="1"/>
+    <br>
+
+    <table width="100%">
+        <tr><th>Time</th><th>User</th><th>Comment</th></tr>
+    <%
+        for (Map.Entry<Path, List<AuditLogEvent>> record : form.getRecords().entrySet())
+        {
+            Path path = record.getKey();
+            WebdavResource resource = WebdavService.get().getResolver().lookup(path);
+
+    %>
+        <%  if (resource.exists()) { %>
+            <tr><td class="labkey-alternate-row" colspan="3"><%=h(resource.isCollection() ? "Folder: " : " File: ")%><a href="<%=resource.getLocalHref(getViewContext())%>"><%=h(resource.getName())%></a></td></tr>
+        <%  } else { %>
+            <tr><td class="labkey-alternate-row" colspan="3"><%=h(resource.isCollection() ? "Folder: " : " File: ")%><span class="labkey-strong"><%=h(resource.getName())%></span></td></tr>
+        <%  }
+
+            int i=0;
+            for (AuditLogEvent event : record.getValue())
             {
-                Path path = record.getKey();
-                WebdavResource resource = WebdavService.get().getResolver().lookup(path);
-
+                // TODO: Just hard-code rowCls? It's always the same
+                String rowCls = (i % 2 == 0) ? "labkey-row" : "labkey-row";
+                User user = event.getCreatedBy();
         %>
-            <%  if (resource.exists()) { %>
-                <tr><td class="labkey-alternate-row" colspan="3"><%=h(resource.isCollection() ? "Folder: " : " File: ")%><a href="<%=resource.getLocalHref(getViewContext())%>"><%=h(resource.getName())%></a></td></tr>
-            <%  } else { %>
-                <tr><td class="labkey-alternate-row" colspan="3"><%=h(resource.isCollection() ? "Folder: " : " File: ")%><span class="labkey-strong"><%=h(resource.getName())%></span></td></tr>
-            <%  }
-
-                int i=0;
-                for (AuditLogEvent event : record.getValue())
-                {
-                    // TODO: Just hard-code rowCls? It's always the same
-                    String rowCls = (i % 2 == 0) ? "labkey-row" : "labkey-row";
-                    User user = event.getCreatedBy();
-            %>
-                    <tr class="<%=text(rowCls)%>"><td><%=h(DateUtil.formatDateTime(form.getContainer(), event.getCreated()))%></td><td><%=h(user.getDisplayName(user))%></td><td><%=h(event.getComment())%></td></tr>
-            <%
-                }
-            %>
-                <tr><td colspan="3"><hr size="1"/></td></tr>
+                <tr class="<%=text(rowCls)%>"><td><%=h(DateUtil.formatDateTime(form.getContainer(), event.getCreated()))%></td><td><%=h(user.getDisplayName(user))%></td><td><%=h(event.getComment())%></td></tr>
         <%
             }
         %>
-        </table>
-        <br>
+            <tr><td colspan="3"><hr size="1"/></td></tr>
+    <%
+        }
+    %>
+    </table>
+    <br>
 
-        <table width="100%">
-            <tr><td>You have received this email because <%
-                switch(pref)
-                {
-                    case FileContentEmailPref.FOLDER_DEFAULT:
-                    case FileContentEmailPref.INDIVIDUAL: %>
-                    you are signed up to receive notifications about updates to files at <a href="<%=h(fileBrowser.getURIString())%>"><%= h(form.getContainer().getPath()) %></a>.
-                    If you no longer wish to receive these notifications you can <a href="<%=h(emailPrefs.getURIString())%>">change your email preferences</a>. <%
-                    break;
-                } %>
-            </td></tr>
-        </table>
-    </body>
+    <table width="100%">
+        <tr><td>You have received this email because <%
+            switch(pref)
+            {
+                case FileContentEmailPref.FOLDER_DEFAULT:
+                case FileContentEmailPref.INDIVIDUAL: %>
+                you are signed up to receive notifications about updates to files at <a href="<%=h(fileBrowser.getURIString())%>"><%= h(form.getContainer().getPath()) %></a>.
+                If you no longer wish to receive these notifications you can <a href="<%=h(emailPrefs.getURIString())%>">change your email preferences</a>. <%
+                break;
+            } %>
+        </td></tr>
+    </table>
+</body>
 </html>

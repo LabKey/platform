@@ -85,7 +85,6 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.RserveScriptEngine;
 import org.labkey.api.reports.actions.ReportForm;
 import org.labkey.api.reports.model.DataViewEditForm;
-import org.labkey.api.reports.model.ReportPropsManager;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.model.ViewInfo;
@@ -1143,7 +1142,7 @@ public class ReportsController extends SpringActionController
 
                 LinkedHashSet<String> includes = new LinkedHashSet<>();
                 LinkedHashSet<String> implicitIncludes = new LinkedHashSet<>();
-                PageFlowUtil.getJavaScriptFiles(getContainer(), getUser(), dependencies, includes, implicitIncludes);
+                PageFlowUtil.getJavaScriptFiles(getContainer(), dependencies, includes, implicitIncludes);
 
                 MockHttpServletResponse mr = new MockHttpServletResponse();
                 resultsView.render(getViewContext().getRequest(), mr);
@@ -1175,7 +1174,7 @@ public class ReportsController extends SpringActionController
 
             // add any css dependencies we have
             for (ClientDependency cd : scriptDependencies)
-                cssScripts.addAll(cd.getCssPaths(getContainer(), getUser(), AppProps.getInstance().isDevMode()));
+                cssScripts.addAll(cd.getCssPaths(getContainer()));
 
             // add these to our client dependencies
             clientDependencies.addAll(scriptDependencies);

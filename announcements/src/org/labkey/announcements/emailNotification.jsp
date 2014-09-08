@@ -23,7 +23,7 @@
     StringBuilder sb = new StringBuilder();
     String separator = "";
 
-    if(!announcementModel.getAttachments().isEmpty())
+    if (!announcementModel.getAttachments().isEmpty())
     {
         sb.append("Attachments: ");
         for (Attachment attachment : announcementModel.getAttachments())
@@ -33,13 +33,12 @@
            sb.append(attachment.getName());
         }
     }
-
 %>
 <html>
 <head>
-<base href="<%=h(ActionURL.getBaseServerURL())%>">
-<%=PageFlowUtil.getStylesheetIncludes(c, recipient)%>
-</head>
+    <base href="<%=h(ActionURL.getBaseServerURL())%>">
+<%=PageFlowUtil.getStylesheetIncludes(c)
+%></head>
 
 <body>
 <table width=100%>

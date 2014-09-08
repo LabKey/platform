@@ -115,16 +115,15 @@ public class WebPartSubstitutionHandler implements HtmlRenderer.SubstitutionHand
                 if (!dependencies.isEmpty())
                 {
                     Container c = ctx.getContainer();
-                    User u = ctx.getUser();
 
                     LinkedHashSet<String> includes = new LinkedHashSet<>();
-                    PageFlowUtil.getJavaScriptFiles(c, u, dependencies, includes, new LinkedHashSet<String>());
+                    PageFlowUtil.getJavaScriptFiles(c, dependencies, includes, new LinkedHashSet<String>());
 
                     LinkedHashSet<String> cssScripts = new LinkedHashSet<>();
 
                     for (ClientDependency d : dependencies)
                     {
-                        cssScripts.addAll(d.getCssPaths(c, u, AppProps.getInstance().isDevMode()));
+                        cssScripts.addAll(d.getCssPaths(c));
                     }
 
                     if (!includes.isEmpty() || !cssScripts.isEmpty())
