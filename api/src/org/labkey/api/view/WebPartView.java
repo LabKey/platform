@@ -122,14 +122,17 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
                 {
                     WebPartView.this.render(request, getViewContext().getResponse());
                 }
-                writer.startResponse();
-                writer.writeProperty("html", mr.getContentAsString());
-                writer.writeProperty("requiredJsScripts", includes);
-                writer.writeProperty("implicitJsIncludes", implicitIncludes);
-                writer.writeProperty("requiredCssScripts", cssScripts);
-                writer.writeProperty("implicitCssIncludes", implicitCssScripts);
-                writer.writeProperty("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
-                writer.endResponse();
+                else // 21477: Query editor fails to display simple errors
+                {
+                    writer.startResponse();
+                    writer.writeProperty("html", mr.getContentAsString());
+                    writer.writeProperty("requiredJsScripts", includes);
+                    writer.writeProperty("implicitJsIncludes", implicitIncludes);
+                    writer.writeProperty("requiredCssScripts", cssScripts);
+                    writer.writeProperty("implicitCssIncludes", implicitCssScripts);
+                    writer.writeProperty("moduleContext", PageFlowUtil.getModuleClientContext(getViewContext(), dependencies));
+                    writer.endResponse();
+                }
             }
         };
     }
