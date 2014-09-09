@@ -188,7 +188,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
             if (null == o)
                 return null;
 
-            if (o instanceof Time)
+            if (o instanceof Time || o instanceof TimeOnlyDate)
                 return o;
 
             Date duration = null;

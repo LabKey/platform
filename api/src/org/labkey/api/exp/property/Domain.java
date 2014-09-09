@@ -51,6 +51,7 @@ public interface Domain extends IPropertyType
     @NotNull
     List<? extends DomainProperty> getProperties();
     List<DomainProperty> getNonBaseProperties();
+    Set<DomainProperty> getBaseProperties();
     DomainProperty getProperty(int id);
     @Nullable
     DomainProperty getPropertyByURI(String propertyURI);
