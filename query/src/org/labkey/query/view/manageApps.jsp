@@ -141,6 +141,7 @@
 
         var form = Ext4.create('Ext.form.Panel', {
             renderTo: 'applicationConfiguration',
+            bodyStyle: 'background-color: transparent;',
             border: false,
             width: 420,
             defaults: {
@@ -150,26 +151,32 @@
             },
             items: [contextCombo,cubeDefCombo],
             buttonAlign: 'left',
-            buttons: [{
-                text: 'Save',
-                handler: function() {
-                    var cubeCb = form.getForm().findField('cubeDef');
-                    var cubeRec = cubeCb.getStore().findRecord('displayValue', cubeCb.getValue());
+            dockedItems: [{
+                xtype: 'toolbar',
+                dock: 'bottom',
+                ui: 'footer',
+                style: 'background-color: transparent;',
+                items: [{ xtype: 'component', flex: 1 },{
+                    text: 'Save',
+                    handler: function() {
+                        var cubeCb = form.getForm().findField('cubeDef');
+                        var cubeRec = cubeCb.getStore().findRecord('displayValue', cubeCb.getValue());
 
-                    var values = {};
-                    values.configId = cubeRec ? cubeRec.get("configId") : null;
-                    values.name = cubeRec ? cubeRec.get("cubeName") : null;
-                    values.schemaName = cubeRec ? cubeRec.get("schemaName") : null;
-                    values.contextName = form.getForm().findField('contextName').getValue();
-                    saveActiveAppConfig(values);
-                }
-            },{
-                text: 'Clear',
-                handler: function() {
-                    form.getForm().findField('cubeDef').setValue(null);
-                    form.getForm().findField('contextName').setValue(null);
-                    saveActiveAppConfig({configId: null, name: null, schemaName: null, contextName: null});
-                }
+                        var values = {};
+                        values.configId = cubeRec ? cubeRec.get("configId") : null;
+                        values.name = cubeRec ? cubeRec.get("cubeName") : null;
+                        values.schemaName = cubeRec ? cubeRec.get("schemaName") : null;
+                        values.contextName = form.getForm().findField('contextName').getValue();
+                        saveActiveAppConfig(values);
+                    }
+                },{
+                    text: 'Clear',
+                    handler: function() {
+                        form.getForm().findField('cubeDef').setValue(null);
+                        form.getForm().findField('contextName').setValue(null);
+                        saveActiveAppConfig({configId: null, name: null, schemaName: null, contextName: null});
+                    }
+                }]
             }]
         });
     }
