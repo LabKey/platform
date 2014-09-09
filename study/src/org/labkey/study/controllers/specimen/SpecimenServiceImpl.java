@@ -17,19 +17,25 @@
 package org.labkey.study.controllers.specimen;
 
 import gwt.client.org.labkey.specimen.client.SpecimenService;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
 import org.labkey.study.importer.SpecimenImporter;
+import org.labkey.study.importer.SpecimenImporter.EventVialRollup;
+import org.labkey.study.importer.SpecimenImporter.RollupInstance;
+import org.labkey.study.importer.SpecimenImporter.VialSpecimenRollup;
 import org.labkey.study.query.SpecimenTablesProvider;
 
 import java.util.ArrayList;
@@ -103,15 +109,16 @@ public class SpecimenServiceImpl extends DomainEditorServiceBase implements Spec
         return errors;
     }
 
-    public List<String> checkRollups(
-            List<GWTPropertyDescriptor> eventFields,
-            List<GWTPropertyDescriptor> vialFields,
-            List<GWTPropertyDescriptor> specimenFields
+    public List<List<String>> checkRollups(
+            List<GWTPropertyDescriptor> eventFields,            // all of these are nonBase properties
+            List<GWTPropertyDescriptor> vialFields,             // all of these are nonBase properties
+            List<GWTPropertyDescriptor> specimenFields          // all of these are nonBase properties
     )
     {
+        // Resulting list has errors, followed by a null String followed by warnings
         List<String> errors = new ArrayList<>();
+        List<String> warnings = new ArrayList<>();
 
-        // Check for rollups and report any errors
         List<PropertyDescriptor> eventProps = new ArrayList<>();
         List<PropertyDescriptor> vialProps = new ArrayList<>();
         List<PropertyDescriptor> specimenProps = new ArrayList<>();
@@ -125,17 +132,57 @@ public class SpecimenServiceImpl extends DomainEditorServiceBase implements Spec
         for (GWTPropertyDescriptor gwtProp : specimenFields)
             specimenProps.add(getPropFromGwtProp(gwtProp));
 
-        Map<String, String> vialToEventNameMap = SpecimenImporter.getVialToEventNameMap(vialProps, eventProps);
+        SpecimenTablesProvider specimenTablesProvider = new SpecimenTablesProvider(getContainer(), getUser(), null);
+        Domain eventDomain = specimenTablesProvider.getDomain("SpecimenEvent", false);
+        if (null != eventDomain)
+        {   // Consider that rollups can come from base properties
+            for (DomainProperty domainProperty : eventDomain.getBaseProperties())
+                eventProps.add(domainProperty.getPropertyDescriptor());
+        }
+        CaseInsensitiveHashSet eventFieldNamesDisallowedForRollups = SpecimenImporter.getEventFieldNamesDisallowedForRollups();
+        Map<String, Pair<String, RollupInstance<EventVialRollup>>> vialToEventNameMap = SpecimenImporter.getVialToEventNameMap(vialProps, eventProps);     // includes rollups with type mismatches
         for (PropertyDescriptor prop : vialProps)
-            if (!vialToEventNameMap.containsKey(prop.getName().toLowerCase()))
-                errors.add("Vial field '" + prop.getName() + "' has no SpecimenEvent field that will rollup to it.");
+        {
+            Pair<String, RollupInstance<EventVialRollup>> eventPair = vialToEventNameMap.get(prop.getName().toLowerCase());
+            if (null != eventPair)
+            {
+                String eventFieldName = eventPair.first;
+                if (eventFieldNamesDisallowedForRollups.contains(eventFieldName))
+                    errors.add("You may not rollup from SpecimenEvent field '" + eventFieldName + "'.");
+                else if (!eventPair.second.isTypeConstraintMet())
+                    errors.add("SpecimenEvent field '" + eventFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met.");
+            }
+            else
+                warnings.add("Vial field '" + prop.getName() + "' has no SpecimenEvent field that will rollup to it.");
+        }
 
-        Map<String, String> specimenToVialNameMap = SpecimenImporter.getSpecimenToVialNameMap(specimenProps, vialProps);
+        Domain vialDomain = specimenTablesProvider.getDomain("Vial", false);
+        if (null != vialDomain)
+        {   // Consider that rollups can come from base properties
+            for (DomainProperty domainProperty : vialDomain.getBaseProperties())
+                vialProps.add(domainProperty.getPropertyDescriptor());
+        }
+        CaseInsensitiveHashSet vialFieldNamesDisallowedForRollups = SpecimenImporter.getVialFieldNamesDisallowedForRollups();
+        Map<String, Pair<String, RollupInstance<VialSpecimenRollup>>> specimenToVialNameMap = SpecimenImporter.getSpecimenToVialNameMap(specimenProps, vialProps);     // includes rollups with type mismatches
         for (PropertyDescriptor prop : specimenProps)
-            if (!specimenToVialNameMap.containsKey(prop.getName().toLowerCase()))
-                errors.add("Specimen field '" + prop.getName() + "' has no Vial field that will rollup to it.");
+        {
+            Pair<String, RollupInstance<VialSpecimenRollup>> vialPair = specimenToVialNameMap.get(prop.getName().toLowerCase());
+            if (null != vialPair)
+            {
+                String vialFieldName = vialPair.first;
+                if (vialFieldNamesDisallowedForRollups.contains(vialFieldName))
+                    errors.add("You may not rollup from Vial field '" + vialFieldName + "'.");
+                else if (!vialPair.second.isTypeConstraintMet())
+                    errors.add("Vial field '" + vialFieldName + "' would rollup to '" + prop.getName() + "' except the type constraint is not met.");
+            }
+            else
+                warnings.add("Specimen field '" + prop.getName() + "' has no Vial field that will rollup to it.");
+        }
 
-        return errors;
+        List<List<String>> result = new ArrayList<>();
+        result.add(errors);
+        result.add(warnings);
+        return result;
     }
 
     private PropertyDescriptor getPropFromGwtProp(GWTPropertyDescriptor gwtProp)

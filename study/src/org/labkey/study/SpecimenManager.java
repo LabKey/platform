@@ -340,7 +340,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             Date date1 = getAnyDate(event1);
             Date date2 = getAnyDate(event2);
             if (date1 == null && date2 == null)
-                return 0;
+                return compareExternalIds(event1, event2);
             if (date1 == null)
                 return -1;
             if (date2 == null)
@@ -348,11 +348,23 @@ public class SpecimenManager implements ContainerManager.ContainerListener
             Long ms1 = date1.getTime();
             Long ms2 = date2.getTime();
             int comp = ms1.compareTo(ms2);
-            if (comp == 0)
-                return getTieBreakValue(event2) - getTieBreakValue(event1);
-            else
+            if (comp != 0)
                 return comp;
+            comp = getTieBreakValue(event2) - getTieBreakValue(event1);
+            if (comp != 0)
+                return comp;
+            return compareExternalIds(event1, event2);
         }
+    }
+
+    private static int compareExternalIds(SpecimenEvent event1, SpecimenEvent event2)
+    {
+        long compExternalIds = event1.getExternalId() - event2.getExternalId();
+        if (compExternalIds < 0)
+            return -1;
+        if (compExternalIds > 0)
+            return 1;
+        return 0;
     }
 
     public List<SpecimenEvent> getDateOrderedEventList(Vial vial)

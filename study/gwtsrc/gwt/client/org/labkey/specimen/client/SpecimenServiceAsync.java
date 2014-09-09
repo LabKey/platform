@@ -39,6 +39,6 @@ public interface SpecimenServiceAsync extends LookupServiceAsync
             List<GWTPropertyDescriptor> eventFields,
             List<GWTPropertyDescriptor> vialFields,
             List<GWTPropertyDescriptor> specimenFields,
-            AsyncCallback<List<String>> errors
+            AsyncCallback<List<List<String>>> errors
     );
 }

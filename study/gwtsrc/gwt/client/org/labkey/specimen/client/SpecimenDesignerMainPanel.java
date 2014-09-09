@@ -40,6 +40,7 @@ import org.labkey.api.gwt.client.util.BooleanProperty;
 import org.labkey.api.gwt.client.util.ErrorDialogAsyncCallback;
 import org.labkey.api.gwt.client.util.PropertyUtil;
 import org.labkey.api.gwt.client.util.ServiceUtil;
+import org.labkey.api.gwt.client.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -290,33 +291,55 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
 
         // Ask server to check rollups
         getService().checkRollups(optionalEventFields, optionalVialFields, optionalSpecimenFields,
-            new AsyncCallback<List<String>>()
-            {
-                public void onFailure(Throwable caught)
+                new AsyncCallback<List<List<String>>>()
                 {
-                }
-
-                public void onSuccess(List<String> result)
-                {
-                    String sep = "";
-                    String errorString = "";
-                    for (String warn : result)
+                    public void onFailure(Throwable caught)
                     {
-                        errorString += sep + warn;
-                        sep = "   ";
-                    }
-                    boolean done = true;
-                    if (result.size() > 0)
-                    {
-                        String message = saveAndClose ? "\n\nClick OK to ignore; Cancel to defer saving and stay on the page." :
-                                                        "\n\nClick OK to ignore; Cancel to defer saving.";
-                        done = Window.confirm("Warning:\n\n" + errorString + message);
                     }
 
-                    if (done)
-                        updateWithCallback(callback);
+                    public void onSuccess(List<List<String>> result)
+                    {
+                        // result list with 2 elements: list of errors, then list of warnings
+                        if (!result.get(0).isEmpty())
+                        {
+                            String sep = "";
+                            String errorString = "";
+                            for (String error : result.get(0))
+                            {
+                                errorString += sep + error;
+                                sep = "   ";
+                            }
+                            if (!StringUtils.isEmpty(errorString))
+                            {
+                                Window.alert(errorString);      // report errors and stay on page
+                            }
+                        }
+                        else
+                        {
+                            boolean done = true;
+                            if (!result.get(1).isEmpty())
+                            {
+                                String sep = "";
+                                String errorString = "";
+                                for (String warn : result.get(1))
+                                {
+                                    errorString += sep + warn;
+                                    sep = "   ";
+                                }
+
+                                if (!StringUtils.isEmpty(errorString))
+                                {
+                                    String message = saveAndClose ? "\n\nClick OK to ignore; Cancel to defer saving and stay on the page." :
+                                            "\n\nClick OK to ignore; Cancel to defer saving.";
+                                    done = Window.confirm("Warning:\n\n" + errorString + message);
+                                }
+                            }
+
+                            if (done)
+                                updateWithCallback(callback);
+                        }
+                    }
                 }
-            }
         );
     }
 

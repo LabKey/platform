@@ -40,7 +40,7 @@ public interface SpecimenService extends LookupService
             GWTDomain<GWTPropertyDescriptor> updateSpecimen
     );
 
-    List<String> checkRollups(
+    List<List<String>> checkRollups(
             List<GWTPropertyDescriptor> eventFields,
             List<GWTPropertyDescriptor> vialFields,
             List<GWTPropertyDescriptor> specimenFields

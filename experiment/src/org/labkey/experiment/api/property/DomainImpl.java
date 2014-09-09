@@ -243,6 +243,21 @@ public class DomainImpl implements Domain
         return nonBaseProperties;
     }
 
+    public Set<DomainProperty> getBaseProperties()
+    {
+        Set<String> basePropertyNames = new HashSet<>();
+        for (PropertyStorageSpec spec : getDomainKind().getBaseProperties())
+            basePropertyNames.add(spec.getName().toLowerCase());
+
+        Set<DomainProperty> baseProperties = new HashSet<>();
+        for (DomainPropertyImpl prop : getProperties())
+        {
+            if (basePropertyNames.contains(prop.getName().toLowerCase()))
+                baseProperties.add(prop);
+        }
+        return baseProperties;
+    }
+
     public void setPropertyIndex(DomainProperty prop, int index)
     {
         if (index < 0 || index >= _properties.size())
