@@ -158,7 +158,7 @@ public class ServerManager
         @Override
         public OlapSchemaDescriptor load(String key, @Nullable Object argument)
         {
-            String[] parts = key.split("/");
+            String[] parts = key.split("/", 2);
             if (parts.length != 2)
                 throw new IllegalStateException("Unrecognized cache key format: " + key);
 

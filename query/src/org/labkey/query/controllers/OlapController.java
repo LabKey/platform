@@ -897,7 +897,7 @@ public class OlapController extends SpringActionController
                 d = ServerManager.getDescriptor(getContainer(), form.getConfigId());
             if (null == d && StringUtils.isNotEmpty(form.getConfigId()))
             {
-                errors.reject(ERROR_MSG, "Olap configuration not found: " + form.getSchemaName());
+                errors.reject(ERROR_MSG, "Olap configuration not found: " + form.getConfigId());
             }
             return new JspView<>("/org/labkey/query/view/mdx.jsp", form, errors);
         }
@@ -923,7 +923,7 @@ public class OlapController extends SpringActionController
                 d = ServerManager.getDescriptor(getContainer(), form.getConfigId());
             if (null == d && StringUtils.isNotEmpty(form.getConfigId()))
             {
-                errors.reject(ERROR_MSG, "Olap configuration not found: " + form.getSchemaName());
+                errors.reject(ERROR_MSG, "Olap configuration not found: " + form.getConfigId());
             }
             return new JspView<>("/org/labkey/query/view/json.jsp", form, errors);
         }
