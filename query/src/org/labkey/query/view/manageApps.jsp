@@ -69,13 +69,28 @@
         );
     }
 
+    function generateCubeDisplayValue(cubeName, defName)
+    {
+        return cubeName + " (" + defName + ")";
+    }
+
+    function isCubeDefInitSelected(cubeName, schemaName, configId)
+    {
+        return cubeName == <%=q(bean.getName())%> && schemaName == <%=q(bean.getSchemaName())%> && configId == <%=q(bean.getConfigId())%>;
+    }
+
     function initAppConfigForm()
     {
         var cubeDefs = [
         <% for (OlapSchemaDescriptor cubeDef : cubeDefs) {
             for (Schema schema : cubeDef.getSchemas(cubeDef.getConnection(getContainer(), getUser()), getContainer(), getUser())) {
                 for (Cube cube : schema.getCubes()) {
-                    %>["<%=h(cube.getName())%>","<%=h(schema.getName())%>","<%=h(cubeDef.getId())%>"],<%
+                    %>[
+                        generateCubeDisplayValue(<%=q(cube.getName())%>, <%=q(cubeDef.getName())%>),
+                        "<%=h(cube.getName())%>","<%=h(schema.getName())%>",
+                        "<%=h(cubeDef.getId())%>",
+                        isCubeDefInitSelected(<%=q(cube.getName())%>, <%=q(schema.getName())%>, <%=q(cubeDef.getId())%>)
+                    ],<%
                 }
             }
         } %>];
@@ -83,6 +98,45 @@
         Ext4.define('AppModel', {
             extend: 'Ext.data.Model',
             fields: [{name: 'name'}]
+        });
+
+        var contextCombo = Ext4.create('Ext.form.field.ComboBox', {
+            name: 'contextName',
+            editable: false,
+            fieldLabel: 'Context Name',
+            displayField: 'name',
+            value: <%=q(bean.getContextName())%>,
+            store: Ext4.create('Ext.data.Store', {
+                model: 'AppModel',
+                proxy: {
+                    type: 'ajax',
+                    url: LABKEY.ActionURL.buildURL('olap', 'listApps'),
+                    reader: {
+                        type: 'json',
+                        root: 'apps'
+                    }
+                },
+                autoLoad: true
+            })
+        });
+
+        var cubeDefCombo = Ext4.create('Ext.form.field.ComboBox', {
+            xtype: 'combo',
+            name: 'cubeDef',
+            editable: false,
+            fieldLabel: 'Cube Definition',
+            displayField: 'displayValue',
+            store: Ext4.create('Ext.data.ArrayStore', {
+                fields: ['displayValue', 'cubeName', 'schemaName', 'configId', 'initSelected'],
+                data: cubeDefs
+            }),
+            listeners: {
+                render: function(combo) {
+                    var initSelectRecord = combo.getStore().findRecord('initSelected', true);
+                    if (initSelectRecord)
+                        cubeDefCombo.select(initSelectRecord);
+                }
+            }
         });
 
         var form = Ext4.create('Ext.form.Panel', {
@@ -94,47 +148,17 @@
                 labelWidth: 110,
                 padding: 5
             },
-            items: [{
-                xtype: 'combo',
-                name: 'contextName',
-                editable: false,
-                fieldLabel: 'Context Name',
-                displayField: 'name',
-                value: <%=q(bean.getContextName())%>,
-                store: Ext4.create('Ext.data.Store', {
-                    model: 'AppModel',
-                    proxy: {
-                        type: 'ajax',
-                        url: LABKEY.ActionURL.buildURL('olap', 'listApps'),
-                        reader: {
-                            type: 'json',
-                            root: 'apps'
-                        }
-                    },
-                    autoLoad: true
-                })
-            },{
-                xtype: 'combo',
-                name: 'cubeDef',
-                editable: false,
-                fieldLabel: 'Cube Definition',
-                displayField: 'name',
-                value: <%=q(bean.getName())%>,
-                store: Ext4.create('Ext.data.ArrayStore', {
-                    fields: ['name', 'schemaName', 'configId'],
-                    data: cubeDefs
-                })
-            }],
+            items: [contextCombo,cubeDefCombo],
             buttonAlign: 'left',
             buttons: [{
                 text: 'Save',
                 handler: function() {
                     var cubeCb = form.getForm().findField('cubeDef');
-                    var cubeRec = cubeCb.getStore().findRecord('name', cubeCb.getValue());
+                    var cubeRec = cubeCb.getStore().findRecord('displayValue', cubeCb.getValue());
 
                     var values = {};
                     values.configId = cubeRec ? cubeRec.get("configId") : null;
-                    values.name = cubeRec ? cubeRec.get("name") : null;
+                    values.name = cubeRec ? cubeRec.get("cubeName") : null;
                     values.schemaName = cubeRec ? cubeRec.get("schemaName") : null;
                     values.contextName = form.getForm().findField('contextName').getValue();
                     saveActiveAppConfig(values);
@@ -207,25 +231,24 @@
     %><table><%
     for (OlapSchemaDescriptor sd : list)
     {
-        if (sd.isEditable())
-        {
-            %><tr>
-                <td><%=h(sd.getName())%></td>
+        %><tr>
+            <td style="font-weight: bold;"><%=h(sd.getName())%></td>
+            <% if (sd.isEditable()) { %>
                 <td><%=textLink("edit", ((CustomOlapSchemaDescriptor) sd).urlEdit().addReturnURL(getActionURL().clone()))%></td>
                 <td><%=textLink("delete", ((CustomOlapSchemaDescriptor)sd).urlDelete().addReturnURL(getActionURL().clone()))%></td>
-            </tr><%
+            <% } %>
+        </tr><%
 
-            try (OlapConnection conn = sd.getConnection(getContainer(), getUser()))
+        try (OlapConnection conn = sd.getConnection(getContainer(), getUser()))
+        {
+            for (Schema s : sd.getSchemas(conn,getContainer(), getUser()))
             {
-                for (Schema s : sd.getSchemas(conn,getContainer(), getUser()))
+                %><tr><td colspan="3"><ul><%
+                for (Cube c : s.getCubes())
                 {
-                    %><tr><td colspan="3"><ul><%
-                    for (Cube c : s.getCubes())
-                    {
-                        %><li><%=h(c.getName())%></li><%
-                    }
-                    %></ul></td></tr><%
+                    %><li><%=h(c.getName())%></li><%
                 }
+                %></ul></td></tr><%
             }
         }
     }
