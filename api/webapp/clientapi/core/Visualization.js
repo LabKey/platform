@@ -178,6 +178,7 @@ LABKEY.Query.Visualization = new function() {
          *                                    what data should be returned if pivoting by dimension results in multiple underlying values
          *                                    per series data point.</li>
          *          </ul>
+         *      </li>
          *      <li><b>dateOptions</b>: Optional if this measure's axis.timeAxis property is true, ignored otherwise.  Has the following child properties.
          *                      Either zeroDateCol or ZeroDayVisitTag may be specified, but not both.
          *          <ul>
@@ -215,7 +216,8 @@ LABKEY.Query.Visualization = new function() {
          *              <li><b>queryName</b>: The name of the query containing this dimension.</li>
          *              <li><b>values</b>: Optional.  If provided, results will be filtered to include only the specified values.</li>
          *          </ul>
-         *      </li>
+         * @param {Boolean} [config.metaDataOnly] Default false. If true, response will no include the actual data rows, just metadata.
+         * @param {Boolean} [config.joinToFirst] Default false. If true, all measures will be joined to the first measure in the array instead of to the previous measure.
 
          * @param {Function} config.success Function called when execution succeeds. Will be called with three arguments:
 				<ul>
@@ -238,7 +240,8 @@ LABKEY.Query.Visualization = new function() {
                 filterQuery: config.filterQuery,
                 limit   : config.limit,
                 groupBys: config.groupBys,
-                metaDataOnly: config.metaDataOnly
+                metaDataOnly: config.metaDataOnly,
+                joinToFirst: config.joinToFirst
             };
 
             LABKEY.Ajax.request(
