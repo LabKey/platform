@@ -15,9 +15,12 @@
  */
 package org.labkey.study.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.security.User;
+import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.study.model.StudyImpl;
+import org.labkey.study.visualization.DataspaceVisualizationProvider;
 
 /**
  * Created by matthew on 2/11/14.
@@ -58,5 +61,12 @@ public class DataspaceQuerySchema extends StudyQuerySchema
     public ContainerFilter getOlapContainerFilter(User user)
     {
         return getDefaultContainerFilter();
+    }
+
+    @Nullable
+    @Override
+    public VisualizationProvider createVisualizationProvider()
+    {
+        return new DataspaceVisualizationProvider(this);
     }
 }

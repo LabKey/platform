@@ -58,6 +58,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     private ViewContext _viewContext;
     private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
     private boolean _metaDataOnly;
+    private boolean _joinToFirst;
     private Integer _limit;
 
     @Override
@@ -125,6 +126,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
     private void _bindProperties(Map<String, Object> properties)
     {
+        _metaDataOnly = BooleanUtils.toBooleanDefaultIfNull((Boolean)properties.get("metaDataOnly"), false);
+        _joinToFirst = BooleanUtils.toBooleanDefaultIfNull((Boolean)properties.get("joinToFirst"), false);
+
         Object measuresProp = properties.get("measures");
         if (measuresProp != null)
         {
@@ -253,7 +257,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 }
 
                 provider.addExtraSelectColumns(_columnFactory, query);
-                previous = query;
+
+                if (previous == null || !isJoinToFirst())
+                    previous = query;
             }
         }
 
@@ -290,8 +296,6 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         }
 
         ensureJoinColumns();
-        
-        _metaDataOnly = BooleanUtils.toBooleanDefaultIfNull((Boolean)properties.get("metaDataOnly"), false);
 
         Object limit = properties.get("limit");
         if (limit != null)
@@ -862,6 +866,16 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     public void setMetaDataOnly(boolean metaDataOnly)
     {
         _metaDataOnly = metaDataOnly;
+    }
+
+    public boolean isJoinToFirst()
+    {
+        return _joinToFirst;
+    }
+
+    public void setJoinToFirst(boolean joinToFirst)
+    {
+        _joinToFirst = joinToFirst;
     }
 
     private static String normalizeInterval(String interval)

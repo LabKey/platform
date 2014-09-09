@@ -3993,6 +3993,7 @@ study/src/org/labkey/study/visitmanager/PurgeParticipantsTask.java -text
 study/src/org/labkey/study/visitmanager/RelativeDateVisitManager.java -text
 study/src/org/labkey/study/visitmanager/SequenceVisitManager.java -text
 study/src/org/labkey/study/visitmanager/VisitManager.java -text
+study/src/org/labkey/study/visualization/DataspaceVisualizationProvider.java -text
 study/src/org/labkey/study/visualization/StudyVisualizationProvider.java -text
 study/src/org/labkey/study/writer/AbstractContext.java -text
 study/src/org/labkey/study/writer/AbstractSpecimenWriter.java -text

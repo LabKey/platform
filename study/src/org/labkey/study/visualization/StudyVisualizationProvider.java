@@ -134,16 +134,6 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
 
         List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> joinCols = new ArrayList<>();
 
-        // prior to Dataspace we were always gettting data from a single study container, now we
-        // need to include the container in the where clause to make sure
-        Study firstStudy = StudyService.get().getStudy(first.getContainer());
-        if (firstStudy != null && firstStudy.isDataspaceStudy())
-        {
-            VisualizationSourceColumn firstContainerCol = factory.create(first.getSchema(), first.getQueryName(), "Container", true);
-            VisualizationSourceColumn secondContainerCol = factory.create(second.getSchema(), second.getQueryName(), "Container", true);
-            joinCols.add(new Pair<>(firstContainerCol, secondContainerCol));
-        }
-
         String firstSubjectColumnName = StudyService.get().getSubjectColumnName(first.getContainer());
         String firstSubjectNounSingular = StudyService.get().getSubjectNounSingular(first.getContainer());
         // allow null results for this column so as to follow the lead of the primary measure column for this query:
@@ -187,14 +177,11 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     }
 
     // for non-demographic datasets, join on subject/visit, allowing null results for this column so as to follow the lead of the primary measure column for this query:
-    private VisualizationSourceColumn getVisitJoinColumn(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query, String subjectNounSingular)
+    protected VisualizationSourceColumn getVisitJoinColumn(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query, String subjectNounSingular)
     {
-        // issue 20689 : always join by visit sequencenum for Dataspace
-        Study study = StudyService.get().getStudy(getSchema().getContainer());
-        String fieldName = (study != null && study.isDataspaceStudy()) || getType() == ChartType.TIME_VISITBASED ? "sequencenum" : "VisitDate";
-
         String subjectVisit = subjectNounSingular + "Visit";
-        String colName = (query.getQueryName().equalsIgnoreCase(subjectVisit) ? "" : subjectVisit + "/") + fieldName;
+        String colName = query.getQueryName().equalsIgnoreCase(subjectVisit) ? "" : subjectVisit + "/";
+        colName += (getType() == ChartType.TIME_VISITBASED ? "sequencenum" : "VisitDate");
         return factory.create(query.getSchema(), query.getQueryName(), colName, true);
     }
 
@@ -371,16 +358,5 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
                 }
             }
         }
-    }
-
-    @Override
-    public String getAlternateJoinOperator(Container container, IVisualizationSourceQuery query)
-    {
-        // issue 20526: use left join for Dataspace when adding color variable to plot (see Scatter.js use of allowNullResults)
-        Study study = StudyService.get().getStudy(container);
-        if (study != null && study.isDataspaceStudy() && !query.getQueryName().contains("VisualizationVisitTag"))
-            return "LEFT JOIN";
-        else
-            return super.getAlternateJoinOperator(container, query);
     }
 }
