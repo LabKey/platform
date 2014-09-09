@@ -122,9 +122,8 @@ LABKEY.Query.Visualization = new function() {
          * @param {Array} config.filters An array of {@link LABKEY.Query.Visualization.Filter} objects.
          * @param {Boolean} [config.dateMeasures] Indicates whether date measures should be returned instead of numeric measures.
          * Defaults to false.
-         * @param {Function} config.success
-				Function called when execution succeeds. Will be called with one argument:
-				<ul><li><b>measures</b>: an array of {@link LABKEY.Query.Visualization.Measure} objects.</li>
+         * @param {Function} config.success Function called when execution succeeds. Will be called with one argument:
+         * <ul><li><b>measures</b>: an array of {@link LABKEY.Query.Visualization.Measure} objects.</li>
          * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -210,21 +209,21 @@ LABKEY.Query.Visualization = new function() {
          * </ul>
          * @param {Array} [config.sorts] Generally an array of augmented {@link LABKEY.Query.Visualization.Dimension} or {@link LABKEY.Query.Visualization.Measure}
          * objects, but can be an array of any objects with the following properties:
-         *          <ul>
-         *              <li><b>name</b>: The name of this dimension.</li>
-         *              <li><b>schemaName</b>: The name of the schema containing the query that contains this dimension.</li>
-         *              <li><b>queryName</b>: The name of the query containing this dimension.</li>
-         *              <li><b>values</b>: Optional.  If provided, results will be filtered to include only the specified values.</li>
-         *          </ul>
+         * <ul>
+         *  <li><b>name</b>: The name of this dimension.</li>
+         *  <li><b>schemaName</b>: The name of the schema containing the query that contains this dimension.</li>
+         *  <li><b>queryName</b>: The name of the query containing this dimension.</li>
+         *  <li><b>values</b>: Optional.  If provided, results will be filtered to include only the specified values.</li>
+         * </ul>
          * @param {Boolean} [config.metaDataOnly] Default false. If true, response will no include the actual data rows, just metadata.
          * @param {Boolean} [config.joinToFirst] Default false. If true, all measures will be joined to the first measure in the array instead of to the previous measure.
 
          * @param {Function} config.success Function called when execution succeeds. Will be called with three arguments:
-				<ul>
-                    <li><b>data</b>: the parsed response data ({@link LABKEY.Query.SelectRowsResults})</li>
-                    <li><b>request</b>: the XMLHttpRequest object</li>
-                    <li><b>options</b>: a request options object ({@link LABKEY.Query.SelectRowsOptions})</li>
-                </ul>
+         * <ul>
+         *  <li><b>data</b>: the parsed response data ({@link LABKEY.Query.SelectRowsResults})</li>
+         *  <li><b>request</b>: the XMLHttpRequest object</li>
+         *  <li><b>options</b>: a request options object ({@link LABKEY.Query.SelectRowsOptions})</li>
+         * </ul>
          * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -278,15 +277,15 @@ LABKEY.Query.Visualization = new function() {
          * @param {String} [config.queryName] Optional, but required if config.schemaName is provided.  Allows the visualization to
          * be scoped to a particular query.  If scoped, this visualization will appear in the 'views' menu for that query.
          * @param {Function} config.success Function called when execution succeeds. Will be called with one arguments:
-				<ul>
-                    <li><b>result</b>: an object with two properties:
-                        <ul>
-                            <li><b>name</b>: the name of the saved visualization</li>
-                            <li><b>visualizationId</b>: a unique integer identifier for this saved visualization</li>
-                        </ul>
-                    <li><b>request</b>: the XMLHttpRequest object</li>
-                    <li><b>options</b>: a request options object</li>
-                </ul>
+         * <ul>
+         *  <li><b>result</b>: an object with two properties:
+         *      <ul>
+         *          <li><b>name</b>: the name of the saved visualization</li>
+         *          <li><b>visualizationId</b>: a unique integer identifier for this saved visualization</li>
+         *      </ul>
+         *  <li><b>request</b>: the XMLHttpRequest object</li>
+         *  <li><b>options</b>: a request options object</li>
+         *  </ul>
          * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
@@ -332,20 +331,20 @@ LABKEY.Query.Visualization = new function() {
          * the visualization to a specific schema and query.  Note that visualization names are unique within a container
          * (regardless of schema and query), so these additional optional parameters are only useful in a small number of circumstances.
          * @param {Function} config.success Function called when execution succeeds. Will be called with one arguments:
-				<ul>
-                    <li><b>result</b>: an object with two properties:
-                        <ul>
-                            <li><b>name</b>: The name of the saved visualization</li>
-                            <li><b>description</b>: The description of the saved visualization</li>
-                            <li><b>type</b>: The visualization type</li>
-                            <li><b>schemaName</b>: The schema to which this visualization has been scoped, if any</li>
-                            <li><b>queryName</b>: The query to which this visualization has been scoped, if any</li>
-                            <li><b>visualizationConfig</b>: The configuration object provided to {@link LABKEY.Query.Visualization.save}</li>
-                        </ul>
-                    </li>
-                    <li><b>request</b>: the XMLHttpRequest object</li>
-                    <li><b>options</b>: a request options object</li>
-                </ul>
+         * <ul>
+         *  <li><b>result</b>: an object with two properties:
+         *      <ul>
+         *          <li><b>name</b>: The name of the saved visualization</li>
+         *          <li><b>description</b>: The description of the saved visualization</li>
+         *          <li><b>type</b>: The visualization type</li>
+         *          <li><b>schemaName</b>: The schema to which this visualization has been scoped, if any</li>
+         *          <li><b>queryName</b>: The query to which this visualization has been scoped, if any</li>
+         *          <li><b>visualizationConfig</b>: The configuration object provided to {@link LABKEY.Query.Visualization.save}</li>
+         *      </ul>
+         *  </li>
+         *  <li><b>request</b>: the XMLHttpRequest object</li>
+         *  <li><b>options</b>: a request options object</li>
+         * </ul>
          * @param {Function} [config.failure] Function called when execution fails.  Called with the following parameters:
          * <ul>
          * <li><b>errorInfo:</b> an object containing detailed error information (may be null)</li>
