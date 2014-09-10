@@ -18,6 +18,7 @@ package org.labkey.api.util;
 
 import org.apache.log4j.Logger;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.module.ModuleLoader;
 
 import javax.servlet.ServletContextEvent;
@@ -166,6 +167,11 @@ public class BreakpointThread extends Thread implements ShutdownListener
         log.debug("*********************************************");
         log.debug("Completed thread dump");
         log.debug("*********************************************");
+
+        for (DbScope dbScope : DbScope.getDbScopes())
+        {
+            dbScope.logCurrentConnectionState();
+        }
     }
 
     /** Request that we log three thread dumps to the primary log file (labkey.log) */

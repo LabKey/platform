@@ -540,6 +540,43 @@ public class DbScope
         }
     }
 
+    /**
+     * Write to the standard log file information about all threads (active or dead) that appear to be holding onto
+     * database connections, having started via beginning a transaction.
+     */
+    public void logCurrentConnectionState()
+    {
+        synchronized (_transaction)
+        {
+            if (_transaction.isEmpty())
+            {
+                LOG.info("There are no threads holding connections for the data source '" + toString() + "'");
+            }
+            else
+            {
+                if (_transaction.size() == 1)
+                {
+                    LOG.info("There is one thread holding a database connections for the data source '" + toString() + "':");
+                }
+                else
+                {
+                    LOG.info("There are " + _transaction.size() + " threads holding a database connections for the data source '" + toString() + "':");
+                    for (Map.Entry<Thread, TransactionImpl> entry : _transaction.entrySet())
+                    {
+                        Thread thread = entry.getKey();
+                        LOG.info("\t'" + thread.getName() + "', State = " + thread.getState());
+                        if (thread.getState() == Thread.State.TERMINATED || thread.getState() == Thread.State.NEW)
+                        {
+                            for (StackTraceElement stackTraceElement : entry.getValue()._creation.getStackTrace())
+                            {
+                                LOG.info("\t\t" + stackTraceElement.toString());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     private static final int spidUnknown = -1;
 
@@ -1194,7 +1231,7 @@ public class DbScope
         /*
          * @return  the task that was inserted or the existing class that will be run instead
          */
-        public <T extends Runnable> T addCommitTask(T runnable, DbScope.CommitTaskOption taskOption);
+        public <T extends Runnable> T addCommitTask(T runnable, CommitTaskOption taskOption);
         public Connection getConnection();
         public void close();
         public void commit();
@@ -1232,7 +1269,7 @@ public class DbScope
             _caches.put(cache, map);
         }
 
-        public <T extends Runnable> T addCommitTask(T task, DbScope.CommitTaskOption taskOption)
+        public <T extends Runnable> T addCommitTask(T task, CommitTaskOption taskOption)
         {
             boolean added;
             T addedObj = task;
