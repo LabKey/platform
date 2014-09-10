@@ -39,8 +39,6 @@ import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
@@ -117,7 +115,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
         status,         // same
         json,
         modified,
-        serializedReportId,
+        serializedReportName,
         showInDashboard // used in Argos (show visible reports in the grid, show in my links if this is true)
     }
 
@@ -477,8 +475,17 @@ public class ReportDescriptor extends Entity implements SecurableResource
     {
         ReportDescriptorDocument doc = ReportDescriptorDocument.Factory.newInstance();
         ReportDescriptorType descriptor = doc.addNewReportDescriptor();
-
         descriptor.setDescriptorType(getDescriptorType());
+
+        // if we have a unique report name then write this out as the attachment
+        // directory element
+        if (context != null)
+        {
+            ReportNameContext rnc = (ReportNameContext) context.getContext(ReportNameContext.class);
+            if (null != rnc && null != rnc.getSerializedName())
+                descriptor.setAttachmentDir(rnc.getSerializedName());
+        }
+
         descriptor.setReportName(getReportName());
         descriptor.setReportKey(getReportKey());
         descriptor.setHidden(isHidden());
@@ -516,7 +523,7 @@ public class ReportDescriptor extends Entity implements SecurableResource
     protected boolean shouldSerialize(String propName)
     {
         if (Prop.returnUrl.name().equals(propName) ||
-            Prop.serializedReportId.name().equals(propName))
+            Prop.serializedReportName.name().equals(propName))
             return false;
 
         return true;
@@ -622,6 +629,10 @@ public class ReportDescriptor extends Entity implements SecurableResource
             descriptor.setReportName(d.getReportName());
             descriptor.setReportKey(d.getReportKey());
             descriptor.setHidden(d.getHidden());
+
+            if (d.isSetAttachmentDir())
+                descriptor.setProperty(Prop.serializedReportName, d.getAttachmentDir());
+
             List<Pair<String, String>> props = new ArrayList<>();
 
             for (ReportPropertyList.Prop prop : d.getProperties().getPropArray())

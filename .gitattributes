@@ -1142,6 +1142,7 @@ api/src/org/labkey/api/reports/report/ReportDB.java -text
 api/src/org/labkey/api/reports/report/ReportDescriptor.java -text
 api/src/org/labkey/api/reports/report/ReportIdentifier.java -text
 api/src/org/labkey/api/reports/report/ReportIdentifierConverter.java -text
+api/src/org/labkey/api/reports/report/ReportNameContext.java -text
 api/src/org/labkey/api/reports/report/ReportThumbnail.java -text
 api/src/org/labkey/api/reports/report/ReportThumbnailLarge.java -text
 api/src/org/labkey/api/reports/report/ReportThumbnailSmall.java -text
@@ -1530,6 +1531,7 @@ api/src/org/labkey/api/util/ExceptionReportingLevel.java -text
 api/src/org/labkey/api/util/ExceptionUtil.java -text
 api/src/org/labkey/api/util/ExpectedException.java -text
 api/src/org/labkey/api/util/ExtUtil.java -text
+api/src/org/labkey/api/util/FileNameUniquifier.java -text
 api/src/org/labkey/api/util/FileStream.java -text
 api/src/org/labkey/api/util/FileType.java -text
 api/src/org/labkey/api/util/FileUtil.java -text

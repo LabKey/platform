@@ -238,10 +238,12 @@ public abstract class AbstractReport implements Report
 
         if (descriptor.getReportId() != null)
         {
-            serializeThumbnail(dir, new ReportThumbnailLarge(context.getContainer(), this));
-            serializeThumbnail(dir, new ReportThumbnailSmall(context.getContainer(), this));
-            String filename = String.format("%s.%s.report.xml", descriptor.getReportName() != null ? descriptor.getReportName() : descriptor.getReportType(), descriptor.getReportId());
-            serialize(context, dir, filename);
+            ReportNameContext rec = (ReportNameContext) context.getContext(ReportNameContext.class);
+            String serializedName = rec.getSerializedName();
+
+            serializeThumbnail(serializedName, dir, new ReportThumbnailLarge(context.getContainer(), this));
+            serializeThumbnail(serializedName, dir, new ReportThumbnailSmall(context.getContainer(), this));
+            serialize(context, dir, String.format("%s.report.xml", serializedName));
         }
         else
             throw new IllegalArgumentException("Cannot serialize a report that hasn't been saved yet");
@@ -442,29 +444,17 @@ public abstract class AbstractReport implements Report
         return errors.isEmpty();
     }
 
-    protected String getSerializedReportName()
+    protected String getAttachmentDir()
     {
-        return FileUtil.makeLegalName(ReportUtil.getSerializeName(getDescriptor()));
+        return ReportUtil.getSerializedName(getDescriptor());
     }
 
-    // return a directory name composed of the report name and id but fall back
-    // to just the report name if it doesn't exist to support older exported folder formats
-    protected String getDeserializedReportName(VirtualFile parentDir)
-    {
-        String dirName = FileUtil.makeLegalName(ReportUtil.getDeserializeName(getDescriptor()));
-        File f = new File(parentDir.getLocation(), dirName);
-        if (f.exists() && f.isDirectory())
-            return dirName;
-
-        return FileUtil.makeLegalName(ReportUtil.getDeserializeName(getDescriptor(), true));
-    }
-
-    protected void serializeThumbnail(VirtualFile dir, ReportThumbnail thumbnail) throws IOException
+    protected void serializeThumbnail(String serializeName, VirtualFile dir, ReportThumbnail thumbnail) throws IOException
     {
         if (thumbnail.shouldSerialize())
         {
             Attachment attachment = AttachmentService.get().getAttachment(this, thumbnail.getFilename());
-            serializeAttachment(dir, attachment);
+            serializeAttachment(serializeName, dir, attachment);
 
             // if we had an auto-generated attachment then update the thumnailType property
             // to AUTO for exporting if it wasn't already set.  On import, we'll look to see if it is set to know
@@ -475,10 +465,10 @@ public abstract class AbstractReport implements Report
         }
     }
 
-    protected void serializeAttachment(VirtualFile parentDir, Attachment attachment) throws IOException
+    protected void serializeAttachment(String serializeName, VirtualFile parentDir, Attachment attachment) throws IOException
     {
-        // for attachment reports and thumbnails, write the attachment to a subdirectory to avoid collisions
-        VirtualFile reportDir = parentDir.getDir(getSerializedReportName());
+        // for attachment reports and thumbnails, write the attachment to a subdirectory that is the same as the report name to avoid collisions
+        VirtualFile reportDir = parentDir.getDir(serializeName);
         if (attachment != null && attachment.getName() != null)
         {
             try (InputStream is = AttachmentService.get().getInputStream(this, attachment.getName()); OutputStream os = reportDir.getOutputStream(attachment.getName()))
@@ -502,7 +492,8 @@ public abstract class AbstractReport implements Report
     {
         if (attachment != null)
         {
-            VirtualFile reportDir = root.getDir(getDeserializedReportName(root));
+            String attachmentDir = getAttachmentDir();
+            VirtualFile reportDir = root.getDir(attachmentDir);
             try
             {
                 InputStream is = reportDir.getInputStream(attachment);

@@ -137,11 +137,11 @@ public class FolderImportContext extends AbstractFolderContext
 
     public boolean isImportedReport(ReportDescriptor d)
     {
-        return _importedReports.contains(ReportUtil.getSerializeName(d));
+        return _importedReports.contains(ReportUtil.getSerializedName(d));
     }
 
     public void addImportedReport(ReportDescriptor d)
     {
-        _importedReports.add(ReportUtil.getSerializeName(d));
+        _importedReports.add(ReportUtil.getSerializedName(d));
     }
 }

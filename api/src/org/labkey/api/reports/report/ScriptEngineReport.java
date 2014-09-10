@@ -56,6 +56,7 @@ import org.labkey.api.reports.report.r.view.SvgOutput;
 import org.labkey.api.reports.report.r.view.TextOutput;
 import org.labkey.api.reports.report.r.view.TsvOutput;
 import org.labkey.api.reports.report.r.view.JsonOutput;
+import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.util.FileUtil;
@@ -683,7 +684,7 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
         if (descriptor.getReportId() != null)
         {
             // for script based reports, write the script portion to a separate file to facilitate script modifications
-            String scriptFileName = getSerializedScriptFileName();
+            String scriptFileName = getSerializedScriptFileName(ctx);
 
             try (PrintWriter writer = directory.getPrintWriter(scriptFileName))
             {
@@ -698,17 +699,28 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
 
     protected String getSerializedScriptFileName()
     {
+        return getSerializedScriptFileName(null);
+    }
+    protected String getSerializedScriptFileName(ImportContext context)
+    {
         ScriptEngine engine = getScriptEngine();
         String extension = "script";
-        ReportDescriptor descriptor = getDescriptor();
+        String reportName;
 
         if (engine != null)
             extension = engine.getFactory().getExtensions().get(0);
 
-        if (descriptor.getReportId() != null)
-            return FileUtil.makeLegalName(String.format("%s.%s.%s", descriptor.getReportName(), descriptor.getReportId(), extension));
+        if (context != null)
+        {
+            ReportNameContext rnc = (ReportNameContext) context.getContext(ReportNameContext.class);
+            reportName = rnc.getSerializedName();
+        }
         else
-            return FileUtil.makeLegalName(String.format("%s.%s", descriptor.getReportName(), extension));
+        {
+            reportName = ReportUtil.getSerializedName(getDescriptor());
+        }
+
+        return FileUtil.makeLegalName(String.format("%s.%s", reportName, extension));
     }
 
     @Override
