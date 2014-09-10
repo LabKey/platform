@@ -16,8 +16,13 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
+import org.jmock.Expectations;
+import org.jmock.Mockery;
+import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.StandardDialectStringHandler;
 import org.labkey.api.util.GUID;
 
 import java.util.Arrays;
@@ -36,6 +41,13 @@ public class InlineInClauseGenerator implements InClauseGenerator
 
     private static final InClauseGenerator FALLBACK_GENERATOR = new ParameterMarkerInClauseGenerator();
 
+    private final SqlDialect _dialect;
+
+    public InlineInClauseGenerator(SqlDialect dialect)
+    {
+        _dialect = dialect;
+    }
+
     @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
@@ -44,7 +56,7 @@ public class InlineInClauseGenerator implements InClauseGenerator
             Object firstElement = params.iterator().next();
 
             // Check if we're capable of in-lining the value
-            if (firstElement instanceof Number || firstElement instanceof GUID)
+            if (firstElement instanceof Number || firstElement instanceof GUID || firstElement instanceof String)
             {
                 Class<?> firstParamClass = firstElement.getClass();
 
@@ -83,6 +95,10 @@ public class InlineInClauseGenerator implements InClauseGenerator
                 // No need to escape any characters in true GUIDs
                 sql.append("'").append(param).append("'");
             }
+            else if (param instanceof String)
+            {
+                sql.append(_dialect.getStringHandler().quoteStringLiteral((String)param));
+            }
             else
             {
                 sql.append("?");
@@ -97,12 +113,25 @@ public class InlineInClauseGenerator implements InClauseGenerator
 
     public static class TestCase
     {
+        private final SqlDialect _dialect;
+
+        public TestCase()
+        {
+            Mockery mockery = new Mockery();
+            mockery.setImposteriser(ClassImposteriser.INSTANCE);
+            _dialect = mockery.mock(SqlDialect.class);
+            mockery.checking(new Expectations() {{
+                allowing(_dialect).getStringHandler();
+                will(returnValue(new StandardDialectStringHandler()));
+            }});
+        }
+
         @Test
         public void testTooShortToInline()
         {
             Assert.assertEquals(
                     new SQLFragment("IN (?, ?, ?)", 1, 2, 3),
-                    new InlineInClauseGenerator().appendInClauseSql(new SQLFragment(), Arrays.asList(1, 2, 3)));
+                    new InlineInClauseGenerator(_dialect).appendInClauseSql(new SQLFragment(), Arrays.asList(1, 2, 3)));
         }
 
         @Test
@@ -110,7 +139,7 @@ public class InlineInClauseGenerator implements InClauseGenerator
         {
             Assert.assertEquals(
                     new SQLFragment("IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)"),
-                    new InlineInClauseGenerator().appendInClauseSql(new SQLFragment(), Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+                    new InlineInClauseGenerator(_dialect).appendInClauseSql(new SQLFragment(), Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
         }
 
         @Test(expected = IllegalArgumentException.class)
@@ -119,16 +148,25 @@ public class InlineInClauseGenerator implements InClauseGenerator
             GUID g = new GUID();
             Assert.assertEquals(
                     new SQLFragment("IN (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, '" + g.toString() + "')"),
-                    new InlineInClauseGenerator().appendInClauseSql(new SQLFragment(), Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, g)));
+                    new InlineInClauseGenerator(_dialect).appendInClauseSql(new SQLFragment(), Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, g)));
         }
 
         @Test
         public void testUnsupportedTypes()
         {
-            // We don't inline arbitrary strings
+            // We don't bother in-lining booleans
             Assert.assertEquals(
-                    new SQLFragment("IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14"),
-                    new InlineInClauseGenerator().appendInClauseSql(new SQLFragment(), Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14")));
+                    new SQLFragment("IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", true, false, true, false, true, false, true, false, true, false, true),
+                    new InlineInClauseGenerator(_dialect).appendInClauseSql(new SQLFragment(), Arrays.asList(true, false, true, false, true, false, true, false, true, false, true)));
+        }
+
+        @Test
+        public void testStringEscaping()
+        {
+            // We now inline arbitrary strings
+            Assert.assertEquals(
+                    new SQLFragment("IN ('1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', 'nasty'';DROP SCHEMA core')"),
+                    new InlineInClauseGenerator(_dialect).appendInClauseSql(new SQLFragment(), Arrays.asList("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "nasty';DROP SCHEMA core")));
         }
     }
 }
