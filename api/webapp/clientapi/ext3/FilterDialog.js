@@ -172,7 +172,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
 
                 var filterParams = '', sep = '';
                 for (var f=0; f < filters.length; f++) {
-                    filterParams += sep + filters[f].getURLParameterName(this.dataRegionName) + '=' + filters[f].getURLParameterValue();
+                    filterParams += sep + encodeURIComponent(filters[f].getURLParameterName(this.dataRegionName)) + '=' + encodeURIComponent(filters[f].getURLParameterValue());
                     sep = '&';
                 }
                 this.changeFilterCallback.call(this, null, null, filterParams);
