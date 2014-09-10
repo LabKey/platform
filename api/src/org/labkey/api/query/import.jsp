@@ -70,14 +70,14 @@
 </div>
 <table class="labkey-bordered labkey-wp" style="background-color:#ffffff;max-width: 760px;">
 <tr class="labkey-wp-header" style="min-width:600px;">
-    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-left">Upload file (.xls, .csv, .txt)</span></th>
+    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-text">Upload file (.xls, .csv, .txt)</span></th>
     <th class="labkey-wp-title-right"><%= PageFlowUtil.button("+").href("#").attributes("id='" + uploadFileDivId + "Expando'") %></tr>
 <tr><td colspan=2><div id="<%=text(uploadFileDivId)%>"></div></td></tr>
 </table>
 <br />
 <table class="labkey-wp" style="background-color:#ffffff;max-width: 760px;">
 <tr class="labkey-wp-header" style="min-width:600px;">
-    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-left">Copy/paste text</span></th>
+    <th class="labkey-wp-title-left" style="padding:5px;"><span class="labkey-wp-title-text">Copy/paste text</span></th>
     <th class="labkey-wp-title-right"><%=PageFlowUtil.button("&ndash;").textAsHTML(true).href("#").attributes("id='" + copyPasteDivId + "Expando'") %></th>
 </tr>
 <tr><td colspan=2 style="display:inline;"><div id="<%=text(copyPasteDivId)%>"></div></td></tr>
