@@ -598,11 +598,14 @@ public class PipelineStatusManager
                 new SqlExecutor(ExperimentService.get().getSchema()).execute(expSql);
             }
 
-            new SqlExecutor(_schema.getSchema()).execute(sql);
+            int rowCount = new SqlExecutor(_schema.getSchema()).execute(sql);
 
             // If we deleted anything, try recursing since we may have deleted all the child jobs which would
             // allow a parent job to be deleted
-            deleteStatus(info, deleteExpRuns, rowIds);
+            if (rowCount > 0 && !rowIds.isEmpty())
+            {
+                deleteStatus(info, deleteExpRuns, rowIds);
+            }
         }
     }
 
