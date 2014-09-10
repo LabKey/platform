@@ -45,6 +45,7 @@ import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
+import org.springframework.dao.DataAccessResourceFailureException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -231,7 +232,11 @@ public class ExceptionUtil
         String sqlState = null;
         for (Throwable t = ex ; t != null ; t = t.getCause())
         {
-
+            if (t instanceof DataAccessResourceFailureException)
+            {
+                // Don't report exceptions from database connectivity issues
+                return;
+            }
             if (t instanceof RuntimeSQLException)
             {
                 // Unwrap RuntimeSQLExceptions
