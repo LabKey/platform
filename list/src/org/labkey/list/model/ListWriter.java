@@ -38,6 +38,7 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.util.FileNameUniquifier;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.writer.VirtualFile;

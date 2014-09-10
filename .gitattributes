@@ -1681,7 +1681,6 @@ list/resources/schemas/dbscripts/sqlserver/obsolete/list-13.12-13.13.sql -text
 list/schemas/lists.xsd -text
 list/src/org/labkey/list/ListModule.java -text
 list/src/org/labkey/list/controllers/ListController.java -text
-list/src/org/labkey/list/model/FileNameUniquifier.java -text
 list/src/org/labkey/list/model/FolderListImporter.java -text
 list/src/org/labkey/list/model/FolderListWriter.java -text
 list/src/org/labkey/list/model/IntegerListDomainKind.java -text

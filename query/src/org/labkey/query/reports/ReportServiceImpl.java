@@ -926,13 +926,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
             // reset any report identifier, we want to treat an imported report as a new
             // report instance
             if (report != null)
-            {
-                // befor resetting the report identifier, remember the serialized value
-                String serializedReportId = report.getDescriptor().getProperty(ReportDescriptor.Prop.reportId);
-                report.getDescriptor().setProperty(ReportDescriptor.Prop.serializedReportId, serializedReportId);
-
                 report.getDescriptor().setReportId(new DbReportIdentifier(-1));
-            }
 
             return report;
         }
@@ -1000,9 +994,9 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
             // re-load the report to get the updated property information (i.e container, etc.)
             report = ReportService.get().getReport(rowId);
 
-            // copy over the serialized report id
-            report.getDescriptor().setProperty(ReportDescriptor.Prop.serializedReportId,
-                    descriptor.getProperty(ReportDescriptor.Prop.serializedReportId));
+            // copy over the serialized report name
+            report.getDescriptor().setProperty(ReportDescriptor.Prop.serializedReportName,
+                    descriptor.getProperty(ReportDescriptor.Prop.serializedReportName));
 
             report.afterSave(ctx.getContainer(), ctx.getUser(), root);
 

@@ -60,6 +60,7 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.util.FileNameUniquifier;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.list.view.ListItemAttachmentParent;

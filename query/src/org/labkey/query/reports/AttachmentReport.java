@@ -29,6 +29,7 @@ import org.labkey.api.query.SimpleValidationError;
 import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportNameContext;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.thumbnail.Thumbnail;
@@ -337,7 +338,8 @@ public class AttachmentReport extends BaseRedirectReport
         {
             // for attachment reports, write the attachment to a subdirectory to avoid collisions
             Attachment attachment = getLatestVersion();
-            serializeAttachment(dir, attachment);
+            ReportNameContext rnc = (ReportNameContext) context.getContext(ReportNameContext.class);
+            serializeAttachment(rnc.getSerializedName(), dir, attachment);
             super.serializeToFolder(context, dir);
         }
         else
@@ -350,7 +352,8 @@ public class AttachmentReport extends BaseRedirectReport
         // get the attachment file to go along with this report from the report dir root
         if (root != null)
         {
-            VirtualFile reportDir = root.getDir(getDeserializedReportName(root));
+            String attachmentDir = getAttachmentDir();
+            VirtualFile reportDir = root.getDir(attachmentDir);
             String attachment = getAttachmentFile(reportDir);
             deserializeAttachment(user, root, attachment);
             super.afterSave(container, user, root);

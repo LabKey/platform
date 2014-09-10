@@ -23,6 +23,7 @@ import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.reports.report.ReportNameContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.ExportDirType;
 import org.labkey.folder.xml.FolderDocument;
@@ -73,12 +74,17 @@ public class ReportWriter extends BaseFolderWriter
             ExportDirType reportsXml = ctx.getXml().addNewReports();
             reportsXml.setDir(DEFAULT_DIRECTORY);
             VirtualFile reportsDir = vf.getDir(DEFAULT_DIRECTORY);
+            ReportNameContext rnc = new ReportNameContext(ctx);
+            ctx.addContext(ReportNameContext.class, rnc);
 
             for (Report report : reports)
             {
                 // Issue 15416: don't export private reports
                 if (report.getDescriptor() != null && report.getDescriptor().isShared())
+                {
+                    rnc.generateSerializedName(report.getDescriptor());
                     report.serializeToFolder(ctx, reportsDir);
+                }
             }
         }
     }
