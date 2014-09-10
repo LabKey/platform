@@ -25,12 +25,11 @@ import org.labkey.api.data.dialect.SqlDialect;
 import java.util.Collection;
 
 /**
+ * Note: Use this only with a servlet container & scope that support JDBC4.
  * User: adam
  * Date: 8/19/12
  * Time: 3:33 PM
  */
-
-// Note: Use this only with a servlet container & scope that support JDBC4.
 public class ArrayParameterInClauseGenerator implements InClauseGenerator
 {
     private final DbScope _scope;
