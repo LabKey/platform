@@ -2063,6 +2063,10 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
                 else if (getKeyManagementType() == KeyManagementType.GUID)
                 {
+                    if (keyColumn == null)
+                    {
+                        throw new IllegalStateException("Could not find key column '" + keyColumnName + "' in dataset " + getName());
+                    }
                     ColumnInfo key = new ColumnInfo(keyColumn);
                     indexKeyProperty = it.addColumn(key, new SimpleTranslator.GuidColumn());
                 }

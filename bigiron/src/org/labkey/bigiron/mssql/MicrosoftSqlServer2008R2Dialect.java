@@ -77,7 +77,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
 {
     private volatile boolean _groupConcatInstalled = false;
 
-    private static final InClauseGenerator DEFAULT_GENERATOR = new InlineInClauseGenerator();
+    private final InClauseGenerator _defaultGenerator = new InlineInClauseGenerator(this);
 
     @Override
     protected @NotNull Set<String> getReservedWords()
@@ -222,7 +222,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public SQLFragment appendInClauseSql(SQLFragment sql, @NotNull Collection<?> params)
     {
-        return DEFAULT_GENERATOR.appendInClauseSql(sql, params);
+        return _defaultGenerator.appendInClauseSql(sql, params);
     }
 
     @Override
