@@ -655,6 +655,56 @@ var statFnPlot = new LABKEY.vis.Plot({
     aes: {x: 'x', y: 'y'}
 });
 
+var barChart = new LABKEY.vis.Plot({
+    renderTo: 'bar',
+    rendererType: 'd3',
+    width: 900,
+    height: 300,
+    labels: {
+        main: {value: 'Example Bar Plot With Path'},
+        yLeft: {value: 'Count'}
+    },
+    layers : [
+        new LABKEY.vis.Layer({
+            geom: new LABKEY.vis.Geom.BarPlot()
+        }),
+        new LABKEY.vis.Layer({
+            geom: new LABKEY.vis.Geom.Path({size: 3, color: 'steelblue'}),
+            aes: { x: 'name', y: 'count' }
+        })
+    ],
+    aes: { x: 'name', y: 'count' },
+    scales : {
+        x : { scaleType: 'discrete' },
+        y : { domain: [0, null] }
+    },
+    data: [{name: 'test1', count: 16}, {name: 'test2', count: 8}, {name: 'test3', count: 4}, {name: 'test4', count: 2},
+        {name: 'test5', count: 1}, {name: 'test6', count: 2}, {name: 'test7', count: 4}, {name: 'test8', count: 8}, {name: 'test9', count: 16}]
+});
+
+var barChart2 = new LABKEY.vis.BarPlot({
+    renderTo: 'bar2',
+    rendererType: 'd3',
+    width: 900,
+    height: 300,
+    labels: {
+        main: {value: 'Example Bar Plot With Cumulative Totals'},
+        yLeft: {value: 'Count'},
+        x: {value: 'Value'}
+    },
+    options: {
+        color: 'red',
+        fill: 'orange',
+        colorTotal: 'blue',
+        fillTotal: 'green',
+        lineWidthTotal: 2,
+        opacityTotal: .5,
+        showCumulativeTotals: true
+    },
+    xAes: function(row){return row['age']},
+    data: barPlotData
+});
+
 var renderStats = function(){
     var labResultsStats = LABKEY.vis.Stat.summary(labResultsRows, function(row){return row.study_LabResults_CD4.value});
     var statsDiv = document.getElementById('stats');
@@ -682,5 +732,7 @@ brushScatter.render();
 mouseEventPlot.render();
 errorPlot.render();
 statFnPlot.render();
+barChart.render();
+barChart2.render();
 console.log(new Date().getTime() - start);
 renderStats();

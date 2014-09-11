@@ -1110,7 +1110,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderLegend = function() {
-        var legendData = plot.getLegendData(), legendGroup, legendItems;
+        var legendData = plot.legendData || plot.getLegendData(), legendGroup, legendItems;
         if (legendData.length > 0) {
             if (this.canvas.selectAll('.legend').size() == 0) {
                 this.canvas.append('g').attr('class', 'legend');
@@ -1756,6 +1756,61 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
+    var renderBarPlotGeom = function(data, geom) {
+        var layer = getLayer.call(this, geom),
+                binWidth, barWidth, offsetWidth, rects, items, heightFn, xAcc, yAcc;
+
+        if (geom.xScale.scaleType == 'continuous') {
+            console.error('Bar Plots not supported for continuous data yet.');
+            return;
+        }
+
+        binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length);
+        barWidth = binWidth / (geom.showCumulativeTotals ? 4 : 2);
+        offsetWidth = (binWidth / (geom.showCumulativeTotals ? 3.5 : 4));
+
+        rects = layer.selectAll('rect.bar-rect').data(data);
+        rects.exit().remove();
+
+        // add the bars and styling for the counts
+        xAcc = function(d){ return geom.getX(d) - offsetWidth };
+        yAcc = function(d){ return geom.getY(d) };
+        heightFn = function(d) { return plot.grid.bottomEdge - geom.getY(d) };
+        rects.enter().append('rect').attr('class', 'bar-rect')
+                .attr('x', xAcc).attr('y', yAcc)
+                .attr('width', barWidth).attr('height', heightFn)
+                .attr('stroke', geom.color).attr('stroke-width', geom.lineWidth)
+                .attr('fill', geom.fill).attr('fill-opacity', geom.opacity);
+
+        // For selenium testing
+        rects.enter().append("text").style('display', 'none')
+                .attr('class', 'bar-text')
+                .attr('x', xAcc).attr('y', yAcc)
+                .text(function(d) { return d.count; });
+
+        // add the bars and styling for the totals
+        if (geom.showCumulativeTotals)
+        {
+            xAcc = function(d){ return geom.getX(d) + (offsetWidth - barWidth) };
+            yAcc = function(d){ return geom.yScale.scale(d.total) };
+            heightFn = function(d) { return plot.grid.bottomEdge - geom.yScale.scale(d.total) };
+            rects.enter().append('rect').attr('class', 'bar-rect')
+                    .attr('x', xAcc).attr('y', yAcc)
+                    .attr('width', barWidth).attr('height', heightFn)
+                    .attr('stroke', geom.colorTotal).attr('stroke-width', geom.lineWidthTotal)
+                    .attr('fill', geom.fillTotal).attr('fill-opacity', geom.opacityTotal);
+
+            // For selenium testing
+            rects.enter().append("text").style('display', 'none')
+                    .attr('class', 'bar-text')
+                    .attr('x', xAcc).attr('y', yAcc)
+                    .text(function(d) { return d.total });
+
+            // Render legend for Individual vs Total bars
+            plot.legendData = [{text: 'Individual', color: geom.fill}, {text: 'Total', color: geom.fillTotal}];
+        }
+    };
+
     return {
         initCanvas: initCanvas,
         renderError: renderError,
@@ -1773,6 +1828,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderErrorBarGeom: renderErrorBarGeom,
         renderBoxPlotGeom: renderBoxPlotGeom,
         renderDataspaceBoxPlotGeom: renderDataspaceBoxPlotGeom,
-        renderHexBinGeom: renderHexBinGeom
+        renderHexBinGeom: renderHexBinGeom,
+        renderBarPlotGeom: renderBarPlotGeom
     };
 };

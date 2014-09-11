@@ -887,7 +887,7 @@ boxPlot.render();
         };
 
         /**
-         * Sets the width of the plot and re-renders if requested.
+         * Sets the height of the plot and re-renders if requested.
          * @param {Number} h The height in pixels.
          * @param {Boolean} render Toggles if plot will be re-rendered or not.
          */
@@ -994,5 +994,38 @@ boxPlot.render();
         }
 
         return this;
+    };
+})();
+
+/**
+ * @name LABKEY.vis.BarPlot
+ * @class BarPlot wrapper to allow a user to easily create a simple bar plot without having to preprocess the data.
+ */
+(function(){
+
+    LABKEY.vis.BarPlot = function(config){
+
+        var countData = LABKEY.vis.groupCountData(config.data, config.xAes);
+        var showCumulativeTotals = config.options && config.options.showCumulativeTotals;
+
+        config.layers = [new LABKEY.vis.Layer({
+            geom: new LABKEY.vis.Geom.BarPlot(config.options),
+            data: countData,
+            aes: { x: 'name', y: 'count' }
+        })];
+
+        if (!config.scales)
+        {
+            config.scales = {};
+            config.scales.x = { scaleType: 'discrete' };
+            config.scales.y = { domain: [0, showCumulativeTotals ? countData[countData.length-1].total : null] };
+        }
+
+        if (showCumulativeTotals && !config.margins)
+        {
+            config.margins = {right: 125};
+        }
+
+        return new LABKEY.vis.Plot(config);
     };
 })();

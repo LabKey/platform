@@ -105,6 +105,31 @@ LABKEY.vis.groupData = function(data, groupAccessor){
     return groupedData;
 };
 
+LABKEY.vis.groupCountData = function(data, groupAccessor){
+    /*
+        Groups data by the groupAccessor passed in and returns the number of occurances for that group.
+        Most commonly used for processing data for a bar plot.
+     */
+    var groupName, groupedData, count, counts = [], total = 0;
+
+    groupedData = LABKEY.vis.groupData(data, groupAccessor);
+
+    for (groupName in groupedData) {
+        if (groupedData.hasOwnProperty(groupName)) {
+            count = groupedData[groupName].length;
+            total += count;
+            counts.push({
+                name: groupName,
+                count: count,
+                total: total,
+                rawData: groupedData[groupName]
+            });
+        }
+    }
+
+    return counts;
+};
+
 LABKEY.vis.getColumnAlias = function(aliasArray, measureInfo) {
     /*
      Lookup the column alias (from the getData response) by the specified measure information

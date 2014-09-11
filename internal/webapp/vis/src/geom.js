@@ -356,3 +356,41 @@ LABKEY.vis.Geom.DataspaceBoxPlot.prototype.render = function(renderer, grid, sca
     renderer.renderDataspaceBoxPlotGeom(data, this);
     return true;
 };
+
+/**
+ * @class Bar plot geom
+ * @param config An object with the following properties:
+ * @param {String} [config.color] Optional. A string value used for the line colors in the bar plot. Defaults to black (#000000)
+ * @param {String} [config.fill] Optional. A string value used for the fill color in the bar plot. Defaults to white (#ffffff)
+ * @param {Number} [config.lineWidth] Optional. A used to set the width of the lines used in the bar plot. Defaults to 1.
+ * @param {Number} [config.opacity] Optional. A number between 0 and 1 used to set the opacity of the bar plot. Defaults to 1.
+ */
+LABKEY.vis.Geom.BarPlot = function(config){
+    this.type = "Barplot";
+
+    if(!config){
+        config = {};
+    }
+
+    this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
+    this.colorTotal = ('colorTotal' in config && config.colorTotal != null && config.colorTotal != undefined) ? config.colorTotal : '#000000';
+    this.fill = ('fill' in config && config.fill != null && config.fill != undefined) ? config.fill : '#c0c0c0';
+    this.fillTotal = ('fillTotal' in config && config.fillTotal != null && config.fillTotal != undefined) ? config.fillTotal : '#000000';
+    this.lineWidth = ('lineWidth' in config && config.lineWidth != null && config.lineWidth != undefined) ? config.lineWidth : 1;
+    this.lineWidthTotal = ('lineWidthTotal' in config && config.lineWidthTotal != null && config.lineWidthTotal != undefined) ? config.lineWidthTotal : 1;
+    this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
+    this.opacityTotal = ('opacityTotal' in config && config.opacityTotal != null && config.opacityTotal != undefined) ? config.opacityTotal : 1;
+    this.showCumulativeTotals = ('showCumulativeTotals' in config && config.showCumulativeTotals != null && config.showCumulativeTotals != undefined) ? config.showCumulativeTotals : false;
+
+    return this;
+};
+LABKEY.vis.Geom.BarPlot.prototype = new LABKEY.vis.Geom.XY();
+LABKEY.vis.Geom.BarPlot.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name, index){
+
+    if(!this.initAesthetics(scales, layerAes, parentAes, name, index)){
+        return false;
+    }
+
+    renderer.renderBarPlotGeom(data, this);
+    return true;
+};

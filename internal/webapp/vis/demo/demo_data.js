@@ -31,6 +31,7 @@ var coffeeData = [
     {"person":"Josh Extra Super Duper Long Name","time":"4:30","consumedCoffee":"No Coffee","efficiency":297},{"person":"Josh Extra Super Duper Long Name","time":"5:00","consumedCoffee":"No Coffee","efficiency":296}
 ];
 var boxPlotData = [];
+var barPlotData = [];
 
 for(var i = 0; i < 6; i++){
     var group = "Really Long Group Name "+(i+1);
@@ -52,6 +53,14 @@ for(var i = 0; i < 6; i++){
         boxPlotData.push({
             group: group,
             age: parseInt(1+(Math.random()*(16-1))), //Compute a random age between 1 and 16
+            gender: parseInt((Math.random()*2)) === 0 ? 'male' : 'female'
+        });
+    }
+
+    for(var j = 0; j < 25; j++){
+        barPlotData.push({
+            group: group,
+            age: parseInt(1+(Math.random()*(12))), //Compute a random age between 0 and 12
             gender: parseInt((Math.random()*2)) === 0 ? 'male' : 'female'
         });
     }
