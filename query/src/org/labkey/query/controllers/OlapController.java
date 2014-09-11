@@ -458,11 +458,20 @@ public class OlapController extends SpringActionController
         @Override
         public void validateCommand(CustomOlapDescriptorForm form, Errors errors)
         {
+            try
+            {
+                form.refreshFromDb();
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+
             OlapDef def = form.getBean();
             if (def == null)
                 throw new NotFoundException("Custom olap definition not found");
 
-            if (getContainer().equals(def.lookupContainer()))
+            if (!getContainer().equals(def.lookupContainer()))
                 throw new IllegalArgumentException("Incorrect container");
         }
 

@@ -83,15 +83,21 @@
     {
         var cubeDefs = [
         <% for (OlapSchemaDescriptor cubeDef : cubeDefs) {
-            for (Schema schema : cubeDef.getSchemas(cubeDef.getConnection(getContainer(), getUser()), getContainer(), getUser())) {
-                for (Cube cube : schema.getCubes()) {
-                    %>[
+            try (OlapConnection conn = cubeDef.getConnection(getContainer(), getUser())) {
+                for (Schema schema : cubeDef.getSchemas(conn, getContainer(), getUser())) {
+                    for (Cube cube : schema.getCubes()) {
+                        %>[
                         generateCubeDisplayValue(<%=q(cube.getName())%>, <%=q(cubeDef.getName())%>),
                         "<%=h(cube.getName())%>","<%=h(schema.getName())%>",
                         "<%=h(cubeDef.getId())%>",
                         isCubeDefInitSelected(<%=q(cube.getName())%>, <%=q(schema.getName())%>, <%=q(cubeDef.getId())%>)
-                    ],<%
+                        ],<%
+                    }
                 }
+            }
+            catch (Exception e)
+            {
+                // ignore -- error message will be displayed below
             }
         } %>];
 
@@ -217,11 +223,11 @@
 </br>
 <h3>Application contexts defined in this folder:</h3>
 <p>
-<%=textLink("Create New", new ActionURL(OlapController.EditAppAction.class, getContainer()))%>
+<%=textLink("create new", new ActionURL(OlapController.EditAppAction.class, getContainer()), "create-app-context")%>
 </p>
-<table>
+<table id="app-contexts">
 <% for (String contextName : bean.getAllContextNames()) { %>
-    <tr>
+    <tr data-name="<%=h(contextName)%>">
         <td><%=h(contextName)%></td>
         <td><%=textLink("edit", new ActionURL(OlapController.EditAppAction.class, getContainer()).addParameter("contextName", contextName))%></td>
         <td><%=textLink("delete", "#", "confirmDeleteApp(" + PageFlowUtil.jsString(contextName) + ");return false;", null)%></td>
@@ -231,14 +237,14 @@
 </br>
 <h3>OLAP Cube definitions in this folder:</h3>
 <p>
-<%=textLink("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnURL(getActionURL().clone()))%>
+<%=textLink("create new", new ActionURL(OlapController.CreateDefinitionAction.class, getContainer()).addReturnURL(getActionURL().clone()), "create-cube-definition")%>
 </p>
 <%
     Collection<OlapSchemaDescriptor> list = ServerManager.getDescriptors(getContainer());
-    %><table><%
+    %><table id="cube-definitions"><%
     for (OlapSchemaDescriptor sd : list)
     {
-        %><tr>
+        %><tr data-name="<%=h(sd.getName())%>">
             <td style="font-weight: bold;"><%=h(sd.getName())%></td>
             <% if (sd.isEditable()) { %>
                 <td><%=textLink("edit", ((CustomOlapSchemaDescriptor) sd).urlEdit().addReturnURL(getActionURL().clone()))%></td>
@@ -257,6 +263,10 @@
                 }
                 %></ul></td></tr><%
             }
+        }
+        catch (Exception e)
+        {
+            %><tr><td colspan="3"><div class="labkey-error"><%=h(e.getMessage())%></div></td><%
         }
     }
     %></table><%
