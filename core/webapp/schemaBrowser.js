@@ -2131,32 +2131,20 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
             if (!success)
                 return;
 
-            // it appears schemaNode is coming back as an array even when it's passed to expand as a single object
-            if(schemaNode instanceof Array )
-                schemaNode =schemaNode[0];
-
             var tree = this.getComponent("lk-sb-tree");
             //look for the query node under both built-in and user-defined
             var queryNode;
-            Ext4.each(schemaNode.childNodes, function(n) {
+            var comparison = function (n)
+            {
                 if (n.data.queryName.toLowerCase() == queryName.toLowerCase())
                     queryNode = n;
-            });
-            /*if (schemaNode.childNodes.length > 0)
-                queryNode = schemaNode.childNodes[0].findChildBy(function(node){
-                    //Issue 15674: if more than 100 queries are present, we include a placeholder node saying 'More..', which lacks queryName
-                    if (!node.data.queryName)
-                        return false;
+            };
 
-                    return node.data.queryName.toLowerCase() == queryName.toLowerCase();
-                });
-            if (!queryNode && schemaNode.childNodes.length > 1)
-                queryNode = schemaNode.childNodes[1].findChildBy(function(node){
-                    if (!node.data.queryName)
-                        return false;
-
-                    return node.data.queryName.toLowerCase() == queryName.toLowerCase();
-                });*/
+            // TODO: check Issue 15674: if more than 100 queries are present, we include a placeholder node saying 'More..', which lacks queryName
+            if (schemaNode.length > 0)
+                Ext4.each(schemaNode[0].childNodes, comparison);
+            if (!queryNode && schemaNode.length > 1)
+                Ext4.each(schemaNode[1].childNodes, comparison);
 
             if (!queryNode)
             {
