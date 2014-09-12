@@ -95,11 +95,4 @@ public class VisualizationModule extends DefaultModule
             });
         }
     }
-
-    @Override
-    @NotNull
-    public Set<Class> getIntegrationTests()
-    {
-        return Collections.<Class>singleton(VisualizationController.TestCase.class);
-    }
 }
