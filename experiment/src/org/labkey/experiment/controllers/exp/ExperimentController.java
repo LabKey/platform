@@ -39,6 +39,7 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.QueryViewAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -338,14 +339,17 @@ public class ExperimentController extends SpringActionController
 
 
     @RequiresPermissionClass(ReadPermission.class)
-    public class DetailsAction extends SimpleViewAction<ExpObjectForm>
+    public class DetailsAction extends QueryViewAction<ExpObjectForm, ExperimentRunListView>
     {
         private ExpExperimentImpl _experiment;
 
-        public ModelAndView getView(ExpObjectForm form, BindException errors) throws Exception
+        public DetailsAction()
         {
-            Container c = getContainer();
+            super(ExpObjectForm.class);
+        }
 
+        private Pair<ExperimentRunListView, JspView> createViews(ExpObjectForm form, BindException errors)
+        {
             _experiment = ExperimentServiceImpl.get().getExpExperiment(form.getRowId());
             if (_experiment == null)
             {
@@ -357,7 +361,30 @@ public class ExperimentController extends SpringActionController
                 throw new RedirectException(getViewContext().cloneActionURL().setContainer(_experiment.getContainer()));
             }
 
-            CustomPropertiesView customPropertiesView = new CustomPropertiesView(_experiment.getLSID(), c);
+            List<? extends ExpProtocol> protocols = _experiment.getAllProtocols();
+
+            Set<ExperimentRunType> types = new TreeSet<>(ExperimentService.get().getExperimentRunTypes(getContainer()));
+            ExperimentRunType selectedType = ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter"));
+
+            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, selectedType, getViewContext().getActionURL().clone(), protocols);
+            JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean, errors);
+
+            ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
+            runListView.getRunTable().setExperiment(_experiment);
+            runListView.setShowRemoveFromExperimentButton(true);
+            runListView.setShowDeleteButton(true);
+            runListView.setShowAddToRunGroupButton(true);
+            runListView.setShowExportButtons(true);
+            runListView.setShowMoveRunsButton(true);
+            return new Pair<>(runListView, chooserView);
+        }
+
+        @Override
+        protected ModelAndView getHtmlView(ExpObjectForm form, BindException errors) throws Exception
+        {
+            Pair<ExperimentRunListView, JspView> views = createViews(form, errors);
+
+            CustomPropertiesView customPropertiesView = new CustomPropertiesView(_experiment.getLSID(), getContainer());
 
             DetailsView detailsView = new DetailsView(new DataRegion(), _experiment.getRowId());
             detailsView.getDataRegion().setTable(ExperimentServiceImpl.get().getTinfoExperiment());
@@ -383,28 +410,18 @@ public class ExperimentController extends SpringActionController
             VBox vbox = new VBox();
             vbox.addView(new StandardAndCustomPropertiesView(detailsView, customPropertiesView));
 
-            List<? extends ExpProtocol> protocols = _experiment.getAllProtocols();
-
-            Set<ExperimentRunType> types = new TreeSet<>(ExperimentService.get().getExperimentRunTypes(getContainer()));
-            ExperimentRunType selectedType = ExperimentRunType.getSelectedFilter(types, getViewContext().getRequest().getParameter("experimentRunFilter"));
-
-            ChooseExperimentTypeBean bean = new ChooseExperimentTypeBean(types, selectedType, getViewContext().getActionURL().clone(), protocols);
-            JspView chooserView = new JspView<>("/org/labkey/experiment/experimentRunQueryHeader.jsp", bean);
-
-            ExperimentRunListView runListView = ExperimentRunListView.createView(getViewContext(), bean.getSelectedFilter(), true);
-            runListView.getRunTable().setExperiment(_experiment);
-            runListView.setShowRemoveFromExperimentButton(true);
-            runListView.setShowDeleteButton(true);
-            runListView.setShowAddToRunGroupButton(true);
-            runListView.setShowExportButtons(true);
-            runListView.setShowMoveRunsButton(true);
-
-            VBox runsVBox = new VBox(chooserView, runListView);
+            VBox runsVBox = new VBox(views.second, createInitializedQueryView(form, errors, false, null));
             runsVBox.setTitle("Experiment Runs");
             runsVBox.setFrame(WebPartView.FrameType.PORTAL);
             vbox.addView(runsVBox);
 
             return vbox;
+        }
+
+        @Override
+        protected ExperimentRunListView createQueryView(ExpObjectForm form, BindException errors, boolean forExport, String dataRegion) throws Exception
+        {
+            return createViews(form, errors).first;
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2062,7 +2079,7 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    public static class ExpObjectForm
+    public static class ExpObjectForm extends QueryViewAction.QueryExportForm
     {
         private int _rowId;
         private String _lsid;

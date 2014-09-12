@@ -68,6 +68,7 @@ abstract class ExpDataFileColumn extends DataColumn
         }
     }
 
+    /** Write the value into the HTML. Responsible for HTML-encoding as necessary. */
     protected abstract void renderData(Writer out, ExpData data) throws IOException;
 
     @Override
