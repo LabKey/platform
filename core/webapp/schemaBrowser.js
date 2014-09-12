@@ -4,16 +4,17 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
-Ext.namespace('LABKEY', 'LABKEY.ext');
+Ext4.namespace('LABKEY', 'LABKEY.ext');
 
-Ext.Ajax.timeout = 60000;
-Ext.QuickTips.init();
+Ext4.Ajax.timeout = 60000;
+Ext4.QuickTips.init();
 
-LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable,
-{
+Ext4.define('LABKEY.ext.QueryCache', {
+    extend: 'Ext.util.Observable',
+
     constructor : function(config)
     {
-        LABKEY.ext.QueryCache.superclass.constructor.apply(this, arguments);
+        this.callParent();
     },
 
     getSchemas : function (callback, scope)
@@ -111,13 +112,13 @@ LABKEY.ext.QueryCache = Ext.extend(Ext.util.Observable,
     }
 });
 
+Ext4.define('LABKEY.ext.QueryDetailsCache', {
+    extend: 'Ext.util.Observable',
 
-LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable,
-{
     constructor : function(config)
     {
         this.addEvents("newdetails");
-        LABKEY.ext.QueryDetailsCache.superclass.constructor.apply(this, arguments);
+        this.callParent([config]);
         this.queryDetailsMap = {};
     },
 
@@ -173,26 +174,74 @@ LABKEY.ext.QueryDetailsCache = Ext.extend(Ext.util.Observable,
 
 });
 
-LABKEY.ext.QueryTreeLoader = Ext.extend(Ext.tree.TreeLoader, {
-    constructor : function (config) {
-        this.url = LABKEY.ActionURL.buildURL("query", "getSchemaQueryTree.api");
-        LABKEY.ext.QueryTreeLoader.superclass.constructor.call(this, config);
+Ext4.define('LABKEY.ext.QueryTreePanel', {
+
+    extend: 'Ext.tree.Panel',
+
+    alias: 'widget.labkey-query-tree-panel',
+
+    constructor : function(config) {
+
+        if (!Ext4.ModelManager.isRegistered('SchemaBrowser.Queries')) {
+            Ext4.define('SchemaBrowser.Queries', {
+                extend : 'Ext.data.Model',
+                proxy : {
+                    type        : 'ajax',
+                    url         : LABKEY.ActionURL.buildURL('query', 'getSchemaQueryTree.api'),
+                    listeners: {
+                        exception: function(proxy, response, operation) {
+                            if (!this._unloading)
+                                LABKEY.Utils.displayAjaxErrorResponse(response);
+                        }
+                    }
+                },
+                fields : [
+                    {name : 'description'                    },
+                    {name : 'hidden',       type : 'boolean' },
+                    {name : 'name'                           },
+                    {name : 'qtip'                           },
+                    {name : 'schemaName'                     },
+                    {name : 'queryName'                      },
+                    {name : 'text'                           }
+                ]
+            });
+        }
+
+        this.store = Ext4.create('Ext.data.TreeStore', {
+            model : 'SchemaBrowser.Queries',
+            root: {
+                expanded: true,
+                expandable: false,
+                draggable: false
+            },
+            listeners: {
+                load: {
+                    fn: function(node){
+                        // NOTE: there should be a better way to do this dance because I suspect it's time intensive.
+                        this.fireEvent("schemasloaded");
+                    },
+                    scope: this
+                },
+                beforeload: function (store, operation, eOpts) {
+                    var params = operation.params;
+
+                    if(!params.node) {
+                        params.node = operation.node.internalId;
+                        params.schemaName = operation.node.data.schemaName;
+                    }
+                }
+            }
+        });
+
+        this.callParent([config]);
     },
 
-    // TreeLoader usually uses the node id as the parameter, but we want to avoid using the schemaName or queryName in the tree node's id attribute.
-    getParams : function (node) {
-        return Ext.apply({node: node.id, schemaName: node.attributes.schemaName}, this.baseParams);
-    }
-});
-
-LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel,
-{
     initComponent : function(){
 
         this.showHidden = false;
         this.fbar = [{
-            xtype: "checkbox",
-            boxLabel: "Show Hidden Schemas and Queries",
+            xtype: 'checkbox',
+            boxLabel: "<span style='font-size: 9.5px'>Show Hidden Schemas and Queries</span>",
             checked: this.showHidden,
             handler: function (checkbox, checked) {
                 this.setShowHiddenSchemasAndQueries(checked);
@@ -201,48 +250,12 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel,
         }];
 
         this.rootVisible = false;
-        Ext.EventManager.on(window, "beforeunload", function(evt){
+        Ext4.EventManager.on(window, "beforeunload", function(evt){
             this._unloading = true
         }, this);
 
-        this.root = new Ext.tree.AsyncTreeNode({
-            id: 'root',
-            name: 'root',
-            text: 'Schemas',
-            expanded: true,
-            expandable: false,
-            draggable: false,
-            listeners: {
-                load: {
-                    fn: function(node){
-                        var numChildren = node.childNodes.length;
-                        var childrenLoaded = 0;
-                        //there is now a level of data sources, under which are the schema nodes
-                        for (var idx = 0; idx < numChildren; ++idx)
-                        {
-                            node.childNodes[idx].on("load", function(childNode){
-                                ++childrenLoaded;
-                                if (childrenLoaded == numChildren)
-                                {
-                                    try {
-                                        this.fireEvent("schemasloaded", childNode.childNodes);
-                                    } catch(ignore) {}
-                                }
-                            }, this);
-                        }
-                    },
-                    scope: this
-                }
-            }
-        });
-        this.loader = new LABKEY.ext.QueryTreeLoader();
-
-        LABKEY.ext.QueryTreePanel.superclass.initComponent.apply(this, arguments);
+        this.callParent();
         this.addEvents("schemasloaded");
-        this.getLoader().on("loadexception", function(loader, node, response){
-            if (!this._unloading)
-                LABKEY.Utils.displayAjaxErrorResponse(response);
-        }, this);
 
         // Show hidden child nodes when expanding if 'Show Hidden Schemas and Queries' is checked.
         this.on('beforeappend', function (tree, parent, node) {
@@ -264,16 +277,18 @@ LABKEY.ext.QueryTreePanel = Ext.extend(Ext.tree.TreePanel,
             }
             else
             {
-                if (node.attributes.hidden)
+                if (node.hidden)
                     node.ui.hide();
             }
         }, this);
     }
 });
 
-Ext.reg('labkey-query-tree-panel', LABKEY.ext.QueryTreePanel);
+Ext4.define('LABKEY.ext.QueryDetailsPanel', {
 
-LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
+    extend: 'Ext.panel.Panel',
+
+    alias: 'widget.labkey-query-details-panel',
 
     domProps : {
         schemaName: 'lkqdSchemaName',
@@ -284,12 +299,12 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
     initComponent : function()
     {
-        Ext.QuickTips.init();
-        Ext.GuidedTips.init();
+        Ext4.QuickTips.init();
+        //Ext4.GuidedTips.init();
 
         this.bodyStyle = "padding: 5px";
 
-        LABKEY.ext.QueryDetailsPanel.superclass.initComponent.apply(this, arguments);
+        this.callParent();
 
         this.cache.loadQueryDetails(this.schemaName, this.queryName, this.fk, this.setQueryDetails, function(errorInfo){
             var html = "<p class='lk-qd-error'>Error in query: " + errorInfo.exception + "</p>";
@@ -300,7 +315,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
 
     onRender : function()
     {
-        LABKEY.ext.QueryDetailsPanel.superclass.onRender.apply(this, arguments);
+        this.callParent();
         this.body.createChild({
             tag: 'p',
             cls: 'lk-qd-loading',
@@ -314,7 +329,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             this.renderQueryDetails();
         else
         {
-            new Ext.util.DelayedTask(function(){
+            new Ext4.util.DelayedTask(function(){
                 this.renderQueryDetails();
             }, this).delay(100);
         }
@@ -333,14 +348,14 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         var lookupLinks = containerEl.query("table tr td span[class='labkey-link']");
         for (var idx = 0; idx < lookupLinks.length; ++idx)
         {
-            var link = Ext.get(lookupLinks[idx]);
+            var link = Ext4.get(lookupLinks[idx]);
             link.on("click", this.getLookupLinkClickFn(link), this);
         }
 
         var expandos = containerEl.query("table tr td img[class='lk-qd-expando']");
         for (idx = 0; idx < expandos.length; ++idx)
         {
-            var expando = Ext.get(expandos[idx]);
+            var expando = Ext4.get(expandos[idx]);
             expando.on("click", this.getExpandoClickFn(expando), this);
         }
 
@@ -357,9 +372,9 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
     {
         return function() {
             this.fireEvent("lookupclick",
-                    Ext.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.schemaName)),
-                    Ext.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.queryName)),
-                    Ext.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.containerPath)));
+                    Ext4.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.schemaName)),
+                    Ext4.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.queryName)),
+                    Ext4.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.containerPath)));
         };
     },
 
@@ -459,7 +474,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         var children = [{
             tag: 'a',
             href: viewDataUrl,
-            html: Ext.util.Format.htmlEncode(schemaKey.toDisplayString()) + "." + Ext.util.Format.htmlEncode(displayText)
+            html: Ext4.util.Format.htmlEncode(schemaKey.toDisplayString()) + "." + Ext4.util.Format.htmlEncode(displayText)
         }];
         if (_qd.isUserDefined && _qd.moduleName) {
             var _tip = '' +
@@ -474,7 +489,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             children.push({
                 tag: 'span',
                 'ext:gtip': _tip,
-                html: 'Defined in ' + Ext.util.Format.htmlEncode(_qd.moduleName) + ' module'
+                html: 'Defined in ' + Ext4.util.Format.htmlEncode(_qd.moduleName) + ' module'
             });
         }
 
@@ -489,7 +504,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
                 {
                     tag: 'div',
                     cls: 'lk-qd-description',
-                    html: Ext.util.Format.htmlEncode(_qd.description)
+                    html: Ext4.util.Format.htmlEncode(_qd.description)
                 }
             ]
         };
@@ -502,7 +517,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         {
             caption: 'Name',
             tip: 'This is the programmatic name used in the API and LabKey SQL.',
-            renderer: function(col){return Ext.util.Format.htmlEncode(col.name);}
+            renderer: function(col){return Ext4.util.Format.htmlEncode(col.name);}
         },
         {
             caption: 'Caption',
@@ -527,7 +542,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         {
             caption: 'Description',
             tip: 'Description of the column.',
-            renderer: function(col){return Ext.util.Format.htmlEncode((col.description || ""));}
+            renderer: function(col){return Ext4.util.Format.htmlEncode((col.description || ""));}
         }
 
     ],
@@ -600,9 +615,9 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
                 {
                     td = {tag: 'td'};
                     content = this.tableCols[idxTable].renderer.call(this, col);
-                    if (Ext.type(content) == "array")
+                    if (Ext4.type(content) == "array")
                         td.children = content;
-                    else if (Ext.type(content) == "object")
+                    else if (Ext4.type(content) == "object")
                         td.children = [content];
                     else
                         td.html = content;
@@ -612,7 +627,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
                 rows.push(row);
             }
         }
-        
+
         return rows;
     },
 
@@ -620,11 +635,11 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         if (!col.lookup || null == col.lookup.queryName)
             return "";
 
-        var schemaNameEncoded = Ext.util.Format.htmlEncode(col.lookup.schemaName);
-        var queryNameEncoded = Ext.util.Format.htmlEncode(col.lookup.queryName);
-        var keyColumnEncoded = Ext.util.Format.htmlEncode(col.lookup.keyColumn);
-        var displayColumnEncoded = Ext.util.Format.htmlEncode(col.lookup.displayColumn);
-        var containerPathEncoded = Ext.util.Format.htmlEncode(col.lookup.containerPath);
+        var schemaNameEncoded = Ext4.util.Format.htmlEncode(col.lookup.schemaName);
+        var queryNameEncoded = Ext4.util.Format.htmlEncode(col.lookup.queryName);
+        var keyColumnEncoded = Ext4.util.Format.htmlEncode(col.lookup.keyColumn);
+        var displayColumnEncoded = Ext4.util.Format.htmlEncode(col.lookup.displayColumn);
+        var containerPathEncoded = Ext4.util.Format.htmlEncode(col.lookup.containerPath);
 
         var caption = schemaNameEncoded + "." + queryNameEncoded;
         var tipText = "This column is a lookup to " + caption;
@@ -639,7 +654,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
             tipText += " (the value from column " + displayColumnEncoded + " is usually displayed in grids)";
         }
         tipText += ". To reference columns in the lookup table, use the syntax '"
-                + Ext.util.Format.htmlEncode(Ext.util.Format.htmlEncode(col.name)) //strangely-we need to double-encode this 
+                + Ext4.util.Format.htmlEncode(Ext4.util.Format.htmlEncode(col.name)) //strangely-we need to double-encode this
                 + "/col-in-lookup-table'.";
 
         if (!col.lookup.isPublic)
@@ -775,7 +790,7 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         //if the next row is not the expanded fk col info, create it
         var trNext = trExpando.next("tr");
 
-        if (!trNext || !trNext.hasClass("lk-fk-" + fieldKey))
+        if (!trNext || !trNext.hasCls("lk-fk-" + fieldKey))
         {
             var trNew = {
                 tag: 'tr',
@@ -813,21 +828,20 @@ LABKEY.ext.QueryDetailsPanel = Ext.extend(Ext.Panel, {
         //update the image
         if (trNext.isDisplayed())
         {
-            trExpando.addClass("lk-qd-colrow-expanded");
+            trExpando.addCls("lk-qd-colrow-expanded");
             expando.set({src: LABKEY.ActionURL.getContextPath() + "/_images/minus.gif"});
         }
         else
         {
-            trExpando.removeClass("lk-qd-colrow-expanded");
+            trExpando.removeCls("lk-qd-colrow-expanded");
             expando.set({src: LABKEY.ActionURL.getContextPath() + "/_images/plus.gif"});
         }
     }
 });
 
-Ext.reg('labkey-query-details-panel', LABKEY.ext.QueryDetailsPanel);
+Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
 
-LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
-{
+    extend: 'Ext.panel.Panel',
 
     initComponent : function()
     {
@@ -838,113 +852,144 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
         this.queries = [];
         this.curSchemaIdx = 0;
         this.curQueryIdx = 0;
-        LABKEY.ext.ValidateQueriesPanel.superclass.initComponent.apply(this, arguments);
+
+        Ext4.apply(this, {
+            items: [
+                {
+                    xtype: 'box',
+                    html: 'This will validate that all queries in all schemas parse and execute without errors. This will not examine the data returned from the query.',
+                    cls: 'lk-sb-instructions'
+                },
+                {
+                    xtype: 'panel',
+                    border: false,
+                    items: [
+                        {
+                            id: 'lk-vq-start',
+                            //tag: 'button',
+                            xtype: 'button',
+                            cls: 'lk-sb-button',
+                            text: 'Start Validation'
+                        },
+                        {
+                            id: 'lk-vq-stop',
+                            //tag: 'button',
+                            xtype: 'button',
+                            cls: 'lk-sb-button',
+                            text: 'Stop Validation',
+                            disabled: true
+                        }
+                    ]
+                },
+                {
+                    xtype: 'panel',
+                    layout: {
+                        type: 'hbox'
+                    },
+                    border: false,
+                    defaults: {border: false},
+                    // TODO: find a better way to space these elements
+                    items: [
+                        {
+                            id: 'lk-vq-subfolders',
+                            xtype: 'checkbox'
+                        },
+                        {
+                            html: '&nbsp;',
+                            cls: 'lk-sb-instructions'
+                        },
+                        {
+                            xtype: 'box',
+                            html: ' Validate subfolders',
+                            cls: 'lk-sb-instructions'
+                        },
+                        {
+                            html: '&nbsp;',
+                            cls: 'lk-sb-instructions'
+                        },
+                        {
+                            id: 'lk-vq-systemqueries',
+                            xtype: 'checkbox'
+                        },
+                        {
+                            html: '&nbsp;',
+                            cls: 'lk-sb-instructions'
+                        },
+                        {
+                            xtype: 'box',
+                            html: ' Include system queries',
+                            cls: 'lk-sb-instructions'
+                        },
+                        {
+                            html: '&nbsp;',
+                            cls: 'lk-sb-instructions'
+                        },
+                        //TODO: this option allows a more thorough validation of queries, metadata and custom views.  it is disabled until we cleanup more of the built-in queries
+                        {
+                            id: 'lk-vq-validatemetadata',
+                            //hidden: true,
+                            xtype: 'checkbox'
+                        },
+                        {
+                            html: '&nbsp;',
+                            cls: 'lk-sb-instructions'
+                        },
+                        {
+                            xtype: 'box',
+                            html: ' Validate metadata and views',
+                            //hidden: true,
+                            cls: 'lk-sb-instructions'
+                        }
+                    ]
+                },
+                {
+                    xtype: 'panel',
+                    id: 'lk-vq-status-frame',
+                    cls: 'lk-vq-status-frame',
+                    hidden: true,
+                    bodyStyle: 'background:transparent;',
+                    border: false,
+                    items: [
+                        {
+                            id: 'lk-vq-status',
+                            cls: 'lk-vq-status',
+                            xtype: 'box'
+                        }
+                    ]
+                },
+                {
+                    xtype: 'panel',
+                    itemId: 'lk-vq-errors',
+                    cls: 'lk-vq-errors-frame',
+                    hidden: true,
+                    border: false
+                }
+            ]
+        });
+
+        this.callParent();
     },
 
     initEvents : function()
     {
-        LABKEY.ext.ValidateQueriesPanel.superclass.initEvents.apply(this, arguments);
+        this.callParent();
         this.ownerCt.on("beforeremove", function(){
             if (this.validating)
             {
-                Ext.Msg.alert("Validation in Process", "Please stop the validation process before closing this tab.");
+                Ext4.Msg.alert("Validation in Process", "Please stop the validation process before closing this tab.");
                 return false;
             }
         }, this);
-    },
 
-    onRender : function()
-    {
-        LABKEY.ext.ValidateQueriesPanel.superclass.onRender.apply(this, arguments);
-        this.body.createChild({
-            tag: 'p',
-            html: 'This will validate that all queries in all schemas parse and execute without errors. This will not examine the data returned from the query.',
-            cls: 'lk-sb-instructions'
-        });
-        this.body.createChild({
-            tag: 'div',
-            cls: 'lk-sb-instructions',
-            children: [
-                {
-                    id: 'lk-vq-start',
-                    tag: 'button',
-                    cls: 'lk-sb-button',
-                    html: 'Start Validation'
-                },
-                {
-                    id: 'lk-vq-stop',
-                    tag: 'button',
-                    cls: 'lk-sb-button',
-                    html: 'Stop Validation',
-                    disabled: true
-                }
-            ]
-        });
-
-        this.body.createChild({
-            tag: 'div',
-            cls: 'lk-sb-instructions',
-            children: [
-                {
-                    tag: 'span',
-                    html: '&nbsp;',
-                    cls: 'lk-sb-instructions'
-                },
-                {
-                    id: 'lk-vq-subfolders',
-                    tag: 'input',
-                    type: 'checkbox'
-                },
-                {
-                    tag: 'span',
-                    html: ' Validate subfolders',
-                    cls: 'lk-sb-instructions'
-                },
-                {
-                    tag: 'span',
-                    html: '&nbsp;',
-                    cls: 'lk-sb-instructions'
-                },
-                {
-                    id: 'lk-vq-systemqueries',
-                    tag: 'input',
-                    type: 'checkbox'
-                },
-                {
-                    tag: 'span',
-                    html: ' Include system queries',
-                    cls: 'lk-sb-instructions'
-                },
-                {
-                    tag: 'span',
-                    html: '&nbsp;',
-                    cls: 'lk-sb-instructions'
-                },
-                //TODO: this option allows a more thorough validation of queries, metadata and custom views.  it is disabled until we cleanup more of the built-in queries
-                {
-                    id: 'lk-vq-validatemetadata',
-                    tag: 'input',
-                    //hidden: true,
-                    type: 'checkbox'
-                },
-                {
-                    tag: 'span',
-                    html: ' Validate metadata and views',
-                    //hidden: true,
-                    cls: 'lk-sb-instructions'
-                }
-            ]
-        });
-
-        Ext.get("lk-vq-start").on("click", this.initContainerList, this);
-        Ext.get("lk-vq-stop").on("click", this.stopValidation, this);
+        Ext4.get("lk-vq-start").on("click", this.initContainerList, this);
+        Ext4.get("lk-vq-stop").on("click", this.stopValidation, this);
     },
 
     initContainerList: function()
     {
         var scope = this;
         var containerList = new Array();
-        if (Ext.get("lk-vq-subfolders").dom.checked)
+        if (Ext4.getCmp("lk-vq-subfolders").checked)
         {
             LABKEY.Security.getContainers({
                 includeSubfolders: true,
@@ -963,46 +1008,33 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
     },
 
     setStatus : function(msg, cls, resetCls) {
-        var frame = Ext.get("lk-vq-status-frame");
-        if (!frame)
-        {
-            frame = this.body.createChild({
-                id: 'lk-vq-status-frame',
-                tag: 'div',
-                cls: 'lk-vq-status-frame',
-                children: [
-                    {
-                        id: 'lk-vq-status',
-                        tag: 'div',
-                        cls: 'lk-vq-status'
-                    }
-                ]
-            });
-        }
-        var elem = Ext.get("lk-vq-status");
+        var elem = Ext4.get("lk-vq-status");
         elem.update(msg);
 
+        var frame = Ext4.getCmp("lk-vq-status-frame");
         if (true === resetCls)
-            frame.dom.className = "lk-vq-status-frame";
-        
+            frame.cls = "lk-vq-status-frame";
+
         if (cls)
         {
             if (this.curStatusClass)
-                frame.removeClass(this.curStatusClass);
-            frame.addClass(cls);
+                frame.removeCls(this.curStatusClass);
+            frame.addCls(cls);
             this.curStatusClass = cls;
         }
+
+        if (frame.hidden) frame.show();
 
         return elem;
     },
 
     setStatusIcon : function(iconCls) {
-        var elem = Ext.get("lk-vq-status");
+        var elem = Ext4.get("lk-vq-status");
         if (!elem)
             elem = this.setStatus("");
         if (this.curIconClass)
-            elem.removeClass(this.curIconClass);
-        elem.addClass(iconCls);
+            elem.removeCls(this.curIconClass);
+        elem.addCls(iconCls);
         this.curIconClass = iconCls;
     },
 
@@ -1018,12 +1050,12 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
         if (!this.currentContainer)
         {
             this.clearValidationErrors();
-            Ext.get("lk-vq-start").dom.disabled = true;
-            Ext.get("lk-vq-stop").dom.disabled = false;
-            Ext.get("lk-vq-subfolders").dom.disabled = true;
-            Ext.get("lk-vq-systemqueries").dom.disabled = true;
-            Ext.get("lk-vq-validatemetadata").dom.disabled = true;
-            Ext.get("lk-vq-stop").focus();
+            Ext4.get("lk-vq-start").dom.disabled = true;
+            Ext4.get("lk-vq-stop").dom.disabled = false;
+            Ext4.get("lk-vq-subfolders").dom.disabled = true;
+            Ext4.get("lk-vq-systemqueries").dom.disabled = true;
+            Ext4.get("lk-vq-validatemetadata").dom.disabled = true;
+            Ext4.get("lk-vq-stop").focus();
             this.numErrors = 0;
             this.numValid = 0;
             this.containerCount = containerList.length;
@@ -1039,26 +1071,26 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
             scope: this,
             containerPath: this.currentContainer
         });
-        this.setStatus("Validating queries in " + Ext.util.Format.htmlEncode(this.currentContainer) + "...", null, true);
+        this.setStatus("Validating queries in " + Ext4.util.Format.htmlEncode(this.currentContainer) + "...", null, true);
         this.setStatusIcon("iconAjaxLoadingGreen");
         this.validating = true;
     },
 
     stopValidation : function() {
         this.stop = true;
-        Ext.get("lk-vq-stop").set({
+        Ext4.get("lk-vq-stop").set({
             disabled: true
         });
-        Ext.get("lk-vq-stop").dom.disabled = true;
-        Ext.get("lk-vq-subfolders").dom.disabled = false;
-        Ext.get("lk-vq-systemqueries").dom.disabled = false;
-        Ext.get("lk-vq-validatemetadata").dom.disabled = false;
+        Ext4.get("lk-vq-stop").dom.disabled = true;
+        Ext4.get("lk-vq-subfolders").dom.disabled = false;
+        Ext4.get("lk-vq-systemqueries").dom.disabled = false;
+        Ext4.get("lk-vq-validatemetadata").dom.disabled = false;
         this.currentContainer = undefined;
     },
 
     getStatusPrefix : function()
     {
-        return Ext.util.Format.htmlEncode(this.currentContainer) + " (" + this.currentContainerNumber + "/" + this.containerCount + ")";
+        return Ext4.util.Format.htmlEncode(this.currentContainer) + " (" + this.currentContainerNumber + "/" + this.containerCount + ")";
     },
 
     onSchemas : function(schemasInfo) {
@@ -1070,20 +1102,20 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
     validateSchema : function() {
         var schemaName = this.schemaNames[this.curSchemaIdx];
         if (!this.isValidSchemaName(schemaName)) {
-            var status = 'FAILED: Unable to resolve invalid schema name: \'' + Ext.util.Format.htmlEncode(schemaName) + '\'';
+            var status = 'FAILED: Unable to resolve invalid schema name: \'' + Ext4.util.Format.htmlEncode(schemaName) + '\'';
             this.setStatusIcon("iconAjaxLoadingRed");
             this.numErrors++;
             this.addValidationError(schemaName, undefined, {exception : status});
             return;
         }
-        this.setStatus(this.getStatusPrefix.call(this) + ": Validating queries in schema '" + Ext.util.Format.htmlEncode(schemaName) + "'...");
+        this.setStatus(this.getStatusPrefix.call(this) + ": Validating queries in schema '" + Ext4.util.Format.htmlEncode(schemaName) + "'...");
         LABKEY.Query.getQueries({
             schemaName: schemaName,
             successCallback: this.onQueries,
             scope: this,
             includeColumns: false,
             includeUserQueries: true,
-            includeSystemQueries: Ext.get("lk-vq-systemqueries").dom.checked,
+            includeSystemQueries: Ext4.getCmp("lk-vq-systemqueries").checked,
             containerPath: this.currentContainer
         });
         // Be sure to recurse into child schemas, if any
@@ -1117,7 +1149,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
         {
             var fqn = schemasInfo[childSchemaName].fullyQualifiedName;
             if (!this.isValidSchemaName(fqn)) {
-                var status = 'FAILED: Unable to resolve qualified schema name: \'' + Ext.util.Format.htmlEncode(fqn) + '\' of child schema \'' + Ext.util.Format.htmlEncode(childSchemaName) + '\'';
+                var status = 'FAILED: Unable to resolve qualified schema name: \'' + Ext4.util.Format.htmlEncode(fqn) + '\' of child schema \'' + Ext4.util.Format.htmlEncode(childSchemaName) + '\'';
                 this.setStatusIcon("iconAjaxLoadingRed");
                 this.numErrors++;
                 this.addValidationError(schemaName, childSchemaName, {exception : status});
@@ -1136,7 +1168,7 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
             errorCallback: this.onValidationFailure,
             scope: this,
             includeAllColumns: true,
-            validateQueryMetadata: Ext.get("lk-vq-validatemetadata").dom.checked,
+            validateQueryMetadata: Ext4.getCmp("lk-vq-validatemetadata").checked,
             containerPath: this.currentContainer
         });
     },
@@ -1190,51 +1222,60 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
             this.startValidation(this.remainingContainers);
         else
         {
-            Ext.get("lk-vq-start").dom.disabled = false;
-            Ext.get("lk-vq-stop").dom.disabled = true;
-            Ext.get("lk-vq-subfolders").dom.disabled = false;
-            Ext.get("lk-vq-systemqueries").dom.disabled = false;
-            Ext.get("lk-vq-validatemetadata").dom.disabled = false;
-            Ext.get("lk-vq-start").focus();
+            Ext4.get("lk-vq-start").dom.disabled = false;
+            Ext4.get("lk-vq-stop").dom.disabled = true;
+            Ext4.get("lk-vq-subfolders").dom.disabled = false;
+            Ext4.get("lk-vq-systemqueries").dom.disabled = false;
+            Ext4.get("lk-vq-validatemetadata").dom.disabled = false;
+            Ext4.get("lk-vq-start").focus();
             this.validating = false;
             this.currentContainer = undefined;
         }
     },
 
     getCurrentQueryLabel : function() {
-        return Ext.util.Format.htmlEncode(this.schemaNames[this.curSchemaIdx]) + "." + Ext.util.Format.htmlEncode(this.queries[this.curQueryIdx].name);
+        return Ext4.util.Format.htmlEncode(this.schemaNames[this.curSchemaIdx]) + "." + Ext4.util.Format.htmlEncode(this.queries[this.curQueryIdx].name);
     },
 
     clearValidationErrors : function() {
-        var errors = Ext.get("lk-vq-errors");
+        var errors = this.getComponent("lk-vq-errors");
         if (errors)
             errors.remove();
     },
 
     addValidationError : function(schemaName, queryName, errorInfo) {
-        var errors = Ext.get("lk-vq-errors");
-        if (!errors)
-        {
-            errors = this.body.createChild({
-                id: 'lk-vq-errors',
-                tag: 'div',
-                cls: 'lk-vq-errors-frame'
-            });
-        }
+        var errors = this.getComponent("lk-vq-errors");
+        var errorContainer = this.currentContainer;
+        var self = this;
+
+        var link = Ext4.create('Ext.Component',{
+            cls: 'labkey-link lk-vq-error-name',
+            html: Ext4.util.Format.htmlEncode(this.currentContainer) + ": " + Ext4.util.Format.htmlEncode(schemaName) + "." + Ext4.util.Format.htmlEncode(queryName),
+            listeners: {
+                afterrender: function(panel) {
+                    panel.el.on("click", function() {
+                        self.fireEvent("queryclick", schemaName, queryName, errorContainer);
+                    });
+                }
+            }
+        });
 
         var config = {
-            tag: 'div',
+            xtype: 'panel',
             cls: 'lk-vq-error',
-            children: [
+            border: false,
+            items: [
                 {
-                    tag: 'div',
+                    xtype: 'panel',
                     cls: 'labkey-vq-error-name',
-                    children: [
-                        {
-                            tag: 'span',
+                    border: false,
+                    items: [
+                        /*{
+                            xtype: 'box',
                             cls: 'labkey-link lk-vq-error-name',
-                            html: Ext.util.Format.htmlEncode(this.currentContainer) + ": " + Ext.util.Format.htmlEncode(schemaName) + "." + Ext.util.Format.htmlEncode(queryName)
-                        }
+                            html: Ext4.util.Format.htmlEncode(this.currentContainer) + ": " + Ext4.util.Format.htmlEncode(schemaName) + "." + Ext4.util.Format.htmlEncode(queryName),
+                        }*/
+                        link
                     ]
                 }
             ]
@@ -1243,13 +1284,13 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
         if(errorInfo.errors){
             var messages = [];
             var hasErrors = false;
-            Ext.each(errorInfo.errors, function(e){
+            Ext4.each(errorInfo.errors, function(e){
                 messages.push(e.msg);
             }, this);
-            messages = Ext.unique(messages);
+            messages = Ext4.unique(messages);
             messages.sort();
 
-            Ext.each(messages, function(msg){
+            Ext4.each(messages, function(msg){
                 var cls = 'lk-vq-error-message';
                 if(msg.match(/^INFO:/))
                     cls = 'lk-vq-info-message';
@@ -1260,10 +1301,12 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
                     hasErrors = true;
                 }
 
-                config.children.push({
-                    tag: 'div',
+                //config.children.push({
+                config.items.push({
+                    //tag: 'div',
+                    xtype: 'box',
                     cls: cls,
-                    html: Ext.util.Format.htmlEncode(msg)
+                    html: Ext4.util.Format.htmlEncode(msg)
                 })
             }, this);
 
@@ -1273,24 +1316,31 @@ LABKEY.ext.ValidateQueriesPanel = Ext.extend(Ext.Panel,
             }
         }
         else {
-            config.children.push({
-                tag: 'div',
+            config.items.push({
+                xtype: 'box',
                 cls: 'lk-vq-error-message',
-                html: Ext.util.Format.htmlEncode(errorInfo.exception)
+                html: Ext4.util.Format.htmlEncode(errorInfo.exception)
             });
         }
-        var error = errors.createChild(config);
 
-        var errorContainer = this.currentContainer;
-        error.down("div span.labkey-link").on("click", function(){
+        errors.add(config);
+
+        if(errors.hidden) errors.show();
+
+        /*
+        //errors.down("panel panel box").on("click", function(){
             this.fireEvent("queryclick", schemaName, queryName, errorContainer);
-        }, this);
+        }, this);*/
     }
 });
 
 
-LABKEY.ext.SchemaBrowserPanel = Ext.extend(Ext.Panel,
-{
+Ext4.define('LABKEY.ext.SchemaBrowserPanel', {
+
+    extend: 'Ext.panel.Panel',
+
+    alias: 'widget.labkey-schema-browser-panel',
+
     formatSchemaList : function (sortedNames, schemas, title)
     {
         var rows = [];
@@ -1310,7 +1360,7 @@ LABKEY.ext.SchemaBrowserPanel = Ext.extend(Ext.Panel,
                             {
                                 tag:'span',
                                 cls:'labkey-link',
-                                html:Ext.util.Format.htmlEncode(sortedNames[idx])
+                                html:Ext4.util.Format.htmlEncode(sortedNames[idx])
                             }
                         ]
                     },
@@ -1320,7 +1370,7 @@ LABKEY.ext.SchemaBrowserPanel = Ext.extend(Ext.Panel,
                     },
                     {
                         tag:'td',
-                        html:Ext.util.Format.htmlEncode(schema.description)
+                        html:Ext4.util.Format.htmlEncode(schema.description)
                     }
                 ]
             });
@@ -1375,7 +1425,7 @@ LABKEY.ext.SchemaBrowserPanel = Ext.extend(Ext.Panel,
         var nameLinks = table.query("tbody tr td span");
         for (idx = 0; idx < nameLinks.length; ++idx)
         {
-            Ext.get(nameLinks[idx]).on("click", function (evt, t)
+            Ext4.get(nameLinks[idx]).on("click", function (evt, t)
             {
                 var schemaName = LABKEY.SchemaKey.fromString(t.innerHTML);
                 var schema = schemas[schemaName];
@@ -1385,19 +1435,22 @@ LABKEY.ext.SchemaBrowserPanel = Ext.extend(Ext.Panel,
     }
 });
 
-Ext.reg('labkey-schema-browser-panel', LABKEY.ext.SchemaBrowserPanel);
+Ext4.define('LABKEY.ext.SchemaBrowserHomePanel', {
 
-LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
-{
+    extend: 'LABKEY.ext.SchemaBrowserPanel',
+
+    alias: 'widget.labkey-schema-browser-home-panel',
+
     initComponent : function() {
         this.bodyStyle = "padding: 5px";
         this.addEvents("schemaclick");
-        LABKEY.ext.SchemaBrowserHomePanel.superclass.initComponent.apply(this, arguments);
+        this.callParent();
     },
 
     onRender : function() {
         //call superclass to create basic elements
-        LABKEY.ext.SchemaBrowserHomePanel.superclass.onRender.apply(this, arguments);
+        this.callParent();
+
         this.body.createChild({
             tag: 'div',
             cls: 'lk-qd-loading',
@@ -1433,15 +1486,17 @@ LABKEY.ext.SchemaBrowserHomePanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
 }
 });
 
-Ext.reg('labkey-schema-browser-home-panel', LABKEY.ext.SchemaBrowserHomePanel);
+Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
 
-LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
-{
+    extend: 'LABKEY.ext.SchemaBrowserPanel',
+
+    alias: 'widget.labkey-schema-summary-panel',
+
     initComponent : function()
     {
         this.bodyStyle = "padding: 5px";
         this.addEvents("queryclick");
-        LABKEY.ext.SchemaSummaryPanel.superclass.initComponent.apply(this, arguments);
+        this.callParent();
 
         this.addListener("schemaclick",
             function(schemaName){
@@ -1453,7 +1508,7 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
     onRender : function()
     {
         //call superclass to create basic elements
-        LABKEY.ext.SchemaSummaryPanel.superclass.onRender.apply(this, arguments);
+        this.callParent();
         this.body.createChild({
             tag: 'div',
             cls: 'lk-qd-loading',
@@ -1475,12 +1530,12 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
         this.body.createChild({
             tag: 'div',
             cls: 'lk-qd-name',
-            html: Ext.util.Format.htmlEncode(this.schemaName.toDisplayString() + " Schema")
+            html: Ext4.util.Format.htmlEncode(this.schemaName.toDisplayString() + " Schema")
         });
         this.body.createChild({
             tag: 'div',
             cls: 'lk-qd-description',
-            html: Ext.util.Format.htmlEncode(schema.description)
+            html: Ext4.util.Format.htmlEncode(schema.description)
         });
 
         //create a list for child schemas
@@ -1527,8 +1582,8 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
         var nameLinks = table.query("tbody tr td span");
         for (var idx = 0; idx < nameLinks.length; ++idx)
         {
-            Ext.get(nameLinks[idx]).on("click", function(evt,t){
-                this.fireEvent("queryclick", this.schemaName, Ext.util.Format.htmlDecode(t.innerHTML));
+            Ext4.get(nameLinks[idx]).on("click", function(evt,t){
+                this.fireEvent("queryclick", this.schemaName, Ext4.util.Format.htmlDecode(t.innerHTML));
             }, this);
         }
 
@@ -1599,11 +1654,11 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
                             {
                                 tag: 'span',
                                 cls: 'labkey-link',
-                                html: Ext.util.Format.htmlEncode(query.name)
+                                html: Ext4.util.Format.htmlEncode(query.name)
                             },
                             {
                                 tag: 'span',
-                                html: Ext.util.Format.htmlEncode((query.name.toLowerCase() != query.title.toLowerCase() ? ' (' + query.title + ')' : ''))
+                                html: Ext4.util.Format.htmlEncode((query.name.toLowerCase() != query.title.toLowerCase() ? ' (' + query.title + ')' : ''))
                             }
                         ]
                     },
@@ -1613,7 +1668,7 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
                     },
                     {
                         tag: 'td',
-                        html: Ext.util.Format.htmlEncode(query.description)
+                        html: Ext4.util.Format.htmlEncode(query.description)
                     }
                 ]
             });
@@ -1623,12 +1678,11 @@ LABKEY.ext.SchemaSummaryPanel = Ext.extend(LABKEY.ext.SchemaBrowserPanel,
     }
 });
 
-Ext.reg('labkey-schema-summary-panel', LABKEY.ext.SchemaSummaryPanel);
-
-
 LABKEY.requiresCss("_images/icons.css");
 
-LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
+Ext4.define('LABKEY.ext.SchemaBrowser', {
+
+    extend: 'Ext.panel.Panel',
 
     qdpPrefix: 'qdp-',
     sspPrefix: 'ssp-',
@@ -1679,7 +1733,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             });
         }
 
-        Ext.apply(this,{
+        Ext4.apply(this,{
             _qdcache: new LABKEY.ext.QueryDetailsCache(),
             layout: 'border',
             items : [
@@ -1693,7 +1747,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     enableDrag: false,
                     useArrows: true,
                     listeners: {
-                        click: {
+                        select: {
                             fn: this.onTreeClick,
                             scope: this
                         },
@@ -1734,35 +1788,44 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                             fn: this.onTabChange,
                             scope: this
                         }
-                    },
-                    plugins: new Ext.ux.TabCloseMenu()
+                    }
                 }
             ],
            tbar: tbar
         });
 
-        Ext.applyIf(this, {
+        Ext4.applyIf(this, {
             autoResize: true
         });
 
         if (this.autoResize)
         {
-            Ext.EventManager.onWindowResize(function(w,h){ LABKEY.ext.Utils.resizeToViewport(this, w, h, 46, 32); }, this);
-            this.on("render", function(){Ext.EventManager.fireWindowResize();}, this);
+            Ext4.EventManager.onWindowResize(function(w,h){
+                LABKEY.ext4.Util.resizeToViewport(this, w, h, 46, 32); }, this
+            );
+            this.on("render", function(){
+                var me = this;
+                Ext4.defer(function(){
+                    var size = Ext4.getBody().getBox();
+                    LABKEY.ext4.Util.resizeToViewport(me, size.width, size.height, 46, 32);
+                }, 300);
+            }, this);
+
         }
 
         this.addEvents("schemasloaded");
 
-        LABKEY.ext.SchemaBrowser.superclass.initComponent.apply(this, arguments);
-        Ext.History.init();
-        Ext.History.on('change', this.onHistoryChange, this);
+        this.callParent();
+
+        Ext4.History.init();
+        Ext4.History.on('change', this.onHistoryChange, this);
     },
 
     showPanel : function(id)
     {
         var tabs = this.getComponent("lk-sb-details");
         if (tabs.getComponent(id))
-            tabs.activate(id);
+            tabs.setActiveTab(id);
         else
         {
             var panel;
@@ -1793,7 +1856,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     schemaName: idMap.schemaName,
                     queryName: idMap.queryName,
                     id: id,
-                    title: Ext.util.Format.htmlEncode(idMap.schemaName.toDisplayString()) + "." + Ext.util.Format.htmlEncode(idMap.queryName),
+                    title: Ext4.util.Format.htmlEncode(idMap.schemaName.toDisplayString()) + "." + Ext4.util.Format.htmlEncode(idMap.queryName),
                     autoScroll: true,
                     listeners: {
                         lookupclick: {
@@ -1814,11 +1877,13 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                     schemaName: schemaPath,
                     id: id,
                     schemaBrowser: this,
-                    title: Ext.util.Format.htmlEncode(schemaPath.toDisplayString()),
+                    title: Ext4.util.Format.htmlEncode(schemaPath.toDisplayString()),
                     autoScroll: true,
                     listeners: {
                         queryclick: {
-                            fn: function(schemaName, queryName){this.showQueryDetails(schemaName, queryName);},
+                            fn: function(schemaName, queryName){
+                                this.showQueryDetails(schemaName, queryName);
+                            },
                             scope: this
                         }
                     },
@@ -1830,7 +1895,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             if (panel)
             {
                 tabs.add(panel);
-                tabs.activate(panel.id);
+                tabs.setActiveTab(panel.id);
             }
         }
     },
@@ -1838,8 +1903,6 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     parseQueryPanelId : function(id) {
         if (id.indexOf(this.qdpPrefix) > -1)
             id = id.substring(this.qdpPrefix.length);
-
-        //console.log("parseQueryId: " + id);
 
         // onHistoryChange hands us a URI encoded token in Chrome and a decoded URI token in Firefox
         var ret = {};
@@ -1862,13 +1925,11 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         var amp = id.indexOf('&');
         if (amp > -1)
         {
-            //console.log("  decoded: " + id);
             var schemaName = id.substring(0, amp);
             ret.schemaName = LABKEY.SchemaKey.fromString(schemaName);
             ret.queryName = id.substring(amp+1);
         }
 
-        //console.log("  ret: ", ret);
         return ret;
     },
 
@@ -1894,11 +1955,11 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
     onCreateQueryClick : function() {
         //determine which schema is selected in the tree
         var tree = this.getComponent("lk-sb-tree");
-        var node = tree.getSelectionModel().getSelectedNode();
-        if (node && node.attributes.schemaName)
-            window.location = this.getCreateQueryUrl(node.attributes.schemaName, node.attributes.queryName), "createQuery";
+        var node = tree.getSelectionModel().getSelection()[0];
+        if (node && node.data.schemaName)
+            window.location = this.getCreateQueryUrl(node.data.schemaName, node.data.queryName), "createQuery";
         else
-            Ext.Msg.alert("Which Schema?", "Please select the schema in which you want to create the new query.");
+            Ext4.Msg.alert("Which Schema?", "Please select the schema in which you want to create the new query.");
 
     },
 
@@ -1922,28 +1983,28 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         if (this._addHistory)
         {
             if (tab.id == 'lk-sb-panel-home')
-                Ext.History.add("#");
+                Ext4.History.add("#");
             else
             {
                 try
                 {
                     decodeURIComponent(tab.id);
-                    Ext.History.add(this.historyPrefix + tab.id);
+                    Ext4.History.add(this.historyPrefix + tab.id);
                 }
                 catch(err)
                 {
                     console.log(err); // URIError (ex: assay.Luminex.$ATestAssayLuminex><$S% 1)
-                };
+                }
             }
         }
         this._addHistory = true;
     },
 
-    onTreeClick : function(node, evt) {
-        if (node.attributes.schemaName && !node.attributes.queryName)
-            this.showPanel(this.sspPrefix + node.attributes.schemaName);
-        else if (node.leaf)
-            this.showQueryDetails(node.attributes.schemaName, node.attributes.queryName);
+    onTreeClick : function(node, record, index, eOpts) {
+        if (record.data.schemaName && !record.data.queryName)
+            this.showPanel(this.sspPrefix + record.data.schemaName);
+        else if (record.data.leaf)
+            this.showQueryDetails(record.data.schemaName, record.data.queryName);
     },
 
     showQueryDetails : function(schemaName, queryName) {
@@ -1987,8 +2048,14 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
 
     selectSchema : function(schemaName) {
         this.expandSchema(schemaName, function (success, schemaNode) {
+            // it appears schemaNode is coming back as an array even when it's passed to expand as a single object
+            if(schemaNode instanceof Array )
+                schemaNode =schemaNode[0];
+
+            // NOTE: we could look at passing tree into here but just going to rip it out of node
+            var tree = schemaNode.store.ownerTree;
             if (success)
-                schemaNode.select();
+                tree.getSelectionModel().select(schemaNode.parentNode);
         });
     },
 
@@ -2000,8 +2067,8 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
         var schemaNode = getSchemaNode(tree, schemaName);
         if (schemaNode)
         {
-            tree.selectPath(schemaNode.getPath());
-            schemaNode.expand(false, false, function (schemaNode) {
+            //tree.selectPath(schemaNode.getPath('text'));
+            schemaNode.expand(false, function (schemaNode) {
                 if (callback)
                     callback.call((scope || this), true, schemaNode);
             });
@@ -2018,7 +2085,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 var node = dataSourceNodes[i];
                 var part = parts[0].toLowerCase();
                 var child = node.findChildBy(function (n) {
-                    return n.attributes.name && n.attributes.name.toLowerCase() == part;
+                    return n.data.name && n.data.name.toLowerCase() == part;
                 });
 
                 if (child) {
@@ -2034,7 +2101,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 var expandCallback = function (success, lastNode) {
                     if (!success)
                     {
-                        Ext.Msg.alert("Missing Schema", "The schema '" + Ext.util.Format.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
+                        Ext4.Msg.alert("Missing Schema", "The schema '" + Ext4.util.Format.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
                         if (callback)
                             callback.call((scope || this), true, lastNode);
                     }
@@ -2054,7 +2121,7 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
                 tree.expandPath(schemaPathStr, "name", expandCallback);
             }
             else {
-                Ext.Msg.alert("Missing Schema", "The schema '" + Ext.util.Format.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
+                Ext4.Msg.alert("Missing Schema", "The schema '" + Ext4.util.Format.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
             }
         }
     },
@@ -2064,32 +2131,41 @@ LABKEY.ext.SchemaBrowser = Ext.extend(Ext.Panel, {
             if (!success)
                 return;
 
+            // it appears schemaNode is coming back as an array even when it's passed to expand as a single object
+            if(schemaNode instanceof Array )
+                schemaNode =schemaNode[0];
+
             var tree = this.getComponent("lk-sb-tree");
             //look for the query node under both built-in and user-defined
             var queryNode;
-            if (schemaNode.childNodes.length > 0)
+            Ext4.each(schemaNode.childNodes, function(n) {
+                if (n.data.queryName.toLowerCase() == queryName.toLowerCase())
+                    queryNode = n;
+            });
+            /*if (schemaNode.childNodes.length > 0)
                 queryNode = schemaNode.childNodes[0].findChildBy(function(node){
                     //Issue 15674: if more than 100 queries are present, we include a placeholder node saying 'More..', which lacks queryName
-                    if (!node.attributes.queryName)
+                    if (!node.data.queryName)
                         return false;
 
-                    return node.attributes.queryName.toLowerCase() == queryName.toLowerCase();
+                    return node.data.queryName.toLowerCase() == queryName.toLowerCase();
                 });
             if (!queryNode && schemaNode.childNodes.length > 1)
                 queryNode = schemaNode.childNodes[1].findChildBy(function(node){
-                    if (!node.attributes.queryName)
+                    if (!node.data.queryName)
                         return false;
 
-                    return node.attributes.queryName.toLowerCase() == queryName.toLowerCase();
-                });
+                    return node.data.queryName.toLowerCase() == queryName.toLowerCase();
+                });*/
 
             if (!queryNode)
             {
+                // TODO: consider case of issue below...
                 //Issue 15674: if there are more than 100 queries, some queries will not appear in the list.  therefore this is a legitimate case
                 return;
             }
 
-            tree.selectPath(queryNode.getPath());
+            tree.getSelectionModel().select(queryNode);
             if (callback)
                 callback.call((scope || this));
 
@@ -2113,7 +2189,7 @@ function getSchemaNode(tree, schemaName)
         {
             var part = parts[j].toLowerCase();
             node = node.findChildBy(function (n) {
-                return n.attributes.name && n.attributes.name.toLowerCase() == part;
+                return n.data.name && n.data.name.toLowerCase() == part;
             });
         }
 
@@ -2124,67 +2200,3 @@ function getSchemaNode(tree, schemaName)
 
     return null;
 }
-
-//adapted from http://www.extjs.com/deploy/dev/examples/tabs/tabs-adv.js
-Ext.ux.TabCloseMenu = function(){
-    var tabs, menu, ctxItem;
-    this.init = function(tp){
-        tabs = tp;
-        tabs.on('contextmenu', onContextMenu);
-    };
-
-    function onContextMenu(ts, item, e){
-        if(!menu){ // create context menu on first right click
-            menu = new Ext.menu.Menu({
-            cls: 'extContainer',
-            items: [{
-                id: tabs.id + '-close',
-                text: 'Close',
-                handler : function(){
-                    tabs.remove(ctxItem);
-                }
-            },{
-                id: tabs.id + '-close-all',
-                text: 'Close All',
-                handler : function(){
-                    tabs.items.each(function(item){
-                        if(item.closable){
-                            tabs.remove(item);
-                        }
-                    });
-                }
-            },{
-                id: tabs.id + '-close-others',
-                text: 'Close Others',
-                handler : function(){
-                    tabs.items.each(function(item){
-                        if(item.closable && item != ctxItem){
-                            tabs.remove(item);
-                        }
-                    });
-                }
-            }]});
-        }
-        ctxItem = item;
-        var items = menu.items;
-        items.get(tabs.id + '-close').setDisabled(!item.closable);
-        var disableOthers = true;
-        var disableAll = true;
-        tabs.items.each(function(){
-            if(this != item && this.closable){
-                disableOthers = false;
-                return false;
-            }
-        });
-        tabs.items.each(function(){
-            if(this.closable){
-                disableAll = false;
-                return false;
-            }
-        });
-        items.get(tabs.id + '-close-others').setDisabled(disableOthers);
-        items.get(tabs.id + '-close-all').setDisabled(disableAll);
-	    e.stopEvent();
-        menu.showAt(e.getPoint());
-    }
-};

@@ -23,19 +23,18 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
         resources.add(ClientDependency.fromFilePath("schemaBrowser.css"));
         resources.add(ClientDependency.fromFilePath("schemaBrowser.js"));
         return resources;
     }
 %>
-<div id="browserContainer" class="extContainer" style="width:100%;">
+<div id="browserContainer" style="width:100%;">
     <div id="browser"></div>
 </div>
 <script type="text/javascript">
     var _browser = null;
 
-    Ext.onReady(function(){
+    Ext4.onReady(function(){
         _browser = new LABKEY.ext.SchemaBrowser({
             renderTo: 'browser',
             boxMinHeight: 600,
