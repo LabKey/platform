@@ -16,6 +16,7 @@
 
 package org.labkey.api.action;
 
+import com.drew.lang.annotations.Nullable;
 import org.labkey.api.data.ExcelWriter;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.query.ExportScriptModel;
@@ -30,6 +31,21 @@ import org.springframework.validation.BindException;
 import org.springframework.web.servlet.ModelAndView;
 
 /**
+ * A special action base class that is useful when a view needs to expose some special variant of a QueryView. It will
+ * be used for export and other similar actions so that the same customizations happen, which might not be present
+ * if going to the standard QueryController versions of those actions. Examples might include adding a special filter
+ * on the underlying table.
+ *
+ * For a simple page that just has a single QueryView, implement createQueryView(). You can ignore the dataRegionName
+ * argument.
+ *
+ * For a page that includes other views, implement createQueryView() and override getHtmlView(). Call
+ * createInitializedQueryView() to get the configured version of your QueryView to add to the rest of the page.
+ *
+ * For pages that involve multiple QueryViews, implement createQueryView() and return the right view based on the
+ * dataRegionName argument. Override getHtmlView() and call createInitializedQueryView() to get the configured version
+ * of all of your QueryViews.
+ *
  * User: jeckels
  * Date: Jan 18, 2008
  */
@@ -40,6 +56,8 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         super(formClass);
     }
 
+    protected Form _form;
+
     public void checkPermissions() throws UnauthorizedException
     {
         if (QueryView.EXCEL_WEB_QUERY_EXPORT_TYPE.equals(getViewContext().getRequest().getParameter("exportType")))
@@ -47,8 +65,10 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         super.checkPermissions();
     }
 
+    /** Most subclasses should not override this method */
     public ModelAndView getView(Form form, BindException errors) throws Exception
     {
+        _form = form;
         if (QueryAction.exportRowsExcel.name().equals(form.getExportType()))
         {
             createInitializedQueryView(form, errors, true, form.getExportRegion()).exportToExcel(getViewContext().getResponse(), ExcelWriter.ExcelDocumentType.xls);
@@ -88,12 +108,17 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         }
     }
 
+    /** Build up the HTML page. Defaults to just including a single QueryView. */
     protected ModelAndView getHtmlView(Form form, BindException errors) throws Exception
     {
         return createInitializedQueryView(form, errors, false, null);
     }
 
-    protected final ViewType createInitializedQueryView(Form form, BindException errors, boolean forExport, String dataRegion) throws Exception
+    /**
+     * Correctly configures the QueryView to use the QueryViewAction for export purposes
+     * @param dataRegion null as a convenience when only a single QueryView is being used
+     */
+    protected final ViewType createInitializedQueryView(Form form, BindException errors, boolean forExport, @Nullable String dataRegion) throws Exception
     {
         ViewType result = createQueryView(form, errors, forExport, dataRegion);
         if (null == result)
@@ -103,7 +128,11 @@ public abstract class QueryViewAction<Form extends QueryViewAction.QueryExportFo
         return result;
     }
 
-    protected abstract ViewType createQueryView(Form form, BindException errors, boolean forExport, String dataRegion) throws Exception;
+    /**
+     * Create the specially configured query view.
+     * @param dataRegion null as a convenience when only a single QueryView is being used
+     */
+    protected abstract ViewType createQueryView(Form form, BindException errors, boolean forExport, @Nullable String dataRegion) throws Exception;
 
     public static class QueryExportForm extends QueryForm
     {
