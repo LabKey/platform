@@ -42,6 +42,7 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="org.labkey.api.query.QueryView" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -113,7 +114,7 @@
     reportConfig.put("schemaName", bean.getSchemaName());
     reportConfig.put("queryName", bean.getQueryName());
     reportConfig.put("viewName", bean.getViewName());
-    reportConfig.put("dataRegionName", bean.getDataRegionName());
+    reportConfig.put("dataRegionName", StringUtils.defaultString(bean.getDataRegionName(), QueryView.DATAREGIONNAME_DEFAULT));
     reportConfig.put("reportType", bean.getReportType());
     reportConfig.put("reportId", bean.getReportId() != null ? bean.getReportId().toString() : null);
     reportConfig.put("shareReport", bean.isShareReport());
@@ -153,7 +154,6 @@
             readOnly        : <%=readOnly%>,
             minHeight       : 500,
             minWidth        : 500,
-            dataRegionName  : <%=q(bean.getDataRegionName())%>,
             initialURL      : <%=q(initialViewURL.getLocalURIString())%>,
             saveURL         : <%=q(saveURL.getLocalURIString())%>,
             baseURL         : <%=q(baseViewURL.getLocalURIString())%>,
