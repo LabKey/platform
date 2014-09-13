@@ -7603,6 +7603,10 @@ internal/webapp/codemirror-4.2/util.js -text
 internal/webapp/codemirror.lib.xml -text
 internal/webapp/color_functions.js -text
 internal/webapp/completion.js -text
+internal/webapp/dataregion/filter/Base.js -text
+internal/webapp/dataregion/filter/Faceted.js -text
+internal/webapp/dataregion/filter/Model.js -text
+internal/webapp/dataregion/filter/Value.js -text
 internal/webapp/dataregion/panel/Facet.js -text
 internal/webapp/designer/designer2.js -text
 internal/webapp/designer/wand.gif -text
