@@ -150,7 +150,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
         var script = this.codeMirror ? this.codeMirror.getValue() : this.reportConfig.script;
 
         data.script = script;
-        data.dataRegionName = this.dataRegionName;
+        data.dataRegionName = this.reportConfig.dataRegionName;
 
         // save previous values
         this.prevScriptSource = script;
@@ -179,8 +179,8 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
     },
 
     _doRenderGrid : function(cmp) {
-        var filters = LABKEY.Filter.getFiltersFromUrl(this.initialURL, this.dataRegionName);
-        var sort = LABKEY.Filter.getSortFromUrl(this.initialURL, this.dataRegionName);
+        var filters = LABKEY.Filter.getFiltersFromUrl(this.initialURL, this.reportConfig.dataRegionName);
+        var sort = LABKEY.Filter.getSortFromUrl(this.initialURL, this.reportConfig.dataRegionName);
 
         var config = {
             schemaName  : this.reportConfig.schemaName,
@@ -188,7 +188,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             viewName    : this.reportConfig.viewName,
             removeableFilters   : filters,
             removeableSort      : sort,
-            dataRegionName      : this.dataRegionName + '_report',
+            dataRegionName      : this.reportConfig.dataRegionName + '_report',
             frame       : 'none',
             showBorders : false,
             showDetailsColumn       : false,
@@ -206,7 +206,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                     var panel = cmp.up('tabpanel');
                     if (panel)
                         panel.doLayout();
-                    var dr = LABKEY.DataRegions[this.dataRegionName + '_report'];
+                    var dr = LABKEY.DataRegions[this.reportConfig.dataRegionName + '_report'];
                     if (dr) {
                         dr.disableHeaderLock();
                     }
@@ -242,7 +242,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             }
 
             // show any filter messages on the enclosing dataregion's msg area
-            var outerRegion = LABKEY.DataRegions[this.dataRegionName];
+            var outerRegion = LABKEY.DataRegions[this.reportConfig.dataRegionName];
             var msgbox = dr.getMessageArea();
 
             if (outerRegion)
@@ -555,7 +555,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 if (name.substr(0, prefix.length) == prefix)
                 {
                     // Translate "Data" tab dataregion params to use view tab dataregion name
-                    var newName = this.dataRegionName + '.' + name.substr(prefix.length);
+                    var newName = this.reportConfig.dataRegionName + '.' + name.substr(prefix.length);
                     url = url + '&' + newName + '=' + params[name];
                 }
             }

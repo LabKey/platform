@@ -1065,19 +1065,29 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
             }
         }
 
+        var customSize = true;
         for (var h in heights) {
             if (heights.hasOwnProperty(h)) {
-                sizeItems.push({boxLabel : heights[h], name : 'webpart.height', inputValue : h, minWidth: 75, checked : false, handler : function(grp){
+                sizeItems.push({boxLabel : heights[h], name : 'height', inputValue : h, minWidth: 75, checked : false, handler : function(grp){
                     // this is called for each 'change' -- only bother with true case
                     if (grp.getValue()) {
                         this.updateConfig = true;
                         this._height = parseInt(grp.inputValue); // WATCH OUT : this MUST be an integer.
                     }
                 }, scope : this});
-                if (this._height == h)
+                if (this._height == h) {
+                    customSize = false;
                     sizeItems[sizeItems.length-1].checked = true;
+                }
             }
         }
+        // custom height
+        sizeItems.push({boxLabel : 'custom', name : 'height', inputValue : 0, minWidth: 75, checked : customSize, handler : function(grp, chk){
+            var fields = this.query('numberfield');
+            if (fields && fields.length == 1) {
+                fields[0].setVisible(chk);
+            }
+        }, scope : this});
 
         var namePanel = Ext4.create('Ext.form.Panel', {
             border : false,
@@ -1099,6 +1109,18 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 columns    : 3,
                 height     : 50,
                 items      : sizeItems
+            },{
+                xtype           : 'numberfield',
+                minValue        : 225,
+                maxValue        : 3000,
+                value           : this._height,
+                emptyText       : '225',
+                hidden          : !customSize,
+                name            : 'height',
+                listeners       : {change : {fn : function(cmp, newValue){
+                    this.updateConfig = true;
+                    this._height = parseInt(newValue);
+                }, scope : this}}
             }]
         });
         
@@ -1159,9 +1181,11 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                     var form = formPanel.getForm();
                     if (form.isValid())
                     {
+                        var params = form.getValues();
+                        params['webpart.height'] = this._height;
                         this.getNorth().getEl().mask('Saving...');
                         Ext4.Ajax.request({
-                            url    : LABKEY.ActionURL.buildURL('project', 'customizeWebPartAsync.api', null, form.getValues()),
+                            url    : LABKEY.ActionURL.buildURL('project', 'customizeWebPartAsync.api', null, params),
                             method : 'POST',
                             success : function() {
                                 var north = this.getNorth();
