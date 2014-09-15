@@ -169,7 +169,16 @@ public enum Operator
     notIn(" NOT IN ", Precedence.like, NOT_IN, ResultType.bool),
     bit_and("&", Precedence.bitwiseand, BIT_AND, ResultType.arg, Associativity.full, true),
     bit_or("|", Precedence.bitwiseor, BIT_OR, ResultType.arg, Associativity.full, true),
-    bit_xor("^", Precedence.bitwisexor, BIT_XOR, ResultType.arg, Associativity.full, true),
+    bit_xor("^", Precedence.bitwisexor, BIT_XOR, ResultType.arg, Associativity.full, true)
+            {
+                @Override
+                public String getOperator(SqlDialect d)
+                {
+                    if (null == d)
+                        return "^";
+                    return d.getXorOperator();
+                }
+            },
 
     exists(" EXISTS ", Precedence.unary, EXISTS, ResultType.bool)
     {
@@ -259,7 +268,7 @@ public enum Operator
         return "";
     }
 
-    public String getOperator()
+    public String getOperator(SqlDialect d)
     {
         return _strOp;
     }
@@ -282,14 +291,14 @@ public enum Operator
             {
                 builder.popPrefix(")");
             }
-            builder.nextPrefix(getOperator());
+            builder.nextPrefix(getOperator(builder.getDialect()));
         }
         builder.popPrefix();
     }
 
     public void appendSqlUnary(SqlBuilder builder, Query query, Iterable<QNode> operands)
     {
-        builder.append(getOperator());
+        builder.append(getOperator(builder.getDialect()));
         builder.append("(");
         Iterator<QNode> i = operands.iterator();
         assert i.hasNext();

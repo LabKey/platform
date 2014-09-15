@@ -40,20 +40,26 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.ModuleProperty;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryParseWarning;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
+import org.labkey.api.util.TestContext;
 import org.labkey.query.QueryServiceImpl;
 import org.labkey.query.sql.antlr.SqlBaseLexer;
 import org.labkey.query.sql.antlr.SqlBaseParser;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -1591,6 +1597,46 @@ public class SqlParser
                 {
                     fail(sql);
                 }
+            }
+        }
+
+        @Test
+        public void testPrecendence() throws SQLException
+        {
+            // ^ is higher precedence than |
+            assertEquals(1, evalInt("(1^1)|1"));
+            assertEquals(0, evalInt("1^(1|1)"));
+            assertEquals(1, evalInt("1^1|1 "));
+            assertEquals(1, evalInt("1|1^1 "));
+            assertEquals(0, evalInt("0|1^1 "));
+
+            // & is higher precedence than ^
+            assertEquals(1, evalInt("(0&1)^1"));
+            assertEquals(0, evalInt("0&(1^1)"));
+            assertEquals(1, evalInt("0&1^1"));
+            assertEquals(1, evalInt("1^0&1"));
+            assertEquals(1, evalInt("1^1&0"));
+
+            // + is higher than &
+            assertEquals(2, evalInt("(1+1)&2"));
+            assertEquals(1, evalInt("1+(1&2)"));
+            assertEquals(2, evalInt("1+1&2"));
+            assertEquals(2, evalInt("2&1+1"));
+        }
+
+
+        QuerySchema core = null;
+
+        private int evalInt(String expr) throws SQLException
+        {
+            if (null == core)
+            {
+                core = DefaultSchema.get(TestContext.get().getUser(), JunitUtil.getTestContainer()).getSchema("core");
+            }
+            try (ResultSet rs = QueryServiceImpl.get().select(core, "SELECT " + expr + " AS expr"))
+            {
+                rs.next();
+                return ((Number)rs.getObject(1)).intValue();
             }
         }
     }

@@ -449,6 +449,12 @@ public class PostgreSql84Dialect extends SqlDialect
     }
 
     @Override
+    public String getXorOperator()
+    {
+        return "#";
+    }
+
+    @Override
     public boolean supportsGroupConcat()
     {
         return true;

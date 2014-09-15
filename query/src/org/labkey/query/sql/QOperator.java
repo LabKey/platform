@@ -45,7 +45,7 @@ final public class QOperator extends QExpr
             {
                 builder.popPrefix(")");
             }
-            builder.nextPrefix(_op.getOperator());
+            builder.nextPrefix(_op.getOperator(null));
         }
         builder.popPrefix();
     }
@@ -79,7 +79,7 @@ final public class QOperator extends QExpr
             }
             if (!first)
             {
-                ret.append(_op.getOperator());
+                ret.append(_op.getOperator(null));
             }
             first = false;
             boolean fParen = needsParentheses(child);
