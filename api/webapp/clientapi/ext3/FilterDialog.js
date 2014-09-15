@@ -1067,7 +1067,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             setValue : function(values, negated) {
                 if (!this.rendered) {
                     this.on('render', function() {
-                        this.setValue(values);
+                        this.setValue(values, negated);
                     }, this, {single: true});
                 }
 
