@@ -19,13 +19,15 @@ package org.labkey.query.sql;
 public enum Precedence
 {
     primary,
-    unary, // + (Positive), - (Negative), ~ (Bitwise NOT)
-    multiplication, // * (Multiply), / (Division), % (Modulo)
-    addition, // + (Add), (+ Concatenate), - (Subtract), & (Bitwise AND)
-    comparison, // =,  >,  <,  >=,  <=,  <>,  !=,  !>,  !< (Comparison operators)
-    bitwiseor, // ^ (Bitwise Exlusive OR), | (Bitwise OR)
+    unary,              // + (Positive), - (Negative), ~ (Bitwise NOT)
+    multiplication,     // * (Multiply), / (Division), % (Modulo)
+    addition,           // + (Add), (+ Concatenate), - (Subtract)
+    bitwiseand,         // & (Bitwise AND)
+    bitwisexor,         // ^ (Bitwise Exlusive OR)
+    bitwiseor,          // | (Bitwise OR)
+    comparison,         // =,  >,  <,  >=,  <=,  <>,  !=,  !>,  !< (Comparison operators)
     not,
     and,
-    like, // ALL, ANY, BETWEEN, IN, LIKE, OR, SOME
+    like,               // ALL, ANY, BETWEEN, IN, LIKE, OR, SOME
     assignment,
 }

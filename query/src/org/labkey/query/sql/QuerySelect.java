@@ -958,13 +958,17 @@ groupByLoop:
      */
     QExpr resolveFields(QExpr expr, @Nullable QNode parent, @Nullable Object referant)
     {
-        if (expr instanceof QQuery)
+        if (expr instanceof QQuery || expr instanceof QUnion)
         {
-            QueryRelation subquery = ((QQuery)expr)._select;
+            QueryRelation subquery;
+            if (expr instanceof QQuery)
+                subquery = ((QQuery)expr)._select;
+            else
+                subquery = ((QUnion)expr)._union;
             if (null == subquery)
             {
                 if (getParseErrors().isEmpty())
-                    getParseErrors().add(new QueryException("Unexpected error: select field is null"));
+                    getParseErrors().add(new QueryException("Unexpected error: sub query not resolved"));
             }
             else
             {

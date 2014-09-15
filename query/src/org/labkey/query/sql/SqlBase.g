@@ -183,6 +183,7 @@ UNION : 'union';
 UPDATE : 'update';
 WHERE : 'where';
 WHEN : 'when';
+WITH : 'with';
 
 
 //
@@ -191,8 +192,8 @@ WHEN : 'when';
 
 
 statement
-	: parameters? ( updateStatement | deleteStatement | selectStatement | insertStatement )
-	    -> ^(STATEMENT parameters? updateStatement? deleteStatement? selectStatement? insertStatement?)
+	: parameters? commonTableExpressions? ( updateStatement | deleteStatement | selectStatement | insertStatement )
+	    -> ^(STATEMENT parameters? commonTableExpressions? updateStatement? deleteStatement? selectStatement? insertStatement?)
 	;
 
 
@@ -257,6 +258,17 @@ optionalFromTokenFromClause!
 	: (FROM)? f=path (AS? a=identifier)?
 	    -> ^(FROM $f $a)
 	;
+
+
+commonTableExpressions
+    : WITH^ commonTableExpression (COMMA! commonTableExpression)*
+    ;
+
+
+commonTableExpression
+    : identifier AS^ OPEN! selectStatement CLOSE!
+    ;
+
 
 selectStatement
 	: q=union
@@ -338,7 +350,6 @@ fromRange
 
 // Usually a simple dotted identifer 'path' such as "core.users".
 // however we support an 'escape' syntax as well such as "Folder.{moduleProperty('ehr','sharedFolder')}.specieslookup"
-// in theory can be extended such as {jdbc('jdbc:jtds:sqlserver://localhost/database')}.table
 tableSpecification
     :  ( { weakKeywords(); } tableSpecificationPart DOT^ )* identifier
     ;
@@ -433,7 +444,7 @@ annotations
 
 
 annotation
-    :   (label=ANNOTATION_LABEL ('=' value=constant)? {addAnnotation(label.getText(),null==value?null:value.getTree());})!
+    :   (label=ANNOTATION_LABEL (EQ! value=constant)? {addAnnotation(label.getText(),null==value?null:value.getTree());})!
     ;
 
 
@@ -486,20 +497,17 @@ logicalAndExpression
 	;
 
 negatedExpression
-	 // Weak keywords can appear in an expression, so look ahead.
 	: NOT^ negatedExpression
-	| { weakKeywords(); } bitwiseOrExpression
+	| { weakKeywords(); } equalityExpression
 	;
 
-bitwiseOrExpression
-    : equalityExpression ( (BIT_OR^ | BIT_XOR^) equalityExpression ) *
-    ;
 
 //## OP: EQ | LT | GT | LE | GE | NE | SQL_NE | LIKE;
 
 // level 5 - EQ, NE
 equalityExpression
-	: relationalExpression (
+	: EXISTS^ OPEN! subQuery CLOSE!
+	| relationalExpression (
 		( EQ^
 		| is=IS^ (NOT!  { $is.setType(IS_NOT); } )?
 		| NE^
@@ -539,37 +547,47 @@ relationalExpression
 		)
 	;
 
+
 likeEscape
 	: (ESCAPE^ valueExpression)?
 	;
+
 
 inList
 	: compoundExpr -> ^(IN_LIST compoundExpr)
 	;
 
+
 betweenList
 	: valueExpression AND! valueExpression
 	;
 
-//level 4 - string concatenation
-// concatenation is the highest non-boolean expression
 valueExpression : concatenation ;
 
 concatenation
-	: additiveExpression ( CONCAT^ additiveExpression )*
+	: bitwiseOrExpression ( CONCAT^ bitwiseOrExpression )*
 	;
 
-// level 3 - binary plus and minus
+bitwiseOrExpression
+        : bitwiseXorExpression ( BIT_OR^ bitwiseXorExpression ) *
+        ;
+
+bitwiseXorExpression
+        : bitwiseAndExpression ( BIT_XOR^ bitwiseAndExpression ) *
+        ;
+
+bitwiseAndExpression
+        : additiveExpression ( BIT_AND^ additiveExpression ) *
+        ;
+
 additiveExpression
-	: multiplyExpression ( ( PLUS^ | MINUS^ | BIT_AND^ ) multiplyExpression )*
+	: multiplyExpression ( ( PLUS^ | MINUS^ ) multiplyExpression )*
 	;
 
-// level 2 - binary multiply and divide
 multiplyExpression
 	: unaryExpression ( ( STAR^ | DIV^ | MODULO^) unaryExpression )*
 	;
 	
-// level 1 - unary minus, unary plus, not
 unaryExpression
 	: (m=MINUS^ {$m.setType(UNARY_MINUS);}) unaryExpression
 	| (p=PLUS^ {$p.setType(UNARY_PLUS);}) unaryExpression
@@ -597,8 +615,7 @@ elseClause
 	
 
 quantifiedExpression
-	: ( SOME^ | EXISTS^ | ALL^ | ANY^ ) 
-	( identifier | (OPEN! ( subQuery ) CLOSE!) )
+	: ( SOME^ | ALL^ | ANY^ ) (OPEN! ( subQuery ) CLOSE!)
 	;
 
 

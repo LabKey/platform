@@ -81,7 +81,7 @@ public enum Operator
             builder.popPrefix("");
         }
     },
-    add("+", Precedence.addition, PLUS, ResultType.arg),
+    add("+", Precedence.addition, PLUS, ResultType.arg, Associativity.full),
     subtract("-", Precedence.addition, MINUS, ResultType.arg),
     plus("+", Precedence.unary, UNARY_PLUS, ResultType.arg)
     {
@@ -97,7 +97,7 @@ public enum Operator
             return "-";
         }
     },
-    multiply("*", Precedence.multiplication, STAR, ResultType.arg),
+    multiply("*", Precedence.multiplication, STAR, ResultType.arg, Associativity.full),
     divide("/", Precedence.multiplication, DIV, ResultType.arg),
     modulo("%", Precedence.multiplication, MODULO, ResultType.arg),
     concat("||", Precedence.addition, CONCAT, ResultType.string)
@@ -124,18 +124,11 @@ public enum Operator
     {
         public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
         {
-            builder.append(getOperator());
-            builder.append("(");
-            Iterator<QNode> i = operands.iterator();
-            assert i.hasNext();
-			QExpr operand = (QExpr)i.next();
-            operand.appendSql(builder, query);
-            assert !i.hasNext();
-            builder.append(")");
+            appendSqlUnary(builder,query,operands);
         }
     },
-    and(" AND ", Precedence.and, AND, ResultType.bool),
-    or(" OR ", Precedence.like, OR, ResultType.bool),
+    and(" AND ", Precedence.and, AND, ResultType.bool, Associativity.full),
+    or(" OR ", Precedence.like, OR, ResultType.bool, Associativity.full),
     like(" LIKE ", Precedence.like, LIKE, ResultType.bool)
     {
         @Override
@@ -174,11 +167,38 @@ public enum Operator
     },
     in(" IN ", Precedence.like, IN, ResultType.bool),
     notIn(" NOT IN ", Precedence.like, NOT_IN, ResultType.bool),
-    bit_and("&", Precedence.addition, BIT_AND, ResultType.arg),
-    bit_or("|", Precedence.bitwiseor, BIT_OR, ResultType.arg),
-    bit_xor("^", Precedence.bitwiseor, BIT_XOR, ResultType.arg),
+    bit_and("&", Precedence.bitwiseand, BIT_AND, ResultType.arg, Associativity.full, true),
+    bit_or("|", Precedence.bitwiseor, BIT_OR, ResultType.arg, Associativity.full, true),
+    bit_xor("^", Precedence.bitwisexor, BIT_XOR, ResultType.arg, Associativity.full, true),
 
-    ;
+    exists(" EXISTS ", Precedence.unary, EXISTS, ResultType.bool)
+    {
+        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+        {
+            appendSqlUnary(builder,query,operands);
+        }
+    },
+    some(" SOME ", Precedence.unary, SOME, ResultType.bool)
+    {
+        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+        {
+            appendSqlUnary(builder,query,operands);
+        }
+    },
+    any(" ANY ", Precedence.unary, ANY, ResultType.bool)
+    {
+        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+        {
+            appendSqlUnary(builder,query,operands);
+        }
+    },
+    all(" ALL ", Precedence.unary, ALL, ResultType.bool)
+    {
+        public void appendSql(SqlBuilder builder, Query query, Iterable<QNode> operands)
+        {
+            appendSqlUnary(builder,query,operands);
+        }
+    };
 
     public enum ResultType
     {
@@ -206,14 +226,28 @@ public enum Operator
     private final Precedence _precedence;
     private final int _tokenType;
     private final ResultType _resultType;
+    private final boolean _forceParens;
+    private final Associativity _associativity;
 
-    private Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType)
+
+    private Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType, Associativity assoc, boolean forceParens)
     {
         _strOp = strOp;
         _precedence = precedence;
         _tokenType = tokenType;
         _resultType = resultType;
+        _forceParens = forceParens;
+        _associativity = assoc;
     }
+    private Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType, Associativity assoc)
+    {
+        this(strOp, precedence, tokenType, resultType, assoc, false);
+    }
+    private Operator(String strOp, Precedence precedence, int tokenType, ResultType resultType)
+    {
+        this(strOp, precedence, tokenType, resultType, Associativity.left, false);
+    }
+
 
     public Precedence getPrecedence()
     {
@@ -253,11 +287,30 @@ public enum Operator
         builder.popPrefix();
     }
 
+    public void appendSqlUnary(SqlBuilder builder, Query query, Iterable<QNode> operands)
+    {
+        builder.append(getOperator());
+        builder.append("(");
+        Iterator<QNode> i = operands.iterator();
+        assert i.hasNext();
+        QExpr operand = (QExpr)i.next();
+        operand.appendSql(builder, query);
+        assert !i.hasNext();
+        builder.append(")");
+    }
+
+
     public boolean needsParentheses(QExpr child, boolean isFirstChild)
     {
         if (!(child instanceof QOperator))
             return false;
         Operator opChild = ((QOperator) child).getOperator();
+        if (opChild == this && getAssociativity() == Operator.Associativity.full)
+            return false;
+        if (_forceParens)
+            return true;
+        if (opChild._forceParens)
+            return true;
         int compare = opChild.getPrecedence().compareTo(getPrecedence());
         if (compare < 0)
             return false;
@@ -265,15 +318,12 @@ public enum Operator
             return true;
         if (isFirstChild)
             return false;
-        if (opChild == this && getAssociativity() == Operator.Associativity.full)
-            return false;
         return true;
-
     }
 
     public Associativity getAssociativity()
     {
-        return Associativity.left;
+        return _associativity;
     }
 
     static public Operator ofTokenType(int type)

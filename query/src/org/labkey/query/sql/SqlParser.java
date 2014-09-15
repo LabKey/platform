@@ -56,6 +56,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -149,13 +150,18 @@ public class SqlParser
 				assert parseRoot != null;
 //                assert dump(parseRoot);
                 assert parseRoot.getType() == STATEMENT;
-                assert parseRoot.getChildCount()==1 || parseRoot.getChildCount()==2;
+                assert parseRoot.getChildCount()==1 || parseRoot.getChildCount()==2 || parseRoot.getChildCount() == 3;
 
+                ArrayList<CommonTree> list = new ArrayList<>((Collection<CommonTree>)parseRoot.getChildren());
                 CommonTree parameters;
-                if (parseRoot.getChildCount() == 2)
+
+
+                // PARAMETERS
+
+                if (!list.isEmpty() && list.get(0).getType() == SqlBaseParser.PARAMETERS)
                 {
                     _parameters = new ArrayList<>();
-                    parameters = (CommonTree)parseRoot.getChild(0);
+                    parameters = list.remove(0);
                     for (Object parameter : parameters.getChildren())
                     {
                         QParameter p = convertParameter((CommonTree)parameter);
@@ -167,7 +173,25 @@ public class SqlParser
                         _parameters.add(p);
                     }
                 }
-                CommonTree selectStmt = (CommonTree)parseRoot.getChild(parseRoot.getChildCount()-1);
+
+
+                // COMMON TABLE EXPRESSIONS
+
+                if (!list.isEmpty() && list.get(0).getType() == SqlBaseParser.WITH)
+                {
+                    list.remove(0);
+                }
+
+
+                // SELECT
+
+                if (list.isEmpty())
+                {
+                    errors.add(new QueryParseException("SELECT statement expected", null, parseRoot.getLine(), parseRoot.getCharPositionInLine()));
+                    return null;
+                }
+
+                CommonTree selectStmt = (CommonTree)list.remove(0);
                 if (selectStmt.getType() != QUERY && !isSetOperator(selectStmt.getType()))
                 {
                     errors.add(new QueryParseException(tokenName(selectStmt.getType()) + " statements are not supported", null, parseRoot.getLine(), parseRoot.getCharPositionInLine()));
@@ -1181,6 +1205,7 @@ public class SqlParser
 			case RANGE:
 				return new QUnknownNode(node);
 
+            case EXISTS: case ANY: case SOME: case ALL:
             case EQ: case NE: case GT: case LT: case GE: case LE: case IS: case IS_NOT:
             case BETWEEN: case NOT_BETWEEN:
             case PLUS: case MINUS: case UNARY_MINUS: case STAR: case DIV: case MODULO: case CONCAT:
@@ -1195,15 +1220,9 @@ public class SqlParser
 				}
 				q = op.expr();
 				break;
-			case EXISTS:
-			case ANY:
-			case SOME:
-			case ALL:
-				_parseErrors.add(new QueryParseException("EXISTS,ANY,ALL, and SOME are not supported", null, node.getLine(), node.getCharPositionInLine()));
-				 return null;
 //			case ESCAPE:
 //				_parseErrors.add(new QueryParseException("LIKE ESCAPE is not supported", null, node.getLine(), node.getCharPositionInLine()));
-//				 return null;
+//				 return null;                                                  å
             case DECLARATION:
                 return new QUnknownNode();
 			default:
@@ -1427,10 +1446,10 @@ public class SqlParser
             new Pair("'a' || ('b' + 'c')", "(|| 'a' (+ 'b' 'c'))"),
             new Pair("a ^ -3 & 256", "(^ a (& (- 3) 256))"),
 // CONCAT           new Pair("a OR b AND NOT b | c = d < e || f + g * -h", "")
-            new Pair("a OR b AND NOT b | c = d < e + g * -h",
-                     "(OR a (AND b (NOT (| b (= c (< d (+ e (* g (- h)))))))))"),
-            new Pair("-a * b + c < d = e | f AND NOT b OR a",
-                    "(OR (AND (| (= (< (+ (* (- a) b) c) d) e) f) (NOT b)) a)"),
+            new Pair("a OR b AND NOT c | d ^ e & f = g < h + i * -j",
+                    "(OR a (AND b (NOT (= (| c (^ d (& e f))) (< g (+ h (* i (- j))))))))"),
+            new Pair("-a * b + c < d = e & f ^ g | h AND NOT i OR j",
+                    "(OR (AND (= (< (+ (* (- a) b) c) d) (| (^ (& e f) g) h)) (NOT i)) j)"),
 
             // identPrimary functions aggregates
             new Pair("a.b","(. a b)"),
@@ -1508,7 +1527,8 @@ public class SqlParser
                 assertTrue(test.first + " has parse errors", errors.isEmpty());
                 assertNotNull(test.first + " did not parse", e);
                 String prefix = toPrefixString(e);
-                assertEquals(test.second,prefix);
+                assertEquals("error parsing sql: " + test.first + "\nexpected  <<" + test.second + ">>\nfound     <<" + prefix + ">>",
+                        test.second, prefix);
             }
         }
 
