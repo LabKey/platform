@@ -399,8 +399,7 @@ Ext4.define('LABKEY.ext4.DefaultFilterPanel', {
         var filter = LABKEY.Filter.getFilterTypeForURLSuffix(cb.getValue());
 
         if(rec){
-            if(filter.isMultiValued()){
-                console.log("blarg");
+            if (filter.isMultiValued()) {
                 return this.validateEqOneOf(input.getValue(), filter.getMultiValueSeparator(), filter.getMultiValueMinOccurs(), filter.getMultiValueMaxOccurs(), rec.get('mappedType'));
             }
 
