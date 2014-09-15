@@ -1491,7 +1491,7 @@ Parse:
             assertEquals(datetimeUTC - TimeUnit.MINUTES.toMillis(270), parseDateTime("Sat Feb 03 04:05:06 GMT+0430 2001"));
 
             // See #21485
-            assertEquals(parseDateTime("2014-07-31 15:00"), parseDateTime("Fri Aug 01 00:00:00 CEST 2014"));
+            assertEquals(parseDateTime("2014-07-31 15:00 PDT"), parseDateTime("Fri Aug 01 00:00:00 CEST 2014"));
 
             // check that parseDateTimeUS handles ISO
             assertEquals(datetimeLocal, parseDateTimeUS("2001-02-03 04:05:06", DateTimeOption.DateTime, true));
