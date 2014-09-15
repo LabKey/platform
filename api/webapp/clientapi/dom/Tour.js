@@ -9,6 +9,8 @@ if (!('help' in LABKEY))
 
 LABKEY.help.Tour =
 {
+    _hopscotchSrc : "/hopscotch/js/hopscotch.js",
+    _hopscotchCss : "/hopscotch/css/hopscotch.css",
     _tours : {},
 
     register : function(config)
@@ -16,14 +18,18 @@ LABKEY.help.Tour =
         this._tours[config.id] = config;
     },
 
+    _initHopscotch: function(fn,scope)
+    {
+        LABKEY.requiresScript(this._hopscotchSrc, true, fn, scope);
+        LABKEY.requiresCss(this._hopscotchCss);
+    },
+
     show : function(idOrConfig)
     {
         var config = idOrConfig;
         if (typeof idOrConfig == "string")
             config = this._tours[idOrConfig];
-
-        var hopscotchSrc = "/hopscotch/js/hopscotch.js";
-        LABKEY.requiresScript(hopscotchSrc, true, function(){
+        this._initHopscotch(function(){
             hopscotch.startTour(config);
             this.markSeen(config.id);
         }, this);
