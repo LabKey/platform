@@ -2,18 +2,21 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
 
     extend: 'LABKEY.dataregion.filter.Base',
 
+    border: false,
+
+    ui: 'custom',
+
     /*** Overridden Methods ***/
     beforeInit : function() {
 
         this.gridReady = false;
         this.storeReady = false;
 
-        this.items = [{
-            xtype: 'panel',
-            ui: 'custom',
-//            width: this.width - 40, // prevent horizontal scrolling
-            items: [this.getGrid()]
-        }];
+        if (!this.filters) {
+            this.filters = [];
+        }
+
+        this.items = [this.getGrid()];
     },
 
     getFilters : function() {
@@ -35,6 +38,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
     setFilters : function(filterArray) {
         if (Ext4.isArray(filterArray)) {
             this.filters = filterArray;
+            this.onViewReady();
         }
     },
 
@@ -64,7 +68,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                     flex: 1,
                     sortable: false,
                     menuDisabled: true,
-                    tpl: new Ext.XTemplate('{displayValue:htmlEncode}')
+                    tpl: new Ext4.XTemplate('{displayValue:htmlEncode}')
                 }],
 
                 /* Styling configuration */
@@ -93,6 +97,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
         // cache
         var store = Ext4.StoreMgr.get(storeId);
         if (store) {
+            this.storeReady = true;
             return store;
         }
 
@@ -117,12 +122,12 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                     for (; i < d.values.length; i++) {
                         v = d.values[i];
                         formattedValue = this.formatValue(v);
-                        isString = Ext.isString(formattedValue);
+                        isString = Ext4.isString(formattedValue);
 
                         if (formattedValue == null || (isString && formattedValue.length == 0) || (!isString && isNaN(formattedValue))) {
                             hasBlank = true;
                         }
-                        else if (Ext.isDefined(v)) {
+                        else if (Ext4.isDefined(v)) {
                             recs.push([v, v.toString(), v.toString()]);
                         }
                     }
@@ -146,7 +151,20 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
 
     onViewReady : function() {
         if (this.gridReady && this.storeReady) {
-            console.log('really ready');
+            // apply current filters
+            var grid = this.getGrid();
+            var numFilters = this.filters.length;
+            var numFacets = grid.getStore().getCount();
+
+            if (numFacets == 0) {
+                grid.getSelectionModel().deselectAll();
+            }
+            else if (numFilters == 0) {
+                grid.getSelectionModel().selectAll();
+            }
+            else {
+                this.selectFilter(this.filters[0]);
+            }
         }
     },
 
@@ -191,5 +209,98 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
             sep = ';';
         }
         return value;
+    },
+
+    /* Grid Functions */
+    selectFilter : function(filter) {
+        var negated = this.determineNegation(filter);
+
+        this.setValue(filter.getURLParameterValue(), negated);
+
+        if (!this.filterOptimization && negated) {
+            this.fireEvent('invalidfilter');
+        }
+    },
+
+    determineNegation: function(filter) {
+        var suffix = filter.getFilterType().getURLSuffix();
+        var negated = suffix == 'neqornull' || suffix == 'notin';
+
+        // negation of the null case is a bit different so check it as a special case.
+        var value = filter.getURLParameterValue();
+        if (value == "" && suffix != 'isblank') {
+            negated = true;
+        }
+        return negated;
+    },
+
+    setValue : function(values, negated) {
+        if (!this.rendered) {
+            this.on('render', function() { this.setValue(values, negated); }, this, {single: true});
+        }
+
+        if (Ext4.isArray(values) && values.length == 1) {
+            values = values[0].split(';');
+        }
+        else if (!Ext4.isArray(values)) {
+            values = values.split(';');
+        }
+
+        var store = this.getGrid().getStore();
+        if (store.isLoading) {
+            // need to wait for the store to load to ensure records
+            store.on('load', function() { this._checkAndLoadValues(store, values, negated); }, this, {single: true});
+        }
+        else {
+            this._checkAndLoadValues(store, values, negated);
+        }
+    },
+
+    _checkAndLoadValues : function(store, values, negated) {
+        var records = [],
+                recIdx,
+                recordNotFound = false;
+
+        Ext4.each(values, function(val) {
+            recIdx = store.findBy(function(rec){
+                return rec.get('strValue') === val;
+            });
+
+            if (recIdx != -1) {
+                records.push(store.getAt(recIdx));
+            }
+            else {
+                // Issue 14710: if the record is not found, we will not be able to select it, so should reject.
+                // If it's null/empty, ignore silently
+                if (!Ext4.isEmpty(val)) {
+                    recordNotFound = true;
+                    return false;
+                }
+            }
+        }, this);
+
+        if (negated) {
+            var count = store.getCount(), found = false, negRecords = [], i, j;
+            for (i=0; i < count; i++) {
+                found = false;
+                for (j=0; j < records.length; j++) {
+                    if (records[j] == i)
+                        found = true;
+                }
+                if (!found) {
+                    negRecords.push(store.getAt(i));
+                }
+            }
+            records = negRecords;
+        }
+
+        if (recordNotFound) {
+            // cannot find any matching records
+            if (this.getModel().get('column').facetingBehaviorType != 'ALWAYS_ON')
+                this.fireEvent('invalidfilter');
+            return;
+        }
+
+        this.getGrid().getSelectionModel().select(records);
     }
 });
