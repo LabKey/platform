@@ -245,6 +245,8 @@ public class RolapReader
                     break;
             }
         }
+        RolapCubeDef.LevelDef lowest = _currentHier.levels.get(_currentHier.levels.size()-1);
+        lowest.isLeaf = true;
 
         _currentDim.hierarchies.add(_currentHier);
         _currentHier = null;

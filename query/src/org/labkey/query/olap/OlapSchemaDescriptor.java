@@ -149,6 +149,18 @@ public abstract class OlapSchemaDescriptor
     }
 
 
+    public RolapCubeDef getRolapCubeDefinitionByName(String name) throws IOException
+    {
+        List<RolapCubeDef> defs = getRolapCubeDefinitions();
+        for (RolapCubeDef d : defs)
+        {
+            if (name.equalsIgnoreCase(d.getName()))
+                return d;
+        }
+        return null;
+    }
+
+
     protected abstract InputStream getInputStream() throws IOException;
 
     /* TODO: get file directly from resource! */

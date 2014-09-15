@@ -27,6 +27,7 @@ import org.labkey.api.query.AliasManager;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.Path;
+import org.labkey.query.olap.metadata.CachedCube;
 import org.olap4j.OlapException;
 import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
@@ -34,6 +35,7 @@ import org.olap4j.metadata.Member;
 import org.olap4j.metadata.Property;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -52,7 +54,18 @@ import java.util.TreeMap;
  * Created by matthew on 8/16/14.
  *
  * Loads a relational olap cube definition (ala Mondrian), for use by the CountDistinct api
+ *     http://mondrian.pentaho.com/documentation/schema.php
+ *
+ *  These classes do two things.
+ *
+ *  1) represents the relevant data in the .xml file.
+ *  2) SQL helpers to load data from the described schema.
+ *
+ * NOTE: RolapCubeDef is meant to be a shared, read-only object.  It should not
+ * hold onto Schema or User or any such objects.
+ *
  */
+
 public class RolapCubeDef
 {
     final boolean emptyEqualsNull = false;            // treat '' and NULL as the same value
@@ -76,6 +89,28 @@ public class RolapCubeDef
 
     public String getSchemaName() { return factTable.schemaName; }
 
+
+    public String getMembersSQL(HierarchyDef hdef)
+    {
+        LevelDef lowest = hdef.levels.get(hdef.levels.size()-1);
+        String selectColumns = lowest.getAllColumnsSQL();
+        String joins;
+
+        if (null == hdef.join)
+            joins = _getFromClause(factTable);
+        else
+            joins = _getFromClause(hdef.join);
+
+        String orderBy = lowest.getOrderByAliases();
+
+        return
+                "SELECT * FROM (\n" +
+                "  SELECT DISTINCT " + selectColumns + "\n" +
+                "  FROM " + joins + ") $$\n" +
+                "ORDER BY " + orderBy;
+    }
+
+
     public String getFromSQL(LevelDef... levels)
     {
         LinkedHashSet<Join> joins = new LinkedHashSet<>();
@@ -84,8 +119,9 @@ public class RolapCubeDef
             if (null != l)
                 l.addJoins(joins);
         }
-        return _getFromSQL(joins);
+        return _getFromSQL(factTable, joins);
     }
+
 
     public String getFromSQL(Collection<HierarchyDef> hierarchyDefs)
     {
@@ -94,13 +130,13 @@ public class RolapCubeDef
         {
             h.addJoins(joins);
         }
-        return _getFromSQL(joins);
+        return _getFromSQL(factTable, joins);
     }
 
-    private String _getFromSQL(Collection<Join> joinsIn)
+    private String _getFromSQL(JoinOrTable innerMost, Collection<Join> joinsIn)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(id_quote(factTable.schemaName, factTable.tableName));
+        sb.append(id_quote(innerMost.schemaName, innerMost.tableName));
 
         if (joinsIn.size() == 0)
             return sb.toString();
@@ -109,7 +145,7 @@ public class RolapCubeDef
 
         // CONSIDER should we use LOJ for some joins??? when?
         Set<String> includedTables = new CaseInsensitiveTreeSet();
-        includedTables.add(factTable.tableName);
+        includedTables.add(innerMost.tableName);
 
         for (int i=0 ; i<100 && !list.isEmpty(); i++)
         {
@@ -154,6 +190,41 @@ public class RolapCubeDef
     }
 
 
+    private String _getFromClause(JoinOrTable jt)
+    {
+        if (null != jt.tableName)
+        {
+            return id_quote(jt.schemaName, jt.tableName);
+        }
+        else
+        {
+            StringBuilder sb = new StringBuilder();
+
+            if (null == jt.left.tableName)
+                sb.append("(");
+            String lhs = _getFromClause(jt.left);
+            sb.append(lhs);
+            if (null == jt.left.tableName)
+                sb.append(")");
+
+            sb.append(" INNER JOIN ");
+
+            if (null == jt.right.tableName)
+                sb.append("(");
+            String rhs = _getFromClause(jt.right);
+            sb.append(rhs);
+            if (null == jt.right.tableName)
+                sb.append(")");
+
+            sb.append(" ON ");
+            sb.append(id_quote(jt.leftAlias, jt.leftKey));
+            sb.append("=");
+            sb.append(id_quote(jt.rightAlias, jt.rightKey));
+            return sb.toString();
+        }
+    }
+
+
     public LevelDef getRolapDef(Level l)
     {
         if (null == l)
@@ -170,6 +241,12 @@ public class RolapCubeDef
     public List<DimensionDef> getDimensions()
     {
         return Collections.unmodifiableList(dimensions);
+    }
+
+
+    public List<MeasureDef> getMeasures()
+    {
+        return Collections.unmodifiableList(measures);
     }
 
 
@@ -239,6 +316,11 @@ public class RolapCubeDef
                 foreignKey = name;
             for (HierarchyDef h : hierarchies)
                 h.validate();
+        }
+
+        public List<HierarchyDef> getHierarchies()
+        {
+            return Collections.unmodifiableList(hierarchies);
         }
     }
 
@@ -321,28 +403,6 @@ public class RolapCubeDef
                 set.add(j);
             }
         }
-
-
-//        public String getFromEntry()
-//        {
-//            if (null != tableName)
-//            {
-//                return id_quote(schemaName, tableName);
-//            }
-//            else
-//            {
-//                String lhs = left.getFromEntry();
-//                String rhs = right.getFromEntry();
-//                StringBuilder sb = new StringBuilder();
-//                sb.append("(");
-//                sb.append(lhs).append(" INNER JOIN ").append(rhs).append(" ON ");
-//                sb.append(id_quote(leftAlias, leftKey));
-//                sb.append("=");
-//                sb.append(id_quote(rightAlias, rightKey));
-//                sb.append(")");
-//                return sb.toString();
-//            }
-//        }
     }
 
 
@@ -508,6 +568,7 @@ public class RolapCubeDef
         protected RolapCubeDef cube;
         protected HierarchyDef hierarchy;
         protected LevelDef parent;
+        protected boolean isLeaf = false;
 
         protected String uniqueName;
         protected String name;
@@ -603,6 +664,50 @@ public class RolapCubeDef
         }
 
 
+        public String getMembeNameFromResult(ResultSet rs)
+        {
+            try
+            {
+                String s;
+                Object o = rs.getObject(nameAlias);
+                if (null == o)
+                    s = "#null";
+                else if (o instanceof Number)
+                    s = df.format((Number)o);
+                else if (cube.emptyEqualsNull && o instanceof String && StringUtils.isEmpty((String)o))
+                    s = "#null";
+                else
+                    s = String.valueOf(o);
+                return s;
+            }
+            catch (Exception x)
+            {
+                throw new RuntimeException(x);
+            }
+        }
+
+
+        public boolean isLeaf()
+        {
+            return isLeaf;
+        }
+
+        public Object getKeyValue(ResultSet rs) throws SQLException
+        {
+            if (null == keyAlias)
+                return null;
+            return rs.getObject(keyAlias);
+        }
+
+
+        public Object getOrindalValue(ResultSet rs) throws SQLException
+        {
+            if (null == ordinalAlias)
+                return null;
+            return rs.getObject(ordinalAlias);
+        }
+
+
         public void addJoins(Set<Join> joins)
         {
             hierarchy.addJoins(joins);
@@ -639,8 +744,9 @@ public class RolapCubeDef
                 // TODO nameType, keyType, ordinalType
                 if (null != keyExpression)
                 {
-                    Property keyProperty = m.getLevel().getProperties().get("KEY");
-                    Object value = m.getPropertyValue(keyProperty);
+                    //Property keyProperty = m.getLevel().getProperties().get("KEY");
+                    Object value = ((CachedCube._Member)m).getKeyValue(); // m.getPropertyValue(keyProperty);
+
                     if (null == value || !(value instanceof String) && "#null".equals(value.toString()))
                     {
                         if (cube.emptyEqualsNull)
@@ -684,9 +790,41 @@ public class RolapCubeDef
 
         public String getOrderBy()
         {
-            // TODO parent levels
+            String orderBy = "";
+
+            if (null != parent)
+            {
+                orderBy = parent.getOrderBy() + ", ";
+            }
+
             String expression = defaultString(ordinalExpression, defaultString(keyExpression, nameExpression));
-            return "CASE WHEN " + expression + " IS NULL THEN 0 ELSE 1 END ASC, " + expression + " ASC";
+            // we don't need to force NULLs first for our loading code
+            //return orderBy + "CASE WHEN " + expression + " IS NULL THEN 0 ELSE 1 END ASC, " + expression + " ASC";
+            return orderBy + expression + " ASC";
+        }
+
+
+        public String getOrderByAliases()
+        {
+            String orderBy = "";
+
+            if (null != parent)
+            {
+                orderBy = parent.getOrderByAliases() + ", ";
+            }
+
+            String alias;
+            if (null != ordinalExpression)
+                alias = ordinalAlias;
+            else if (null != keyExpression)
+                alias = keyAlias;
+            else
+                alias = nameAlias;
+
+
+            // we don't need to force NULLs first for our loading code
+            //return orderBy + "CASE WHEN " + expression + " IS NULL THEN 0 ELSE 1 END ASC, " + expression + " ASC";
+            return orderBy + alias + " ASC";
         }
 
 
@@ -741,7 +879,7 @@ public class RolapCubeDef
             {
                 ordinalExpression = id_quote(tableAlias, ordinalColumn);
             }
-            if (null == ordinalAlias)
+            if (null == ordinalAlias && null != ordinalExpression)
             {
                 ordinalAlias = cube.columnAliases.decideAlias((hierarchy.getName() + "_" + getName() + "_ord").toLowerCase());
             }
@@ -770,6 +908,11 @@ public class RolapCubeDef
         String name;
         String columnExpression;
         String aggregator = "count";
+
+        public String getName()
+        {
+            return name;
+        }
     }
 
 

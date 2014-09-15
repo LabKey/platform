@@ -2527,7 +2527,6 @@ query/src/org/labkey/query/jdbc/QueryDriver.java -text
 query/src/org/labkey/query/jdbc/QueryStatement.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/olap/BitSetQueryImpl.java -text
-query/src/org/labkey/query/olap/CachedCubeFactory.java -text
 query/src/org/labkey/query/olap/CustomOlapSchemaDescriptor.java -text
 query/src/org/labkey/query/olap/MdxQueryImpl.java -text
 query/src/org/labkey/query/olap/MemberSet.java -text
@@ -2541,6 +2540,11 @@ query/src/org/labkey/query/olap/QubeCellSet.java -text
 query/src/org/labkey/query/olap/QubeQuery.java -text
 query/src/org/labkey/query/olap/ServerManager.java -text
 query/src/org/labkey/query/olap/SqlQueryImpl.java -text
+query/src/org/labkey/query/olap/metadata/CachedCube.java -text
+query/src/org/labkey/query/olap/metadata/Hash.java -text
+query/src/org/labkey/query/olap/metadata/MetadataElementBase.java -text
+query/src/org/labkey/query/olap/metadata/Olap4JCachedCubeFactory.java -text
+query/src/org/labkey/query/olap/metadata/RolapCachedCubeFactory.java -text
 query/src/org/labkey/query/olap/rolap/RolapCubeDef.java -text
 query/src/org/labkey/query/olap/rolap/RolapReader.java -text
 query/src/org/labkey/query/persist/AbstractExternalSchemaDef.java -text

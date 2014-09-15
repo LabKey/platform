@@ -1,0 +1,324 @@
+package org.labkey.query.olap.metadata;
+
+import com.drew.lang.annotations.Nullable;
+import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.QueryParseException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.query.olap.rolap.RolapCubeDef;
+import org.olap4j.OlapException;
+import org.olap4j.metadata.Dimension;
+import org.olap4j.metadata.Hierarchy;
+import org.olap4j.metadata.Level;
+import org.olap4j.metadata.Member;
+import org.olap4j.metadata.NamedList;
+import org.olap4j.metadata.NamedSet;
+import org.olap4j.metadata.Property;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+
+import static org.labkey.query.olap.rolap.RolapCubeDef.*;
+
+
+
+/**
+ * Created by matthew on 9/8/14.
+ */
+public class RolapCachedCubeFactory
+{
+    final public RolapCubeDef rolap;
+    final public QuerySchema schema;
+
+    public RolapCachedCubeFactory(RolapCubeDef rolap, DefaultSchema s) throws SQLException
+    {
+        this.rolap = rolap;
+        this.schema = s.getSchema(rolap.getSchemaName());
+
+        if (null == schema)
+            throw new SQLException("Schema not found: " + rolap.getSchemaName());
+    }
+
+
+    public CachedCube createCachedCube() throws SQLException
+    {
+        CachedCube cube = new CachedCube(rolap.getName());
+
+        generateMeasuresDimension(cube);
+
+        for (DimensionDef ddef : rolap.getDimensions())
+        {
+            CachedCube._Dimension d = new CachedCube._Dimension(ddef);
+            cube.dimensions.add(d);
+
+            for (HierarchyDef hdef : ddef.getHierarchies())
+            {
+                CachedCube._Hierarchy h = new CachedCube._Hierarchy(d, hdef);
+                d.hierarchies.add(h);
+
+                CachedCube._Level l = new CachedCube._Level(h, Level.Type.ALL);
+                h.levels.add(l);
+
+                for (LevelDef ldef : hdef.getLevels())
+                {
+                    l = new CachedCube._Level(h, ldef, h.levels.size());
+                    h.levels.add(l);
+                }
+
+                generateHierachyMembers(hdef, h);
+            }
+            d.hierarchies.seal();
+        }
+
+
+        cube.dimensions.seal();
+        return cube;
+    }
+
+
+    void generateMeasuresDimension(CachedCube cube) throws SQLException
+    {
+        CachedCube._Dimension dMeasures = new CachedCube._Dimension("Measures");
+        dMeasures.dimensionType = Dimension.Type.MEASURE;
+        cube.dimensions.add(dMeasures);
+        CachedCube._Hierarchy hMeasures = new CachedCube._Hierarchy(dMeasures, "Measures");
+        dMeasures.hierarchies.add(hMeasures);
+        dMeasures.hierarchies.seal();
+        CachedCube._Level lMeasures = new CachedCube._Level(hMeasures,"MeasuresLevel", 0);
+        hMeasures.levels.add(lMeasures);
+        hMeasures.levels.seal();
+        for (MeasureDef measureDef : rolap.getMeasures())
+        {
+            CachedCube._Measure m = new CachedCube._Measure(lMeasures, measureDef.getName());
+            lMeasures.members.add(m);
+        }
+        lMeasures.members.seal();
+    }
+
+
+    void generateHierachyMembers(HierarchyDef hdef, CachedCube._Hierarchy h) throws SQLException
+    {
+        CachedCube._Level allLevel = (CachedCube._Level)h.getLevels().get(0);
+        CachedCube._Member allMember = new CachedCube._Member(allLevel, Member.Type.ALL);
+        allLevel.members.add(allMember);
+
+        // hdef.getLevels() does not include all Level, so need to add null to make things match
+        ArrayList<CachedCube._Level> levelList = h.levels;
+        ArrayList<LevelDef> levelDefList = new ArrayList<>();
+        levelDefList.add(null);
+        levelDefList.addAll(hdef.getLevels());
+        assert levelDefList.size() == levelList.size();
+
+        int levelCount = levelDefList.size();
+        ArrayList<String> namesPrevious = new ArrayList<>(levelDefList.size());
+        ArrayList<String> namesCurrent = new ArrayList<>(levelDefList.size());
+        ArrayList<CachedCube._Member> membersCurrent = new ArrayList<>(levelDefList.size());
+
+        namesPrevious.add(allMember.getName());
+        namesCurrent.add(allMember.getName());
+        membersCurrent.add(allMember);
+
+        for (int l=1 ; l<levelCount ; l++)
+        {
+            namesPrevious.add(null);
+            namesCurrent.add(null);
+            membersCurrent.add(null);
+        }
+
+        CaseInsensitiveHashMap<CachedCube._Member> uniqueNameMap = new CaseInsensitiveHashMap<>();
+
+        String hierarchySql = rolap.getMembersSQL(hdef);
+        try (ResultSet rs = QueryService.get().select(schema, hierarchySql, true, false))
+        {
+            // get all the names top to bottom, and find first name that is different
+            while (rs.next())
+            {
+                int breakLevel = 0;
+                for (int l = 1; l < levelCount; l++)
+                {
+                    String name = levelDefList.get(l).getMembeNameFromResult(rs);
+                    namesCurrent.set(l, name);
+                    if (breakLevel == 0 && !StringUtils.equalsIgnoreCase(namesCurrent.get(l), namesPrevious.get(l)))
+                        breakLevel = l;
+                }
+
+                if (breakLevel == 0)
+                    continue;
+
+                // allocate new Members as needed
+                for (int l = breakLevel; l < levelCount; l++)
+                {
+                    CachedCube._Level level = levelList.get(l);
+                    LevelDef levelDef = levelDefList.get(l);
+                    CachedCube._Member parent = membersCurrent.get(l - 1);
+                    String name = namesCurrent.get(l);
+
+                    String uniqueName;
+                    if (l == 1)
+                        uniqueName = level.getUniqueName() + ".[" + name + "]";
+                    else
+                        uniqueName = parent.getUniqueName() + ".[" + name + "]";
+
+                    // it's possible we've seen this member before
+                    CachedCube._Member m = uniqueNameMap.get(uniqueName);
+                    if (null != m)
+                    {
+                        assert m._parent == membersCurrent.get(l - 1);
+                        membersCurrent.set(l, m);
+                        continue;
+                    }
+                    // need to create a new member! yeah
+
+                    m = new CachedCube._Member(level, parent, name, levelDef.isLeaf());
+                    m.keyValue = (Comparable)levelDef.getKeyValue(rs);
+                    m.ordinalValue = (Comparable)levelDef.getOrindalValue(rs);
+
+                    membersCurrent.set(l, m);
+                    level.members.add(m);
+                }
+
+                ArrayList t = namesPrevious;
+                namesPrevious = namesCurrent;
+                namesCurrent = t;
+            }
+        }
+        catch (SQLException|QueryParseException|AssertionError x)
+        {
+            throw x;
+        }
+
+        orderMembers(h);
+
+        for (Level l : h.getLevels())
+        {
+            ((CachedCube._Level)l).members.seal();
+        }
+    }
+
+
+    /*
+     * SORTING
+     */
+
+    static void orderMembers(CachedCube._Hierarchy h) throws OlapException
+    {
+        for (Level L : h.getLevels())
+        {
+            CachedCube._Level l = (CachedCube._Level) L;
+            orderLevelMembers(l.orig, l.members);
+        }
+        for (Level L : h.getLevels())
+        {
+            CachedCube._Level l = (CachedCube._Level) L;
+            if (l.getDepth() != h.getLevels().size() - 1)
+                orderChildMembers(l.members);
+        }
+    }
+
+
+    static void orderLevelMembers(Level l, CachedCube._NamedList<CachedCube._Member, Member> list)
+    {
+        list._sort(MEMBER_COMPARATOR);
+        for (int i = 0; i < list.size(); i++)
+            list.get(i).ordinal = i;
+    }
+
+
+    static void orderChildMembers(CachedCube._NamedList<CachedCube._Member, Member> list) throws OlapException
+    {
+        for (CachedCube._Member m : list)
+            if (null != m.childMembers)
+                Collections.sort(m.childMembers, MEMBER_COMPARATOR);
+    }
+
+
+
+    static final NamedList<NamedSet> emptyNamedSetList = (new CachedCube._EmptyNamedList<NamedSet>()).recast();
+
+
+    static MemberComparator MEMBER_COMPARATOR = new MemberComparator();
+
+    static class MemberComparator implements Comparator<Member>
+    {
+        @Override
+        public int compare(Member m1, Member m2)
+        {
+            int ret;
+            ret = _compare((CachedCube._Member)m1,(CachedCube._Member)m2);
+//            if (ret < 0)
+//            {
+//                System.err.println(m1.getUniqueName() + " < " + m2.getUniqueName());
+//            }
+//            else if (ret > 0)
+//            {
+//                System.err.println(m2.getUniqueName() + " < " + m1.getUniqueName());
+//            }
+//            else
+//            {
+//                System.err.println( m1.getUniqueName() + " = " + m2.getUniqueName() + " *** ");
+//            }
+            return ret;
+        }
+
+
+        public int _compare(CachedCube._Member m1, CachedCube._Member m2)
+        {
+            int o = m1.ordinal - m2.ordinal;
+            if (0 != o)
+                return o;
+
+            CachedCube._Member p1 = (CachedCube._Member)m1.getParentMember();
+            CachedCube._Member p2 = (CachedCube._Member)m2.getParentMember();
+            assert (null==p1) == (null==p2);
+            if (null != p1 && null != p2 && p1 != p2)
+            {
+                int p = _compare(p1,p2);
+                if (0 != p)
+                    return p;
+            }
+
+            o = compareKey(m1.ordinalValue, m2.ordinalValue, null);
+            if (0 != o)
+                return o;
+            o = compareKey(m2.keyValue, m2.keyValue, null);
+            if (0 != o)
+                return o;
+            return compareKey(m1.getName(), m2.getName(), "#null");
+        }
+    }
+
+
+    static int compareKey(Comparable k1, Comparable k2, @Nullable String nullString)
+    {
+        if (null != nullString)
+        {
+            if (k1 instanceof String && StringUtils.equals((String)k1,nullString))
+                k1 = null;
+            if (k2 instanceof String && StringUtils.equals((String)k2,nullString))
+                k2 = null;
+        }
+
+        if (k1 == k2)
+            return 0;
+        if (k1 == null)
+            return -1;
+        if (k2 == null)
+            return 1;
+        if (k1 instanceof String && k2 instanceof String)
+        {
+            return ((String) k1).compareToIgnoreCase((String) k2);
+        }
+        if (k1.getClass() == k2.getClass())
+        {
+            return k1.compareTo(k2);
+        }
+        assert false;
+        return k1.compareTo(k2);
+    }
+}

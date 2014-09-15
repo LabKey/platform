@@ -28,6 +28,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.Path;
+import org.labkey.query.olap.metadata.CachedCube;
 import org.olap4j.OlapException;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Dimension;
@@ -226,7 +227,7 @@ public class QubeQuery
         for (Level hl : listOfLevels)
         {
             List<Member> list = hl.getMembers();
-            if (cube instanceof CachedCubeFactory.CachedCube)
+            if (cube instanceof CachedCube)
             {
                 Member m = ((NamedList<Member>)list).get(memberUniqueName);
                 if (null != m)

@@ -40,6 +40,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
@@ -52,6 +53,11 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewServlet;
+import org.labkey.query.controllers.OlapController;
+import org.labkey.query.olap.metadata.CachedCube;
+import org.labkey.query.olap.metadata.Olap4JCachedCubeFactory;
+import org.labkey.query.olap.metadata.RolapCachedCubeFactory;
+import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.labkey.query.persist.QueryManager;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
@@ -228,10 +234,22 @@ public class ServerManager
         return ret;
     }
 
+
+    public static Cube getCachedCube(OlapSchemaDescriptor d, OlapConnection conn, final Container c, final User user, String schemaName, String cubeName, BindException errors)
+            throws SQLException, IOException
+    {
+        if (OlapController.strategy == OlapController.ImplStrategy.rolapYourOwn)
+            return getCachedCubeRolap(d,conn,c,user,schemaName,cubeName,errors);
+        else
+            return getCachedCubeMondrian(d,conn,c,user,schemaName,cubeName,errors);
+    }
+
+
     /* Note we pass in OlapConnection here, that's because the connection must stay open in order to use the cube
      * (Unless we create a cached cube)
      */
-    public static Cube getCachedCube(OlapSchemaDescriptor d, OlapConnection conn, Container c, User user, String schemaName, String cubeName, BindException errors)  throws SQLException
+    private static Cube getCachedCubeMondrian(OlapSchemaDescriptor d, OlapConnection conn, final Container c, final User user, String schemaName, String cubeName, BindException errors)
+        throws SQLException, IOException
     {
         List<Schema> findSchemaList;
         if (StringUtils.isNotEmpty(schemaName))
@@ -285,7 +303,7 @@ public class ServerManager
                 try
                 {
                     long start = System.currentTimeMillis();
-                    Cube c = CachedCubeFactory.createCachedCube((Cube)src);
+                    Cube c = (new Olap4JCachedCubeFactory()).createCachedCube((Cube)src);
                     long end = System.currentTimeMillis();
                     return c;
                 } catch (SQLException x)
@@ -300,6 +318,37 @@ public class ServerManager
         return cachedCube;
     }
 
+    private static Cube getCachedCubeRolap(OlapSchemaDescriptor d, OlapConnection conn, final Container c, final User user, String schemaName, String cubeName, BindException errors)
+            throws SQLException, IOException
+    {
+        RolapCubeDef rolap = d.getRolapCubeDefinitionByName(cubeName);
+
+        String cubeCacheKey = c.getId() + /* "/" + rolap.getSchema().getName() + "/" + */ rolap.getName();
+        final SQLException ex[] = new SQLException[1];
+        Cube cachedCube = CUBES.get(cubeCacheKey,rolap,new CacheLoader<String,Cube>()
+        {
+            @Override
+            public Cube load(String key, @Nullable Object src)
+            {
+                try
+                {
+                    long start = System.currentTimeMillis();
+
+                    CachedCube cachedCube = new RolapCachedCubeFactory((RolapCubeDef) src, DefaultSchema.get(user, c)).createCachedCube();
+
+                    long end = System.currentTimeMillis();
+                    return cachedCube;
+                } catch (SQLException x)
+                {
+                    ex[0] = x;
+                    return null;
+                }
+            }
+        });
+        if (null != ex[0])
+            throw ex[0];
+        return cachedCube;
+    }
 
     /*
      * Start with one MondrianServer per container.  We'd like to get down to one MondrianServer.
@@ -381,7 +430,9 @@ public class ServerManager
                 return "Error: No olap connection for " + cubeName + " in container " + c.getName();
 
             long s = System.currentTimeMillis();
+
             Cube cube = getCachedCube(sd, conn, c, u, schemaName, cubeName, getDummyBindException());
+
             if (null == cube)
                 return "Error: No cached cube for " + cubeName + " in container " + c.getName();
             long e = System.currentTimeMillis();

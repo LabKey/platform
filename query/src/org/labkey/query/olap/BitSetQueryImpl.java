@@ -15,6 +15,7 @@
  */
 package org.labkey.query.olap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -37,6 +38,8 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.query.controllers.OlapController;
+import org.labkey.query.olap.metadata.CachedCube;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.olap4j.CellSet;
 import org.olap4j.OlapConnection;
@@ -107,7 +110,7 @@ public class BitSetQueryImpl
 
     CubeDataSourceHelper _cdsh = new CubeDataSourceHelper();
     SqlDataSourceHelper _sdsh = new SqlDataSourceHelper();
-    IDataSourceHelper _dataSourceHelper = _cdsh;
+    IDataSourceHelper _dataSourceHelper = OlapController.strategy == OlapController.ImplStrategy.rolapYourOwn ? _sdsh : _cdsh;
 
 
     MemberSet containerMembers = null;  // null == all
@@ -123,8 +126,9 @@ public class BitSetQueryImpl
         this.cube = qq.getCube();
         this.errors = errors;
 
-        this._dataSourceHelper = useSQL ? _sdsh : _cdsh;
+//        this._dataSourceHelper = useSQL ? _sdsh : _cdsh;
 //        this._dataSourceHelper = new DoubleDownHelper();
+//        this._dataSourceHelper = _sdsh;
 
         RolapCubeDef r = null;
         List<RolapCubeDef> defs = sd.getRolapCubeDefinitions();
@@ -142,7 +146,7 @@ public class BitSetQueryImpl
             dialect = s.getDbSchema().getSqlDialect();
 
         String cubeId = cube.getUniqueName() +
-                ((cube instanceof CachedCubeFactory.CachedCube)?"@" + ((CachedCubeFactory.CachedCube)cube).getLongHashCode() : "");
+                ((cube instanceof CachedCube)?"@" + ((CachedCube)cube).getLongHashCode() : "");
         this.cachePrefix = "" + c.getRowId() + "/" + sd.getId() + "/" + cubeId + "/";
 
         initCube();
@@ -183,7 +187,7 @@ public class BitSetQueryImpl
             for (Level l : h.getLevels())
             {
                 levelMap.put(l.getUniqueName(),l);
-                if (!(cube instanceof CachedCubeFactory.CachedCube))
+                if (!(cube instanceof CachedCube))
                 {
                     // Member ordinals may not be set, which is really annoying
                     List<Member> members = l.getMembers();
@@ -900,7 +904,7 @@ public class BitSetQueryImpl
                 MemberSet set = new MemberSet();
                 for (Member m : containerMembers)
                 {
-                    List<? extends Member> children = (m instanceof CachedCubeFactory._Member) ? ((CachedCubeFactory._Member)m).getChildMembersArray() : m.getChildMembers();
+                    List<? extends Member> children = (m instanceof CachedCube._Member) ? ((CachedCube._Member)m).getChildMembersArray() : m.getChildMembers();
                     for (Member c : children)
                     {
                         set.add(c);
@@ -1492,7 +1496,7 @@ public class BitSetQueryImpl
             logDebug("SqlDataSourceHelper.execute(" + query + ")");
             try
             {
-                QuerySchema qs = DefaultSchema.get(user, container, "core");
+                QuerySchema qs = DefaultSchema.get(user, container, StringUtils.defaultString(rolap.getSchemaName(),"core"));
                 return QueryService.get().select(qs, query, true, false);
             }
             catch (SQLException|QueryParseException|AssertionError x)

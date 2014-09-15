@@ -140,6 +140,11 @@ import java.util.Map;
  */
 public class OlapController extends SpringActionController
 {
+    public enum ImplStrategy {mondrian, rolapYourOwn};
+    public static ImplStrategy strategy = ImplStrategy.mondrian;
+
+
+
     private static final Logger _log = Logger.getLogger(OlapController.class);
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(OlapController.class);
@@ -954,6 +959,8 @@ public class OlapController extends SpringActionController
         if (null == annotated)
             return null;
         Map<String,Annotation> annotations = annotated.getAnnotationMap();
+        if (null == annotations)
+            return null;
         Annotation a = annotations.get(name);
         return null==a ? null : null == a.getValue() ? null : String.valueOf(a.getValue());
     }
@@ -962,7 +969,7 @@ public class OlapController extends SpringActionController
 
     private Cube _cube = null;
 
-    private Cube getCube(OlapForm form, BindException errors) throws SQLException
+    private Cube getCube(OlapForm form, BindException errors) throws SQLException, IOException
     {
         if (null != _cube)
             return _cube;
@@ -1018,6 +1025,8 @@ public class OlapController extends SpringActionController
 
     OlapConnection getConnection(OlapSchemaDescriptor d) throws SQLException
     {
+        if (strategy == ImplStrategy.rolapYourOwn)
+            return null;
         if (null == _connection)
         {
             _connection = d.getConnection(getContainer(), getUser());
