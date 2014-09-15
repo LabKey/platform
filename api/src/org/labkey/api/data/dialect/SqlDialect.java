@@ -557,6 +557,11 @@ public abstract class SqlDialect
 
     public abstract String getSubstringFunction(String s, String start, String length);
 
+    public String getXorOperator()
+    {
+        return "^";
+    }
+
     public abstract boolean supportsGroupConcat();
 
     // GroupConcat is usable as an aggregate function within a GROUP BY
