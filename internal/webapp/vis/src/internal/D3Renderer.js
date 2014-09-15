@@ -1757,8 +1757,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderBarPlotGeom = function(data, geom) {
-        var layer = getLayer.call(this, geom),
-                binWidth, barWidth, offsetWidth, rects, items, heightFn, xAcc, yAcc;
+        var layer = getLayer.call(this, geom), barWrappers,
+                binWidth, barWidth, offsetWidth, rects, hoverFn, heightFn, xAcc, yAcc;
 
         if (geom.xScale.scaleType == 'continuous') {
             console.error('Bar Plots not supported for continuous data yet.');
@@ -1769,12 +1769,19 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         barWidth = binWidth / (geom.showCumulativeTotals ? 4 : 2);
         offsetWidth = (binWidth / (geom.showCumulativeTotals ? 3.5 : 4));
 
-        rects = layer.selectAll('rect.bar-rect').data(data);
-        rects.exit().remove();
-
-        // add the bars and styling for the counts
+        hoverFn = function(d) { return geom.yAes.getValue(d) };
         xAcc = function(d){ return geom.getX(d) - offsetWidth };
         yAcc = function(d){ return geom.getY(d) };
+
+        // group each bar with an a tag for hover
+        barWrappers = layer.selectAll('a.bar-individual').data(data);
+        barWrappers.exit().remove();
+        barWrappers.enter().append('a').attr('class', 'bar-individual');
+        barWrappers.attr('xlink:title', hoverFn);
+
+        // add the bars and styling for the counts
+        rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
+        rects.exit().remove();
         heightFn = function(d) { return plot.grid.bottomEdge - geom.getY(d) };
         rects.enter().append('rect').attr('class', 'bar-rect')
                 .attr('x', xAcc).attr('y', yAcc)
@@ -1791,9 +1798,18 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         // add the bars and styling for the totals
         if (geom.showCumulativeTotals)
         {
+            hoverFn = function(d) { return d.total };
             xAcc = function(d){ return geom.getX(d) + (offsetWidth - barWidth) };
             yAcc = function(d){ return geom.yScale.scale(d.total) };
             heightFn = function(d) { return plot.grid.bottomEdge - geom.yScale.scale(d.total) };
+
+            barWrappers = layer.selectAll('a.bar-total').data(data);
+            barWrappers.exit().remove();
+            barWrappers.enter().append('a').attr('class', 'bar-total');
+            barWrappers.attr('xlink:title', hoverFn);
+
+            rects = barWrappers.selectAll('rect.bar-rect').data(function(d){ return [d] });
+            rects.exit().remove();
             rects.enter().append('rect').attr('class', 'bar-rect')
                     .attr('x', xAcc).attr('y', yAcc)
                     .attr('width', barWidth).attr('height', heightFn)
@@ -1807,7 +1823,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .text(function(d) { return d.total });
 
             // Render legend for Individual vs Total bars
-            plot.legendData = [{text: 'Individual', color: geom.fill}, {text: 'Total', color: geom.fillTotal}];
+            plot.legendData = [{text: 'Total', color: geom.fillTotal}, {text: 'Individual', color: geom.fill}];
         }
     };
 

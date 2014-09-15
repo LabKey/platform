@@ -645,6 +645,55 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         }
     };
 
+    var renderBarPlotGeom = function(data, geom) {
+        var x, y, barLeft, binWidth, barWidth, offsetWidth, barHeight;
+
+        if (geom.xScale.scaleType == 'continuous') {
+            console.error('Bar Plots not supported for continuous data yet.');
+            return;
+        }
+
+        binWidth = (plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length);
+        barWidth = binWidth / (geom.showCumulativeTotals ? 4 : 2);
+        offsetWidth = (binWidth / (geom.showCumulativeTotals ? 3.5 : 4));
+
+        for (var i = 0; i < data.length; i++)
+        {
+            x = geom.xScale.scale(geom.xAes.getValue(data[i]));
+            y = geom.yScale.scale(geom.yAes.getValue(data[i]));
+            console.log(data[i]);
+
+            this.paper.setStart();
+
+            // add the bars and styling for the counts
+            barLeft = x - offsetWidth;
+            barHeight = plot.grid.bottomEdge - y;
+            var bar = this.paper.rect(barLeft, y, barWidth, barHeight)
+                    .attr('title', geom.yAes.getValue(data[i]))
+                    .attr('fill', geom.fill)
+                    .attr('fill-opacity', geom.opacity)
+                    .attr('stroke', geom.color)
+                    .attr('stroke-width', geom.lineWidth);
+
+            // add the bars and styling for the totals
+            if (geom.showCumulativeTotals)
+            {
+                y = geom.yScale.scale(data[i].total);
+                barLeft = x + (offsetWidth - barWidth);
+                barHeight = plot.grid.bottomEdge - y;
+                var bar = this.paper.rect(barLeft, y, barWidth, barHeight)
+                        .attr('title', data[i].total)
+                        .attr('fill', geom.fillTotal)
+                        .attr('fill-opacity', geom.opacityTotal)
+                        .attr('stroke', geom.colorTotal)
+                        .attr('stroke-width', geom.lineWidthTotal);
+
+                // Render legend for Individual vs Total bars
+                plot.legendData = [{text: 'Total', color: geom.fillTotal}, {text: 'Individual', color: geom.fill}];
+            }
+        }
+    };
+
     /*
         LEGEND STUFF BELOW HERE
      */
@@ -679,7 +728,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             legendWidth = this.paper.width - x - 25,
             defaultColor = '#333333',
             defaultPath = "M" + -5 + "," + -2.5 + "L" + 5 + "," + -2.5 + " " + 5 + "," + 2.5 + " " + -5 + "," + 2.5 + "Z",
-            legendData = plot.getLegendData();
+            legendData = plot.legendData || plot.getLegendData();
 
         if (legendData.length > 0) {
             for (i = 0; i < legendData.length; i++) {
@@ -716,6 +765,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         renderPointGeom: renderPointGeom,
         renderPathGeom: renderPathGeom,
         renderErrorBarGeom: renderErrorBarGeom,
-        renderBoxPlotGeom: renderBoxPlotGeom
+        renderBoxPlotGeom: renderBoxPlotGeom,
+        renderBarPlotGeom: renderBarPlotGeom
     };
 };
