@@ -168,12 +168,17 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
 
                 if (g && g.values) {
                     Ext4.each(g.values, function(_g) {
-                        gmap[_g.toString()] = true;
+                        if (_g === null) {
+                            gmap[_g] = true;
+                        }
+                        else {
+                            gmap[_g.toString()] = true;
+                        }
                     });
                 }
 
                 if (d && d.values) {
-                    var recs = [], v, i=0, hasBlank = false, isString, formattedValue;
+                    var recs = [], v, i=0, hasBlank = false, hasBlankGrp = false, isString, formattedValue;
                     for (; i < d.values.length; i++) {
                         v = d.values[i];
                         formattedValue = this.formatValue(v);
@@ -181,6 +186,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
 
                         if (formattedValue == null || (isString && formattedValue.length == 0) || (!isString && isNaN(formattedValue))) {
                             hasBlank = true;
+                            hasBlankGrp = (gmap[null] === true);
                         }
                         else if (Ext4.isDefined(v)) {
                             var datas = [v, v.toString(), v.toString(), true];
@@ -194,7 +200,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                     }
 
                     if (hasBlank)
-                        recs.unshift(['', '', this.emptyDisplayValue]);
+                        recs.unshift(['', '', this.emptyDisplayValue, hasBlankGrp]);
 
                     store.loadData(recs);
                     store.group(store.groupField, 'DESC');
