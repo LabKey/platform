@@ -3,19 +3,13 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
+LABKEY.requiresCss("_images/icons.css");
 Ext4.namespace('LABKEY', 'LABKEY.ext');
 
 Ext4.Ajax.timeout = 60000;
 Ext4.QuickTips.init();
 
 Ext4.define('LABKEY.ext.QueryCache', {
-    extend: 'Ext.util.Observable',
-
-    constructor : function(config)
-    {
-        this.callParent();
-    },
 
     getSchemas : function (callback, scope)
     {
@@ -113,12 +107,19 @@ Ext4.define('LABKEY.ext.QueryCache', {
 });
 
 Ext4.define('LABKEY.ext.QueryDetailsCache', {
-    extend: 'Ext.util.Observable',
+
+    mixins: {
+        observable: 'Ext.util.Observable'
+    },
 
     constructor : function(config)
     {
-        this.addEvents("newdetails");
         this.callParent([config]);
+
+        this.mixins.observable.constructor.call(this, config);
+
+        this.addEvents("newdetails");
+
         this.queryDetailsMap = {};
     },
 
@@ -141,15 +142,15 @@ Ext4.define('LABKEY.ext.QueryDetailsCache', {
             schemaName: ""+schemaName, // stringify LABKEY.SchemaKey
             queryName: queryName,
             fk: fk,
-            successCallback: function (json, response, options) {
+            success: function (json, response, options) {
                 this.queryDetailsMap[cacheKey] = json;
                 this.fireEvent("newdetails", json);
-                if (callback)
+                if (Ext4.isFunction(callback))
                     callback.call(scope || this, json);
             },
             //Issue 15674: if a query is not found, provide a more informative error message
-            errorCallback: function(response){
-                if (errorCallback){
+            failure: function(response){
+                if (Ext4.isFunction(errorCallback)){
                     errorCallback.call(scope || this, response);
                 }
             },
@@ -372,17 +373,23 @@ Ext4.define('LABKEY.ext.QueryDetailsPanel', {
     {
         return function() {
             this.fireEvent("lookupclick",
-                    Ext4.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.schemaName)),
-                    Ext4.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.queryName)),
-                    Ext4.util.Format.htmlDecode(lookupLink.getAttributeNS('', this.domProps.containerPath)));
+                Ext4.htmlDecode(lookupLink.getAttributeNS('', this.domProps.schemaName)),
+                Ext4.htmlDecode(lookupLink.getAttributeNS('', this.domProps.queryName)),
+                Ext4.htmlDecode(lookupLink.getAttributeNS('', this.domProps.containerPath))
+            );
         };
     },
 
     formatQueryDetails : function(queryDetails)
     {
-        var root = {tag: 'div', children: []};
-        root.children.push(this.formatQueryLinks(queryDetails));
-        root.children.push(this.formatQueryInfo(queryDetails));
+        var root = {
+            tag: 'div',
+            children: [
+                this.formatQueryLinks(queryDetails),
+                this.formatQueryInfo(queryDetails)
+            ]
+        };
+
         if (queryDetails.exception)
             root.children.push(this.formatQueryException(queryDetails));
         else
@@ -474,7 +481,7 @@ Ext4.define('LABKEY.ext.QueryDetailsPanel', {
         var children = [{
             tag: 'a',
             href: viewDataUrl,
-            html: Ext4.util.Format.htmlEncode(schemaKey.toDisplayString()) + "." + Ext4.util.Format.htmlEncode(displayText)
+            html: Ext4.htmlEncode(schemaKey.toDisplayString()) + "." + Ext4.htmlEncode(displayText)
         }];
         if (_qd.isUserDefined && _qd.moduleName) {
             var _tip = '' +
@@ -489,7 +496,7 @@ Ext4.define('LABKEY.ext.QueryDetailsPanel', {
             children.push({
                 tag: 'span',
                 'ext:gtip': _tip,
-                html: 'Defined in ' + Ext4.util.Format.htmlEncode(_qd.moduleName) + ' module'
+                html: 'Defined in ' + Ext4.htmlEncode(_qd.moduleName) + ' module'
             });
         }
 
@@ -504,7 +511,7 @@ Ext4.define('LABKEY.ext.QueryDetailsPanel', {
                 {
                     tag: 'div',
                     cls: 'lk-qd-description',
-                    html: Ext4.util.Format.htmlEncode(_qd.description)
+                    html: Ext4.htmlEncode(_qd.description)
                 }
             ]
         };
@@ -517,7 +524,7 @@ Ext4.define('LABKEY.ext.QueryDetailsPanel', {
         {
             caption: 'Name',
             tip: 'This is the programmatic name used in the API and LabKey SQL.',
-            renderer: function(col){return Ext4.util.Format.htmlEncode(col.name);}
+            renderer: function(col){return Ext4.htmlEncode(col.name);}
         },
         {
             caption: 'Caption',
@@ -542,7 +549,7 @@ Ext4.define('LABKEY.ext.QueryDetailsPanel', {
         {
             caption: 'Description',
             tip: 'Description of the column.',
-            renderer: function(col){return Ext4.util.Format.htmlEncode((col.description || ""));}
+            renderer: function(col){return Ext4.htmlEncode((col.description || ""));}
         }
 
     ],
@@ -635,11 +642,11 @@ Ext4.define('LABKEY.ext.QueryDetailsPanel', {
         if (!col.lookup || null == col.lookup.queryName)
             return "";
 
-        var schemaNameEncoded = Ext4.util.Format.htmlEncode(col.lookup.schemaName);
-        var queryNameEncoded = Ext4.util.Format.htmlEncode(col.lookup.queryName);
-        var keyColumnEncoded = Ext4.util.Format.htmlEncode(col.lookup.keyColumn);
-        var displayColumnEncoded = Ext4.util.Format.htmlEncode(col.lookup.displayColumn);
-        var containerPathEncoded = Ext4.util.Format.htmlEncode(col.lookup.containerPath);
+        var schemaNameEncoded = Ext4.htmlEncode(col.lookup.schemaName);
+        var queryNameEncoded = Ext4.htmlEncode(col.lookup.queryName);
+        var keyColumnEncoded = Ext4.htmlEncode(col.lookup.keyColumn);
+        var displayColumnEncoded = Ext4.htmlEncode(col.lookup.displayColumn);
+        var containerPathEncoded = Ext4.htmlEncode(col.lookup.containerPath);
 
         var caption = schemaNameEncoded + "." + queryNameEncoded;
         var tipText = "This column is a lookup to " + caption;
@@ -654,7 +661,7 @@ Ext4.define('LABKEY.ext.QueryDetailsPanel', {
             tipText += " (the value from column " + displayColumnEncoded + " is usually displayed in grids)";
         }
         tipText += ". To reference columns in the lookup table, use the syntax '"
-                + Ext4.util.Format.htmlEncode(Ext4.util.Format.htmlEncode(col.name)) //strangely-we need to double-encode this
+                + Ext4.htmlEncode(Ext4.htmlEncode(col.name)) //strangely-we need to double-encode this
                 + "/col-in-lookup-table'.";
 
         if (!col.lookup.isPublic)
@@ -1071,7 +1078,7 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
             scope: this,
             containerPath: this.currentContainer
         });
-        this.setStatus("Validating queries in " + Ext4.util.Format.htmlEncode(this.currentContainer) + "...", null, true);
+        this.setStatus("Validating queries in " + Ext4.htmlEncode(this.currentContainer) + "...", null, true);
         this.setStatusIcon("iconAjaxLoadingGreen");
         this.validating = true;
     },
@@ -1090,7 +1097,7 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
 
     getStatusPrefix : function()
     {
-        return Ext4.util.Format.htmlEncode(this.currentContainer) + " (" + this.currentContainerNumber + "/" + this.containerCount + ")";
+        return Ext4.htmlEncode(this.currentContainer) + " (" + this.currentContainerNumber + "/" + this.containerCount + ")";
     },
 
     onSchemas : function(schemasInfo) {
@@ -1102,13 +1109,13 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
     validateSchema : function() {
         var schemaName = this.schemaNames[this.curSchemaIdx];
         if (!this.isValidSchemaName(schemaName)) {
-            var status = 'FAILED: Unable to resolve invalid schema name: \'' + Ext4.util.Format.htmlEncode(schemaName) + '\'';
+            var status = 'FAILED: Unable to resolve invalid schema name: \'' + Ext4.htmlEncode(schemaName) + '\'';
             this.setStatusIcon("iconAjaxLoadingRed");
             this.numErrors++;
             this.addValidationError(schemaName, undefined, {exception : status});
             return;
         }
-        this.setStatus(this.getStatusPrefix.call(this) + ": Validating queries in schema '" + Ext4.util.Format.htmlEncode(schemaName) + "'...");
+        this.setStatus(this.getStatusPrefix.call(this) + ": Validating queries in schema '" + Ext4.htmlEncode(schemaName) + "'...");
         LABKEY.Query.getQueries({
             schemaName: schemaName,
             successCallback: this.onQueries,
@@ -1149,7 +1156,7 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
         {
             var fqn = schemasInfo[childSchemaName].fullyQualifiedName;
             if (!this.isValidSchemaName(fqn)) {
-                var status = 'FAILED: Unable to resolve qualified schema name: \'' + Ext4.util.Format.htmlEncode(fqn) + '\' of child schema \'' + Ext4.util.Format.htmlEncode(childSchemaName) + '\'';
+                var status = 'FAILED: Unable to resolve qualified schema name: \'' + Ext4.htmlEncode(fqn) + '\' of child schema \'' + Ext4.htmlEncode(childSchemaName) + '\'';
                 this.setStatusIcon("iconAjaxLoadingRed");
                 this.numErrors++;
                 this.addValidationError(schemaName, childSchemaName, {exception : status});
@@ -1234,7 +1241,7 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
     },
 
     getCurrentQueryLabel : function() {
-        return Ext4.util.Format.htmlEncode(this.schemaNames[this.curSchemaIdx]) + "." + Ext4.util.Format.htmlEncode(this.queries[this.curQueryIdx].name);
+        return Ext4.htmlEncode(this.schemaNames[this.curSchemaIdx]) + "." + Ext4.htmlEncode(this.queries[this.curQueryIdx].name);
     },
 
     clearValidationErrors : function() {
@@ -1250,7 +1257,7 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
 
         var link = Ext4.create('Ext.Component',{
             cls: 'labkey-link lk-vq-error-name',
-            html: Ext4.util.Format.htmlEncode(this.currentContainer) + ": " + Ext4.util.Format.htmlEncode(schemaName) + "." + Ext4.util.Format.htmlEncode(queryName),
+            html: Ext4.htmlEncode(this.currentContainer) + ": " + Ext4.htmlEncode(schemaName) + "." + Ext4.htmlEncode(queryName),
             listeners: {
                 afterrender: function(panel) {
                     panel.el.on("click", function() {
@@ -1273,7 +1280,7 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
                         /*{
                             xtype: 'box',
                             cls: 'labkey-link lk-vq-error-name',
-                            html: Ext4.util.Format.htmlEncode(this.currentContainer) + ": " + Ext4.util.Format.htmlEncode(schemaName) + "." + Ext4.util.Format.htmlEncode(queryName),
+                            html: Ext4.htmlEncode(this.currentContainer) + ": " + Ext4.htmlEncode(schemaName) + "." + Ext4.htmlEncode(queryName),
                         }*/
                         link
                     ]
@@ -1306,7 +1313,7 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
                     //tag: 'div',
                     xtype: 'box',
                     cls: cls,
-                    html: Ext4.util.Format.htmlEncode(msg)
+                    html: Ext4.htmlEncode(msg)
                 })
             }, this);
 
@@ -1319,7 +1326,7 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
             config.items.push({
                 xtype: 'box',
                 cls: 'lk-vq-error-message',
-                html: Ext4.util.Format.htmlEncode(errorInfo.exception)
+                html: Ext4.htmlEncode(errorInfo.exception)
             });
         }
 
@@ -1334,104 +1341,78 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
     }
 });
 
-
 Ext4.define('LABKEY.ext.SchemaBrowserPanel', {
 
     extend: 'Ext.panel.Panel',
 
     alias: 'widget.labkey-schema-browser-panel',
 
+    statics: {
+        _schemaListTpl : new Ext4.XTemplate(
+            '<table class="lk-qd-coltable">',
+                '<thead>',
+                    '<tpl if="this.hasTitle(title)">',
+                        '<tr>',
+                            '<td colspan="3" class="lk-qd-collist-title">{title:htmlEncode}</td>',
+                        '</tr>',
+                    '</tpl>',
+                    '<tr>',
+                        '<th>Name</th><th>Attributes</th><th>Description</th>',
+                    '</tr>',
+                '</thead>',
+                '<tbody>',
+                    '<tpl for="schemas">',
+                        '<tr>',
+                            '<td><span class="labkey-link">{name:htmlEncode}</span></td>',
+                            '<td>{schema.hidden:this.schemaHidden}</td>',
+                            '<td>{schema.description:this.description}</td>',
+                        '<tr>',
+                    '</tpl>',
+                '</tbody>',
+            '</table>',
+                {
+                    hasTitle : function(title) {
+                        return !Ext4.isEmpty(title);
+                    },
+                    schemaHidden : function(hidden) {
+                        return Ext4.htmlEncode((hidden === true ? 'Hidden': ''));
+                    },
+                    description : function(description) {
+                        return Ext4.htmlEncode((!Ext4.isEmpty(description) ? description : ''));
+                    }
+                }
+        )
+    },
+
     formatSchemaList : function (sortedNames, schemas, title)
     {
-        var rows = [];
-        for (var idx = 0; idx < sortedNames.length; ++idx)
-        {
-            var schema = schemas[sortedNames[idx]];
-            var attributes = [];
-            if (schema.hidden)
-                attributes.push("Hidden");
-
+        var rows = []; // make an object more consuable by XTemplate
+        Ext4.each(sortedNames, function(name) {
             rows.push({
-                tag:'tr',
-                children:[
-                    {
-                        tag:'td',
-                        children:[
-                            {
-                                tag:'span',
-                                cls:'labkey-link',
-                                html:Ext4.util.Format.htmlEncode(sortedNames[idx])
-                            }
-                        ]
-                    },
-                    {
-                        tag:'td',
-                        html:attributes.join(", ")
-                    },
-                    {
-                        tag:'td',
-                        html:Ext4.util.Format.htmlEncode(schema.description)
-                    }
-                ]
+                name: name,
+                schema: schemas[name]
             });
-        }
-
-        var headerRows = [];
-        if (title)
-        {
-            headerRows.push({
-                tag: 'tr',
-                children: [{
-                    tag: 'td',
-                    colspan: 2,
-                    cls: 'lk-qd-collist-title',
-                    html: title
-                }]
-            })
-        }
-        headerRows.push({
-            tag:'tr',
-            children:[
-                {
-                    tag:'th',
-                    html:'Name'
-                },
-                {
-                    tag:'th',
-                    html:'Attributes'
-                },
-                {
-                    tag:'th',
-                    html:'Description'
-                }
-            ]
         });
 
-        var table = this.body.createChild({
-            tag:'table',
-            cls:'lk-qd-coltable',
-            children:[
-                {
-                    tag:'thead',
-                    children: headerRows
-                },
-                {
-                    tag:'tbody',
-                    children:rows
-                }
-            ]
+        var table = LABKEY.ext.SchemaBrowserPanel._schemaListTpl.overwrite(this.body, {
+            schemas: rows,
+            title: title
         });
 
-        var nameLinks = table.query("tbody tr td span");
-        for (idx = 0; idx < nameLinks.length; ++idx)
-        {
-            Ext4.get(nameLinks[idx]).on("click", function (evt, t)
-            {
-                var schemaName = LABKEY.SchemaKey.fromString(t.innerHTML);
-                var schema = schemas[schemaName];
-                this.fireEvent("schemaclick", LABKEY.SchemaKey.fromString(schema.fullyQualifiedName));
+        // bind links
+        var links = Ext4.DomQuery.select('span.labkey-link', table);
+        if (links.length > 0) {
+            Ext4.each(links, function(link) {
+                var linkEl = Ext4.get(link);
+                linkEl.on('click', function(evt, t) { this.onSchemaLinkClick(schemas, evt, t); }, this);
             }, this);
         }
+    },
+
+    onSchemaLinkClick : function(schemas, evt, t) {
+        var schemaName = LABKEY.SchemaKey.fromString(t.innerHTML); // this is bad
+        var schema = schemas[schemaName];
+        this.fireEvent("schemaclick", LABKEY.SchemaKey.fromString(schema['fullyQualifiedName']));
     }
 });
 
@@ -1441,10 +1422,11 @@ Ext4.define('LABKEY.ext.SchemaBrowserHomePanel', {
 
     alias: 'widget.labkey-schema-browser-home-panel',
 
-    initComponent : function() {
-        this.bodyStyle = "padding: 5px";
-        this.addEvents("schemaclick");
-        this.callParent();
+    bodyStyle: 'padding: 5px;',
+
+    constructor : function(config) {
+        this.callParent([config]);
+        this.addEvents('schemaclick');
     },
 
     onRender : function() {
@@ -1472,18 +1454,17 @@ Ext4.define('LABKEY.ext.SchemaBrowserHomePanel', {
         //create a sorted list of schema names
         var sortedNames = [];
         var schemas = {};
-        for (var schemaName in schemaTree.schemas)
-        {
+        Ext4.iterate(schemaTree.schemas, function(schemaName, schema) {
             sortedNames.push(schemaName);
             schemas[schemaName] = this.queryCache.lookupSchema(schemaTree, schemaName);
-        }
+        }, this);
         sortedNames.sort(function(a,b){return a.toLowerCase().localeCompare(b.toLowerCase());}); // 10572
 
         //IE won't let you create the table rows incrementally
         //so build the rows as a data structure first and then
         //do one createChild() for the whole table
         this.formatSchemaList(sortedNames, schemas);
-}
+    }
 });
 
 Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
@@ -1492,17 +1473,22 @@ Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
 
     alias: 'widget.labkey-schema-summary-panel',
 
+    bodyStyle: 'padding: 5px;',
+
+    constructor : function(config) {
+        this.callParent([config]);
+        this.addEvents('queryclick');
+    },
+
     initComponent : function()
     {
-        this.bodyStyle = "padding: 5px";
-        this.addEvents("queryclick");
-        this.callParent();
+        this.callParent(arguments);
+        this.on("schemaclick", this.onSchemaClick, this);
+    },
 
-        this.addListener("schemaclick",
-            function(schemaName){
-                this.schemaBrowser.selectSchema(schemaName);
-                this.schemaBrowser.showPanel(this.schemaBrowser.sspPrefix + schemaName);
-            }, this);
+    onSchemaClick : function(schemaName) {
+        this.schemaBrowser.selectSchema(schemaName);
+        this.schemaBrowser.showPanel(this.schemaBrowser.sspPrefix + schemaName);
     },
 
     onRender : function()
@@ -1530,35 +1516,32 @@ Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
         this.body.createChild({
             tag: 'div',
             cls: 'lk-qd-name',
-            html: Ext4.util.Format.htmlEncode(this.schemaName.toDisplayString() + " Schema")
+            html: Ext4.htmlEncode(this.schemaName.toDisplayString() + " Schema")
         });
         this.body.createChild({
             tag: 'div',
             cls: 'lk-qd-description',
-            html: Ext4.util.Format.htmlEncode(schema.description)
+            html: Ext4.htmlEncode(schema.description)
         });
 
         //create a list for child schemas
         var childSchemaNames = [];
-        for (var childSchemaName in schema.schemas)
-        {
+        Ext4.iterate(schema.schemas, function(childSchemaName, value) {
             childSchemaNames.push(childSchemaName);
-        }
+        });
         if (childSchemaNames.length > 0)
             childSchemaNames.sort(function(a,b){return a.toLowerCase().localeCompare(b.toLowerCase());});
 
         //create one list for user-defined and one for built-in
         var userDefined = [];
         var builtIn = [];
-        for (var queryName in queriesMap)
-        {
-            var query = queriesMap[queryName];
-            query.name = queryName;
+        Ext4.iterate(queriesMap, function(name, query) {
+            query.name = name;
             if (query.isUserDefined)
                 userDefined.push(query);
             else
                 builtIn.push(query);
-        }
+        });
 
         if (userDefined.length > 0)
             userDefined.sort(function(a,b){return a.name.localeCompare(b.name);});
@@ -1583,12 +1566,10 @@ Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
         for (var idx = 0; idx < nameLinks.length; ++idx)
         {
             Ext4.get(nameLinks[idx]).on("click", function(evt,t){
-                this.fireEvent("queryclick", this.schemaName, Ext4.util.Format.htmlDecode(t.innerHTML));
+                this.fireEvent("queryclick", this.schemaName, Ext4.htmlDecode(t.innerHTML));
             }, this);
         }
-
     },
-
 
     formatSchemaLinks : function(schema)
     {
@@ -1604,7 +1585,6 @@ Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
         }
         return container;
     },
-
 
     formatQueryList : function(queries, title)
     {
@@ -1654,11 +1634,11 @@ Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
                             {
                                 tag: 'span',
                                 cls: 'labkey-link',
-                                html: Ext4.util.Format.htmlEncode(query.name)
+                                html: Ext4.htmlEncode(query.name)
                             },
                             {
                                 tag: 'span',
-                                html: Ext4.util.Format.htmlEncode((query.name.toLowerCase() != query.title.toLowerCase() ? ' (' + query.title + ')' : ''))
+                                html: Ext4.htmlEncode((query.name.toLowerCase() != query.title.toLowerCase() ? ' (' + query.title + ')' : ''))
                             }
                         ]
                     },
@@ -1668,7 +1648,7 @@ Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
                     },
                     {
                         tag: 'td',
-                        html: Ext4.util.Format.htmlEncode(query.description)
+                        html: Ext4.htmlEncode(query.description)
                     }
                 ]
             });
@@ -1677,8 +1657,6 @@ Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
         return rows;
     }
 });
-
-LABKEY.requiresCss("_images/icons.css");
 
 Ext4.define('LABKEY.ext.SchemaBrowser', {
 
@@ -1856,7 +1834,7 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
                     schemaName: idMap.schemaName,
                     queryName: idMap.queryName,
                     id: id,
-                    title: Ext4.util.Format.htmlEncode(idMap.schemaName.toDisplayString()) + "." + Ext4.util.Format.htmlEncode(idMap.queryName),
+                    title: Ext4.htmlEncode(idMap.schemaName.toDisplayString()) + "." + Ext4.htmlEncode(idMap.queryName),
                     autoScroll: true,
                     listeners: {
                         lookupclick: {
@@ -1877,7 +1855,7 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
                     schemaName: schemaPath,
                     id: id,
                     schemaBrowser: this,
-                    title: Ext4.util.Format.htmlEncode(schemaPath.toDisplayString()),
+                    title: Ext4.htmlEncode(schemaPath.toDisplayString()),
                     autoScroll: true,
                     listeners: {
                         queryclick: {
@@ -2101,7 +2079,7 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
                 var expandCallback = function (success, lastNode) {
                     if (!success)
                     {
-                        Ext4.Msg.alert("Missing Schema", "The schema '" + Ext4.util.Format.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
+                        Ext4.Msg.alert("Missing Schema", "The schema '" + Ext4.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
                         if (callback)
                             callback.call((scope || this), true, lastNode);
                     }
@@ -2121,7 +2099,7 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
                 tree.expandPath(schemaPathStr, "name", expandCallback);
             }
             else {
-                Ext4.Msg.alert("Missing Schema", "The schema '" + Ext4.util.Format.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
+                Ext4.Msg.alert("Missing Schema", "The schema '" + Ext4.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
             }
         }
     },
@@ -2154,7 +2132,7 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
             }
 
             tree.getSelectionModel().select(queryNode);
-            if (callback)
+            if (Ext4.isFunction(callback))
                 callback.call((scope || this));
 
         }, scope || this);
