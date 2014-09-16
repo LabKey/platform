@@ -6,6 +6,10 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
 
     ui: 'custom',
 
+    useGrouping: false,
+
+    useStoreCache: true,
+
     /*** Overridden Methods ***/
     beforeInit : function() {
 
@@ -14,6 +18,9 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
 
         if (!this.filters) {
             this.filters = [];
+        }
+        if (this.useGrouping === true && !Ext4.isArray(this.groupFilters)) {
+            this.groupFilters = [];
         }
 
         this.items = [this.getGrid()];
@@ -35,7 +42,12 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
         return filters;
     },
 
-    setFilters : function(filterArray) {
+    setFilters : function(filterArray, groupingFilterArray) {
+
+        if (this.useGrouping === true && Ext4.isArray(groupingFilterArray)) {
+            this.groupFilters = groupingFilterArray;
+        }
+
         if (Ext4.isArray(filterArray)) {
             this.filters = filterArray;
             this.onViewReady();
@@ -46,7 +58,8 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
 
     getGrid : function() {
         if (!Ext4.isDefined(this.grid)) {
-            this.grid = Ext4.create('Ext.grid.Panel', {
+
+            var gridConfig = {
                 itemId: 'membergrid',
                 store: this.getLookupStore(),
                 viewConfig : { stripeRows : false },
@@ -74,7 +87,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                 /* Styling configuration */
                 border: false,
                 ui: 'custom',
-                cls: 'measuresgrid infopanegrid',
+                cls: 'measuresgrid filterpanegrid',
 
                 listeners : {
                     viewready: {
@@ -83,7 +96,26 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                         single: true
                     }
                 }
-            });
+            };
+
+            /* Grouping configuration */
+            if (this.useGrouping === true) {
+                gridConfig['requires'] = ['Ext.grid.feature.Grouping'];
+                gridConfig['features'] = [{
+                    ftype: 'grouping',
+                    collapsible: false,
+                    groupHeaderTpl: new Ext.XTemplate(
+                        '{name:this.renderHeader}', // 'name' is actually the value of the groupField
+                        {
+                            renderHeader: function(v) {
+                                return v ? 'Has data in current selection' : 'No data in current selection';
+                            }
+                        }
+                    )
+                }];
+            }
+
+            this.grid = Ext4.create('Ext.grid.Panel', gridConfig);
         }
 
         return this.grid;
@@ -95,19 +127,29 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
         var storeId = [model.get('schemaName'), model.get('queryName'), model.get('fieldKey')].join('||');
 
         // cache
-        var store = Ext4.StoreMgr.get(storeId);
-        if (store) {
-            this.storeReady = true;
-            return store;
+        if (this.useStoreCache === true) {
+            var store = Ext4.StoreMgr.get(storeId);
+            if (store) {
+                this.storeReady = true;
+                return store;
+            }
         }
 
-        store = Ext4.create('Ext.data.ArrayStore', {
-            fields: ['value', 'strValue', 'displayValue'],
+        var storeConfig = {
+            fields: [
+                'value', 'strValue', 'displayValue',
+                {name: 'hasData', type: 'boolean', defaultValue: true}
+            ],
             storeId: storeId
-        });
+        };
 
-        // Select Disinct Configuration
-        var config = {
+        if (this.useGrouping === true) {
+            storeConfig['groupField'] = 'hasData';
+        }
+
+        store = Ext4.create('Ext.data.ArrayStore', storeConfig);
+
+        var baseConfig = {
             schemaName: model.get('schemaName'),
             queryName: model.get('queryName'),
             dataRegionName: model.get('dataRegionName'),
@@ -115,8 +157,21 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
             column: model.get('fieldKey'),
             container: model.get('container'),
             parameters: model.get('parameters'),
-            maxRows: 251,
-            success: function(d) {
+            maxRows: 251
+        };
+
+        var onSuccess = function() {
+            if (Ext4.isDefined(this.distinctValues) && Ext4.isDefined(this.groupedValues)) {
+                var d = this.distinctValues;
+                var g = this.groupedValues;
+                var gmap = {};
+
+                if (g && g.values) {
+                    Ext4.each(g.values, function(_g) {
+                        gmap[_g.toString()] = true;
+                    });
+                }
+
                 if (d && d.values) {
                     var recs = [], v, i=0, hasBlank = false, isString, formattedValue;
                     for (; i < d.values.length; i++) {
@@ -128,7 +183,13 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                             hasBlank = true;
                         }
                         else if (Ext4.isDefined(v)) {
-                            recs.push([v, v.toString(), v.toString()]);
+                            var datas = [v, v.toString(), v.toString(), true];
+                            if (this.useGrouping === true) {
+                                if (gmap[v.toString()] !== true) {
+                                    datas[3] = false;
+                                }
+                            }
+                            recs.push(datas);
                         }
                     }
 
@@ -136,13 +197,39 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
                         recs.unshift(['', '', this.emptyDisplayValue]);
 
                     store.loadData(recs);
+                    store.group(store.groupField, 'DESC');
                     store.isLoading = false;
                     this.storeReady = true;
                     this.onViewReady();
+                    this.distinctValues = undefined; this.groupedValues = undefined;
                 }
+            }
+        };
+
+        // Select Disinct Configuration
+        var config = Ext4.apply({
+            success: function(d) {
+                this.distinctValues = d;
+                onSuccess.call(this);
             },
             scope: this
-        };
+        }, baseConfig);
+
+        if (this.useGrouping === true) {
+            var grpConfig = Ext4.apply(Ext4.clone(baseConfig), {
+                filterArray: this.groupFilters,
+                maxRows: 20,
+                success: function(d) {
+                    this.groupedValues = d;
+                    onSuccess.call(this);
+                },
+                scope: this
+            });
+            LABKEY.Query.selectDistinctRows(grpConfig);
+        }
+        else {
+            this.groupedValues = true;
+        }
 
         LABKEY.Query.selectDistinctRows(config);
 
