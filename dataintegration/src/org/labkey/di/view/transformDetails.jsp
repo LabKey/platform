@@ -29,6 +29,7 @@
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        resources.add(ClientDependency.fromFilePath("Ext4"));
         return resources;
     }
 %>
@@ -41,8 +42,7 @@
     ScheduledPipelineJobDescriptor descriptor = TransformManager.get().getDescriptor(transformId);
 %>
 <script type="text/javascript">
-    var X = Ext4 || Ext;
-    X.onReady(function()
+    Ext4.onReady(function()
     {
         var qwp = new LABKEY.QueryWebPart({
             renderTo: 'transformDetailDiv',

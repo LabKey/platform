@@ -255,10 +255,9 @@ abstract public class TransformBaseTable extends VirtualTable
             script.append("function ");
             script.append(dataRegionName + ShowLog);
             script.append("(url, title) {");
-            script.append("var X = Ext4 || Ext;");
-            script.append("X.Ajax.request({");
+            script.append("Ext4.Ajax.request({");
             script.append("url:url, method: 'GET', success: function(response) {");
-            script.append("var win = new X.Window({");
+            script.append("var win = new Ext4.Window({");
             script.append("title: title, border: false, html: response.responseText.replace(/\\r\\n/g, \"<br>\"),");
             script.append("closeAction: 'close', autoScroll : true, buttons : [{");
             script.append("text: 'Close', handler : function() { win.close(); } }]");
