@@ -1823,7 +1823,8 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                     .text(function(d) { return d.total });
 
             // Render legend for Individual vs Total bars
-            plot.legendData = [{text: 'Total', color: geom.fillTotal}, {text: 'Individual', color: geom.fill}];
+            if (!plot.legendData)
+                plot.legendData = [{text: 'Total', color: geom.fillTotal}, {text: 'Individual', color: geom.fill}];
         }
     };
 

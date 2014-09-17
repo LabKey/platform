@@ -713,6 +713,7 @@ boxPlot.render();
         this.legendPos = config.legendPos;
         this.throwErrors = config.throwErrors || false; // Allows the configuration to specify whether chart errors should be thrown or logged (default).
         this.brushing = ('brushing' in config && config.brushing != null && config.brushing != undefined) ? config.brushing : null;
+        this.legendData = config.legendData ? config.legendData : null; // An array of rows for the legend text/color/etc. Optional.
 
         this.bgColor = config.bgColor ? config.bgColor : null;
         this.gridColor = config.gridColor ? config.gridColor : null;
