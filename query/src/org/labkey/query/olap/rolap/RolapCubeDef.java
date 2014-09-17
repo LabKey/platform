@@ -18,6 +18,7 @@ package org.labkey.query.olap.rolap;
 import org.apache.commons.lang3.StringUtils;
 import static org.apache.commons.lang3.StringUtils.*;
 
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
@@ -687,6 +688,19 @@ public class RolapCubeDef
         }
 
 
+        public JdbcType computeKeyType(ResultSet rs) throws SQLException
+        {
+            int index = rs.findColumn(keyAlias);
+            int columnType = rs.getMetaData().getColumnType(index);
+            JdbcType j = JdbcType.valueOf(columnType);
+            if (j != jdbcType)
+            {
+                Logger.getLogger(RolapCubeDef.class).info("jdbc types do not match, expected:" + jdbcType + " found:" + j);
+            }
+            return jdbcType;
+        }
+
+
         public boolean isLeaf()
         {
             return isLeaf;
@@ -720,6 +734,7 @@ public class RolapCubeDef
             makeMemberFilter(m,d,sb);
             return sb.toString();
         }
+
 
         private void makeMemberFilter(Member m, @Nullable SqlDialect d, StringBuilder sb)
         {

@@ -3,6 +3,7 @@ package org.labkey.query.olap.metadata;
 import com.drew.lang.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
@@ -10,26 +11,23 @@ import org.labkey.api.query.QueryService;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.olap4j.OlapException;
 import org.olap4j.metadata.Dimension;
-import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
 import org.olap4j.metadata.Member;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.NamedSet;
-import org.olap4j.metadata.Property;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 
 import static org.labkey.query.olap.rolap.RolapCubeDef.*;
 
 
 
 /**
- * Created by matthew on 9/8/14.
+ * Construct a CachedCube given a RolapCubeDef
  */
 public class RolapCachedCubeFactory
 {
@@ -136,7 +134,14 @@ public class RolapCachedCubeFactory
         String hierarchySql = rolap.getMembersSQL(hdef);
         try (ResultSet rs = QueryService.get().select(schema, hierarchySql, true, false))
         {
-            // get all the names top to bottom, and find first name that is different
+            // compute jdbcType for all key columns
+            for (int l = 1; l < levelCount; l++)
+            {
+                CachedCube._Level level = levelList.get(l);
+                LevelDef ldef = levelDefList.get(l);
+                level.jdbcType = ldef.computeKeyType(rs);
+            }
+
             while (rs.next())
             {
                 int breakLevel = 0;
@@ -233,10 +238,14 @@ public class RolapCachedCubeFactory
     static void orderChildMembers(CachedCube._NamedList<CachedCube._Member, Member> list) throws OlapException
     {
         for (CachedCube._Member m : list)
-            if (null != m.childMembers)
-                Collections.sort(m.childMembers, MEMBER_COMPARATOR);
+        {
+            if (null == m.childMembers)
+                continue;
+            Collections.sort(m.childMembers, MEMBER_COMPARATOR);
+            // We also create a map using the KEY value
+            m._keyMap = CachedCube.KeyMap.create(m.level.jdbcType, m.childMembers);
+        }
     }
-
 
 
     static final NamedList<NamedSet> emptyNamedSetList = (new CachedCube._EmptyNamedList<NamedSet>()).recast();

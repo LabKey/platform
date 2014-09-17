@@ -4,6 +4,7 @@ import mondrian.olap.Annotated;
 import mondrian.olap.Annotation;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.JdbcType;
 import org.labkey.api.util.Pair;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.olap4j.OlapException;
@@ -25,6 +26,7 @@ import org.olap4j.metadata.Property;
 import org.olap4j.metadata.Schema;
 
 import java.sql.SQLException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -285,6 +287,7 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         final int depth;
         final _Hierarchy hierarchy;
         final Type levelType;
+        JdbcType jdbcType = JdbcType.VARCHAR;
         final _NamedList<_Member,Member> members = new _UniqueNamedList<>();
         final ArrayListMap.FindMap<String> memberPropertiesFindMap= new ArrayListMap.FindMap<>(new HashMap<String,Integer>());
         final _NamedList<_Property,Property> memberProperties = new _NamedList<>();
@@ -406,6 +409,10 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         final Map<String,Pair<Object,String>> _properties;
         int ordinal = -1;
 
+        // this is the only not thread-safe member, this is built lazily as needed
+        Map<Object,_Member> _keyMap;
+
+
         // Olap4JCachedCubeFactory orig is to facilitate sorting by
         Member orig = null;
 
@@ -493,6 +500,7 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
             return list;
         }
 
+
         @Override
         public NamedList<? extends Member> getChildMembers()
                 throws OlapException
@@ -507,6 +515,15 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
                 return ret.recast();
             }
         }
+
+
+        public _Member getChildMemberByKey(Object key)
+        {
+            if (null == _keyMap)
+                throw new IllegalStateException("Factory did not construct a keymap");
+            return _keyMap.get(key);
+        }
+
 
         @Override
         public int getChildMemberCount() throws OlapException
@@ -893,4 +910,86 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         {
         }
     }).recast();
+
+
+    static class KeyMap extends AbstractMap<Object,_Member>
+    {
+        final JdbcType type;
+        final Map<Object,_Member> impl;
+
+        public static KeyMap create(JdbcType type, Collection<Member> members) throws OlapException
+        {
+            Map<Object,_Member> map;
+
+            if (type.isText())
+                map = (Map<Object,_Member>)(Map)new CaseInsensitiveHashMap<_Member>();
+            else
+                map = new HashMap<>();
+
+            for (Member M : members)
+            {
+                _Member m = (_Member)M;
+                _Member prev = map.put(convertKey(type, m.getKeyValue()), m);
+                if (null != prev)
+                {
+                    // two possibilities, duplicate key which is an error, or case-sensitivy problem
+                    if (!type.isText())
+                        throw new IllegalStateException("Duplicate child member key: " + String.valueOf(m.getKeyValue()));
+                    break;  // deal with this later
+                }
+            }
+            if (map.size() == members.size())
+                return new KeyMap(type, map);
+
+            // try again with case sensitive map
+            map = new HashMap<>();
+            for (Member M : members)
+            {
+                _Member m = (_Member)M;
+                _Member prev = map.put(convertKey(type, m.getKeyValue()), m);
+                if (null != prev)
+                    throw new IllegalStateException("Duplicate child member key: " + String.valueOf(m.getKeyValue()));
+            }
+            return new KeyMap(type, map);
+        }
+
+        private KeyMap(JdbcType type, Map<Object,_Member> map) throws OlapException
+        {
+            this.type = type;
+            this.impl = map;
+        }
+
+        static Object convertKey(JdbcType type, Object rawKey)
+        {
+            Object key;
+            if (null == rawKey && type.isText())
+                key = "#null";
+            else
+                key = type.convert(rawKey);
+            return key;
+        }
+
+        Object convertKey(Object rawKey)
+        {
+            return convertKey(type, rawKey);
+        }
+
+        @Override
+        public _Member get(Object key)
+        {
+            return impl.get(convertKey(key));
+        }
+
+        @Override
+        public _Member put(Object key, _Member value)
+        {
+            return impl.put(convertKey(key), value);
+        }
+
+        @Override
+        public Set<Entry<Object, _Member>> entrySet()
+        {
+            return impl.entrySet();
+        }
+    }
 }

@@ -142,7 +142,7 @@ public class OlapController extends SpringActionController
 {
     public enum ImplStrategy {mondrian, rolapYourOwn};
     public static ImplStrategy strategy = ImplStrategy.mondrian;
-
+//    public static ImplStrategy strategy = ImplStrategy.rolapYourOwn;
 
 
     private static final Logger _log = Logger.getLogger(OlapController.class);
@@ -758,7 +758,7 @@ public class OlapController extends SpringActionController
                 try
                 {
                     start = System.currentTimeMillis();
-                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), sd, cube, getConnection(sd), qquery, errors, useSqlImplementation);
+                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, getConnection(sd), qquery, errors, useSqlImplementation);
                     if (null != cf)
                         bitsetquery.setContainerFilter(getContainerCollection(cf));
                     cs = bitsetquery.executeQuery();

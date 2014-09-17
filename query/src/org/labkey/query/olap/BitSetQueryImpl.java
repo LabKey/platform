@@ -37,6 +37,7 @@ import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.GUID;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.olap.metadata.CachedCube;
@@ -88,12 +89,13 @@ public class BitSetQueryImpl
     final boolean mondrianCompatibleNullHandling = false;
 
     static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
-    final static User serviceUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+    final static User olapServiceUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
     static
     {
-        serviceUser.setPrincipalType(PrincipalType.SERVICE);
-        serviceUser.setDisplayName("Internal JDBC Service User");
-        serviceUser.setEmail("internaljdbc@labkey.org");
+        olapServiceUser.setPrincipalType(PrincipalType.SERVICE);
+        olapServiceUser.setDisplayName("Internal JDBC Service User");
+        olapServiceUser.setEmail("internaljdbc@labkey.org");
+        olapServiceUser.setEntityId(new GUID());
     }
 
     final Container container;
@@ -106,6 +108,7 @@ public class BitSetQueryImpl
     OlapConnection connection;
     final String cachePrefix;
     SqlDialect dialect = null;
+    final User serviceUser;
     final User user;
 
     CubeDataSourceHelper _cdsh = new CubeDataSourceHelper();
@@ -115,11 +118,12 @@ public class BitSetQueryImpl
 
     MemberSet containerMembers = null;  // null == all
 
-    public BitSetQueryImpl(Container c, OlapSchemaDescriptor sd, Cube cube, OlapConnection connection, QubeQuery qq,
+    public BitSetQueryImpl(Container c, User user, OlapSchemaDescriptor sd, Cube cube, OlapConnection connection, QubeQuery qq,
            BindException errors, boolean useSQL /* for testing */
            ) throws SQLException, IOException
     {
-        this.user = serviceUser;
+        this.serviceUser = olapServiceUser;
+        this.user = user;
         this.container = c;
         this.connection = connection;
         this.qq = qq;
@@ -678,17 +682,33 @@ public class BitSetQueryImpl
             outer = new MemberSetResult(expr.hierarchy);
         }
 
-        if (null != outer && null != expr.membersQuery)
+        if (null != outer)
         {
-            Result subquery = processExpr(expr.membersQuery);
-            MemberSet filtered;
-            if (subquery instanceof MemberSetResult)
-                filtered = _dataSourceHelper.membersQuery(outer, (MemberSetResult)subquery);
-            else if (subquery instanceof CrossResult)
-                filtered = _dataSourceHelper.membersQuery(outer, (CrossResult)subquery);
-            else
-                throw new IllegalStateException("unsupported query, did not expect " + subquery.getClass().getName());
-            return new MemberSetResult(filtered);
+            if (null != expr.membersQuery)
+            {
+                Result subquery = processExpr(expr.membersQuery);
+                MemberSet filtered;
+                if (subquery instanceof MemberSetResult)
+                    filtered = _dataSourceHelper.membersQuery(outer, (MemberSetResult) subquery);
+                else if (subquery instanceof CrossResult)
+                    filtered = _dataSourceHelper.membersQuery(outer, (CrossResult) subquery);
+                else
+                    throw new IllegalStateException("unsupported query, did not expect " + subquery.getClass().getName());
+                return new MemberSetResult(filtered);
+            }
+            else if (null != expr.sql)
+            {
+                if (!(_dataSourceHelper instanceof SqlDataSourceHelper))
+                    throw new IllegalStateException("sql not supported");
+                if (null == expr.level)
+                    throw new IllegalStateException("sql requires that a level specification");
+                // SQL needs to be executed using the current users credentials
+                if (null == user)
+                    throw new IllegalStateException("sql requires a user");
+
+                MemberSet set = ((SqlDataSourceHelper)_dataSourceHelper).sqlMembersQuery(expr.level, expr.sql);
+                return new MemberSetResult(set);
+            }
         }
 
         if (null != outer)
@@ -1491,7 +1511,7 @@ public class BitSetQueryImpl
         }
 
 
-        ResultSet execute(String query) throws SQLException
+        ResultSet execute(User user, String query) throws SQLException
         {
             logDebug("SqlDataSourceHelper.execute(" + query + ")");
             try
@@ -1712,7 +1732,7 @@ public class BitSetQueryImpl
                     }
                     RolapCubeDef.LevelDef ldef = getRolapFromCube(level);
 
-                    try (ResultSet rs = execute(query))
+                    try (ResultSet rs = execute(serviceUser, query))
                     {
                         set = new MemberSet();
                         while (rs.next())
@@ -1762,7 +1782,7 @@ public class BitSetQueryImpl
 
                 MemberSet set = new MemberSet();
 
-                try (ResultSet rs = execute(query))
+                try (ResultSet rs = execute(serviceUser, query))
                 {
                     RolapCubeDef.LevelDef ldef = getRolapFromCube(outer);
                     while (rs.next())
@@ -1791,7 +1811,7 @@ public class BitSetQueryImpl
             if (null != s)
                 return s;
 
-            try (ResultSet rs = execute(query))
+            try (ResultSet rs = execute(serviceUser, query))
             {
                 Level level = outer.getLevel();
                 RolapCubeDef.LevelDef ldef = getRolapFromCube(level);
@@ -1810,6 +1830,46 @@ public class BitSetQueryImpl
                 resultsCachePut(query, set);
                 return set;
             }
+        }
+
+
+        public MemberSet sqlMembersQuery(Level level, String sql) throws SQLException
+        {
+            // CONSIDER: This needs to be executed in the context of the actual user for security.
+            // CONSIDER: The result will often be the same across users, however, so we could
+            // CONSIDER: try to share cached results.
+
+            String cacheKey = user.getEntityId() + ":" + sql;
+            MemberSet set = _resultsCache.get(cacheKey);
+            if (null != set)
+                return set;
+
+            int depth = level.getDepth();
+            CachedCube._Member all = (CachedCube._Member)level.getHierarchy().getLevels().get(0).getMembers().get(0);
+
+            MemberSet ret = new MemberSet();
+            try (ResultSet rs = execute(user, sql))
+            {
+resultLoop:     while (rs.next())
+                {
+                    CachedCube._Member m = all;
+                    for (int i=1 ; i<=depth ; i++)
+                    {
+                        Object key = rs.getObject(i);
+                        CachedCube._Member child = m.getChildMemberByKey(key);
+                        if (null == child)
+                        {
+                            _log.info("Child not found: parent=" + m.getUniqueName() + " key=" + String.valueOf(key));
+                            continue resultLoop;
+                        }
+                        m = child;
+                    }
+                    ret.add(m);
+                }
+            }
+
+            _resultsCache.put(cacheKey, ret);
+            return ret;
         }
 
 
@@ -1886,7 +1946,7 @@ public class BitSetQueryImpl
             MemberSet nullMemberSet = null;
             String nullQuery = null;
 
-            try (ResultSet rs = execute(queryXjoin))
+            try (ResultSet rs = execute(serviceUser, queryXjoin))
             {
                 RolapCubeDef.LevelDef ldefOuter = getRolapFromCube(outerLevel);
                 RolapCubeDef.LevelDef ldefInner = getRolapFromCube(inner.getLevel());

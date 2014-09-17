@@ -464,7 +464,7 @@ public class ServerManager
                             if (ViewServlet.isShuttingDown())
                                 return "warm cache stopped because of server shutdown";
                             s = System.currentTimeMillis();
-                            execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
+                            execCountDistinct(c, null, sd, conn, cube, jsonQuery, getDummyBindException());
                             e = System.currentTimeMillis();
                             LOG.info(DateUtil.formatDuration(e - s) + " " + jsonQuery.toString());
                         }
@@ -479,7 +479,7 @@ public class ServerManager
                                 return "warm cache stopped because of server shutdown";
 
                             s = System.currentTimeMillis();
-                            execCountDistinct(c, sd, conn, cube, jsonQuery, getDummyBindException());
+                            execCountDistinct(c, null, sd, conn, cube, jsonQuery, getDummyBindException());
                             e = System.currentTimeMillis();
                             LOG.info(DateUtil.formatDuration(e - s) + " " + jsonQuery.toString());
 
@@ -507,7 +507,7 @@ public class ServerManager
     }
 
 
-    private static void execCountDistinct(Container c, OlapSchemaDescriptor sd, OlapConnection conn,  Cube cube, JSONObject jsonQuery, BindException errors) throws Exception
+    private static void execCountDistinct(Container c, User user, OlapSchemaDescriptor sd, OlapConnection conn,  Cube cube, JSONObject jsonQuery, BindException errors) throws Exception
     {
         QubeQuery qquery = new QubeQuery(cube);
         qquery.fromJson(jsonQuery, errors);
@@ -515,7 +515,7 @@ public class ServerManager
         if (errors.hasErrors())
             return;
 
-        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, sd, cube, conn, qquery, errors, false);
+        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, user, sd, cube, conn, qquery, errors, false);
         try(CellSet ignored = bitsetquery.executeQuery()){}
     }
 
