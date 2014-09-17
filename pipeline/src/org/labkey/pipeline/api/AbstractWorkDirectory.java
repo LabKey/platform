@@ -264,6 +264,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     {
         NetworkDrive.ensureDrive(source.getAbsolutePath());
         NetworkDrive.ensureDrive(target.getAbsolutePath());
+
         try (WorkDirectory.CopyingResource lock = ensureCopyingLock())
         {
             _jobLog.info("Copying " + source + " to " + target);
@@ -281,6 +282,17 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     protected File copyInputFile(File fileInput) throws IOException
     {
         File fileWork = newFile(fileInput.getName());
+        return copyInputFile(fileInput, fileWork);
+    }
+
+    protected File copyInputFile(File fileInput, File fileWork) throws IOException
+    {
+        //ensure fileWork is a descendent of workDir
+        if (getRelativePath(fileWork) == null)
+        {
+            throw new IOException("The target file must be a descendent of the work directory.  File was: " + fileWork.getPath());
+        }
+
         copyFile(fileInput, fileWork);
         _copiedInputs.put(fileInput, fileWork);
         return fileWork;

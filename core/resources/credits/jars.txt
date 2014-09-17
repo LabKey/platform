@@ -50,6 +50,7 @@ patricia-trie-0.6.jar|PATRICIA Trie|0.6|{link:PATRICIA Trie|http://code.google.c
 opencsv-2.3.jar|OpenCSV|2.3|{link:OpenCSV|http://opencsv.sourceforge.net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Parsing CSV Files
 objenesis-1.0.jar|Objenesis|1.0|{link:Objenesis|http://code.google.com/p/objenesis/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Library for instantiating Java objects, dependency of jMock
 picard-1.118.jar|Picard-JDK|1.118|{link:PicardTools|http://picard.sourceforge.net/index.shtml}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|bbimber|Manipulating Sequence Data
+bzip2.jar|bzip2|1.0|{link:Apache Ant|http://ant.apache.org/}|{link:Apache 1.1|http://www.apache.org/licenses/LICENSE-1.1}|bbimber|BZIP, required by HTS-JDK
 quartz-2.1.7.jar|quartz|2.1.7|{link:quartz|http://quartz-scheduler.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Scheduling
 rengine-0.6-8.jar|Rengine|0.6-8|{link:Rserve|http://www.rforge.net/Rserve}|{link:LGPL|http://www.gnu.org/licenses/lgpl.html}|daxh|R client classes
 rome-1.0.jar|ROME|1.0|{link:ROME|https://github.com/rometools/rome}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|nicka|Support for RSS and Atom aggregation

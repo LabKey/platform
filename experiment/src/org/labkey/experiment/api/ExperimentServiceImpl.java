@@ -1742,7 +1742,11 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
             for (ListDefinition list : ListService.get().getLists(c).values())
             {
-                list.delete(user);
+                //issue 21395: dont delete list from a parent container when a workbook is deleted
+                if (c.equals(list.getContainer()))
+                {
+                    list.delete(user);
+                }
             }
 
             OntologyManager.deleteAllObjects(c, user);

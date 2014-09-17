@@ -46,9 +46,16 @@ public class WorkDirectoryRemote extends AbstractWorkDirectory
 
     private static final Map<File, Lock> _locks = new HashMap<>();
 
+    @Override
     public File inputFile(File fileInput, boolean forceCopy) throws IOException
     {
         return copyInputFile(fileInput);
+    }
+
+    @Override
+    public File inputFile(File fileInput, File fileWork, boolean forceCopy) throws IOException
+    {
+        return copyInputFile(fileInput, fileWork);
     }
 
     public static class Factory extends AbstractFactory implements InitializingBean
