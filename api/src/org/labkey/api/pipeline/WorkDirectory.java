@@ -66,6 +66,14 @@ public interface WorkDirectory
      */
     File inputFile(File fileInput, boolean forceCopy) throws IOException;
 
+    /**
+     * Indicates that a file is to be used as input. The implementation can choose whether it needs to be copied, unless
+     * forceCopy is true (in which case it will always be copied to the work directory.  This version of the method allows the caller
+     * to manually specify the destination file, which allows callers to place files into subdirectories of the work directory
+     * @return the full path to the file where it is available for use
+     */
+    File inputFile(File fileInput, File fileWork, boolean forceCopy) throws IOException;
+    
     /** @return the relative path of the file relative to the work directory itself. The file is presumed to be under the work directory. */
     String getRelativePath(File fileWork) throws IOException;
 

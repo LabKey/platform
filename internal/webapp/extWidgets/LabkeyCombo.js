@@ -24,8 +24,8 @@ Ext4.define('LABKEY.ext4.ComboBox', {
         expandToFitContent: true,
         maxExpandWidth: null
     },
-    initComponent: function(){
-        this.initConfig();
+    initComponent: function(config){
+        this.initConfig(config || this.initialConfig);
 
         this.plugins = this.plugins || [];
         this.plugins.push('combo-autowidth');

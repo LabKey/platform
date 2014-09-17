@@ -31,13 +31,13 @@ import java.util.Arrays;
  */
 public class SharedDataTable<SchemaType extends UserSchema> extends SimpleUserSchema.SimpleTable<SchemaType>
 {
-    private boolean _alwaysReverToParent = false;
+    private boolean _alwaysRevertToParent = false;
 
-    public SharedDataTable(SchemaType schema, TableInfo table, boolean alwaysReverToParent)
+    public SharedDataTable(SchemaType schema, TableInfo table, boolean alwaysRevertToParent)
     {
         super(schema, table);
         applyContainerFilter(getContainerFilter());
-        _alwaysReverToParent = alwaysReverToParent;
+        _alwaysRevertToParent = alwaysRevertToParent;
     }
 
     @Override

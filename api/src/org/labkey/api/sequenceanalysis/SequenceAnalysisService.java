@@ -16,6 +16,10 @@
 package org.labkey.api.sequenceanalysis;
 
 
+import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.pipeline.PipelineJobException;
+
 import java.io.File;
 
 /**
@@ -38,4 +42,10 @@ abstract public class SequenceAnalysisService
     }
 
     abstract public ReferenceLibraryHelper getLibraryHelper(File refFasta);
+
+    abstract public void registerGenomeTrigger(GenomeTrigger trigger);
+
+    abstract public void registerFileHandler(SequenceFileHandler handler);
+
+    abstract public File createTabixIndex(File input, @Nullable Logger log) throws PipelineJobException;
 }
