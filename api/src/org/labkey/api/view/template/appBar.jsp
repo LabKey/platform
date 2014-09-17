@@ -177,21 +177,20 @@
     Ext4.onReady(function() {
 
         var fatBars = function() {
-            var contentTable = Ext4.get(Ext4.DomQuery.select('table.labkey-proj')[0]).getBox();
-            var width = contentTable.width-5;
-            var menuBarRep = Ext4.get(Ext4.DomQuery.select('.main-menu-replicate')[0]);
-            menuBarRep.setWidth(width);
-            if (Ext4.isGecko || Ext4.isIE9m) {
-                menuBarRep.setStyle('top', '46px');
+            var topBar = Ext4.get('topmenu');
+            if (topBar) {
+                var contentTable = Ext4.get(Ext4.DomQuery.select('table.labkey-proj')[0]).getBox();
+                var width = contentTable.width-5;
+                var menuBarRep = Ext4.get(Ext4.DomQuery.select('.main-menu-replicate')[0]);
+                menuBarRep.setWidth(width);
+                menuBarRep.setStyle('top', '' + topBar.getBox().top + 'px');
             }
 
             var appBar = Ext4.get(Ext4.DomQuery.select('.labkey-app-bar')[0]);
             var appBarRep = Ext4.get(Ext4.DomQuery.select('.labkey-app-bar-replicate')[0]);
             if (appBar && appBarRep) {
                 appBarRep.setSize(width, 32);
-                if (Ext4.isGecko || Ext4.isIE9p) {
-                    appBarRep.setStyle('top', '74px');
-                }
+                appBarRep.setStyle('top', '' + appBar.getBox().top + 'px');
             }
         };
 
@@ -222,14 +221,5 @@
         fatBars();
         addTabListeners();
         Ext4.EventManager.onWindowResize(fatBars);
-
-//        if (window.addEventListener) {
-//            // Most browsers.
-//            window.addEventListener('scroll', scrollListener, false);
-//        }
-//        else if(window.attachEvent) {
-//            // <= IE8
-//            window.attachEvent('onscroll',scrollListener);
-//        }
     });
 </script>
