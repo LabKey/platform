@@ -181,14 +181,16 @@ Ext4.define('LABKEY.ext.QueryTreePanel', {
 
     alias: 'widget.labkey-query-tree-panel',
 
+    border: false,
+
     constructor : function(config) {
 
         if (!Ext4.ModelManager.isRegistered('SchemaBrowser.Queries')) {
             Ext4.define('SchemaBrowser.Queries', {
-                extend : 'Ext.data.Model',
-                proxy : {
-                    type        : 'ajax',
-                    url         : LABKEY.ActionURL.buildURL('query', 'getSchemaQueryTree.api'),
+                extend: 'Ext.data.Model',
+                proxy: {
+                    type: 'ajax',
+                    url: LABKEY.ActionURL.buildURL('query', 'getSchemaQueryTree.api'),
                     listeners: {
                         exception: function(proxy, response, operation) {
                             if (!this._unloading)
@@ -197,13 +199,13 @@ Ext4.define('LABKEY.ext.QueryTreePanel', {
                     }
                 },
                 fields : [
-                    {name : 'description'                    },
-                    {name : 'hidden',       type : 'boolean' },
-                    {name : 'name'                           },
-                    {name : 'qtip'                           },
-                    {name : 'schemaName'                     },
-                    {name : 'queryName'                      },
-                    {name : 'text'                           }
+                    {name: 'description'},
+                    {name: 'hidden', type: 'boolean', defaultValue: false},
+                    {name: 'name'},
+                    {name: 'qtip'},
+                    {name: 'schemaName'},
+                    {name: 'queryName'},
+                    {name: 'text'}
                 ]
             });
         }
@@ -235,6 +237,8 @@ Ext4.define('LABKEY.ext.QueryTreePanel', {
         });
 
         this.callParent([config]);
+
+        this.addEvents("schemasloaded");
     },
 
     initComponent : function(){
@@ -255,33 +259,32 @@ Ext4.define('LABKEY.ext.QueryTreePanel', {
             this._unloading = true
         }, this);
 
-        this.callParent();
-        this.addEvents("schemasloaded");
+        this.callParent(arguments);
 
         // Show hidden child nodes when expanding if 'Show Hidden Schemas and Queries' is checked.
         this.on('beforeappend', function (tree, parent, node) {
             if (this.showHidden)
                 node.hidden = false;
         }, this);
-
     },
 
     setShowHiddenSchemasAndQueries : function (showHidden)
     {
         this.showHidden = showHidden;
 
-        this.root.cascade(function (node) {
-            if (showHidden)
-            {
-                if (node.hidden)
-                    node.ui.show();
-            }
-            else
-            {
-                if (node.hidden)
-                    node.ui.hide();
-            }
-        }, this);
+        // TODO: Cannot show/hide nodes in ExtJS 4.2.1 -- Optimially, use TreeStore.filter() in ExtJS 4.2.3
+//        this.getRootNode().cascadeBy(function(node) {
+//            if (showHidden)
+//            {
+//                if (node.hidden)
+//                    node.ui.show();
+//            }
+//            else
+//            {
+//                if (node.hidden)
+//                    node.ui.hide();
+//            }
+//        }, this);
     }
 });
 
@@ -297,6 +300,8 @@ Ext4.define('LABKEY.ext.QueryDetailsPanel', {
         containerPath: 'lkqdContainerPath',
         fieldKey: 'lkqdFieldKey'
     },
+
+    border: false,
 
     initComponent : function()
     {
@@ -1394,7 +1399,7 @@ Ext4.define('LABKEY.ext.SchemaBrowserPanel', {
             });
         });
 
-        var table = LABKEY.ext.SchemaBrowserPanel._schemaListTpl.overwrite(this.body, {
+        var table = LABKEY.ext.SchemaBrowserPanel._schemaListTpl.append(this.body, {
             schemas: rows,
             title: title
         });
@@ -1423,6 +1428,8 @@ Ext4.define('LABKEY.ext.SchemaBrowserHomePanel', {
     alias: 'widget.labkey-schema-browser-home-panel',
 
     bodyStyle: 'padding: 5px;',
+
+    border: false,
 
     constructor : function(config) {
         this.callParent([config]);
@@ -1474,6 +1481,8 @@ Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
     alias: 'widget.labkey-schema-summary-panel',
 
     bodyStyle: 'padding: 5px;',
+
+    border: false,
 
     constructor : function(config) {
         this.callParent([config]);
@@ -1759,8 +1768,9 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
                             }
                         }
                     ],
-                    enableTabScroll:true,
-                    defaults: {autoScroll:true},
+                    enableTabScroll: true,
+                    defaults: { autoScroll:true, border: false },
+                    border: false,
                     listeners: {
                         tabchange: {
                             fn: this.onTabChange,

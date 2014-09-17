@@ -1,3 +1,15 @@
+.schemabrowser .x4-border-layout-ct {
+    background-color: #FFFFFF;
+}
+
+.schemabrowser .x4-toolbar-default {
+    border-color: #b4b4b4;
+}
+
+.schemabrowser .x4-grid-body {
+    border-width: 0px;
+}
+
 .lk-qd-loading
 {
     font-style: italic;

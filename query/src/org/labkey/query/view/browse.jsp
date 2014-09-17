@@ -29,8 +29,8 @@
         return resources;
     }
 %>
-<div id="browserContainer" style="width:100%;">
-    <div id="browser"></div>
+<div id="browserContainer">
+    <div id="browser" class="schemabrowser"></div>
 </div>
 <script type="text/javascript">
     var _browser = null;
