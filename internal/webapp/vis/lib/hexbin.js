@@ -106,7 +106,7 @@
     };
 
     var d3_hexbinAngles = d3.range(0, 2 * Math.PI, Math.PI / 3),
-            d3_hexbinX = function(d) { return d[0]; },
-            d3_hexbinY = function(d) { return d[1]; };
+            d3_hexbinX = function(d) { return d.x; },
+            d3_hexbinY = function(d) { return d.y; };
 
 })();

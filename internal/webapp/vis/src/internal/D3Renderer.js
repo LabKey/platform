@@ -1550,7 +1550,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var renderHexBinGeom = function(data, geom) {
 
-        var hexbin = d3.hexbin().radius(5);
+        var hexbin = d3.hexbin().radius(geom.size);
 
         var xAcc = function(row) {return geom.getX(row);};
         var yAcc = function(row) {return geom.getY(row);};
@@ -1560,13 +1560,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         for (var d=0; d < data.length; d++) {
             x = xAcc(data[d]); y = yAcc(data[d]);
             if (x != null && !isNaN(x) && y != null && !isNaN(y)) {
-                points.push([x, y]);
+                points.push({x: x, y: y, data: data[d]});
             }
         }
 
         var color = d3.scale.linear()
-                .domain([0, 5])
-                .range(["white", "orange"])
+                .domain([0, geom.size])
+                .range(["white", geom.color])
                 .interpolate(d3.interpolateLab);
 
         var layer = getLayer.call(this, geom);

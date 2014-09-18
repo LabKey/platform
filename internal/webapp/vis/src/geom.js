@@ -150,12 +150,9 @@ LABKEY.vis.Geom.HexBin = function(config) {
         config = {};
     }
 
-    // The following configurations were copied from 'Point' geom and most likely not all (none?) of them are needed
     this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
     this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 5;
-    this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
     this.plotNullPoints = ('plotNullPoints' in config && config.plotNullPoints != null && config.plotNullPoints != undefined) ? config.plotNullPoints : false;
-    this.position = ('position' in config && config.position != null && config.position != undefined) ? config.position : null;
 
     return this;
 };
