@@ -218,4 +218,6 @@ abstract public class EHRService
     abstract public Collection<String> terminateFlagsIfExists(User u, Container c, String flag, Date enddate, Collection<String> animalIds);
 
     abstract public String getEHRDefaultClinicalProjectName(Container c);
+
+    abstract public void addModuleRequiringLegagyExt3EditUI(Module m);
 }
