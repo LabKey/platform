@@ -242,7 +242,7 @@ public class LdapController extends SpringActionController
                 throw new RuntimeException(e);
             }
 
-            principal = LdapAuthenticationManager.emailToLdapPrincipal(email);
+            principal = LdapAuthenticationManager.substituteEmailTemplate(LdapAuthenticationManager.getPrincipalTemplate(), email);
 
             if ("null".equals(principal))
                 principal = null;

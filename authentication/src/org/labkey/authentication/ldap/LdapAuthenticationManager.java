@@ -56,21 +56,21 @@ public class LdapAuthenticationManager
     {
         if (useEmailAsPrincipal())
         {
-            return connect(url, emailToLdapPrincipal(email), password, saslAuthentication);
+            return connect(url, substituteEmailTemplate(getPrincipalTemplate(), email), password, saslAuthentication);
         }
         else
         {
-            return searchAndConnect(url, email.getEmailAddress(), password, saslAuthentication);
+            return searchAndConnect(url, email, password, saslAuthentication);
         }
     }
 
 
-    public static String emailToLdapPrincipal(ValidEmail email)
+    public static String substituteEmailTemplate(String template, ValidEmail email)
     {
         String emailAddress = email.getEmailAddress();
         int index = emailAddress.indexOf('@');
         String uid = emailAddress.substring(0, index);     // Note: ValidEmail guarantees an @ will be present
-        StringExpression se = StringExpressionFactory.create(getPrincipalTemplate());
+        StringExpression se = StringExpressionFactory.create(template);
         return se.eval(PageFlowUtil.map("email", email, "uid", uid));
     }
 
@@ -146,18 +146,22 @@ public class LdapAuthenticationManager
         public final String username;
         public final String password;
         public final String searchBase;
+        public final String lookupField;
+        public final String searchTemplate;
         
-        public LdapSearchConfig(String username, String password, String searchBase)
+        public LdapSearchConfig(String username, String password, String searchBase, String lookupField, String searchTemplate)
         {
             this.username = username;
             this.password = password;
             this.searchBase = searchBase;
+            this.lookupField = lookupField;
+            this.searchTemplate = searchTemplate;
         }
         
         @Override
         public String toString()
         {
-            return "username: " + username + " searchBase: " + searchBase; // Omit password - don't want it showing up in logs.
+            return "username: " + username + " searchBase: " + searchBase + " lookupField: " + lookupField + " searchTemplate: " + searchTemplate; // Omit password - don't want it showing up in logs.
         }
     }
     
@@ -166,14 +170,14 @@ public class LdapAuthenticationManager
     // Get configuration for searching LDAP, if so configured. If not so configured, silently return null.
     private static LdapSearchConfig lookupLdapSearchConfig()
     {
+        Context jndiCtx;
+        String username, password, searchBase;
         try
         {
-            Context jndiCtx = (Context) new InitialContext().lookup("java:comp/env");
-            String username = (String) jndiCtx.lookup("ldapSearch_username");
-            String password = (String) jndiCtx.lookup("ldapSearch_password");
-            String searchBase = (String) jndiCtx.lookup("ldapSearch_searchBase");
-
-            return new LdapSearchConfig(username, password, searchBase);
+            jndiCtx = (Context) new InitialContext().lookup("java:comp/env");
+            username = (String) jndiCtx.lookup("ldapSearch_username");
+            password = (String) jndiCtx.lookup("ldapSearch_password");
+            searchBase = (String) jndiCtx.lookup("ldapSearch_searchBase");
         }
         catch (NamingException ne)
         {
@@ -182,6 +186,27 @@ public class LdapAuthenticationManager
             return null;
         }
 
+        String lookupField;
+        try
+        {
+            lookupField = (String) jndiCtx.lookup("ldapSearch_lookupField");
+        }
+        catch (NamingException ne)
+        {
+            lookupField = LDAP_ACCOUNT_NAME_ATTR;
+        }
+
+        String searchTemplate;
+        try
+        {
+            searchTemplate = (String) jndiCtx.lookup("ldapSearch_searchTemplate");
+        }
+        catch (NamingException ne)
+        {
+            searchTemplate = "(&(objectClass=user)(mail=${email}))";
+        }
+
+        return new LdapSearchConfig(username, password, searchBase, lookupField, searchTemplate);
         // No explicit close() here because Tomcat 7 changed to throw on every call to close(). For more information,
         // see #18777 and https://issues.apache.org/bugzilla/show_bug.cgi?id=51744
     }
@@ -197,7 +222,7 @@ public class LdapAuthenticationManager
     // we want to use sAMAccountName instead. We connect to LDAP using a specially-configured set of credentials,
     // search for an entry with the given principal as its email address,
     // and if we find one, we try to authenticate using the entry's sAMAccountName as the principal.
-    private static boolean searchAndConnect(String url, @NotNull String email, @NotNull String password, boolean saslAuthentication) throws NamingException
+    private static boolean searchAndConnect(String url, @NotNull ValidEmail email, @NotNull String password, boolean saslAuthentication) throws NamingException
     {
         if (ldapSearchConfig == null)
         {
@@ -220,10 +245,11 @@ public class LdapAuthenticationManager
                 throw e;
             }
             
-            String accountName = findLdapAccountNameFromEmail(ldapCtx, email);
+            String accountName = findLdapAccountNameFromEmail(ldapCtx, email, ldapSearchConfig.lookupField, ldapSearchConfig.searchTemplate);
             if (accountName == null)
             {
                 // Couldn't find LDAP user with that email.
+                _log.warn("LDAP search could not find the user with email: " + email);
                 return false;
             }
             
@@ -243,7 +269,7 @@ public class LdapAuthenticationManager
 
     // Returns SAMAccountName of user in LDAP that has the given email,
     // or null, if there is no such user, or any unexpected exception is thrown.
-    private static String findLdapAccountNameFromEmail(DirContext ldapCtx, String email)
+    private static String findLdapAccountNameFromEmail(DirContext ldapCtx, ValidEmail email, String ldapAccountNameAttr, String searchTemplate)
     {
         // Search subtrees starting at searchBase.
         SearchControls searchCtls = new SearchControls();
@@ -252,7 +278,8 @@ public class LdapAuthenticationManager
         // searchCtls.setReturningAttributes(returnedAtts);
         
         // We're looking for an LDAP user with given email.
-        String searchFilter = "(&(objectClass=user)(mail=" + email + "))";
+        // an optional searchTemplate can be provided in labkey.xml
+        String searchFilter = substituteEmailTemplate(searchTemplate, email);
 
         NamingEnumeration<SearchResult> results;
         try
@@ -279,22 +306,22 @@ public class LdapAuthenticationManager
             _log.debug("No LDAP user found with email: " + email);
             return null;
         }
-        
-        if (attributes.get(LDAP_ACCOUNT_NAME_ATTR) == null)
+
+        if (attributes.get(ldapAccountNameAttr) == null)
         {
-            _log.warn("LDAP user with email: " + email + " does not have " + LDAP_ACCOUNT_NAME_ATTR + " attribute, so can't authenticate.");
+            _log.warn("LDAP user with email: " + email + " does not have " + ldapAccountNameAttr + " attribute, so can't authenticate.");
             return null;
         }
         
         try
         {
-            String accountName = attributes.get(LDAP_ACCOUNT_NAME_ATTR).get().toString();
-            _log.debug("Converted LDAP principal from email \"" + email + "\" to " + LDAP_ACCOUNT_NAME_ATTR + "\"" + accountName + "\"");
+            String accountName = attributes.get(ldapAccountNameAttr).get().toString();
+            _log.debug("Converted LDAP principal from email \"" + email + "\" to " + ldapAccountNameAttr + "\"" + accountName + "\"");
             return accountName;
         }
         catch (NamingException ne)
         {
-            _log.warn("Exception while getting value of " + LDAP_ACCOUNT_NAME_ATTR + " attributat of LDAP user with email: " + email, ne);
+            _log.warn("Exception while getting value of " + ldapAccountNameAttr + " attribute of LDAP user with email: " + email, ne);
             return null;
         }
     }

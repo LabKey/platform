@@ -1742,8 +1742,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
             for (ListDefinition list : ListService.get().getLists(c).values())
             {
-                //issue 21395: dont delete list from a parent container when a workbook is deleted
-                if (c.equals(list.getContainer()))
+                // Temporary fix for Issue 21400: **Deleting workbook deletes lists defined in parent container
+                if (list.getContainer().equals(c))
                 {
                     list.delete(user);
                 }
