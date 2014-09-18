@@ -203,12 +203,19 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
             if (formats.length > 1)
             {
                 Map<String, String> metadataFormats = new LinkedHashMap<>();
+                StringBuilder sbHelp = new StringBuilder();
+                String sep = "<b>";
 
                 for (SampleMetadataInputFormat format : formats)
                 {
                     metadataFormats.put(format.name(), format.getLabel());
+
+                    sbHelp.append(sep).append(format.getLabel()).append(":</b> ").append(format.getDescription());
+                    sep = "<br><br><b>";
                 }
+
                 result.setAvailableMetadataInputFormats(metadataFormats);
+                result.setMetadataInputFormatHelp(sbHelp.toString());
             }
             result.setSelectedMetadataInputFormat(((PlateBasedAssayProvider)provider).getMetadataInputFormat(protocol).name());
         }
