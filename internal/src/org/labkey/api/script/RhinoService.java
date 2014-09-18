@@ -292,7 +292,7 @@ class ScriptReferenceImpl implements ScriptReference
         }
     };
 
-    private static final PathBasedModuleResourceCache<CompiledScript> NEW_CACHE = ModuleResourceCaches.create("Module JavaScript cache", CACHE_HANDLER);
+    private static final PathBasedModuleResourceCache<CompiledScript> SCRIPT_CACHE = ModuleResourceCaches.create("Module JavaScript cache", CACHE_HANDLER);
 
     private final Resource r;
     private final RhinoEngine engine;
@@ -335,42 +335,9 @@ class ScriptReferenceImpl implements ScriptReference
 
     private CompiledScript compile(Context ctx) throws ScriptException
     {
-//
-//        TODO: Delete all this, the previous caching code
-//
-//        String cacheKey = r.toString();
-//        CompiledScript script = null;
-//        int opt = ctx.getOptimizationLevel();
-//        if (ref == null && opt > -1)
-//        {
-//            ref = SCRIPT_CACHE.get(cacheKey);
-//        }
-//
-//        if (ref == null || ref.isStale())
-//        {
-//            RhinoService.LOG.info((ref == null ? "Compiling new" : "Recompiling stale") + " script '" + r.getPath().toString() + "'");
-//
-//            try (InputStreamReader reader = new InputStreamReader(r.getInputStream()))
-//            {
-//                engine.put(ScriptEngine.FILENAME, r.getPath().toString());
-//                script = engine.compile(reader);
-//                ref = new ScriptResourceRef(r, script);
-//                if (opt > -1)
-//                    SCRIPT_CACHE.put(cacheKey, ref);
-//            }
-//            catch (IOException e)
-//            {
-//                throw new UnexpectedException(e);
-//            }
-//        }
-//        else
-//        {
-//            script = ref.getScript();
-//        }
-
-        // TODO: Review this... do we really want to skip caching based on optimization level?
+        // TODO: Review... do we really want to skip caching based on optimization level?
         boolean useCache = ctx.getOptimizationLevel() > -1;
-        return useCache ? NEW_CACHE.getResource(r, engine) : compile(r, engine);
+        return useCache ? SCRIPT_CACHE.getResource(r, engine) : compile(r, engine);
     }
 
     public ScriptContext getContext()
@@ -483,7 +450,6 @@ class ScriptReferenceImpl implements ScriptReference
     {
         return invokeFn(Object.class, name, args);
     }
-
 }
 
 class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
