@@ -21,19 +21,26 @@ package org.labkey.api.study.assay;
  */
 public enum SampleMetadataInputFormat
 {
-    MANUAL("Manual"),                               // form based manual entry
-    FILE_BASED("File Upload (metadata only)"),           // metadata is provided from a file (separate from the run data file)
-    COMBINED("Combined File Upload (metadata & run data)");     // metadata and run data are combined in a single file
+    MANUAL("Manual", "Metadata is provided as form based manual entry"),
+    FILE_BASED("File Upload (metadata only)", "Metadata is provided from a file upload (separate from the run data file)"),
+    COMBINED("Combined File Upload (metadata & run data)", "Metadata and run data are combined into a single file upload");
 
     private String _label;
+    private String _description;
 
-    SampleMetadataInputFormat(String label)
+    SampleMetadataInputFormat(String label, String description)
     {
         _label = label;
+        _description = description;
     }
 
     public String getLabel()
     {
         return _label;
+    }
+
+    public String getDescription()
+    {
+        return _description;
     }
 }

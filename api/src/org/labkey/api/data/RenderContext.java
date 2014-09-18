@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.LabkeyError;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.NullPreventingSet;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
@@ -718,20 +719,29 @@ public class RenderContext implements Map<String, Object>, Serializable
             list = errors.getFieldErrors(paramName);
         if (list == null || list.size() == 0)
             return "";
+
+        Set<String> uniqueErrorStrs = new CaseInsensitiveHashSet();
         StringBuilder sb = new StringBuilder();
         String br = "<font class=\"labkey-error\">";
         for (Object m : list)
         {
-            sb.append(br);
+            String errStr = null;
             if (m instanceof LabkeyError)
             {
-                sb.append(((LabkeyError) m).renderToHTML(getViewContext()));
+                errStr = ((LabkeyError) m).renderToHTML(getViewContext());
             }
             else
             {
-                sb.append(PageFlowUtil.filter(getViewContext().getMessage((MessageSourceResolvable) m), true));
+                errStr = PageFlowUtil.filter(getViewContext().getMessage((MessageSourceResolvable) m), true);
             }
-            br = "<br>";
+
+            if (!uniqueErrorStrs.contains(errStr))
+            {
+                sb.append(br);
+                sb.append(errStr);
+                br = "<br>";
+            }
+            uniqueErrorStrs.add(errStr);
         }
         if (sb.length() > 0)
             sb.append("</font>");

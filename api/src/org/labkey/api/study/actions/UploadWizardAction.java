@@ -18,7 +18,8 @@ package org.labkey.api.study.actions;
 
     import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.ActionButton;
+    import org.labkey.api.collections.CaseInsensitiveHashSet;
+    import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DataRegion;
@@ -761,25 +762,31 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
                 if (list == null || list.size() == 0)
                     return "";
 
+                Set<String> uniqueErrorStrs = new CaseInsensitiveHashSet();
                 StringBuilder sb = new StringBuilder();
                 StringBuilder msgBox = new StringBuilder();
                 String br = "<font class=\"labkey-error\">";
                 int cnt = 0;
                 for (Object m : list)
                 {
-                    if (cnt++ < MAX_ERRORS)
+                    String errStr = getViewContext().getMessage((MessageSourceResolvable)m);
+                    if (!uniqueErrorStrs.contains(errStr))
                     {
-                        sb.append(br);
-                        sb.append(getViewContext().getMessage((MessageSourceResolvable)m));
-                        br = "<br>";
+                        if (cnt++ < MAX_ERRORS)
+                        {
+                            sb.append(br);
+                            sb.append(errStr);
+                            br = "<br>";
+                        }
+                        msgBox.append(errStr);
+                        msgBox.append("<br>");
                     }
-                    msgBox.append(getViewContext().getMessage((MessageSourceResolvable)m));
-                    msgBox.append("<br>");
+                    uniqueErrorStrs.add(errStr);
                 }
                 if (sb.length() > 0)
                     sb.append("</font>");
 
-                if (list.size() > MAX_ERRORS)
+                if (uniqueErrorStrs.size() > MAX_ERRORS)
                 {
                     sb.append("<br><a id='extraErrors' href='#' onclick=\"showPopup('extraErrors', 'All Errors', ");
                     sb.append(PageFlowUtil.jsString(msgBox.toString()));

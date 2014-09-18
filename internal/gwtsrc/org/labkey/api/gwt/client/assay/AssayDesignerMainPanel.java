@@ -493,9 +493,7 @@ public class AssayDesignerMainPanel extends VerticalPanel implements Saveable<GW
             // file based metadata
             FlowPanel metadataInputPanel = new FlowPanel();
             metadataInputPanel.add(new InlineHTML("Metadata Input Format"));
-            metadataInputPanel.add(new HelpPopup("Metadata Input Format", "Assays that support more than one method of adding " +
-                    "sample metadata during the data import process can be configured by selecting one of the values " +
-                    "from the dropdown selection list."));
+            metadataInputPanel.add(new HelpPopup("Metadata Input Format", assay.getMetadataInputFormatHelp()));
 
             table.setWidget(row, 0, metadataInputPanel);
             final ListBox metadataSelection = new ListBox();

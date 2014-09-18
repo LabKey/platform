@@ -45,6 +45,7 @@ public class GWTProtocol implements IsSerializable
 
     private List<String> _availablePlateTemplates;
     private Map<String, String> _availableMetadataInputFormats = new HashMap<String, String>();
+    private String _metadataInputFormatHelp;
 
     private String _selectedPlateTemplate;
     private String _selectedMetadataInputFormat;
@@ -237,6 +238,16 @@ public class GWTProtocol implements IsSerializable
     public void setAvailableMetadataInputFormats(Map<String, String> availableMetadataInputFormats)
     {
         _availableMetadataInputFormats = availableMetadataInputFormats;
+    }
+
+    public String getMetadataInputFormatHelp()
+    {
+        return _metadataInputFormatHelp;
+    }
+
+    public void setMetadataInputFormatHelp(String metadataInputFormatHelp)
+    {
+        _metadataInputFormatHelp = metadataInputFormatHelp;
     }
 
     public String getSelectedMetadataInputFormat()

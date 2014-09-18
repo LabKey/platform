@@ -15,6 +15,7 @@
  */
 package org.labkey.api.assay.dilution;
 
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
@@ -352,7 +353,13 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
             throw new ExperimentException("Initial Dilution, Dilution Factor and Method must all be specified.");
         }
 
+        // Issue 21452: catch values for Method not in Enum
+        if (!EnumUtils.isValidEnum(SampleInfo.Method.class, methodString))
+        {
+            throw new ExperimentException("Method value \"" + methodString + "\" is not an accepted value.");
+        }
         SampleInfo.Method method = SampleInfo.Method.valueOf(methodString);
+
         // Single plate NAb run specimens get more dilute as you move up or left on the plate, while
         // high-throughput layouts get more dilute as you move down through the plates:
         boolean diluteDown = isDilutionDownOrRight();
