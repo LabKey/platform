@@ -64,7 +64,6 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
@@ -72,9 +71,9 @@ import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
 import org.labkey.data.xml.externalSchema.TemplateSchemaDocument;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
-import org.labkey.query.audit.SelectQueryAuditEvent;
 import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
+import org.labkey.query.audit.SelectQueryAuditEvent;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.olap.ServerManager;
 import org.labkey.query.persist.CstmView;
@@ -117,7 +116,7 @@ public class QueryServiceImpl extends QueryService
 {
     private static final Cache<String, Collection<? extends Resource>> MODULE_RESOURCES_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module resources cache");
     private static final Cache<String, ModuleQueryDef> MODULE_QUERY_DEFS_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query defs cache");
-    private static final PathBasedModuleResourceCache<Collection<ModuleCustomViewDef>> MODULE_CUSTOM_VIEWS_CACHE_NEW = ModuleResourceCaches.create("Module custom view defs cache", new CustomViewResourceCacheHandler());
+    private static final PathBasedModuleResourceCache<Collection<ModuleCustomViewDef>> MODULE_CUSTOM_VIEW_CACHE = ModuleResourceCaches.create("Module custom view defs cache", new CustomViewResourceCacheHandler());
     private static final Cache<String, ModuleQueryMetadataDef> MODULE_QUERY_METADATA_DEF_CACHE = CacheManager.getCache(5000, CacheManager.DAY, "Module query metadata defs cache");
     private static final Cache<String, List<String>> NAMED_SET_CACHE = CacheManager.getCache(100, CacheManager.DAY, "Named sets for IN clause cache");
     private static final String QUERYDEF_SET_CACHE_ENTRY = "QUERYDEFS:";
@@ -509,7 +508,7 @@ public class QueryServiceImpl extends QueryService
 
         for (Module module : allModules)
         {
-            Collection<ModuleCustomViewDef> views = MODULE_CUSTOM_VIEWS_CACHE_NEW.getResource(module, path, schemaQuery);
+            Collection<ModuleCustomViewDef> views = MODULE_CUSTOM_VIEW_CACHE.getResource(module, path, schemaQuery);
 
             // CacheLoader returns empty collection (not null) for non-existent directories
             //noinspection ConstantConditions
