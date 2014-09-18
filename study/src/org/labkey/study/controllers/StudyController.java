@@ -26,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -1640,7 +1641,11 @@ public class StudyController extends BaseStudyController
 
         public ModelAndView getView(LocationEditForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "manageLocations.jsp", getStudyRedirectIfNull(), errors);
+
+            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), StudyQuerySchema.SCHEMA_NAME);
+            QuerySettings settings = schema.getSettings(getViewContext(), QueryView.DATAREGIONNAME_DEFAULT, "Location");
+            QueryView queryView = schema.createView(getViewContext(), settings, errors);
+            return queryView;
         }
 
         public boolean handlePost(LocationEditForm form, BindException errors) throws Exception
@@ -1721,6 +1726,79 @@ public class StudyController extends BaseStudyController
         }
     }
 
+    @RequiresPermissionClass(DeletePermission.class)
+    public class DeleteAllUnusedLocationsAction extends ConfirmAction<LocationForm>
+    {
+
+        @Override
+        public ModelAndView getConfirmView(LocationForm form, BindException errors) throws Exception
+        {
+            List<String> temp = new ArrayList<>();
+            for (Container c : getContainers(form))
+            {
+                if(c.hasPermission(getUser(), DeletePermission.class))
+                {
+                    for (LocationImpl loc : StudyManager.getInstance().getSites(c))
+                    {
+                        if (!(StudyManager.getInstance().isLocationInUse(loc)))
+                        {
+                            temp.add(c.getName() + "/" + loc.getLabel());
+                        }
+                    }
+                }
+            }
+            String[] labels = new String[temp.size()];
+            for(int i = 0; i<temp.size(); i++)
+            {
+                labels[i] = temp.get(i);
+            }
+            form.setLabels(labels);
+            return new JspView<>("/org/labkey/study/view/confirmDeleteLocation.jsp", form, errors);
+        }
+
+        @Override
+        public boolean handlePost(LocationForm form, BindException errors) throws Exception
+        {
+            for(Container c : getContainers(form))
+            {
+                if(c.hasPermission(getUser(), DeletePermission.class))
+                {
+                    for (LocationImpl loc : StudyManager.getInstance().getSites(c))
+                    {
+                        if (!(StudyManager.getInstance().isLocationInUse(loc)))
+                        {
+                            StudyManager.getInstance().deleteLocation(loc);
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public void validateCommand(LocationForm locationEditForm, Errors errors)
+        {
+        }
+
+        @NotNull
+        @Override
+        public URLHelper getSuccessURL(LocationForm form)
+        {
+            return form.getReturnURLHelper();
+        }
+        private List<Container> getContainers(LocationForm form)
+        {
+            List<Container> containers = new ArrayList<>();
+            if(form.getReturnURLHelper().getParameters() != null
+                    && form.getReturnURLHelper().getParameters().contains(new Pair("query.containerFilterName", "CurrentAndSubfolders")))
+            {
+                containers.addAll(getContainer().getChildren());
+            }
+            containers.add(getContainer());
+            return containers;
+        }
+    }
+
     public static class LocationEditForm extends BulkEditForm
     {
         private String _newDescription;
@@ -1746,6 +1824,32 @@ public class StudyController extends BaseStudyController
             _descriptions = descriptions;
         }
     }
+    public static class LocationForm extends ViewForm
+    {
+        private int[] _ids;
+        private String[] _labels;
+
+        public String[] getLabels()
+        {
+            return _labels;
+        }
+
+        public void setLabels(String[] labels)
+        {
+            _labels = labels;
+        }
+
+        public int[] getIds()
+        {
+            return _ids;
+        }
+
+        public void setIds(int[] ids)
+        {
+            _ids = ids;
+        }
+    }
+
 
     @RequiresPermissionClass(AdminPermission.class)
     public class VisitSummaryAction extends FormViewAction<VisitForm>

@@ -1534,6 +1534,76 @@ public class StudyManager
         _locationHelper.update(user, location);
     }
 
+    private boolean isLocationInUse(LocationImpl loc, TableInfo table, String... columnNames)
+    {
+        List<Object> params = new ArrayList<>();
+        params.add(loc.getContainer().getId());
+
+        StringBuilder cols = new StringBuilder("(");
+        String or = "";
+        for (String columnName : columnNames)
+        {
+            cols.append(or).append(columnName).append(" = ?");
+            params.add(loc.getRowId());
+            or = " OR ";
+        }
+        cols.append(")");
+
+        String containerColumn = " = ? AND ";
+        if(table.getName().contains("_vial") || table.getName().equals("_specimenevent"))
+        {
+            //vials and events use a column called fr_container instead of normal container.
+            containerColumn = "FR_Container" + containerColumn;
+        }
+        else if(table.getName().contains("_specimen"))
+        {
+            params.remove(0);
+            containerColumn = "";
+        }
+        else
+        {
+            containerColumn = "Container" + containerColumn;
+        }
+        return new SqlSelector(StudySchema.getInstance().getSchema(), new SQLFragment("SELECT * FROM " +
+                table + " WHERE " + containerColumn + cols.toString(), params)).exists();
+    }
+
+    public boolean isLocationInUse(LocationImpl loc)
+    {
+        return  isLocationInUse(loc, StudySchema.getInstance().getTableInfoSampleRequest(), "DestinationSiteId") ||
+                isLocationInUse(loc, StudySchema.getInstance().getTableInfoSampleRequestRequirement(), "SiteId") ||
+                isLocationInUse(loc, StudySchema.getInstance().getTableInfoParticipant(), "EnrollmentSiteId", "CurrentSiteId") ||
+                isLocationInUse(loc, StudySchema.getInstance().getTableInfoAssaySpecimen(), "LocationId") ||
+                isLocationInUse(loc, StudySchema.getInstance().getTableInfoVial(loc.getContainer()), "CurrentLocation", "ProcessingLocation") ||
+                  //vials and events use a column called fr_container instead of normal container.
+                isLocationInUse(loc, StudySchema.getInstance().getTableInfoSpecimen(loc.getContainer()), "originatinglocationid", "ProcessingLocation") ||
+                  //Doesn't have a container or fr_container column
+                isLocationInUse(loc, StudySchema.getInstance().getTableInfoSpecimenEvent(loc.getContainer()), "LabId", "OriginatingLocationId");
+                  //vials and events use a column called fr_container instead of normal container.
+    }
+
+    public void deleteLocation(LocationImpl location) throws SQLException
+    {
+        StudySchema schema = StudySchema.getInstance();
+        if(!isLocationInUse(location))
+        {
+            try (Transaction transaction = schema.getSchema().getScope().ensureTransaction())
+            {
+                Container container = location.getContainer();
+
+                TreatmentManager.getInstance().deleteTreatmentVisitMapForCohort(container, location.getRowId());
+
+                _locationHelper.delete(location);
+
+                transaction.commit();
+            }
+        }
+        else
+        {
+            throw new SQLException("Locations currently in use cannot be deleted");
+        }
+    }
+
     public List<AssaySpecimenConfigImpl> getAssaySpecimenConfigs(Container container, String sortCol)
     {
         return _assaySpecimenHelper.get(container, sortCol);

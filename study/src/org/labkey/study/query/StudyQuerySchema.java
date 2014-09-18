@@ -823,6 +823,11 @@ public class StudyQuerySchema extends UserSchema
                 return new CohortQueryView(context.getUser(), getStudy(), context);
             }
 
+            if ("Location".equalsIgnoreCase(settings.getQueryName()))
+            {
+                return new LocationQueryView(this, settings, errors);
+            }
+
             DataSetDefinition dsd = getDatasetDefinitionByQueryName(settings.getQueryName());
             // Check for permission before deciding to treat the request as a dataset
             if (dsd != null && dsd.canRead(getUser()))

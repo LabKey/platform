@@ -16,11 +16,34 @@
 
 package org.labkey.study.query;
 
-import org.labkey.api.data.ContainerForeignKey;
-import org.labkey.api.query.QueryForeignKey;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
 import org.labkey.api.data.ForeignKey;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.DuplicateKeyException;
+import org.labkey.api.query.ExprColumn;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.InvalidKeyException;
+import org.labkey.api.query.QueryForeignKey;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.security.User;
+import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.study.Location;
 import org.labkey.study.StudySchema;
+import org.labkey.study.controllers.BaseStudyController;
+import org.labkey.study.model.LocationImpl;
+import org.labkey.study.model.StudyManager;
+
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 public class LocationTable extends BaseStudyTable
 {
@@ -33,23 +56,38 @@ public class LocationTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSite());
         setName("Location");
-        for (ColumnInfo baseColumn : _rootTable.getColumns())
-        {
-            String name = baseColumn.getName();
-            if ("EntityId".equalsIgnoreCase(name))
-                continue;
-            ColumnInfo column = addWrapColumn(baseColumn);
-            if ("Container".equalsIgnoreCase(name))
-            {
-                column = ContainerForeignKey.initColumn(column, schema);
-                column.setHidden(true);
-            }
-            if ("RowId".equalsIgnoreCase(name))
-            {
-                // If there were a pageflow action which showed details on a particular site, we would set the fk of rowid here.
-                // column.setFk(new TitleForeignKey(getBaseDetailsURL(), _rootTable.getColumn("RowId"), _rootTable.getColumn("Label"), "siteId"));
-            }
-        }
+        ColumnInfo c = new LocationInUseExpressionColumn(this);
+        addColumn(c);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("LdmsLabCode")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ExternalId")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("LabwareLabCode"))).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("LabUploadCode"))).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Label")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Description")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Sal")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Repository")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Endpoint")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Clinic")));
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("StreetAddress"))).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("City"))).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("GoverningDistrict"))).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("PostalArea"))).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))).setHidden(true);
+        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("EntityId"))).setHidden(true);
+    }
+
+    @Override
+    public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
+    {
+        return _userSchema.getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, perm);
+    }
+
+    @Override
+    public QueryUpdateService getUpdateService()
+    {
+        TableInfo dbTable = StudySchema.getInstance().getTableInfoSite();
+        return new LocationQueryUpdateService(this, dbTable);
     }
 
     @Override
@@ -57,4 +95,103 @@ public class LocationTable extends BaseStudyTable
     {
         return "Label";
     }
+    private class LocationQueryUpdateService extends DefaultQueryUpdateService
+    {
+
+        public LocationQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
+        {
+            super(queryTable, dbTable);
+        }
+
+        @Override
+        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+        {
+            if (rows.get(0).get("Label") == null)
+                throw new QueryUpdateServiceException("A Label must be entered");
+
+            if (rows.get(0).get("LdmsLabCode") == null)
+            {
+                throw new QueryUpdateServiceException("You must enter a number for the Ldms Lab Code");
+            }
+            return super.insertRows(user, container, rows, errors, extraScriptContext);
+        }
+
+        @Override
+        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+            if (rows.get(0).get("Label") == null)
+                throw new QueryUpdateServiceException("A Label must be entered");
+
+            if (rows.get(0).get("LdmsLabCode") == null)
+            {
+                throw new QueryUpdateServiceException("You must enter a number for the Ldms Lab Code");
+            }
+            Integer i = (Integer)rows.get(0).get("RowId");
+            Location location = null;
+            for(Location loc : BaseStudyController.getStudy(getContainer()).getLocations())
+            {
+                if(loc.getRowId() == (i))
+                {
+                    location = loc;
+                }
+            }
+            LocationImpl test = (LocationImpl)location;
+            test.createMutable();
+            return super.updateRows(user, container, rows, oldKeys, extraScriptContext);
+        }
+
+        @Override
+        public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        {
+            Integer i = (Integer)keys.get(0).get("RowId");
+            LocationImpl location = null;
+            for(LocationImpl loc : BaseStudyController.getStudy(getContainer()).getLocations())
+            {
+                if(loc.getRowId() == (i))
+                {
+                    location = loc;
+                }
+            }
+            if(StudyManager.getInstance().isLocationInUse(location))
+            {
+                throw new InvalidKeyException("Locations currently in use cannot be deleted");
+            }
+            return super.deleteRows(user, container, keys, extraScriptContext);
+        }
+    }
+
+    private class LocationInUseExpressionColumn extends ExprColumn
+    {
+        public LocationInUseExpressionColumn(TableInfo parent, ColumnInfo... dependentColumns)
+        {
+            super(parent, "In Use", sqlBuilder(), JdbcType.BOOLEAN);
+        }
+    }
+
+    public SQLFragment sqlBuilder()
+    {
+        final String EXISTS = "(EXISTS(SELECT 1 FROM ";
+        final StudySchema schema = StudySchema.getInstance();
+        //TODO: Switch over to appends
+        SQLFragment ret = new SQLFragment(EXISTS + schema.getTableInfoSampleRequest() + " WHERE Location.rowid = DestinationSiteID))"
+                + "\n OR"
+                + "\n" + EXISTS + schema.getTableInfoSampleRequestRequirement() + " s WHERE Location.rowid = SiteId))"
+                + "\n OR"
+                + "\n" + EXISTS + schema.getTableInfoParticipant() + " s WHERE Location.rowid = s.EnrollmentSiteId OR location.rowid = CurrentSiteId))"
+                + "\n OR"
+                + "\n" + EXISTS + schema.getTableInfoAssaySpecimen() + " s WHERE Location.rowid = LocationId))");
+        List<Container> cons = getContainer().getChildren();
+        cons.add(getContainer());
+        //checks usages in all containers, regardless of what view is actually being used.
+        for (Container c : cons)
+        {
+            ret.append(" OR" + EXISTS + schema.getTableInfoSpecimenEventIfExists(c) + " s WHERE Location.rowid = s.labid OR location.rowid = OriginatingLocationId))"
+                    + "\n OR"
+                    + "\n" + EXISTS + schema.getTableInfoVialIfExists(c) + " s WHERE Location.rowid = s.CurrentLocation OR location.rowid = ProcessingLocation))"
+                    + "\n OR"
+                    + "\n" + EXISTS + schema.getTableInfoSpecimenIfExists(c) + " s WHERE Location.rowid = s.originatinglocationid OR Location.rowid = s.ProcessingLocation))");
+        }
+        return ret;
+    }
+
 }

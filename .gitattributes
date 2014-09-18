@@ -3688,6 +3688,7 @@ study/src/org/labkey/study/query/DataspaceContainerFilter.java -text
 study/src/org/labkey/study/query/DataspaceQuerySchema.java -text
 study/src/org/labkey/study/query/DerivativeTypeTable.java -text
 study/src/org/labkey/study/query/ExtensibleObjectQueryView.java -text
+study/src/org/labkey/study/query/LocationQueryView.java -text
 study/src/org/labkey/study/query/LocationSpecimenListTable.java -text
 study/src/org/labkey/study/query/LocationTable.java -text
 study/src/org/labkey/study/query/OuterAliasedColumn.java -text
@@ -3876,6 +3877,7 @@ study/src/org/labkey/study/view/assayList2.jsp -text
 study/src/org/labkey/study/view/bulkDatasetDelete.jsp -text
 study/src/org/labkey/study/view/bulkImportDataTypes.jsp -text
 study/src/org/labkey/study/view/columnPicker.jsp -text
+study/src/org/labkey/study/view/confirmDeleteLocation.jsp -text
 study/src/org/labkey/study/view/confirmDeleteStudy.jsp -text
 study/src/org/labkey/study/view/confirmDeleteVisit.jsp -text
 study/src/org/labkey/study/view/createCrosstabReport.jsp -text
