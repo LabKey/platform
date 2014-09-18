@@ -198,6 +198,18 @@ public class RolapCachedCubeFactory
             throw x;
         }
 
+        // add #NOTNULL members
+        CachedCube._Member parent = (CachedCube._Member)levelList.get(0).getMembers().get(0);
+        for (int l = 1; l < levelCount; l++)
+        {
+            CachedCube._Level level = levelList.get(l);
+            LevelDef ldef = levelDefList.get(l);
+            CachedCube._Member notNullMember = new CachedCube._NotNullMember(level, parent, ldef.isLeaf());
+            notNullMember.ordinal = Integer.MAX_VALUE;
+            level.members.add(notNullMember);
+            parent = notNullMember;
+        }
+
         orderMembers(h);
 
         for (Level l : h.getLevels())

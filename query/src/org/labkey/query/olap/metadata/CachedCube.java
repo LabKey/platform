@@ -576,7 +576,7 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         @Override
         public boolean isCalculated()
         {
-            throw new UnsupportedOperationException();
+            return false;
         }
 
         @Override
@@ -646,7 +646,7 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         @Override
         public boolean isHidden()
         {
-            throw new UnsupportedOperationException();
+            return false;
         }
 
         @Override
@@ -659,6 +659,27 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         public Member getDataMember()
         {
             throw new UnsupportedOperationException();
+        }
+    }
+
+
+    public static class _NotNullMember extends _Member
+    {
+        _NotNullMember(_Level level, _Member parent, boolean isLeaf) throws OlapException
+        {
+            super(level, parent, "#notnull", isLeaf);
+        }
+
+        @Override
+        public boolean isCalculated()
+        {
+            return true;
+        }
+
+        @Override
+        public boolean isHidden()
+        {
+            return true;
         }
     }
 

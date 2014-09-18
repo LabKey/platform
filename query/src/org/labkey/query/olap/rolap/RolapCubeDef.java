@@ -69,9 +69,19 @@ import java.util.TreeMap;
 
 public class RolapCubeDef
 {
-    final boolean emptyEqualsNull = false;            // treat '' and NULL as the same value
-    final boolean useOuterJoin = true;                // use LOJ for dimensions joins
-    final boolean memberFilterUsesJoinKey = true;     // effectively create INNER JOIN if there is a member filter
+    // Treat '' and NULL as the same value, mondrian behavior is FALSE
+    final boolean emptyEqualsNull = false;
+
+    // use LOJ for dimensions joins
+    // using inner joins can cause problems when <join> specifications may filter where we do not want them to
+    // however, depending on NULL semantics we may sometimes want JOIN semantics (see memberFilterUsersJoinKey)
+    final boolean useOuterJoin = true;
+
+
+    // filter on PK IS NOT NULL if there is a member filter
+    // if this is TRUE, then we'll eliminate values that are null only because the JOIN failed
+    final boolean memberFilterUsesJoinKey = true;
+
 
     protected String name;
     protected JoinOrTable factTable;
@@ -762,20 +772,29 @@ public class RolapCubeDef
                     //Property keyProperty = m.getLevel().getProperties().get("KEY");
                     Object value = ((CachedCube._Member)m).getKeyValue(); // m.getPropertyValue(keyProperty);
 
-                    if (null == value || !(value instanceof String) && "#null".equals(value.toString()))
+                    if (m.isCalculated())
                     {
-                        if (cube.emptyEqualsNull)
-                            sb.append("(" + keyExpression + " IS NULL) OR " + keyExpression + "='')");
+                        if (!(m instanceof CachedCube._NotNullMember))
+                            throw new IllegalStateException("only not null suppported");
+                        if (cube.emptyEqualsNull && jdbcType.isText())
+                            sb.append("((" + keyExpression + ") IS NOT NULL AND (" + keyExpression + ")<>''))");
                         else
-                            sb.append("(" + keyExpression + " IS NULL)");
+                            sb.append("((" + keyExpression + ") IS NOT NULL)");
+                    }
+                    else if (null == value || (value instanceof String) && "#null".equals(value.toString()))
+                    {
+                        if (cube.emptyEqualsNull && jdbcType.isText())
+                            sb.append("((" + keyExpression + ") IS NULL OR (" + keyExpression + ")='')");
+                        else
+                            sb.append("((" + keyExpression + ") IS NULL)");
                     }
                     else
                     {
                         String literal = toSqlLiteral(jdbcType, value);
                         if (jdbcType.isText() && toUpper)
-                            sb.append("UPPER(" + keyExpression + ")=UPPER(" + literal + ")");
+                            sb.append("(UPPER(" + keyExpression + ")=UPPER(" + literal + "))");
                         else
-                            sb.append(keyExpression + "=" + literal);
+                            sb.append("((" + keyExpression + ")=" + literal + ")");
                     }
                 }
                 else
@@ -786,14 +805,14 @@ public class RolapCubeDef
                     if ("#null".equals(name))
                     {
                         if (cube.emptyEqualsNull)
-                            sb.append("(" + nameExpression + " IS NULL OR " + name + "='')");
+                            sb.append("((" + nameExpression + ") IS NULL OR (" + nameExpression + ")='')");
                         else
-                            sb.append("(" + nameExpression + " IS NULL)");
+                            sb.append("((" + nameExpression + ") IS NULL)");
                     }
                     else if (name instanceof String)
-                        sb.append(nameExpression + "=" + string_quote((String) name));
+                        sb.append("((" + nameExpression + ")=" + string_quote((String) name) + ")");
                     else
-                        sb.append(nameExpression + "=" + String.valueOf(name));
+                        sb.append("((" + nameExpression + ")=" + String.valueOf(name) + ")");
                 }
             }
             catch (OlapException x)

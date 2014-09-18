@@ -259,6 +259,11 @@ public class BitSetQueryImpl
         abstract void toMdxSet(StringBuilder sb);
         @NotNull abstract Collection<Member> getCollection() throws OlapException;
 
+        boolean skipCalculated()
+        {
+            return true;
+        }
+
         public String toString()
         {
             StringBuilder sb = new StringBuilder();
@@ -305,6 +310,12 @@ public class BitSetQueryImpl
             this.level = null;
             this.hierarchy = h;
             this.member = null;
+        }
+
+        @Override
+        boolean skipCalculated()
+        {
+            return null==level && null==hierarchy;
         }
 
         void toMdxSet(StringBuilder sb)
@@ -810,16 +821,22 @@ public class BitSetQueryImpl
         if (null != rowsExpr)
             _dataSourceHelper.populateCache(measureLevel, rowsExpr);
 
-        Collection<Member> rowMembers = null==rowsExpr ? null : rowsExpr.getCollection();
-        Collection<Member> colMembers = null==colsExpr ? null : colsExpr.getCollection();
+        Collection<Member> rowMembers = null;
+        Collection<Member> colMembers = null;
 
         // ONE-AXIS
         if (null == colsExpr || null == rowsExpr)
         {
-            Collection<Member> members = null==rowMembers ? colMembers : rowMembers;
+            Result expr = null==rowsExpr ? colsExpr : rowsExpr;
+            Collection<Member> members = expr.getCollection();
+
             Collection<Member> notEmptyMembers = !qq.showEmpty ? new ArrayList<Member>() : null;
+            boolean skipCalculated = expr.skipCalculated();
+
             for (Member m : members)
             {
+                if (skipCalculated && m.isCalculated())
+                    continue;
                 int count;
                 if (0 == countFilterSet)
                 {
@@ -845,7 +862,7 @@ public class BitSetQueryImpl
             }
             if (!qq.showEmpty)
             {
-                if (null != rowMembers)
+                if (null != rowsExpr)
                     rowMembers = notEmptyMembers;
                 else
                     colMembers = notEmptyMembers;
@@ -855,6 +872,9 @@ public class BitSetQueryImpl
         else
         {
             // TODO handle showEmpty==false for two axis query
+            rowMembers = rowsExpr.getCollection();
+            colMembers = colsExpr.getCollection();
+
             HashMap<String,MemberSet> quickCache = new HashMap<>();
             for (Member rowMember : rowsExpr.getCollection())
             {
@@ -1905,6 +1925,8 @@ resultLoop:     while (rs.next())
             // we could find just the members that are not yet cached, but I'm just going to check if ANY are missing
             for (Member sub : inner.getCollection())
             {
+                if (sub.isCalculated())
+                    continue;
                 if (same(sub.getHierarchy(), outerLevel.getHierarchy()))
                     continue;
                 String query = queryIsNotEmpty(outerLevel, sub);
@@ -1986,6 +2008,8 @@ resultLoop:     while (rs.next())
 
             for (Member sub : inner.getCollection())
             {
+                if (sub.isCalculated())
+                    continue;
                 String query = queryIsNotEmpty(outerLevel, sub);
                 MemberSet s = sets.get(sub.getUniqueName());
                 if (null == s)
