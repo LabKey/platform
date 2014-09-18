@@ -78,6 +78,7 @@ import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
@@ -887,6 +888,24 @@ public class VisualizationController extends SpringActionController
                     false, schemaName, def.getName(), 0, null, metaDataOnly, false, false);
         }
     }
+
+
+    @RequiresSiteAdmin
+    public class TestGetDataAction extends SimpleViewAction<Void>
+    {
+        @Override
+        public ModelAndView getView(Void noform, BindException errors) throws Exception
+        {
+            return new JspView("/org/labkey/visualization/test.jsp");
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            return root;
+        }
+    }
+
 
     @RequiresPermissionClass(ReadPermission.class)
     public class GetZeroDateAction extends GetMeasuresAction<MeasuresForm>

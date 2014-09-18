@@ -4376,6 +4376,7 @@ visualization/src/org/labkey/visualization/report/VisualizationUIProvider.java -
 visualization/src/org/labkey/visualization/sql/OuterJoinSourceQuery.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSQLGenerator.java -text
 visualization/src/org/labkey/visualization/sql/VisualizationSourceQuery.java -text
+visualization/src/org/labkey/visualization/test.jsp -text
 visualization/src/org/labkey/visualization/views/genericChartWizard.jsp -text
 visualization/src/org/labkey/visualization/views/timeChartWizard.jsp -text
 visualization/webapp/visualization/report/box_plot.gif -text
