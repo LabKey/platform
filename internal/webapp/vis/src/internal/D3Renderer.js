@@ -1569,16 +1569,37 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 .range(["white", geom.color])
                 .interpolate(d3.interpolateLab);
 
+        var hoverTextAcc = function(d){
+            return d.length + (d.length == 1 ? " point" : " points");
+        };
+
         var layer = getLayer.call(this, geom);
-        var hexSel = layer.selectAll('.hexagon').data(hexbin(points));
-        hexSel.exit().remove();
-        hexSel.enter().append("path")
-                .attr("class", "hexagon")
-                .attr("d", hexbin.hexagon())
+        var anchorSel = layer.selectAll('.hexagon').data(hexbin(points));
+        anchorSel.exit().remove();
+        anchorSel.enter().append('a').attr('class', 'hexagon').append('path');
+        anchorSel.attr('xlink:title', hoverTextAcc);
+        var hexSel = anchorSel.select('path');
+        hexSel.attr("d", hexbin.hexagon())
                 .attr("transform", function(d) {
                     return "translate(" + d.x + "," + d.y + ")";
                 })
                 .style("fill", function(d) { return color(d.length); });
+
+        if (geom.mouseOverFnAes) {
+            hexSel.on('mouseover', function(data) {
+                geom.mouseOverFnAes.value(d3.event, data, layer);
+            });
+        } else {
+            hexSel.on('mouseover', null);
+        }
+
+        if (geom.mouseOutFnAes) {
+            hexSel.on('mouseout', function(data) {
+                geom.mouseOutFnAes.value(d3.event, data, layer);
+            });
+        } else {
+            hexSel.on('mouseout', null);
+        }
     };
 
     var renderDataspaceBoxes = function(selection, plot, geom) {

@@ -162,6 +162,9 @@ LABKEY.vis.Geom.HexBin.prototype.render = function(renderer, grid, scales, data,
         return false;
     }
 
+    this.mouseOverFnAes = layerAes.mouseOverFn ? layerAes.mouseOverFn : parentAes.mouseOverFn;
+    this.mouseOutFnAes = layerAes.mouseOutFn ? layerAes.mouseOutFn : parentAes.mouseOutFn;
+
     renderer.renderHexBinGeom(data, this);
     return true;
 };
