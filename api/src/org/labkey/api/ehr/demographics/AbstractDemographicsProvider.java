@@ -99,7 +99,7 @@ abstract public class AbstractDemographicsProvider implements DemographicsProvid
             {
                 Results rs = new ResultsImpl(object, cols);
 
-                String id = rs.getString(FieldKey.fromString(ti.getColumn("Id").getSelectName()));
+                String id = rs.getString(FieldKey.fromString(ti.getColumn("Id").getAlias()));
 
                 Map<String, Object> map = ret.get(id);
                 if (map == null)
