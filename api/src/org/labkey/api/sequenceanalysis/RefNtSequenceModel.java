@@ -28,9 +28,11 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
+import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.security.User;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.MemTracker;
 
 import java.io.File;
@@ -407,13 +409,14 @@ public class RefNtSequenceModel
     private File getSequenceDir(boolean create) throws IllegalArgumentException
     {
         Container c = getLabKeyContainer();
-        PipeRoot root = PipelineService.get().getPipelineRootSetting(c);
+        FileContentService fileService = ServiceRegistry.get().getService(FileContentService.class);
+        File root = fileService == null ? null : fileService.getFileRoot(c, FileContentService.ContentType.files);
         if (root == null)
         {
-            throw new IllegalArgumentException("Pipeline root not defined for container: " + c.getPath());
+            throw new IllegalArgumentException("File root not defined for container: " + c.getPath());
         }
 
-        File ret = new File(root.getRootPath(), ".sequences");
+        File ret = new File(root, ".sequences");
         if (create && !ret.exists())
         {
             ret.mkdirs();
