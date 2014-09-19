@@ -98,7 +98,8 @@ public class ReportImporter implements FolderImporter
         // fire the query change listeners for older archives to fix-up these dataset label references
         if (ctx.getArchiveVersion() != null && ctx.getArchiveVersion() < 13.11)
         {
-            Study study = StudyService.get().getStudy(ctx.getContainer());
+            StudyService.Service svc = StudyService.get();
+            Study study = svc != null ? svc.getStudy(ctx.getContainer()) : null;
             if (study != null)
             {
                 List<QueryChangeListener.QueryPropertyChange> queryPropertyChanges = new ArrayList<>();

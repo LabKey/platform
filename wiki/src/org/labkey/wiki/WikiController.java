@@ -1145,7 +1145,9 @@ public class WikiController extends SpringActionController
                 //set new page title to be name.
                 _wikiversion.setTitle(name);
                 // check if this is a search result hit
-                ServiceRegistry.get(SearchService.class).notFound(getViewContext().getActionURL());
+                SearchService ss = ServiceRegistry.get(SearchService.class);
+                if (ss != null)
+                    ss.notFound(getViewContext().getActionURL());
             }
             else
             {

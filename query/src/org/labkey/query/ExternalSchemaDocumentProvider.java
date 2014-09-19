@@ -63,7 +63,11 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
 
     public void enumerateDocuments(SearchService.IndexTask t, final @NotNull Container c, Date since)
     {
-        final SearchService.IndexTask task = null==t ? ServiceRegistry.get(SearchService.class).defaultTask() : t;
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        if (ss == null)
+            return;
+
+        final SearchService.IndexTask task = null==t ? ss.defaultTask() : t;
 
         Runnable r = new Runnable()
         {

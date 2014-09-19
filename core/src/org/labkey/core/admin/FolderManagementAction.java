@@ -585,11 +585,13 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
 
                     if (isStudy)
                     {
-                       StudyService.get().runStudyImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
+                        StudyService.Service svc = StudyService.get();
+                        if (svc != null)
+                            svc.runStudyImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
                     }
                     else
                     {
-                       PipelineService.get().runFolderImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
+                        PipelineService.get().runFolderImportJob(c, user, url, folderXml, file.getOriginalFilename(), errors, pipelineRoot, options);
                     }
                 }
             }

@@ -881,8 +881,12 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
     @Override
     public void enumerateDocuments(SearchService.IndexTask task, @NotNull Container c, Date since)
     {
+        SearchService ss = ServiceRegistry.get(SearchService.class);
+        if (ss == null)
+            return;
+
         if (null == task)
-            task = ServiceRegistry.get(SearchService.class).defaultTask();
+            task = ss.defaultTask();
 
         if (c.isRoot())
             return;
@@ -894,7 +898,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         String body;
 
         // UNDONE: generalize to other folder types
-        Study study = StudyService.get().getStudy(c);
+        StudyService.Service svc = StudyService.get();
+        Study study = svc != null ? svc.getStudy(c) : null;
 
         if (null != study)
         {

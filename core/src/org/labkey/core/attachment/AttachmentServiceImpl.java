@@ -432,8 +432,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             List<Attachment> atts = getAttachments(parent);
             SearchService ss = ServiceRegistry.get(SearchService.class);
 
-            for (Attachment att : atts)
-                ss.deleteResource(makeDocId(parent, att.getName()));
+            if (ss != null)
+                for (Attachment att : atts)
+                    ss.deleteResource(makeDocId(parent, att.getName()));
 
             new SqlExecutor(coreTables().getSchema()).execute(sqlCascadeDelete(), parent.getEntityId());
             if (parent instanceof AttachmentDirectory)
@@ -450,8 +451,9 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
             List<Attachment> atts = getAttachments(parent);
             SearchService ss = ServiceRegistry.get(SearchService.class);
 
-            for (Attachment att : atts)
-                ss.deleteResource(makeDocId(parent, att.getName()));
+            if (ss != null)
+                for (Attachment att : atts)
+                    ss.deleteResource(makeDocId(parent, att.getName()));
 
             new SqlExecutor(coreTables().getSchema()).execute(sqlCascadeDelete(), parent.getEntityId());
             if (parent instanceof AttachmentDirectory)
@@ -468,7 +470,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
         if (null != att)
         {
             SearchService ss = ServiceRegistry.get(SearchService.class);
-            ss.deleteResource(makeDocId(parent, att.getName()));
+            if (ss != null)
+                ss.deleteResource(makeDocId(parent, att.getName()));
         }
 
         new SqlExecutor(coreTables().getSchema()).execute(sqlDelete(), parent.getEntityId(), name);
@@ -541,7 +544,8 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
                 for (Attachment att : atts)
                 {
                     filename = att.getName();
-                    ss.deleteResource(makeDocId(parent, filename));
+                    if (ss != null)
+                        ss.deleteResource(makeDocId(parent, filename));
                     addAuditEvent(auditUser, parent, filename, "The attachment " + filename + " was moved");
                 }
                 AttachmentCache.removeAttachments(parent);

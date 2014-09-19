@@ -1740,12 +1740,16 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             {
                 deleteExperimentRunsByRowIds(c, user, runId);
             }
-            for (ListDefinition list : ListService.get().getLists(c).values())
+            ListService.Interface ls = ListService.get();
+            if (ls != null)
             {
-                // Temporary fix for Issue 21400: **Deleting workbook deletes lists defined in parent container
-                if (list.getContainer().equals(c))
+                for (ListDefinition list : ListService.get().getLists(c).values())
                 {
-                    list.delete(user);
+                    // Temporary fix for Issue 21400: **Deleting workbook deletes lists defined in parent container
+                    if (list.getContainer().equals(c))
+                    {
+                        list.delete(user);
+                    }
                 }
             }
 

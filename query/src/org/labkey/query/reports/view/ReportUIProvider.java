@@ -133,7 +133,12 @@ public class ReportUIProvider extends DefaultReportUIProvider
             returnUrl = context.getActionURL();
         chartBean.setRedirectUrl(returnUrl.getLocalURIString());
 
-        Study study = StudyService.get().getStudy(context.getContainer());
+        StudyService.Service svc = StudyService.get();
+        Study study = null;
+        if (svc != null)
+        {
+            study = svc.getStudy(context.getContainer());
+        }
 
         if (study == null)
         {

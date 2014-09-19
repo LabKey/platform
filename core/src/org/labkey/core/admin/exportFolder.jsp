@@ -44,7 +44,7 @@ ViewContext context = getViewContext();
 Container c = context.getContainerNoTab();
 FolderManagementAction.FolderManagementForm form = (FolderManagementAction.FolderManagementForm) HttpView.currentModel();
 
-Study study = StudyService.get().getStudy(c);
+Study study = StudyService.get() != null ? StudyService.get().getStudy(c) : null;
 String subjectNoun = study != null ? study.getSubjectNounSingular() : null;
 String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : null;
 %>

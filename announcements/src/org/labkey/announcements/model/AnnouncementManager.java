@@ -854,9 +854,13 @@ public class AnnouncementManager
     {
         String parent = null == ann.getParent() ? ann.getEntityId() : ann.getParent();
         String container = ann.getContainerId();
-        SearchService.IndexTask task = ServiceRegistry.get().getService(SearchService.class).defaultTask();
-        // indexMessages is overkill, but I don't want to duplicate the code
-        indexMessages(task, container, null, parent);
+        SearchService svc = ServiceRegistry.get().getService(SearchService.class);
+        if (svc != null)
+        {
+            SearchService.IndexTask task = svc.defaultTask();
+            // indexMessages is overkill, but I don't want to duplicate the code
+            indexMessages(task, container, null, parent);
+        }
     }
 
     

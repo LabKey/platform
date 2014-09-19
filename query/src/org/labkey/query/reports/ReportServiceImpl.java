@@ -957,7 +957,8 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
             if (ctx.getArchiveVersion() != null && ctx.getArchiveVersion() < 13.11)
             {
                 String schema = descriptor.getProperty(ReportDescriptor.Prop.schemaName);
-                Study study = StudyService.get().getStudy(ctx.getContainer());
+                StudyService.Service svc = StudyService.get();
+                Study study = svc != null ? svc.getStudy(ctx.getContainer()) : null;
                 if (study != null && schema != null && schema.equals("study"))
                 {
                     DataSet dataset = study.getDatasetByLabel(descriptor.getProperty(ReportDescriptor.Prop.queryName));

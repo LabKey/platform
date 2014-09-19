@@ -122,6 +122,7 @@ public class WikiManager implements WikiService
         return ServiceRegistry.get(AttachmentService.Service.class);
     }
 
+    @Nullable
     SearchService getSearchService()
     {
         return ServiceRegistry.get(SearchService.class);
@@ -567,7 +568,7 @@ public class WikiManager implements WikiService
     {
         SearchService ss = getSearchService();
         String docid = "wiki:" + entityId;
-        if (null != getSearchService())
+        if (ss != null)
             ss.deleteResource(docid);
         // UNDONE attachment
     }
