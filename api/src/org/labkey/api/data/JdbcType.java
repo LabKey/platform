@@ -432,19 +432,19 @@ public enum JdbcType
         switch (type)
         {
             case BIGINT:
-                return (Long)obj1 + (Long)obj2;
+                return ConvertHelper.convert(obj1, Long.class) + ConvertHelper.convert(obj2, Long.class);
             case DECIMAL:
-                return ((BigDecimal)obj1).add((BigDecimal)obj2);
+                return ConvertHelper.convert(obj1, BigDecimal.class).add(ConvertHelper.convert(obj2, BigDecimal.class));
             case DOUBLE:
-                return (Double)obj1 + (Double)obj2;
+                return ConvertHelper.convert(obj1, Double.class) + ConvertHelper.convert(obj2, Double.class);
             case INTEGER:
-                return (Integer)obj1 + (Integer)obj2;
+                return ConvertHelper.convert(obj1, Integer.class) + ConvertHelper.convert(obj2, Integer.class);
             case REAL:
-                return (Float)obj1 + (Float)obj2;
+                return ConvertHelper.convert(obj1, Float.class) + ConvertHelper.convert(obj2, Float.class);
             case SMALLINT:
-                return (Short)obj1 + (Short)obj2;
+                return ConvertHelper.convert(obj1, Short.class) + ConvertHelper.convert(obj2, Short.class);
             case TINYINT:
-                return (Short)obj1 + (Short)obj2;
+                return ConvertHelper.convert(obj1, Short.class) + ConvertHelper.convert(obj2, Short.class);
             default:
                 throw new IllegalStateException("Cannot add non-numeric objects.");
         }
