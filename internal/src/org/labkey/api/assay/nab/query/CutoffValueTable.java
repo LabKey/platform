@@ -123,7 +123,7 @@ public class CutoffValueTable extends FilteredTable<AssayProtocolSchema>
     public void removeContainerAndProtocolFilters()
     {
         // When CutoffValueTable is used with NabSpecimenTable already we don't want the extra filter;
-        // Need to clear explicitly because FilteredTable contructor calls applyContainerFilter
+        // Need to clear explicitly because FilteredTable constructor calls applyContainerFilter
         clearConditions(CONTAINER_FIELD_KEY);
         clearConditions(PROTOCOL_FIELD_KEY);
         _dontNeedFilterContainer = true;

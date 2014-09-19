@@ -70,7 +70,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         Select specified columns from a table. Note: many methods require a column collection that iterates in a predictable
         order; getValueMap(), fillValueMap(), getResultSet(), getResults(), and forEach(ForEachBlock<ResultSet>) will all
         throw IllegalStateException if they are called after (for example) a HashSet<ColumnInfo> has been passed to this
-        constuctor. Asking for a primitive typed array or collection will also throw, since we implicitly rely on column
+        constructor. Asking for a primitive typed array or collection will also throw, since we implicitly rely on column
         order (we pick the first one).
      */
     public TableSelector(@NotNull TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)

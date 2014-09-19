@@ -1438,7 +1438,7 @@ public final class CGIServlet extends HttpServlet {
      * <p>
      *
      * The CGI environment and settings are derived from the information
-     * passed to the constuctor.
+     * passed to the constructor.
      *
      * </p>
      * <p>
