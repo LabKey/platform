@@ -950,6 +950,8 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
             for (Member M : members)
             {
                 _Member m = (_Member)M;
+                if (m.isCalculated())
+                    continue;
                 _Member prev = map.put(convertKey(type, m.getKeyValue()), m);
                 if (null != prev)
                 {
@@ -967,6 +969,8 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
             for (Member M : members)
             {
                 _Member m = (_Member)M;
+                if (m.isCalculated())
+                    continue;
                 _Member prev = map.put(convertKey(type, m.getKeyValue()), m);
                 if (null != prev)
                     throw new IllegalStateException("Duplicate child member key: " + String.valueOf(m.getKeyValue()));

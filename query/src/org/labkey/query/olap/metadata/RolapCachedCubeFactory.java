@@ -205,7 +205,6 @@ public class RolapCachedCubeFactory
             CachedCube._Level level = levelList.get(l);
             LevelDef ldef = levelDefList.get(l);
             CachedCube._Member notNullMember = new CachedCube._NotNullMember(level, parent, ldef.isLeaf());
-            notNullMember.ordinal = Integer.MAX_VALUE;
             level.members.add(notNullMember);
             parent = notNullMember;
         }
@@ -272,18 +271,18 @@ public class RolapCachedCubeFactory
         {
             int ret;
             ret = _compare((CachedCube._Member)m1,(CachedCube._Member)m2);
-//            if (ret < 0)
-//            {
-//                System.err.println(m1.getUniqueName() + " < " + m2.getUniqueName());
-//            }
-//            else if (ret > 0)
-//            {
-//                System.err.println(m2.getUniqueName() + " < " + m1.getUniqueName());
-//            }
-//            else
-//            {
-//                System.err.println( m1.getUniqueName() + " = " + m2.getUniqueName() + " *** ");
-//            }
+            if (ret < 0)
+            {
+                System.err.println(m1.getUniqueName() + " < " + m2.getUniqueName());
+            }
+            else if (ret > 0)
+            {
+                System.err.println(m2.getUniqueName() + " < " + m1.getUniqueName());
+            }
+            else
+            {
+                System.err.println( m1.getUniqueName() + " = " + m2.getUniqueName() + " *** ");
+            }
             return ret;
         }
 
@@ -303,6 +302,9 @@ public class RolapCachedCubeFactory
                 if (0 != p)
                     return p;
             }
+
+            if (m1.isCalculated() !=  m2.isCalculated())
+                return m1.isCalculated() ?  1 : -1;
 
             o = compareKey(m1.ordinalValue, m2.ordinalValue, null);
             if (0 != o)

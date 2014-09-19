@@ -35,10 +35,14 @@ import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
 import org.labkey.api.security.roles.ReaderRole;
 import org.labkey.api.security.roles.RoleManager;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ResultSetUtil;
+import org.labkey.api.visualization.SQLGenerationException;
+import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.visualization.VisualizationService;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.olap.metadata.CachedCube;
 import org.labkey.query.olap.rolap.RolapCubeDef;
@@ -707,7 +711,7 @@ public class BitSetQueryImpl
                     throw new IllegalStateException("unsupported query, did not expect " + subquery.getClass().getName());
                 return new MemberSetResult(filtered);
             }
-            else if (null != expr.sql)
+            else if (null != expr.sql || null != expr.getData)
             {
                 if (!(_dataSourceHelper instanceof SqlDataSourceHelper))
                     throw new IllegalStateException("sql not supported");
@@ -717,7 +721,24 @@ public class BitSetQueryImpl
                 if (null == user)
                     throw new IllegalStateException("sql requires a user");
 
-                MemberSet set = ((SqlDataSourceHelper)_dataSourceHelper).sqlMembersQuery(expr.level, expr.sql);
+                String sql = expr.sql;
+                if (null != expr.getData)
+                {
+                    VisualizationService vs = ServiceRegistry.get(VisualizationService.class);
+                    if (null == vs)
+                        throw new UnsupportedOperationException("VisualizationService not registered");
+                    try
+                    {
+                        VisualizationService.SQLResponse r = vs.getDataGenerateSQL(container, user, expr.getData);
+                        sql = r.sql;
+                    }
+                    catch (SQLGenerationException ex)
+                    {
+                        throw new IllegalArgumentException(ex);
+                    }
+                }
+
+                MemberSet set = ((SqlDataSourceHelper)_dataSourceHelper).sqlMembersQuery(expr.level, sql);
                 return new MemberSetResult(set);
             }
         }

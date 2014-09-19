@@ -157,6 +157,7 @@ public class QubeQuery
         Set<Member> membersSet;
         QubeExpr membersQuery;       // subset the memberlist based on intersection with this orthoganal query
         String sql;                  // SQL query with one column per level matching the keyExpression for each level
+        JSONObject getData;
     }
 
 
@@ -483,6 +484,11 @@ public class QubeQuery
             {
                 // execution code needs to make sure user has permission to execute this query, if it is running as a service user
                 e.sql = (String)json.get("sql");
+            }
+            else if (null != json.get("getData"))
+            {
+                // execution code needs to make sure user has permission to execute this query, if it is running as a service user
+                e.getData = (JSONObject)json.get("getData");
             }
             else
             {

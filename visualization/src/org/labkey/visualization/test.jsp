@@ -1,4 +1,4 @@
-<textarea id="json" style="height:400px; width: 600px;">
+<textarea id="json" style="height:400px; width: 100%;">
 
 </textarea>
 <button onclick="getData()">get data</button>

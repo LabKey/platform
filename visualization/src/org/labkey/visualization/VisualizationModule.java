@@ -20,11 +20,13 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.TimeChartReportDescriptor;
+import org.labkey.api.visualization.VisualizationService;
 import org.labkey.visualization.report.GenericChartReportImpl;
 import org.labkey.visualization.report.TimeChartReportImpl;
 import org.labkey.visualization.report.VisualizationUIProvider;
@@ -38,16 +40,19 @@ public class VisualizationModule extends DefaultModule
 {
     public static final String NAME = "Visualization";
 
+    @Override
     public String getName()
     {
         return NAME;
     }
 
+    @Override
     public double getVersion()
     {
         return 14.20;
     }
 
+    @Override
     public boolean hasScripts()
     {
         return false;
@@ -59,6 +64,8 @@ public class VisualizationModule extends DefaultModule
         return Collections.emptyList();
     }
 
+
+    @Override
     protected void init()
     {
         addController(VisualizationController.NAME, VisualizationController.class);
@@ -69,11 +76,16 @@ public class VisualizationModule extends DefaultModule
         ReportService.get().registerReport(new GenericChartReportImpl());
 
         ReportService.get().addUIProvider(new VisualizationUIProvider());
+
+        ServiceRegistry.get().registerService(VisualizationService.class, new VisualizationServiceImpl());
     }
 
+
+    @Override
     public void doStartup(ModuleContext moduleContext)
     {
     }
+
 
     @Override
     public void afterUpdate(final ModuleContext moduleContext) {

@@ -756,7 +756,14 @@ public class QueryServiceImpl extends QueryService
 
     public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schemaName, String sql, String metadataXml)
     {
-        Map<String, SessionQuery> queries = getSessionQueryMap(context.getRequest(), container, schemaName, true);
+        return saveSessionQuery(context.getRequest().getSession(true), container, context.getUser(), schemaName, sql, metadataXml);
+    }
+
+
+    @Override
+    public QueryDefinition saveSessionQuery(HttpSession session, Container container, User user, String schemaName, String sql, String metadataXml)
+    {
+        Map<String, SessionQuery> queries = getSessionQueryMap(session, container, schemaName, true);
         String queryName = null;
         SessionQuery sq = new SessionQuery(sql, metadataXml);
         for (Map.Entry<String, SessionQuery> query : queries.entrySet())
@@ -772,7 +779,7 @@ public class QueryServiceImpl extends QueryService
             queryName = schemaName + "_temp_" + UniqueID.getServerSessionScopedUID();
             queries.put(queryName, sq);
         }
-        return getSessionQuery(context, container, schemaName, queryName);
+        return getSessionQuery(session, container, user, schemaName, queryName);
     }
 
 
@@ -823,9 +830,8 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
-    private Map<String, SessionQuery> getSessionQueryMap(HttpServletRequest request, Container container, String schemaName, boolean create)
+    private Map<String, SessionQuery> getSessionQueryMap(HttpSession session, Container container, String schemaName, boolean create)
     {
-        HttpSession session = request.getSession(create);
         if (session == null)
             return Collections.emptyMap();
         Map<ContainerSchemaKey, Map<String, SessionQuery>> containerQueries = (Map<ContainerSchemaKey, Map<String, SessionQuery>>) session.getAttribute(PERSISTED_TEMP_QUERIES_KEY);
@@ -846,7 +852,7 @@ public class QueryServiceImpl extends QueryService
 
     private List<QueryDefinition> getAllSessionQueries(HttpServletRequest request, User user, Container container, String schemaName)
     {
-        Map<String, SessionQuery> sessionQueries = getSessionQueryMap(request, container, schemaName, false);
+        Map<String, SessionQuery> sessionQueries = getSessionQueryMap(request.getSession(true), container, schemaName, false);
         List<QueryDefinition> ret = new ArrayList<>();
         for (Map.Entry<String, SessionQuery> entry : sessionQueries.entrySet())
             ret.add(createTempQueryDefinition(user, container, schemaName, entry.getKey(), entry.getValue()));
@@ -855,9 +861,16 @@ public class QueryServiceImpl extends QueryService
 
     public QueryDefinition getSessionQuery(ViewContext context, Container container, String schemaName, String queryName)
     {
-        SessionQuery query = getSessionQueryMap(context.getRequest(), container, schemaName, false).get(queryName);
+        SessionQuery query = getSessionQueryMap(context.getRequest().getSession(true), container, schemaName, false).get(queryName);
         return createTempQueryDefinition(context.getUser(), container, schemaName, queryName, query);
     }
+
+    public QueryDefinition getSessionQuery(HttpSession session, Container container, User user, String schemaName, String queryName)
+    {
+        SessionQuery query = getSessionQueryMap(session, container, schemaName, false).get(queryName);
+        return createTempQueryDefinition(user, container, schemaName, queryName, query);
+    }
+
 
     private QueryDefinition createTempQueryDefinition(User user, Container container, String schemaName, String queryName, SessionQuery query)
     {
