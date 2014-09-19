@@ -331,8 +331,10 @@ LABKEY.vis.Geom.DataspaceBoxPlot = function(config){
     this.opacity = ('opacity' in config && config.opacity != null && config.opacity != undefined) ? config.opacity : 1;
     this.showOutliers = ('showOutliers' in config && config.showOutliers != null && config.showOutliers != undefined) ? config.showOutliers : true;
     this.outlierFill = ('outlierFill' in config && config.outlierFill != null && config.outlierFill != undefined) ? config.outlierFill : '#000000';
-    this.pointOpacity = ('pointOpacity' in config && config.outlierOpacity != null && config.outlierOpacity != undefined) ? config.outlierOpacity : .5;
-    this.pointSize = ('pointSize' in config && config.outlierSize != null && config.outlierSize != undefined) ? config.outlierSize : 3;
+    this.pointOpacity = ('outlierOpacity' in config && config.outlierOpacity != null && config.outlierOpacity != undefined) ? config.outlierOpacity : .5;
+    this.pointSize = ('outlierSize' in config && config.outlierSize != null && config.outlierSize != undefined) ? config.outlierSize : 3;
+    this.binRowLimit = ('binRowLimit' in config && config.binRowLimit != null && config.binRowLimit != undefined) ? config.binRowLimit : 5000;
+    this.size = ('binSize' in config && config.binSize != null && config.binSize != undefined) ? config.binSize : 5;
 
     return this;
 };

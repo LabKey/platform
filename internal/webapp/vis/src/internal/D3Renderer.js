@@ -1220,21 +1220,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             pointsSel.on('click', null);
         }
 
-        if (geom.mouseOverFnAes) {
-            pointsSel.on('mouseover', function(data) {
-                geom.mouseOverFnAes.value(d3.event, data, layer);
-            });
-        } else {
-            pointsSel.on('mouseover', null);
-        }
-
-        if (geom.mouseOutFnAes) {
-            pointsSel.on('mouseout', function(data) {
-                geom.mouseOutFnAes.value(d3.event, data, layer);
-            });
-        } else {
-            pointsSel.on('mouseout', null);
-        }
+        bindMouseEvents(pointsSel, geom, layer);
 
         if (plot.clipRect) {
             applyClipRect.call(this, layer);
@@ -1560,8 +1546,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return d.length + (d.length == 1 ? " point" : " points");
         };
 
-        var layer = getLayer.call(this, geom);
-        var anchorSel = layer.selectAll('.vis-bin').data(hexbin(points));
+        var anchorSel = this.selectAll('.vis-bin').data(hexbin(points));
         anchorSel.exit().remove();
         anchorSel.enter().append('a').attr('class', 'vis-bin vis-bin-hexagon').append('path');
         anchorSel.attr('xlink:title', hoverTextAcc);
@@ -1575,7 +1560,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         return {
             sel: hexSel,
-            layer: layer
+            layer: this
         };
     };
 
@@ -1591,8 +1576,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return d.length + (d.length == 1 ? " point" : " points");
         };
 
-        var layer = getLayer.call(this, geom);
-        var anchorSel = layer.selectAll('.vis-bin').data(sqbin(points));
+        var anchorSel = this.selectAll('.vis-bin').data(sqbin(points));
         anchorSel.exit().remove();
         anchorSel.enter().append('a').attr('class', 'vis-bin vis-bin-square').append('path');
         anchorSel.attr('xlink:title', hoverTextAcc);
@@ -1606,53 +1590,27 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         return {
             sel: squareSel,
-            layer: layer
+            layer: this
         };
     };
 
     var renderBinGeom = function(data, geom) {
 
-        var xAcc = function(row) {return geom.getX(row);};
-        var yAcc = function(row) {return geom.getY(row);};
-
-        // translate points
-        var points = [], x, y;
-        for (var d=0; d < data.length; d++) {
-            x = xAcc(data[d]); y = yAcc(data[d]);
-            if (x != null && !isNaN(x) && y != null && !isNaN(y)) {
-                points.push({x: x, y: y, data: data[d]});
-            }
-        }
+        var points = translatePointsForBin(geom, data);
 
         var selLayer;
+        var layer = getLayer.call(this, geom);
         switch (geom.shape) {
             case 'square':
-                selLayer = renderSquareBin.call(this, data, geom, points);
+                selLayer = renderSquareBin.call(layer, data, geom, points);
                 break;
             case 'hex':
             default:
-                selLayer = renderHexBin.call(this, data, geom, points);
+                selLayer = renderHexBin.call(layer, data, geom, points);
         }
 
-        // bind mouse events
         if (selLayer) {
-            if (geom.mouseOverFnAes) {
-                selLayer.sel.on('mouseover', function(data) {
-                    geom.mouseOverFnAes.value(d3.event, data, selLayer.layer);
-                });
-            }
-            else {
-                selLayer.sel.on('mouseover', null);
-            }
-
-            if (geom.mouseOutFnAes) {
-                selLayer.sel.on('mouseout', function(data) {
-                    geom.mouseOutFnAes.value(d3.event, data, selLayer.layer);
-                });
-            }
-            else {
-                selLayer.sel.on('mouseout', null);
-            }
+            bindMouseEvents(selLayer.sel, geom, layer);
         }
     };
 
@@ -1791,30 +1749,37 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             points.on('click', null);
         }
 
-        if (geom.mouseOverFnAes) {
-            points.on('mouseover', function(data) {
-                geom.mouseOverFnAes.value(d3.event, data, layer);
-            });
-        } else {
-            points.on('mouseover', null);
-        }
+        bindMouseEvents(points, geom, layer);
+    };
 
-        if (geom.mouseOutFnAes) {
-            points.on('mouseout', function(data) {
-                geom.mouseOutFnAes.value(d3.event, data, layer);
-            });
-        } else {
-            points.on('mouseout', null);
+    var renderDataspaceBins = function(selection, plot, geom, layer, data) {
+
+        var points = translatePointsForBin(geom, data);
+        var selLayer = renderSquareBin.call(layer, data, geom, points);
+
+        // stretch the bins horizontally
+        var xBinHeight = geom.size;
+        var xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 3;
+        var offset = xBinWidth / 4;
+        var binCorners = [offset+",0", xBinWidth+",0", xBinWidth+","+xBinHeight, offset+","+xBinHeight, offset+",0"];
+        selLayer.sel.attr('d', "M" + binCorners.join(" "));
+
+        if (selLayer) {
+            bindMouseEvents(selLayer.sel, geom, layer);
         }
     };
 
-    var renderDataspaceBoxGoups = function(layer, plot, geom, summaries) {
+    var renderDataspaceBoxGoups = function(layer, plot, geom, data, summaries) {
         var boxGroups;
         boxGroups = layer.selectAll('g.dataspace-box-group').data(summaries);
         boxGroups.exit().remove();
         boxGroups.enter().append('g').attr('class', 'dataspace-box-group');
         boxGroups.call(renderDataspaceBoxes, plot, geom);
-        boxGroups.call(renderDataspacePoints, plot, geom, layer);
+
+        if (data.length <= geom.binRowLimit)
+            boxGroups.call(renderDataspacePoints, plot, geom, layer);
+        else
+            boxGroups.call(renderDataspaceBins, plot, geom, layer, data);
     };
 
     var renderDataspaceBoxPlotGeom = function(data, geom) {
@@ -1827,7 +1792,42 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         summaries = prepBoxPlotData(data, geom);
 
         if (summaries.length > 0) {
-            layer.call(renderDataspaceBoxGoups, plot, geom, summaries);
+            layer.call(renderDataspaceBoxGoups, plot, geom, data, summaries);
+        }
+    };
+
+    var translatePointsForBin = function(geom, data) {
+        var xAcc = function(row) {return geom.getX(row);};
+        var yAcc = function(row) {return geom.getY(row);};
+
+        var points = [], x, y;
+        for (var d=0; d < data.length; d++) {
+            x = xAcc(data[d]); y = yAcc(data[d]);
+            if (x != null && !isNaN(x) && y != null && !isNaN(y)) {
+                points.push({x: x, y: y, data: data[d]});
+            }
+        }
+
+        return points;
+    };
+
+    var bindMouseEvents = function(selection, geom, layer) {
+        if (geom.mouseOverFnAes) {
+            selection.on('mouseover', function(data) {
+                geom.mouseOverFnAes.value(d3.event, data, layer);
+            });
+        }
+        else {
+            selection.on('mouseover', null);
+        }
+
+        if (geom.mouseOutFnAes) {
+            selection.on('mouseout', function(data) {
+                geom.mouseOutFnAes.value(d3.event, data, layer);
+            });
+        }
+        else {
+            selection.on('mouseout', null);
         }
     };
 

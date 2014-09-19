@@ -106,6 +106,11 @@
     };
 
     var d3_hexbinAngles = d3.range(0, 2 * Math.PI, Math.PI / 3),
+
+            // NOTE: data was change to use objects instead of array of x/y values
+            //d3_hexbinX = function(d) { return d[0]; },
+            //d3_hexbinY = function(d) { return d[1]; };
+
             d3_hexbinX = function(d) { return d.x; },
             d3_hexbinY = function(d) { return d.y; };
 
