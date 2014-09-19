@@ -552,7 +552,7 @@ public class SpecimenImporter
             }
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
-                return from.equals(to);
+                return from.equals(to) || canPromoteNumeric(from, to);
             }
         },
         EventVialFirst
@@ -572,7 +572,7 @@ public class SpecimenImporter
             }
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
-                return from.equals(to);
+                return from.equals(to) || canPromoteNumeric(from, to);
             }
         },
         EventVialLatestNonBlank
@@ -606,7 +606,7 @@ public class SpecimenImporter
             }
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
-                return from.equals(to);
+                return from.equals(to) || canPromoteNumeric(from, to);
             }
         },
         EventVialCombineAll
@@ -676,7 +676,7 @@ public class SpecimenImporter
 
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
-                return from.equals(to) &&
+                return (from.equals(to) || canPromoteNumeric(from, to)) &&
                         (from.isNumeric() || from.isText());
             }
         };
@@ -748,7 +748,7 @@ public class SpecimenImporter
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return !JdbcType.BOOLEAN.equals(from) &&
-                        (from.equals(to) || (from.isNumeric() && to.isNumeric()));
+                        (from.equals(to) || canPromoteNumeric(from, to));
             }
         },
         VialSpecimenMinimum
@@ -766,7 +766,7 @@ public class SpecimenImporter
             public boolean isTypeConstraintMet(JdbcType from, JdbcType to)
             {
                 return !JdbcType.BOOLEAN.equals(from) &&
-                        (from.equals(to) || (from.isNumeric() && to.isNumeric()));
+                        (from.equals(to) || canPromoteNumeric(from, to));
             }
         };
 
@@ -782,6 +782,11 @@ public class SpecimenImporter
             }
             return false;
         }
+    }
+
+    private static boolean canPromoteNumeric(JdbcType from, JdbcType to)
+    {
+        return (from.isNumeric() && to.isNumeric() && JdbcType.promote(from, to) == to);
     }
 
     public static class RollupInstance<K extends Rollup> extends Pair<String, K>
