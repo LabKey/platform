@@ -41,6 +41,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
 
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -92,6 +93,7 @@ abstract public class QueryService
     abstract public List<QuerySnapshotDefinition> getQuerySnapshotDefs(Container container, String schema);
     abstract public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql);
     abstract public QueryDefinition saveSessionQuery(ViewContext context, Container container, String schema, String sql, String metadataXml);
+    abstract public QueryDefinition saveSessionQuery(HttpSession session, Container container, User user, String schema, String sql, @Nullable String xml);
     abstract public QueryDefinition getSessionQuery(ViewContext context, Container container, String schema, String queryName);
 
     abstract public ActionURL urlQueryDesigner(User user, Container container, String schema);
