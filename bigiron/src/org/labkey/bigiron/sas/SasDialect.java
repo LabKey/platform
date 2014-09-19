@@ -18,6 +18,8 @@ package org.labkey.bigiron.sas;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ConnectionWrapper;
+import org.labkey.api.data.ResultSetMetaDataWrapper;
+import org.labkey.api.data.ResultSetWrapper;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -29,6 +31,8 @@ import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.Date;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -194,7 +198,7 @@ public abstract class SasDialect extends SimpleSqlDialect
         // Don't test keywords on SAS
     }
 
-    // I think this is rigth
+    // I think this is right
     @Override
     public boolean allowSortOnSubqueryWithoutLimit()
     {
@@ -280,6 +284,65 @@ public abstract class SasDialect extends SimpleSqlDialect
                 return new Date(((Timestamp)x).getTime());
             else
                 return x;
+        }
+
+        // Methods below ensure that SAS ResultSets return a ResultSetMetaData that meets the JDBC 4.0 specification; see #21444, #21259, and #19869.
+
+        @Override
+        public ResultSet getResultSet() throws SQLException
+        {
+            return new SasResultSetWrapper(super.getResultSet());
+        }
+
+        @Override
+        public ResultSet executeQuery() throws SQLException
+        {
+            return new SasResultSetWrapper(super.executeQuery());
+        }
+
+        @Override
+        public ResultSet executeQuery(String sql) throws SQLException
+        {
+            return new SasResultSetWrapper(super.executeQuery(sql));
+        }
+
+        @Override
+        public ResultSetMetaData getMetaData() throws SQLException
+        {
+            return new SasResultSetMetaData(super.getMetaData());
+        }
+    }
+
+
+    // Ensures that SAS ResultSets return ResultSetMetaData that meets JDBC 4.0 specifications
+    private static class SasResultSetWrapper extends ResultSetWrapper
+    {
+        public SasResultSetWrapper(ResultSet rs)
+        {
+            super(rs);
+        }
+
+        @Override
+        public ResultSetMetaData getMetaData() throws SQLException
+        {
+            return new SasResultSetMetaData(super.getMetaData());
+        }
+    }
+
+
+    // Makes SAS ResultSetMetaData behave according to the JDBC 4.0 spec, which states that name-based ResultSet getters
+    // should use the values returns by getColumnLabel(). See #21444, #21259, and #19869.
+    private static class SasResultSetMetaData extends ResultSetMetaDataWrapper
+    {
+        public SasResultSetMetaData(ResultSetMetaData rsmd)
+        {
+            super(rsmd);
+        }
+
+        @Override
+        public String getColumnLabel(int column) throws SQLException
+        {
+            return super.getColumnName(column);
         }
     }
 }
