@@ -50,11 +50,8 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
 
     protected void addAllColumns(ResultSetMetaData md) throws SQLException
     {
-        // SAS/SHARE needs to use ResultSetMetaData.getColumnName(), #21259 & #21444
-        boolean isSas = "com.sas.net.sharenet.ShareNetResultSetMetaData".equals(md.getClass().getName());
-
         for (int i = 1; i <= md.getColumnCount(); i++)
-            addColumn(new ColumnMetaData(md, i, isSas));
+            addColumn(new ColumnMetaData(md, i));
     }
 
     public int getColumnCount() throws SQLException
@@ -224,7 +221,7 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
         }
 
         // Set values based on the specified ResultSetMetaData column
-        private ColumnMetaData(ResultSetMetaData md, int i, boolean isSas) throws SQLException
+        private ColumnMetaData(ResultSetMetaData md, int i) throws SQLException
         {
             catalogName = md.getCatalogName(i);
             isAutoIncrement = md.isAutoIncrement(i);
@@ -234,7 +231,7 @@ public class ResultSetMetaDataImpl implements ResultSetMetaData
             isNullable = md.isNullable(i);
             isSigned = md.isSigned(i);
             columnDisplaySize = md.getColumnDisplaySize(i);
-            columnLabel = isSas ? md.getColumnName(i) : md.getColumnLabel(i);
+            columnLabel = md.getColumnLabel(i);
             columnName = md.getColumnName(i);
             schemaName = md.getSchemaName(i);
             precision = md.getPrecision(i);

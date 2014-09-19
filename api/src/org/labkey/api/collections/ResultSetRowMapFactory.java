@@ -69,17 +69,13 @@ public class ResultSetRowMapFactory extends RowMapFactory<Object> implements Ser
     {
         super(md.getColumnCount() + 1);
 
-        // SAS/SHARE needs to use ResultSetMetaData.getColumnName(), #21259
-        boolean useColumnNames = "com.sas.net.sharenet.ShareNetResultSetMetaData".equals(md.getClass().getName());
-
         int count = md.getColumnCount();
         Map<String, Integer> findMap = getFindMap();
         findMap.put("_row", 0);  // We're going to stuff the current row index at index 0
 
         for (int i = 1; i <= count; i++)
         {
-            // SAS/SHARE needs to use ResultSetMetaData.getColumnName(), #21259
-            String propName = useColumnNames ? md.getColumnName(i) : md.getColumnLabel(i);
+            String propName = md.getColumnLabel(i);
 
             if (propName.length() > 0 && Character.isUpperCase(propName.charAt(0)))
                 propName = Introspector.decapitalize(propName);
