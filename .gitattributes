@@ -8288,6 +8288,8 @@ internal/webapp/vis/lib/hexbin.min.js -text
 internal/webapp/vis/lib/patches.js -text
 internal/webapp/vis/lib/raphael-2.1.0.js -text
 internal/webapp/vis/lib/raphael-min-2.1.0.js -text
+internal/webapp/vis/lib/sqbin.js -text
+internal/webapp/vis/lib/sqbin.min.js -text
 internal/webapp/vis/src/geom.js -text
 internal/webapp/vis/src/internal/D3Renderer.js -text
 internal/webapp/vis/src/internal/RaphaelRenderer.js -text

@@ -138,26 +138,27 @@ LABKEY.vis.Geom.Point.prototype.render = function(renderer, grid, scales, data, 
 
 /**
  * @private
- * @class The HexBin geom, used to bin a set of data and generate a hexagonal plot of binned points. Currently, under development and not for external use. Normally, this is used for scatter x-y based data.
+ * @class The Bin geom, used to bin a set of data and generate a plot of binned points. Currently, under development and not for external use. Normally, this is used for scatter x-y based data.
  * @param config
- * @returns {LABKEY.vis.Geom.HexBin}
+ * @returns {LABKEY.vis.Geom.Bin}
  * @constructor
  */
-LABKEY.vis.Geom.HexBin = function(config) {
-    this.type = "HexBin";
+LABKEY.vis.Geom.Bin = function(config) {
+    this.type = "Bin";
 
     if (!config) {
         config = {};
     }
 
+    this.shape = ('shape' in config && config.color != null && config.shape != undefined) ? config.shape : 'hex';
     this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
     this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 5;
     this.plotNullPoints = ('plotNullPoints' in config && config.plotNullPoints != null && config.plotNullPoints != undefined) ? config.plotNullPoints : false;
 
     return this;
 };
-LABKEY.vis.Geom.HexBin.prototype = new LABKEY.vis.Geom.XY();
-LABKEY.vis.Geom.HexBin.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name, index){
+LABKEY.vis.Geom.Bin.prototype = new LABKEY.vis.Geom.XY();
+LABKEY.vis.Geom.Bin.prototype.render = function(renderer, grid, scales, data, layerAes, parentAes, name, index){
     if(!this.initAesthetics(scales, layerAes, parentAes, name, index)){
         return false;
     }
@@ -165,7 +166,7 @@ LABKEY.vis.Geom.HexBin.prototype.render = function(renderer, grid, scales, data,
     this.mouseOverFnAes = layerAes.mouseOverFn ? layerAes.mouseOverFn : parentAes.mouseOverFn;
     this.mouseOutFnAes = layerAes.mouseOutFn ? layerAes.mouseOutFn : parentAes.mouseOutFn;
 
-    renderer.renderHexBinGeom(data, this);
+    renderer.renderBinGeom(data, this);
     return true;
 };
 

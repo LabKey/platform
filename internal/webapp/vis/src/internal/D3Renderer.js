@@ -1548,9 +1548,69 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
-    var renderHexBinGeom = function(data, geom) {
-
+    var renderHexBin = function(data, geom, points) {
         var hexbin = d3.hexbin().radius(geom.size);
+
+        var color = d3.scale.linear()
+                .domain([0, geom.size])
+                .range(["white", geom.color])
+                .interpolate(d3.interpolateLab);
+
+        var hoverTextAcc = function(d){
+            return d.length + (d.length == 1 ? " point" : " points");
+        };
+
+        var layer = getLayer.call(this, geom);
+        var anchorSel = layer.selectAll('.vis-bin').data(hexbin(points));
+        anchorSel.exit().remove();
+        anchorSel.enter().append('a').attr('class', 'vis-bin vis-bin-hexagon').append('path');
+        anchorSel.attr('xlink:title', hoverTextAcc);
+
+        var hexSel = anchorSel.select('path');
+        hexSel.attr("d", hexbin.hexagon())
+                .attr("transform", function(d) {
+                    return "translate(" + d.x + "," + d.y + ")";
+                })
+                .style("fill", function(d) { return color(d.length); });
+
+        return {
+            sel: hexSel,
+            layer: layer
+        };
+    };
+
+    var renderSquareBin = function(data, geom, points) {
+        var sqbin = d3.sqbin().side(geom.size);
+
+        var color = d3.scale.linear()
+                .domain([0, geom.size])
+                .range(["white", geom.color])
+                .interpolate(d3.interpolateLab);
+
+        var hoverTextAcc = function(d){
+            return d.length + (d.length == 1 ? " point" : " points");
+        };
+
+        var layer = getLayer.call(this, geom);
+        var anchorSel = layer.selectAll('.vis-bin').data(sqbin(points));
+        anchorSel.exit().remove();
+        anchorSel.enter().append('a').attr('class', 'vis-bin vis-bin-square').append('path');
+        anchorSel.attr('xlink:title', hoverTextAcc);
+
+        var squareSel = anchorSel.select('path');
+        squareSel.attr("d", sqbin.square())
+                .attr("transform", function(d) {
+                    return "translate(" + d.x + "," + d.y + ")";
+                })
+                .style("fill", function(d) { return color(d.length); });
+
+        return {
+            sel: squareSel,
+            layer: layer
+        };
+    };
+
+    var renderBinGeom = function(data, geom) {
 
         var xAcc = function(row) {return geom.getX(row);};
         var yAcc = function(row) {return geom.getY(row);};
@@ -1564,41 +1624,35 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             }
         }
 
-        var color = d3.scale.linear()
-                .domain([0, geom.size])
-                .range(["white", geom.color])
-                .interpolate(d3.interpolateLab);
-
-        var hoverTextAcc = function(d){
-            return d.length + (d.length == 1 ? " point" : " points");
-        };
-
-        var layer = getLayer.call(this, geom);
-        var anchorSel = layer.selectAll('.hexagon').data(hexbin(points));
-        anchorSel.exit().remove();
-        anchorSel.enter().append('a').attr('class', 'hexagon').append('path');
-        anchorSel.attr('xlink:title', hoverTextAcc);
-        var hexSel = anchorSel.select('path');
-        hexSel.attr("d", hexbin.hexagon())
-                .attr("transform", function(d) {
-                    return "translate(" + d.x + "," + d.y + ")";
-                })
-                .style("fill", function(d) { return color(d.length); });
-
-        if (geom.mouseOverFnAes) {
-            hexSel.on('mouseover', function(data) {
-                geom.mouseOverFnAes.value(d3.event, data, layer);
-            });
-        } else {
-            hexSel.on('mouseover', null);
+        var selLayer;
+        switch (geom.shape) {
+            case 'square':
+                selLayer = renderSquareBin.call(this, data, geom, points);
+                break;
+            case 'hex':
+            default:
+                selLayer = renderHexBin.call(this, data, geom, points);
         }
 
-        if (geom.mouseOutFnAes) {
-            hexSel.on('mouseout', function(data) {
-                geom.mouseOutFnAes.value(d3.event, data, layer);
-            });
-        } else {
-            hexSel.on('mouseout', null);
+        // bind mouse events
+        if (selLayer) {
+            if (geom.mouseOverFnAes) {
+                selLayer.sel.on('mouseover', function(data) {
+                    geom.mouseOverFnAes.value(d3.event, data, selLayer.layer);
+                });
+            }
+            else {
+                selLayer.sel.on('mouseover', null);
+            }
+
+            if (geom.mouseOutFnAes) {
+                selLayer.sel.on('mouseout', function(data) {
+                    geom.mouseOutFnAes.value(d3.event, data, selLayer.layer);
+                });
+            }
+            else {
+                selLayer.sel.on('mouseout', null);
+            }
         }
     };
 
@@ -1866,7 +1920,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         renderErrorBarGeom: renderErrorBarGeom,
         renderBoxPlotGeom: renderBoxPlotGeom,
         renderDataspaceBoxPlotGeom: renderDataspaceBoxPlotGeom,
-        renderHexBinGeom: renderHexBinGeom,
+        renderBinGeom: renderBinGeom,
         renderBarPlotGeom: renderBarPlotGeom
     };
 };
