@@ -589,6 +589,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 VisualizationSourceColumn col = selectAliases.iterator().next();
                 String label = col.getLabel();
                 selectAlias = col.getSQLAlias() + (null==label ? " @preservetitle" : " @title='" + StringUtils.replace(label,"'","''") + "'");
+                if (col.isHidden())
+                    selectAlias += " @hidden";
             }
             masterSelectList.append(sep).append(selectAlias);
             sep = ",\n\t";

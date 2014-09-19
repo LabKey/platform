@@ -51,6 +51,7 @@ import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.PropertyStore;
+import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
@@ -601,7 +602,7 @@ public class OlapController extends SpringActionController
                 long ms = System.currentTimeMillis();
                 cs = stmt.executeOlapQuery(query);
                 long d = System.currentTimeMillis() - ms;
-                QueryProfiler.getInstance().track(null, "-- MDX\n" + query + sd.getQueryTag(), null, d, null, true);
+                QueryProfiler.getInstance().track(null, "-- MDX\n" + query + sd.getQueryTag(), null, d, null, true, QueryLogging.emptyQueryLogging());
                 Logger.getLogger(this.getClass()).debug("\nEND executeOlapQuery: " + DateUtil.formatDuration(d) + " --------------------------    --------------------------    --------------------------\n");
 
                 StringWriter sw = new StringWriter();
@@ -766,7 +767,8 @@ public class OlapController extends SpringActionController
                 }
                 finally
                 {
-                    QueryProfiler.getInstance().track(null, "-- CountDistinctQuery \n" + q.toString() + "\n" + sd.getQueryTag(), null, (0 == start || 0 == end) ? 0 : (end - start), null, true);
+                    QueryProfiler.getInstance().track(null, "-- CountDistinctQuery \n" + q.toString() + "\n" + sd.getQueryTag(),
+                            null, (0 == start || 0 == end) ? 0 : (end - start), null, true, QueryLogging.noValidationNeededQueryLogging());
                     _log.debug("bitsetquery.executeQuery() took " + DateUtil.formatDuration(end - start));
                 }
 

@@ -64,6 +64,7 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
@@ -73,7 +74,6 @@ import org.labkey.data.xml.externalSchema.TemplateSchemaDocument;
 import org.labkey.data.xml.externalSchema.TemplateSchemaType;
 import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditViewFactory;
-import org.labkey.query.audit.SelectQueryAuditEvent;
 import org.labkey.query.controllers.QueryController;
 import org.labkey.query.olap.ServerManager;
 import org.labkey.query.persist.CstmView;
@@ -1741,10 +1741,15 @@ public class QueryServiceImpl extends QueryService
         }
     }
 
-
     @Override
-	public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
+    public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
                                     int maxRows, long offset, boolean forceSort)
+    {
+        return getSelectSQL(table, selectColumns, filter, sort, maxRows, offset, forceSort, QueryLogging.emptyQueryLogging());
+    }
+
+	public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> selectColumns, @Nullable Filter filter, @Nullable Sort sort,
+                                    int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging)
 	{
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for rowCount; should be positive, Table.ALL_ROWS or Table.NO_ROWS";
 
@@ -1777,38 +1782,69 @@ public class QueryServiceImpl extends QueryService
         String columnLoggingComment = null;
         for (ColumnInfo column : allColumns)
         {
-            ColumnLogging columnLogging = column.getColumnLogging();
-            if (columnLogging.shouldLogName())
+            if (!(column instanceof LookupColumn))
             {
-                shouldLogNameLoggings.add(columnLogging);
-                dataLoggingFieldKeys.addAll(columnLogging.getDataLoggingColumns(column.getName()));
-                if (null == columnLoggingComment)
-                    columnLoggingComment = columnLogging.getLoggingComment();
+                ColumnLogging columnLogging = column.getColumnLogging();
+                if (columnLogging.shouldLogName())
+                {
+                    shouldLogNameLoggings.add(columnLogging);
+                    dataLoggingFieldKeys.addAll(columnLogging.getDataLoggingColumns());
+                    if (null == columnLoggingComment)
+                        columnLoggingComment = columnLogging.getLoggingComment();
+                }
             }
         }
 
+        Set<ColumnInfo> dataLoggingColumns = new HashSet<>();
+        Set<ColumnInfo> extraSelectDataLoggingColumns = new HashSet<>();
         for (FieldKey fieldKey : dataLoggingFieldKeys)
         {
             ColumnInfo loggingColumn = getColumnForDataLogging(table, fieldKey);
             if (null != loggingColumn)
             {
-                if (null == loggingColumn.getFk())
-                    continue;                           // TODO: certain cases from Argos app obscure FK
-                ColumnInfo lookupColumn = loggingColumn.getFk().createLookupColumn(loggingColumn, loggingColumn.getFk().getLookupDisplayName());
-                if (null != lookupColumn)
+                // For the case where we had to add the MRN column in Visualization, that columm is in the table.columnMap, but not the local columnMap.
+                // This is because it's marked as hidden in the queryDef, so not to display, but isn't a normal "extra" column that DataRegion deems to add.
+                if (!allColumns.contains(loggingColumn))
                 {
-                    if (!columnMap.containsKey(lookupColumn.getFieldKey()))
+                    allColumns.add(loggingColumn);
+                    extraSelectDataLoggingColumns.add(loggingColumn);
+                }
+                if (null != loggingColumn.getFk())
+                {
+                    ColumnInfo lookupColumn = loggingColumn.getFk().createLookupColumn(loggingColumn, loggingColumn.getFk().getLookupDisplayName());
+                    if (null != lookupColumn)
                     {
-                        lookupColumn.setHidden(true);
-                        lookupColumn.setIsUnselectable(true);
-                        allColumns.add(lookupColumn);
+                        if (!columnMap.containsKey(lookupColumn.getFieldKey()))
+                        {
+                            lookupColumn.setHidden(true);
+                            lookupColumn.setIsUnselectable(true);
+                            columnMap.put(lookupColumn.getFieldKey(), lookupColumn);
+                            extraSelectDataLoggingColumns.add(lookupColumn);
+                            allColumns.add(lookupColumn);
+                        }
+                        dataLoggingColumns.add(lookupColumn);
                     }
-                    continue;
+                    else
+                    {
+                        throw new UnauthorizedException("Unable to locate required logging column.");
+                    }
+                }
+                else
+                {
+                    dataLoggingColumns.add(loggingColumn);
                 }
             }
-
-//            throw new UnauthorizedException("Unable to locate required logging column.");
+            else
+            {
+                throw new UnauthorizedException("Unable to locate required logging column.");
+            }
         }
+
+        if (null != table.getUserSchema() && !queryLogging.isReadOnly())
+            queryLogging.setQueryLogging(table.getUserSchema().getUser(), table.getUserSchema().getContainer(), columnLoggingComment,
+                                         shouldLogNameLoggings, dataLoggingColumns);
+        else if (!shouldLogNameLoggings.isEmpty())
+            throw new UnauthorizedException("Column logging is required but cannot set query logging object.");
 
         // Check columns again: ensureRequiredColumns() may have added new columns
         assert Table.checkAllColumns(table, allColumns, "getSelectSQL() results of ensureRequiredColumns()", true);
@@ -1871,6 +1907,12 @@ public class QueryServiceImpl extends QueryService
                 outerSelect.append(dialect.getColumnSelectName(column.getAlias()));
                 strComma = ", ";
             }
+            for (ColumnInfo column : extraSelectDataLoggingColumns)
+            {
+                outerSelect.append(strComma);
+                outerSelect.append(dialect.getColumnSelectName(column.getAlias()));
+                strComma = ", ";
+            }
         }
 
 		SQLFragment fromFrag = new SQLFragment("FROM ");
@@ -1915,10 +1957,6 @@ public class QueryServiceImpl extends QueryService
             ret = SQLFragment.prettyPrint(t);
         }
 
-        if (!shouldLogNameLoggings.isEmpty() && null != table.getUserSchema())
-        {
-            AuditLogService.get().addEvent(table.getUserSchema().getUser(), new SelectQueryAuditEvent(table.getUserSchema().getContainer(), columnLoggingComment, shouldLogNameLoggings, dataLoggingFieldKeys, null));
-        }
 	    return ret;
     }
 

@@ -71,6 +71,7 @@ import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.util.UnexpectedException;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.DefaultContainerUser;
 import org.labkey.audit.model.LogManager;
@@ -649,6 +650,12 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     public String getPropertyURI(String eventType, String propertyName)
     {
         return new Lsid("AuditLogService", eventType).toString() + '#' + propertyName;
+    }
+
+    @Override
+    public ActionURL getAuditUrl()
+    {
+        return new ActionURL(AuditController.ShowAuditLogAction.class, ContainerManager.getRoot());
     }
 
     private static final String AUDIT_MIGRATE_PROPSET = "audit-hardtable-migration-13.3";

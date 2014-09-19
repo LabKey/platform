@@ -24,6 +24,7 @@ import org.labkey.api.cache.StringKeyCache;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.query.DefaultSchema;
@@ -1209,7 +1210,7 @@ public class BitSetQueryImpl
                 long ms = System.currentTimeMillis();
                 cs = stmt.executeOlapQuery(query);
                 long d = System.currentTimeMillis() - ms;
-                QueryProfiler.getInstance().track(null, "-- MDX\n" + query, null, d, null, true);
+                QueryProfiler.getInstance().track(null, "-- MDX\n" + query, null, d, null, true, QueryLogging.emptyQueryLogging());
                 logDebug("\nEND executeOlapQuery: " + DateUtil.formatDuration(d) + " --------------------------    --------------------------    --------------------------\n");
                 return cs;
             }

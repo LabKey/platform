@@ -147,6 +147,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             {
                 _allSelects = new LinkedHashSet<>(_selects);
                 _allSelects.addAll(getOORColumns(factory));
+                _allSelects.addAll(getDataLoggingColumns(factory));
             }
             return _allSelects;
         }
@@ -481,6 +482,29 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
                 fieldKeys.put(FieldKey.fromString(colName), colName);
         }
         return QueryService.get().getColumns(getTableInfo(), fieldKeys.keySet());
+    }
+
+    private Set<VisualizationSourceColumn> getDataLoggingColumns(VisualizationSourceColumn.Factory factory)
+    {
+        // Ensure any data logging columns (such as for PHI) are present
+        Set<VisualizationSourceColumn> dataLoggingColumns = new HashSet<>();
+        Set<FieldKey> fieldKeys = new HashSet<>();
+        for (VisualizationSourceColumn column : getSelects(factory, true))
+        {
+            fieldKeys.addAll(column.getColumnInfo().getColumnLogging().getDataLoggingColumns());
+        }
+
+        Map<FieldKey, ColumnInfo> cols = QueryService.get().getColumns(getTableInfo(), fieldKeys);
+        for (FieldKey key : cols.keySet())
+        {
+            VisualizationSourceColumn dataLoggingColumn = factory.create(getSchema(), getQueryName(), key.toString(), true);
+            if (!_allSelects.contains(dataLoggingColumn))
+            {
+                dataLoggingColumn.setHidden(true);
+                dataLoggingColumns.add(dataLoggingColumn);
+            }
+        }
+        return dataLoggingColumns;
     }
 
     private String appendSimpleFilter(StringBuilder where, SimpleFilter filter, String separator)

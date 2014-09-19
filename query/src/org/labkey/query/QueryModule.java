@@ -60,7 +60,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.WebPartFactory;
-import org.labkey.query.audit.SelectQueryAuditProvider;
+import org.labkey.api.data.SelectQueryAuditProvider;
 import org.labkey.query.audit.QueryAuditProvider;
 import org.labkey.query.audit.QueryAuditViewFactory;
 import org.labkey.query.audit.QueryUpdateAuditProvider;
