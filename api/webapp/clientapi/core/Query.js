@@ -526,7 +526,7 @@ LABKEY.Query = new function()
          * @param {String} config.queryName Name of a query table associated with the chosen schema.  See also: <a class="link"
                         href="https://www.labkey.org/wiki/home/Documentation/page.view?name=findNames">
                         How To Find schemaName, queryName &amp; viewName</a>.
-         * @param {String} [config.column] A single column for which the distinct results will be requested. This column
+         * @param {String} config.column A single column for which the distinct results will be requested. This column
          *              must exist within the specified query.
          * @param {String} [config.containerFilter] One of the values of {@link LABKEY.Query.containerFilter} that sets
          *       the scope of this query. Defaults to containerFilter.current, and is interpreted relative to
