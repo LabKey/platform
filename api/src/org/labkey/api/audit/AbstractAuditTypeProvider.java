@@ -44,6 +44,7 @@ import org.labkey.api.query.AliasedColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -293,5 +294,10 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
         // add a column to show the differences between old and new values
         if (oldCol != null && newCol != null)
             table.addColumn(new DataMapDiffColumn(table, "DataChanges", oldCol, newCol));
+    }
+
+    public ActionURL getAuditUrl()
+    {
+        return AuditLogService.get().getAuditUrl();
     }
 }

@@ -142,7 +142,7 @@ public class GroupedResultSet extends ResultSetImpl
 
     public GroupedResultSet(ResultSet rs, String columnName)
     {
-        super(rs);
+        super(rs, QueryLogging.emptyQueryLogging());
 
         try
         {
@@ -220,7 +220,7 @@ public class GroupedResultSet extends ResultSetImpl
 
         public NestedResultSet(ResultSet rs) throws SQLException
         {
-            super(rs);
+            super(rs, QueryLogging.emptyQueryLogging());
             _currentValue = null;
             _rowOffset = super.getRow();  // Reset the row offset so getRow() returns index within the sub-resultset
         }

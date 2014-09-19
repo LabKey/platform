@@ -33,7 +33,7 @@ import java.util.Map;
 * Date: 10/2/12
 * Time: 9:36 PM
 */
-public class ResultSetImpl extends ResultSetWrapper implements TableResultSet
+public class ResultSetImpl extends LoggingResultSetWrapper implements TableResultSet
 {
     private static final Logger _log = Logger.getLogger(ResultSetImpl.class);
 
@@ -48,21 +48,21 @@ public class ResultSetImpl extends ResultSetWrapper implements TableResultSet
     protected boolean _wasClosed = false;
 
 
-    public ResultSetImpl(ResultSet rs)
+    public ResultSetImpl(ResultSet rs, QueryLogging queryLogging)
     {
-        this(rs, Table.ALL_ROWS);
+        this(rs, Table.ALL_ROWS, queryLogging);
     }
 
 
-    public ResultSetImpl(ResultSet rs, int maxRows)
+    public ResultSetImpl(ResultSet rs, int maxRows, QueryLogging queryLogging)
     {
-        this(null, null, rs, maxRows);
+        this(null, null, rs, maxRows, queryLogging);
     }
 
 
-    public ResultSetImpl(@Nullable Connection connection, @Nullable DbScope scope, ResultSet rs, int maxRows)
+    public ResultSetImpl(@Nullable Connection connection, @Nullable DbScope scope, ResultSet rs, int maxRows, QueryLogging queryLogging)
     {
-        super(rs);
+        super(rs, queryLogging);
         MemTracker.getInstance().put(this);
         //noinspection ConstantConditions
         assert null != (_debugCreated = new Throwable("created ResultSetImpl"));

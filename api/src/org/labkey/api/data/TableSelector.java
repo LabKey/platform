@@ -52,6 +52,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     private final @Nullable Filter _filter;
     private final @Nullable Sort _sort;
     private final boolean _stableColumnOrdering;
+    private final QueryLogging _queryLogging = new QueryLogging();
 
     private boolean _forDisplay = false;
 
@@ -118,6 +119,12 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     public TableSelector(ColumnInfo column)
     {
         this(column, null, null);
+    }
+
+    @Override
+    public QueryLogging getQueryLogging()
+    {
+        return _queryLogging;
     }
 
     private static Collection<ColumnInfo> columnInfosList(TableInfo table, Collection<String> select)
@@ -486,7 +493,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
             }
 
             int selectMaxRows = (Table.ALL_ROWS == _maxRows || Table.NO_ROWS == _maxRows) ? _maxRows : (int)_scrollOffset + _maxRows + _extraRows;
-            SQLFragment sql = QueryService.get().getSelectSQL(_table, _columns, _filter, _sort, selectMaxRows, selectOffset, forceSort);
+            SQLFragment sql = QueryService.get().getSelectSQL(_table, _columns, _filter, _sort, selectMaxRows, selectOffset, forceSort, _queryLogging);
 
             // This is for SAS, which doesn't support a SQL LIMIT syntax, so we must set Statement.maxRows() instead
             _statementMaxRows = _table.getSqlDialect().requiresStatementMaxRows() ? selectMaxRows : null;

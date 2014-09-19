@@ -30,7 +30,7 @@ public class ResultSetCollapser extends ResultSetImpl
     // XXX: needs offset?
     public ResultSetCollapser(TableResultSet rs, String columnName, int maxRows)
     {
-        super(rs);
+        super(rs, QueryLogging.emptyQueryLogging());
         try
         {
             if (maxRows > 0)

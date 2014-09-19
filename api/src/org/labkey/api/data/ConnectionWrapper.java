@@ -574,7 +574,8 @@ public class ConnectionWrapper implements java.sql.Connection
             if (getLogger().isDebugEnabled())
                 getLogger().debug(message + " " + DateUtil.formatDuration(duration));
 
-            QueryProfiler.getInstance().track(null, "DatabaseMetaData." + methodName, null, duration, Thread.currentThread().getStackTrace(), ViewServlet.isRequestThread());
+            QueryProfiler.getInstance().track(null, "DatabaseMetaData." + methodName, null, duration, Thread.currentThread().getStackTrace(),
+                                              ViewServlet.isRequestThread(), QueryLogging.emptyQueryLogging());
         }
 
         @Override

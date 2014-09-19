@@ -25,6 +25,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TSVWriter;
 import org.labkey.api.query.QueryService;
@@ -178,7 +179,8 @@ public class QueryProfiler
         _listeners.add(listener);
     }
 
-    public void track(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed, @Nullable StackTraceElement[] stackTrace, boolean requestThread)
+    public void track(@Nullable DbScope scope, String sql, @Nullable List<Object> parameters, long elapsed,
+                      @Nullable StackTraceElement[] stackTrace, boolean requestThread, QueryLogging queryLogging)
     {
         if (null == stackTrace)
             stackTrace = Thread.currentThread().getStackTrace();
@@ -200,7 +202,7 @@ public class QueryProfiler
                 }
                 listener.queryInvoked(scope, sql,
                         (User) QueryService.get().getEnvironment(QueryService.Environment.USER),
-                        (Container)QueryService.get().getEnvironment(QueryService.Environment.CONTAINER), listenerEnvironment);
+                        (Container)QueryService.get().getEnvironment(QueryService.Environment.CONTAINER), listenerEnvironment, queryLogging);
             }
         }
 

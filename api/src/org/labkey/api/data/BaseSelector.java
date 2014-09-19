@@ -51,6 +51,11 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     // No implementation of getResultSet(), getRowCount(), or exists() here since implementations will differ widely.
 
+    public QueryLogging getQueryLogging()
+    {
+        return QueryLogging.emptyQueryLogging();      // empty queryLogging
+    }
+
     @Override
     public @NotNull <E> E[] getArray(Class<E> clazz)
     {

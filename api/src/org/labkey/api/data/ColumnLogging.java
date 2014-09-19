@@ -50,7 +50,7 @@ public class ColumnLogging implements Comparable<ColumnLogging>
     }
 
     // Returns set of field keys for column's whose data should be logged when a query is logged; example is PatientId FK to MRN
-    public Set<FieldKey> getDataLoggingColumns(String currentColumnName)
+    public Set<FieldKey> getDataLoggingColumns()
     {
         return _dataLoggingColumns;
     }

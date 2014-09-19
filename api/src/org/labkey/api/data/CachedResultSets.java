@@ -40,12 +40,13 @@ public class CachedResultSets
 {
     public static CachedResultSet create(ResultSet rs, boolean cacheMetaData, int maxRows) throws SQLException
     {
-        return create(rs, cacheMetaData, maxRows, null);
+        return create(rs, cacheMetaData, maxRows, null, QueryLogging.emptyQueryLogging());      // TODO: Should be only for MetaData??
     }
 
 
-    public static CachedResultSet create(ResultSet rs, boolean cacheMetaData, int maxRows, @Nullable StackTraceElement[] stackTrace) throws SQLException
+    public static CachedResultSet create(ResultSet rsIn, boolean cacheMetaData, int maxRows, @Nullable StackTraceElement[] stackTrace, QueryLogging queryLogging) throws SQLException
     {
+        ResultSet rs = new LoggingResultSetWrapper(rsIn, queryLogging);         // TODO: avoid is we're passed a read-only and empty one??
         ArrayList<RowMap<Object>> list = new ArrayList<>();
 
         if (maxRows == Table.ALL_ROWS)
@@ -60,7 +61,9 @@ public class CachedResultSets
         // If we have another row, then we're not complete
         boolean isComplete = !rs.next();
 
-        return new CachedResultSet(rs.getMetaData(), cacheMetaData, list, isComplete, stackTrace);
+        CachedResultSet cachedResultSet = new CachedResultSet(rs.getMetaData(), cacheMetaData, list, isComplete, stackTrace);
+        rs.close();
+        return cachedResultSet;
     }
 
 

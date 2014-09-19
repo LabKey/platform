@@ -21,6 +21,7 @@ import org.labkey.api.audit.query.AuditLogQueryView;
 import org.labkey.api.audit.query.DefaultAuditQueryView;
 import org.labkey.api.audit.query.DefaultAuditSchema;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -29,6 +30,7 @@ import org.labkey.api.exp.Lsid;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 
 import java.util.Collections;
@@ -190,5 +192,10 @@ public class DefaultAuditProvider implements AuditLogService.I, AuditLogService.
     public String getPropertyURI(String eventType, String propertyName)
     {
         return new Lsid("AuditLogService", eventType).toString() + '#' + propertyName;
+    }
+    @Override
+    public ActionURL getAuditUrl()
+    {
+        return null;
     }
 }

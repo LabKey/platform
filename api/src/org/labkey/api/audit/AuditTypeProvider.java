@@ -21,6 +21,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.view.ActionURL;
 
 import java.util.Map;
 
@@ -62,5 +63,7 @@ public interface AuditTypeProvider
      * Mapping from old audit table names ("intKey1", "key1", and "Property/Foo" to the new column names.)
      */
     Map<FieldKey, String> legacyNameMap();
+
+    public ActionURL getAuditUrl();
 
 }

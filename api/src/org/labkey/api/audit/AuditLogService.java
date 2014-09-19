@@ -29,6 +29,7 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
 
@@ -229,6 +230,8 @@ public class AuditLogService
         public void registerAuditType(AuditTypeProvider provider);
         public List<AuditTypeProvider> getAuditProviders();
         public AuditTypeProvider getAuditProvider(String eventType);
+
+        public ActionURL getAuditUrl();
 
         /**
          * Check if the event type has been migrated from using the old audit log table to the new provisioned audit log tables.

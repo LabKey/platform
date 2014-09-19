@@ -80,7 +80,7 @@ public class ResultSetSelector extends NonSqlExecutingSelector<ResultSetSelector
     @Override
     public TableResultSet getResultSet()
     {
-        return new ResultSetImpl(_rs);
+        return new ResultSetImpl(_rs, QueryLogging.emptyQueryLogging());
     }
 
     @Override

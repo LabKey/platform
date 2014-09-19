@@ -18,6 +18,7 @@ package org.labkey.api.data.queryprofiler;
 import com.drew.lang.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.QueryLogging;
 import org.labkey.api.security.User;
 
 /**
@@ -32,7 +33,7 @@ public interface DatabaseQueryListener<T>
     public boolean matches(String sql);
 
     /** Called when a matching query is run against the database. */
-    public void queryInvoked(DbScope scope, String sql, User user, Container container, @Nullable T environment);
+    public void queryInvoked(DbScope scope, String sql, User user, Container container, @Nullable T environment, QueryLogging queryLogging);
 
     /** @return a custom context, which will be provided if and when the queryInvoked() method is called. This will be called
      * from the originating thread (not an asychronous thread that might actually be running the query), so it can

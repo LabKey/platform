@@ -27,6 +27,7 @@ import org.labkey.api.data.Filter;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.ParameterDescriptionImpl;
+import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
@@ -203,6 +204,7 @@ abstract public class QueryService
      * clause 
      */
     abstract public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort);
+    abstract public SQLFragment getSelectSQL(TableInfo table, @Nullable Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset, boolean forceSort, @NotNull QueryLogging queryLogging);
 
     /**
      * Gets all of the custom views from the given relative path defined in the set of active modules for the

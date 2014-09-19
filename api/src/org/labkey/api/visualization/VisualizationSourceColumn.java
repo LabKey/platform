@@ -15,6 +15,7 @@
  */
 package org.labkey.api.visualization;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
@@ -46,6 +47,7 @@ public class VisualizationSourceColumn
     private String _otherAlias;
     protected String _label;
     private JdbcType _type = null;
+    private boolean _hidden = false;
     private Set<Object> _values = new LinkedHashSet<>();
 
     public Map<String, String> toJSON(String measureName)
@@ -58,6 +60,16 @@ public class VisualizationSourceColumn
         }
         info.put("columnName", getAlias());
         return info;
+    }
+
+    public boolean isHidden()
+    {
+        return _hidden;
+    }
+
+    public void setHidden(boolean hidden)
+    {
+        _hidden = hidden;
     }
 
     public static class Factory
@@ -211,12 +223,7 @@ public class VisualizationSourceColumn
 
         try
         {
-            ColumnInfo columnInfo = findColumnInfo();
-            if (columnInfo == null)
-            {
-                throw new NotFoundException("Unable to find field " + getOriginalName() + " in " + getSchemaName() + "." + getQueryName() +
-                        ".  The field may have been deleted, renamed, or you may not have permissions to read the data.");
-            }
+            findColumnInfo();
         }
         catch (SQLGenerationException e)
         {
@@ -229,17 +236,7 @@ public class VisualizationSourceColumn
         try
         {
             ColumnInfo columnInfo = findColumnInfo();
-            List<String> parts;
-            if (columnInfo != null)
-            {
-                // We found the column
-                parts = columnInfo.getFieldKey().getParts();
-            }
-            else
-            {
-                throw new NotFoundException("Unable to find field " + _name + " in " + _schema.getName() + "." + _queryName +
-                        ".  The field may have been deleted, renamed, or you may not have permissions to read the data.");
-            }
+            List<String> parts = columnInfo.getFieldKey().getParts();
 
             StringBuilder selectName = new StringBuilder();
             String sep = "";
@@ -287,12 +284,6 @@ public class VisualizationSourceColumn
             try
             {
                 ColumnInfo column = findColumnInfo();
-                if (column == null)
-                {
-                    throw new SQLGenerationException("Unable to find field " + _name + " in " + _schema.getName() + "." + _queryName +
-                            ".  The field may have been deleted, renamed, or you may not have permissions to read the data.");
-                }
-
                 _type = column.getJdbcType();
                 _label = column.getLabel();
             }
@@ -304,12 +295,30 @@ public class VisualizationSourceColumn
         }
     }
 
+    @NotNull
+    public ColumnInfo getColumnInfo()
+    {
+        try
+        {
+            return findColumnInfo();
+        }
+        catch (SQLGenerationException e)
+        {
+            throw new NotFoundException(e.getMessage(), e);
+        }
+    }
+
     ColumnInfo _columnInfo;
 
+    @NotNull
     private ColumnInfo findColumnInfo() throws SQLGenerationException
     {
         if (null == _columnInfo)
         {
+            if (getSchemaName() == null || getQueryName() == null || getOriginalName() == null)
+            {
+                throw new IllegalArgumentException("SchemaName, queryName, and name are all required for each measure, dimension, or sort.");
+            }
             TableInfo tinfo = _schema.getTable(_queryName);
             if (tinfo == null)
             {
@@ -327,6 +336,12 @@ public class VisualizationSourceColumn
                 column = cols.get(fieldKey);
             }
             _columnInfo = column;
+            if (null == _columnInfo)
+            {
+                throw new NotFoundException("Unable to find field " + getOriginalName() + " in " + getSchemaName() + "." + getQueryName() +
+                        ".  The field may have been deleted, renamed, or you may not have permissions to read the data.");
+            }
+
         }
         return _columnInfo;
     }

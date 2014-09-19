@@ -23,6 +23,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.OneBasedList;
 import org.labkey.api.data.ConnectionWrapper;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.util.BreakpointThread;
 import org.labkey.api.util.DateUtil;
@@ -70,6 +71,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     private OneBasedList<Object> _parameters = null;
     private @Nullable StackTraceElement[] _stackTrace = null;
     private @Nullable Boolean _requestThread = null;
+    private QueryLogging _queryLogging = QueryLogging.emptyQueryLogging();
 
     String _sqlStateTestException = null;
 
@@ -113,6 +115,16 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
             throws SQLException
     {
         ((CallableStatement)_stmt).registerOutParameter(parameterIndex, sqlType, scale);
+    }
+
+    public QueryLogging getQueryLogging()
+    {
+        return _queryLogging;
+    }
+
+    public void setQueryLogging(QueryLogging queryLogging)
+    {
+        _queryLogging = queryLogging;
     }
 
     public boolean wasNull()
@@ -1599,13 +1611,13 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
                 ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
             }
         }
-        _logStatement(sql, x, rowsAffected);
+        _logStatement(sql, x, rowsAffected, getQueryLogging());
     }
     
 
     private static Package _java_lang = java.lang.String.class.getPackage();
 
-    private void _logStatement(String sql, Exception x, int rowsAffected)
+    private void _logStatement(String sql, Exception x, int rowsAffected, QueryLogging queryLogging)
     {
         long elapsed = System.currentTimeMillis() - _msStart;
         boolean isAssertEnabled = false;
@@ -1613,7 +1625,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
 
         // Make a copy of the parameters list (it gets modified below) and switch to zero-based list (_parameters is a one-based list)
         List<Object> zeroBasedList = null != _parameters ? new ArrayList<>(_parameters.getUnderlyingList()) : null;
-        QueryProfiler.getInstance().track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread());
+        QueryProfiler.getInstance().track(_conn.getScope(), sql, zeroBasedList, elapsed, _stackTrace, isRequestThread(), queryLogging);
 
         if (!_log.isEnabledFor(Level.DEBUG) && !isAssertEnabled)
             return;

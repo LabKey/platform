@@ -63,7 +63,7 @@ public class JdbcMetaDataSelector extends NonSqlExecutingSelector<JdbcMetaDataSe
             @Override
             public TableResultSet handle(ResultSet rs, Connection conn) throws SQLException
             {
-                return new ResultSetImpl(rs);
+                return new ResultSetImpl(rs, QueryLogging.emptyQueryLogging());
             }
         });
     }

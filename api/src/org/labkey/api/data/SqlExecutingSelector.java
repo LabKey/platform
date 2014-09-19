@@ -97,7 +97,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                 public TableResultSet handle(ResultSet rs, Connection conn) throws SQLException
                 {
                     // We're handing back a ResultSet, so cache the meta data
-                    return CachedResultSets.create(rs, true, _maxRows, _loggingStacktrace);
+                    return CachedResultSets.create(rs, true, _maxRows, _loggingStacktrace, getQueryLogging());
                 }
             });
         }
@@ -108,7 +108,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                 @Override
                 public TableResultSet handle(ResultSet rs, Connection conn) throws SQLException
                 {
-                    return new ResultSetImpl(conn, getScope(), rs, _maxRows);
+                    return new ResultSetImpl(conn, getScope(), rs, _maxRows, getQueryLogging());
                 }
             });
         }
@@ -398,6 +398,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                     StatementWrapper sw = (StatementWrapper)statement;
                     sw.setStackTrace(asyncRequest.getCreationStackTrace());
                     sw.setRequestThread(true);      // AsyncRequests aren't really background threads; treat them as request threads.
+                    sw.setQueryLogging(getQueryLogging());
                 }
             }
         }
