@@ -68,7 +68,9 @@ public class ReportQueryView extends QueryView
                 filter = _filter;
             view.getRenderContext().setBaseFilter(filter);
         }
-        StudyService.get().applyDefaultQCStateFilter(view);
+        StudyService.Service svc = StudyService.get();
+        if (svc != null)
+            svc.applyDefaultQCStateFilter(view);
         return view;
     }
 }

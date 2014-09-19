@@ -396,7 +396,8 @@ public class DefaultFolderType implements FolderType
             defaultModules.add(getModule("FileContent"));
             defaultModules.add(getModule("Wiki"));
             defaultModules.add(getModule("Query"));
-            defaultModules.add(getModule("Issues"));
+            if (ModuleLoader.getInstance().hasModule("Issues"))
+                defaultModules.add(getModule("Issues"));
             s_defaultModules = Collections.unmodifiableSet(defaultModules);
         }
 

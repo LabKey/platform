@@ -277,6 +277,12 @@ abstract public class JspBase extends JspContext implements HasViewContext
         return new ActionURL(actionClass, getContainer());
     }
 
+    /** @return true if the UrlProvider exists. */
+    public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
+    {
+        return PageFlowUtil.hasUrlProvider(inter);
+    }
+
     /**
      * Convenience function for getting a specified <code>UrlProvider</code> interface
      * implementation, for use in writing URLs implemented in other modules.
@@ -284,6 +290,7 @@ abstract public class JspBase extends JspContext implements HasViewContext
      * @param inter interface extending UrlProvider
      * @return an implementation of the interface
      */
+    @Nullable
     public <P extends UrlProvider> P urlProvider(Class<P> inter)
     {
         return PageFlowUtil.urlProvider(inter);

@@ -2235,6 +2235,12 @@ public class PageFlowUtil
         }
     }
 
+    /** @return true if the UrlProvider exists. */
+    static public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
+    {
+        return ModuleLoader.getInstance().hasUrlProvider(inter);
+    }
+
     /**
      * Returns a specified <code>UrlProvider</code> interface implementation, for use
      * in writing URLs implemented in other modules.
@@ -2242,6 +2248,7 @@ public class PageFlowUtil
      * @param inter interface extending UrlProvider
      * @return an implementation of the interface.
      */
+    @Nullable
     static public <P extends UrlProvider> P urlProvider(Class<P> inter)
     {
         return ModuleLoader.getInstance().getUrlProvider(inter);

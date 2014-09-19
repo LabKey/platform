@@ -48,8 +48,9 @@
     LookAndFeelProperties laf = LookAndFeelProperties.getInstance(c);
 
     boolean hasWarnings = me.getWarningMessages().size() > 0;
-    boolean showSearchForm = bean.pageConfig.getTemplate() == PageConfig.Template.Home || bean.pageConfig.getTemplate() == PageConfig.Template.None;
-    boolean showHeaderMenu = !showSearchForm;
+    boolean homeOrNoneTemplate = bean.pageConfig.getTemplate() == PageConfig.Template.Home || bean.pageConfig.getTemplate() == PageConfig.Template.None;
+    boolean showSearchForm = hasUrlProvider(SearchUrls.class) && homeOrNoneTemplate;
+    boolean showHeaderMenu = !homeOrNoneTemplate;
     if ("search".equalsIgnoreCase(currentURL.getController()) && "search".equalsIgnoreCase(currentURL.getAction()))
     {
         showSearchForm = false;

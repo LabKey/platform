@@ -50,8 +50,6 @@ import java.util.Set;
  */
 public class StudyService
 {
-    private static Service _serviceImpl;
-
     /** LSID namespace prefix for study specimens in the experiment material table */
     public static final String SPECIMEN_NAMESPACE_PREFIX = "StudySpecimen";
 
@@ -181,18 +179,9 @@ public class StudyService
         TableInfo getSpecimenSummaryTableUnion(QuerySchema qsDefault, List<Container> containers, @NotNull Map<Container, SQLFragment> filterFragments, boolean dontAliasColumns, boolean useParticipantIdName);
     }
 
-    public static void register(Service serviceImpl)
-    {
-        if (_serviceImpl != null)
-            throw new IllegalStateException("Service has already been set.");
-        _serviceImpl = serviceImpl;
-        ServiceRegistry.get().registerService(StudyService.Service.class, serviceImpl);
-    }
-
+    @Nullable
     public static Service get()
     {
-        if (_serviceImpl == null)
-            throw new IllegalStateException("Service has not been set. You need to call register() first.");
-        return _serviceImpl;
+        return ServiceRegistry.get(StudyService.Service.class);
     }
 }

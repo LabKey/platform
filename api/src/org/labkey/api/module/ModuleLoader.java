@@ -1399,6 +1399,11 @@ public class ModuleLoader implements Filter
         }
     }
 
+    public boolean hasModule(String name)
+    {
+        return moduleMap.containsKey(name);
+    }
+
     public Module getModule(String name)
     {
         return moduleMap.get(name);
@@ -1573,14 +1578,19 @@ public class ModuleLoader implements Filter
         return _schemaNameToSchemaDetails.get(schemaName);
     }
 
+    /** @return true if the UrlProvider exists. */
+    public <P extends UrlProvider> boolean hasUrlProvider(Class<P> inter)
+    {
+        return _urlProviderToImpl.get(inter) != null;
+    }
+
+    @Nullable
     public <P extends UrlProvider> P getUrlProvider(Class<P> inter)
     {
         Class<? extends UrlProvider> clazz = _urlProviderToImpl.get(inter);
 
         if (clazz == null)
-        {
-            throw new IllegalArgumentException("Interface " + inter.getName() + " not registered.");
-        }
+            return null;
 
         try
         {

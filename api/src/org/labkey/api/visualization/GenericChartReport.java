@@ -187,7 +187,8 @@ public abstract class GenericChartReport extends AbstractReport
      */
     public static NavTree getQuickChartItem(String rgnName, ViewContext context, List<DisplayColumn> columns, ColumnInfo col, QuerySettings settings)
     {
-        if (settings != null && settings.getSchemaName() != null && settings.getQueryName() != null)
+        VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
+        if (urlProvider != null && settings != null && settings.getSchemaName() != null && settings.getQueryName() != null)
         {
             boolean quickChartDisabled = BooleanUtils.toBoolean(context.getActionURL().getParameter(rgnName + ".quickChartDisabled"));
 
@@ -201,7 +202,6 @@ public abstract class GenericChartReport extends AbstractReport
                     {
                         RenderType type = RenderType.AUTO_PLOT;
 
-                        VisualizationUrls urlProvider = PageFlowUtil.urlProvider(VisualizationUrls.class);
                         ActionURL plotURL = urlProvider.getGenericChartDesignerURL(context.getContainer(), context.getUser(), settings, type).addParameter("autoColumnYName", col.getName());
 
                         NavTree navItem = new NavTree("Quick Chart");

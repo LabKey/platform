@@ -135,8 +135,9 @@ public abstract class AbstractWebdavResource extends AbstractResource implements
 
     public void setLastIndexed(long indexed, long modified)
     {
-        if (isFile())
-            ServiceRegistry.get().getService(SearchService.class).setLastIndexedForPath(getPath(), indexed, modified);
+        SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+        if (isFile() && ss != null)
+            ss.setLastIndexedForPath(getPath(), indexed, modified);
     }
 
     public User getModifiedBy()

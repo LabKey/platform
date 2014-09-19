@@ -48,6 +48,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -190,7 +191,10 @@ public class ExperimentRunListView extends QueryView
 
         if (_showUploadAssayRunsButton && c.hasPermission(getUser(), InsertPermission.class))
         {
-            List<ExpProtocol> protocols = AssayService.get().getAssayProtocols(getContainer());
+            List<ExpProtocol> protocols = Collections.emptyList();
+            if (AssayService.get() != null)
+                protocols = AssayService.get().getAssayProtocols(getContainer());
+
             if (!protocols.isEmpty())
             {
                 MenuButton addRunsButton;

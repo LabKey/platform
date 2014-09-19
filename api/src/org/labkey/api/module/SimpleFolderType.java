@@ -302,11 +302,15 @@ public class SimpleFolderType extends MultiPortalFolderType
         Set<Module> activeModules = new HashSet<>();
         for (String moduleName : type.getModules().getModuleNameArray())
         {
-            Module module = getModule(moduleName);
-            if (module == null)
-                LOGGER.error("Unable to load folder type: module " + moduleName + " does not exist.");
-            else
+            if (ModuleLoader.getInstance().hasModule(moduleName))
+            {
+                Module module = getModule(moduleName);
                 activeModules.add(module);
+            }
+            else
+            {
+                LOGGER.warn("Module '" + moduleName + "' not available for folder type '" + _name + "'");
+            }
         }
         _activeModules = activeModules;
         if (type.getDefaultModule() != null)

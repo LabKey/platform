@@ -742,7 +742,12 @@ public abstract class ContainerFilter
             {
                 result.add(currentContainer.getEntityId());
             }
-            Study study = StudyService.get().getStudy(currentContainer);
+
+            Study study = null;
+            StudyService.Service svc = StudyService.get();
+            if (svc != null)
+                study = svc.getStudy(currentContainer);
+
             if (study != null && study.isAncillaryStudy())
             {
                 Study sourceStudy = study.getSourceStudy();

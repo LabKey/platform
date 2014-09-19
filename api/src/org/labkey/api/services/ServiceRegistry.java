@@ -100,11 +100,23 @@ public class ServiceRegistry
         return null==s ? null : (T)s.instance;
     }
 
+    public <T> boolean hasService(Class<T> type)
+    {
+        return getService(type) != null;
+    }
 
-    // short cut
+
+    /** Returns a service implementation for a given service interface. */
     public static <T> T get(Class<T> type)
     {
         return get().getService(type);
+    }
+
+
+    /** Check a service has been registered. */
+    public static <T> boolean has(Class<T> type)
+    {
+        return get().hasService(type);
     }
 
 
