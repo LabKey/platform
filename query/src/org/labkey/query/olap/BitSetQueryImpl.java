@@ -850,6 +850,10 @@ public class BitSetQueryImpl
         {
             Result expr = null==rowsExpr ? colsExpr : rowsExpr;
             Collection<Member> members = expr.getCollection();
+            if (null != rowsExpr)
+                rowMembers = members;
+            else
+                colMembers = members;
 
             Collection<Member> notEmptyMembers = !qq.showEmpty ? new ArrayList<Member>() : null;
             boolean skipCalculated = expr.skipCalculated();

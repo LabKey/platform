@@ -84,7 +84,7 @@ public class QubeCellSet implements CellSet
     {
         _cube = cube;
         if (null == columns && null == rows)
-            throw new IllegalArgumentException("just specify at least one axis");
+            throw new IllegalArgumentException("Query must specify at least one axis (onRows or onColumns)");
         if (null == columns)
             _axes.add(new _MeasureAxis(Axis.COLUMNS, measure));
         else
