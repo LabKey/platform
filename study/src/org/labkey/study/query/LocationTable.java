@@ -164,34 +164,30 @@ public class LocationTable extends BaseStudyTable
     {
         public LocationInUseExpressionColumn(TableInfo parent, ColumnInfo... dependentColumns)
         {
-            super(parent, "In Use", sqlBuilder(), JdbcType.BOOLEAN);
+            super(parent, "In Use", getLocationExpression(), JdbcType.BOOLEAN);
         }
     }
 
-    public SQLFragment sqlBuilder()
+    public SQLFragment getLocationExpression()
     {
-        final String EXISTS = "(EXISTS(SELECT 1 FROM ";
+        final String EXISTS = "    EXISTS(SELECT 1 FROM ";
         final StudySchema schema = StudySchema.getInstance();
         //TODO: Switch over to appends
-        SQLFragment ret = new SQLFragment(EXISTS + schema.getTableInfoSampleRequest() + " WHERE Location.rowid = DestinationSiteID))"
-                + "\n OR"
-                + "\n" + EXISTS + schema.getTableInfoSampleRequestRequirement() + " s WHERE Location.rowid = SiteId))"
-                + "\n OR"
-                + "\n" + EXISTS + schema.getTableInfoParticipant() + " s WHERE Location.rowid = s.EnrollmentSiteId OR location.rowid = CurrentSiteId))"
-                + "\n OR"
-                + "\n" + EXISTS + schema.getTableInfoAssaySpecimen() + " s WHERE Location.rowid = LocationId))");
+        SQLFragment ret = new SQLFragment(EXISTS + schema.getTableInfoSampleRequest() + " WHERE Location.rowid = DestinationSiteID) OR\n"
+                + EXISTS + schema.getTableInfoSampleRequestRequirement() + " s WHERE Location.rowid = SiteId) OR\n"
+                + EXISTS + schema.getTableInfoParticipant() + " s WHERE Location.rowid = s.EnrollmentSiteId OR location.rowid = CurrentSiteId) OR\n"
+                + EXISTS + schema.getTableInfoAssaySpecimen() + " s WHERE Location.rowid = LocationId)");
         List<Container> cons = getContainer().getChildren();
         cons.add(getContainer());
         //checks usages in all containers, regardless of what view is actually being used.
         for (Container c : cons)
         {
-            ret.append(" OR" + EXISTS + schema.getTableInfoSpecimenEventIfExists(c) + " s WHERE Location.rowid = s.labid OR location.rowid = OriginatingLocationId))"
-                    + "\n OR"
-                    + "\n" + EXISTS + schema.getTableInfoVialIfExists(c) + " s WHERE Location.rowid = s.CurrentLocation OR location.rowid = ProcessingLocation))"
-                    + "\n OR"
-                    + "\n" + EXISTS + schema.getTableInfoSpecimenIfExists(c) + " s WHERE Location.rowid = s.originatinglocationid OR Location.rowid = s.ProcessingLocation))");
+            ret.append(" OR\n" + EXISTS + schema.getTableInfoSpecimenEventIfExists(c) + " s WHERE Location.rowid = s.labid OR location.rowid = OriginatingLocationId) OR\n"
+                    + EXISTS + schema.getTableInfoVialIfExists(c) + " s WHERE Location.rowid = s.CurrentLocation OR location.rowid = ProcessingLocation) OR\n"
+                    + EXISTS + schema.getTableInfoSpecimenIfExists(c) + " s WHERE Location.rowid = s.originatinglocationid OR Location.rowid = s.ProcessingLocation)");
         }
-        return ret;
-    }
 
+        // PostgreSQL allows EXISTS as a simple expression, but SQL Server does not. Probably should make this a dialect capability.
+        return schema.getSqlDialect().isSqlServer() ? new SQLFragment("CAST(CASE WHEN\n").append(ret).append("\nTHEN 1 ELSE 0 END AS BIT)") : ret;
+    }
 }
