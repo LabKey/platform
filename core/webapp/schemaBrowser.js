@@ -1062,12 +1062,12 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
         if (!this.currentContainer)
         {
             this.clearValidationErrors();
-            Ext4.get("lk-vq-start").dom.disabled = true;
-            Ext4.get("lk-vq-stop").dom.disabled = false;
-            Ext4.get("lk-vq-subfolders").dom.disabled = true;
-            Ext4.get("lk-vq-systemqueries").dom.disabled = true;
-            Ext4.get("lk-vq-validatemetadata").dom.disabled = true;
-            Ext4.get("lk-vq-stop").focus();
+            Ext4.getCmp("lk-vq-start").setDisabled(true);
+            Ext4.getCmp("lk-vq-stop").setDisabled(false);
+            Ext4.getCmp("lk-vq-subfolders").setDisabled(true);
+            Ext4.getCmp("lk-vq-systemqueries").setDisabled(true);
+            Ext4.getCmp("lk-vq-validatemetadata").setDisabled(true);
+            Ext4.getCmp("lk-vq-stop").focus();
             this.numErrors = 0;
             this.numValid = 0;
             this.containerCount = containerList.length;
@@ -1090,13 +1090,10 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
 
     stopValidation : function() {
         this.stop = true;
-        Ext4.get("lk-vq-stop").set({
-            disabled: true
-        });
-        Ext4.get("lk-vq-stop").dom.disabled = true;
-        Ext4.get("lk-vq-subfolders").dom.disabled = false;
-        Ext4.get("lk-vq-systemqueries").dom.disabled = false;
-        Ext4.get("lk-vq-validatemetadata").dom.disabled = false;
+        Ext4.getCmp("lk-vq-stop").setDisabled(true);
+        Ext4.getCmp("lk-vq-subfolders").setDisabled(false);
+        Ext4.getCmp("lk-vq-systemqueries").setDisabled(false);
+        Ext4.getCmp("lk-vq-validatemetadata").setDisabled(false);
         this.currentContainer = undefined;
     },
 
@@ -1234,12 +1231,12 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
             this.startValidation(this.remainingContainers);
         else
         {
-            Ext4.get("lk-vq-start").dom.disabled = false;
-            Ext4.get("lk-vq-stop").dom.disabled = true;
-            Ext4.get("lk-vq-subfolders").dom.disabled = false;
-            Ext4.get("lk-vq-systemqueries").dom.disabled = false;
-            Ext4.get("lk-vq-validatemetadata").dom.disabled = false;
-            Ext4.get("lk-vq-start").focus();
+            Ext4.getCmp("lk-vq-start").setDisabled(false);
+            Ext4.getCmp("lk-vq-stop").setDisabled(true);
+            Ext4.getCmp("lk-vq-subfolders").setDisabled(false);
+            Ext4.getCmp("lk-vq-systemqueries").setDisabled(false);
+            Ext4.getCmp("lk-vq-validatemetadata").setDisabled(false);
+            Ext4.getCmp("lk-vq-start").focus();
             this.validating = false;
             this.currentContainer = undefined;
         }
@@ -1252,7 +1249,7 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
     clearValidationErrors : function() {
         var errors = this.getComponent("lk-vq-errors");
         if (errors)
-            errors.remove();
+            errors.removeAll();
     },
 
     addValidationError : function(schemaName, queryName, errorInfo) {
