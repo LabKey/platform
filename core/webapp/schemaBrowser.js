@@ -1756,10 +1756,7 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
                             queryCache: this._qcache,
                             listeners: {
                                 schemaclick: {
-                                    fn: function(schemaName){
-                                        this.selectSchema(schemaName);
-                                        this.showPanel(this.sspPrefix + schemaName);
-                                    },
+                                    fn: this.onSchemaClick,
                                     scope: this
                                 }
                             }
@@ -2053,62 +2050,17 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
         if (schemaNode)
         {
             //tree.selectPath(schemaNode.getPath('text'));
-            schemaNode.expand(false, function (schemaNode) {
-                if (callback)
-                    callback.call((scope || this), true, schemaNode);
-            });
-        }
-        else
-        {
-            // Attempt to expand along the schemaName path.
-            // Find the data source root node first
-            var parts = schemaName.getParts();
-            var root = tree.getRootNode();
-            var dataSourceNodes = root.childNodes;
-            var dataSourceRoot;
-            for (var i = 0; i < dataSourceNodes.length; i++) {
-                var node = dataSourceNodes[i];
-                var part = parts[0].toLowerCase();
-                var child = node.findChildBy(function (n) {
-                    return n.data.name && n.data.name.toLowerCase() == part;
+            // Issue 21557: Schema browser tree panel gets confused with explicit schema/query params
+            if (!schemaNode.expanding)
+            {
+                schemaNode.expanding = true;
+                schemaNode.expand(false, function (schemaNode) {
+                    if (callback)
+                        callback.call((scope || this), true, schemaNode);
                 });
-
-                if (child) {
-                    dataSourceRoot = node;
-                    break;
-                }
-            }
-
-            // Expand along the patch to fetch the schema data
-            if (dataSourceRoot) {
-                var partIndex = 0;
-                var schemaPathStr = "/root/" + dataSourceRoot.attributes.name + "/" + parts[partIndex];
-                var expandCallback = function (success, lastNode) {
-                    if (!success)
-                    {
-                        Ext4.Msg.alert("Missing Schema", "The schema '" + Ext4.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
-                        if (callback)
-                            callback.call((scope || this), true, lastNode);
-                    }
-
-                    // Might need to recurse to expand child schemas
-                    if (!success || ++partIndex == parts.length)
-                    {
-                        if (callback)
-                            callback.call((scope || this), true, lastNode);
-                    }
-                    else
-                    {
-                        schemaPathStr += "/" + parts[partIndex];
-                        tree.expandPath(schemaPathStr, "name", expandCallback);
-                    }
-                };
-                tree.expandPath(schemaPathStr, "name", expandCallback);
-            }
-            else {
-                Ext4.Msg.alert("Missing Schema", "The schema '" + Ext4.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
             }
         }
+        // consider else with error alert here.
     },
 
     selectQuery : function(schemaName, queryName, callback, scope) {
