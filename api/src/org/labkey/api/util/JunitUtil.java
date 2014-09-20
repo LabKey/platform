@@ -85,9 +85,9 @@ public class JunitUtil
     /**
      * Returns the container called "_junit" to be used by test cases.
      */
-    private static Path getTestContainerPath()
+    public static Path getTestContainerPath()
     {
-        return ContainerManager.getSharedContainer().getParsedPath().append("_junit");
+        return ContainerManager.getSharedContainer().getParsedPath().append("_junit",true);
     }
 
     public static Container getTestContainer()
