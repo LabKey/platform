@@ -3,19 +3,16 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresCss("_images/icons.css");
-Ext4.namespace('LABKEY', 'LABKEY.ext');
-
 Ext4.Ajax.timeout = 60000;
 Ext4.QuickTips.init();
 
-Ext4.define('LABKEY.ext.QueryCache', {
+Ext4.define('LABKEY.ext4.QueryCache', {
 
     getSchemas : function (callback, scope)
     {
         if (this.schemaTree)
         {
-            if (callback)
+            if (Ext4.isFunction(callback))
                 callback.call(scope || this, this.schemaTree);
             return;
         }
@@ -106,7 +103,7 @@ Ext4.define('LABKEY.ext.QueryCache', {
     }
 });
 
-Ext4.define('LABKEY.ext.QueryDetailsCache', {
+Ext4.define('LABKEY.ext4.QueryDetailsCache', {
 
     mixins: {
         observable: 'Ext.util.Observable'
@@ -133,7 +130,7 @@ Ext4.define('LABKEY.ext.QueryDetailsCache', {
         var cacheKey = this.getCacheKey(schemaName, queryName, fk);
         if (this.queryDetailsMap[cacheKey])
         {
-            if (callback)
+            if (Ext4.isFunction(callback))
                 callback.call(scope || this, this.queryDetailsMap[cacheKey]);
             return;
         }
@@ -149,11 +146,7 @@ Ext4.define('LABKEY.ext.QueryDetailsCache', {
                     callback.call(scope || this, json);
             },
             //Issue 15674: if a query is not found, provide a more informative error message
-            failure: function(response){
-                if (Ext4.isFunction(errorCallback)){
-                    errorCallback.call(scope || this, response);
-                }
-            },
+            failure: errorCallback,
             scope: this
         });
     },
@@ -175,7 +168,7 @@ Ext4.define('LABKEY.ext.QueryDetailsCache', {
 
 });
 
-Ext4.define('LABKEY.ext.QueryTreePanel', {
+Ext4.define('LABKEY.ext4.QueryTreePanel', {
 
     extend: 'Ext.tree.Panel',
 
@@ -288,7 +281,7 @@ Ext4.define('LABKEY.ext.QueryTreePanel', {
     }
 });
 
-Ext4.define('LABKEY.ext.QueryDetailsPanel', {
+Ext4.define('LABKEY.ext4.QueryDetailsPanel', {
 
     extend: 'Ext.panel.Panel',
 
@@ -851,7 +844,7 @@ Ext4.define('LABKEY.ext.QueryDetailsPanel', {
     }
 });
 
-Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
+Ext4.define('LABKEY.ext4.ValidateQueriesPanel', {
 
     extend: 'Ext.panel.Panel',
 
@@ -1343,7 +1336,7 @@ Ext4.define('LABKEY.ext.ValidateQueriesPanel', {
     }
 });
 
-Ext4.define('LABKEY.ext.SchemaBrowserPanel', {
+Ext4.define('LABKEY.ext4.SchemaBrowserPanel', {
 
     extend: 'Ext.panel.Panel',
 
@@ -1396,7 +1389,7 @@ Ext4.define('LABKEY.ext.SchemaBrowserPanel', {
             });
         });
 
-        var table = LABKEY.ext.SchemaBrowserPanel._schemaListTpl.append(this.body, {
+        var table = LABKEY.ext4.SchemaBrowserPanel._schemaListTpl.append(this.body, {
             schemas: rows,
             title: title
         });
@@ -1418,9 +1411,9 @@ Ext4.define('LABKEY.ext.SchemaBrowserPanel', {
     }
 });
 
-Ext4.define('LABKEY.ext.SchemaBrowserHomePanel', {
+Ext4.define('LABKEY.ext4.SchemaBrowserHomePanel', {
 
-    extend: 'LABKEY.ext.SchemaBrowserPanel',
+    extend: 'LABKEY.ext4.SchemaBrowserPanel',
 
     alias: 'widget.labkey-schema-browser-home-panel',
 
@@ -1471,9 +1464,9 @@ Ext4.define('LABKEY.ext.SchemaBrowserHomePanel', {
     }
 });
 
-Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
+Ext4.define('LABKEY.ext4.SchemaSummaryPanel', {
 
-    extend: 'LABKEY.ext.SchemaBrowserPanel',
+    extend: 'LABKEY.ext4.SchemaBrowserPanel',
 
     alias: 'widget.labkey-schema-summary-panel',
 
@@ -1664,7 +1657,7 @@ Ext4.define('LABKEY.ext.SchemaSummaryPanel', {
     }
 });
 
-Ext4.define('LABKEY.ext.SchemaBrowser', {
+Ext4.define('LABKEY.ext4.SchemaBrowser', {
 
     extend: 'Ext.panel.Panel',
 
@@ -1672,9 +1665,13 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
     sspPrefix: 'ssp-',
     historyPrefix: 'sbh-',
 
-    _qcache: new LABKEY.ext.QueryCache(),
+    layout: 'border',
 
     initComponent : function(){
+
+        this._qcache = new LABKEY.ext4.QueryCache();
+        this._qdcache = new LABKEY.ext4.QueryDetailsCache();
+
         var tbar = [
             {
                 text: 'Refresh',
@@ -1718,8 +1715,6 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
         }
 
         Ext4.apply(this,{
-            _qdcache: new LABKEY.ext.QueryDetailsCache(),
-            layout: 'border',
             items : [
                 {
                     id: 'lk-sb-tree',
@@ -1816,7 +1811,7 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
             var panel;
             if (id == "lk-vq-panel")
             {
-                panel = new LABKEY.ext.ValidateQueriesPanel(
+                panel = new LABKEY.ext4.ValidateQueriesPanel(
                 {
                     id: "lk-vq-panel",
                     closable: true,
@@ -1835,7 +1830,7 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
             else if (this.qdpPrefix == id.substring(0, this.qdpPrefix.length))
             {
                 var idMap = this.parseQueryPanelId(id);
-                panel = new LABKEY.ext.QueryDetailsPanel(
+                panel = new LABKEY.ext4.QueryDetailsPanel(
                 {
                     cache: this._qdcache,
                     schemaName: idMap.schemaName,
@@ -1856,7 +1851,7 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
             {
                 var schemaName = id.substring(this.sspPrefix.length);
                 var schemaPath = LABKEY.SchemaKey.fromString(schemaName);
-                panel = new LABKEY.ext.SchemaSummaryPanel(
+                panel = new LABKEY.ext4.SchemaSummaryPanel(
                 {
                     cache: this._qcache,
                     schemaName: schemaPath,
@@ -2032,16 +2027,49 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
     },
 
     selectSchema : function(schemaName) {
-        this.expandSchema(schemaName, function (success, schemaNode) {
-            // it appears schemaNode is coming back as an array even when it's passed to expand as a single object
-            if(schemaNode instanceof Array )
-                schemaNode =schemaNode[0];
 
-            // NOTE: we could look at passing tree into here but just going to rip it out of node
-            var tree = schemaNode.store.ownerTree;
-            if (success)
-                tree.getSelectionModel().select(schemaNode.parentNode);
-        });
+        var tree = this.getComponent("lk-sb-tree");
+
+        this.expandSchema(schemaName, function(success, schemaNode) {
+            if (success === true) {
+                if (Ext4.isArray(schemaNode)) {
+                    if (!Ext4.isEmpty(schemaNode)) {
+                        schemaNode = schemaNode[0];
+                    }
+                }
+
+                if (Ext4.isObject(schemaNode)) {
+                    tree.getSelectionModel().select(schemaNode.parentNode);
+                }
+            }
+        }, this);
+    },
+
+    getSchemaNode : function(tree, schemaName) {
+        if (!(schemaName instanceof LABKEY.SchemaKey))
+            schemaName = LABKEY.SchemaKey.fromString(schemaName);
+
+        var parts = schemaName.getParts();
+
+        var root = tree.getRootNode();
+        var dataSourceNodes = root.childNodes;
+        for (var i = 0; i < dataSourceNodes.length; i++)
+        {
+            var node = dataSourceNodes[i];
+            for (var j = 0; node && j < parts.length; j++)
+            {
+                var part = parts[j].toLowerCase();
+                node = node.findChildBy(function (n) {
+                    return n.data.name && n.data.name.toLowerCase() == part;
+                });
+            }
+
+            // found node
+            if (node && j == parts.length)
+                return node;
+        }
+
+        return null;
     },
 
     expandSchema : function(schemaName, callback, scope) {
@@ -2049,12 +2077,12 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
             schemaName = LABKEY.SchemaKey.fromString(schemaName);
 
         var tree = this.getComponent("lk-sb-tree");
-        var schemaNode = getSchemaNode(tree, schemaName);
+        var schemaNode = this.getSchemaNode(tree, schemaName);
         if (schemaNode)
         {
             //tree.selectPath(schemaNode.getPath('text'));
             schemaNode.expand(false, function (schemaNode) {
-                if (callback)
+                if (Ext4.isFunction(callback))
                     callback.call((scope || this), true, schemaNode);
             });
         }
@@ -2087,14 +2115,14 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
                     if (!success)
                     {
                         Ext4.Msg.alert("Missing Schema", "The schema '" + Ext4.htmlEncode(schemaName.toDisplayString()) + "' was not found. The data source for the schema may be unreachable, or the schema may have been deleted.");
-                        if (callback)
+                        if (Ext4.isFunction(callback))
                             callback.call((scope || this), true, lastNode);
                     }
 
                     // Might need to recurse to expand child schemas
                     if (!success || ++partIndex == parts.length)
                     {
-                        if (callback)
+                        if (Ext4.isFunction(callback))
                             callback.call((scope || this), true, lastNode);
                     }
                     else
@@ -2145,31 +2173,3 @@ Ext4.define('LABKEY.ext.SchemaBrowser', {
         }, scope || this);
     }
 });
-
-function getSchemaNode(tree, schemaName)
-{
-    if (!(schemaName instanceof LABKEY.SchemaKey))
-        schemaName = LABKEY.SchemaKey.fromString(schemaName);
-
-    var parts = schemaName.getParts();
-
-    var root = tree.getRootNode();
-    var dataSourceNodes = root.childNodes;
-    for (var i = 0; i < dataSourceNodes.length; i++)
-    {
-        var node = dataSourceNodes[i];
-        for (var j = 0; node && j < parts.length; j++)
-        {
-            var part = parts[j].toLowerCase();
-            node = node.findChildBy(function (n) {
-                return n.data.name && n.data.name.toLowerCase() == part;
-            });
-        }
-
-        // found node
-        if (node && j == parts.length)
-            return node;
-    }
-
-    return null;
-}

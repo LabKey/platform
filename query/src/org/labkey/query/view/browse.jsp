@@ -25,6 +25,7 @@
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromFilePath("clientapi/ext4"));
         resources.add(ClientDependency.fromFilePath("schemaBrowser.css"));
+        resources.add(ClientDependency.fromFilePath("_images/icons.css"));
         resources.add(ClientDependency.fromFilePath("schemaBrowser.js"));
         return resources;
     }
@@ -32,11 +33,15 @@
 <div id="browserContainer">
     <div id="browser" class="schemabrowser"></div>
 </div>
+<!-- Fields required for history management -->
+<form id="history-form" class="x-hidden">
+    <input type="hidden" id="x-history-field" />
+    <iframe id="x-history-frame"></iframe>
+</form>
 <script type="text/javascript">
-    var _browser = null;
 
     Ext4.onReady(function(){
-        _browser = new LABKEY.ext.SchemaBrowser({
+        Ext4.create('LABKEY.ext4.SchemaBrowser', {
             renderTo: 'browser',
             boxMinHeight: 600,
             boxMinWidth: 900,
@@ -78,9 +83,3 @@
         }
     }
 </script>
-
-<!-- Fields required for history management -->
-<form id="history-form" class="x-hidden">
-    <input type="hidden" id="x-history-field" />
-    <iframe id="x-history-frame"></iframe>
-</form>
