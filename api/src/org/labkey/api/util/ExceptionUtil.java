@@ -464,7 +464,14 @@ public class ExceptionUtil
     static ActionURL handleException(HttpServletRequest request, HttpServletResponse response, Throwable ex, @Nullable String message, boolean startupFailure,
         SearchService ss, Logger log)
     {
-        DbScope.closeAllConnections();
+        try
+        {
+            DbScope.closeAllConnections();
+        }
+        catch (Throwable t)
+        {
+            // This will fail if, for example, we're dealing with a startup exception
+        }
 
         // First, get rid of RuntimeException, InvocationTargetException, etc. wrappers
         ex = unwrapException(ex);

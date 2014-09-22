@@ -307,6 +307,7 @@ public class ModuleLoader implements Filter
 
         _servletContext = servletCtx;
 
+        verifyProductionModeResources();
         verifyTomcatVersion();
 
         _webappDir = FileUtil.getAbsoluteCaseSensitiveFile(new File(servletCtx.getRealPath(".")));
@@ -421,6 +422,37 @@ public class ModuleLoader implements Filter
         }
 
         _log.info("LabKey Server startup is complete, modules will be initialized after the first HTTP/HTTPS request");
+    }
+
+    // If in production mode then make sure this isn't a development build, #21567
+    private void verifyProductionModeResources()
+    {
+        if (!AppProps.getInstance().isDevMode() && !webappFilesExist(
+            "Ext4.lib.xml",
+            "clientapi.lib.xml",
+            "internal.lib.xml",
+            "stylesheet.css",
+            "printStyle.css",
+            "clientapi_core.min.js",
+            "schemaBrowser.js.gz",
+            "js_doc.zip",
+            "admin/FolderManagementPanel.js.gz",
+            "dataregion/panel/Facet.js"
+        ))
+            throw new ConfigurationException("This server does not appear to be compiled for production mode");
+    }
+
+    // Returns true if every specified file exists in the webapp directory
+    private boolean webappFilesExist(String... filepaths)
+    {
+        for (String filepath : filepaths)
+        {
+            String fullPath = _servletContext.getRealPath(filepath);
+            if (!new File(fullPath).isFile())
+                return false;
+        }
+
+        return true;
     }
 
     /** Goes through all the modules, initializes them, and removes the ones that fail to start up */

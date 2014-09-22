@@ -98,7 +98,7 @@ class ErrorView extends HttpView
             {
                 c = ContainerManager.getRoot();
             }
-            catch (Exception e)
+            catch (Throwable t)
             {
                 // Exception at initial bootstrap (e.g., database not supported) might result in no root
             }
