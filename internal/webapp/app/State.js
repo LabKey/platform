@@ -595,9 +595,9 @@ Ext.define('LABKEY.app.controller.State', {
             this.processCaching(mdx, this.filters, function() {
 
                 // we're done, all the filters should be cached appropriately on the server
-                var olapFilters = [], getOlap = LABKEY.app.model.Filter.getOlapFilter;
+                var olapFilters = [];
                 Ext.each(this.filters, function(ff) {
-                    olapFilters.push(getOlap(mdx, ff.data, this.subjectName));
+                    olapFilters.push(ff.getOlapFilter(mdx, ff.data, this.subjectName));
                 }, this);
 
                 var proceed = true;
