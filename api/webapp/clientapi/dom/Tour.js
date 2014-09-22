@@ -9,6 +9,7 @@ if (!('help' in LABKEY))
 
 LABKEY.help.Tour =
 {
+    _hopscotchSessionProperty : 'hopscotch.tour.state',
     _localStorageProperty : "LABKEY.tours.state",
     _hopscotchSrc : "/hopscotch/js/hopscotch.js",
     _hopscotchCss : "/hopscotch/css/hopscotch.css",
@@ -71,11 +72,15 @@ LABKEY.help.Tour =
         if (!config)
             return;
         var testState = config.id + ":" + step;
-        this._initHopscotch(function()
+        // peek into hopscotch state w/o loading hopscotch.js
+        var hopscotchState = sessionStorage.getItem(this._hopscotchSessionProperty);
+        if (hopscotchState == testState)
         {
-            if (hopscotch.getState() == testState)
+            this._initHopscotch(function ()
+            {
                 hopscotch.startTour(config, step);
-        },this);
+            }, this);
+        }
     },
 
 
@@ -126,5 +131,56 @@ LABKEY.help.Tour =
         {
             hopscotch.endTour(true,false);
         });
+    },
+
+
+    /**
+     * continueAtLocation() and continueTour() make a simple pattern for multi-page tours
+     *
+     * when leaving a page
+     *
+     * onNext: function()
+     * {
+     *     LABKEY.help.Tour.continueAtLocation("?pageId=study.DATA_ANALYSIS");
+     * }
+     *
+     * and
+     *
+     * LABKEY.Utils.onReady(function(){
+     *      LABKEY.help.Tour.continueTour();
+     * })
+     *
+     * @param href
+     */
+    continueAtLocation : function(href)
+    {
+        // NOTE state is not updated yet
+        // var hopscotchState = sessionStorage.getItem(this._hopscotchSessionProperty);
+        if (!hopscotch.getCurrTour())
+            window.location = href;
+        var hopscotchState = hopscotch.getCurrTour().id + ":" + hopscotch.getCurrStepNum();
+
+        var a = document.createElement("A");
+        a.href = href;
+        a.hash = 'tourstate:' + hopscotchState;
+        window.location = a.href;
+    },
+
+
+    /** see continueAtLocation() */
+    continueTour : function()
+    {
+        var hash = window.location.hash;
+        if (hash && hash.charAt(0) == '#')
+            hash = hash.substring(1);
+        if (hash.substring(0,"tourstate:".length) != "tourstate:")
+            return;
+        var tourstate = hash.substring("tourstate:".length);
+        if (-1 == tourstate.indexOf(":"))
+            return;
+        var id = tourstate.substring(0,tourstate.indexOf(":"));
+        var step = tourstate.substring(tourstate.indexOf(":")+1);
+        step = parseInt(step);
+        this.resume(id,step);
     }
 };
