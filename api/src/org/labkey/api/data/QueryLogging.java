@@ -31,7 +31,7 @@ public class QueryLogging
     private String _comment;
     private Set<ColumnLogging> _columnLoggings = Collections.emptySet();
     private Set<ColumnInfo> _dataLoggingColumns = Collections.emptySet();
-    private String _queryId;
+    private Integer _queryId;
     private boolean _hasBeenValidated = false;
     private final boolean _readOnly;
 
@@ -103,12 +103,12 @@ public class QueryLogging
     }
 
     @Nullable
-    public String getQueryId()
+    public Integer getQueryId()
     {
         return _queryId;
     }
 
-    public void setQueryId(@Nullable String queryId)
+    public void setQueryId(@Nullable Integer queryId)
     {
         if (_readOnly)
             throw new IllegalStateException("This QueryLogging instance is read-only.");
