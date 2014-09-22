@@ -7461,6 +7461,7 @@ internal/webapp/_images/warning-small.png -text
 internal/webapp/_images/zero.png -text
 internal/webapp/app/AbstractViewController.js -text
 internal/webapp/app/Filter.js -text
+internal/webapp/app/LoadingMask.js -text
 internal/webapp/app/MeasurePicker.js -text
 internal/webapp/app/OlapExplorer.js -text
 internal/webapp/app/Route.js -text
