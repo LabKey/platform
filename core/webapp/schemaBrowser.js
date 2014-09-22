@@ -198,7 +198,8 @@ Ext4.define('LABKEY.ext4.QueryTreePanel', {
                     {name: 'qtip'},
                     {name: 'schemaName'},
                     {name: 'queryName'},
-                    {name: 'text'}
+                    {name: 'text'},
+                    {name: 'leaf', type: 'boolean', defaultValue: false}
                 ]
             });
         }
@@ -591,7 +592,7 @@ Ext4.define('LABKEY.ext4.QueryDetailsPanel', {
                         tag: 'td',
                         cls: 'lk-qd-collist-title',
                         html: caption,
-                        "ext:qtip": tip,
+                        "data-qtip": tip,
                         colspan: this.tableCols.length
                     }
                 ]
@@ -605,7 +606,7 @@ Ext4.define('LABKEY.ext4.QueryDetailsPanel', {
                 tag: 'td',
                 cls: 'lk-qd-colheader',
                 html: this.tableCols[idxTable].caption,
-                "ext:qtip": this.tableCols[idxTable].tip
+                "data-qtip": this.tableCols[idxTable].tip
             });
         }
         rows.push(headerRow);
@@ -671,7 +672,7 @@ Ext4.define('LABKEY.ext4.QueryDetailsPanel', {
         var span = {
             tag: 'span',
             html: caption,
-            "ext:qtip": tipText
+            "data-qtip": tipText
         };
 
         if (col.lookup.isPublic)
@@ -772,7 +773,7 @@ Ext4.define('LABKEY.ext4.QueryDetailsPanel', {
     formatAttribute : function(attr) {
         return {
             tag: 'span',
-            "ext:qtip": attr.label + ": " + attr.description,
+            "data-qtip": attr.label + ": " + attr.description,
             html: attr.abbreviation
         };
     },
@@ -993,7 +994,7 @@ Ext4.define('LABKEY.ext4.ValidateQueriesPanel', {
     initContainerList: function()
     {
         var scope = this;
-        var containerList = new Array();
+        var containerList = [];
         if (Ext4.getCmp("lk-vq-subfolders").checked)
         {
             LABKEY.Security.getContainers({
@@ -1588,29 +1589,29 @@ Ext4.define('LABKEY.ext4.SchemaSummaryPanel', {
     formatQueryList : function(queries, title)
     {
         var rows = [{
-                tag: 'tr',
-                children: [{
-                    tag: 'td',
-                    colspan: 3,
-                    cls: 'lk-qd-collist-title',
-                    html: title
-                }]
+            tag: 'tr',
+            children: [{
+                tag: 'td',
+                colspan: 3,
+                cls: 'lk-qd-collist-title',
+                html: title
+            }]
+        },{
+            tag: 'tr',
+            children: [{
+                tag: 'td',
+                cls: 'lk-qd-colheader',
+                html: 'Name'
             },{
-                tag: 'tr',
-                children: [{
-                    tag: 'td',
-                    cls: 'lk-qd-colheader',
-                    html: 'Name'
-                },{
-                    tag: 'td',
-                    cls: 'lk-qd-colheader',
-                    html: 'Attributes'
-                },{
-                    tag: 'td',
-                    cls: 'lk-qd-colheader',
-                    html: 'Description'
-                }]
-            }];
+                tag: 'td',
+                cls: 'lk-qd-colheader',
+                html: 'Attributes'
+            },{
+                tag: 'td',
+                cls: 'lk-qd-colheader',
+                html: 'Description'
+            }]
+        }];
 
         var query;
         for (var idx = 0; idx < queries.length; ++idx)
@@ -1667,30 +1668,120 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
 
     layout: 'border',
 
+    autoResize: true,
+
+    bindURLParams: true,
+
+    constructor : function(config) {
+        this.callParent([config]);
+        this.addEvents('schemasloaded', 'selectschema', 'selectquery');
+    },
+
     initComponent : function(){
 
+        // initialize caches
         this._qcache = new LABKEY.ext4.QueryCache();
         this._qdcache = new LABKEY.ext4.QueryDetailsCache();
 
-        var tbar = [
-            {
-                text: 'Refresh',
-                handler: this.onRefresh,
-                scope: this,
-                iconCls:'iconReload',
-                tooltip: 'Refreshes the tree of schemas and queries, or a particular schema if one is selected.'
-            },
-            {
-                text: 'Validate Queries',
-                handler: function(){this.showPanel("lk-vq-panel");},
-                scope: this,
-                iconCls: 'iconCheck',
-                tooltip: 'Opens the validate queries tab where you can validate all the queries defined in this folder.'
-            }
-        ];
+        // configure items
+        this.items = [this._initTree(),this._initTabDisplay()];
 
-        if (LABKEY.Security.currentUser.isAdmin)
-        {
+        // configure toolbar actions
+        this.tbar = this._initTbar();
+
+        if (this.autoResize) {
+            this._initResize();
+        }
+
+        this.callParent();
+
+        Ext4.History.init();
+        Ext4.History.on('change', this.onHistoryChange, this);
+
+        this.selectQueryTask = new Ext4.util.DelayedTask(this._selectQuery, this);
+        this.on('selectquery', this.onSelectQuery, this);
+
+        if (this.bindURLParams) {
+            this.on('schemasloaded', this._bindURL, this, {single: true});
+        }
+    },
+
+    _initTree : function() {
+        return {
+            id: 'lk-sb-tree',
+            xtype: 'labkey-query-tree-panel',
+            region: 'west',
+            split: true,
+            width: 200,
+            autoScroll: true,
+            enableDrag: false,
+            useArrows: true,
+            listeners: {
+                select: {
+                    fn: this.onTreeClick,
+                    scope: this
+                },
+                schemasloaded: {
+                    fn: function(schemaNodes){
+                        this.fireEvent("schemasloaded", this);
+                    },
+                    scope: this
+                }
+            }
+        };
+    },
+
+    _initTabDisplay : function() {
+        return {
+            id: 'lk-sb-details',
+            xtype: 'tabpanel',
+            region: 'center',
+            activeTab: 0,
+            items: [
+                {
+                    xtype: 'labkey-schema-browser-home-panel',
+                    title: 'Home',
+                    id: 'lk-sb-panel-home',
+                    queryCache: this._qcache,
+                    listeners: {
+                        schemaclick: {
+                            fn: function(schemaName){
+                                this.selectSchema(schemaName);
+                                this.showPanel(this.sspPrefix + schemaName);
+                            },
+                            scope: this
+                        }
+                    }
+                }
+            ],
+            enableTabScroll: true,
+            defaults: { autoScroll:true, border: false },
+            border: false,
+            listeners: {
+                tabchange: {
+                    fn: this.onTabChange,
+                    scope: this
+                }
+            }
+        };
+    },
+
+    _initTbar : function() {
+        var tbar = [{
+            text: 'Refresh',
+            handler: this.onRefresh,
+            scope: this,
+            iconCls:'iconReload',
+            tooltip: 'Refreshes the tree of schemas and queries, or a particular schema if one is selected.'
+        },{
+            text: 'Validate Queries',
+            handler: function(){this.showPanel("lk-vq-panel");},
+            scope: this,
+            iconCls: 'iconCheck',
+            tooltip: 'Opens the validate queries tab where you can validate all the queries defined in this folder.'
+        }];
+
+        if (LABKEY.Security.currentUser.isAdmin) {
             tbar.push({
                 text: 'Schema Administration',
                 handler: this.onSchemaAdminClick,
@@ -1714,95 +1805,53 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
             });
         }
 
-        Ext4.apply(this,{
-            items : [
-                {
-                    id: 'lk-sb-tree',
-                    xtype: 'labkey-query-tree-panel',
-                    region: 'west',
-                    split: true,
-                    width: 200,
-                    autoScroll: true,
-                    enableDrag: false,
-                    useArrows: true,
-                    listeners: {
-                        select: {
-                            fn: this.onTreeClick,
-                            scope: this
-                        },
-                        schemasloaded: {
-                            fn: function(schemaNodes){
-                                this.fireEvent("schemasloaded", this);
-                            },
-                            scope: this
-                        }
-                    }
-                },
-                {
-                    id: 'lk-sb-details',
-                    xtype: 'tabpanel',
-                    region: 'center',
-                    activeTab: 0,
-                    items: [
-                        {
-                            xtype: 'labkey-schema-browser-home-panel',
-                            title: 'Home',
-                            id: 'lk-sb-panel-home',
-                            queryCache: this._qcache,
-                            listeners: {
-                                schemaclick: {
-                                    fn: function(schemaName){
-                                        this.selectSchema(schemaName);
-                                        this.showPanel(this.sspPrefix + schemaName);
-                                    },
-                                    scope: this
-                                }
-                            }
-                        }
-                    ],
-                    enableTabScroll: true,
-                    defaults: { autoScroll:true, border: false },
-                    border: false,
-                    listeners: {
-                        tabchange: {
-                            fn: this.onTabChange,
-                            scope: this
-                        }
-                    }
-                }
-            ],
-           tbar: tbar
-        });
-
-        Ext4.applyIf(this, {
-            autoResize: true
-        });
-
-        if (this.autoResize)
-        {
-            Ext4.EventManager.onWindowResize(function(w,h){
-                LABKEY.ext4.Util.resizeToViewport(this, w, h, 46, 32); }, this
-            );
-            this.on("render", function(){
-                var me = this;
-                Ext4.defer(function(){
-                    var size = Ext4.getBody().getBox();
-                    LABKEY.ext4.Util.resizeToViewport(me, size.width, size.height, 46, 32);
-                }, 300);
-            }, this);
-
-        }
-
-        this.addEvents("schemasloaded");
-
-        this.callParent();
-
-        Ext4.History.init();
-        Ext4.History.on('change', this.onHistoryChange, this);
+        return tbar;
     },
 
-    showPanel : function(id)
-    {
+    _initResize : function() {
+        function _resize(w, h) { LABKEY.ext4.Util.resizeToViewport(this, w, h, 46, 32); }
+        Ext4.EventManager.onWindowResize(_resize, this);
+        this.on('render', function() {
+            Ext4.defer(function(){
+                var size = Ext4.getBody().getBox();
+                _resize.call(this, size.width, size.height);
+            }, 300, this);
+        }, this);
+    },
+
+    /**
+     * @private
+     * Binds to URL parameters as well as the # history. Is used only when 'bindURLParams' is true.
+     */
+    _bindURL : function() {
+        var params = LABKEY.ActionURL.getParameters();
+
+        var schemaName = params.schemaName;
+        var queryName = params['queryName'] || params['query.queryName'];
+
+        if (!Ext4.isEmpty(schemaName)) {
+            if (!Ext4.isEmpty(queryName)) {
+                this.selectQuery(schemaName, queryName);
+            }
+            else {
+                this.selectSchema(schemaName, queryName);
+            }
+        }
+
+        if (window.location.hash && window.location.hash.length > 1) {
+            // window.location.hash returns an decoded value, which
+            // is different from what Ext.History.getToken() returns
+            // so use the same technique Ext does for getting the hash
+            var href = top.location.href;
+            var idx = href.indexOf("#");
+            var hash = idx >= 0 ? href.substr(idx + 1) : null;
+            if (hash) {
+                this.onHistoryChange(hash);
+            }
+        }
+    },
+
+    showPanel : function(id) {
         var tabs = this.getComponent("lk-sb-details");
         if (tabs.getComponent(id))
             tabs.setActiveTab(id);
@@ -1870,7 +1919,6 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
                     closable: true
                 });
             }
-
 
             if (panel)
             {
@@ -1981,10 +2029,11 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
     },
 
     onTreeClick : function(node, record, index, eOpts) {
-        if (record.data.schemaName && !record.data.queryName)
-            this.showPanel(this.sspPrefix + record.data.schemaName);
-        else if (record.data.leaf)
-            this.showQueryDetails(record.data.schemaName, record.data.queryName);
+        var schemaName = record.get('schemaName');
+        if (schemaName && !record.get('queryName'))
+            this.showPanel(this.sspPrefix + schemaName);
+        else if (record.get('leaf'))
+            this.showQueryDetails(schemaName, record.get('queryName'));
     },
 
     showQueryDetails : function(schemaName, queryName) {
@@ -2018,11 +2067,8 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
     onLookupClick : function(schemaName, queryName, containerPath) {
         if (containerPath && containerPath != LABKEY.ActionURL.getContainer())
             window.open(LABKEY.ActionURL.buildURL("query", "begin", containerPath, {schemaName: schemaName, queryName: queryName}));
-        else
-        {
-            this.selectQuery(schemaName, queryName, function(){
-                this.showQueryDetails(schemaName, queryName);
-            }, this);
+        else {
+            this.selectQuery(schemaName, queryName);
         }
     },
 
@@ -2139,7 +2185,25 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
         }
     },
 
-    selectQuery : function(schemaName, queryName, callback, scope) {
+    /**
+     * This can be used to select a given queryName. A corresponding 'selectquery' event will fire
+     * once a query is actively selected.
+     * @param schemaName
+     * @param queryName
+     */
+    selectQuery : function(schemaName, queryName) {
+        this._activeSchema = schemaName;
+        this._activeQuery = queryName;
+        this.selectQueryTask.delay(100);
+    },
+
+    /**
+     * @private
+     * Do not call directly, use selectQuery(schemaName, queryName). This method is used by selectQueryTask
+     */
+    _selectQuery : function() {
+        var schemaName = this._activeSchema;
+        var queryName = this._activeQuery;
         this.expandSchema(schemaName, function (success, schemaNode) {
             if (!success)
                 return;
@@ -2167,9 +2231,16 @@ Ext4.define('LABKEY.ext4.SchemaBrowser', {
             }
 
             tree.getSelectionModel().select(queryNode);
-            if (Ext4.isFunction(callback))
-                callback.call((scope || this));
+            this.fireEvent('selectquery', schemaName, queryName);
+        }, this);
+    },
 
-        }, scope || this);
+    /**
+     * Bound to this instances firing of 'selectquery'
+     * @param schemaName
+     * @param queryName
+     */
+    onSelectQuery : function(schemaName, queryName) {
+        this.showQueryDetails(schemaName, queryName);
     }
 });
