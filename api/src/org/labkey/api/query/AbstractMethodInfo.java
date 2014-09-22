@@ -60,11 +60,11 @@ abstract public class AbstractMethodInfo implements MethodInfo
                 return arguments.length > 0 ? arguments[0].getColumnLogging() : super.getColumnLogging();
             }
 
-            @Override
-            public ForeignKey getFk()
-            {
-                return arguments.length > 0 ? arguments[0].getFk() : super.getFk();
-            }
+//            @Override
+//            public ForeignKey getFk()
+//            {
+//                return arguments.length > 0 ? arguments[0].getFk() : super.getFk();
+//            }
         };
     }
 
