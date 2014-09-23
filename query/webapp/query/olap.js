@@ -778,6 +778,11 @@ Ext4.define('LABKEY.query.olap.MDX', {
         this._filter[name] = filter;
     },
 
+    getNamedFilter : function(name)
+    {
+        return this._filter[name];
+    },
+
     serverSaveNamedSet : function(name, members, callback, scope) {
         Ext4.Ajax.request({
             url: LABKEY.ActionURL.buildURL('query', 'saveNamedSet'),
