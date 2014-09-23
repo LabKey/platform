@@ -1556,7 +1556,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         var color = d3.scale.linear()
                 .domain([0, getMaxBinPointCount(binData)])
-                .range(["white", geom.color])
+                .range(geom.colorRange)
                 .interpolate(d3.interpolateLab);
 
         var hoverTextAcc = function(d){
@@ -1587,7 +1587,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         var color = d3.scale.linear()
                 .domain([0, getMaxBinPointCount(binData)])
-                .range(["white", geom.color])
+                .range(geom.colorRange)
                 .interpolate(d3.interpolateLab);
 
         var hoverTextAcc = function(d){

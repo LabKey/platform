@@ -150,8 +150,8 @@ LABKEY.vis.Geom.Bin = function(config) {
         config = {};
     }
 
-    this.shape = ('shape' in config && config.color != null && config.shape != undefined) ? config.shape : 'hex';
-    this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
+    this.shape = ('shape' in config && config.shape != null && config.shape != undefined) ? config.shape : 'hex';
+    this.colorRange = ('colorRange' in config && config.colorRange != null && config.colorRange != undefined) ? config.colorRange : ["#e6e6e6", "#085D90"]; // lightish-gray -> labkey blue
     this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 5;
     this.plotNullPoints = ('plotNullPoints' in config && config.plotNullPoints != null && config.plotNullPoints != undefined) ? config.plotNullPoints : false;
 
