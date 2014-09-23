@@ -1809,30 +1809,7 @@ public class QueryServiceImpl extends QueryService
                     allColumns.add(loggingColumn);
                     extraSelectDataLoggingColumns.add(loggingColumn);
                 }
-                if (null != loggingColumn.getFk())
-                {
-                    ColumnInfo lookupColumn = loggingColumn.getFk().createLookupColumn(loggingColumn, loggingColumn.getFk().getLookupDisplayName());
-                    if (null != lookupColumn)
-                    {
-                        if (!columnMap.containsKey(lookupColumn.getFieldKey()))
-                        {
-                            lookupColumn.setHidden(true);
-                            lookupColumn.setIsUnselectable(true);
-                            columnMap.put(lookupColumn.getFieldKey(), lookupColumn);
-                            extraSelectDataLoggingColumns.add(lookupColumn);
-                            allColumns.add(lookupColumn);
-                        }
-                        dataLoggingColumns.add(lookupColumn);
-                    }
-                    else
-                    {
-                        throw new UnauthorizedException("Unable to locate required logging column.");
-                    }
-                }
-                else
-                {
-                    dataLoggingColumns.add(loggingColumn);
-                }
+                dataLoggingColumns.add(loggingColumn);
             }
             else
             {
