@@ -34,6 +34,7 @@ if (Ext4||Ext)
 
 function getData()
 {
+    document.getElementById("response").innerHTML = "";
     var config = JSON.parse(document.getElementById("json").value);
     config.success = function(json, response)
     {
