@@ -63,7 +63,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         this.addEvents('selectrequest', 'subselect');
     },
 
-    load : function(dimension, hIndex, selections, showEmpty) {
+    load : function(dimension, hIndex, selections, showEmpty, altRequestDimNamedFilters) {
         this.KEYED_LOAD = true;
 
         if (!this.olapProvider) {
@@ -84,7 +84,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 // reset selection ignoring inflight requests
                 this.mflight = 0;
             }
-            this.loadDimension(selections);
+            this.loadDimension(selections, altRequestDimNamedFilters);
         }
         else {
             // mark as stale, processed once previous request is unlocked
@@ -97,7 +97,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         }
     },
 
-    loadDimension : function(selections) {
+    loadDimension : function(selections, altRequestDimNamedFilters) {
         var hierarchies = this.dim.getHierarchies();
         var distinctLevel = this.dim.distinctLevel;
 
@@ -115,7 +115,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                         showEmpty: me.showEmpty,
                         success: function(qr) {
                             me.totals[uniqueName] = me.processMaxCount.call(me, qr);
-                            me.requestDimension(hierarchy, selections, distinctLevel);
+                            me.requestDimension(hierarchy, selections, distinctLevel, altRequestDimNamedFilters);
                         }
                     };
 
@@ -132,12 +132,12 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 }, this);
             }
             else {
-                me.requestDimension(hierarchy, selections, distinctLevel);
+                me.requestDimension(hierarchy, selections, distinctLevel, altRequestDimNamedFilters);
             }
         }
     },
 
-    requestDimension : function(hierarchy, selections, distinctLevel) {
+    requestDimension : function(hierarchy, selections, distinctLevel, altRequestDimNamedFilters) {
         // Asks for the Gray area
         this.flight++;
         var hasSelection = Ext.isArray(selections) && selections.length > 0;
@@ -171,7 +171,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                     hierarchy: hierarchy.getUniqueName(),
                     members: 'members'
                 }],
-                useNamedFilters: ['statefilter'],
+                useNamedFilters: altRequestDimNamedFilters || ['statefilter'],
                 showEmpty: me.showEmpty,
                 qFlight: this.flight,
                 success: function(qr, _mdx, x) {
@@ -469,6 +469,8 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
 
     barLabelCls: 'barlabel',
 
+    altRequestDimNamedFilters : undefined,
+
     statics: {
         APPLY_ANIMATE: false
     },
@@ -504,7 +506,7 @@ Ext.define('LABKEY.app.view.OlapExplorer', {
 
         this.loadTask = new Ext.util.DelayedTask(function() {
             if (Ext.isDefined(this.dimension)) {
-                this.store.load(this.dimension, this.hierarchyIndex, this.selections, this.showEmpty);
+                this.store.load(this.dimension, this.hierarchyIndex, this.selections, this.showEmpty, this.altRequestDimNamedFilters);
             }
         }, this);
 
