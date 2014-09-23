@@ -19,6 +19,7 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
@@ -36,12 +37,16 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.study.Location;
+import org.labkey.api.util.GUID;
 import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 
 import java.sql.SQLException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -164,39 +169,68 @@ public class LocationTable extends BaseStudyTable
     {
         public LocationInUseExpressionColumn(TableInfo parent)
         {
-            super(parent, "In Use", getLocationExpression(), JdbcType.BOOLEAN);
+            super(parent, "In Use", null, JdbcType.BOOLEAN);
+        }
+
+        @Override
+        public SQLFragment getValueSql(String tableAlias)
+        {
+            return getLocationInUseExpression(tableAlias);
         }
     }
 
-    public SQLFragment getLocationExpression()
+    public SQLFragment getLocationInUseExpression(String tableAlias)
     {
         final String EXISTS = "    EXISTS(SELECT 1 FROM ";
         final StudySchema schema = StudySchema.getInstance();
-        //TODO: Switch over to appends
-        SQLFragment ret = new SQLFragment(EXISTS + schema.getTableInfoSampleRequest() + " WHERE Location.rowid = DestinationSiteID) OR\n"
-                + EXISTS + schema.getTableInfoSampleRequestRequirement() + " s WHERE Location.rowid = SiteId) OR\n"
-                + EXISTS + schema.getTableInfoParticipant() + " s WHERE Location.rowid = s.EnrollmentSiteId OR location.rowid = CurrentSiteId) OR\n"
-                + EXISTS + schema.getTableInfoAssaySpecimen() + " s WHERE Location.rowid = LocationId)");
-        List<Container> cons = getContainer().getChildren();
-        cons.add(getContainer());
 
-        //checks usages in all containers, regardless of what view is actually being used.
-        for (Container c : cons)
+        // These are all site-wide tables, so just check for current RowId in use anywhere (regardless of current container filter)
+        SQLFragment ret = new SQLFragment(EXISTS).append(schema.getTableInfoSampleRequest(), "sr").append(" WHERE ").append(tableAlias).append(".RowId = sr.DestinationSiteID) OR\n")
+                .append(EXISTS).append(schema.getTableInfoSampleRequestRequirement(), "srr").append(" WHERE ").append(tableAlias).append(".RowId = srr.SiteId) OR\n")
+                .append(EXISTS).append(schema.getTableInfoParticipant(), "p").append(" WHERE ").append(tableAlias).append(".RowId = p.EnrollmentSiteId OR ").append(tableAlias).append(".RowId = p.CurrentSiteId) OR\n")
+                .append(EXISTS).append(schema.getTableInfoAssaySpecimen(), "a").append(" WHERE ").append(tableAlias).append(".RowId = a.LocationId)");
+
+        // Specimen tables are provisioned per container, so include all specimen tables in all study folders in the current container filter
+        for (Container c : getStudyContainers())
         {
             TableInfo eventTableInfo = schema.getTableInfoSpecimenEventIfExists(c);
             if (null != eventTableInfo)
-                ret.append(" OR\n" + EXISTS).append(eventTableInfo, "s").append(" WHERE Location.rowid = s.labid OR location.rowid = OriginatingLocationId)");
+                ret.append(" OR\n" + EXISTS).append(eventTableInfo, "se").append(" WHERE ").append(tableAlias).append(".RowId = se.LabId OR location.RowId = se.OriginatingLocationId)");
 
             TableInfo vialTableInfo = schema.getTableInfoVialIfExists(c);
             if (null != vialTableInfo)
-                ret.append(" OR\n" + EXISTS).append(vialTableInfo, "s").append(" WHERE Location.rowid = s.CurrentLocation OR location.rowid = ProcessingLocation)");
+                ret.append(" OR\n" + EXISTS).append(vialTableInfo, "v").append(" WHERE ").append(tableAlias).append(".RowId = v.CurrentLocation OR ").append(tableAlias).append(".RowId = v.ProcessingLocation)");
 
             TableInfo specimentTableInfo = schema.getTableInfoSpecimenIfExists(c);
             if (null != specimentTableInfo)
-                ret.append(" OR\n" + EXISTS).append(specimentTableInfo, "s").append(" WHERE Location.rowid = s.originatinglocationid OR Location.rowid = s.ProcessingLocation)");
+                ret.append(" OR\n" + EXISTS).append(specimentTableInfo, "s").append(" WHERE ").append(tableAlias).append(".RowId = s.OriginatingLocationId OR ").append(tableAlias).append(".RowId = s.ProcessingLocation)");
         }
 
         // PostgreSQL allows EXISTS as a simple expression, but SQL Server does not. Probably should make this a dialect capability.
         return schema.getSqlDialect().isSqlServer() ? new SQLFragment("CAST(CASE WHEN\n").append(ret).append("\nTHEN 1 ELSE 0 END AS BIT)") : ret;
+    }
+
+    private Collection<Container> getStudyContainers()
+    {
+        Collection<GUID> ids = getContainerFilter().getIds(getContainer());
+
+        if (null == ids)
+        {
+            return Collections.singleton(getContainer());
+        }
+        else
+        {
+            List<Container> studyContainers = new LinkedList<>();
+
+            for (GUID id : ids)
+            {
+                Container c = ContainerManager.getForId(id);
+
+                if (null != StudyManager.getInstance().getStudy(c))
+                    studyContainers.add(c);
+            }
+
+            return studyContainers;
+        }
     }
 }
