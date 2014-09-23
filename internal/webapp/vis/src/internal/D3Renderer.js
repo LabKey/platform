@@ -1534,11 +1534,28 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         }
     };
 
+    var getMaxBinPointCount = function(data) {
+        var maxBinPointCount = 0;
+
+        for (var i = 0; i < data.length; i++)
+        {
+            if (data[i].length > maxBinPointCount)
+                maxBinPointCount = data[i].length;
+
+            // set a maximum for the bin domain
+            if (maxBinPointCount > 50)
+                return 50;
+        }
+
+        return maxBinPointCount;
+    };
+
     var renderHexBin = function(data, geom, points) {
         var hexbin = d3.hexbin().radius(geom.size);
+        var binData = hexbin(points);
 
         var color = d3.scale.linear()
-                .domain([0, geom.size])
+                .domain([0, getMaxBinPointCount(binData)])
                 .range(["white", geom.color])
                 .interpolate(d3.interpolateLab);
 
@@ -1546,7 +1563,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return d.length + (d.length == 1 ? " point" : " points");
         };
 
-        var anchorSel = this.selectAll('.vis-bin').data(hexbin(points));
+        var anchorSel = this.selectAll('.vis-bin').data(binData);
         anchorSel.exit().remove();
         anchorSel.enter().append('a').attr('class', 'vis-bin vis-bin-hexagon').append('path');
         anchorSel.attr('xlink:title', hoverTextAcc);
@@ -1566,9 +1583,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var renderSquareBin = function(data, geom, points) {
         var sqbin = d3.sqbin().side(geom.size);
+        var binData = sqbin(points);
 
         var color = d3.scale.linear()
-                .domain([0, geom.size])
+                .domain([0, getMaxBinPointCount(binData)])
                 .range(["white", geom.color])
                 .interpolate(d3.interpolateLab);
 
@@ -1576,7 +1594,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             return d.length + (d.length == 1 ? " point" : " points");
         };
 
-        var anchorSel = this.selectAll('.vis-bin').data(sqbin(points));
+        var anchorSel = this.selectAll('.vis-bin').data(binData);
         anchorSel.exit().remove();
         anchorSel.enter().append('a').attr('class', 'vis-bin vis-bin-square').append('path');
         anchorSel.attr('xlink:title', hoverTextAcc);
@@ -1759,9 +1777,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
         // stretch the bins horizontally
         var xBinHeight = geom.size;
-        var xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 3;
-        var offset = xBinWidth / 4;
-        var binCorners = [offset+",0", xBinWidth+",0", xBinWidth+","+xBinHeight, offset+","+xBinHeight, offset+",0"];
+        var xBinWidth = ((plot.grid.rightEdge - plot.grid.leftEdge) / (geom.xScale.scale.domain().length)) / 2;
+        var padding = Math.max(xBinWidth * .05, 5); // Pad the space between the box and bins.
+        var width = (xBinWidth / 4) + (padding / 2);
+        var binCorners = [padding+",0", width+",0", width+","+xBinHeight, padding+","+xBinHeight, padding+",0"];
         selLayer.sel.attr('d', "M" + binCorners.join(" "));
 
         if (selLayer) {
