@@ -139,7 +139,7 @@ LABKEY.help.Tour =
      *
      * when leaving a page
      *
-     * onNext: function()
+     * onNext: function()                                                                                                 t
      * {
      *     LABKEY.help.Tour.continueAtLocation("?pageId=study.DATA_ANALYSIS");
      * }
@@ -180,7 +180,14 @@ LABKEY.help.Tour =
             return;
         var id = tourstate.substring(0,tourstate.indexOf(":"));
         var step = tourstate.substring(tourstate.indexOf(":")+1);
-        step = parseInt(step);
+        try
+        {
+            step = parseInt(step);
+        }
+        catch (ex)
+        {
+            return;
+        }
         this.resume(id,step);
     }
 };
