@@ -48,7 +48,11 @@ public class StudyListQueryView extends QueryView
     {
         //Cast is OK since coming from study schema where it is created as FilteredTable
         FilteredTable table = (FilteredTable) super.createTable();
-        table.setContainerFilter(ContainerFilter.Type.CurrentAndSubfolders.create(getUser()));
+
+        // Dataspace queries don't support container filter, #21501
+        if (table.supportsContainerFilter())
+            table.setContainerFilter(ContainerFilter.Type.CurrentAndSubfolders.create(getUser()));
+
         return table;
     }
 }
