@@ -15,6 +15,7 @@
  */
 package org.labkey.api.ldk.table;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
@@ -52,6 +53,7 @@ public class SharedDataTable<SchemaType extends UserSchema> extends SimpleUserSc
         return (SharedDataTable<SchemaType>)super.init();
     }
 
+    @NotNull
     @Override
     public ContainerFilter getContainerFilter()
     {

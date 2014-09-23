@@ -47,7 +47,7 @@ public abstract class ContainerFilter
      * @return null if no filtering should be done, otherwise the set of valid container ids
      */
     @Nullable
-    protected abstract Collection<GUID> getIds(Container currentContainer);
+    public abstract Collection<GUID> getIds(Container currentContainer);
 
     /**
      * May return null if the ContainerFilter has no corresponding ContainerFilter.Type.

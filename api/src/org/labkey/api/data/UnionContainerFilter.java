@@ -37,7 +37,7 @@ public class UnionContainerFilter extends ContainerFilter
 
 
     @Override @Nullable
-    protected Collection<GUID> getIds(Container currentContainer)
+    public Collection<GUID> getIds(Container currentContainer)
     {
         Set<GUID> result = new HashSet<>();
         for (ContainerFilter filter : _filters)
