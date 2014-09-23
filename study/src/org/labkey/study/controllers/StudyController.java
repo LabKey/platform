@@ -1729,7 +1729,6 @@ public class StudyController extends BaseStudyController
     @RequiresPermissionClass(DeletePermission.class)
     public class DeleteAllUnusedLocationsAction extends ConfirmAction<LocationForm>
     {
-
         @Override
         public ModelAndView getConfirmView(LocationForm form, BindException errors) throws Exception
         {

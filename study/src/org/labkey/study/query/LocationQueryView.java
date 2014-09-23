@@ -44,25 +44,23 @@ public class LocationQueryView extends QueryView
     {
         super(schema, settings, errors);
     }
-    @Override
-    public DataView createDataView()
-    {
-        return super.createDataView();
-    }
+
     @Override
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
-        bar.add(super.createViewButton(getViewItemFilter()));
-        bar.add(super.createInsertButton());
-        bar.add(super.createDeleteButton());
+        bar.add(createViewButton(getViewItemFilter()));
+        bar.add(createInsertButton());
+        bar.add(createDeleteButton());
         ActionURL deleteUnusedURL = new ActionURL(StudyController.DeleteAllUnusedLocationsAction.class, getSchema().getContainer());
         deleteUnusedURL.addReturnURL(getReturnURL());
-        ActionButton delete = new ActionButton(deleteUnusedURL, "Delete Unused");
+        ActionButton delete = new ActionButton(deleteUnusedURL, "Delete All Unused");
         delete.setActionType(ActionButton.Action.LINK);
-        delete.setRequiresSelection(false, "Are you sure you want to delete the selected row?", "Are you sure you want to delete the selected rows?");
+        delete.setRequiresSelection(false, "Are you sure you want to delete the selected location?", "Are you sure you want to delete the selected locations?");
         deleteUnusedURL.addReturnURL(getViewContext().getActionURL());
         bar.add(delete);
-
+        bar.add(createExportButton(false));
+        bar.add(createPrintButton());
+        bar.add(createPageSizeMenuButton());
     }
 
     @Override
@@ -82,6 +80,4 @@ public class LocationQueryView extends QueryView
             ret.add(0, new UpdateColumn(urlUpdate));
         }
     }
-
-
 }

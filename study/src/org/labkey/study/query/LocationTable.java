@@ -95,9 +95,9 @@ public class LocationTable extends BaseStudyTable
     {
         return "Label";
     }
+
     private class LocationQueryUpdateService extends DefaultQueryUpdateService
     {
-
         public LocationQueryUpdateService(TableInfo queryTable, TableInfo dbTable)
         {
             super(queryTable, dbTable);
@@ -162,7 +162,7 @@ public class LocationTable extends BaseStudyTable
 
     private class LocationInUseExpressionColumn extends ExprColumn
     {
-        public LocationInUseExpressionColumn(TableInfo parent, ColumnInfo... dependentColumns)
+        public LocationInUseExpressionColumn(TableInfo parent)
         {
             super(parent, "In Use", getLocationExpression(), JdbcType.BOOLEAN);
         }
@@ -179,12 +179,21 @@ public class LocationTable extends BaseStudyTable
                 + EXISTS + schema.getTableInfoAssaySpecimen() + " s WHERE Location.rowid = LocationId)");
         List<Container> cons = getContainer().getChildren();
         cons.add(getContainer());
+
         //checks usages in all containers, regardless of what view is actually being used.
         for (Container c : cons)
         {
-            ret.append(" OR\n" + EXISTS + schema.getTableInfoSpecimenEventIfExists(c) + " s WHERE Location.rowid = s.labid OR location.rowid = OriginatingLocationId) OR\n"
-                    + EXISTS + schema.getTableInfoVialIfExists(c) + " s WHERE Location.rowid = s.CurrentLocation OR location.rowid = ProcessingLocation) OR\n"
-                    + EXISTS + schema.getTableInfoSpecimenIfExists(c) + " s WHERE Location.rowid = s.originatinglocationid OR Location.rowid = s.ProcessingLocation)");
+            TableInfo eventTableInfo = schema.getTableInfoSpecimenEventIfExists(c);
+            if (null != eventTableInfo)
+                ret.append(" OR\n" + EXISTS).append(eventTableInfo, "s").append(" WHERE Location.rowid = s.labid OR location.rowid = OriginatingLocationId)");
+
+            TableInfo vialTableInfo = schema.getTableInfoVialIfExists(c);
+            if (null != vialTableInfo)
+                ret.append(" OR\n" + EXISTS).append(vialTableInfo, "s").append(" WHERE Location.rowid = s.CurrentLocation OR location.rowid = ProcessingLocation)");
+
+            TableInfo specimentTableInfo = schema.getTableInfoSpecimenIfExists(c);
+            if (null != specimentTableInfo)
+                ret.append(" OR\n" + EXISTS).append(specimentTableInfo, "s").append(" WHERE Location.rowid = s.originatinglocationid OR Location.rowid = s.ProcessingLocation)");
         }
 
         // PostgreSQL allows EXISTS as a simple expression, but SQL Server does not. Probably should make this a dialect capability.
