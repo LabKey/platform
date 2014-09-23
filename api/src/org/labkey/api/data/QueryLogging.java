@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.security.User;
 
@@ -32,6 +33,7 @@ public class QueryLogging
     private Set<ColumnLogging> _columnLoggings = Collections.emptySet();
     private Set<ColumnInfo> _dataLoggingColumns = Collections.emptySet();
     private Integer _queryId;
+    private SelectQueryAuditEvent _selectQueryAuditEvent;       // allows this to be set with derived
     private boolean _hasBeenValidated = false;
     private final boolean _readOnly;
 
@@ -126,5 +128,18 @@ public class QueryLogging
     public static QueryLogging noValidationNeededQueryLogging()
     {
         return _noValidationNeededQueryLogging;
+    }
+
+    @NotNull
+    public SelectQueryAuditEvent getSelectQueryAuditEvent()
+    {
+        if (null == _selectQueryAuditEvent)
+            _selectQueryAuditEvent = new SelectQueryAuditEvent(this);
+        return _selectQueryAuditEvent;
+    }
+
+    public void setSelectQueryAuditEvent(SelectQueryAuditEvent selectQueryAuditEvent)
+    {
+        _selectQueryAuditEvent = selectQueryAuditEvent;
     }
 }

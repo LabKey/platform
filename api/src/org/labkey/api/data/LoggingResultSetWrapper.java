@@ -30,7 +30,7 @@ import java.util.Set;
 public class LoggingResultSetWrapper extends ResultSetWrapper
 {
     protected final QueryLogging _queryLogging;
-    private Set<String> _dataLoggingValues = new HashSet<>();
+    private Set<Object> _dataLoggingValues = new HashSet<>();
 
 
     public LoggingResultSetWrapper(ResultSet rs, @NotNull QueryLogging queryLogging)
@@ -56,7 +56,9 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
     {
         if (!_queryLogging.isEmpty())
         {
-            AuditLogService.get().addEvent(_queryLogging.getUser(), new SelectQueryAuditEvent(_queryLogging, _dataLoggingValues));
+            SelectQueryAuditEvent selectQueryAuditEvent = _queryLogging.getSelectQueryAuditEvent();
+            selectQueryAuditEvent.setDataLogging(_queryLogging, _dataLoggingValues);
+            AuditLogService.get().addEvent(_queryLogging.getUser(), selectQueryAuditEvent);
         }
         resultset.close();
     }
@@ -121,7 +123,7 @@ public class LoggingResultSetWrapper extends ResultSetWrapper
                 Object obj = resultset.getObject(dataLoggingColumn.getAlias());
                 if (null == obj)
                     throw new UnauthorizedException("Unable to read expected data logging column.");
-                _dataLoggingValues.add(obj.toString());
+                _dataLoggingValues.add(obj);
             }
         }
     }

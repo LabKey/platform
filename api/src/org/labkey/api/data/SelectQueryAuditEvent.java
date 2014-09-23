@@ -40,10 +40,13 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
         super(SelectQueryAuditProvider.EVENT_NAME, container.getId(), comment);
     }
 
-    public SelectQueryAuditEvent(QueryLogging queryLogging, Set<String> dataLoggingValues)
+    public SelectQueryAuditEvent(QueryLogging queryLogging)
     {
         this(queryLogging.getContainer(), queryLogging.getComment());
+    }
 
+    public void setDataLogging(QueryLogging queryLogging, Set<Object> dataLoggingValues)
+    {
         List<ColumnLogging> sortedLoggings = new ArrayList<>(queryLogging.getColumnLoggings());
         Collections.sort(sortedLoggings);
 
@@ -56,8 +59,7 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
             sep = ", ";
         }
 
-        List<String> sortedDataLoggingValues = new ArrayList<>(dataLoggingValues);
-        Collections.sort(sortedDataLoggingValues);
+        List<String> sortedDataLoggingValues = getMappedAndSortedDataLoggingValues(queryLogging, dataLoggingValues);
 
         StringBuilder dataColumns = new StringBuilder();
         sep = "";
@@ -99,5 +101,15 @@ public class SelectQueryAuditEvent extends AuditTypeEvent
     public void setQueryId(Integer queryId)
     {
         _queryId = queryId;
+    }
+
+    protected List<String> getMappedAndSortedDataLoggingValues(QueryLogging queryLogging, Set<Object> dataLoggingValues)
+    {
+        // allow derived class to map values if needed; must convert
+        List<String> sortedDataLoggingValues = new ArrayList<>();
+        for (Object obj : dataLoggingValues)
+            sortedDataLoggingValues.add(obj.toString());
+        Collections.sort(sortedDataLoggingValues);
+        return sortedDataLoggingValues;
     }
 }
