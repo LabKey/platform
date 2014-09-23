@@ -339,8 +339,8 @@ public class MdxQueryImpl
             columnset = this._toSetString(this._processExpr(qq.onColumns));
         if (null != qq.onRows)
             rowset = this._toSetString(this._processExpr(qq.onRows));
-        if (null != qq.filters && qq.filters.arguments.size() > 0)
-            filterset = this._toSetString(this._processExpr(qq.filters));
+        if (null != qq.countFilters && qq.countFilters.arguments.size() > 0)
+            filterset = this._toSetString(this._processExpr(qq.countFilters));
 
         String countMeasure = "[Measures].DefaultMember";
         String withDefinition = "";

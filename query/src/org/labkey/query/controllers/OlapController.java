@@ -700,10 +700,49 @@ public class OlapController extends SpringActionController
     }
 
 
-    /**
-     * NOT PART OF OFFICIAL CLIENT API
-     * the particulars of the JSON format may change, and is very tied to the dataspace implementation
-     */
+/**
+ * NOT PART OF OFFICIAL CLIENT API
+ * the particulars of the JSON format may change, and is very tied to the dataspace implementation
+ *
+ *
+ * config
+ *
+ * onRows:{}
+ * A set of members to select on the rows of the returned cellset
+ * (required)
+ *
+ * onColumns:{}
+ * A set of members to select on the columns of the returned cellset
+ * (optional)
+ *
+ * countDistinctLevel : ""
+ * name of the level that contains the members we are counting in the query result (e.g. Participant)
+ * (required)
+ *
+ * countFilter : []
+ * This filter is used to specify a subset of members in the countDistinctLevel to be counted in the query result
+ * (optional)
+ *
+ * joinLevel : ""
+ * name of the level that relates the row, column, and dataFilter results (e.g. ParticipantVisit).  In some sense,
+ * the whereFilter applies directly to all the rows of the fact table, but the whole point of the cube/olap strategry
+ * is to reduce the data-size as much as possible.  In some sense, the joinLevel indicates the useful level of
+ * granularity for the fact table filter.
+ * if not specified, this is the same as the countDistinctLevel
+ * (optional)
+ *
+ * whereFilter : []
+ * This filter is is used the data processed by the query.  The result will be a set of members of
+ * the joinLevel.  If joinLevel==countDistinctLevel then this will be functionally equivalent to the countFilter:[]
+ * e.g. (ParticipantVisit)
+ * (optional)
+ *
+ * filter : []
+ * @deprecated same as countFilter
+ *
+ * TODO document set selection syntax (operator, memberQuery etc.)
+ */
+
     @RequiresPermissionClass(ReadPermission.class)
     @Action(ActionType.SelectData)
     public class CountDistinctQueryAction extends ApiAction<JsonQueryForm>

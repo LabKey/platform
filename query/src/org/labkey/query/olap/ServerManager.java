@@ -42,10 +42,13 @@ import org.labkey.api.module.ModuleResourceCache;
 import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.MemTrackerListener;
 import org.labkey.api.util.PageFlowUtil;
@@ -239,7 +242,7 @@ public class ServerManager
             throws SQLException, IOException
     {
         if (OlapController.strategy == OlapController.ImplStrategy.rolapYourOwn)
-            return getCachedCubeRolap(d,conn,c,user,schemaName,cubeName,errors);
+            return getCachedCubeRolap(d,c,user,cubeName,null);
         else
             return getCachedCubeMondrian(d,conn,c,user,schemaName,cubeName,errors);
     }
@@ -257,8 +260,12 @@ public class ServerManager
             Schema s = d.getSchema(conn, c, user, schemaName);
             if (null == s)
             {
-                errors.reject(ERROR_MSG, "Schema not found: " + schemaName);
-                return null;
+                s = d.getSchema(conn, c, user, schemaName.toUpperCase());
+                if (null == s)
+                {
+                    errors.reject(ERROR_MSG, "Schema not found: " + schemaName);
+                    return null;
+                }
             }
             findSchemaList = Collections.singletonList(s);
         }
@@ -318,7 +325,7 @@ public class ServerManager
         return cachedCube;
     }
 
-    private static Cube getCachedCubeRolap(OlapSchemaDescriptor d, OlapConnection conn, final Container c, final User user, String schemaName, String cubeName, BindException errors)
+    public static Cube getCachedCubeRolap(OlapSchemaDescriptor d, final Container c, final User user, String cubeName, @Nullable final UserSchema schema)
             throws SQLException, IOException
     {
         RolapCubeDef rolap = d.getRolapCubeDefinitionByName(cubeName);
@@ -334,7 +341,8 @@ public class ServerManager
                 {
                     long start = System.currentTimeMillis();
 
-                    CachedCube cachedCube = new RolapCachedCubeFactory((RolapCubeDef) src, DefaultSchema.get(user, c)).createCachedCube();
+                    QuerySchema startSchema = null!=schema ? schema : DefaultSchema.get(user, c).getSchema("core");
+                    CachedCube cachedCube = new RolapCachedCubeFactory((RolapCubeDef) src, startSchema).createCachedCube();
 
                     long end = System.currentTimeMillis();
                     return cachedCube;
@@ -389,6 +397,8 @@ public class ServerManager
                         "<Catalogs>\n");
                 for (OlapSchemaDescriptor d : descriptors)
                 {
+                    if ("junit".equals(d.getName()) && (!c.getParsedPath().equals(JunitUtil.getTestContainerPath()) || OlapController.strategy != OlapController.ImplStrategy.rolapYourOwn))
+                        continue;
                     sb.append(
                             "\n" +
                             "  <Catalog name=\"" + OlapSchemaDescriptor.makeCatalogName(d, c) + "\">\n" +

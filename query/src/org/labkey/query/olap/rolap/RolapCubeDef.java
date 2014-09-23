@@ -478,7 +478,7 @@ public class RolapCubeDef
     }
 
 
-    static private String toSqlLiteral(JdbcType type, Object value)
+    static String toSqlLiteral(JdbcType type, Object value)
     {
         value = type.convert(value);
 
@@ -892,7 +892,7 @@ public class RolapCubeDef
             }
             if (null == keyAlias)
             {
-                keyAlias = cube.columnAliases.decideAlias((hierarchy.getName() + "_" + getName() + "_key").toLowerCase());
+                keyAlias = cube.columnAliases.decideAlias((hierarchy.getName() + "$" + getName() + "_key").toLowerCase());
             }
 
             // name
@@ -903,7 +903,7 @@ public class RolapCubeDef
             if (null == nameAlias)
             {
                 if (null != nameExpression)
-                    nameAlias = cube.columnAliases.decideAlias((hierarchy.getName() + "_" + getName() + "_name").toLowerCase());
+                    nameAlias = cube.columnAliases.decideAlias((hierarchy.getName() + "$" + getName() + "_name").toLowerCase());
                 else
                     nameAlias = keyAlias;
             }
@@ -915,7 +915,7 @@ public class RolapCubeDef
             }
             if (null == ordinalAlias && null != ordinalExpression)
             {
-                ordinalAlias = cube.columnAliases.decideAlias((hierarchy.getName() + "_" + getName() + "_ord").toLowerCase());
+                ordinalAlias = cube.columnAliases.decideAlias((hierarchy.getName() + "$" + getName() + "_ord").toLowerCase());
             }
 
             if (null == keyType)

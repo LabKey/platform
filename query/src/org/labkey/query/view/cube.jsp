@@ -31,6 +31,7 @@
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="org.labkey.query.olap.CustomOlapSchemaDescriptor" %>
+<%@ page import="org.labkey.query.olap.rolap.RolapCubeDef" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -56,22 +57,23 @@
             %><%=textLink("edit", ((CustomOlapSchemaDescriptor)sd).urlEdit())%>
               <%=textLink("delete", ((CustomOlapSchemaDescriptor)sd).urlDelete())%><%
         }
-        try (OlapConnection conn = sd.getConnection(getContainer(), getUser()))
-        {
-            for (Schema s : sd.getSchemas(conn,getContainer(), getUser()))
-            {
+
+//        try (OlapConnection conn = sd.getConnection(getContainer(), getUser()))
+//        {
+//            for (Schema s : sd.getSchemas(conn,getContainer(), getUser()))
+//            {
                 %><ul><%
-                for (Cube c : s.getCubes())
+                for (RolapCubeDef c : sd.getRolapCubeDefinitions())
                 {
                     ActionURL url = new ActionURL(OlapController.TestBrowserAction.class, getContainer());
                     url.addParameter("configId",sd.getId());
-                    url.addParameter("schemaName",s.getName());
+                    url.addParameter("schemaName",c.getSchemaName());
                     url.addParameter("cubeName",c.getName());
                     %><li><%=textLink(c.getName(),url)%>&nbsp;<%=textLink("mdx",url.setAction(OlapController.TestMdxAction.class))%>&nbsp;<%=textLink("json",url.setAction(OlapController.TestJsonAction.class))%></li><%
                 }
                 %></ul><%
-            }
-        }
+//            }
+//        }
     }
 
     Cube cube = (Cube)HttpView.currentModel();

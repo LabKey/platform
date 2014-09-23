@@ -27,10 +27,13 @@ import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
 import org.labkey.api.module.DefaultModule;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.JavaScriptExportScriptFactory;
 import org.labkey.api.query.PerlExportScriptFactory;
+import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.RExportScriptFactory;
@@ -56,6 +59,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.StudySerializationRegistry;
+import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
@@ -71,6 +75,8 @@ import org.labkey.query.jdbc.QueryDriver;
 import org.labkey.query.olap.MemberSet;
 import org.labkey.query.olap.ServerManager;
 import org.labkey.query.olap.rolap.RolapReader;
+import org.labkey.query.olap.rolap.RolapTestCase;
+import org.labkey.query.olap.rolap.RolapTestSchema;
 import org.labkey.query.persist.QueryManager;
 import org.labkey.query.reports.AttachmentReport;
 import org.labkey.query.reports.LinkReport;
@@ -125,6 +131,21 @@ public class QueryModule extends DefaultModule
 
     protected void init()
     {
+        DefaultSchema.registerProvider("rolap_test", new DefaultSchema.SchemaProvider(this)
+        {
+            @Override
+            public boolean isAvailable(DefaultSchema schema, Module module)
+            {
+                return schema.getContainer().getParsedPath().equals(JunitUtil.getTestContainerPath());
+            }
+
+            public QuerySchema createSchema(DefaultSchema schema, Module module)
+            {
+                return new RolapTestSchema(schema.getUser(), schema.getContainer());
+            }
+        });
+
+
         addController("query", QueryController.class);
         addController("reports", ReportsController.class);
         addController("olap", OlapController.class);
@@ -233,7 +254,7 @@ public class QueryModule extends DefaultModule
     @NotNull
     public Set<String> getSchemaNames()
     {
-        return PageFlowUtil.set(QueryManager.get().getDbSchemaName());
+        return PageFlowUtil.set(QueryManager.get().getDbSchemaName(), "junit");
     }
 
     @Override
@@ -244,6 +265,7 @@ public class QueryModule extends DefaultModule
                 Query.QueryTestCase.class,
                 QueryServiceImpl.TestCase.class,
                 RolapReader.RolapTest.class
+                ,RolapTestCase.class
         ));
     }
 

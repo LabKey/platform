@@ -63,21 +63,22 @@ public class QubeQuery
         XINTERSECT,     // need to explain this one
         INTERSECT,
         UNION,
+        EXCEPT,
         CROSSJOIN,
         MEMBERS
     }
 
-    // TODO explicitly separate the count distinct measure filters and the regular slice filters
-
     Cube cube;
-    // pretty standard MDX query specification
     boolean showEmpty;
     QubeExpr onRows;
     QubeExpr onColumns;
-    QubeExpr filters;               // for regular slices, e.g. [Species].[Homo Sapiens]
-    // for magic count(distinct) handling
-//    QubeExpr distinctMeasureFilters;       // for filtering the count distinct measure
+
     Level countDistinctLevel;       // [Subject].[Subject]
+    QubeExpr countFilters;          // subset the members that are counted (e.g. restrict [Subject].[Subject] by [Species].[Homo Sapiens])
+
+    Level joinLevel;                // [Subject].[SubjectVisit], affects how onRows,onColumns,wherefilters intersect
+    QubeExpr whereFilters;          // like a regular WHERE
+
     Member countDistinctMember;     // [Measures].[ParticipantCount]
     Member countRowsMember;         // [Measures].[RowCount]
 
@@ -249,7 +250,7 @@ public class QubeQuery
     }
 
 
-    /* NAME Helpers */
+    /* NAME Helpers
 
     Path uniqueNametoPath(MetadataElement m) throws BindException
     {
@@ -260,7 +261,7 @@ public class QubeQuery
     {
         Path p = new Path();
         int start=0;
-        while (start < uniqueName.length());
+        while (start < uniqueName.length())
         {
             String part = null;
             if (uniqueName.charAt(start) == '[')
@@ -291,6 +292,8 @@ public class QubeQuery
         }
         return p;
     }
+ */
+
 
     String pathToUniqueName(Path path)
     {
@@ -305,7 +308,6 @@ public class QubeQuery
         }
     }
 
-
     /*
      * JSON
      */
@@ -315,28 +317,60 @@ public class QubeQuery
         this.errors = errors;
         Object v = json.get("showEmpty");
         showEmpty = null==v ? false : (Boolean)ConvertUtils.convert(v.toString(), Boolean.class);
+
         onRows = parseJsonExpr(json.get("onRows"), OP.MEMBERS, OP.XINTERSECT);
+
         Object cols = null != json.get("onColumns") ? json.get("onColumns") : json.get("onCols");
         onColumns = parseJsonExpr(cols, OP.MEMBERS, OP.XINTERSECT);
-        filters = parseJsonExpr(json.get("filter"), OP.MEMBERS, OP.XINTERSECT);
+
+
+        Object countFilter = json.get("countFilter");
+        if (null == countFilter)
+            countFilter = json.get("filter");
+        countFilters = parseJsonExpr(countFilter, OP.MEMBERS, OP.XINTERSECT);
+
+
+        Object whereFilter = json.get("whereFilter");
+        whereFilters = parseJsonExpr(whereFilter, OP.MEMBERS, OP.XINTERSECT);
+
 
         Object countDistinctLevelNameSpec = json.get("countDistinctLevel");
-        String countDistinctLevelName = null;
-        if (countDistinctLevelNameSpec instanceof String)
-        {
-            countDistinctLevelName = (String)countDistinctLevelNameSpec;
-        }
-        else if (countDistinctLevelNameSpec instanceof Map && ((Map)countDistinctLevelNameSpec).get("uniqueName") instanceof String)
-        {
-            countDistinctLevelName = (String)((Map)countDistinctLevelNameSpec).get("uniqueName");
-        }
+        String countDistinctLevelName = toLevelName(countDistinctLevelNameSpec);
+
+        Object joinLevelNameSpec = json.get("joinLevel");
+        String joinLevelName = toLevelName(joinLevelNameSpec);
+
         if (!StringUtils.isEmpty(countDistinctLevelName))
         {
             this.countDistinctLevel = _getLevel(countDistinctLevelName, null);
             if (null == this.countDistinctLevel)
                 errors.reject(SpringActionController.ERROR_MSG, ("Could not find level: " + countDistinctLevelName));
         }
+
+        if (!StringUtils.isEmpty(joinLevelName))
+        {
+            this.joinLevel = _getLevel(joinLevelName, null);
+            if (null == this.joinLevel)
+                errors.reject(SpringActionController.ERROR_MSG, ("Could not find level: " + joinLevelName));
+        }
+        if (null == this.joinLevel)
+            this.joinLevel = countDistinctLevel;
     }
+
+
+    private String toLevelName(Object levelSpec)
+    {
+        if (levelSpec instanceof String)
+        {
+            return (String)levelSpec;
+        }
+        else if (levelSpec instanceof Map && ((Map)levelSpec).get("uniqueName") instanceof String)
+        {
+            return (String)((Map)levelSpec).get("uniqueName");
+        }
+        return null;
+    }
+
 
 
     private QubeExpr parseJsonExpr(Object o, OP defaultOp, OP defaultArrayOperator) throws OlapException, BindException

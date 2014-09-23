@@ -150,7 +150,9 @@ LABKEY.query.olap._private = new function() {
 
     var postProcessCellSet = function(cs)
     {
-        var idMap = postProcessCube(cs.metadata.cube);
+        var idMap = {};
+        if (cs.metadata && cs.metadata.cube)
+            idMap = postProcessCube(cs.metadata.cube);
 
         // look for level references
         for (var a=0 ; a<cs.axes.length ; a++)
@@ -895,8 +897,10 @@ Ext4.define('LABKEY.query.olap.MDX', {
                     showEmpty:config.showEmpty,
                     onRows:config.onRows,
                     onColumns:(config.onColumns||config.onCols),
-                    filter:config.filter,
-                    countDistinctLevel:config.countDistinctLevel
+                    countDistinctLevel:config.countDistinctLevel,
+                    countFilter:config.countFilter||config.filter,
+                    joinLevel:config.joinLevel,
+                    whereFilter:config.whereFilter
                 },
             log : config.log,
             originalConfig : config,
@@ -964,6 +968,7 @@ Ext4.define('LABKEY.query.olap.MDX', {
 
             copy.filter = copy.filter.concat(filters);
         }
+        copy.sql = config.sql;
 //        console.debug(JSON.stringify({showEmpty:copy.showEmpty, onRows:copy.onRows, onCols:copy.onCols, filter:copy.filter}));
         return this._queryJava(copy);
     },

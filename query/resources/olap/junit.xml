@@ -1,0 +1,80 @@
+<Schema name="query" description="HIV Collaborative Dataspace">
+
+
+    <Cube name="JunitCube" visible="true" defaultMeasure="RowCount" cache="true" enabled="true">
+
+        <Annotations>
+            <Annotation name="AllowMDX">true</Annotation>
+        </Annotations>
+
+
+        <Table schema="rolap_test" name="fact" >
+        </Table>
+
+
+        <Dimension name="Participant" foreignKey="ptid">
+            <Hierarchy visible="true" hasAll="true" primaryKey="ptid">
+                <Table name="participant"/>
+                <Level name="Participant" visible="true" column="ptid" />
+            </Hierarchy>
+            <Hierarchy name="Gender" visible="true" hasAll="true" primaryKey="ptid">
+                <Table name="participant" schema="rolap_test"/>
+                <Level name="Gender" visible="true" type="String" uniqueMembers="true" column="gender" />
+            </Hierarchy>
+            <Hierarchy name="Species" visible="true" hasAll="true" primaryKey="ptid">
+                <Table name="participant" schema="rolap_test"/>
+                <Level name="Species" visible="true" type="String" uniqueMembers="true" column="species" />
+            </Hierarchy>
+        </Dimension>
+
+        <Dimension name="ParticipantVisit">
+            <Hierarchy visible="true" hasAll="true" primaryKey="ptid">
+                <Level name="ParticipantVisit" visible="true" >
+                    <KeyExpression><SQL>"fact"."ptid" || '|' || "fact"."visitid"</SQL></KeyExpression>
+                </Level>
+            </Hierarchy>
+        </Dimension>
+
+
+        <Dimension name="Positivity">
+            <Hierarchy hasAll="true" >
+                <Level name="Positivity" column="positivity" type="Integer" />
+            </Hierarchy>
+        </Dimension>
+
+        <Dimension name="Assay" foreignKey="assay">
+            <Hierarchy primaryKey="Name" hasAll="true">
+                <Table name="assay"/>
+                <Level name="Name" visible="true" column="name" nameColumn="label" />
+            </Hierarchy>
+        </Dimension>
+
+
+        <Dimension name="Study" foreignKey="studyid">
+            <Hierarchy visible="true" hasAll="true" primaryKey="studyid">
+                <Table schema="rolap_test" name="study" />
+                <Level name="Name" visible="true" column="studyid" type="String" uniqueMembers="true" hideMemberIf="IfBlankName">
+                </Level>
+            </Hierarchy>
+            <Hierarchy name="Type" visible="true" hasAll="true" primaryKey="studyid">
+                <Table schema="rolap_test" name="study" />
+                <Level name="Type" visible="true" column="type" type="String" uniqueMembers="true" hideMemberIf="IfBlankName">
+                </Level>
+            </Hierarchy>
+            <Hierarchy name="Condition" visible="true" hasAll="true" primaryKey="studyid">
+                <Table schema="rolap_test" name="study" />
+                <Level name="Condition" visible="true" column="Condition" type="String" uniqueMembers="true" hideMemberIf="IfBlankName">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+
+
+        <Measure name="ParticipantCount" column="ptid" aggregator="distinct-count" visible="true">
+        </Measure>
+
+
+        <Measure name="RowCount" column="ptid" aggregator="count" visible="true">
+        </Measure>
+    </Cube>
+
+</Schema>

@@ -2343,6 +2343,7 @@ query/lib/olap4j-xmla.jar -text
 query/lib/olap4j.jar -text
 query/module.properties -text
 query/resources/credits/jars.txt -text
+query/resources/olap/junit.xml -text
 query/resources/schemas/dbscripts/postgresql/obsolete/query-0.00-10.20.sql -text
 query/resources/schemas/dbscripts/postgresql/obsolete/query-0.00-11.30.sql -text
 query/resources/schemas/dbscripts/postgresql/obsolete/query-0.00-2.00.sql -text
@@ -2545,6 +2546,8 @@ query/src/org/labkey/query/olap/metadata/Olap4JCachedCubeFactory.java -text
 query/src/org/labkey/query/olap/metadata/RolapCachedCubeFactory.java -text
 query/src/org/labkey/query/olap/rolap/RolapCubeDef.java -text
 query/src/org/labkey/query/olap/rolap/RolapReader.java -text
+query/src/org/labkey/query/olap/rolap/RolapTestCase.java -text
+query/src/org/labkey/query/olap/rolap/RolapTestSchema.java -text
 query/src/org/labkey/query/persist/AbstractExternalSchemaDef.java -text
 query/src/org/labkey/query/persist/CstmView.java -text
 query/src/org/labkey/query/persist/ExternalSchemaDef.java -text

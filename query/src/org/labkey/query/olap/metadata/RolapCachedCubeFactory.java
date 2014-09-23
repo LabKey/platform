@@ -23,7 +23,10 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.TestContext;
 import org.labkey.query.olap.rolap.RolapCubeDef;
+import org.labkey.query.olap.rolap.RolapTestSchema;
 import org.olap4j.OlapException;
 import org.olap4j.metadata.Dimension;
 import org.olap4j.metadata.Level;
@@ -49,10 +52,15 @@ public class RolapCachedCubeFactory
     final public RolapCubeDef rolap;
     final public QuerySchema schema;
 
-    public RolapCachedCubeFactory(RolapCubeDef rolap, DefaultSchema s) throws SQLException
+    public RolapCachedCubeFactory(RolapCubeDef rolap, QuerySchema s) throws SQLException
     {
         this.rolap = rolap;
-        this.schema = s.getSchema(rolap.getSchemaName());
+
+        // minor hackery for junit testing... where's my IOC
+        if (s.getContainer().getId().equals(JunitUtil.getTestContainer().getId()) && "junit".equals(rolap.getSchemaName()))
+            this.schema = new RolapTestSchema(s.getUser(), s.getContainer());
+        else
+            this.schema = s.getSchema(rolap.getSchemaName());
 
         if (null == schema)
             throw new SQLException("Schema not found: " + rolap.getSchemaName());

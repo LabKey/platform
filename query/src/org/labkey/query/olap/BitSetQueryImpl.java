@@ -42,7 +42,6 @@ import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.visualization.SQLGenerationException;
-import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationService;
 import org.labkey.query.controllers.OlapController;
 import org.labkey.query.olap.metadata.CachedCube;
@@ -238,11 +237,18 @@ public class BitSetQueryImpl
             if (null == h)
                 h = cube.getHierarchies().get("Patient");
             if (h != null)
-                qq.countDistinctLevel = h.getLevels().get(h.getLevels().size()-1);
+            {
+                qq.countDistinctLevel = h.getLevels().get(h.getName());
+                if (null == qq.countDistinctLevel)
+                    qq.countDistinctLevel = h.getLevels().get(h.getLevels().size() - 1);
+            }
         }
 
         if (null == qq.countDistinctLevel)
             throw new IllegalArgumentException("No count distinct measure definition found");
+
+        if (null == qq.joinLevel)
+            qq.joinLevel = qq.countDistinctLevel;
 
         if (null == qq.countDistinctMember)
         {
@@ -320,7 +326,7 @@ public class BitSetQueryImpl
         @Override
         boolean skipCalculated()
         {
-            return null==level && null==hierarchy;
+            return null!=level || null!=hierarchy;
         }
 
         void toMdxSet(StringBuilder sb)
@@ -407,7 +413,7 @@ public class BitSetQueryImpl
 
         final Level level;              // all members of a level
         final Hierarchy hierarchy;      // all members of a hierarchy
-        final Member member;            // special case, one member (used in filters)
+        final Member member;            // special case, one member (used in countFilters)
         final MemberSet members;        // explicit list of members
 
         @Override
@@ -785,6 +791,10 @@ public class BitSetQueryImpl
         {
             return union(expr.op, results);
         }
+        case EXCEPT:
+        {
+            return except(expr.op, results);
+        }
         default:
         case MEMBERS:
         {
@@ -794,15 +804,20 @@ public class BitSetQueryImpl
     }
 
 
-    CellSet evaluate(Result rowsExpr, Result colsExpr, Result filterExpr) throws SQLException
+    CellSet evaluate(Result rowsExpr, Result colsExpr, Result filterExpr, Result whereExpr) throws SQLException
     {
         if (null == rowsExpr && null == colsExpr)
             throw new IllegalArgumentException();
 
         Level measureLevel = ((CountDistinctMeasureDef)measure).level;
+        Level joinLevel = qq.joinLevel;
+        if (null == whereExpr)
+            joinLevel = measureLevel;
 
-        // STEP 1: create filter set (measure members selected by filter)
+        // STEP 1: create count filter set (measure members selected by filter), and where filter set
         MemberSet filterSet = filter(measureLevel, filterExpr, containerMembers);
+
+        MemberSet whereSet = filter(joinLevel, whereExpr, containerMembers);
 
         if (_log.isDebugEnabled())
         {
@@ -825,112 +840,182 @@ public class BitSetQueryImpl
             {
                 sb.append("\n\teval      ").append(filterSet.toString());
             }
+            if (null != whereExpr)
+            {
+                sb.append("\n\twhere    ").append(whereExpr.toString());
+            }
+            if (null != whereSet)
+            {
+                sb.append("\n\teval      ").append(whereSet.toString());
+            }
             logDebug(sb.toString());
         }
 
-        ArrayList<Number> measureValues = new ArrayList<>();
-        int countAllMeasureMembers = measureLevel.getMembers().size();
-        int countFilterSet = null == filterSet ? -1 : filterSet.size();
         // if the filter returns all members, it's not much of a filter is it?
-        if (countFilterSet == countAllMeasureMembers)
+        int countFilterSet = null == filterSet ? -1 : filterSet.size();
+        if (countFilterSet ==  measureLevel.getMembers().size())
         {
             filterSet = null;
             countFilterSet = -1;
         }
+        int countWhereSet = null == whereSet ? -1 : whereSet.size();
+        if (countWhereSet ==  joinLevel.getMembers().size())
+        {
+            whereSet = null;
+            countWhereSet = -1;
+        }
+        if (joinLevel == measureLevel)
+        {
+            if (null != whereSet)
+            {
+                if (null == filterSet)
+                    filterSet = whereSet;
+                else
+                    filterSet = MemberSet.intersect(filterSet,whereSet);
+                whereSet = null;
+                countWhereSet = -1;
+                countFilterSet = filterSet.size();
+            }
+        }
+
 
         if (null != colsExpr)
-            _dataSourceHelper.populateCache(measureLevel, colsExpr);
+            _dataSourceHelper.populateCache(joinLevel, colsExpr);
         if (null != rowsExpr)
-            _dataSourceHelper.populateCache(measureLevel, rowsExpr);
+            _dataSourceHelper.populateCache(joinLevel, rowsExpr);
+        if (measureLevel != joinLevel)
+            _dataSourceHelper.populateCache(measureLevel, new MemberSetResult(joinLevel));
 
+
+        ArrayList<Number> measureValues = new ArrayList<>();
         Collection<Member> rowMembers = null;
         Collection<Member> colMembers = null;
+
 
         // ONE-AXIS
         if (null == colsExpr || null == rowsExpr)
         {
-            Result expr = null==rowsExpr ? colsExpr : rowsExpr;
-            Collection<Member> members = expr.getCollection();
-            if (null != rowsExpr)
-                rowMembers = members;
-            else
-                colMembers = members;
+            Result axisExpr = null==rowsExpr ? colsExpr : rowsExpr;
+            boolean skipCalculated = axisExpr.skipCalculated();
 
-            Collection<Member> notEmptyMembers = !qq.showEmpty ? new ArrayList<Member>() : null;
-            boolean skipCalculated = expr.skipCalculated();
+            ArrayList<Member> axisMembers = new ArrayList<>();
 
-            for (Member m : members)
+            for (Member m : axisExpr.getCollection())
             {
                 if (skipCalculated && m.isCalculated())
                     continue;
                 int count;
-                if (0 == countFilterSet)
+                if (0 == countWhereSet || 0 == countFilterSet)
                 {
                     count = 0;
                 }
                 else
                 {
-                    MemberSet memberSet = _dataSourceHelper.membersQuery(measureLevel, m);
-                    if (null == filterSet)
-                        count = memberSet.size();
+                    MemberSet countMemberSet;
+                    if (0 < countWhereSet)
+                    {
+                        // collect the joinLevel members that intersect the current row/col member and the whereFilter
+                        MemberSet joinMemberSet = _dataSourceHelper.membersQuery(joinLevel, m);
+                        MemberSet filtered = MemberSet.intersect(joinMemberSet, whereSet);
+                        // now find the related members in the countDistinctLevel
+                        // TODO avoid new MemberSetResult() wrapper
+                        countMemberSet = _dataSourceHelper.membersQuery(new MemberSetResult(measureLevel), new MemberSetResult(filtered));
+                    }
                     else
-                        count = MemberSet.countIntersect(memberSet, filterSet);
+                    {
+                        countMemberSet = _dataSourceHelper.membersQuery(measureLevel, m);
+                    }
+
+                    if (null == filterSet)
+                        count = countMemberSet.size();
+                    else
+                        count = MemberSet.countIntersect(countMemberSet, filterSet);
                 }
-                if (qq.showEmpty)
-                    measureValues.add(0==count?null:count);
-                else
+                if (qq.showEmpty || 0 != count)
                 {
-                    if (0==count)
-                        continue;
-                    measureValues.add(count);
-                    notEmptyMembers.add(m);
+                    measureValues.add(0 == count ? null : count);
+                    axisMembers.add(m);
                 }
             }
-            if (!qq.showEmpty)
-            {
-                if (null != rowsExpr)
-                    rowMembers = notEmptyMembers;
-                else
-                    colMembers = notEmptyMembers;
-            }
+            if (null != rowsExpr)
+                rowMembers = axisMembers;
+            else
+                colMembers = axisMembers;
         }
         // TWO-AXIS
         else
         {
             // TODO handle showEmpty==false for two axis query
-            rowMembers = rowsExpr.getCollection();
-            colMembers = colsExpr.getCollection();
+            rowMembers = new ArrayList<>();
+            colMembers = new ArrayList<>();
 
             HashMap<String,MemberSet> quickCache = new HashMap<>();
             for (Member rowMember : rowsExpr.getCollection())
             {
+                if (rowMember.isCalculated() && rowsExpr.skipCalculated())
+                    continue;
+
                 MemberSet rowMemberSet = null;
 
                 for (Member colMember : colsExpr.getCollection())
                 {
+                    if (colMember.isCalculated() && colsExpr.skipCalculated())
+                        continue;
+
+                    // first time through rowMembers isEmpty
+                    if (rowMembers.isEmpty())
+                        colMembers.add(colMember);
+
                     int count;
-                    if (0 == countFilterSet)
+                    if (0 == countFilterSet || 0 == countWhereSet)
                     {
                         count = 0;
                     }
                     else
                     {
                         if (null == rowMemberSet)
-                            rowMemberSet = _dataSourceHelper.membersQuery(measureLevel, rowMember);
+                        {
+                            if (0 < countWhereSet)
+                                rowMemberSet = _dataSourceHelper.membersQuery(joinLevel, rowMember);
+                            else
+                                rowMemberSet = _dataSourceHelper.membersQuery(measureLevel, rowMember);
+                        }
 
                         MemberSet colMemberSet = quickCache.get(colMember.getUniqueName());
                         if (null == colMemberSet)
                         {
-                            colMemberSet = _dataSourceHelper.membersQuery(measureLevel, colMember);
+                            if (0 < countWhereSet)
+                                colMemberSet = _dataSourceHelper.membersQuery(joinLevel, colMember);
+                            else
+                                colMemberSet = _dataSourceHelper.membersQuery(measureLevel, colMember);
                             quickCache.put(colMember.getUniqueName(),colMemberSet);
                         }
-                        if (null == filterSet)
-                            count = MemberSet.countIntersect(rowMemberSet, colMemberSet);
+
+                        // if joinLevel == measureLevel then countWhere should be -1
+                        assert joinLevel != measureLevel || countWhereSet == -1;
+                        if (0 < countWhereSet || joinLevel != measureLevel)
+                        {
+                            MemberSet join = null == whereSet ?
+                                    MemberSet.intersect(rowMemberSet, colMemberSet) :
+                                    MemberSet.intersect(rowMemberSet, colMemberSet, whereSet);
+                            // TODO avoid new MemberSetResult() wrapper
+                            MemberSet countMemberSet = _dataSourceHelper.membersQuery(new MemberSetResult(measureLevel), new MemberSetResult(join));
+                            if (null == filterSet)
+                                count = countMemberSet.size();
+                            else
+                                count = MemberSet.countIntersect(countMemberSet, filterSet);
+                        }
                         else
-                            count = MemberSet.countIntersect(rowMemberSet, colMemberSet, filterSet);
+                        {
+                            if (null == filterSet)
+                                count = MemberSet.countIntersect(rowMemberSet, colMemberSet);
+                            else
+                                count = MemberSet.countIntersect(rowMemberSet, colMemberSet, filterSet);
+                        }
                     }
                     measureValues.add(count);
                 }
+                rowMembers.add(rowMember);
             }
         }
 
@@ -1033,7 +1118,7 @@ public class BitSetQueryImpl
     /**
      * We don't actually perform the cross-join, we just collect the results by hierarchy.
      *
-     * XINTERSECT is a made-up operator, that is a useful default for filters.  It simply
+     * XINTERSECT is a made-up operator, that is a useful default for countFilters.  It simply
      * combines sets over the same level by doing an intersection.  NOTE: it could be smarter
      * about combining results within the same _hierarchy_ as well.  However, the main use case is
      * for combinding participant sets.
@@ -1125,6 +1210,24 @@ public class BitSetQueryImpl
     }
 
 
+    Result except(OP op, Collection<Result> results) throws OlapException
+    {
+        if (results.size() == 0)
+            throw new IllegalArgumentException();
+        if (results.size() == 1)
+            return results.iterator().next();
+
+        MemberSet set = null;
+        for (Result r : results)
+        {
+            if (null == set)
+                set = new MemberSet(r.getCollection());
+            else
+                set.removeAll(r.getCollection());
+        }
+        return new MemberSetResult(set);
+    }
+
 
 
     //
@@ -1138,17 +1241,20 @@ public class BitSetQueryImpl
     public CellSet executeQuery() throws BindException,SQLException
     {
 
-        Result filterExpr=null, rowsExpr=null, columnsExpr=null;
+        Result countFilterExpr=null, whereFilterExpr=null, rowsExpr=null, columnsExpr=null;
 
         if (null != qq.onColumns)
             columnsExpr = processExpr(qq.onColumns);
         if (null != qq.onRows)
             rowsExpr = processExpr(qq.onRows);
-        if (null != qq.filters && qq.filters.arguments.size() > 0)
-            filterExpr = processExpr(qq.filters);
+        if (null != qq.countFilters && qq.countFilters.arguments.size() > 0)
+            countFilterExpr = processExpr(qq.countFilters);
+
+        if (null != qq.whereFilters && qq.whereFilters.arguments.size() > 0)
+            whereFilterExpr = processExpr(qq.whereFilters);
 
         CellSet ret;
-        ret = evaluate(rowsExpr, columnsExpr, filterExpr);
+        ret = evaluate(rowsExpr, columnsExpr, countFilterExpr, whereFilterExpr);
         return ret;
     }
 
