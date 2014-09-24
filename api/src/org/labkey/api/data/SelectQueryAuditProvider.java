@@ -23,10 +23,8 @@ import org.labkey.api.audit.query.AbstractAuditDomainKind;
 import org.labkey.api.audit.query.DefaultAuditTypeTable;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
-import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.UserSchema;
-import org.labkey.api.view.ActionURL;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,7 +36,7 @@ public class SelectQueryAuditProvider extends AbstractAuditTypeProvider
 {
     public static final String EVENT_NAME = "SelectQuery";
 
-    static final List<FieldKey> DEFAULT_VISIBLE_COLUMNS = new ArrayList<>();
+    protected static final List<FieldKey> DEFAULT_VISIBLE_COLUMNS = new ArrayList<>();
 
     static {
 
@@ -99,28 +97,7 @@ public class SelectQueryAuditProvider extends AbstractAuditTypeProvider
             {
                 return DEFAULT_VISIBLE_COLUMNS;
             }
-
-            @Override
-            protected void initColumn(ColumnInfo col)
-            {
-                if (col.getName().equalsIgnoreCase("QueryId"))
-                {
-                    col.setURL(new DetailsURL(getAuditUrl(), "query.RowId~eq", FieldKey.fromParts("QueryId")));
-                }
-                else
-                {
-                    super.initColumn(col);
-                }
-            }
         };
-    }
-
-    @Override
-    public ActionURL getAuditUrl()
-    {
-        ActionURL url = super.getAuditUrl();
-        url.addParameter("view", "ArgosQuery");
-        return url;
     }
 
     public static class SelectQueryAuditDomainKind extends AbstractAuditDomainKind
@@ -159,6 +136,4 @@ public class SelectQueryAuditProvider extends AbstractAuditTypeProvider
             return NAME;
         }
     }
-
-
 }
