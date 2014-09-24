@@ -157,8 +157,6 @@
                 }
                 html.push('</tr>');
             }
-            html.push("</table>");
-            html.push("<p><b>" + (duration/1000) + "</b></p>");
         }
         else if (cs.axes.length == 2)
         {
@@ -180,9 +178,11 @@
                 }
                 html.push('</tr>');
             }
-            html.push("</table>");
-            html.push("<p><b>" + (duration/1000) + "</b></p>");
         }
+
+        html.push("</table>");
+        html.push("" + cs.axes[1].positions.length + " rows");
+        html.push("<p><b>" + (duration/1000) + "s</b></p>");
 
         el.update(html.join(""));
     }

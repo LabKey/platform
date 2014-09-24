@@ -8,7 +8,6 @@ import org.junit.Test;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.Module;
@@ -30,6 +29,7 @@ import org.olap4j.Position;
 import org.olap4j.metadata.Cube;
 import org.olap4j.metadata.Hierarchy;
 import org.olap4j.metadata.Level;
+import org.olap4j.metadata.Member;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
@@ -40,7 +40,7 @@ import java.util.Map;
 
 
 /**
- * Created by matthew on 9/19/14.
+ * Test the ROLAP implementation of BitSetQueryImpl
  */
 public class RolapTestCase extends Assert
 {
@@ -78,7 +78,6 @@ public class RolapTestCase extends Assert
     {
         UserSchema schema = new RolapTestSchema(getUser(), getContainer());
         ArrayList<Map> result;
-        SQLFragment sql;
 
         TableInfo p = schema.getTable("Participant");
         assertNotNull(p);
@@ -173,8 +172,6 @@ public class RolapTestCase extends Assert
         assertFalse(errors.hasErrors());
 
         Map<String,Integer> ret = new CaseInsensitiveTreeMap<>();
-        long start = 0, end = 0;
-        start = System.currentTimeMillis();
         OlapConnection conn = null;
         if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
             conn = sd.getConnection(getContainer(), getUser());
@@ -184,17 +181,19 @@ public class RolapTestCase extends Assert
         {
             for (Position p : cs.getAxes().get(1).getPositions())
             {
+                Member m = p.getMembers().get(0);
                 Cell cell = cs.getCell(p);
                 Object v = cell.getValue();
                 Integer i = null==v ? null : ((Number)v).intValue();
-                ret.put(p.getMembers().get(0).getUniqueName(), i);
+                assertFalse(ret.containsKey(m.getUniqueName()));
+                ret.put(m.getUniqueName(), i);
             }
         }
-        end = System.currentTimeMillis();
         return ret;
     }
 
-    void validateOneAxisQuery(String json, Integer... counts) throws Exception
+
+    void validateOneAxisQueryCounts(String json, Integer... counts) throws Exception
     {
         Map<String,Integer> result = oneAxisQuery(json);
         assertEquals(counts.length, result.size());
@@ -209,8 +208,6 @@ public class RolapTestCase extends Assert
         }
 
     }
-
-
 
 
     @Test
@@ -491,7 +488,7 @@ public class RolapTestCase extends Assert
 
 
         // #notnull counts
-        validateOneAxisQuery(
+        validateOneAxisQueryCounts(
             "{\n" +
                 "\"onRows\":{\"level\":\"[Study].[Name]\"},\n" +
                 "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
@@ -500,13 +497,13 @@ public class RolapTestCase extends Assert
                 "[\n" +
                 "    {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[#notnull]\"]}}\n" +
                 "]\n" +
-            "}",
+                "}",
             8, 7, 7, 7, 7, null
         );
 
 
         // studies with ANY gender=null
-        validateOneAxisQuery(
+        validateOneAxisQueryCounts(
             "{\n" +
                 "\"onRows\":{\"level\":\"[Study].[Name]\"},\n" +
                 "\"countDistinctLevel\":\"[Study].[Name]\",\n" +
@@ -515,12 +512,12 @@ public class RolapTestCase extends Assert
                 "[\n" +
                 "        {\"level\":\"[Study].[Name]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[#null]\"]}}\n" +
                 "]\n" +
-            "}",
+                "}",
             null, 1, 1, 1, 1, 1
         );
 
         // studies with ANY gender=notnull
-        validateOneAxisQuery(
+        validateOneAxisQueryCounts(
             "{\n" +
                 "\"onRows\":{\"level\":\"[Study].[Name]\"},\n" +
                 "\"countDistinctLevel\":\"[Study].[Name]\",\n" +
@@ -535,7 +532,7 @@ public class RolapTestCase extends Assert
 
 
         // studies with ONLY null gender
-        validateOneAxisQuery(
+        validateOneAxisQueryCounts(
             "{\n" +
                 "\"onRows\":{\"level\":\"[Study].[Name]\"},\n" +
                 "\"countDistinctLevel\":\"[Study].[Name]\",\n" +
@@ -547,12 +544,12 @@ public class RolapTestCase extends Assert
                 "        {\"level\":\"[Study].[Name]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[#notnull]\"]}}\n" +
                 "    ]}\n" +
                 "]\n" +
-            "}",
+                "}",
             null, null, null, null, null, 1
         );
 
         // studies with ONLY #Notnull gender
-        validateOneAxisQuery(
+        validateOneAxisQueryCounts(
             "{\n" +
                 "\"onRows\":{\"level\":\"[Study].[Name]\"},\n" +
                 "\"countDistinctLevel\":\"[Study].[Name]\",\n" +
@@ -567,5 +564,267 @@ public class RolapTestCase extends Assert
                 "}",
             1, null, null, null, null, null
         );
+    }
+
+
+    @Test
+    public void testComplexFilter() throws Exception
+    {
+        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
+            return;
+        Map<String,Integer> cs;
+
+        // female
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Participant].[Participant]\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":false,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "    {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[Female]\"]}}\n" +
+                "]\n" +
+                "}"
+        );
+        assertEquals(16, cs.size());
+
+        // male
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Participant].[Participant]\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":false,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "    {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[male]\"]}}\n" +
+                "]\n" +
+                "}"
+        );
+        assertEquals(20, cs.size());
+
+
+        // monkey
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Participant].[Participant]\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":false,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "    {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Species].[Species]\", \"members\":[\"[Participant.Species].[monkey]\"]}}\n" +
+                "]\n" +
+            "}"
+        );
+        assertEquals(8, cs.size());
+
+
+        // male and monkey (implicit AND)
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Participant].[Participant]\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":false,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "        {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Species].[Species]\", \"members\":[\"[Participant.Species].[monkey]\"]}},\n" +
+                "        {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[Male]\"]}}\n" +
+                "]\n" +
+            "}"
+        );
+        assertEquals(4, cs.size());
+
+
+        // male and monkey (explicit INTERSECT)
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":false,\n" +
+                "\"onRows\":\n" +
+                "{ \"operator\":\"INTERSECT\", \"arguments\":\n" +
+                "[\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Species].[Species]\", \"members\":[\"[Participant.Species].[monkey]\"]}},\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[Male]\"]}}\n" +
+                "]}\n" +
+            "}"
+        );
+        assertEquals(4, cs.size());
+
+        // female and monkey (explicit INTERSECT)
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":false,\n" +
+                "\"onRows\":\n" +
+                "{ \"operator\":\"INTERSECT\", \"arguments\":\n" +
+                "[\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Species].[Species]\", \"members\":[\"[Participant.Species].[monkey]\"]}},\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[female]\"]}}\n" +
+                "]}\n" +
+                "}"
+        );
+        assertEquals(3, cs.size());
+
+
+        // male OR monkey (UNION)
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":false,\n" +
+                "\"onRows\":\n" +
+                "{ \"operator\":\"UNION\", \"arguments\":\n" +
+                "[\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Species].[Species]\", \"members\":[\"[Participant.Species].[monkey]\"]}},\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[Male]\"]}}\n" +
+                "]}\n" +
+                "}"
+        );
+        assertEquals(24, cs.size());
+
+
+        // female AND NOT monkey (EXCEPT)
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":false,\n" +
+                "\"onRows\":\n" +
+                "{ \"operator\":\"EXCEPT\", \"arguments\":\n" +
+                "[\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[female]\"]}},\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Species].[Species]\", \"members\":[\"[Participant.Species].[monkey]\"]}}\n" +
+                "]}\n" +
+                "}"
+        );
+        assertEquals(13, cs.size());
+    }
+
+
+    @Test
+    public void testShorthandSyntax() throws Exception
+    {
+        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
+            return;
+        Map<String,Integer> cs;
+
+        // members:STRING
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":true,\n" +
+                "\"onRows\":{\"level\":\"[Participant].[Participant]\", \"members\":\"[Participant].[P001001]\"}\n" +
+            "}"
+        );
+        assertEquals(1, cs.size());
+        assertEquals((Integer)1, cs.get("[Participant].[P001001]"));
+
+        // members:[STRING]
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":true,\n" +
+                "\"onRows\":{\"level\":\"[Participant].[Participant]\", \"members\":[\"[Participant].[P001001]\"]}\n" +
+                "}"
+        );
+        assertEquals(1, cs.size());
+        assertEquals((Integer)1, cs.get("[Participant].[P001001]"));
+
+        // members:[STRING,STRING]
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":true,\n" +
+                "\"onRows\":{\"level\":\"[Participant].[Participant]\", \"members\":[\"[Participant].[P001001]\",\"[Participant].[P001002]\"]}\n" +
+                "}"
+        );
+        assertEquals(2, cs.size());
+        assertEquals((Integer)1, cs.get("[Participant].[P001001]"));
+        assertEquals((Integer)1, cs.get("[Participant].[P001002]"));
+
+        // filter:[] {[Participant].[Participant] membersQuery} not explicitly specificed in the filter
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Participant].[Participant]\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":false,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "    {\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[Female]\"]}\n" +
+                "]\n" +
+                "}"
+        );
+        assertEquals(16,cs.size());
+        for (Integer I : cs.values())
+            assertEquals((Integer)1, I);
+
+        // filter:{} single filter not wrapped in array
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Participant].[Participant]\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":false,\n" +
+                "\"countFilter\":\n" +
+                "    {\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[Female]\"]}\n" +
+                "}"
+        );
+        assertEquals(16,cs.size());
+        for (Integer I : cs.values())
+            assertEquals((Integer)1, I);
+    }
+
+
+    @Test
+    public void testDataFilter() throws Exception
+    {
+        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
+            return;
+        Map<String,Integer> cs;
+
+
+        // no filter
+        validateOneAxisQueryCounts(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Assay].[Name]\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\"\n" +
+            "}",
+            40, 8, 8, 8
+        );
+
+
+        // participant filter, two assays get pulled in because of shared participants
+        validateOneAxisQueryCounts(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Assay].[Name]\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":true,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "    {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Positivity].[Positivity]\", \"members\":\"[Positivity].[1]\"}}\n" +
+                "],\n" +
+                "\"joinLevel\":\"[ParticipantVisit].[ParticipantVisit]\"\n" +
+            "}",
+            3, 3, null, null
+        );
+
+
+        // participantvisit filter, only assay associated with positivity timepoint is pulled in
+        validateOneAxisQueryCounts(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Assay].[Name]\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":true,\n" +
+                "\"joinLevel\":\"[ParticipantVisit].[ParticipantVisit]\",\n" +
+                "\"whereFilter\":\n" +
+                "[\n" +
+                "    {\"level\":\"[ParticipantVisit].[ParticipantVisit]\", \"membersQuery\":{\"level\":\"[Positivity].[Positivity]\", \"members\":\"[Positivity].[1]\"}}\n" +
+                "]\n" +
+            "}",
+            3, null, null, null
+        );
+    }
+
+
+    @Test
+    public void testRegressionXYZ()
+    {
+
     }
 }

@@ -189,7 +189,7 @@ public class RolapCachedCubeFactory
 
                     String uniqueName;
                     if (l == 1)
-                        uniqueName = level.getUniqueName() + ".[" + name + "]";
+                        uniqueName = h.getUniqueName() + ".[" + name + "]";
                     else
                         uniqueName = parent.getUniqueName() + ".[" + name + "]";
 
@@ -207,6 +207,7 @@ public class RolapCachedCubeFactory
                     m.keyValue = (Comparable)levelDef.getKeyValue(rs);
                     m.ordinalValue = (Comparable)levelDef.getOrindalValue(rs);
 
+                    uniqueNameMap.put(uniqueName, m);
                     membersCurrent.set(l, m);
                     level.members.add(m);
                 }

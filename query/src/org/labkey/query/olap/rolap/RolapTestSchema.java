@@ -333,7 +333,7 @@ public class RolapTestSchema extends UserSchema
            row("FCS", "Flow Cytometry"),
            row("mRNA", "Gene Expression"),
            row("PCR", "Polymerase Chain Reaction"),
-           row("NAB", "Neutrolizing Antibody"),
+           row("NAB", "Neutralizing Antibody"),
         };
         return new TestTableInfo("Visit", cols, data);
     }

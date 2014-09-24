@@ -327,10 +327,14 @@ public class QubeQuery
         Object countFilter = json.get("countFilter");
         if (null == countFilter)
             countFilter = json.get("filter");
+        if (countFilter instanceof JSONObject)
+            countFilter = new JSONArray(Collections.singleton(countFilter));
         countFilters = parseJsonExpr(countFilter, OP.MEMBERS, OP.XINTERSECT);
 
 
         Object whereFilter = json.get("whereFilter");
+        if (whereFilter instanceof JSONObject)
+            whereFilter = new JSONArray(Collections.singleton(whereFilter));
         whereFilters = parseJsonExpr(whereFilter, OP.MEMBERS, OP.XINTERSECT);
 
 
