@@ -1087,6 +1087,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                         name: '',
                         queryName: null,
                         queryLabel: this.supportSessionLabel,
+                        queryDescription: 'All variables that have been selected from this session grouped by source',
                         variableType: 'SESSION'
                     });
                 }
