@@ -56,9 +56,16 @@ var decl = [
 var formpanel;
 function submitHandler()
 {
-    var values = formpanel.getForm().getValues();
+    var valuesRaw = formpanel.getForm().getValues();
     formpanel.destroy();
     delete formpanel;
+
+    var values = {};
+    for (var i=0 ; i<decl.length ; i++)
+    {
+        var parameter = dataRegionName + ".param." + decl[i].name;
+        values[parameter] = valuesRaw[parameter];
+    }
 
     var dataRegion = LABKEY.DataRegions[dataRegionName];
     if (dataRegion)
