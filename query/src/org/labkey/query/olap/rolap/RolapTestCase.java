@@ -194,6 +194,24 @@ public class RolapTestCase extends Assert
         return ret;
     }
 
+    void validateOneAxisQuery(String json, Integer... counts) throws Exception
+    {
+        Map<String,Integer> result = oneAxisQuery(json);
+        assertEquals(counts.length, result.size());
+
+        int i=0;
+        for (Map.Entry<String,Integer> e : result.entrySet())
+        {
+            Integer expectedCount = counts[i++];
+            String member = e.getKey();
+            Integer actualCount = e.getValue();
+            assertEquals(member, expectedCount, actualCount);
+        }
+
+    }
+
+
+
 
     @Test
     public void testNoFilters() throws Exception
@@ -438,5 +456,116 @@ public class RolapTestCase extends Assert
         assertEquals((Integer)1, cs.get("[Study.Type].[Interventional]"));
         assertEquals((Integer)9, cs.get("[Study.Type].[Longitudinal]"));
         assertEquals((Integer)2, cs.get("[Study.Type].[Observational]"));
+    }
+
+
+    @Test
+    public void testNotNullFilter() throws Exception
+    {
+        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
+            return;
+
+        Map<String,Integer> cs;
+
+
+        // #null counts
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Study].[Name]\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":true,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "    {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[#null]\"]}}\n" +
+                "]\n" +
+                "}"
+        );
+        // break this one out to check order of members in map
+        assertEquals(6, cs.size());
+        assertNull(cs.get("[Study].[S001]"));
+        assertEquals((Integer)1, cs.get("[Study].[S002]"));
+        assertEquals((Integer)1, cs.get("[Study].[S003]"));
+        assertEquals((Integer)1, cs.get("[Study].[S004]"));
+        assertEquals((Integer)1, cs.get("[Study].[S005]"));
+        assertEquals((Integer)8, cs.get("[Study].[S006]"));
+
+
+        // #notnull counts
+        validateOneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Study].[Name]\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":true,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "    {\"level\":\"[Participant].[Participant]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[#notnull]\"]}}\n" +
+                "]\n" +
+            "}",
+            8, 7, 7, 7, 7, null
+        );
+
+
+        // studies with ANY gender=null
+        validateOneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Study].[Name]\"},\n" +
+                "\"countDistinctLevel\":\"[Study].[Name]\",\n" +
+                "\"showEmpty\":true,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "        {\"level\":\"[Study].[Name]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[#null]\"]}}\n" +
+                "]\n" +
+            "}",
+            null, 1, 1, 1, 1, 1
+        );
+
+        // studies with ANY gender=notnull
+        validateOneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Study].[Name]\"},\n" +
+                "\"countDistinctLevel\":\"[Study].[Name]\",\n" +
+                "\"showEmpty\":true,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "        {\"level\":\"[Study].[Name]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[#notnull]\"]}}\n" +
+                "]\n" +
+                "}",
+            1, 1, 1, 1, 1, null
+        );
+
+
+        // studies with ONLY null gender
+        validateOneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Study].[Name]\"},\n" +
+                "\"countDistinctLevel\":\"[Study].[Name]\",\n" +
+                "\"showEmpty\":true,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "    {\"operator\":\"EXCEPT\", \"arguments\":[\n" +
+                "        {\"level\":\"[Study].[Name]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[#null]\"]}},\n" +
+                "        {\"level\":\"[Study].[Name]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[#notnull]\"]}}\n" +
+                "    ]}\n" +
+                "]\n" +
+            "}",
+            null, null, null, null, null, 1
+        );
+
+        // studies with ONLY #Notnull gender
+        validateOneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Study].[Name]\"},\n" +
+                "\"countDistinctLevel\":\"[Study].[Name]\",\n" +
+                "\"showEmpty\":true,\n" +
+                "\"countFilter\":\n" +
+                "[\n" +
+                "    {\"operator\":\"EXCEPT\", \"arguments\":[\n" +
+                "        {\"level\":\"[Study].[Name]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[#notnull]\"]}},\n" +
+                "        {\"level\":\"[Study].[Name]\", \"membersQuery\":{\"level\":\"[Participant.Gender].[Gender]\", \"members\":[\"[Participant.Gender].[#null]\"]}}\n" +
+                "    ]}\n" +
+                "]\n" +
+                "}",
+            1, null, null, null, null, null
+        );
     }
 }
