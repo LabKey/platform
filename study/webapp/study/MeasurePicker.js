@@ -1075,6 +1075,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                         name: '',
                         queryName: null,
                         queryLabel: this.supportSelectionLabel,
+                        queryDescription: 'Currently selected variables grouped by source',
                         variableType: 'SELECTION'
                     });
                 }
