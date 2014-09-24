@@ -27,6 +27,7 @@
             </Hierarchy>
         </Dimension>
 
+
         <Dimension name="ParticipantVisit">
             <Hierarchy visible="true" hasAll="true" primaryKey="ptid">
                 <Level name="ParticipantVisit" visible="true" >
@@ -41,6 +42,7 @@
                 <Level name="Positivity" column="positivity" type="Integer" />
             </Hierarchy>
         </Dimension>
+
 
         <Dimension name="Assay" foreignKey="assay">
             <Hierarchy primaryKey="Name" hasAll="true">

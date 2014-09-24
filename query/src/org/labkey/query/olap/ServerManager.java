@@ -397,7 +397,7 @@ public class ServerManager
                         "<Catalogs>\n");
                 for (OlapSchemaDescriptor d : descriptors)
                 {
-                    if ("junit".equals(d.getName()) && (!c.getParsedPath().equals(JunitUtil.getTestContainerPath()) || OlapController.strategy != OlapController.ImplStrategy.rolapYourOwn))
+                    if ("junit".equals(d.getName()) && (!c.getParsedPath().equals(JunitUtil.getTestContainerPath())))
                         continue;
                     sb.append(
                             "\n" +

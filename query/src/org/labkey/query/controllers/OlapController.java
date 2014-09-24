@@ -141,7 +141,7 @@ import java.util.Map;
  */
 public class OlapController extends SpringActionController
 {
-    public enum ImplStrategy {mondrian, rolapYourOwn};
+    public enum ImplStrategy {mondrian, rolapYourOwn}
     public static ImplStrategy strategy = ImplStrategy.mondrian;
 //    public static ImplStrategy strategy = ImplStrategy.rolapYourOwn;
 
@@ -1028,7 +1028,9 @@ public class OlapController extends SpringActionController
             return null;
         }
 
-        OlapConnection conn = getConnection(d);
+        OlapConnection conn = null;
+        if (strategy == ImplStrategy.mondrian)
+            conn = getConnection(d);
         Cube cube = ServerManager.getCachedCube(d, conn, getContainer(), getUser(), form.getSchemaName(), form.getCubeName(), errors);
         if (errors.hasErrors())
         {

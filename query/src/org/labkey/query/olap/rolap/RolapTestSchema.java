@@ -9,6 +9,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -121,6 +122,14 @@ public class RolapTestSchema extends UserSchema
             new ColumnInfo("assay", JdbcType.VARCHAR),
             new ColumnInfo("positivity", JdbcType.INTEGER)
         };
+        cols[0].setFk(new LookupForeignKey("ptid")
+        {
+            @Override
+            public TableInfo getLookupTableInfo()
+            {
+                return RolapTestSchema.this.createParticipant();
+            }
+        });
         Object[][] data = new Object[][]
         {
             row("P001001", "S001", "V0", "mRNA", 0),
@@ -266,9 +275,9 @@ public class RolapTestSchema extends UserSchema
             row("P004002", "Female", "Mouse"),
             row("P004003", "Male", "Mouse"),
             row("P004004", "Female", "Mouse"),
-            row("P004005", "Male", "Mouse"),
-            row("P004006", "Female", "Mouse"),
-            row("P004007", "Male", "Mouse"),
+            row("P004005", "male", "mouse"),
+            row("P004006", "female", "mouse"),
+            row("P004007", "male", "mouse"),
             row("P004008", null, "Mouse"),
 
             row("P005001", "Male", null),
