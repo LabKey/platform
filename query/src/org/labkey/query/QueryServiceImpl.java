@@ -1813,7 +1813,7 @@ public class QueryServiceImpl extends QueryService
             }
             else
             {
-                throw new UnauthorizedException("Unable to locate required logging column.");
+                throw new UnauthorizedException("Unable to locate required logging column '" + fieldKey.toString() + "'.");
             }
         }
 

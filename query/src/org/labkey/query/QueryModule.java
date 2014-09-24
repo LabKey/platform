@@ -243,7 +243,6 @@ public class QueryModule extends DefaultModule
 
         AuditLogService.registerAuditType(new QueryAuditProvider());
         AuditLogService.registerAuditType(new QueryUpdateAuditProvider());
-        AuditLogService.registerAuditType(new SelectQueryAuditProvider());
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());
 
