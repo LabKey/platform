@@ -219,7 +219,9 @@
       <ns:column columnName="PostalArea">
         <ns:description>The postal area code (i.e. zip, postcode) of each location.</ns:description>
       </ns:column>
-      <ns:column columnName="Container" />
+      <ns:column columnName="Container">
+        <ns:isKeyField>true</ns:isKeyField>
+      </ns:column>
       <ns:column columnName="EntityId">
         <ns:description>A unique string identifier for each location.</ns:description>
       </ns:column>

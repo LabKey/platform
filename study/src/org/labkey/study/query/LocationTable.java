@@ -19,6 +19,8 @@ package org.labkey.study.query;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerForeignKey;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.JdbcType;
@@ -35,11 +37,11 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.study.Location;
 import org.labkey.api.util.GUID;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.study.StudySchema;
-import org.labkey.study.controllers.BaseStudyController;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.StudyManager;
 
@@ -61,8 +63,8 @@ public class LocationTable extends BaseStudyTable
     {
         super(schema, StudySchema.getInstance().getTableInfoSite());
         setName("Location");
-        ColumnInfo c = new LocationInUseExpressionColumn(this);
-        addColumn(c);
+        ColumnInfo inUse = new LocationInUseExpressionColumn(this);
+        addColumn(inUse);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("RowId"))).setHidden(true);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("LdmsLabCode")));
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("ExternalId")));
@@ -78,14 +80,16 @@ public class LocationTable extends BaseStudyTable
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("City"))).setHidden(true);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("GoverningDistrict"))).setHidden(true);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("PostalArea"))).setHidden(true);
-        addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))).setHidden(true);
         addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("EntityId"))).setHidden(true);
+
+        // FK on Container
+        ContainerForeignKey.initColumn(addWrapColumn(_rootTable.getColumn(FieldKey.fromParts("Container"))), schema).setHidden(true);
     }
 
     @Override
     public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
     {
-        return _userSchema.getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, perm);
+        return _userSchema.getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, AdminPermission.class);
     }
 
     @Override
@@ -115,52 +119,67 @@ public class LocationTable extends BaseStudyTable
                 throw new QueryUpdateServiceException("A Label must be entered");
 
             if (rows.get(0).get("LdmsLabCode") == null)
-            {
                 throw new QueryUpdateServiceException("You must enter a number for the Ldms Lab Code");
-            }
+
             return super.insertRows(user, container, rows, errors, extraScriptContext);
         }
 
         @Override
-        public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        public List<Map<String, Object>> updateRows(User user, Container c, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
         {
-            if (rows.get(0).get("Label") == null)
+            if (!c.hasPermission(user, AdminPermission.class))
+                throw new UnauthorizedException();
+
+            Map<String, Object> map = rows.get(0);
+
+            Integer locId = (Integer)map.get("RowId");
+            if (null == locId)
+                throw new InvalidKeyException("Invalid location ID");
+
+            LocationImpl loc = StudyManager.getInstance().getLocation(c, locId);
+            if (null == loc)
+                throw new InvalidKeyException("Location not found");
+            loc.createMutable();    // Test mutability
+
+            if (map.get("Label") == null)
                 throw new QueryUpdateServiceException("A Label must be entered");
 
-            if (rows.get(0).get("LdmsLabCode") == null)
-            {
+            if (map.get("LdmsLabCode") == null)
                 throw new QueryUpdateServiceException("You must enter a number for the Ldms Lab Code");
-            }
-            Integer i = (Integer)rows.get(0).get("RowId");
-            Location location = null;
-            for(Location loc : BaseStudyController.getStudy(getContainer()).getLocations())
-            {
-                if(loc.getRowId() == (i))
-                {
-                    location = loc;
-                }
-            }
-            LocationImpl test = (LocationImpl)location;
-            test.createMutable();
-            return super.updateRows(user, container, rows, oldKeys, extraScriptContext);
+
+            return super.updateRows(user, c, rows, oldKeys, extraScriptContext);
         }
 
         @Override
         public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
         {
-            Integer i = (Integer)keys.get(0).get("RowId");
-            LocationImpl location = null;
-            for(LocationImpl loc : BaseStudyController.getStudy(getContainer()).getLocations())
+            StudyManager mgr = StudyManager.getInstance();
+
+            for (Map<String, Object> map : keys)
             {
-                if(loc.getRowId() == (i))
-                {
-                    location = loc;
-                }
+                Integer locId = (Integer)map.get("RowId");
+                if (null == locId)
+                    throw new InvalidKeyException("Invalid location ID");
+
+                String cid = (String)map.get("Container");
+                if (null == cid)
+                    throw new InvalidKeyException("Invalid container ID");
+
+                Container c = ContainerManager.getForId(cid);
+                if (null == c)
+                    throw new InvalidKeyException("Container not found");
+
+                if (!c.hasPermission(user, AdminPermission.class))
+                    throw new UnauthorizedException();
+
+                LocationImpl loc = mgr.getLocation(c, locId);
+                if (null == loc)
+                    throw new InvalidKeyException("Location not found");
+
+                if (mgr.isLocationInUse(loc))
+                    throw new InvalidKeyException("Locations currently in use cannot be deleted");
             }
-            if(StudyManager.getInstance().isLocationInUse(location))
-            {
-                throw new InvalidKeyException("Locations currently in use cannot be deleted");
-            }
+
             return super.deleteRows(user, container, keys, extraScriptContext);
         }
     }
@@ -190,8 +209,8 @@ public class LocationTable extends BaseStudyTable
                 .append(EXISTS).append(schema.getTableInfoParticipant(), "p").append(" WHERE ").append(tableAlias).append(".RowId = p.EnrollmentSiteId OR ").append(tableAlias).append(".RowId = p.CurrentSiteId) OR\n")
                 .append(EXISTS).append(schema.getTableInfoAssaySpecimen(), "a").append(" WHERE ").append(tableAlias).append(".RowId = a.LocationId)");
 
-        // Specimen tables are provisioned per container, so include all specimen tables in all study folders in the current container filter
-        for (Container c : getStudyContainers())
+        // Specimen tables are provisioned per container, so include all specimen tables in all study folders referenced by the current container filter
+        for (Container c : getStudyContainers(getContainer(), getContainerFilter()))
         {
             TableInfo eventTableInfo = schema.getTableInfoSpecimenEventIfExists(c);
             if (null != eventTableInfo)
@@ -210,13 +229,13 @@ public class LocationTable extends BaseStudyTable
         return schema.getSqlDialect().isSqlServer() ? new SQLFragment("CAST(CASE WHEN\n").append(ret).append("\nTHEN 1 ELSE 0 END AS BIT)") : ret;
     }
 
-    private Collection<Container> getStudyContainers()
+    public static Collection<Container> getStudyContainers(Container root, ContainerFilter cFilter)
     {
-        Collection<GUID> ids = getContainerFilter().getIds(getContainer());
+        Collection<GUID> ids = cFilter.getIds(root);
 
         if (null == ids)
         {
-            return Collections.singleton(getContainer());
+            return Collections.singleton(root);
         }
         else
         {

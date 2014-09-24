@@ -19,20 +19,27 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DetailsColumn;
 import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateColumn;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.study.controllers.StudyController;
 import org.springframework.validation.Errors;
 
+import java.io.IOException;
+import java.io.Writer;
 import java.util.List;
 
 /**
@@ -49,15 +56,29 @@ public class LocationQueryView extends QueryView
     protected void populateButtonBar(DataView view, ButtonBar bar)
     {
         bar.add(createViewButton(getViewItemFilter()));
-        bar.add(createInsertButton());
-        bar.add(createDeleteButton());
-        ActionURL deleteUnusedURL = new ActionURL(StudyController.DeleteAllUnusedLocationsAction.class, getSchema().getContainer());
-        deleteUnusedURL.addReturnURL(getReturnURL());
-        ActionButton delete = new ActionButton(deleteUnusedURL, "Delete All Unused");
-        delete.setActionType(ActionButton.Action.LINK);
-        delete.setRequiresSelection(false, "Are you sure you want to delete the selected location?", "Are you sure you want to delete the selected locations?");
-        deleteUnusedURL.addReturnURL(getViewContext().getActionURL());
-        bar.add(delete);
+
+        // Only admins can insert/delete locations
+        if (getContainer().hasPermission(getUser(), AdminPermission.class))
+        {
+            bar.add(createInsertButton());
+            bar.add(createDeleteButton());
+            ActionURL deleteUnusedURL = new ActionURL(StudyController.DeleteAllUnusedLocationsAction.class, getSchema().getContainer());
+            deleteUnusedURL.addReturnURL(getReturnURL());
+            ContainerFilter cFilter = getContainerFilter();
+            if (null != cFilter)
+            {
+                ContainerFilter.Type type = cFilter.getType();
+
+                if (null != type)
+                    deleteUnusedURL.addParameter("containerFilter", type.name());
+            }
+            ActionButton deleteAllUnused = new ActionButton(deleteUnusedURL, "Delete All Unused");
+            deleteAllUnused.setActionType(ActionButton.Action.LINK);
+            deleteAllUnused.setRequiresSelection(false, "Are you sure you want to delete the selected location?", "Are you sure you want to delete the selected locations?");
+            deleteUnusedURL.addReturnURL(getViewContext().getActionURL());
+            bar.add(deleteAllUnused);
+        }
+
         bar.add(createExportButton(false));
         bar.add(createPrintButton());
         bar.add(createPageSizeMenuButton());
@@ -73,11 +94,26 @@ public class LocationQueryView extends QueryView
             ret.add(new DetailsColumn(urlDetails, table));
         }
 
-        StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
-
-        if (urlUpdate != null)
+        // Only admins can update locations
+        if (getContainer().hasPermission(getUser(), AdminPermission.class))
         {
-            ret.add(0, new UpdateColumn(urlUpdate));
+            StringExpression urlUpdate = urlExpr(QueryAction.updateQueryRow);
+
+            if (urlUpdate != null)
+            {
+                UpdateColumn update = new UpdateColumn(urlUpdate) {
+                    @Override
+                    public void renderGridCellContents(RenderContext ctx, Writer out) throws IOException
+                    {
+                        Container c = ContainerManager.getForId((String)ctx.get("container"));
+                        if (c.hasPermission(getUser(), AdminPermission.class))
+                            super.renderGridCellContents(ctx, out);
+                        else
+                            out.write("&nbsp;");
+                    }
+                };
+                ret.add(0, update);
+            }
         }
     }
 }

@@ -208,6 +208,7 @@ import org.labkey.study.pipeline.DatasetFileReader;
 import org.labkey.study.pipeline.StudyPipeline;
 import org.labkey.study.query.DataSetQuerySettings;
 import org.labkey.study.query.DataSetQueryView;
+import org.labkey.study.query.LocationTable;
 import org.labkey.study.query.PublishedRecordQueryView;
 import org.labkey.study.query.StudyPropertiesQueryView;
 import org.labkey.study.query.StudyQuerySchema;
@@ -1726,7 +1727,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    @RequiresPermissionClass(DeletePermission.class)
+    @RequiresPermissionClass(AdminPermission.class)
     public class DeleteAllUnusedLocationsAction extends ConfirmAction<LocationForm>
     {
         @Override
@@ -1735,11 +1736,11 @@ public class StudyController extends BaseStudyController
             List<String> temp = new ArrayList<>();
             for (Container c : getContainers(form))
             {
-                if(c.hasPermission(getUser(), DeletePermission.class))
+                if (c.hasPermission(getUser(), AdminPermission.class))
                 {
                     for (LocationImpl loc : StudyManager.getInstance().getSites(c))
                     {
-                        if (!(StudyManager.getInstance().isLocationInUse(loc)))
+                        if (!StudyManager.getInstance().isLocationInUse(loc))
                         {
                             temp.add(c.getName() + "/" + loc.getLabel());
                         }
@@ -1758,13 +1759,13 @@ public class StudyController extends BaseStudyController
         @Override
         public boolean handlePost(LocationForm form, BindException errors) throws Exception
         {
-            for(Container c : getContainers(form))
+            for (Container c : getContainers(form))
             {
-                if(c.hasPermission(getUser(), DeletePermission.class))
+                if (c.hasPermission(getUser(), AdminPermission.class))
                 {
                     for (LocationImpl loc : StudyManager.getInstance().getSites(c))
                     {
-                        if (!(StudyManager.getInstance().isLocationInUse(loc)))
+                        if (!StudyManager.getInstance().isLocationInUse(loc))
                         {
                             StudyManager.getInstance().deleteLocation(loc);
                         }
@@ -1785,16 +1786,15 @@ public class StudyController extends BaseStudyController
         {
             return form.getReturnURLHelper();
         }
-        private List<Container> getContainers(LocationForm form)
+
+        private Collection<Container> getContainers(LocationForm form)
         {
-            List<Container> containers = new ArrayList<>();
-            if(form.getReturnURLHelper().getParameters() != null
-                    && form.getReturnURLHelper().getParameters().contains(new Pair("query.containerFilterName", "CurrentAndSubfolders")))
-            {
-                containers.addAll(getContainer().getChildren());
-            }
-            containers.add(getContainer());
-            return containers;
+            String containerFilterName = form.getContainerFilter();
+
+            if (null != containerFilterName)
+                return LocationTable.getStudyContainers(getContainer(), ContainerFilter.getContainerFilterByName(form.getContainerFilter(), getUser()));
+            else
+                return Collections.singleton(getContainer());
         }
     }
 
@@ -1823,10 +1823,12 @@ public class StudyController extends BaseStudyController
             _descriptions = descriptions;
         }
     }
+
     public static class LocationForm extends ViewForm
     {
         private int[] _ids;
         private String[] _labels;
+        private String _containerFilter;
 
         public String[] getLabels()
         {
@@ -1846,6 +1848,16 @@ public class StudyController extends BaseStudyController
         public void setIds(int[] ids)
         {
             _ids = ids;
+        }
+
+        public String getContainerFilter()
+        {
+            return _containerFilter;
+        }
+
+        public void setContainerFilter(String containerFilter)
+        {
+            _containerFilter = containerFilter;
         }
     }
 

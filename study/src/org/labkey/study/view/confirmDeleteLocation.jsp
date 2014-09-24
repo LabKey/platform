@@ -22,10 +22,10 @@
     StudyController.LocationForm form = (StudyController.LocationForm)getModelBean();
 %>
 <% if (form.getLabels().length == 0) { %>
-<p>All Locations are in use</p>
+<p>All locations are in use</p>
 <% }
 else if (form.getLabels().length == 1) { %>
-<p>Are you sure you want to delete the site: '<%=h(form.getLabels()[0])%>'?</p>
+<p>Are you sure you want to delete the location: '<%=h(form.getLabels()[0])%>'?</p>
 <% }
 else if (form.getLabels().length > 1) { %>
 <p>Are you sure you want to delete the following locations? </p>
