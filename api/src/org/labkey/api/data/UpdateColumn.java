@@ -28,6 +28,5 @@ public class UpdateColumn extends UrlColumn
         setWidth("0");
         addDisplayClass("labkey-update");
     }
-
 }
 

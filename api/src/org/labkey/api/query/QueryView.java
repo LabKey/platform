@@ -2363,7 +2363,7 @@ public class QueryView extends WebPartView<Object>
         return _table;
     }
 
-    private ContainerFilter getContainerFilter()
+    protected ContainerFilter getContainerFilter()
     {
         String filterName = _settings.getContainerFilterName();
 
@@ -2376,7 +2376,7 @@ public class QueryView extends WebPartView<Object>
         return null;
     }
 
-    private final boolean isShowExperimentalGenericDetailsURL()
+    private boolean isShowExperimentalGenericDetailsURL()
     {
         return AppProps.getInstance().isExperimentalFeatureEnabled(EXPERIMENTAL_GENERIC_DETAILS_URL);
     }
