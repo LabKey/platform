@@ -55,18 +55,19 @@ public class RolapCachedCubeFactory
     public RolapCachedCubeFactory(RolapCubeDef rolap, QuerySchema s) throws SQLException
     {
         this.rolap = rolap;
-
-        // minor hackery for junit testing... where's my IOC
-        if (s.getContainer().getId().equals(JunitUtil.getTestContainer().getId()) && "junit".equals(rolap.getSchemaName()))
-            this.schema = new RolapTestSchema(s.getUser(), s.getContainer());
-        else
-            this.schema = s.getSchema(rolap.getSchemaName());
+        this.schema = s.getSchema(rolap.getSchemaName());
 
         if (null == schema)
             throw new SQLException("Schema not found: " + rolap.getSchemaName());
     }
 
 
+    /**
+     * Not much to see here, just loop through the dimensions and hierarchies to load members
+     *
+     * @return
+     * @throws SQLException
+     */
     public CachedCube createCachedCube() throws SQLException
     {
         CachedCube cube = new CachedCube(rolap.getName());
@@ -97,7 +98,6 @@ public class RolapCachedCubeFactory
             d.hierarchies.seal();
         }
 
-
         cube.dimensions.seal();
         return cube;
     }
@@ -123,6 +123,13 @@ public class RolapCachedCubeFactory
     }
 
 
+    /**
+     * Generate a result with all the data from the dimension table for this hierarchy
+     * The results are sorted so we can save a lot of effort by looking for the first
+     * level in the hierachy with a "break" or change in data value, and pick up there
+     * creating new members.  We remember the members before the break, and don't need
+     * to look them up, or create them.
+     */
     void generateHierachyMembers(HierarchyDef hdef, CachedCube._Hierarchy h) throws SQLException
     {
         CachedCube._Level allLevel = (CachedCube._Level)h.getLevels().get(0);
@@ -167,6 +174,7 @@ public class RolapCachedCubeFactory
 
             while (rs.next())
             {
+                // find first level where value is different than in the previous row
                 int breakLevel = 0;
                 for (int l = 1; l < levelCount; l++)
                 {
@@ -193,7 +201,10 @@ public class RolapCachedCubeFactory
                     else
                         uniqueName = parent.getUniqueName() + ".[" + name + "]";
 
-                    // it's possible we've seen this member before
+                    // it's possible we've seen this member before if we're sorting case-sensitve, for instance
+                    // NOTE: There is an assumption there that testing uniqueName equality is the same as testing key equality.
+                    // This should be the case for the cube to be useful, and it's easier to do one string compare than
+                    // comparing arrays of objects
                     CachedCube._Member m = uniqueNameMap.get(uniqueName);
                     if (null != m)
                     {
@@ -295,18 +306,18 @@ public class RolapCachedCubeFactory
         {
             int ret;
             ret = _compare((CachedCube._Member)m1,(CachedCube._Member)m2);
-            if (ret < 0)
-            {
-                System.err.println(m1.getUniqueName() + " < " + m2.getUniqueName());
-            }
-            else if (ret > 0)
-            {
-                System.err.println(m2.getUniqueName() + " < " + m1.getUniqueName());
-            }
-            else
-            {
-                System.err.println( m1.getUniqueName() + " = " + m2.getUniqueName() + " *** ");
-            }
+//            if (ret < 0)
+//            {
+//                System.err.println(m1.getUniqueName() + " < " + m2.getUniqueName());
+//            }
+//            else if (ret > 0)
+//            {
+//                System.err.println(m2.getUniqueName() + " < " + m1.getUniqueName());
+//            }
+//            else
+//            {
+//                System.err.println( m1.getUniqueName() + " = " + m2.getUniqueName() + " *** ");
+//            }
             return ret;
         }
 

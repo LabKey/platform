@@ -27,7 +27,7 @@ import org.olap4j.metadata.MetadataElement;
 */
 public abstract class MetadataElementBase implements MetadataElement, Named
 {
-//  NOTE storing String uniqueName can take a lot of memory, using FieldKey might be more efficient
+    //  NOTE storing String uniqueName can take a lot of memory, using FieldKey might be more efficient
     final UniqueName uniqueName;
     String name;                  // name is _usually_, but not always == uniqueName.getName()
 

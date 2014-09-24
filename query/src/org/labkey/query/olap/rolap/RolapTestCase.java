@@ -148,8 +148,8 @@ public class RolapTestCase extends Assert
         Hierarchy hAssay = cube.getHierarchies().get("Assay");
         assertNotNull(hAssay);
         Level lAssay = hAssay.getLevels().get(1);
-        // 4 + #notnull
-        assertEquals(4+1,lAssay.getMembers().size());
+        // 5 + #notnull
+        assertEquals(5+1,lAssay.getMembers().size());
     }
 
 
@@ -175,7 +175,7 @@ public class RolapTestCase extends Assert
         OlapConnection conn = null;
         if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
             conn = sd.getConnection(getContainer(), getUser());
-        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, conn, qquery, errors, true);
+        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, conn, qquery, errors);
         assertFalse(errors.hasErrors());
         try (CellSet cs = bitsetquery.executeQuery())
         {
@@ -378,6 +378,18 @@ public class RolapTestCase extends Assert
         assertEquals((Integer)7, cs.get("[Study.Type].[Interventional]"));
         assertEquals((Integer)3, cs.get("[Study.Type].[Longitudinal]"));
         assertEquals((Integer)6, cs.get("[Study.Type].[Observational]"));
+
+
+        // test optimzation for filter that returns all data
+        validateOneAxisQueryCounts(
+            "{\n" +
+                "\"onRows\":{\"level\":\"[Assay].[Name]\"},\n" +
+                "\"countFilter\":{\"level\":\"[Study.Type].[Type]\", \"members\":\"members\"},\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":true\n" +
+            "}",
+            40, 8, 8, null, 8
+        );
     }
 
 
@@ -783,9 +795,10 @@ public class RolapTestCase extends Assert
         validateOneAxisQueryCounts(
             "{\n" +
                 "\"onRows\":{\"level\":\"[Assay].[Name]\"},\n" +
-                "\"countDistinctLevel\":\"[Participant].[Participant]\"\n" +
+                "\"countDistinctLevel\":\"[Participant].[Participant]\",\n" +
+                "\"showEmpty\":true\n" +
             "}",
-            40, 8, 8, 8
+            40, 8, 8, null, 8
         );
 
 
@@ -801,7 +814,7 @@ public class RolapTestCase extends Assert
                 "],\n" +
                 "\"joinLevel\":\"[ParticipantVisit].[ParticipantVisit]\"\n" +
             "}",
-            3, 3, null, null
+            3, 3, null, null, null
         );
 
 
@@ -817,14 +830,83 @@ public class RolapTestCase extends Assert
                 "    {\"level\":\"[ParticipantVisit].[ParticipantVisit]\", \"membersQuery\":{\"level\":\"[Positivity].[Positivity]\", \"members\":\"[Positivity].[1]\"}}\n" +
                 "]\n" +
             "}",
-            3, null, null, null
+            3, null, null, null, null
         );
     }
 
 
     @Test
-    public void testRegressionXYZ()
+    public void testRegressionsUnion() throws Exception
     {
+        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
+            return;
+        Map<String,Integer> cs;
 
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"operator\":\"UNION\", \"arguments\": \n" +
+                "  [\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"members\":[\"[Participant].[P001001]\"]}\n" +
+                "  ]}\n" +
+                "}"
+        );
+        assertEquals(1, cs.size());
+
+
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"operator\":\"UNION\", \"arguments\": \n" +
+                "  [\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"members\":[]}\n" +
+                "  ]}\n" +
+                "}"
+        );
+        assertEquals(0, cs.size());
+
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"operator\":\"UNION\", \"arguments\": \n" +
+                "  [\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"members\":[\"[Participant].[P001001]\"]},\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"members\":[\"[Participant].[P001002]\"]}\n" +
+                "  ]}\n" +
+                "}"
+        );
+        assertEquals(2, cs.size());
+
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"operator\":\"UNION\", \"arguments\": \n" +
+                "  [\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"members\":[\"[Participant].[P001001]\"]},\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"members\":[\"[Participant].[P001001]\"]}\n" +
+                "  ]}\n" +
+                "}"
+        );
+        assertEquals(1, cs.size());
+
+
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"operator\":\"UNION\", \"arguments\": \n" +
+                "  [\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"members\":[\"[Participant].[P001001]\"]},\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"members\":[]}\n" +
+                "  ]}\n" +
+                "}"
+        );
+        assertEquals(1, cs.size());
+
+
+        cs = oneAxisQuery(
+            "{\n" +
+                "\"onRows\":{\"operator\":\"UNION\", \"arguments\": \n" +
+                "  [\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"members\":[]},\n" +
+                "  {\"level\":\"[Participant].[Participant]\", \"members\":[]}\n" +
+                "  ]}\n" +
+                "}"
+        );
+        assertEquals(0, cs.size());
     }
 }

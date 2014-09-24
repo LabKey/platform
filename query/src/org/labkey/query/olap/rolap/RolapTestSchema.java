@@ -315,7 +315,7 @@ public class RolapTestSchema extends UserSchema
            row("V0", "Day 0"),
            row("V1", "Day 1"),
            row("V7", "Day 7"),
-           row("V28", "Follow-up"),
+           row("V28", "Follow-up")
         };
         return new TestTableInfo("Visit", cols, data);
     }
@@ -330,10 +330,11 @@ public class RolapTestSchema extends UserSchema
         };
         Object[][] data = new Object[][]
         {
-           row("FCS", "Flow Cytometry"),
-           row("mRNA", "Gene Expression"),
-           row("PCR", "Polymerase Chain Reaction"),
-           row("NAB", "Neutralizing Antibody"),
+            row("FCS", "Flow Cytometry"),
+            row("mRNA", "Gene Expression"),
+            row("PCR", "Polymerase Chain Reaction"),
+            row("NAB", "Neutralizing Antibody"),
+            row("XYZ", "PDQ")
         };
         return new TestTableInfo("Visit", cols, data);
     }

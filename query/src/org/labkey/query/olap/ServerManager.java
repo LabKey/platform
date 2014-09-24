@@ -254,26 +254,6 @@ public class ServerManager
     private static Cube getCachedCubeMondrian(OlapSchemaDescriptor d, OlapConnection conn, final Container c, final User user, String schemaName, String cubeName, BindException errors)
         throws SQLException, IOException
     {
-        List<Schema> findSchemaList;
-        if (StringUtils.isNotEmpty(schemaName))
-        {
-            Schema s = d.getSchema(conn, c, user, schemaName);
-            if (null == s)
-            {
-                s = d.getSchema(conn, c, user, schemaName.toUpperCase());
-                if (null == s)
-                {
-                    errors.reject(ERROR_MSG, "Schema not found: " + schemaName);
-                    return null;
-                }
-            }
-            findSchemaList = Collections.singletonList(s);
-        }
-        else
-        {
-            findSchemaList = d.getSchemas(conn, c, user);
-        }
-
         Cube cube = null;
         if (StringUtils.isEmpty(cubeName))
         {
@@ -281,8 +261,10 @@ public class ServerManager
             return null;
         }
 
-        for (Schema s : findSchemaList)
+        for (Schema s : d.getSchemas(conn, c, user))
         {
+            if (null != schemaName && !StringUtils.equalsIgnoreCase(schemaName, s.getName()))
+                continue;
             Cube findCube = s.getCubes().get(cubeName);
             if (null != findCube)
             {
@@ -525,7 +507,7 @@ public class ServerManager
         if (errors.hasErrors())
             return;
 
-        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, user, sd, cube, conn, qquery, errors, false);
+        BitSetQueryImpl bitsetquery = new BitSetQueryImpl(c, user, sd, cube, conn, qquery, errors);
         try(CellSet ignored = bitsetquery.executeQuery()){}
     }
 

@@ -123,7 +123,7 @@ public class BitSetQueryImpl
     MemberSet containerMembers = null;  // null == all
 
     public BitSetQueryImpl(Container c, User user, OlapSchemaDescriptor sd, Cube cube, OlapConnection connection, QubeQuery qq,
-           BindException errors, boolean useSQL /* for testing */
+           BindException errors
            ) throws SQLException, IOException
     {
         this.serviceUser = olapServiceUser;
@@ -133,10 +133,6 @@ public class BitSetQueryImpl
         this.qq = qq;
         this.cube = qq.getCube();
         this.errors = errors;
-
-//        this._dataSourceHelper = useSQL ? _sdsh : _cdsh;
-//        this._dataSourceHelper = new DoubleDownHelper();
-//        this._dataSourceHelper = _sdsh;
 
         RolapCubeDef r = null;
         List<RolapCubeDef> defs = sd.getRolapCubeDefinitions();
@@ -443,6 +439,16 @@ public class BitSetQueryImpl
                     (count == -1 ? "" : " " + String.valueOf(count));
         }
     }
+
+
+    class EmptyResult extends MemberSetResult
+    {
+        EmptyResult()
+        {
+            super(new HashSet<Member>());
+        }
+    }
+
 
 
     class UnionResult extends Result
@@ -804,6 +810,22 @@ public class BitSetQueryImpl
     }
 
 
+    boolean setContainsAllLevelMembers(@NotNull MemberSet set, @NotNull Level l) throws OlapException
+    {
+        // size check doesn't work because of calculated members
+        // CONSIDER: dont' return calculated members in getMembers()
+
+        for (Member m : l.getMembers())
+        {
+            if (m.isCalculated())
+                continue;
+            if (!set.contains(m))
+                return false;
+        }
+        return true;
+    }
+
+
     CellSet evaluate(Result rowsExpr, Result colsExpr, Result filterExpr, Result whereExpr) throws SQLException
     {
         if (null == rowsExpr && null == colsExpr)
@@ -853,13 +875,13 @@ public class BitSetQueryImpl
 
         // if the filter returns all members, it's not much of a filter is it?
         int countFilterSet = null == filterSet ? -1 : filterSet.size();
-        if (countFilterSet ==  measureLevel.getMembers().size())
+        if (null != filterSet && setContainsAllLevelMembers(filterSet, measureLevel))
         {
             filterSet = null;
             countFilterSet = -1;
         }
         int countWhereSet = null == whereSet ? -1 : whereSet.size();
-        if (countWhereSet ==  joinLevel.getMembers().size())
+        if (null != whereSet && setContainsAllLevelMembers(whereSet, joinLevel))
         {
             whereSet = null;
             countWhereSet = -1;
@@ -1045,8 +1067,7 @@ public class BitSetQueryImpl
             // this doesn't work because we're in the same hierarchy, we can just iterate over the children
             //MemberSetResult r = _dataSourceHelper.membersQuery(new MemberSetResult(measureLevel), new MemberSetResult(containerMembers));
             int size = containerMembers.size();
-            Level level = containerMembers.getLevel();
-            if (0 < size && null != level && size == level.getMembers().size())
+            if (0 < size && setContainsAllLevelMembers(containerMembers, containerMembers.getLevel()))
             {
                 // not much of a filter... skip it
             }
@@ -1165,7 +1186,7 @@ public class BitSetQueryImpl
         {
             if (!(r instanceof MemberSetResult))
                 throw new IllegalArgumentException();
-            sets.add(((MemberSetResult)r).getCollection());
+            sets.add(r.getCollection());
         }
         MemberSet s = MemberSet.intersect(sets);
         return new MemberSetResult(s);
@@ -1173,40 +1194,46 @@ public class BitSetQueryImpl
 
 
 
-    Result union(OP op, Collection<Result> results) throws OlapException
+    Result union(OP op, Collection<Result> resultsIN) throws OlapException
     {
+        // skip empty results
+        ArrayList<Result> results = new ArrayList<>(resultsIN.size());
+        for (Result r : resultsIN)
+        {
+            // CONSIDER: Result.isEmpty() for efficiency
+            if (r instanceof MemberSetResult && r.getCollection().isEmpty())
+                continue;
+            results.add(r);
+        }
+
         if (results.size() == 0)
-            throw new IllegalArgumentException();
+            return new EmptyResult();
         if (results.size() == 1)
-            return results.iterator().next();
+            return results.get(0);
 
         // if all members are part of the same hierarchy just return a simple MemberSetResult
         // if there is more than one hierarchy involved, return a UnionResult
-        Set<String> hierarchies = new HashSet<>();
+        String hierarchyName = null;
+
         for (Result r : results)
         {
             if (!(r instanceof MemberSetResult))
                 throw new IllegalArgumentException();
-            Hierarchy h = ((MemberSetResult)r).getHierarchy();
-            String name = null==h ? "NULL" : h.getUniqueName();
-            hierarchies.add(name);
+            Hierarchy h = r.getHierarchy();
+            if (null == h || (null != hierarchyName && !StringUtils.equals(hierarchyName, h.getUniqueName())))
+                return new UnionResult(results);
+            hierarchyName = h.getUniqueName();
         }
 
-        if (1 == hierarchies.size())
+        List<Collection<Member>> sets = new ArrayList<>(results.size());
+        for (Result r : results)
         {
-            List<Collection<Member>> sets = new ArrayList<>(results.size());
-            for (Result r : results)
-            {
-                if (!(r instanceof MemberSetResult))
-                    throw new IllegalArgumentException();
-                sets.add(((MemberSetResult) r).getCollection());
-            }
-            MemberSet s = MemberSet.union(sets);
-            return new MemberSetResult(s);
+            if (!(r instanceof MemberSetResult))
+                throw new IllegalArgumentException();
+            sets.add(((MemberSetResult) r).getCollection());
         }
-
-        // more than one hierarchy
-        return new UnionResult(results);
+        MemberSet s = MemberSet.union(sets);
+        return new MemberSetResult(s);
     }
 
 
