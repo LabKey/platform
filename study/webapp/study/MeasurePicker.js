@@ -722,6 +722,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     // only used if displaySourceCounts is 'true'
     sourceCountMemberSet: [],
+    sourceCountSourceSet: [],
+    sourceCountIdColumn: null,
     sourceCountSchema: null,
 
     sourceGroupHeader : 'Queries',
@@ -831,10 +833,11 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     '</tpl>',
                         {
                             renderCount : function(values) {
-                                var val = "";
+                                var val = " <span class='maskit'>";
                                 if (values['variableType'] == null && Ext.isNumber(values['sourceCount'])) {
-                                    val = " <span class='maskit'>(" + Ext.htmlEncode(values['sourceCount']) + ")</span>";
+                                    val += "(" + Ext.htmlEncode(values['sourceCount']) + ")";
                                 }
+                                val += "</span>";
                                 return val;
                             },
                             renderDisabled : function(values) {
@@ -863,14 +866,18 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
             var json = {
                 schema: this.sourceCountSchema,
+                colName: this.sourceCountIdColumn,
                 members: this.sourceCountMemberSet,
-                sources: []
+                sources: this.sourceCountSourceSet
             };
 
-            Ext4.each(sources, function(source) {
-                var q = source.get('queryLabel') || source.get('queryName');
-                json.sources.push(q);
-            }, this);
+            if (this.sourceCountSourceSet.length == 0)
+            {
+                Ext4.each(sources, function(source) {
+                    var q = source.get('queryLabel') || source.get('queryName');
+                    json.sources.push(q);
+                }, this);
+            }
 
             Ext4.Ajax.request({
                 url: LABKEY.ActionURL.buildURL('visualization', 'getSourceCounts'),
@@ -910,7 +917,8 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     },
 
     setCountMemberSet : function(memberSet) {
-        this.sourceCountMemberSet = Ext.isArray(memberSet) ? memberSet : [];
+        // getSourceCounts API action will distinquish between null (no filters) vs empty array (no members that fit filters)
+        this.sourceCountMemberSet = Ext.isArray(memberSet) ? memberSet : null;
         this.getSourceCounts();
     },
 

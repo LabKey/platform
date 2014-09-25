@@ -363,12 +363,12 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
     }
 
     @Override
-    public String getSourceCountSql(@NotNull JSONArray sources, @NotNull JSONArray members)
+    public String getSourceCountSql(@NotNull JSONArray sources, JSONArray members, String colName)
     {
         String selectSql = "SELECT DataSet.Label, COUNT(DISTINCT ParticipantId) AS value FROM StudyData ";
         String innerSql = "";
         String sep = "";
-        if (members.length() > 0)
+        if (members != null && members.length() > 0)
         {
             innerSql += "WHERE ParticipantId IN (";
             for (int i = 0; i < members.length(); i++)
@@ -380,7 +380,7 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
             selectSql += innerSql;
         }
 
-        if (members.length() > 0 && sources.length() > 0)
+        if (members != null && members.length() > 0 && sources.length() > 0)
             innerSql = "AND ";
         else if (sources.length() > 0)
             innerSql = "WHERE ";

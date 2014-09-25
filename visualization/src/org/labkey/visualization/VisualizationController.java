@@ -1906,9 +1906,10 @@ public class VisualizationController extends SpringActionController
         public ApiResponse execute(SourceCountForm form, BindException errors) throws Exception
         {
             JSONObject json = form.getProps();
-            JSONArray members = json.getJSONArray("members");
+            JSONArray members = !json.isNull("members") ? json.getJSONArray("members") : null;
             JSONArray sources = json.getJSONArray("sources");
             String schemaName = json.getString("schema");
+            String colName = json.getString("colName");
 
             UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
             if (userSchema == null)
@@ -1929,7 +1930,7 @@ public class VisualizationController extends SpringActionController
             ResultSet rs = null;
             try
             {
-                rs = QueryService.get().select(userSchema, provider.getSourceCountSql(sources, members));
+                rs = QueryService.get().select(userSchema, provider.getSourceCountSql(sources, members, colName));
 
                 Map<String, Integer> values = new HashMap<>();
                 while (rs.next())
