@@ -53,7 +53,7 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
 
     public abstract void addExtraResponseProperties(Map<String, Object> extraProperties);
 
-    public abstract String getSourceCountSql(@NotNull JSONArray sources, @NotNull JSONArray members);
+    public abstract String getSourceCountSql(@NotNull JSONArray sources, JSONArray members, String colName);
 
     protected static enum ColumnMatchType
     {
