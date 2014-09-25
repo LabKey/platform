@@ -842,12 +842,12 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @Nullable
     public ReportDescriptor getCachedReport(Path path)
     {
-        return REPORT_DESCRIPTOR_CACHE.get(path);
+        return REPORT_DESCRIPTOR_CACHE.get(new Path("{"+getName()+"}").append(path));
     }
 
     public void cacheReport(Path path, ReportDescriptor descriptor)
     {
-        REPORT_DESCRIPTOR_CACHE.put(path, descriptor);
+        REPORT_DESCRIPTOR_CACHE.put(new Path("{"+getName()+"}").append(path), descriptor);
     }
 
     protected void loadXmlFile(Resource r)
