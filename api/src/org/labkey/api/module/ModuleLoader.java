@@ -432,12 +432,7 @@ public class ModuleLoader implements Filter
             "clientapi.lib.xml",
             "internal.lib.xml",
             "stylesheet.css",
-            "printStyle.css",
-            "clientapi_core.min.js",
-            "schemaBrowser.js.gz",
-            "js_doc.zip",
-            "admin/FolderManagementPanel.js.gz",
-            "dataregion/panel/Facet.js"
+            "clientapi_core.min.js"
         ))
             throw new ConfigurationException("This server does not appear to be compiled for production mode");
     }
