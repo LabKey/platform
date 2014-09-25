@@ -953,7 +953,7 @@ public class SpecimenImporter
             new ImportableColumn("is_endpoint", "Endpoint", BOOLEAN_TYPE),
             new ImportableColumn("street_address", "StreetAddress", "VARCHAR(200)", false, true),
             new ImportableColumn("city", "City", "VARCHAR(200)", false, true),
-            new ImportableColumn("govering_district", "GoverningDistrict", "VARCHAR(200)", false, true),
+            new ImportableColumn("governing_district", "GoverningDistrict", "VARCHAR(200)", false, true),
             new ImportableColumn("country", "Country", "VARCHAR(200)", false, true),
             new ImportableColumn("postal_area", "PostalArea", "VARCHAR(50)", false, true),
             new ImportableColumn("description", "Description", "VARCHAR(500)", false, true)
