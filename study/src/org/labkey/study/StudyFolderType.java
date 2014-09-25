@@ -18,7 +18,6 @@ package org.labkey.study;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.Module;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.MultiPortalFolderType;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyFolderTabs;
@@ -96,4 +95,4 @@ public class StudyFolderType extends MultiPortalFolderType
     {
         return PAGES;
     }
-    }
+}
