@@ -719,6 +719,7 @@ public class IssueManager
         }
     }
 
+    @NotNull
     public static EntryTypeNames getEntryTypeNames(Container container)
     {
         Map<String,String> props = PropertyManager.getProperties(container, CAT_ENTRY_TYPE_NAMES);

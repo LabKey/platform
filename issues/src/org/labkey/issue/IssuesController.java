@@ -2348,8 +2348,9 @@ public class IssuesController extends SpringActionController
         public NavTree appendNavTrail(NavTree root, ViewContext ctx, @NotNull SearchScope scope, @Nullable String category)
         {
             String status = ctx.getActionURL().getParameter("status");
-            root.addChild("Issues List", issueURL(ctx.getContainer(), ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"));
-            root.addChild("Search " + (null != status ? status + " " : "") + "Issues");
+            String pluralName = IssueManager.getEntryTypeNames(ctx.getContainer()).pluralName.getSource();
+            root.addChild(pluralName + " List", issueURL(ctx.getContainer(), ListAction.class).addParameter(DataRegion.LAST_FILTER_PARAM, "true"));
+            root.addChild("Search " + (null != status ? status + " " : "") + pluralName);
 
             return root;
         }
