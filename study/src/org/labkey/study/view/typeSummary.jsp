@@ -47,8 +47,9 @@
         }
         else
         {
-             // MV indicator and raw columns shouldn't be displayed
-            if (col.isHidden())
+             // MV indicator and raw columns shouldn't be displayed, since they're considered to be part of the primary
+             // column for that property
+            if (col.isMvIndicatorColumn() || col.isRawValueColumn())
                 continue;
 
             // SystemProperties and properties from other containers should be listed above the line

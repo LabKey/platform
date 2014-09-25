@@ -40,7 +40,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultScaleType;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.FacetingBehaviorType;
-import org.labkey.api.query.AliasManager;
 import org.labkey.api.security.User;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -567,7 +566,7 @@ public class DomainPropertyImpl implements DomainProperty
         DomainKind kind = getDomain().getDomainKind();
         if (null != kind)
             kind.deletePropertyDescriptor(getDomain(), user, _pd);
-        OntologyManager.deletePropertyDescriptor(_pd);
+        OntologyManager.removePropertyDescriptorFromDomain(this);
     }
 
     public void save(User user, DomainDescriptor dd, int sortOrder) throws ChangePropertyDescriptorException
