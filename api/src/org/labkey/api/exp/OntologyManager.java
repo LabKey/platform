@@ -1818,6 +1818,26 @@ public class OntologyManager
         }
     }
 
+    /** Removes the property from a single domain, and completley deletes it if there are no other references */
+    public static void removePropertyDescriptorFromDomain(DomainProperty domainProp)
+    {
+        SQLFragment deletePropDomSql = new SQLFragment("DELETE FROM " + getTinfoPropertyDomain() + " WHERE PropertyId = ? AND DomainId = ?", domainProp.getPropertyId(), domainProp.getDomain().getTypeId());
+        SqlExecutor executor = new SqlExecutor(getExpSchema());
+        DbScope dbScope = getExpSchema().getScope();
+        try (DbScope.Transaction transaction = dbScope.ensureTransaction())
+        {
+            executor.execute(deletePropDomSql);
+            // Check if there are any other usages
+            SQLFragment otherUsagesSQL = new SQLFragment("SELECT DomainId FROM " + getTinfoPropertyDomain() + " WHERE PropertyId = ?", domainProp.getPropertyId());
+            if (!new SqlSelector(dbScope, otherUsagesSQL).exists())
+            {
+                deletePropertyDescriptor(domainProp.getPropertyDescriptor());
+            }
+            transaction.commit();
+        }
+    }
+
+    /** Completely deletes the property from the database */
     public static void deletePropertyDescriptor(PropertyDescriptor pd)
     {
         int propId= pd.getPropertyId();

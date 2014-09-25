@@ -134,7 +134,8 @@ public class PropertyStorageSpec
         setName(propertyDescriptor.getStorageColumnName());
         if (null == getName())
         {
-            throw new IllegalStateException();
+            // PropertyDescriptors that are shared across domains may not have this set. This is an EHR scenario
+            setName(propertyDescriptor.getName());
         }
         setJdbcType(propertyDescriptor.getJdbcType());
         _setSize(propertyDescriptor.getScale(), propertyDescriptor.getJdbcType());

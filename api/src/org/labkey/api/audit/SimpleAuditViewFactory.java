@@ -261,7 +261,7 @@ public abstract class SimpleAuditViewFactory implements AuditLogService.AuditVie
             for (DomainProperty dp : existingProps.values())
             {
                 dirty = true;
-                OntologyManager.deletePropertyDescriptor(dp.getPropertyDescriptor());
+                OntologyManager.removePropertyDescriptorFromDomain(dp);
             }
 
             if (dirty)

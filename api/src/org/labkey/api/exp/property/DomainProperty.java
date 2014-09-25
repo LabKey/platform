@@ -52,6 +52,7 @@ public interface DomainProperty extends ImportAliasable
     boolean isProtected();
     boolean isExcludeFromShifting();
 
+    /** Mark as deleted, without actually saving to the database */
     void delete();
 
     void setName(String name);

@@ -442,13 +442,13 @@ public class DomainUtil
                 }
                 catch (ExperimentException e)
                 {
-                    errors.add(e.getMessage());
+                    errors.add(e.getMessage() == null ? e.toString() : e.getMessage());
                 }
             }
         }
         catch (IllegalStateException x)
         {
-            errors.add(x.getMessage());
+            errors.add(x.getMessage() == null ? x.toString() : x.getMessage());
         }
         catch (ChangePropertyDescriptorException x)
         {
