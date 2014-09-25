@@ -38,7 +38,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     private static Logger _log = Logger.getLogger(Portal.class);
 
     String name;
-    String defaultLocation;
+    protected String defaultLocation;
     Module module = null;
     private boolean editable;
     private boolean showCustomizeOnInsert;

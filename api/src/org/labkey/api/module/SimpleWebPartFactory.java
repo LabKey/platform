@@ -113,6 +113,24 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
                 throw new Exception("Webpart definition file " + webPartResource.getName() + " does not contain a root 'webpart' element!");
 
             _webPartDef = doc.getWebpart();
+
+            // Establish a default location, which the base class can use to do a first pass of determining if this
+            // web part should be available in the list
+            if(null != _webPartDef.getLocations())
+            {
+                for(LocationType declaredLoc : _webPartDef.getLocations().getLocationArray())
+                {
+                    String friendlyLocation = declaredLoc.getName().toString();
+                    for (Map.Entry<String, String> entry : _locationsTranslationMap.entrySet())
+                    {
+                        if (entry.getValue().equalsIgnoreCase(friendlyLocation))
+                        {
+                            defaultLocation = entry.getKey();
+                        }
+                    }
+                }
+            }
+
         }
         catch(Exception e)
         {
