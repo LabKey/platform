@@ -757,8 +757,6 @@ public class OlapController extends SpringActionController
             if (errors.hasErrors())
                 return null;
 
-            boolean useSqlImplementation = "true".equals(form.json.get("sql")) || "true".equals(getViewContext().getRequest().getParameter("sql"));
-
             JSONObject q = (JSONObject)form.json.get("query");
             if (null == q)
             {
@@ -798,7 +796,7 @@ public class OlapController extends SpringActionController
                 try
                 {
                     start = System.currentTimeMillis();
-                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, getConnection(sd), qquery, errors, useSqlImplementation);
+                    BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, getConnection(sd), qquery, errors);
                     if (null != cf)
                         bitsetquery.setContainerFilter(getContainerCollection(cf));
                     cs = bitsetquery.executeQuery();
