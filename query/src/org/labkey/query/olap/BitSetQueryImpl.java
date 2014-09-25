@@ -62,7 +62,6 @@ import org.olap4j.metadata.MetadataElement;
 import org.olap4j.metadata.NamedList;
 import org.olap4j.metadata.Property;
 import org.springframework.validation.BindException;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -87,9 +86,6 @@ import static org.labkey.query.olap.QubeQuery.OP;
  */
 public class BitSetQueryImpl
 {
-    // mondrian compatibility, ignore NULL associations if member is associated with any non-null members
-    // e.g. Will will ignore the fact that Subject has a row with BMI IS NULL, if there is a row where BMI IS NOT NULL
-    // NOTE: this is for validation against Mondrian only, the current implementation is NOT robust!
     final boolean mondrianCompatibleNullHandling = false;
 
     static Logger _log = Logger.getLogger(BitSetQueryImpl.class);
@@ -873,19 +869,21 @@ public class BitSetQueryImpl
             logDebug(sb.toString());
         }
 
-        // if the filter returns all members, it's not much of a filter is it?
+        // OPTIMIZATION: remove countFilter if it contains all members of measureLevel (should rename to countLevel)
         int countFilterSet = null == filterSet ? -1 : filterSet.size();
         if (null != filterSet && setContainsAllLevelMembers(filterSet, measureLevel))
         {
             filterSet = null;
             countFilterSet = -1;
         }
+        // OPTIMIZATION: remove whereFilter if it contains all members of joinLevel
         int countWhereSet = null == whereSet ? -1 : whereSet.size();
         if (null != whereSet && setContainsAllLevelMembers(whereSet, joinLevel))
         {
             whereSet = null;
             countWhereSet = -1;
         }
+        // OPTIMIZTION: if measureLevel and joinLevel are the same, do the intersection now and ignore whereFitler
         if (joinLevel == measureLevel)
         {
             if (null != whereSet)
@@ -901,6 +899,7 @@ public class BitSetQueryImpl
         }
 
 
+        // load cache in bulk to avoid one-at-a-time queries
         if (null != colsExpr)
             _dataSourceHelper.populateCache(joinLevel, colsExpr);
         if (null != rowsExpr)
@@ -927,6 +926,8 @@ public class BitSetQueryImpl
                 if (skipCalculated && m.isCalculated())
                     continue;
                 int count;
+
+                // OPTIMIZATION: no work to do if either filter returned an empty set
                 if (0 == countWhereSet || 0 == countFilterSet)
                 {
                     count = 0;
@@ -934,20 +935,25 @@ public class BitSetQueryImpl
                 else
                 {
                     MemberSet countMemberSet;
+
                     if (0 < countWhereSet)
                     {
+                        // if there is a whereFilter,
                         // collect the joinLevel members that intersect the current row/col member and the whereFilter
                         MemberSet joinMemberSet = _dataSourceHelper.membersQuery(joinLevel, m);
                         MemberSet filtered = MemberSet.intersect(joinMemberSet, whereSet);
-                        // now find the related members in the countDistinctLevel
+
+                        // now find the related members in the measureLevel
                         // TODO avoid new MemberSetResult() wrapper
                         countMemberSet = _dataSourceHelper.membersQuery(new MemberSetResult(measureLevel), new MemberSetResult(filtered));
                     }
                     else
                     {
+                        // simple case just query for the associated members in the measureLevel directly
                         countMemberSet = _dataSourceHelper.membersQuery(measureLevel, m);
                     }
 
+                    // final computation of members associated with this row, filtered if necessary
                     if (null == filterSet)
                         count = countMemberSet.size();
                     else
@@ -989,12 +995,17 @@ public class BitSetQueryImpl
                         colMembers.add(colMember);
 
                     int count;
+
+                    // OPTIMIZATION: nothing to do if either filter returned empty set
                     if (0 == countFilterSet || 0 == countWhereSet)
                     {
                         count = 0;
                     }
                     else
                     {
+                        // first time we see this row, cache the members associated with the row member
+                        // if there is a whereFilter, we cache the set of members in the joinLevel,
+                        // otherwise we cache members from the measureLevel
                         if (null == rowMemberSet)
                         {
                             if (0 < countWhereSet)
@@ -1003,6 +1014,10 @@ public class BitSetQueryImpl
                                 rowMemberSet = _dataSourceHelper.membersQuery(measureLevel, rowMember);
                         }
 
+                        // first time we see this column, cache the members associated with the column member
+                        // if there is a whereFilter, we cache the set of members in the joinLevel,
+                        // otherwise we cache members from the measureLevel
+                        // for perf we stack away in quickCache so we don't have to recompute anything on the next row.
                         MemberSet colMemberSet = quickCache.get(colMember.getUniqueName());
                         if (null == colMemberSet)
                         {
@@ -1013,13 +1028,21 @@ public class BitSetQueryImpl
                             quickCache.put(colMember.getUniqueName(),colMemberSet);
                         }
 
+
+                        // at this point we have a subset of joinLevel or measureLevel members for the current row and column
+
                         // if joinLevel == measureLevel then countWhere should be -1
                         assert joinLevel != measureLevel || countWhereSet == -1;
+
                         if (0 < countWhereSet || joinLevel != measureLevel)
                         {
+                            // if there is a whereFilter
+                            // collect the joinLevel members that intersect the current row and column membersets and the whereFilter
                             MemberSet join = null == whereSet ?
                                     MemberSet.intersect(rowMemberSet, colMemberSet) :
                                     MemberSet.intersect(rowMemberSet, colMemberSet, whereSet);
+
+                            // now find the associated members in the measureLevel and filter if necessary
                             // TODO avoid new MemberSetResult() wrapper
                             MemberSet countMemberSet = _dataSourceHelper.membersQuery(new MemberSetResult(measureLevel), new MemberSetResult(join));
                             if (null == filterSet)
@@ -1029,6 +1052,7 @@ public class BitSetQueryImpl
                         }
                         else
                         {
+                            // simple case, just intersect everything and return the count
                             if (null == filterSet)
                                 count = MemberSet.countIntersect(rowMemberSet, colMemberSet);
                             else
@@ -1713,7 +1737,7 @@ public class BitSetQueryImpl
                 return queryCrossjoin( ((MemberSetResult)from).level, to);
             }
 
-            throw new NotImplementedException();
+            throw new UnsupportedOperationException();
         }
 
 
@@ -1907,7 +1931,7 @@ public class BitSetQueryImpl
                     Level level = outer.getLevel();
                     if (null == level)
                     {
-                        throw new NotImplementedException();
+                        throw new UnsupportedOperationException();
                     }
                     RolapCubeDef.LevelDef ldef = getRolapFromCube(level);
 
