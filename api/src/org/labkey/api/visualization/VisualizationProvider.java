@@ -15,6 +15,8 @@
  */
 package org.labkey.api.visualization;
 
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -50,6 +52,8 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
     public abstract boolean isJoinColumn(VisualizationSourceColumn column, Container container);
 
     public abstract void addExtraResponseProperties(Map<String, Object> extraProperties);
+
+    public abstract String getSourceCountSql(@NotNull JSONArray sources, @NotNull JSONArray members);
 
     protected static enum ColumnMatchType
     {
