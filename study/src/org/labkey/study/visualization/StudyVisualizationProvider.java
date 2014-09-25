@@ -16,6 +16,8 @@
 package org.labkey.study.visualization;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.json.JSONArray;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
@@ -358,5 +360,51 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
                 }
             }
         }
+    }
+
+    @Override
+    public String getSourceCountSql(@NotNull JSONArray sources, @NotNull JSONArray members)
+    {
+        String selectSql = "SELECT DataSet.Label, COUNT(DISTINCT ParticipantId) AS value FROM StudyData ";
+        String innerSql = "";
+        String sep = "";
+        if (members.length() > 0)
+        {
+            innerSql += "WHERE ParticipantId IN (";
+            for (int i = 0; i < members.length(); i++)
+            {
+                innerSql += sep + toSqlString(members.getString(i));
+                sep = ", ";
+            }
+            innerSql += ") ";
+            selectSql += innerSql;
+        }
+
+        if (members.length() > 0 && sources.length() > 0)
+            innerSql = "AND ";
+        else if (sources.length() > 0)
+            innerSql = "WHERE ";
+
+        if (sources.length() > 0)
+        {
+            innerSql += "DataSet.Label IN (";
+            sep = "";
+            for (int i = 0; i < sources.length(); i++)
+            {
+                innerSql += sep + toSqlString(sources.getString(i));
+                sep = ", ";
+            }
+            innerSql += ") ";
+            selectSql += innerSql;
+        }
+
+        selectSql += "GROUP BY DataSet.Label";
+
+        return selectSql;
+    }
+
+    private String toSqlString(String unescapedSql)
+    {
+        return "'" + unescapedSql.replaceAll("'", "''") + "'";
     }
 }

@@ -722,6 +722,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     // only used if displaySourceCounts is 'true'
     sourceCountMemberSet: [],
+    sourceCountSchema: null,
 
     sourceGroupHeader : 'Queries',
 
@@ -861,17 +862,18 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             var sources = store.getRange();
 
             var json = {
+                schema: this.sourceCountSchema,
                 members: this.sourceCountMemberSet,
                 sources: []
-            }, q;
+            };
 
             Ext4.each(sources, function(source) {
-                q = source.get('queryLabel') || source.get('queryName');
+                var q = source.get('queryLabel') || source.get('queryName');
                 json.sources.push(q);
             }, this);
 
             Ext4.Ajax.request({
-                url: LABKEY.ActionURL.buildURL('cds', 'getSourceCounts'),
+                url: LABKEY.ActionURL.buildURL('visualization', 'getSourceCounts'),
                 method: 'POST',
                 jsonData: json,
                 success: function(response) {

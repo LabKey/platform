@@ -26,17 +26,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.labkey.api.action.Action;
 import org.labkey.api.action.ActionType;
 import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtendedApiQueryResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -91,6 +90,7 @@ import org.labkey.api.thumbnail.ThumbnailService;
 import org.labkey.api.thumbnail.ThumbnailService.ImageType;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -1898,4 +1898,83 @@ public class VisualizationController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.SelectData)
+    public class GetSourceCountsAction extends ApiAction<SourceCountForm>
+    {
+        @Override
+        public ApiResponse execute(SourceCountForm form, BindException errors) throws Exception
+        {
+            JSONObject json = form.getProps();
+            JSONArray members = json.getJSONArray("members");
+            JSONArray sources = json.getJSONArray("sources");
+            String schemaName = json.getString("schema");
+
+            UserSchema userSchema = QueryService.get().getUserSchema(getUser(), getContainer(), schemaName);
+            if (userSchema == null)
+            {
+                throw new IllegalArgumentException("No such schema: " + schemaName);
+            }
+
+            VisualizationProvider provider = userSchema.createVisualizationProvider();
+            if (provider == null)
+            {
+                throw new IllegalArgumentException("No provider available for schema: " + userSchema.getSchemaPath());
+            }
+
+            ApiResponseWriter writer = new ApiJsonWriter(getViewContext().getResponse());
+            writer.startResponse();
+
+            writer.startMap("counts");
+            ResultSet rs = null;
+            try
+            {
+                rs = QueryService.get().select(userSchema, provider.getSourceCountSql(sources, members));
+
+                Map<String, Integer> values = new HashMap<>();
+                while (rs.next())
+                {
+                    values.put(rs.getString("label"), rs.getInt("value"));
+                }
+
+                Integer value;
+                for (int i=0; i < sources.length(); i++)
+                {
+                    if (values.containsKey(sources.getString(i)))
+                        value = values.get(sources.getString(i));
+                    else
+                        value = 0;
+                    writer.writeProperty(sources.getString(i), value);
+                }
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+            finally
+            {
+                ResultSetUtil.close(rs);
+            }
+            writer.endMap();
+            writer.endResponse();
+
+            return null;
+        }
+    }
+
+    public static class SourceCountForm implements CustomApiForm
+    {
+        private Map<String, Object> _props;
+
+        @Override
+        public void bindProperties(Map<String, Object> props)
+        {
+            _props = props;
+        }
+
+        public JSONObject getProps()
+        {
+            return (JSONObject) _props;
+        }
+    }
 }
