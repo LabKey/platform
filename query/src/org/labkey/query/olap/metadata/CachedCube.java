@@ -299,6 +299,7 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
 
     public static class _Level extends MetadataElementBase implements Level
     {
+        final String uniqueNameStr;
         final int depth;
         final _Hierarchy hierarchy;
         final Type levelType;
@@ -318,6 +319,7 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
             this.hierarchy = h;
             this.levelType = l.getLevelType();
             this.orig = l;
+            this.uniqueNameStr = super.getUniqueName();
         }
 
         // Type == ALL
@@ -330,6 +332,7 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
             this.hierarchy = h;
             this.levelType = t;
             this.orig = null;
+            this.uniqueNameStr = super.getUniqueName();
         }
 
 
@@ -340,12 +343,20 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
             this.hierarchy = h;
             this.levelType = Type.REGULAR;
             this.orig = null;
+            this.uniqueNameStr = super.getUniqueName();
         }
 
 
         _Level(_Hierarchy h, RolapCubeDef.LevelDef l, int depth) throws OlapException
         {
             this(h, l.getName(), depth);
+        }
+
+
+        @Override
+        public String getUniqueName()
+        {
+            return uniqueNameStr;
         }
 
 

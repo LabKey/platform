@@ -74,6 +74,7 @@ import org.labkey.query.controllers.QueryController;
 import org.labkey.query.jdbc.QueryDriver;
 import org.labkey.query.olap.MemberSet;
 import org.labkey.query.olap.ServerManager;
+import org.labkey.query.olap.metadata.MetadataElementBase;
 import org.labkey.query.olap.rolap.RolapReader;
 import org.labkey.query.olap.rolap.RolapTestCase;
 import org.labkey.query.olap.rolap.RolapTestSchema;
@@ -263,8 +264,8 @@ public class QueryModule extends DefaultModule
         return new HashSet<Class>(Arrays.asList(
                 Query.QueryTestCase.class,
                 QueryServiceImpl.TestCase.class,
-                RolapReader.RolapTest.class
-                ,RolapTestCase.class
+                RolapReader.RolapTest.class,
+                RolapTestCase.class
         ));
     }
 
@@ -279,7 +280,8 @@ public class QueryModule extends DefaultModule
                 TableWriter.TestCase.class,
                 AggregateQueryDataTransform.TestCase.class,
                 FilterClauseBuilder.TestCase.class,
-                MemberSet.TestCase.class
+                MemberSet.TestCase.class,
+                MetadataElementBase.TestCase.class
         ));
     }
 

@@ -38,7 +38,7 @@ public abstract class MetadataElementBase implements MetadataElement, Named
         else
             this.uniqueName = new UniqueName(parent.uniqueName,mde.getName());
         // NOTE Properties don't always use the [ ] syntax
-        assert StringUtils.equalsIgnoreCase(getUniqueName(),mde.getUniqueName())
+        assert StringUtils.equalsIgnoreCase(uniqueName.toString(),mde.getUniqueName())
                 || null==uniqueName.getParent() && StringUtils.equalsIgnoreCase(getName(), mde.getName());
         name = uniqueName.getName().equals(mde.getName()) ? uniqueName.getName() : mde.getName();
     }
@@ -60,7 +60,7 @@ public abstract class MetadataElementBase implements MetadataElement, Named
     }
 
     @Override
-    final public String getUniqueName()
+    public String getUniqueName()
     {
         return uniqueName.toString();
     }
