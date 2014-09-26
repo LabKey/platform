@@ -141,7 +141,7 @@ public class BitSetQueryImpl
         if (null == rolap)
             throw new IllegalStateException("Rolap definition not found: " + cube.getName());
         String schemaName = rolap.getSchemaName();
-        QuerySchema s = DefaultSchema.get(user, c).getSchema(schemaName);
+        QuerySchema s = DefaultSchema.get(serviceUser, c).getSchema(schemaName);
         if (null != s)
             dialect = s.getDbSchema().getSqlDialect();
 
