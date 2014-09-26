@@ -315,6 +315,7 @@ public class UserManager
     }
 
 
+    @NotNull
     public static Collection<User> getActiveUsers()
     {
         return UserCache.getActiveUsers();
