@@ -15,12 +15,27 @@
  */
 package org.labkey.api.study.assay;
 
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SqlSelector;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.FilteredTable;
+import org.labkey.api.query.QueryService;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.util.Pair;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * Captures information about where assay implementations store various fields within their schema. For example,
@@ -147,10 +162,86 @@ public class AssayTableMetadata
         return new FieldKey(runFK, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
     }
 
-    protected FieldKey getTargetStudyFieldKeyOnBatch()
+    protected FieldKey getBatchFieldKey()
     {
         FieldKey batchFK = new FieldKey(getRunRowIdFieldKeyFromResults().getParent(), AssayService.BATCH_COLUMN_NAME);
+        return batchFK;
+    }
+
+    protected FieldKey getTargetStudyFieldKeyOnBatch()
+    {
+        FieldKey batchFK = getBatchFieldKey();
         return new FieldKey(batchFK, AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME);
     }
-    
+
+    /**
+     * Get the list of possible TargetStudies associated with the rows of the {@code assayDataTable} including any filters.
+     *
+     * The general strategy is to write a query of the form (for Batches):
+     * <pre>
+     *     SELECT DISTINCT TargetStudy
+     *     FROM Batches
+     *     WHERE RowId IN (
+     *         SELECT DISTINCT X.Data.Run.Batch
+     *         FORM Data X
+     *     )
+     * </pre>
+     * To keep the container filter on the referenced tables, we push the tables into Query.
+     */
+    public Collection<String> getTargetStudyContainers(AssaySchema schema, TableInfo assayDataTable, ColumnInfo targetStudyCol)
+    {
+        final FieldKey targetStudyFieldKey = targetStudyCol.getFieldKey();
+        final boolean onBatch = targetStudyFieldKey.equals(getTargetStudyFieldKeyOnBatch());
+        final boolean onRun = targetStudyFieldKey.equals(getTargetStudyFieldKeyOnRun());
+
+        if (onBatch || onRun)
+        {
+            // TargetStudy on batch or run
+            FilteredTable targetStudyTable = (FilteredTable)schema.getTable(
+                    onBatch ? AssayProtocolSchema.BATCHES_TABLE_NAME : AssayProtocolSchema.RUNS_TABLE_NAME);
+            targetStudyTable.setContainerFilter(assayDataTable.getContainerFilter());
+
+            SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ");
+            sqlf.append(targetStudyFieldKey.getName());
+            sqlf.append(" FROM\n");
+            sqlf.append(" __TARGET_STUDY_TABLE\n");
+            sqlf.append("WHERE RowId IN (\n");
+            sqlf.append("  SELECT DISTINCT X.").append(targetStudyFieldKey.getTable().toSQLString());
+            sqlf.append("  FROM __DATA X\n");
+            sqlf.append(")\n");
+
+            Map<String, TableInfo> tableMap = new HashMap<>();
+            tableMap.put("__TARGET_STUDY_TABLE", targetStudyTable);
+            tableMap.put("__DATA", assayDataTable);
+
+            try (ResultSet rs = QueryService.get().select(schema, sqlf.getSQL(), tableMap, false, true))
+            {
+                ArrayList<String> ids = new ArrayList<>();
+                while (rs.next())
+                    ids.add(rs.getString(1));
+                return ids;
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+        else
+        {
+            // TargetStudy on results
+            SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ");
+            sqlf.append(targetStudyCol.getValueSql("x"));
+            sqlf.append("\nFROM ");
+            sqlf.append(assayDataTable.getFromSQL("x"));
+            Map<String,SQLFragment> joins = new LinkedHashMap<>();
+            targetStudyCol.declareJoins("x",joins);
+            for (SQLFragment join : joins.values())
+            {
+                sqlf.append(join);
+            }
+
+            ArrayList<String> ids = new SqlSelector(schema.getDbSchema(), sqlf).getArrayList(String.class);
+            return ids;
+        }
+    }
 }

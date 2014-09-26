@@ -22,12 +22,10 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
-import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -53,7 +51,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -722,40 +719,31 @@ public class SpecimenForeignKey extends LookupForeignKey
 
         if (null != _assayTargetStudyCol)
         {
-            DbSchema s = _assayDataTable.getSchema();
-            SQLFragment sqlf = new SQLFragment("SELECT DISTINCT ");
-            sqlf.append(_assayTargetStudyCol.getValueSql("x"));
-            sqlf.append("\nFROM ");
-            sqlf.append(_assayDataTable.getFromSQL("x"));
-            Map<String,SQLFragment> joins = new LinkedHashMap<>();
-            _assayTargetStudyCol.declareJoins("x",joins);
-            for (SQLFragment join : joins.values())
+            Collection<String> ids = _tableMetadata.getTargetStudyContainers(_schema, _assayDataTable, _assayTargetStudyCol);
+            if (!ids.isEmpty())
             {
-                sqlf.append(join);
-            }
+                Set<GUID> filterIds = null;
+                if (null != _studyContainerFilter)
+                {
+                    Collection<GUID> studyContainerFilterIds = ((StudyContainerFilter) _studyContainerFilter).getIds(_schema.getContainer());
+                    if (null != studyContainerFilterIds)
+                        filterIds = new HashSet<>(studyContainerFilterIds);
+                }
 
-            Set<GUID> filterIds = null;
-            if (null != _studyContainerFilter)
-            {
-                Collection<GUID> studyContainerFilterIds = ((StudyContainerFilter)_studyContainerFilter).getIds(_schema.getContainer());
-                if (null != studyContainerFilterIds)
-                    filterIds = new HashSet<>(studyContainerFilterIds);
-            }
-
-            ArrayList<String> ids = new SqlSelector(s,sqlf).getArrayList(String.class);
-            for (String id : ids)
-            {
-                Container c = ContainerManager.getForId(id);
-                if (null == c)
-                    continue;
-                if (!c.hasPermission(_schema.getUser(), ReadPermission.class))
-                    continue;
-                Study study = StudyService.get().getStudy(c);
-                if (null == study)
-                    continue;
-                if (null != filterIds && !filterIds.contains(c.getEntityId()))
-                    continue;
-                containers.add(c);
+                for (String id : ids)
+                {
+                    Container c = ContainerManager.getForId(id);
+                    if (null == c)
+                        continue;
+                    if (!c.hasPermission(_schema.getUser(), ReadPermission.class))
+                        continue;
+                    Study study = StudyService.get().getStudy(c);
+                    if (null == study)
+                        continue;
+                    if (null != filterIds && !filterIds.contains(c.getEntityId()))
+                        continue;
+                    containers.add(c);
+                }
             }
         }
 
