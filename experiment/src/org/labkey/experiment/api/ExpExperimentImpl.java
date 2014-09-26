@@ -122,6 +122,13 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
         {
             new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(sql);
 
+            // Clear out the experimentrun.batchId column if it was set to this ExpExperiment.
+            if (this.equals(run.getBatch()))
+            {
+                ((ExpRunImpl) run).setBatchId(null);
+                run.save(user);
+            }
+
             ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, this, "The run '" + run.getName() + "' was removed from the run group '" + getName() + "'");
             transaction.commit();
         }
@@ -146,6 +153,8 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                 existingRunIds.add(er.getRowId());
             }
 
+            Integer batchId = _object.getBatchProtocolId() != null ? getRowId() : null;
+
             String sql = "INSERT INTO " + ExperimentServiceImpl.get().getTinfoRunList() + " ( ExperimentId, ExperimentRunId, Created, CreatedBy )  VALUES ( ? , ?, ? , ? )";
             for (ExpRun run : newRuns)
             {
@@ -153,6 +162,14 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
                 {
                     SQLFragment fragment = new SQLFragment(sql, getRowId(), run.getRowId(), new Date(), user == null ? null : user.getUserId());
                     new SqlExecutor(ExperimentServiceImpl.get().getExpSchema()).execute(fragment);
+
+                    // Set the experimentrun.batchId column to this ExpExperiment if it is a batch.
+                    // If this experiment is not a batch, don't clear the run's current batchId.
+                    if (batchId != null)
+                    {
+                        ((ExpRunImpl) run).setBatchId(batchId);
+                        run.save(user);
+                    }
 
                     ExperimentServiceImpl.get().auditRunEvent(user, run.getProtocol(), run, this, "The run '" + run.getName() + "' was added to the run group '" + getName() + "'");
                 }

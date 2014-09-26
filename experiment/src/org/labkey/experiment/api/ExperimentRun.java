@@ -29,6 +29,7 @@ public class ExperimentRun extends IdentifiableEntity
     private String comments;
     private Integer jobId;
     private Integer _replacedByRunId;
+    private Integer _batchId;
 
     public String getProtocolLSID()
     {
@@ -88,6 +89,16 @@ public class ExperimentRun extends IdentifiableEntity
     public void setReplacedByRunId(Integer replacedByRunId)
     {
         _replacedByRunId = replacedByRunId;
+    }
+
+    public Integer getBatchId()
+    {
+        return _batchId;
+    }
+
+    public void setBatchId(Integer batchId)
+    {
+        _batchId = batchId;
     }
 
     public boolean equals(Object o)

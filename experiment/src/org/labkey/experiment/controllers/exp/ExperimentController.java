@@ -386,9 +386,11 @@ public class ExperimentController extends SpringActionController
 
             CustomPropertiesView customPropertiesView = new CustomPropertiesView(_experiment.getLSID(), getContainer());
 
+            TableInfo runGroupsTable = new ExpSchema(getUser(), getContainer()).getTable(ExpSchema.TableType.RunGroups);
+
             DetailsView detailsView = new DetailsView(new DataRegion(), _experiment.getRowId());
-            detailsView.getDataRegion().setTable(ExperimentServiceImpl.get().getTinfoExperiment());
-            detailsView.getDataRegion().addColumns(ExperimentServiceImpl.get().getTinfoExperiment(), "RowId,Name,Created,Modified,ContactId,ExperimentDescriptionURL,Hypothesis,Comments");
+            detailsView.getDataRegion().setTable(runGroupsTable);
+            detailsView.getDataRegion().addColumns(runGroupsTable, "RowId,Name,Created,Modified,ContactId,ExperimentDescriptionURL,Hypothesis,Comments");
             detailsView.getDataRegion().getDisplayColumn(0).setVisible(false);
             detailsView.getDataRegion().getDisplayColumn(2).setWidth("60%");
 
@@ -401,6 +403,7 @@ public class ExperimentController extends SpringActionController
             if (_experiment.getBatchProtocol() != null)
             {
                 detailsView.setTitle("Batch Details");
+                detailsView.getDataRegion().addColumns(runGroupsTable, "BatchProtocolId");
             }
             else
             {

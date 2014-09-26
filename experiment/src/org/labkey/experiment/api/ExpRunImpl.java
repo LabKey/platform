@@ -119,6 +119,53 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         return ExpExperimentImpl.fromExperiments(new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql, _object.getLSID(), Boolean.FALSE).getArray(Experiment.class));
     }
 
+    @Nullable
+    public ExpExperimentImpl getBatch()
+    {
+        if (_object.getBatchId() == null)
+            return null;
+
+        final SQLFragment sql = new SQLFragment("SELECT E.* FROM ");
+        sql.append(ExperimentServiceImpl.get().getTinfoExperiment(), "E");
+        sql.append(" WHERE rowid=?").add(_object.getBatchId());
+
+        Experiment batch = new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql).getObject(Experiment.class);
+        if (batch != null)
+        {
+            ExpExperimentImpl ret = new ExpExperimentImpl(batch);
+            assert checkBatch(ret);
+            return ret;
+        }
+        else
+        {
+            return null;
+        }
+    }
+
+    private boolean checkBatch(ExpExperimentImpl batch)
+    {
+        List<ExpExperimentImpl> exps = getExperiments();
+        if (!exps.contains(batch))
+        {
+            LOG.warn("Expected batch '" + batch.getRowId() + "' to be in list of experiments: " + exps);
+            return false;
+        }
+
+        if (!getProtocol().equals(batch.getBatchProtocol()))
+        {
+            LOG.warn("Expected batch '" + batch.getRowId() + "' to have same protocol as run.  Expected protocol '" + getProtocol() + "', but found '" + batch.getBatchProtocol() + "'");
+            return false;
+        }
+
+        return true;
+    }
+
+    protected void setBatchId(Integer batchId)
+    {
+        assert batchId == null || checkBatch(ExperimentServiceImpl.get().getExpExperiment(batchId));
+        _object.setBatchId(batchId);
+    }
+
     public ExpProtocolImpl getProtocol()
     {
         return ExperimentServiceImpl.get().getExpProtocol(_object.getProtocolLSID());
