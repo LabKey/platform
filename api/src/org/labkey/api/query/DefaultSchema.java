@@ -199,7 +199,7 @@ final public class DefaultSchema extends AbstractSchema
         return Collections.emptySet();
     }
 
-    public QuerySchema getSchema(String name)
+    public QuerySchema getSchema(@NotNull String name)
     {
         SchemaProvider provider = _providers.get(name);
         if (provider != null)

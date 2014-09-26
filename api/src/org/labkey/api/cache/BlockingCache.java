@@ -126,22 +126,38 @@ public class BlockingCache<K, V> implements Cache<K, V>
             w.setLoading();
         }
 
+        boolean success = false;
+
         try
         {
             if (null == loader)
                 loader = _loader;
+
+            if (null == loader)
+                throw new IllegalStateException("cache loader was not provided");
+
             V value = loader.load(key, argument);
-            w.setValue(value);
             CacheManager.validate(loader, value);
+
+            //noinspection SynchronizationOnLocalVariableOrMethodParameter
+            synchronized (w)
+            {
+                w.setValue(value);
+                w.notifyAll();
+            }
+            success = true;
             return value;
         }
         finally
         {
             //noinspection SynchronizationOnLocalVariableOrMethodParameter
-            synchronized (w)
+            if (!success)
             {
-                w.doneLoading();
-                w.notifyAll();
+                synchronized (w)
+                {
+                    w.doneLoading();
+                    w.notifyAll();
+                }
             }
         }
     }

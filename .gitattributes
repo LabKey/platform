@@ -1624,6 +1624,7 @@ api/src/org/labkey/api/view/AjaxCompletion.java -text
 api/src/org/labkey/api/view/AjaxResponse.java -text
 api/src/org/labkey/api/view/AjaxXmlResponse.java -text
 api/src/org/labkey/api/view/AlwaysAvailableWebPartFactory.java -text
+api/src/org/labkey/api/view/BadRequestException.java -text
 api/src/org/labkey/api/view/BaseWebPartFactory.java -text
 api/src/org/labkey/api/view/Collapsible.java -text
 api/src/org/labkey/api/view/DefaultModelAndView.java -text

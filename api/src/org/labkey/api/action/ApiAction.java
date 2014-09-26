@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectReader;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -30,6 +31,7 @@ import org.labkey.api.query.RuntimeValidationException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
+import org.labkey.api.view.BadRequestException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.beans.MutablePropertyValues;
@@ -127,7 +129,18 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
         try
         {
-            Pair<FORM, BindException> pair = populateForm();
+            Pair<FORM, BindException> pair;
+
+            try
+            {
+                pair = populateForm();
+            }
+            catch (BadRequestException bad)
+            {
+                getViewContext().getResponse().sendError(bad.getStatus(), bad.getMessage());
+                return null;
+            }
+
             FORM form = pair.first;
             BindException errors = pair.second;
 
@@ -216,6 +229,8 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         return null == o || (o instanceof String && ((String)o).isEmpty());
     }
 
+
+    @NotNull
     protected Pair<FORM, BindException> populateForm() throws Exception
     {
         String contentType = getViewContext().getRequest().getContentType();
@@ -238,6 +253,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
     // CONSIDER: Extract ApiRequestReader similar to the ApiResponseWriter
     // CONSIDER: Something like Jersey's MessageBodyReader? https://jax-rs-spec.java.net/nonav/2.0/apidocs/javax/ws/rs/ext/MessageBodyReader.html
+    @NotNull
     protected Pair<FORM, BindException> populateJsonForm() throws Exception
     {
         if (_marshaller == Marshaller.Jackson)
@@ -247,6 +263,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     }
 
 
+    @NotNull
     protected Pair<FORM, BindException> defaultPopulateForm() throws Exception
     {
         BindException errors = null;
@@ -266,6 +283,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     /**
      * Use Jackson to parse POST body as JSON and instantiate the FORM class directly.
      */
+    @NotNull
     protected Pair<FORM, BindException> populateJacksonForm() throws Exception
     {
         FORM form = null;
@@ -309,6 +327,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     /**
      * Parse POST body as JSONObject then use either CustomApiForm or spring form binding to populate the FORM instance.
      */
+    @NotNull
     protected Pair<FORM, BindException> populateJSONObjectForm() throws Exception
     {
         JSONObject jsonObj;
@@ -323,8 +342,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         }
         catch (JSONException x)
         {
-            getViewContext().getResponse().sendError(HttpServletResponse.SC_BAD_REQUEST, x.getMessage());
-            return null;
+            throw new BadRequestException(x.getMessage(), x);
         }
         saveRequestedApiVersion(getViewContext().getRequest(), jsonObj);
 
@@ -332,6 +350,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         BindException errors = populateForm(jsonObj, form);
         return Pair.of(form, errors);
     }
+
 
     protected double saveRequestedApiVersion(HttpServletRequest request, Object obj)
     {
@@ -369,7 +388,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     }
 
 
-    protected JSONObject getJsonObject() throws Exception
+    protected JSONObject getJsonObject() throws IOException
     {
         //read the JSON into a buffer
         //unfortunately the json.org classes can't read directly from a stream!
@@ -389,7 +408,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         return new JSONObject(jsonString);
     }
 
-    protected BindException populateForm(JSONObject jsonObj, FORM form) throws Exception
+    protected BindException populateForm(JSONObject jsonObj, FORM form)
     {
         if (null == jsonObj)
             return new NullSafeBindException(form, "form");
