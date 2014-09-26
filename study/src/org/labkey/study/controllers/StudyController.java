@@ -1870,9 +1870,6 @@ public class StudyController extends BaseStudyController
         public void validateCommand(VisitForm target, Errors errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
-            if (study.getTimepointType() == TimepointType.CONTINUOUS)
-                errors.reject(null, "Unsupported operation for continuous date study");
-
             target.validate(errors, study);
             if (errors.getErrorCount() > 0)
                 return;
@@ -2136,9 +2133,6 @@ public class StudyController extends BaseStudyController
         public void validateCommand(VisitForm target, Errors errors)
         {
             StudyImpl study = getStudyRedirectIfNull();
-            if (study.getTimepointType() == TimepointType.CONTINUOUS)
-                errors.reject(null, "Unsupported operation for continuous date study");
-
             target.validate(errors, study);
             if (errors.getErrorCount() > 0)
                 return;

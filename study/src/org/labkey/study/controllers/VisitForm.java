@@ -51,10 +51,14 @@ public class VisitForm extends ViewForm
     {
     }
 
+
     public void validate(Errors errors, Study study)
     {
         if (study.getTimepointType() == TimepointType.CONTINUOUS)
+        {
             errors.reject(null, "Unsupported operation for continuous date study");
+            return;
+        }
 
         HttpServletRequest request = getRequest();
 
@@ -80,6 +84,12 @@ public class VisitForm extends ViewForm
         if (null == getSequenceNumMax() && null != getSequenceNumMin())
             setSequenceNumMax(getSequenceNumMin());
 
+        Double maxSeqNum = Math.pow(10,11);
+        if (!(-maxSeqNum < getSequenceNumMin() && getSequenceNumMin() < maxSeqNum))
+            errors.rejectValue("sequenceNumMin", null, "Out of range");
+        if (!(-maxSeqNum < getSequenceNumMax() && getSequenceNumMax() < maxSeqNum))
+            errors.rejectValue("sequenceNumMax", null, "Out of range");
+
         // if target sequence num is null, set to min
         if (null == getProtocolDay() && TimepointType.DATE == study.getTimepointType())
             setProtocolDay(VisitImpl.calcDefaultDateBasedProtocolDay(getSequenceNumMin(), getSequenceNumMax()));
@@ -97,6 +107,7 @@ public class VisitForm extends ViewForm
         }
         setBean(visit);
     }
+
 
     public VisitImpl getBean()
     {
