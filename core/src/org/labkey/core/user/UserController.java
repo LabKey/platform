@@ -1963,7 +1963,9 @@ public class UserController extends SpringActionController
                 if (nameFilter.length() > 0)
                     response.put("name", nameFilter);
 
+                boolean includeEmail = SecurityManager.canSeeEmailAddresses(getContainer(), currentUser);
                 boolean userHasPermission;
+
                 for (User user : users)
                 {
                     // TODO: consider performance here (Aaron gets picky about this)
@@ -1992,12 +1994,12 @@ public class UserController extends SpringActionController
                         //force sanitize of the display name, even for logged-in users
                         userInfo.put(PROP_USER_NAME, user.getDisplayName(currentUser));
 
-                        //include email address (we now require login so no guests can see the response)
-                        userInfo.put("email", user.getEmail());
+                        //include email address, if user is allowed to see them
+                        if (includeEmail)
+                            userInfo.put("email", user.getEmail());
 
                         userResponseList.add(userInfo);
                     }
-
                 }
             }
 
