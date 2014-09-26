@@ -15,8 +15,10 @@
  */
 package org.labkey.query.olap.metadata;
 
+import com.drew.lang.annotations.NotNull;
 import junit.framework.Assert;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
 import org.labkey.api.query.FieldKey;
 import org.olap4j.impl.Named;
@@ -31,20 +33,22 @@ public abstract class MetadataElementBase implements MetadataElement, Named
     final UniqueName uniqueName;
     String name;                  // name is _usually_, but not always == uniqueName.getName()
 
-    MetadataElementBase(MetadataElement mde, MetadataElementBase parent)
+    MetadataElementBase(@Nullable CachedCube cc, MetadataElement mde, MetadataElementBase parent)
     {
         if (null == parent)
-            this.uniqueName = UniqueName.parse(mde.getUniqueName());
+            this.uniqueName = UniqueName.parse(cc, mde.getUniqueName());
         else
-            this.uniqueName = new UniqueName(parent.uniqueName,mde.getName());
+            this.uniqueName = new UniqueName(parent.uniqueName, null==cc ? mde.getName() : cc.intern(mde.getName()));
+
         // NOTE Properties don't always use the [ ] syntax
-        assert StringUtils.equalsIgnoreCase(uniqueName.toString(),mde.getUniqueName())
+        assert StringUtils.equalsIgnoreCase(uniqueName.toString(), mde.getUniqueName())
                 || null==uniqueName.getParent() && StringUtils.equalsIgnoreCase(getName(), mde.getName());
+
         name = uniqueName.getName().equals(mde.getName()) ? uniqueName.getName() : mde.getName();
     }
 
 
-    MetadataElementBase(String name, MetadataElementBase parent)
+    MetadataElementBase(@Nullable CachedCube cc, String name, MetadataElementBase parent)
     {
         if (null == parent)
             this.uniqueName = new UniqueName(null, name);
@@ -98,7 +102,12 @@ public abstract class MetadataElementBase implements MetadataElement, Named
         }
 
         static UniqueName parse(String s)
-         {
+        {
+            return parse(null, s);
+        }
+
+        static UniqueName parse(@Nullable CachedCube cc, String s)
+        {
              // Split is so unhelpful split(\\]\\.\\]) doesn't work
              String[] parts = StringUtils.split(s,'.');
              UniqueName u = null;
@@ -108,7 +117,8 @@ public abstract class MetadataElementBase implements MetadataElement, Named
                  p += parts[i];
                  if (p.endsWith("]"))
                  {
-                     u = new UniqueName(u, p.substring(1, p.length() - 1));
+                     String n = p.substring(1, p.length() - 1);
+                     u = new UniqueName(u, null==cc ? n : cc.intern(n));
                      p = "";
                  }
                  else if (i < parts.length-1)
@@ -118,7 +128,7 @@ public abstract class MetadataElementBase implements MetadataElement, Named
              {
                  if (p.startsWith("[") && p.endsWith("]"))
                      p = p.substring(1,p.length()-1);
-                 u = new UniqueName(u, p);
+                 u = new UniqueName(u, null==cc ? p : cc.intern(p));
              }
              return u;
         }

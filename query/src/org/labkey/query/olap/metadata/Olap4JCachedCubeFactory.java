@@ -65,17 +65,18 @@ public class Olap4JCachedCubeFactory
     {
         CachedCube ret = new CachedCube(c);
         loadDimensions(ret, c);
+        ret.strings = null;
         return ret;
     }
 
 
-    void loadDimensions(CachedCube cached, Cube c) throws SQLException
+    void loadDimensions(CachedCube cube, Cube c) throws SQLException
     {
         for (Dimension d : c.getDimensions())
         {
-            cached.dimensions.add(loadDimension(d));
+            cube.dimensions.add(loadDimension(cube,d));
         }
-        cached.dimensions.seal();
+        cube.dimensions.seal();
 
         Map<String,Annotation> map = new HashMap<>();
         if (c instanceof OlapWrapper)
@@ -84,15 +85,15 @@ public class Olap4JCachedCubeFactory
             Map<String, Annotation> annotations = annotated.getAnnotationMap();
             map.putAll(annotations);
         }
-        cached.annotations = Collections.unmodifiableMap(map);
+        cube.annotations = Collections.unmodifiableMap(map);
     }
 
 
-    _Dimension loadDimension(Dimension d) throws SQLException
+    _Dimension loadDimension(CachedCube cube, Dimension d) throws SQLException
     {
-        _Dimension ret = new CachedCube._Dimension(d);
+        _Dimension ret = new CachedCube._Dimension(cube, d);
 
-        loadHierarchies(ret, d);
+        loadHierarchies(cube, ret, d);
 
         ret.dimensionType = d.getDimensionType();
         Hierarchy def = d.getDefaultHierarchy();
@@ -101,19 +102,19 @@ public class Olap4JCachedCubeFactory
     }
 
 
-    void loadHierarchies(_Dimension cached, Dimension d) throws SQLException
+    void loadHierarchies(CachedCube cube, _Dimension cached, Dimension d) throws SQLException
     {
         for (Hierarchy h : d.getHierarchies())
         {
-            cached.hierarchies.add(loadHierarchy(cached, h));
+            cached.hierarchies.add(loadHierarchy(cube, cached, h));
         }
         cached.hierarchies.seal();
     }
 
 
-    _Hierarchy loadHierarchy(_Dimension cached, Hierarchy h) throws SQLException
+    _Hierarchy loadHierarchy(CachedCube cube, _Dimension cached, Hierarchy h) throws SQLException
     {
-        _Hierarchy ret = new _Hierarchy(cached, h);
+        _Hierarchy ret = new _Hierarchy(cube, cached, h);
 
         ArrayList<_Level> list = new ArrayList<>();
 
@@ -122,7 +123,7 @@ public class Olap4JCachedCubeFactory
         for (int i =0 ; i < h.getLevels().size() ; i++)
         {
             Level l = h.getLevels().get(i);
-            _Level thisLevel = loadLevel(ret, l, parentLevel);
+            _Level thisLevel = loadLevel(cube, ret, l, parentLevel);
             list.add(thisLevel);
             parentLevel = thisLevel;
         }
@@ -162,9 +163,9 @@ public class Olap4JCachedCubeFactory
     }
 
 
-    _Level loadLevel(_Hierarchy cached, Level l, _Level parentLevel) throws SQLException
+    _Level loadLevel(CachedCube cube, _Hierarchy cached, Level l, _Level parentLevel) throws SQLException
     {
-        _Level ret = new _Level(cached, l);
+        _Level ret = new _Level(cube, cached, l);
 
         for (Property p : l.getProperties())
         {
@@ -173,14 +174,14 @@ public class Olap4JCachedCubeFactory
                 continue;
             if (n.equals("MEMBER_ORDINAL") || n.equals("MEMBER_TYPE") || n.equals("CHILDREN_CARDINALITY"))
                 continue;
-            ret.memberProperties.add(new CachedCube._Property(p));
+            ret.memberProperties.add(new CachedCube._Property(cube, p));
         }
 
         if ("[Measures]".equals(cached.getDimension().getUniqueName()))
         {
             for (Member m : l.getMembers())
             {
-                ret.members.add(new _Measure(ret, parentLevel, (Measure) m));
+                ret.members.add(new _Measure(cube, ret, parentLevel, (Measure) m));
             }
         }
         else
@@ -188,7 +189,7 @@ public class Olap4JCachedCubeFactory
             boolean isLeaf = l.getDepth() == l.getHierarchy().getLevels().size();
             for (Member m : l.getMembers())
             {
-                ret.members.add(new _Member(ret, parentLevel, m, isLeaf));
+                ret.members.add(new _Member(cube, ret, parentLevel, m, isLeaf));
             }
         }
         ret.members.trimToSize();

@@ -605,15 +605,24 @@ public class BitSetQueryImpl
     }
 
 
-    void addMemberAndChildrenInLevel(Member m, Level filter, Collection<Member> list) throws OlapException
+    void addChildrenInLevel(Member m, Level filter, Collection<Member> list) throws OlapException
     {
-        if (same(m.getLevel(), filter))
+        assert same(m.getHierarchy(), filter.getHierarchy());
+
+        if (m.getLevel().getDepth() == filter.getDepth())
         {
             list.add(m);
             return;
         }
+        if (m.getLevel().getDepth()+1 == filter.getDepth())
+        {
+            list.addAll(m.getChildMembers());
+            return;
+        }
         for (Member c : m.getChildMembers())
-            addMemberAndChildrenInLevel(c, filter, list);
+        {
+            addChildrenInLevel(c, filter, list);
+        }
     }
 
 
@@ -1533,9 +1542,14 @@ public class BitSetQueryImpl
         {
             if (same(sub.getHierarchy(), outer.getHierarchy()))
             {
-                MemberSet s = new MemberSet();
-                addMemberAndChildrenInLevel(sub, outer, s);
-                return s;
+                if (sub.isAll())
+                    return new MemberSet(outer, outer.getMembers());
+                else
+                {
+                    MemberSet s = new MemberSet();
+                    addChildrenInLevel(sub, outer, s);
+                    return s;
+                }
             }
 
             String query = queryIsNotEmpty(outer, sub);
@@ -1958,9 +1972,14 @@ public class BitSetQueryImpl
         {
             if (same(sub.getHierarchy(), outer.getHierarchy()))
             {
-                MemberSet s = new MemberSet();
-                addMemberAndChildrenInLevel(sub, outer, s);
-                return s;
+                if (sub.isAll())
+                    return new MemberSet(outer, outer.getMembers());
+                else
+                {
+                    MemberSet s = new MemberSet();
+                    addChildrenInLevel(sub, outer, s);
+                    return s;
+                }
             }
 
             if (sub.isAll())

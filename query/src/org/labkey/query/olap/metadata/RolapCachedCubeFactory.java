@@ -18,15 +18,10 @@ package org.labkey.query.olap.metadata;
 import com.drew.lang.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.data.JdbcType;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.util.JunitUtil;
-import org.labkey.api.util.TestContext;
 import org.labkey.query.olap.rolap.RolapCubeDef;
-import org.labkey.query.olap.rolap.RolapTestSchema;
 import org.olap4j.OlapException;
 import org.olap4j.metadata.Dimension;
 import org.olap4j.metadata.Level;
@@ -52,6 +47,7 @@ public class RolapCachedCubeFactory
     final public RolapCubeDef rolap;
     final public QuerySchema schema;
 
+
     public RolapCachedCubeFactory(RolapCubeDef rolap, QuerySchema s) throws SQLException
     {
         this.rolap = rolap;
@@ -76,47 +72,49 @@ public class RolapCachedCubeFactory
 
         for (DimensionDef ddef : rolap.getDimensions())
         {
-            CachedCube._Dimension d = new CachedCube._Dimension(ddef);
+            CachedCube._Dimension d = new CachedCube._Dimension(cube, ddef);
             cube.dimensions.add(d);
 
             for (HierarchyDef hdef : ddef.getHierarchies())
             {
-                CachedCube._Hierarchy h = new CachedCube._Hierarchy(d, hdef);
+                CachedCube._Hierarchy h = new CachedCube._Hierarchy(cube, d, hdef);
                 d.hierarchies.add(h);
 
-                CachedCube._Level l = new CachedCube._Level(h, Level.Type.ALL);
+                CachedCube._Level l = new CachedCube._Level(cube, h, Level.Type.ALL);
                 h.levels.add(l);
 
                 for (LevelDef ldef : hdef.getLevels())
                 {
-                    l = new CachedCube._Level(h, ldef, h.levels.size());
+                    l = new CachedCube._Level(cube, h, ldef, h.levels.size());
                     h.levels.add(l);
                 }
 
-                generateHierachyMembers(hdef, h);
+                generateHierachyMembers(cube, hdef, h);
             }
             d.hierarchies.seal();
         }
 
         cube.dimensions.seal();
+        cube.strings = null;
+
         return cube;
     }
 
 
     void generateMeasuresDimension(CachedCube cube) throws SQLException
     {
-        CachedCube._Dimension dMeasures = new CachedCube._Dimension("Measures");
+        CachedCube._Dimension dMeasures = new CachedCube._Dimension(cube, "Measures");
         dMeasures.dimensionType = Dimension.Type.MEASURE;
         cube.dimensions.add(dMeasures);
-        CachedCube._Hierarchy hMeasures = new CachedCube._Hierarchy(dMeasures, "Measures");
+        CachedCube._Hierarchy hMeasures = new CachedCube._Hierarchy(cube, dMeasures, "Measures");
         dMeasures.hierarchies.add(hMeasures);
         dMeasures.hierarchies.seal();
-        CachedCube._Level lMeasures = new CachedCube._Level(hMeasures,"MeasuresLevel", 0);
+        CachedCube._Level lMeasures = new CachedCube._Level(cube, hMeasures,"MeasuresLevel", 0);
         hMeasures.levels.add(lMeasures);
         hMeasures.levels.seal();
         for (MeasureDef measureDef : rolap.getMeasures())
         {
-            CachedCube._Measure m = new CachedCube._Measure(lMeasures, measureDef.getName());
+            CachedCube._Measure m = new CachedCube._Measure(cube, lMeasures, measureDef.getName());
             lMeasures.members.add(m);
         }
         lMeasures.members.seal();
@@ -130,10 +128,10 @@ public class RolapCachedCubeFactory
      * creating new members.  We remember the members before the break, and don't need
      * to look them up, or create them.
      */
-    void generateHierachyMembers(HierarchyDef hdef, CachedCube._Hierarchy h) throws SQLException
+    void generateHierachyMembers(CachedCube cube, HierarchyDef hdef, CachedCube._Hierarchy h) throws SQLException
     {
         CachedCube._Level allLevel = (CachedCube._Level)h.getLevels().get(0);
-        CachedCube._Member allMember = new CachedCube._Member(allLevel, Member.Type.ALL);
+        CachedCube._Member allMember = new CachedCube._Member(cube, allLevel, Member.Type.ALL);
         allLevel.members.add(allMember);
 
         // hdef.getLevels() does not include all Level, so need to add null to make things match
@@ -214,8 +212,10 @@ public class RolapCachedCubeFactory
                     }
                     // need to create a new member! yeah
 
-                    m = new CachedCube._Member(level, parent, name, levelDef.isLeaf());
+                    m = new CachedCube._Member(cube, level, parent, name, levelDef.isLeaf());
                     m.keyValue = (Comparable)levelDef.getKeyValue(rs);
+                    if (m.keyValue instanceof String)
+                        m.keyValue = cube.intern((String)m.keyValue);
                     m.ordinalValue = (Comparable)levelDef.getOrindalValue(rs);
 
                     uniqueNameMap.put(uniqueName, m);
@@ -239,7 +239,7 @@ public class RolapCachedCubeFactory
         {
             CachedCube._Level level = levelList.get(l);
             LevelDef ldef = levelDefList.get(l);
-            CachedCube._Member notNullMember = new CachedCube._NotNullMember(level, parent, ldef.isLeaf());
+            CachedCube._Member notNullMember = new CachedCube._NotNullMember(cube, level, parent, ldef.isLeaf());
             level.members.add(notNullMember);
             parent = notNullMember;
         }
@@ -269,6 +269,13 @@ public class RolapCachedCubeFactory
             CachedCube._Level l = (CachedCube._Level) L;
             if (l.getDepth() != h.getLevels().size() - 1)
                 orderChildMembers(l.members);
+        }
+        // free memory associated with original ordinalValue
+        for (Level L : h.getLevels())
+        {
+            CachedCube._Level l = (CachedCube._Level) L;
+            for (Member m : l.getMembers())
+                ((CachedCube._Member)m).ordinalValue = null;
         }
     }
 

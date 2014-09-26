@@ -67,12 +67,12 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
     /* TODO redo compute hash code */
     CachedCube(Cube c) throws SQLException
     {
-        super(c, null);
+        super(null, c, null);
     }
 
     CachedCube(String name) throws SQLException
     {
-        super(name, null);
+        super(null, name, null);
     }
 
     public long getLongHashCode()
@@ -204,19 +204,19 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         _Hierarchy defaultHierarchy;
         Type dimensionType;
 
-        _Dimension(Dimension d) throws OlapException
+        _Dimension(CachedCube cc, Dimension d) throws OlapException
         {
-            super(d, null);
+            super(cc, d, null);
         }
 
-        _Dimension(String name) throws OlapException
+        _Dimension(CachedCube cc, String name) throws OlapException
         {
-            super(name, null);
+            super(cc, name, null);
         }
 
-        _Dimension(RolapCubeDef.DimensionDef ddef) throws OlapException
+        _Dimension(CachedCube cc, RolapCubeDef.DimensionDef ddef) throws OlapException
         {
-            this(ddef.getName());
+            this(cc, ddef.getName());
         }
 
         @Override
@@ -246,23 +246,23 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         _Member defaultMember;
 
 
-        _Hierarchy(_Dimension dimension, Hierarchy h) throws OlapException
+        _Hierarchy(CachedCube cc, _Dimension dimension, Hierarchy h) throws OlapException
         {
-            super(h, null);
+            super(cc, h, null);
             this.dimension = dimension;
         }
 
 
-        _Hierarchy(_Dimension dimension, String name) throws OlapException
+        _Hierarchy(CachedCube cc, _Dimension dimension, String name) throws OlapException
         {
-            super(dimension.getName().equals(name) ? name : dimension.getName() + "." + name, null);
+            super(cc, dimension.getName().equals(name) ? name : dimension.getName() + "." + name, null);
             this.dimension = dimension;
         }
 
 
-        _Hierarchy(_Dimension dimension, RolapCubeDef.HierarchyDef h) throws OlapException
+        _Hierarchy(CachedCube cc, _Dimension dimension, RolapCubeDef.HierarchyDef h) throws OlapException
         {
-            this(dimension, h.getName());
+            this(cc, dimension, h.getName());
         }
 
 
@@ -311,9 +311,9 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         // temporary pointer, used in olap4j loading
         Level orig;
 
-        _Level(_Hierarchy h, Level l) throws OlapException
+        _Level(CachedCube cc, _Hierarchy h, Level l) throws OlapException
         {
-            super(l, null);
+            super(cc, l, null);
 
             this.depth = l.getDepth();
             this.hierarchy = h;
@@ -323,9 +323,9 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         }
 
         // Type == ALL
-        _Level(_Hierarchy h, Type t) throws OlapException
+        _Level(CachedCube cc, _Hierarchy h, Type t) throws OlapException
         {
-            super("(All)", h);
+            super(cc, "(All)", h);
             if (t != Type.ALL)
                 throw new IllegalArgumentException();
             this.depth = 0;
@@ -336,9 +336,9 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         }
 
 
-        _Level(_Hierarchy h, String name, int depth) throws OlapException
+        _Level(CachedCube cc, _Hierarchy h, String name, int depth) throws OlapException
         {
-            super(name, h);
+            super(cc, name, h);
             this.depth = depth;
             this.hierarchy = h;
             this.levelType = Type.REGULAR;
@@ -347,9 +347,9 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         }
 
 
-        _Level(_Hierarchy h, RolapCubeDef.LevelDef l, int depth) throws OlapException
+        _Level(CachedCube cc, _Hierarchy h, RolapCubeDef.LevelDef l, int depth) throws OlapException
         {
-            this(h, l.getName(), depth);
+            this(cc, h, l.getName(), depth);
         }
 
 
@@ -448,9 +448,9 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
 
 
         // Type == ALL
-        _Member(_Level level, Member.Type type) throws OlapException
+        _Member(CachedCube cc, _Level level, Member.Type type) throws OlapException
         {
-            super("(All)", level.hierarchy);
+            super(cc, "(All)", level.hierarchy);
             if (type != Member.Type.ALL)
                 throw new IllegalArgumentException();
             this.level = level;
@@ -461,9 +461,9 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         }
 
 
-        public _Member(_Level level, _Member parent, String name, boolean isLeaf) throws OlapException
+        public _Member(CachedCube cc, _Level level, _Member parent, String name, boolean isLeaf) throws OlapException
         {
-            super(name, level.depth<2 ? level.hierarchy : parent);
+            super(cc, name, level.depth<2 ? level.hierarchy : parent);
             this.level = level;
             this.all = false;
             this.memberType = Type.REGULAR;
@@ -475,10 +475,10 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         }
 
 
-        _Member(_Level level, _Level parentLevel, Member m, boolean isLeaf) throws OlapException
+        _Member(CachedCube cc, _Level level, _Level parentLevel, Member m, boolean isLeaf) throws OlapException
         {
             // TODO this is the case where we could pass in the parent member to save space on cached strings
-            super(m, null);
+            super(cc, m, null);
             this.level = level;
             this.all = m.isAll();
             this.memberType = m.getMemberType();
@@ -691,9 +691,9 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
 
     public static class _NotNullMember extends _Member
     {
-        _NotNullMember(_Level level, _Member parent, boolean isLeaf) throws OlapException
+        _NotNullMember(CachedCube cc, _Level level, _Member parent, boolean isLeaf) throws OlapException
         {
-            super(level, parent, "#notnull", isLeaf);
+            super(cc, level, parent, "#notnull", isLeaf);
         }
 
         @Override
@@ -712,15 +712,15 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
 
     public static class _Measure extends _Member implements Measure
     {
-        _Measure(_Level l, _Level parentLevel, Measure m) throws OlapException
+        _Measure(CachedCube cc, _Level l, _Level parentLevel, Measure m) throws OlapException
         {
-            super(l,parentLevel,m,true);
+            super(cc, l,parentLevel,m,true);
             memberType = Type.MEASURE;
         }
 
-        _Measure(_Level l, String name) throws OlapException
+        _Measure(CachedCube cc, _Level l, String name) throws OlapException
         {
-            super(l, null, name, true);
+            super(cc, l, null, name, true);
             memberType = Type.MEASURE;
         }
 
@@ -745,9 +745,9 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         final ContentType contentType;
         final boolean visible;
 
-        _Property(Property p)
+        _Property(CachedCube cc, Property p)
         {
-            super(p, null);
+            super(cc, p, null);
             datatype = p.getDatatype();
             type = Collections.unmodifiableSet(new HashSet<TypeFlag>(p.getType()));
             contentType = p.getContentType();
@@ -1042,5 +1042,22 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         {
             return impl.entrySet();
         }
+    }
+
+
+    // during cube construction we want to make sure we share strings as much as possible
+    HashMap<String,String> strings = new HashMap<>();
+    String intern(String s)
+    {
+        String i = strings.get(s);
+        if (null != i)
+        {
+            if (i == s)
+                return i;
+            return i;
+        }
+        i = new String(s);
+        strings.put(i,i);
+        return i;
     }
 }
