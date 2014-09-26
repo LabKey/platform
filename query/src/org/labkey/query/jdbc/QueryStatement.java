@@ -61,7 +61,7 @@ public class QueryStatement implements Statement
         if (_log.isTraceEnabled())
             cached = true;
 
-        _rs = QueryService.get().select(schema, s, true, cached);
+        _rs = QueryService.get().select(schema, s, null, true, cached);
 
         if (_log.isTraceEnabled() && _rs instanceof CachedResultSet)
         {

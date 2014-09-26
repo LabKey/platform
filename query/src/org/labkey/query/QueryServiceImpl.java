@@ -1635,10 +1635,11 @@ public class QueryServiceImpl extends QueryService
     }
 
     @Override
-    public ResultSet select(@NotNull QuerySchema schema, String sql, boolean strictColumnList, boolean cached) throws SQLException
+    public ResultSet select(@NotNull QuerySchema schema, String sql, @Nullable Map<String, TableInfo> tableMap, boolean strictColumnList, boolean cached) throws SQLException
 	{
 		Query q = new Query(schema);
         q.setStrictColumnList(strictColumnList);
+        q.setTableMap(tableMap);
 		q.parse(sql);
 
 		if (q.getParseErrors().size() > 0)

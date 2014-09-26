@@ -1734,7 +1734,7 @@ public class BitSetQueryImpl
             try
             {
                 QuerySchema qs = DefaultSchema.get(user, container, StringUtils.defaultString(rolap.getSchemaName(),"core"));
-                return QueryService.get().select(qs, query, true, false);
+                return QueryService.get().select(qs, query, null, true, false);
             }
             catch (SQLException|QueryParseException|AssertionError x)
             {

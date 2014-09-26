@@ -117,6 +117,8 @@ public class Query
     private final QuerySchema _schema;
 	String _querySource;
     boolean _strictColumnList = false;
+    // TableInfos handed to Query that will be used if a table isn't found.
+    private Map<String, TableInfo> _tableMap;
 	private ArrayList<QueryException> _parseErrors = new ArrayList<>();
     private ArrayList<QueryParseException> _parseWarnings = new ArrayList<>();
 
@@ -159,6 +161,11 @@ public class Query
     public void setStrictColumnList(boolean b)
     {
         _strictColumnList = b;
+    }
+
+    public void setTableMap(Map<String, TableInfo> tableMap)
+    {
+        _tableMap = tableMap;
     }
 
     /* for debugging */
@@ -718,6 +725,12 @@ public class Query
         {
             parseError(resolveExceptions, "No permission to read table: " + key.getName(), node);
             return null;
+        }
+
+        // Last attempt: map of extra tables previously resolved and provided to Query.
+        if (t == null && _tableMap != null)
+        {
+            t = _tableMap.get(key.getName());
         }
 
 		if (t == null)
@@ -1448,7 +1461,7 @@ public class Query
 
 			try
 			{
-				CachedResultSet rs = (CachedResultSet)QueryService.get().select(schema, sql, true, true);
+				CachedResultSet rs = (CachedResultSet)QueryService.get().select(schema, sql, null, true, true);
 				assertNotNull(sql, rs);
 				return rs;
 			}
