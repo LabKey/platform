@@ -178,6 +178,8 @@
         <ns:description>The external identifier for each location, if imported from an external data source.</ns:description>
       </ns:column>
       <ns:column columnName="LdmsLabCode">
+        <ns:columnTitle>Location Id</ns:columnTitle>
+        <ns:nullable>false</ns:nullable>
         <ns:description>The unique LDMS identifier assigned to each location, if imported from an LDMS system.</ns:description>
       </ns:column>
       <ns:column columnName="LabwareLabCode">
@@ -199,6 +201,7 @@
         <ns:description>Whether each location is a clinic.</ns:description>
       </ns:column>
       <ns:column columnName="Label">
+        <ns:nullable>false</ns:nullable>
         <ns:description>The long/friendly name of each location.</ns:description>
       </ns:column>
       <ns:column columnName="Description">

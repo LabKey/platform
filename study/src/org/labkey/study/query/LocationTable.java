@@ -204,7 +204,7 @@ public class LocationTable extends BaseStudyTable
         final StudySchema schema = StudySchema.getInstance();
 
         // These are all site-wide tables, so just check for current RowId in use anywhere (regardless of current container filter)
-        SQLFragment ret = new SQLFragment(EXISTS).append(schema.getTableInfoSampleRequest(), "sr").append(" WHERE ").append(tableAlias).append(".RowId = sr.DestinationSiteID) OR\n")
+        SQLFragment ret = new SQLFragment(EXISTS).append(schema.getTableInfoSampleRequest(), "sr").append(" WHERE ").append(tableAlias).append(".RowId = sr.DestinationSiteId) OR\n")
                 .append(EXISTS).append(schema.getTableInfoSampleRequestRequirement(), "srr").append(" WHERE ").append(tableAlias).append(".RowId = srr.SiteId) OR\n")
                 .append(EXISTS).append(schema.getTableInfoParticipant(), "p").append(" WHERE ").append(tableAlias).append(".RowId = p.EnrollmentSiteId OR ").append(tableAlias).append(".RowId = p.CurrentSiteId) OR\n")
                 .append(EXISTS).append(schema.getTableInfoAssaySpecimen(), "a").append(" WHERE ").append(tableAlias).append(".RowId = a.LocationId)");
