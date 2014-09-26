@@ -37,7 +37,7 @@ import org.labkey.api.data.TableInfo;
  *
  * @example
  *
- * Collect all FieldKeys:
+ * Collect all FieldKeys (functionally with reduce):
  * <pre>
  * SimpleSchemaTreeVisitor<Set<FieldKey>, Void> visitor = new SimpleSchemaTreeVisitor<Set<FieldKey>, Void>()
  * {
@@ -62,7 +62,7 @@ import org.labkey.api.data.TableInfo;
  * </pre>
  *
  * @example
- * Translate the schema tree into a JSONObject:
+ * Translate the schema tree into a JSONObject (imperitively by mutating parameter state):
  * <pre>
  * SimpleSchemaTreeVisitor visitor = new SimpleSchemaTreeVisitor<Void, JSONObject>()
  * {

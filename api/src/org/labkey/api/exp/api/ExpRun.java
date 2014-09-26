@@ -27,6 +27,8 @@ import java.util.Map;
 public interface ExpRun extends ExpObject
 {
     public List<? extends ExpExperiment> getExperiments();
+    @Nullable
+    public ExpExperiment getBatch();
     public ExpProtocol getProtocol();
 
     /**

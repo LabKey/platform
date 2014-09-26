@@ -42,8 +42,23 @@ public interface ExpExperiment extends ExpObject
      * @return all the parent protocols for all of the member runs 
      */
     List<? extends ExpProtocol> getAllProtocols();
+
+    /**
+     * Remove an ExpRun from this experiment.
+     * If this experiment is a batch, the run is disconnected from the batch.
+     * @param user The current user.
+     * @param run The run to remove from this experiment.
+     */
     void removeRun(User user, ExpRun run);
+
+    /**
+     * Add ExpRuns to this experiment.
+     * If this experiment is a batch, the runs must all have the same ExpProtocol and be the batch's protocol.
+     * @param user The current user.
+     * @param run The runs to add to this experiment.
+     */
     void addRuns(User user, ExpRun... run);
+
     boolean isHidden();
 
 

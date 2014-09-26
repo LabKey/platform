@@ -51,6 +51,7 @@ import org.labkey.api.view.ViewContext;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -147,6 +148,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         List<ExpRun> runsToAdd = new ArrayList<>(runs);
         runsToAdd.removeAll(existingRuns);
         batch.addRuns(context.getUser(), runsToAdd.toArray(new ExpRun[runsToAdd.size()]));
+        assert checkRunsInBatch(batch, runsToAdd) : "Runs should be in current batch: " + batch;
 
         // Remove any runs that are no longer part of the batch
         List<ExpRun> runsToRemove = new ArrayList<>(existingRuns);
@@ -154,6 +156,7 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         for (ExpRun runToRemove : runsToRemove)
         {
             batch.removeRun(context.getUser(), runToRemove);
+            assert !batch.equals(runToRemove.getBatch()) : "Run's batch should not be the current batch";
         }
 
         if (makeNameUnique)
@@ -162,6 +165,19 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         }
 
         return batch;
+    }
+
+    private boolean checkRunsInBatch(ExpExperiment batch, Collection<ExpRun> runs)
+    {
+        for (ExpRun run : runs)
+        {
+            if (!batch.equals(run.getBatch()))
+            {
+                LOG.warn("Run '" + run + "' is not in batch '" + batch + "'");
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

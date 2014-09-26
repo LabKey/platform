@@ -254,6 +254,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
             run.save(context.getUser());
             // Add the run to the batch so that we can find it when we're loading the data files
             batch.addRuns(context.getUser(), run);
+            assert batch.equals(run.getBatch()) : "Run's batch should be the current batch";
 
             ViewBackgroundInfo info = new ViewBackgroundInfo(context.getContainer(), context.getUser(), context.getActionURL());
             XarContext xarContext = new AssayUploadXarContext("Simple Run Creation", context);

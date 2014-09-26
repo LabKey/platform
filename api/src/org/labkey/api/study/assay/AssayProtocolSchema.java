@@ -384,16 +384,8 @@ public abstract class AssayProtocolSchema extends AssaySchema
         visibleColumns.remove(FieldKey.fromParts(ExpRunTable.Column.Protocol));
         visibleColumns.remove(FieldKey.fromParts(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME));
 
-        SQLFragment batchSQL = new SQLFragment("(SELECT MIN(ExperimentId) FROM ");
-        batchSQL.append(ExperimentService.get().getTinfoRunList(), "rl");
-        batchSQL.append(", ");
-        batchSQL.append(ExperimentService.get().getTinfoExperiment(), "e");
-        batchSQL.append(" WHERE e.RowId = rl.ExperimentId AND rl.ExperimentRunId = ");
-        batchSQL.append(ExprColumn.STR_TABLE_ALIAS);
-        batchSQL.append(".RowId AND e.BatchProtocolId = ");
-        batchSQL.append(getProtocol().getRowId());
-        batchSQL.append(")");
-        ExprColumn batchColumn = new ExprColumn(runTable, AssayService.BATCH_COLUMN_NAME, batchSQL, JdbcType.INTEGER, runTable.getColumn(ExpRunTable.Column.RowId));
+        // Add the batchId column, but replace the lookup with one to the assay's Batches table.
+        ColumnInfo batchColumn = runTable.addColumn(ExpRunTable.Column.BatchId);
         batchColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
@@ -403,7 +395,6 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 return batchesTable;
             }
         });
-        runTable.addColumn(batchColumn);
 
         visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
         FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName());

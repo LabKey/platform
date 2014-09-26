@@ -48,7 +48,8 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         DataOutputs,
         Replaced,
         ReplacedByRun,
-        ReplacesRun
+        ReplacesRun,
+        BatchId
     }
 
     /**
