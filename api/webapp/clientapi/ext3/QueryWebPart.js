@@ -625,7 +625,7 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                             this.dataRegion = null;
                         }
 
-                        this.fireEvent("render");
+                        this.fireEvent("render", this);
                     }, this);
                 }
                 else
