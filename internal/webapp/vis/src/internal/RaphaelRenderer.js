@@ -661,7 +661,6 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         {
             x = geom.xScale.scale(geom.xAes.getValue(data[i]));
             y = geom.yScale.scale(geom.yAes.getValue(data[i]));
-            console.log(data[i]);
 
             this.paper.setStart();
 
