@@ -793,7 +793,7 @@ public class CoreController extends SpringActionController
 
             if (name != null && getContainer().getChild(name) != null)
             {
-                throw new ApiUsageException("A child container with that name already exists");
+                throw new ApiUsageException("A child container with the name '" + name + "' already exists");
             }
 
             try
