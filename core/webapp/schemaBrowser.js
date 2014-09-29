@@ -178,12 +178,22 @@ Ext4.define('LABKEY.ext4.QueryTreePanel', {
 
     constructor : function(config) {
 
+        this.callParent([config]);
+
+        this.addEvents("schemasloaded");
+    },
+
+    initComponent : function(){
+
+        var params = LABKEY.ActionURL.getParameters();
+        this.showHidden = (params.showHidden == 'true') ? true : false;
+
         if (!Ext4.ModelManager.isRegistered('SchemaBrowser.Queries')) {
             Ext4.define('SchemaBrowser.Queries', {
                 extend: 'Ext.data.Model',
                 proxy: {
                     type: 'ajax',
-                    url: LABKEY.ActionURL.buildURL('query', 'getSchemaQueryTree.api'),
+                    url: LABKEY.ActionURL.buildURL('query', 'getSchemaQueryTree.api', null, {showHidden : this.showHidden}),
                     listeners: {
                         exception: function(proxy, response, operation) {
                             if (!this._unloading)
@@ -230,14 +240,6 @@ Ext4.define('LABKEY.ext4.QueryTreePanel', {
             }
         });
 
-        this.callParent([config]);
-
-        this.addEvents("schemasloaded");
-    },
-
-    initComponent : function(){
-
-        this.showHidden = false;
         this.fbar = [{
             xtype: 'checkbox',
             boxLabel: "<span style='font-size: 9.5px'>Show Hidden Schemas and Queries</span>",
@@ -265,6 +267,13 @@ Ext4.define('LABKEY.ext4.QueryTreePanel', {
     setShowHiddenSchemasAndQueries : function (showHidden)
     {
         this.showHidden = showHidden;
+
+        // Until TreeStore filtering is supported, push this solution to the server
+        var params = LABKEY.ActionURL.getParameters();
+        params.showHidden = showHidden;
+
+        var url = LABKEY.ActionURL.buildURL('query', 'begin', null, params);
+        window.location.href = url + window.location.hash;
 
         // TODO: Cannot show/hide nodes in ExtJS 4.2.1 -- Optimially, use TreeStore.filter() in ExtJS 4.2.3
 //        this.getRootNode().cascadeBy(function(node) {

@@ -73,6 +73,9 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                 if (null == schema || null == schema.getDbSchema())
                     continue;
 
+                if (schema.isHidden() && !form.isShowHidden())
+                    continue;
+
                 DbScope scope = schema.getDbSchema().getScope();
                 JSONArray schemas = map.get(scope);
 
@@ -164,6 +167,9 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                         QueryDefinition qdef = queryDefMap.get(qname);
                         if (!qdef.isTemporary())
                         {
+                            if (qdef.isHidden() && !form.isShowHidden())
+                                continue;
+
                             addQueryToList(schemaPath, qname, qname, qdef.getDescription(), qdef.isHidden(), userDefined);
                             addedQueryCount++;
                         }
@@ -198,6 +204,9 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
                     // Add any children schemas
                     for (UserSchema child : uschema.getUserSchemas(true))
                     {
+                        if (child.isHidden() && !form.isShowHidden())
+                            continue;
+
                         SchemaKey childPath = new SchemaKey(schemaPath, child.getName());
                         JSONObject schemaProps = getSchemaProps(childPath, child);
                         respArray.put(schemaProps);
@@ -263,6 +272,7 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
     {
         private String _node;
         private SchemaKey _schemaName;
+        private boolean _showHidden;
 
         public String getNode()
         {
@@ -282,6 +292,16 @@ public class GetSchemaQueryTreeAction extends ApiAction<GetSchemaQueryTreeAction
         public void setSchemaName(SchemaKey schemaName)
         {
             _schemaName = schemaName;
+        }
+
+        public boolean isShowHidden()
+        {
+            return _showHidden;
+        }
+
+        public void setShowHidden(boolean showHidden)
+        {
+            _showHidden = showHidden;
         }
     }
 }
