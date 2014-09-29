@@ -385,7 +385,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
         visibleColumns.remove(FieldKey.fromParts(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME));
 
         // Add the batchId column, but replace the lookup with one to the assay's Batches table.
-        ColumnInfo batchColumn = runTable.addColumn(ExpRunTable.Column.BatchId);
+        ColumnInfo batchColumn = runTable.addColumn(AssayService.BATCH_COLUMN_NAME, ExpRunTable.Column.BatchId);
         batchColumn.setFk(new LookupForeignKey("RowId")
         {
             public TableInfo getLookupTableInfo()
