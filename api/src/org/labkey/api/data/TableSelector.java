@@ -80,7 +80,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
     }
 
     // Select all columns from a table, with no filter or sort
-    public TableSelector(TableInfo table)
+    public TableSelector(@NotNull TableInfo table)
     {
         this(table, ALL_COLUMNS, null, null);
     }
@@ -89,13 +89,13 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         Select specified columns from a table, no filter or sort. Note: many methods require the columnNames set to
         iterate in a predictable order; see comment above for more details.
     */
-    public TableSelector(TableInfo table, Set<String> columnNames)
+    public TableSelector(@NotNull TableInfo table, Set<String> columnNames)
     {
         this(table, columnNames, null, null);
     }
 
     // Select all columns from a table
-    public TableSelector(TableInfo table, @Nullable Filter filter, @Nullable Sort sort)
+    public TableSelector(@NotNull TableInfo table, @Nullable Filter filter, @Nullable Sort sort)
     {
         this(table, ALL_COLUMNS, filter, sort);
     }
@@ -104,13 +104,13 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         Select specified columns from a table. Note: many methods require the columnNames set to iterate in a predictable
         order; see comment above for more details.
     */
-    public TableSelector(TableInfo table, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
+    public TableSelector(@NotNull TableInfo table, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
     {
         this(table, columnInfosList(table, columnNames), filter, sort, isStableOrdered(columnNames));
     }
 
     // Select a single column
-    public TableSelector(ColumnInfo column, @Nullable Filter filter, @Nullable Sort sort)
+    public TableSelector(@NotNull ColumnInfo column, @Nullable Filter filter, @Nullable Sort sort)
     {
         this(column.getParentTable(), Collections.singleton(column), filter, sort, true);  // Single column is stable ordered
     }
@@ -127,7 +127,7 @@ public class TableSelector extends SqlExecutingSelector<TableSelector.TableSqlFa
         return _queryLogging;
     }
 
-    private static Collection<ColumnInfo> columnInfosList(TableInfo table, Collection<String> select)
+    private static Collection<ColumnInfo> columnInfosList(@NotNull TableInfo table, Collection<String> select)
     {
         Collection<ColumnInfo> selectColumns;
 
