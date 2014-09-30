@@ -474,6 +474,8 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
 
     protected ModuleSource load(String moduleScript, Object validator)
     {
+        RhinoService.LOG.info("moduleScript: " + moduleScript);
+
         // NOTE: Don't recheck for stale-ness: calling .isStale() resets the staleness of the ResourceRef.
         //if (validator instanceof ResourceRef && !((ResourceRef)validator).isStale())
         //    return NOT_MODIFIED;
@@ -484,8 +486,18 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
 
         Path path = Path.parse(moduleScript);
         Resource res = ModuleLoader.getInstance().getResource(path);
+
         if (res == null || !res.isFile())
+        {
+            RhinoService.LOG.info("Returning null for path: " + path.toString());
+            Resource parent = ModuleLoader.getInstance().getResource(path.getParent());
+            if (parent != null)
+            {
+                RhinoService.LOG.info("Parent Children");
+                RhinoService.LOG.info(parent.listNames());
+            }
             return null;
+        }
 
         RhinoService.LOG.info("Loading require()'ed resource '" + path.toString() + "'");
 
