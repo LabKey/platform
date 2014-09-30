@@ -49,7 +49,7 @@ public interface ExpRunTable extends ExpTable<ExpRunTable.Column>
         Replaced,
         ReplacedByRun,
         ReplacesRun,
-        BatchId
+        Batch
     }
 
     /**

@@ -34,7 +34,7 @@ public interface ExpExperimentTable extends ExpTable<ExpExperimentTable.Column>
         LSID,
         Name,
         Hypothesis,
-        ContactId,
+        Contact,
         ExperimentDescriptionURL,
         Comments,
         Created,

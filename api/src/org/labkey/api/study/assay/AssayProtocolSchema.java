@@ -49,6 +49,7 @@ import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PropertyForeignKey;
 import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -384,17 +385,9 @@ public abstract class AssayProtocolSchema extends AssaySchema
         visibleColumns.remove(FieldKey.fromParts(ExpRunTable.Column.Protocol));
         visibleColumns.remove(FieldKey.fromParts(AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME));
 
-        // Add the batchId column, but replace the lookup with one to the assay's Batches table.
-        ColumnInfo batchColumn = runTable.addColumn(AssayService.BATCH_COLUMN_NAME, ExpRunTable.Column.BatchId);
-        batchColumn.setFk(new LookupForeignKey("RowId")
-        {
-            public TableInfo getLookupTableInfo()
-            {
-                ExpExperimentTable batchesTable = createBatchesTable(getProtocol(), getProvider(), runTable.getContainerFilter());
-                fixupRenderers(batchesTable);
-                return batchesTable;
-            }
-        });
+        // Add the batch column, but replace the lookup with one to the assay's Batches table.
+        ColumnInfo batchColumn = runTable.addColumn(AssayService.BATCH_COLUMN_NAME, ExpRunTable.Column.Batch);
+        batchColumn.setFk(new QueryForeignKey(this, getContainer(), AssayProtocolSchema.BATCHES_TABLE_NAME, "RowId", null));
 
         visibleColumns.add(FieldKey.fromParts(batchColumn.getName()));
         FieldKey batchPropsKey = FieldKey.fromParts(batchColumn.getName());
