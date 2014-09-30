@@ -10,5 +10,5 @@ Ext.Msg = {
     }
 };
 
-Ext.num = Ext.Number.from
+Ext.num = Ext.Number.from;
 

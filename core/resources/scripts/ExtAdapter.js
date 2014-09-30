@@ -58,12 +58,12 @@ exports.Adapter = {
     query: Ext.query,
 
     Version: Ext.Version
-}
+};
 
 if (Ext.Version == 4){
     exports.Adapter.Ajax = {
         request: require("/labkey/adapter/ext4Bridge").request
-    }
+    };
 
     exports.Adapter.decode = Ext.JSON.decode;
 
