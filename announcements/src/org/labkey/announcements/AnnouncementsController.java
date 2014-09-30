@@ -799,11 +799,11 @@ public class AnnouncementsController extends SpringActionController
             {
                 AnnouncementManager.insertAnnouncement(c, u, insert, files);
 
-                // update the parent message setting it active
+                // update the parent message setting it match the status of the update
                 AnnouncementModel parent = AnnouncementManager.getAnnouncement(getContainer(), insert.getParent(), true);
                 if (parent != null)
                 {
-                    parent.setStatus(DiscussionService.ACTIVE);
+                    parent.setStatus(insert.getStatus());
                     Table.update(u, _comm.getTableInfoAnnouncements(), parent, parent.getRowId());
                 }
             }
