@@ -333,8 +333,11 @@ LABKEY.vis.Geom.DataspaceBoxPlot = function(config){
     this.outlierFill = ('outlierFill' in config && config.outlierFill != null && config.outlierFill != undefined) ? config.outlierFill : '#000000';
     this.pointOpacity = ('outlierOpacity' in config && config.outlierOpacity != null && config.outlierOpacity != undefined) ? config.outlierOpacity : .5;
     this.pointSize = ('outlierSize' in config && config.outlierSize != null && config.outlierSize != undefined) ? config.outlierSize : 3;
-    this.binRowLimit = ('binRowLimit' in config && config.binRowLimit != null && config.binRowLimit != undefined) ? config.binRowLimit : 5000;
     this.size = ('binSize' in config && config.binSize != null && config.binSize != undefined) ? config.binSize : 5;
+
+    // binning geom specific
+    this.binRowLimit = ('binRowLimit' in config && config.binRowLimit != null && config.binRowLimit != undefined) ? config.binRowLimit : 5000;
+    this.colorRange = ('colorRange' in config && config.colorRange != null && config.colorRange != undefined) ? config.colorRange : ["#e6e6e6", "#000000"]; // lightish-gray -> black
 
     return this;
 };
