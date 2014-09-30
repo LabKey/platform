@@ -22,13 +22,14 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
+import org.labkey.api.gwt.client.util.StringUtils;
 import org.labkey.api.message.digest.DailyMessageDigest;
 import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.ContextListener;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.WebPartFactory;
@@ -38,11 +39,12 @@ import org.labkey.filecontent.message.FileEmailConfig;
 import org.labkey.filecontent.message.ShortMessageDigest;
 
 import javax.servlet.ServletContext;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 
@@ -83,7 +85,57 @@ public class FileContentModule extends DefaultModule
     @Override
     public Collection<String> getSummary(Container c)
     {
-        return Collections.emptyList();
+        List<String> result = new ArrayList<>();
+        FileContentService service = ServiceRegistry.get().getService(FileContentService.class);
+        File file = service.getFileRoot(c, FileContentService.ContentType.files);
+        if (file != null && NetworkDrive.exists(file) && file.isDirectory())
+        {
+            int fileCount = 0;
+            int directoryCount = 0;
+            File[] children = file.listFiles();
+            if (children != null)
+            {
+                List<String> fileNames = new ArrayList<>();
+                List<String> directoryNames = new ArrayList<>();
+                for (File child : children)
+                {
+                    if (child.isFile())
+                    {
+                        fileCount++;
+                        if (fileNames.size() < 3)
+                        {
+                            fileNames.add(child.getName());
+                        }
+                    }
+                    else
+                    {
+                        directoryCount++;
+                        if (directoryNames.size() < 3)
+                        {
+                            directoryNames.add(child.getName());
+                        }
+                    }
+                }
+                if (fileCount == 1)
+                {
+                    result.add("One file: " + fileNames.get(0));
+                }
+                if (fileCount > 1)
+                {
+                    result.add(fileCount + " files, including: " + StringUtils.join(fileNames, ", "));
+                }
+                if (directoryCount == 1)
+                {
+                    result.add("One directory in the file system, which may contain additional files: " + directoryNames.get(0));
+                }
+                if (directoryCount > 1)
+                {
+                    result.add(directoryCount + " directories in the file system, which may contain additional files, including: " + StringUtils.join(directoryNames, ", "));
+                }
+            }
+        }
+        return result;
+
     }
 
     public void doStartup(ModuleContext moduleContext)

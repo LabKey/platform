@@ -471,7 +471,7 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
 
         if (null != dir && dir.exists())
         {
-            moveToDeleted(dir);
+            FileUtil.deleteDir(dir);
         }
 
         ContainerUtil.purgeTable(CoreSchema.getInstance().getMappedDirectories(), c, null);
@@ -540,50 +540,8 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
                 }
                 break;
             }
-
-            // this looks to be obsolete code
-/*
-            case Parent:        // container move event
-            {
-                Container oldParent = (Container) propertyChangeEvent.getOldValue();
-                File oldParentFile = null;
-                try
-                {
-                    oldParentFile = getMappedDirectory(oldParent, false);
-                }
-                catch (MissingRootDirectoryException ex)
-                {
-                    _log.error(ex);
-                }
-                if (null == oldParentFile)
-                    return;
-                File oldDir = new File(oldParentFile, c.getName());
-                if (!oldDir.exists())
-                    return;
-
-                File newDir = null;
-                try
-                {
-                    newDir = getMappedDirectory(c, false);
-                }
-                catch (MissingRootDirectoryException ex)
-                {
-                }
-                //Move stray content out of the way
-                if (null != newDir && newDir.exists())
-                   moveToDeleted(newDir);
-
-                oldDir.renameTo(newDir);
-                break;
-            }
-*/
         }
     }
-
-//    public AttachmentParent[] getNamedAttachmentDirectories(Container c) throws SQLException
-//    {
-//        return Table.select(CoreSchema.getInstance().getMappedDirectories(), Table.ALL_COLUMNS, SimpleFilter.createContainerFilter(c), null, FileSystemAttachmentParent.class);
-//    }
 
     public @Nullable String getFolderName(FileContentService.ContentType type)
     {
@@ -592,9 +550,28 @@ public class FileContentServiceImpl implements FileContentService, ContainerMana
         return null;
     }
 
-    static void moveToDeleted(File fileToMove)
+
+    /**
+     * Move the file or directory into a ".deleted" directory under the parent directory.
+     * @return True if succesfully moved.
+     */
+    private static boolean moveToDeleted(File fileToMove)
     {
-        FileUtil.moveToDeleted(fileToMove);
+        if (!fileToMove.exists())
+            return false;
+
+        File parent = fileToMove.getParentFile();
+
+        File deletedDir = new File(parent, ".deleted");
+        if (!deletedDir.exists())
+            if (!deletedDir.mkdir())
+                return false;
+
+        File newLocation = new File(deletedDir, fileToMove.getName());
+        if (newLocation.exists())
+            FileUtil.deleteDir(newLocation);
+
+        return fileToMove.renameTo(newLocation);
     }
 
     static void logFileAction(File directory, String fileName, FileAction action, User user)

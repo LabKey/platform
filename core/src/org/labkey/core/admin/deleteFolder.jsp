@@ -114,7 +114,7 @@
                 </li><%
             } %>
             </ul></td></tr>
-            <tr><td><%=h(recurse ? "They" : "It")%> may contain objects that are not listed.</td></tr>
+            <tr><td><%=h(recurse ? "They" : "It")%> may contain other objects that are not listed.</td></tr>
             <tr><td>&nbsp;</td></tr><%
         } %>
             <tr><td>Are you <u>sure</u> you want to permanently delete <%=h(containerType)%> <b><%=h(name)%></b><%=h(recurse ? ", all its subfolders," : "")%> and all the objects <%=h(recurse ? "they contain" : "it contains")%>?</td></tr>

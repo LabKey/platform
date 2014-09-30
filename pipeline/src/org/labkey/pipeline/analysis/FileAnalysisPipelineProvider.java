@@ -151,7 +151,7 @@ public class FileAnalysisPipelineProvider extends AbstractFileAnalysisProvider<F
             // CONSIDER: Perform file delete in post-commit transaction
             if (unused)
             {
-                if (FileUtil.moveToDeleted(analysisDir))
+                if (FileUtil.deleteDir(analysisDir))
                 {
                     Logger.getLogger(FileAnalysisPipelineProvider.class).info(String.format("Job '%s' analysis directory no longer referenced by any runs and was moved to .deleted: %s", sf.getInfo(), analysisDir));
 
