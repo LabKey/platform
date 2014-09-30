@@ -185,7 +185,7 @@ public class ParticipantIdImportHelper
     public static class ParticipantIdTest extends Assert
     {
         @Test
-        public void testAliasLookup() throws ValidationException
+        public void testAliasLookup()
         {
             HashMap<String, String> map = new HashMap<>();
             map.put("IdAnimal01", "IdAnimal01_ID");
@@ -196,25 +196,37 @@ public class ParticipantIdImportHelper
                     map
                     );
             // the map is populated with values to return upon translation
-            String result1 = h.translateParticipantId("IdAnimal01");
-            assertEquals(result1, "IdAnimal01_ID");
-            String result3 = h.translateParticipantId("IdAnimal03");
-            assertEquals(result3, "IdAnimal03_ID");
+            try
+            {
+                String result1 = h.translateParticipantId((Object) "IdAnimal01");
+                assertEquals(result1, "IdAnimal01_ID");
+                String result3 = h.translateParticipantId((Object) "IdAnimal03");
+                assertEquals(result3, "IdAnimal03_ID");
+            }
+            catch (ValidationException e) {
+                assert(false); // fail
+            }
         }
 
         @Test
-        public void testEmptyAliasLookup() throws ValidationException
+        public void testEmptyAliasLookup()
         {
             HashMap<String, String> map = new HashMap<>();
             ParticipantIdImportHelper h = new ParticipantIdImportHelper(
                     map
             );
-            // the map is empty, so values should be "translated" back to themselves
-            String result1 = h.translateParticipantId("IdAnimal01");
-            assertEquals(result1, "IdAnimal01");
-            String result3;
-            result3 = h.translateParticipantId((Object) "IdAnimal03");
-            assertEquals(result3, "IdAnimal03");
+            try
+            {
+                // the map is empty, so values should be "translated" back to themselves
+                String result1 = h.translateParticipantId((Object) "IdAnimal01");
+                assertEquals(result1, "IdAnimal01");
+                String result3 = h.translateParticipantId((Object) "IdAnimal03");
+                assertEquals(result3, "IdAnimal03");
+            }
+            catch (ValidationException e)
+            {
+                assert(false); // fail
+            }
         }
     }
 }
