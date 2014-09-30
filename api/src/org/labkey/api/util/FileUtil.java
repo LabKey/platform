@@ -105,30 +105,6 @@ public class FileUtil
     }
 
     /**
-     * Move the file or directory into a ".deleted" directory under the parent directory.
-     * @param fileToMove
-     * @return True if succesfully moved.
-     */
-    public static boolean moveToDeleted(File fileToMove)
-    {
-        if (!fileToMove.exists())
-            return false;
-
-        File parent = fileToMove.getParentFile();
-
-        File deletedDir = new File(parent, ".deleted");
-        if (!deletedDir.exists())
-            if (!deletedDir.mkdir())
-                return false;
-
-        File newLocation = new File(deletedDir, fileToMove.getName());
-        if (newLocation.exists())
-            deleteDir(newLocation);
-
-        return fileToMove.renameTo(newLocation);
-    }
-
-    /**
      * Remove text right of a specific number of periods, including the periods, from a file's name.
      * <ul>
      *  <li>C:\dir\name.ext, 1 => name</li>
