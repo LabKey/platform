@@ -73,7 +73,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
                 return setupNonEditableCol(createUserColumn(alias, _rootTable.getColumn("ModifiedBy")));
             case Hypothesis:
                 return wrapColumn(alias, _rootTable.getColumn("Hypothesis"));
-            case ContactId:
+            case Contact:
                 ColumnInfo contactCol = wrapColumn(alias, _rootTable.getColumn("ContactId"));
                 contactCol.setLabel("Contact");
                 return contactCol;
@@ -164,7 +164,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         colRowId.setFk(new RowIdForeignKey(colRowId));
         addColumn(Column.Name);
         addColumn(Column.Hypothesis);
-        addColumn(Column.ContactId);
+        addColumn(Column.Contact);
         addColumn(Column.ExperimentDescriptionURL);
         addColumn(Column.Comments);
         addColumn(Column.Created);

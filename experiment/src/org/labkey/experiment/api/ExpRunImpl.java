@@ -125,21 +125,12 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
         if (_object.getBatchId() == null)
             return null;
 
-        final SQLFragment sql = new SQLFragment("SELECT E.* FROM ");
-        sql.append(ExperimentServiceImpl.get().getTinfoExperiment(), "E");
-        sql.append(" WHERE rowid=?").add(_object.getBatchId());
-
-        Experiment batch = new SqlSelector(ExperimentServiceImpl.get().getExpSchema(), sql).getObject(Experiment.class);
-        if (batch != null)
-        {
-            ExpExperimentImpl ret = new ExpExperimentImpl(batch);
-            assert checkBatch(ret);
-            return ret;
-        }
-        else
-        {
+        ExpExperimentImpl batch = ExperimentServiceImpl.get().getExpExperiment(_object.getBatchId());
+        if (batch == null)
             return null;
-        }
+
+        assert checkBatch(batch);
+        return batch;
     }
 
     private boolean checkBatch(ExpExperimentImpl batch)

@@ -390,7 +390,7 @@ public class ExperimentController extends SpringActionController
 
             DetailsView detailsView = new DetailsView(new DataRegion(), _experiment.getRowId());
             detailsView.getDataRegion().setTable(runGroupsTable);
-            detailsView.getDataRegion().addColumns(runGroupsTable, "RowId,Name,Created,Modified,ContactId,ExperimentDescriptionURL,Hypothesis,Comments");
+            detailsView.getDataRegion().addColumns(runGroupsTable, "RowId,Name,Created,Modified,Contact,ExperimentDescriptionURL,Hypothesis,Comments");
             detailsView.getDataRegion().getDisplayColumn(0).setVisible(false);
             detailsView.getDataRegion().getDisplayColumn(2).setWidth("60%");
 

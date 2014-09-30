@@ -410,9 +410,8 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                 replacesRunCol.setLabel("Replaces");
                 replacesRunCol.setDescription("The run that this run replaces, usually with updated or corrected information");
                 return replacesRunCol;
-            case BatchId:
+            case Batch:
                 ColumnInfo batchIdCol = wrapColumn(alias, _rootTable.getColumn("BatchId"));
-                batchIdCol.setLabel("Batch");
                 batchIdCol.setUserEditable(false);
                 batchIdCol.setShownInInsertView(false);
                 batchIdCol.setShownInUpdateView(false);
