@@ -487,7 +487,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         if (res == null || !res.isFile())
             return null;
 
-        RhinoService.LOG.debug("Loading require()'ed resource '" + path.toString() + "'");
+        RhinoService.LOG.info("Loading require()'ed resource '" + path.toString() + "'");
 
         ResourceRef ref = new ResourceRef(res);
         try
@@ -525,6 +525,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
             }
             catch (IOException e)
             {
+                RhinoService.LOG.info(e.getMessage());
                 // XXX: log to mothership
                 return null;
             }
@@ -572,6 +573,7 @@ class RhinoEngine extends RhinoScriptEngine
 
             if (topLevel == null)
             {
+                RhinoService.LOG.info("RhinoEngine.createTopLevel: initialize cache");
                 // Create the shared module script cache.
                 // This cache is managed by Rhino's module provider implementation.
                 ModuleSourceProvider moduleSourceProvider = new LabKeyModuleSourceProvider();
