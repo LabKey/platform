@@ -81,6 +81,17 @@
     var hidden = true;
 
     /**
+     * Create a Related Issue - prompt with a warning before creating the issue
+     * if one is not careful one might post sensitive data from a private list to a public one
+     */
+    function createRelatedIssue() {
+        var response = window.confirm("Warning:  When creating a related issue in a public list, one may potentially expose private data.  Are you sure that you wish to continue?");
+        if (response == true) {
+            document.forms.CreateIssue.submit();
+        }
+    }
+
+    /**
     * Toggle the hidden flag, set the hide button text to reflect state, and show or hide all related comments.
      */
     function toggleComments() {
@@ -142,7 +153,7 @@
     <%
     if (showRelatedIssuesButton)
     {
-        %><td><%= textLink("create related issue", "javascript:document.forms.CreateIssue.submit()") %></td><%
+        %><td><%= textLink("create related issue", "javascript:createRelatedIssue()") %></td><%
     }
     if ( IssueManager.hasRelatedIssues(issue, user))
     {
