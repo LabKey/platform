@@ -583,6 +583,7 @@ public class QueryProfiler
 
             if (null != logger)
             {
+                LOG.info("Starting to log statistics for queries prior to web application shut down");
                 Appender appender = logger.getAppender("QUERY_STATS");
                 if (null != appender && appender instanceof RollingFileAppender)
                     ((RollingFileAppender)appender).rollOver();
@@ -597,6 +598,7 @@ public class QueryProfiler
                 {
                     LOG.error("Exception writing query stats", e);
                 }
+                LOG.info("Completed logging statistics for queries prior to web application shut down");
             }
         }
     }
