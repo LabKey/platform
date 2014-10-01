@@ -22,8 +22,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.NamedObjectList;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.ContainerFilterable;
-import org.labkey.api.data.DelegatingContainerFilter;
 import org.labkey.api.data.ForeignKey;
 import org.labkey.api.data.LookupColumn;
 import org.labkey.api.data.RenderContext;
@@ -120,14 +118,10 @@ public class QueryForeignKey implements ForeignKey
         try
         {
             lookupTable = getLookupTableInfo();
-            if (foreignKey.getParentTable() != null && foreignKey.getParentTable().supportsContainerFilter() && lookupTable != null && lookupTable.supportsContainerFilter())
-            {
-                ContainerFilterable table = (ContainerFilterable) lookupTable;
-                if (table.hasDefaultContainerFilter())
-                {
-                    table.setContainerFilter(new DelegatingContainerFilter(foreignKey.getParentTable(), true));
-                }
-            }
+            if (null == lookupTable)
+                return null;
+
+            LookupForeignKey.propagateContainerFilter(foreignKey, lookupTable);
         }
         catch (QueryParseException qpe)
         {
@@ -135,8 +129,6 @@ public class QueryForeignKey implements ForeignKey
             FieldKey key = new FieldKey(foreignKey.getFieldKey(), name);
             return qpe.makeErrorColumnInfo(foreignKey.getParentTable(), key);
         }
-        if (null == lookupTable)
-            return null;
 
         if (displayField == null)
         {

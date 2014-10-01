@@ -222,7 +222,7 @@ abstract public class AbstractFormSection implements FormSection
 
                     //finally check InsertPermission, which will be required for CustomPermissionTable
                     TableInfo ti = ctx.getTable(pair.first, pair.second);
-                    return ti.hasPermission(ctx.getUser(), InsertPermission.class);
+                    return ti != null && ti.hasPermission(ctx.getUser(), InsertPermission.class);
                 }
             }
         }

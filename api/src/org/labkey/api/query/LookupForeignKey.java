@@ -105,22 +105,21 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
     public ColumnInfo createLookupColumn(ColumnInfo parent, String displayField)
     {
         TableInfo table = getLookupTableInfo();
+        if (table == null)
+        {
+            return null;
+        }
         if (displayField == null)
         {
             displayField = _displayColumnName;
-            if (displayField == null && table != null)
+            if (displayField == null)
                 displayField = table.getTitleColumn();
         }
         if (displayField == null)
             return null;
-        if (table.supportsContainerFilter() && parent.getParentTable().getContainerFilter() != null)
-        {
-            ContainerFilterable newTable = (ContainerFilterable)table;
 
-            // Only override if the new table doesn't already have some special filter
-            if (newTable.hasDefaultContainerFilter())
-                newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable(), true));
-        }
+        propagateContainerFilter(parent, table);
+
         LookupColumn result = LookupColumn.create(parent, getPkColumn(table), table.getColumn(displayField), _prefixColumnCaption);
         if (result != null)
         {
@@ -137,6 +136,18 @@ abstract public class LookupForeignKey extends AbstractForeignKey implements Clo
         }
 
         return result;
+    }
+
+    public static void propagateContainerFilter(ColumnInfo parent, TableInfo table)
+    {
+        if (table.supportsContainerFilter() && parent.getParentTable().getContainerFilter() != null)
+        {
+            ContainerFilterable newTable = (ContainerFilterable)table;
+
+            // Only override if the new table doesn't already have some special filter
+            if (newTable.hasDefaultContainerFilter())
+                newTable.setContainerFilter(new DelegatingContainerFilter(parent.getParentTable(), true));
+        }
     }
 
     /**
