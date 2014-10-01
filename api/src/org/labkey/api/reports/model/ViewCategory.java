@@ -44,9 +44,10 @@ public class ViewCategory extends Entity implements Comparable
     {
     }
 
-    protected ViewCategory(String label, @Nullable ViewCategory parent)
+    protected ViewCategory(String label, Container c, @Nullable ViewCategory parent)
     {
         _label = label;
+        setContainer(c.getId());
         if (parent != null)
             _parentId = parent.getRowId();
     }
@@ -102,21 +103,32 @@ public class ViewCategory extends Entity implements Comparable
     }
 
     @Nullable
-    public ViewCategory getParent()
+    public ViewCategory getParentCategory()
     {
         if (_parentId != null)
-            return ViewCategoryManager.getInstance().getCategory(_parentId);
+            return ViewCategoryManager.getInstance().getCategory(getContainerId(), _parentId);
         return null;
     }
 
-    public void setParent(ViewCategory parent)
+    public void setParentCategory(ViewCategory parent)
     {
         _parentId = parent != null ? parent.getRowId() : null;
     }
 
+    @Nullable
+    public Integer getParent()
+    {
+        return _parentId;
+    }
+
+    public void setParent(Integer id)
+    {
+        _parentId = id;
+    }
+
     public List<ViewCategory> getSubcategories()
     {
-        return ViewCategoryManager.getInstance().getSubCategories(this);
+        return ViewCategoryManager.getInstance().getSubcategories(this);
     }
 
     public JSONObject toJSON(User currentUser)
@@ -144,7 +156,7 @@ public class ViewCategory extends Entity implements Comparable
         }
         o.put("subCategories", subCategories);
 
-        o.put("parent", null != getParent() ? getParent().getRowId() : -1);
+        o.put("parent", null != getParentCategory() ? getParentCategory().getRowId() : -1);
 
         return o;
     }
@@ -168,9 +180,7 @@ public class ViewCategory extends Entity implements Comparable
         Object parent = info.get("parent");
         if (parent instanceof Integer)
         {
-            ViewCategory parentCategory = ViewCategoryManager.getInstance().getCategory((Integer)parent);
-            if (parentCategory != null)
-                category.setParent(parentCategory);
+            category.setParent((Integer)parent);
         }
         return category;
     }

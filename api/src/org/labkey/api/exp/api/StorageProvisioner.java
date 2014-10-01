@@ -114,8 +114,10 @@ public class StorageProvisioner
             }
             String tableName = dd.getStorageTableName();
             if (null != tableName)
+            {
+                transaction.commit();
                 return tableName;
-
+            }
             tableName = makeTableName(kind, domain);
 
             TableChange change = new TableChange(kind.getStorageSchemaName(), tableName, TableChange.ChangeType.CreateTable);

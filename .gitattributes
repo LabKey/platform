@@ -1110,6 +1110,7 @@ api/src/org/labkey/api/reports/model/DataViewEditForm.java -text
 api/src/org/labkey/api/reports/model/NotificationInfo.java -text
 api/src/org/labkey/api/reports/model/ReportPropsManager.java -text
 api/src/org/labkey/api/reports/model/ViewCategory.java -text
+api/src/org/labkey/api/reports/model/ViewCategoryCache.java -text
 api/src/org/labkey/api/reports/model/ViewCategoryListener.java -text
 api/src/org/labkey/api/reports/model/ViewCategoryManager.java -text
 api/src/org/labkey/api/reports/model/ViewInfo.java -text
@@ -1156,7 +1157,6 @@ api/src/org/labkey/api/reports/report/ScriptEngineReport.java -text
 api/src/org/labkey/api/reports/report/ScriptOutput.java -text
 api/src/org/labkey/api/reports/report/ScriptReport.java -text
 api/src/org/labkey/api/reports/report/ScriptReportDescriptor.java -text
-api/src/org/labkey/api/reports/report/ViewCategoryConverter.java -text
 api/src/org/labkey/api/reports/report/r/AbstractParamReplacement.java -text
 api/src/org/labkey/api/reports/report/r/ParamReplacement.java -text
 api/src/org/labkey/api/reports/report/r/ParamReplacementSvc.java -text

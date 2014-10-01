@@ -23,15 +23,11 @@ import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DatabaseCache;
 import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.data.SQLFragment;
-import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.TableSelector;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContainerUtil;
@@ -58,17 +54,6 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
     private static final ViewCategoryManager _instance = new ViewCategoryManager();
     private static final List<ViewCategoryListener> _listeners = new CopyOnWriteArrayList<>();
 
-    private static DatabaseCache<ViewCategory> _viewCategoryCache;
-
-    synchronized DatabaseCache<ViewCategory> getCategoryCache()
-    {
-        if (_viewCategoryCache == null)
-        {
-            _viewCategoryCache = new DatabaseCache<>(CoreSchema.getInstance().getSchema().getScope(), 300, "View Category");
-        }
-        return _viewCategoryCache;
-    }
-
     private ViewCategoryManager()
     {
         ContainerManager.addContainerListener(this);
@@ -84,93 +69,32 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         return CoreSchema.getInstance().getSchema().getTable("ViewCategory");
     }
 
-    public ViewCategory[] getCategories(Container c, User user)
+    public List<ViewCategory> getCategories(Container c)
     {
-        return getCategories(c, user, new SimpleFilter());
+        return ViewCategoryCache.get().getAllCategories(c.getId());
     }
 
-    public ViewCategory[] getCategories(Container c, User user, SimpleFilter filter)
+    public ViewCategory getCategory(Container c, int rowId)
     {
-        filter.addCondition(FieldKey.fromParts("Container"), c);
-
-        return new TableSelector(getTableInfoCategories(), filter, null).getArray(ViewCategory.class);
+        return getCategory(c.getId(), rowId);
     }
 
-    public ViewCategory getCategory(int rowId)
+    public ViewCategory getCategory(String containerId, int rowId)
     {
-        String cacheKey = getCacheKey(rowId);
-        ViewCategory category = getCategoryCache().get(cacheKey);
-
-        if (category != null)
-            return category;
-
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("rowId"), rowId);
-
-        return new TableSelector(getTableInfoCategories(), filter, null).getObject(ViewCategory.class);
+        return ViewCategoryCache.get().getViewCategory(containerId, rowId);
     }
 
     /**
-     * looks up a view category by it's path
-     * @param c
-     * @param parts An array representing a path heirarchy. For example ["reports"] would represent a top level
+     * looks up a view category by its path
+     * @param c Container
+     * @param parts An array representing a path hierarchy. For example ["reports"] would represent a top level
      *              category named 'reports' whereas ["reports", "R"] would represent a subcategory named 'R' with
-     *              a parent named 'reports'. Current heirarchy depth is limited to one level deep.
-     * @return
+     *              a parent named 'reports'. Current hierarchy depth is limited to one level deep.
+     * @return The ViewCategory or null
      */
     public ViewCategory getCategory(Container c, String... parts)
     {
-        if (parts.length > 2)
-            throw new IllegalArgumentException("Only one level of view category is supported at this time");
-
-        String cacheKey = getCacheKey(c, parts);
-        ViewCategory category = getCategoryCache().get(cacheKey);
-
-        if (category != null)
-            return category;
-
-        ViewCategory parent = null;
-
-        // a subcategory with a parent
-        if (parts.length == 2)
-        {
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), c);
-            filter.addCondition(FieldKey.fromParts("label"), parts[0]);
-            filter.addClause(new SimpleFilter.SQLClause("parent IS NULL", null));
-
-            TableSelector selector = new TableSelector(getTableInfoCategories(), filter, null);
-            ViewCategory[] categories = selector.getArray(ViewCategory.class);
-
-            // should only be one as there is a unique constraint on the db
-            assert categories.length <= 1;
-
-            if (categories.length == 1)
-                parent = categories[0];
-            else
-                // expected a parent but couldn't find one
-                return null;
-        }
-
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), c);
-        filter.addCondition(FieldKey.fromParts("label"), parts[parts.length-1]);
-
-        // a subcategory with a parent
-        if (parent != null)
-            filter.addCondition(FieldKey.fromParts("parent"), parent.getRowId());
-        else
-            filter.addClause(new SimpleFilter.SQLClause("parent IS NULL", null));
-
-        TableSelector selector = new TableSelector(getTableInfoCategories(), filter, null);
-        ViewCategory[] categories = selector.getArray(ViewCategory.class);
-
-        // should only be one as there is a unique constraint on the db
-        assert categories.length <= 1;
-
-        if (categories.length == 1)
-        {
-            getCategoryCache().put(cacheKey, categories[0]);
-            return categories[0];
-        }
-        return null;
+        return ViewCategoryCache.get().getViewCategory(c.getId(), parts);
     }
 
     public void deleteCategory(Container c, User user, ViewCategory category)
@@ -182,7 +106,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
             throw new RuntimeException("You must be an administrator to delete a view category");
 
         List<ViewCategory> categoriesToDelete = new ArrayList<>();
-        category = getCategory(category.getRowId());
+        category = getCategory(category.getContainerId(), category.getRowId());
         if (category == null)
             throw Table.OptimisticConflictException.create(Table.ERROR_DELETED);
 
@@ -197,7 +121,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         SqlExecutor executor = new SqlExecutor(CoreSchema.getInstance().getSchema().getScope());
         executor.execute(sql);
 
-        getCategoryCache().clear();
+        ViewCategoryCache.get().clear(c);
 
         List<Throwable> errors = new ArrayList<>();
         for (ViewCategory vc : categoriesToDelete)
@@ -215,21 +139,33 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
     public ViewCategory saveCategory(Container c, User user, ViewCategory category)
     {
-        ViewCategory ret = null;
+        ViewCategory ret;
         List<Throwable> errors;
 
         if (category.isNew()) // insert
         {
-            // check for duplicates
-            SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("label"), category.getLabel());
-            if (category.getParent() != null)
-                filter.addCondition(FieldKey.fromParts("parent"), category.getParent().getRowId());
-            else
-                filter.addClause(new SimpleFilter.SQLClause("parent IS NULL", null));
+            boolean topLevelCategory = (null == category.getParent());
+            final String[] parts;
 
-            if (getCategories(c, user, filter).length > 0)
+            if (topLevelCategory)
             {
-                if (category.getParent() != null)
+                parts = new String[]{category.getLabel()};
+            }
+            else
+            {
+                ViewCategory parent = category.getParentCategory();
+
+                if (null == parent)
+                    throw new IllegalStateException("Parent does not exist");
+
+                parts = new String[]{parent.getLabel(), category.getLabel()};
+            }
+
+            ViewCategory dup = ViewCategoryManager.getInstance().getCategory(c, parts);
+
+            if (null != dup)
+            {
+                if (topLevelCategory)
                     throw new IllegalArgumentException("There is already a subcategory attached to the same parent with the name: " + category.getLabel());
                 else
                     throw new IllegalArgumentException("There is already a category in this folder with the name: " + category.getLabel());
@@ -238,13 +174,13 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
             ret = Table.insert(user, getTableInfoCategories(), category);
 
-            getCategoryCache().clear();
+            ViewCategoryCache.get().clear(c);
 
             errors = fireCreatedCategory(user, ret);
         }
         else // update
         {
-            ViewCategory existing = getCategory(category.getRowId());
+            ViewCategory existing = getCategory(c, category.getRowId());
             if (existing != null)
             {
                 existing.setLabel(category.getLabel());
@@ -252,7 +188,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
                 ret = Table.update(user, getTableInfoCategories(), existing, existing.getRowId());
 
-                getCategoryCache().clear();
+                ViewCategoryCache.get().clear(c);
 
                 errors = fireUpdateCategory(user, ret);
             }
@@ -271,43 +207,9 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         return ret;
     }
 
-    public List<ViewCategory> getSubCategories(ViewCategory category)
+    public List<ViewCategory> getSubcategories(ViewCategory category)
     {
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("parent"), category.getRowId());
-        filter.addCondition(FieldKey.fromParts("Container"), category.getContainerId());
-
-        TableSelector selector = new TableSelector(getTableInfoCategories(), filter, null);
-        ViewCategory[] categories = selector.getArray(ViewCategory.class);
-
-        return Arrays.asList(categories);
-    }
-
-    private String getCacheKey(Container c, String[] parts)
-    {
-        StringBuilder sb = new StringBuilder("ViewCategory-" + c);
-
-        if (parts != null)
-        {
-            for (String part : parts)
-                sb.append('-').append(parts);
-        }
-        return sb.toString();
-    }
-
-    private String getCacheKey(ViewCategory category)
-    {
-        if (category == null)
-            return null;
-
-        if (category.getParent() != null)
-            return getCacheKey(ContainerManager.getForId(category.getContainerId()), new String[]{category.getParent().getLabel(), category.getLabel()});
-        else
-            return getCacheKey(ContainerManager.getForId(category.getContainerId()), new String[]{category.getLabel()});
-    }
-
-    private String getCacheKey(int categoryId)
-    {
-        return "ViewCategory-" + categoryId;
+        return ViewCategoryCache.get().getSubcategories(category.getContainerId(), category.getRowId());
     }
 
     public static void addCategoryListener(ViewCategoryListener listener)
@@ -326,7 +228,8 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
         for (ViewCategoryListener l : _listeners)
         {
-            try {
+            try
+            {
                 l.categoryDeleted(user, category);
             }
             catch (Throwable t)
@@ -343,7 +246,8 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
         for (ViewCategoryListener l : _listeners)
         {
-            try {
+            try
+            {
                 l.categoryUpdated(user, category);
             }
             catch (Throwable t)
@@ -360,7 +264,8 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
         for (ViewCategoryListener l : _listeners)
         {
-            try {
+            try
+            {
                 l.categoryCreated(user, category);
             }
             catch (Throwable t)
@@ -376,7 +281,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
      * @param parts An array representing a path heirarchy. For example ["reports"] would represent a top level
      *              category named 'reports' whereas ["reports", "R"] would represent a subcategory named 'R' with
      *              a parent named 'reports'. Current heirarchy depth is limited to one level deep.
-     * @return
+     * @return The requested ViewCategory
      */
 
     public ViewCategory ensureViewCategory(Container c, User user, String... parts)
@@ -394,11 +299,11 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
                 parent = getCategory(c, parts[0]);
                 if (parent == null)
                 {
-                    parent = new ViewCategory(parts[0], null);
+                    parent = new ViewCategory(parts[0], c, null);
                     parent = saveCategory(c, user, parent);
                 }
             }
-            category = new ViewCategory(parts[parts.length-1], parent);
+            category = new ViewCategory(parts[parts.length - 1], c, parent);
             category = saveCategory(c, user, category);
         }
         return category;
@@ -417,9 +322,9 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
     {
         StringBuilder sb = new StringBuilder();
 
-        if (category.getParent() != null)
+        if (category.getParentCategory() != null)
         {
-            sb.append(category.getParent().getLabel().replaceAll("&", ENCODED_AMP)).append("&");
+            sb.append(category.getParentCategory().getLabel().replaceAll("&", ENCODED_AMP)).append("&");
         }
         sb.append(category.getLabel().replaceAll("&", ENCODED_AMP));
 
@@ -500,9 +405,9 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         @Override
         protected void fixupMap(Map<String, Object> m, ViewCategory bean)
         {
-            if (null != bean.getParent())
+            if (null != bean.getParentCategory())
             {
-                m.put("Parent", bean.getParent().getRowId());
+                m.put("Parent", bean.getParentCategory().getRowId());
             }
         }
     }
@@ -549,10 +454,11 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
     }
 
     public static final int UNCATEGORIZED_ROWID = 0;
-    public List<ViewCategoryTreeNode> getCategorySubcriptionTree(Container container, User user, Set<Integer> subscriptionSet)
+
+    public List<ViewCategoryTreeNode> getCategorySubcriptionTree(Container container, Set<Integer> subscriptionSet)
     {
         // We take advantage of the fact that this is at most 2 levels; the 1st level may have multiple categories
-        List<ViewCategory> categories = Arrays.asList(getCategories(container, user));
+        List<ViewCategory> categories = getCategories(container);
         sortViewCategories(categories);
         List<ViewCategoryTreeNode> viewCategoryTreeNodes = new ArrayList<>();
 
@@ -563,7 +469,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
         for (ViewCategory category : categories)
         {
-            if (null == category.getParent())
+            if (null == category.getParentCategory())
             {
                 ViewCategoryTreeNode treeNode = makeTreeNode(category, subscriptionSet);
                 List<ViewCategory> subCategories = category.getSubcategories();
@@ -671,7 +577,8 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
                     subcat.setLabel(subLabel);
                     subcat.setDisplayOrder(i++);
-                    subcat.setParent(cat);
+                    subcat.setParentCategory(cat);
+                    subcat.setContainerId(c.getId());
 
                     subcat = mgr.saveCategory(c, user, subcat);
 
@@ -693,7 +600,8 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
                     subcat.setLabel(subLabels[0]);
                     subcat.setDisplayOrder(i++);
-                    subcat.setParent(cat);
+                    subcat.setParentCategory(cat);
+                    subcat.setContainer(cat.getContainerId());
 
                     mgr.saveCategory(c, user, subcat);
                 }
@@ -705,14 +613,17 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
                 assertTrue("Duplicate subcategory name was allowed", duplicate);
             }
 
-            // get categories
+            // get top-level categories
             Map<String, ViewCategory> categoryMap = new HashMap<>();
-            for (ViewCategory cat : mgr.getCategories(c, user))
+            for (ViewCategory cat : mgr.getCategories(c))
             {
-                categoryMap.put(cat.getLabel(), cat);
+                if (null == cat.getParentCategory())
+                    categoryMap.put(cat.getLabel(), cat);
             }
 
+            assertEquals(labels.length, categoryMap.size());
             List<String> subCategoryNames = Arrays.asList(subLabels);
+
             for (String label : labels)
             {
                 assertTrue(categoryMap.containsKey(label));
@@ -722,7 +633,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
                 for (ViewCategory subCategory : cat.getSubcategories())
                 {
                     assertTrue(subCategoryNames.contains(subCategory.getLabel()));
-                    assertTrue(subCategory.getParent().getRowId() == cat.getRowId());
+                    assertTrue(subCategory.getParentCategory().getRowId() == cat.getRowId());
                 }
             }
 
@@ -745,7 +656,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
             ViewCategory top = mgr.ensureViewCategory(c, user, "top");
 
             assertNotNull(top);
-            assertTrue(top.getParent() == null);
+            assertTrue(top.getParentCategory() == null);
             assertTrue(top.getLabel().equals("top"));
 
             ViewCategory subTop = mgr.ensureViewCategory(c, user, "top", "sub");
@@ -754,17 +665,17 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
             mgr.ensureViewCategory(c, user, "top");
 
             assertNotNull(subTop);
-            assertTrue(subTop.getParent().getLabel().equals("top"));
+            assertTrue(subTop.getParentCategory().getLabel().equals("top"));
             assertTrue(subTop.getLabel().equals("sub"));
 
             ViewCategory subBottom = mgr.ensureViewCategory(c, user, "bottom", "sub");
 
             assertNotNull(subBottom);
-            assertTrue(subBottom.getParent().getLabel().equals("bottom"));
+            assertTrue(subBottom.getParentCategory().getLabel().equals("bottom"));
             assertTrue(subBottom.getLabel().equals("sub"));
 
             mgr.deleteCategory(c, user, top);
-            mgr.deleteCategory(c, user, subBottom.getParent());
+            mgr.deleteCategory(c, user, subBottom.getParentCategory());
         }
 
         @AfterClass

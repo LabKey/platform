@@ -24,6 +24,10 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.cache.BlockingStringKeyCache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.StringKeyCache;
+import org.labkey.api.cache.Wrapper;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.RowMapFactory;
@@ -91,7 +95,8 @@ public class OntologyManager
 	private static final DatabaseCache<Map<String, ObjectProperty>> mapCache = new DatabaseCache<>(getExpSchema().getScope(), 5000, "Property maps");
 	private static final DatabaseCache<Integer> objectIdCache = new DatabaseCache<>(getExpSchema().getScope(), 1000, "ObjectIds");
     private static final DatabaseCache<PropertyDescriptor> propDescCache = new DatabaseCache<>(getExpSchema().getScope(), 10000, "Property descriptors");
-	private static final DatabaseCache<DomainDescriptor> domainDescCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors");
+	private static final DatabaseCache<DomainDescriptor> domainDescByURICache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain descriptors by URI");
+	private static final StringKeyCache<DomainDescriptor> domainDescByIDCache = new BlockingStringKeyCache<>(new DatabaseCache<Wrapper<DomainDescriptor>>(getExpSchema().getScope(), 2000, "Domain descriptors by ID"), new DomainDescriptorLoader());
 	private static final DatabaseCache<List<Pair<String, Boolean>>> domainPropertiesCache = new DatabaseCache<>(getExpSchema().getScope(), 2000, "Domain properties");
     private static final Container _sharedContainer = ContainerManager.getSharedContainer();
     public static final String MV_INDICATOR_SUFFIX = "mvindicator";
@@ -1094,7 +1099,8 @@ public class OntologyManager
                         DomainDescriptor dd = getDomainDescriptor(domUri, c);
                         if (dd.getContainer().getId().equals(c.getId()))
                         {
-                            domainDescCache.remove(getCacheKey(dd));
+                            domainDescByURICache.remove(getURICacheKey(dd));
+                            domainDescByIDCache.remove(getIDCacheKey(dd));
                             domainPropertiesCache.clear();
                             dd.setContainer(project);
                             dd.setProject(project);
@@ -1533,7 +1539,7 @@ public class OntologyManager
             try
             {
                 dd = Table.insert(null, getTinfoDomainDescriptor(), ddIn);
-                domainDescCache.put(getCacheKey(dd),dd);
+                domainDescByURICache.put(getURICacheKey(dd), dd);
                 return dd;
             }
             catch (RuntimeSQLException x)
@@ -1646,7 +1652,7 @@ public class OntologyManager
             sqlUpdate.add(dd.getDomainId());
             new SqlExecutor(getExpSchema()).execute(sqlUpdate);
         }
-        domainPropertiesCache.remove(getCacheKey(dd));
+        domainPropertiesCache.remove(getURICacheKey(dd));
         return pd;
     }
 
@@ -1928,10 +1934,19 @@ public class OntologyManager
         return pd;
 	}
     
+    private static class DomainDescriptorLoader implements CacheLoader<String, DomainDescriptor>
+    {
+        @Override
+        public DomainDescriptor load(String key, @Nullable Object argument)
+        {
+            int id = Integer.valueOf(key);
+            return new TableSelector(getTinfoDomainDescriptor()).getObject(id, DomainDescriptor.class);
+        }
+    }
 
     public static DomainDescriptor getDomainDescriptor(int id, boolean force)
     {
-        return new TableSelector(getTinfoDomainDescriptor()).getObject(id, DomainDescriptor.class);
+        return domainDescByIDCache.get(String.valueOf(id));
     }
 
 
@@ -1944,12 +1959,12 @@ public class OntologyManager
 	{
         // cache lookup by project. if not found at project level, check to see if global
         String key = getCacheKey(domainURI , c);
-        DomainDescriptor dd = domainDescCache.get(key);
+        DomainDescriptor dd = domainDescByURICache.get(key);
         if (null != dd)
             return dd;
 
         key = getCacheKey(domainURI , _sharedContainer);
-        dd = domainDescCache.get(key);
+        dd = domainDescByURICache.get(key);
         if (null != dd)
             return dd;
 
@@ -1973,8 +1988,8 @@ public class OntologyManager
                 if (dd.getProject().equals(_sharedContainer))
                     dd = ddArray[1];
             }
-            key = getCacheKey(dd);
-            domainDescCache.put(key, dd);
+            key = getURICacheKey(dd);
+            domainDescByURICache.put(key, dd);
         }
         _log.debug("getDomainDescriptor for "+ domainURI + " container= "+ c.getPath());
         return dd;
@@ -2009,13 +2024,19 @@ public class OntologyManager
         return Collections.unmodifiableCollection(ret.values());
     }
     
-    public static String getCacheKey (DomainDescriptor dd)
+    public static String getURICacheKey(DomainDescriptor dd)
     {
         return getCacheKey(dd.getDomainURI(), dd.getContainer());
     }
 
 
-    public static String getCacheKey (PropertyDescriptor pd)
+    public static String getIDCacheKey(DomainDescriptor dd)
+    {
+        return String.valueOf(dd.getDomainId());
+    }
+
+
+    public static String getCacheKey(PropertyDescriptor pd)
     {
         return getCacheKey(pd.getPropertyURI(), pd.getContainer());
     }
@@ -2267,15 +2288,17 @@ public class OntologyManager
     {
         assert dd.getDomainId() != 0;
         dd = Table.update(null, getTinfoDomainDescriptor(), dd, dd.getDomainId());
-        domainDescCache.remove(getCacheKey(dd));
-        domainPropertiesCache.remove(getCacheKey(dd));
+        domainDescByURICache.remove(getURICacheKey(dd));
+        domainDescByIDCache.remove(getIDCacheKey(dd));
+        domainPropertiesCache.remove(getURICacheKey(dd));
         return dd;
     }
 
 	public static void clearCaches()
 	{
 		ExperimentService.get().clearCaches();
-        domainDescCache.clear();
+        domainDescByURICache.clear();
+        domainDescByIDCache.clear();
         domainPropertiesCache.clear();
         propDescCache.clear();
 		mapCache.clear();
