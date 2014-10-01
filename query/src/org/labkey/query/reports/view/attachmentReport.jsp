@@ -231,7 +231,7 @@
                     authorUserId: <%=form.getAuthor()%>,
                     status: <%=q(form.getStatus().name())%>,
                     refreshDate: refreshDateStr ? new Date(refreshDateStr) : null,
-                    category: {rowid : <%=form.getViewCategory() != null ? form.getViewCategory().getRowId() : null%>},
+                    category: {rowid : <%=form.getCategory()%>},
                     description: <%=q(form.getDescription())%>,
                     shared: <%=form.getShared()%>
                 }
