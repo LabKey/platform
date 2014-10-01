@@ -30,6 +30,7 @@ import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
@@ -505,6 +506,12 @@ public class StudyServiceImpl implements StudyService.Service
         }
 
         return result;
+    }
+
+    @Override
+    public DbSchema getDatasetSchema()
+    {
+        return StudySchema.getInstance().getDatasetSchema();
     }
 
     public List<SecurableResource> getSecurableResources(Container container, User user)
