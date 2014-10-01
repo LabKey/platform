@@ -161,7 +161,6 @@ Ext4.define('LABKEY.ext4.DataViewPropertiesPanel', {
                 queryMode      : 'remote',
                 displayField   : 'label',
                 valueField     : 'rowid',
-                emptyText      : 'Choose Category...',
                 labelWidth : 120,
                 width      : 400,
                 listeners      : {
