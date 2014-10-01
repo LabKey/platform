@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportOptions;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -129,6 +130,8 @@ public class StudyService
          * permission to read or modify all of the datasets that are returned.
          */
         public Set<? extends DataSet> getDatasetsForAssayRuns(Collection<ExpRun> runs, User user);
+
+        public DbSchema getDatasetSchema();
 
         public void addAssayRecallAuditEvent(DataSet def, int rowCount, Container sourceContainer, User user);
 
