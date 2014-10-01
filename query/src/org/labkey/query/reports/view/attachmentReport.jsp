@@ -44,7 +44,7 @@
         canUseDiskFile = getUser().isSiteAdmin() && form.getReportId() == null;
     }
 
-    String action = (form.isUpdate() ? "update" : "create") + "attachmentReport";
+    String action = (form.isUpdate() ? "update" : "create") + "AttachmentReport";
 %>
 
 <table>

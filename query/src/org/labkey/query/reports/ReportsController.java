@@ -1788,7 +1788,8 @@ public class ReportsController extends SpringActionController
             try (DbScope.Transaction tx = scope.ensureTransaction())
             {
                 // save the category information then the report
-                ViewCategory category = ViewCategoryManager.getInstance().getCategory(getContainer(), form.getCategory());
+                Integer categoryId = form.getCategory();
+                ViewCategory category = null != categoryId ? ViewCategoryManager.getInstance().getCategory(getContainer(), categoryId) : null;
 
                 R report = initializeReportForSave(form);
                 ReportDescriptor descriptor = report.getDescriptor();
