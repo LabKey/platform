@@ -661,7 +661,7 @@ public class ReportServiceImpl extends ContainerManager.AbstractContainerListene
                     descriptor.setDisplayOrder(r.getDisplayOrder());
 
                     if (r.getCategoryId() != null)
-                        descriptor.setCategory(ViewCategoryManager.getInstance().getCategory(r.getCategoryId()));
+                        descriptor.setCategory(ViewCategoryManager.getInstance().getCategory(r.getContainerId(), r.getCategoryId()));
 
                     descriptor.initProperties();
 

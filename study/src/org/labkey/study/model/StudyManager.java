@@ -655,7 +655,7 @@ public class StudyManager
         ViewCategory category = null;
 
         if (def.getCategoryId() != null)
-            category = ViewCategoryManager.getInstance().getCategory(def.getCategoryId());
+            category = ViewCategoryManager.getInstance().getCategory(def.getContainer(), def.getCategoryId());
 
         if (category == null && def.getCategory() != null)
         {
@@ -4517,7 +4517,7 @@ public class StudyManager
             String domainURI = StudyManager.getInstance().getDomainURI(study.getContainer(), null, dd);
             dd.setTypeURI(domainURI);
             OntologyManager.ensureDomainDescriptor(domainURI, dd.getName(), study.getContainer());
-            StudyManager.getInstance().updateDatasetDefinition(null, dd);
+            StudyManager.getInstance().updateDatasetDefinition(_context.getUser(), dd);
 
             // validator
             Lsid lsidValidator = DefaultPropertyValidator.createValidatorURI(PropertyValidatorType.Range);

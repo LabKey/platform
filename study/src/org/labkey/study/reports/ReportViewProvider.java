@@ -309,7 +309,7 @@ public class ReportViewProvider implements DataViewProvider
                     if (props.containsKey(Property.category.name()))
                     {
                         int categoryId = NumberUtils.toInt(String.valueOf(props.get(Property.category.name())));
-                        category = ViewCategoryManager.getInstance().getCategory(categoryId);
+                        category = ViewCategoryManager.getInstance().getCategory(context.getContainer(), categoryId);
                     }
 
                     descriptor.setCategory(category);

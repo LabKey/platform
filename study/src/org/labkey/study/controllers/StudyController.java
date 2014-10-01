@@ -4429,7 +4429,7 @@ public class StudyController extends BaseStudyController
                         if (NumberUtils.isDigits(categories[i]))
                         {
                             categoryId = NumberUtils.toInt(categories[i]);
-                            data.viewCategory = ViewCategoryManager.getInstance().getCategory(categoryId);
+                            data.viewCategory = ViewCategoryManager.getInstance().getCategory(getContainer(), categoryId);
                         }
                     }
                     data.cohort = cohorts[i] == -1 ? null : cohorts[i];
@@ -7146,7 +7146,8 @@ public class StudyController extends BaseStudyController
 
     public static class DefineDatasetForm implements CustomApiForm
     {
-        enum Type {
+        enum Type
+        {
             importFromFile,
             defineManually,
             placeHolder,

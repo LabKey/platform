@@ -1726,7 +1726,7 @@ public class ReportsController extends SpringActionController
             form.setShared(report.getDescriptor().isShared());
 
             if (null != report.getDescriptor().getCategory())
-                form.setViewCategory(report.getDescriptor().getCategory());
+                form.setCategory(report.getDescriptor().getCategory().getRowId());
 
             Integer authorId = report.getDescriptor().getAuthor();
             if (null != authorId)
@@ -1788,7 +1788,7 @@ public class ReportsController extends SpringActionController
             try (DbScope.Transaction tx = scope.ensureTransaction())
             {
                 // save the category information then the report
-                ViewCategory category = form.getViewCategory();
+                ViewCategory category = ViewCategoryManager.getInstance().getCategory(getContainer(), form.getCategory());
 
                 R report = initializeReportForSave(form);
                 ReportDescriptor descriptor = report.getDescriptor();
@@ -3101,12 +3101,12 @@ public class ReportsController extends SpringActionController
                     }
                     else
                     {
-                        ViewCategory vc = vcm.getCategory(og.getRowId()); // ask the real authority
+                        ViewCategory vc = vcm.getCategory(getContainer(), og.getRowId()); // ask the real authority
 
                         if (null != vc)
                         {
                             int rowId = vc.getRowId();
-                            ViewCategory parent = vc.getParent();
+                            ViewCategory parent = vc.getParentCategory();
 
                             if (!groups.containsKey(rowId))
                                 groups.put(rowId, new ArrayList<DataViewInfo>());
@@ -3148,7 +3148,7 @@ public class ReportsController extends SpringActionController
                     tree.put(ckey, new TreeSet<>(t));
                 }
 
-                ViewCategory p = c.getParent();
+                ViewCategory p = c.getParentCategory();
                 if (null != p)
                 {
                     if (!tree.containsKey(p.getRowId()))
@@ -3307,29 +3307,27 @@ public class ReportsController extends SpringActionController
             List<ViewCategory> categoriesWithDisplayOrder = new ArrayList<>();
             List<ViewCategory> categoriesWithoutDisplayOrder = new ArrayList<>();
 
-            ViewCategory[] categories;
+            final List<ViewCategory> categories;
             int parent = form.getParent();
 
             // Default, no parent specifically requested
             if (parent == -2)
             {
-                categories = ViewCategoryManager.getInstance().getCategories(getContainer(), getUser());
+                categories = ViewCategoryManager.getInstance().getCategories(getContainer());
             }
             else if (parent == 0)
             {
                 // parent filter on non-existent category
-                categories = new ViewCategory[0];
+                categories = Collections.emptyList();
             }
             else
             {
-                SimpleFilter filter;
-                FieldKey field = FieldKey.fromParts("Parent");
+                ViewCategory parentCategory = ViewCategoryManager.getInstance().getCategory(getContainer(), parent);
 
-                if (parent > 0)
-                    filter = new SimpleFilter(field, parent);
+                if (null != parentCategory)
+                    categories = parentCategory.getSubcategories();
                 else
-                    filter = new SimpleFilter(field, null, CompareType.ISBLANK);
-                categories = ViewCategoryManager.getInstance().getCategories(getContainer(), getUser(), filter);
+                    categories = Collections.emptyList();
             }
 
             for (ViewCategory c : categories)
@@ -3727,9 +3725,8 @@ public class ReportsController extends SpringActionController
         public List<ViewCategoryManager.ViewCategoryTreeNode> getCategorySubcriptionTree()
         {
             Set<Integer> subscriptionSet = ReportContentEmailManager.getSubscriptionSet(getContainer(), getUser());
-            return ViewCategoryManager.getInstance().getCategorySubcriptionTree(getContainer(), getUser(), subscriptionSet);
+            return ViewCategoryManager.getInstance().getCategorySubcriptionTree(getContainer(), subscriptionSet);
         }
-
     }
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -3743,7 +3740,6 @@ public class ReportsController extends SpringActionController
             response.put("success", true);
             return response;
         }
-
     }
 
     public static class SaveCategoryNotificationsForm implements CustomApiForm

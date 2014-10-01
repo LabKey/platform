@@ -29,10 +29,8 @@ import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.ResourceURL;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
@@ -55,14 +53,16 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
     public List<DataViewInfo> getViews(ViewContext context) throws Exception
     {
         List<DataViewInfo> dataViews = new ArrayList<>();
+        Container ctxContainer = context.getContainer();
 
         for (CustomView view : getCustomViews(context))
         {
-            DefaultViewInfo info = new DefaultViewInfo(getType(), view.getEntityId(), view.getName(), view.getContainer());
+            Container viewContainer = view.getContainer();
+            DefaultViewInfo info = new DefaultViewInfo(getType(), view.getEntityId(), view.getName(), null != viewContainer ? viewContainer : ctxContainer);
 
             info.setType("Query");
 
-            ViewCategory vc = ReportUtil.getDefaultCategory(context.getContainer(), view.getSchemaName(), view.getQueryName());
+            ViewCategory vc = ReportUtil.getDefaultCategory(ctxContainer, view.getSchemaName(), view.getQueryName());
             info.setCategory(vc);
 
             info.setCreatedBy(view.getCreatedBy());
@@ -74,7 +74,7 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
             info.setQueryName(view.getQueryName());
 
             // run url and details url are the same for now
-            ActionURL runUrl = getViewRunURL(context.getUser(), context.getContainer(), view);
+            ActionURL runUrl = getViewRunURL(context.getUser(), ctxContainer, view);
 
             info.setRunUrl(runUrl);
             info.setDetailsUrl(runUrl);

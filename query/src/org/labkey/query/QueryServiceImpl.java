@@ -453,43 +453,63 @@ public class QueryServiceImpl extends QueryService
         return _getCustomViews(user, container, null, schemaName, queryName, includeInherited, true);
     }
 
-    private List<CustomView> _getCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly)
+    private List<CustomView> _getCustomViews(final @NotNull User user, final Container container, final @Nullable User owner, final @Nullable String schemaName, final @Nullable String queryName, final boolean includeInherited, final boolean sharedOnly)
     {
+        final Collection<CustomView> views;
+
         if (schemaName == null || queryName == null)
         {
-            // TODO - include module-based custom views (.qview.xml) in this list. Currently it only finds views
-            // stored in the database
-            List<CustomView> result = new ArrayList<>();
-            Map<String, UserSchema> schemas = new HashMap<>();
-            Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<>();
-            for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schemaName, queryName, owner, includeInherited, sharedOnly))
-            {
-                Pair<String, String> key = new Pair<>(cstmView.getSchema(), cstmView.getQueryName());
-                QueryDefinition queryDef = queryDefs.get(key);
-                if (queryDef == null)
+            DefaultSchema defSchema = DefaultSchema.get(user, container);
+            SchemaTreeNode topNode = null != schemaName ? defSchema.getUserSchema(schemaName) : defSchema;
+
+            views = new SchemaTreeWalker<Set<CustomView>, Void>(false) {
+                @Override
+                protected Set<CustomView> visitTablesAndReduce(UserSchema schema, Iterable<String> names, Path path, Void param, Set<CustomView> customViews)
                 {
-                    UserSchema schema = schemas.get(schemaName);
-                    if (schema == null)
+                    Set<CustomView> views = new HashSet<>();
+                    for (String name : names)
                     {
-                        schema = getUserSchema(user, container, cstmView.getSchema());
-                        schemas.put(cstmView.getSchema(), schema);
+                        QueryDefinition qd = schema.getQueryDefForTable(name);
+                        if (qd != null)
+                        {
+                            try
+                            {
+                                Map<String, CustomView> viewMap = getCustomViewMap(user, container, owner, qd, includeInherited, sharedOnly);
+
+                                if (!viewMap.isEmpty())
+                                    views.addAll(viewMap.values());
+                            }
+                            catch (Exception e)
+                            {
+                                // Ignore bad columns, etc.
+                            }
+                        }
                     }
-                    if (schema != null)
-                    {
-                        queryDef = schema.getQueryDefForTable(cstmView.getQueryName());
-                        queryDefs.put(key, queryDef);
-                    }
+                    return views;
                 }
 
-                if (queryDef != null)
+                @Override
+                public Set<CustomView> reduce(Set<CustomView> r1, Set<CustomView> r2)
                 {
-                    result.add(new CustomViewImpl(queryDef, cstmView));
+                    if (r1 == null)
+                        return r2;
+                    if (r2 == null)
+                        return r1;
+
+                    Set<CustomView> set = new HashSet<>();
+                    set.addAll(r1);
+                    set.addAll(r2);
+
+                    return set;
                 }
-            }
-            return result;
+            }.visitTop(topNode, null);
+        }
+        else
+        {
+            views = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values();
         }
 
-        return new ArrayList<>(getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values());
+        return new ArrayList<>(views);
     }
 
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)

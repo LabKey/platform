@@ -116,7 +116,7 @@ public class DatasetWriter implements InternalStudyWriter
             ViewCategory category = null;
             if (def.getCategoryId() != null)
             {
-                category = ViewCategoryManager.getInstance().getCategory(def.getCategoryId());
+                category = ViewCategoryManager.getInstance().getCategory(ctx.getContainer(), def.getCategoryId());
             }
 
             if (null != category)

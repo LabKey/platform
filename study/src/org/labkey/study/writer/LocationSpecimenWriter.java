@@ -16,7 +16,6 @@
 package org.labkey.study.writer;
 
 import org.labkey.api.admin.ImportContext;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
@@ -24,7 +23,6 @@ import org.labkey.study.importer.SpecimenImporter;
 import org.labkey.study.xml.StudyDocument;
 
 import java.util.Collection;
-import java.util.List;
 
 /**
  * User: cnathe

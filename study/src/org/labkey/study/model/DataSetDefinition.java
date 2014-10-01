@@ -420,7 +420,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
 
         if (_categoryId != null)
         {
-            ViewCategory category = ViewCategoryManager.getInstance().getCategory(_categoryId);
+            ViewCategory category = ViewCategoryManager.getInstance().getCategory(getContainer(), _categoryId);
             if (category != null)
                 _category = category.getLabel();
         }
@@ -430,7 +430,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     public ViewCategory getViewCategory()
     {
         if (_categoryId != null)
-            return ViewCategoryManager.getInstance().getCategory(_categoryId);
+            return ViewCategoryManager.getInstance().getCategory(getContainer(), _categoryId);
 
         return null;
     }

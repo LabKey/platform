@@ -242,7 +242,7 @@ public class CustomViewXmlReader
             reader._query = viewElement.getQuery();
             reader._hidden = viewElement.isSetHidden() && viewElement.getHidden();
             reader._canInherit = viewElement.isSetCanInherit() && viewElement.getCanInherit();
-            reader._customIconUrl = viewElement.getCustomIconUrl();
+            reader._customIconUrl = viewElement.isSetCustomIconUrl() ? viewElement.getCustomIconUrl() : "/reports/icon_query_view.png";
             reader._label = viewElement.getLabel();
 
             //load the columns, filters, sorts, aggregates

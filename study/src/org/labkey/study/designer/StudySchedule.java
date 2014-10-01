@@ -135,7 +135,7 @@ public class StudySchedule implements CustomApiForm
 
         ViewCategory vc = null;
         if (ds.getCategoryId() != null)
-            vc = ViewCategoryManager.getInstance().getCategory(ds.getCategoryId());
+            vc = ViewCategoryManager.getInstance().getCategory(ds.getContainer(), ds.getCategoryId());
 
         if (vc != null)
             o.put("category", vc.toJSON(user));

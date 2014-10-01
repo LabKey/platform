@@ -23,6 +23,8 @@ import org.labkey.study.xml.viewCategory.CategoriesDocument;
 import org.labkey.study.xml.viewCategory.CategoryType;
 import org.labkey.study.xml.viewCategory.ViewCategoryType;
 
+import java.util.List;
+
 /**
  * User: klum
  * Date: Oct 21, 2011
@@ -42,9 +44,9 @@ public class ViewCategoryWriter implements InternalStudyWriter
     @Override
     public void write(StudyImpl object, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        ViewCategory[] categories = ViewCategoryManager.getInstance().getCategories(ctx.getContainer(), ctx.getUser());
+        List<ViewCategory> categories = ViewCategoryManager.getInstance().getCategories(ctx.getContainer());
 
-        if (categories.length > 0)
+        if (!categories.isEmpty())
         {
             CategoriesDocument doc = CategoriesDocument.Factory.newInstance();
             ViewCategoryType categoryType = doc.addNewCategories();
@@ -56,8 +58,8 @@ public class ViewCategoryWriter implements InternalStudyWriter
                 ct.setLabel(category.getLabel());
                 ct.setDisplayOrder(category.getDisplayOrder());
 
-                if (category.getParent() != null)
-                    ct.setParent(category.getParent().getLabel());
+                if (category.getParentCategory() != null)
+                    ct.setParent(category.getParentCategory().getLabel());
             }
             vf.saveXmlBean(FILE_NAME, doc);
         }
