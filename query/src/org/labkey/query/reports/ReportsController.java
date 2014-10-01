@@ -1894,11 +1894,17 @@ public class ReportsController extends SpringActionController
 
                 // Only site administrators can specify a path, #14445
                 if (null != filePath)
-                {
                     if (!getUser().isSiteAdmin())
                         throw new UnauthorizedException();
-                }
 
+                // TODO: category should be validated here but it's not required in the UI which is a bit ugh...
+                if (null == form.getCategory())
+                    errors.reject("category", "Category is required.");
+
+                // NOTE: no need to check if this is set because enforced in UI.
+                File file = new File(form.getFilePath());
+                if (!file.exists())
+                    errors.reject("filePath", "File path is not a valid path on the server.");
             }
             else if (form.getAttachmentType() == AttachmentReportForm.AttachmentReportType.local)
             {
