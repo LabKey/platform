@@ -1130,6 +1130,10 @@ public class UserController extends SpringActionController
 
         for (Container child : children)
         {
+            // Skip workbooks as they don't have directly assigned permissions (they inherit from their parent)
+            if (child.isWorkbook())
+                continue;
+
             Map<String, List<Group>> childAccessGroups = new TreeMap<>();
 
             SecurityPolicy policy = SecurityPolicyManager.getPolicy(child);
