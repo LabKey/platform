@@ -35,6 +35,7 @@ import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.PathBasedModuleResourceCache;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
+import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
@@ -73,6 +74,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -497,6 +499,27 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
                 RhinoService.LOG.info(parent.listNames());
             }
             return null;
+        }
+
+        if (path.toString().contains("Ext4"))
+        {
+            Resource p = ModuleLoader.getInstance().getResource(path.getParent());
+            if (null != p)
+            {
+                for (File f : ((MergedDirectoryResource) p)._dirs)
+                {
+                    if (f.isDirectory())
+                    {
+                        String result = "Folder Contents: [";
+                        for (String file : f.list())
+                        {
+                            result += " " + file;
+                        }
+                        result += "]";
+                        RhinoService.LOG.info(result);
+                    }
+                }
+            }
         }
 
         RhinoService.LOG.info("Loading require()'ed resource '" + path.toString() + "'");

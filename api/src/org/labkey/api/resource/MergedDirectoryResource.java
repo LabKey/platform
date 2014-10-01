@@ -55,7 +55,7 @@ public class MergedDirectoryResource extends AbstractResourceCollection
     private static final FileSystemWatcher WATCHER = FileSystemWatchers.get("Merged directory resource watcher");
     private static final Set<Pair<Resolver, Path>> KEYS_WITH_LISTENERS = new ConcurrentHashSet<>();
 
-    private final List<File> _dirs;
+    public final List<File> _dirs;
     private final Resource[] _additional;
     private final Pair<Resolver, Path> _cacheKey;
 
