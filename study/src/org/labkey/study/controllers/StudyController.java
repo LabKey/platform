@@ -7580,7 +7580,16 @@ public class StudyController extends BaseStudyController
         {
             _study = getStudyRedirectIfNull();
             StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(_study.getStudySnapshot());
-            return new JspView<>("/org/labkey/study/view/snapshotSettings.jsp", snapshot);
+
+            if (null == snapshot)
+            {
+                errors.reject(null, "This is not a published or ancillary study");
+                return new SimpleErrorView(errors);
+            }
+            else
+            {
+                return new JspView<>("/org/labkey/study/view/snapshotSettings.jsp", snapshot);
+            }
         }
 
         @Override
