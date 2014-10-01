@@ -196,6 +196,8 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 {
     public static final String EXPERIMENTAL_JSDOC = "experimental-jsdoc";
 
+    public static final Logger LOG = Logger.getLogger(CoreModule.class);
+
     // Register dialect extra early, since we need to initialize the data sources before calling DefaultModule.initialize()
     static
     {
@@ -598,6 +600,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
 
                 if (null != logger)
                 {
+                    LOG.info("Starting to log statistics for actions prior to web application shut down");
                     Appender appender = logger.getAppender("ACTION_STATS");
 
                     if (null != appender && appender instanceof RollingFileAppender)
@@ -618,6 +621,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     }
 
                     logger.info(buf.toString());
+                    LOG.info("Completed logging statistics for actions prior to web application shut down");
                 }
             }
 
