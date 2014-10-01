@@ -608,6 +608,11 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             {
                 // Tika mistakenly thinks some files (e.g., .ggl files) are AutoCAD files, #13811. Don't even warn about these.
             }
+            else if (topMessage.equals("Bad TrueType font."))
+            {
+                // Tika mistakenly thinks some files (e.g., *.fmp12) are TrueType fonts. Don't even warn about these.
+                // https://issues.apache.org/jira/browse/TIKA-1061 is clearly related, but seems insufficient for FMP 12 files
+            }
             else if (topMessage.equals("image/gif parse error") && StringUtils.endsWithIgnoreCase(r.getName(), ".mht"))
             {
                 // Tika can't parse all .mht files
