@@ -94,19 +94,28 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     protected @NotNull <E> ArrayList<E> getArrayList(final Class<E> clazz, final ResultSetFactory factory)
     {
-        return handleResultSet(factory, new ArrayListResultSetHandler<>(clazz, factory));
+        return handleResultSet(factory, new ArrayListResultSetHandler<>(clazz));
     }
 
+    // Simple object case: Number, String, Date, etc.
+    protected @NotNull <E> ArrayList<E> createPrimitiveArrayList(ResultSet rs, @NotNull Table.Getter getter) throws SQLException
+    {
+        ArrayList<E> list = new ArrayList<>();
+
+        while (rs.next())
+            //noinspection unchecked
+            list.add((E)getter.getObject(rs));
+
+        return list;
+    }
 
     private class ArrayListResultSetHandler<E> implements ResultSetHandler<ArrayList<E>>
     {
         private final Class<E> _clazz;
-        private final ResultSetFactory _factory;
 
-        public ArrayListResultSetHandler(Class<E> clazz, ResultSetFactory factory)
+        public ArrayListResultSetHandler(Class<E> clazz)
         {
             _clazz = clazz;
-            _factory = factory;
         }
 
         @Override
@@ -115,18 +124,10 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
             final ArrayList<E> list;
             final Table.Getter getter = Table.Getter.forClass(_clazz);
 
-           // If we have a Getter, then use it (simple object case: Number, String, Date, etc.)
+            // If we have a Getter, then use it (simple object case: Number, String, Date, etc.)
             if (null != getter)
             {
-                list = new ArrayList<>();
-                forEach(new ForEachBlock<ResultSet>() {
-                    @Override
-                    public void exec(ResultSet rs) throws SQLException
-                    {
-                        //noinspection unchecked
-                        list.add((E)getter.getObject(rs));
-                    }
-                }, _factory);
+                list = createPrimitiveArrayList(rs, getter);
             }
             // If not, we're generating maps or beans
             else
@@ -159,7 +160,7 @@ public abstract class BaseSelector<SELECTOR extends BaseSelector> extends JdbcCo
 
     protected <T> T getObject(final Class<T> clazz, ResultSetFactory factory)
     {
-        List<T> list = handleResultSet(factory, new ArrayListResultSetHandler<T>(clazz, factory) {
+        List<T> list = handleResultSet(factory, new ArrayListResultSetHandler<T>(clazz) {
             @Override
             public ArrayList<T> handle(ResultSet rs, Connection conn) throws SQLException
             {
