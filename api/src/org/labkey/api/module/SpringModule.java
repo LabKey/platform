@@ -41,7 +41,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -155,7 +154,7 @@ public abstract class SpringModule extends DefaultModule
     }
 
 
-    // see contextCongfigLocation parameter
+    // see contextConfigLocation parameter
     protected List<String> getContextConfigLocation()
     {
         String contextXMLFilePath = getContextXMLFilePath();
@@ -169,23 +168,31 @@ public abstract class SpringModule extends DefaultModule
         result.add(contextXMLFilePath);
 
         // Look for post-installation config outside the module
-        String configPath = getModuleServletContext().getInitParameter(INIT_PARAMETER_CONFIG_PATH);
-        if (configPath != null)
+        File dirConfig = getSpringConfigDir(getModuleServletContext().getInitParameter(INIT_PARAMETER_CONFIG_PATH));
+
+        File fileConfig = new File(dirConfig, prefix + "Config.xml");
+        if (fileConfig.isFile())
         {
-            File dirConfig = new File(configPath);
-            String configRelPath = prefix + "Config.xml";
-            URI uriConfig = URIUtil.resolve(dirConfig.toURI(), configRelPath);
-            if (uriConfig != null)
-            {
-                File fileConfig = new File(uriConfig);
-                if (fileConfig.exists())
-                {
-                    result.add(fileConfig.toString());
-                }
-            }
+            result.add(fileConfig.toString());
         }
 
         return result;
+    }
+
+    public static File getSpringConfigDir(String configPath)
+    {
+        File dirConfig;
+        // First check for an explicit pointer to some other location
+        if (configPath != null)
+        {
+            dirConfig = new File(configPath);
+        }
+        else
+        {
+            // Fall back on a directory that's a peer to the webapp directory
+            dirConfig = new File(ModuleLoader.getInstance().getWebappDir().getParent(), "config");
+        }
+        return dirConfig;
     }
 
 
@@ -305,11 +312,7 @@ public abstract class SpringModule extends DefaultModule
             {
                 // If the path starts with the config root, try creating
                 // a raw FileInputStream for it.
-                String configPath = getInitParameter(INIT_PARAMETER_CONFIG_PATH);
-                if (configPath == null)
-                    return null;
-
-                File configRoot = new File(configPath);
+                File configRoot = getSpringConfigDir(getInitParameter(INIT_PARAMETER_CONFIG_PATH));
                 File configFile = new File(string);
                 if (!URIUtil.isDescendant(configRoot.toURI(), configFile.toURI()))
                     return null;

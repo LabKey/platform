@@ -1446,6 +1446,7 @@ public class ModuleLoader implements Filter
         return getModule(DefaultModule.CORE_MODULE_NAME);
     }
 
+    /** @return all known modules, sorted in dependency order */
     public List<Module> getModules()
     {
         return _modules;
