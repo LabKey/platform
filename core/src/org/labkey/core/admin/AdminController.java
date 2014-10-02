@@ -2376,12 +2376,14 @@ public class AdminController extends SpringActionController
     {
         public ModelAndView getView(MemForm form, BindException errors) throws Exception
         {
-            if (form.isClearCaches())
+            if (form.isClearCaches() && getUser().isSiteAdmin())
             {
                 LOG.info("Clearing Introspector caches");
                 Introspector.flushCaches();
                 LOG.info("Purging all caches");
                 CacheManager.clearAllKnownCaches();
+                ActionURL redirect = getViewContext().cloneActionURL().deleteParameter("clearCaches");
+                throw new RedirectException(redirect);
             }
 
             List<TrackingCache> caches = CacheManager.getKnownCaches();
