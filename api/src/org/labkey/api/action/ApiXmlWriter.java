@@ -40,6 +40,7 @@ public class ApiXmlWriter extends ApiResponseWriter
     private static final String ARRAY_ELEMENT_NAME = "element";
     public static final String CONTENT_TYPE = "text/xml";
     private XMLStreamWriter _xmlWriter;
+    private boolean _closed = false;
 
     public ApiXmlWriter(HttpServletResponse response, String contentTypeOverride) throws IOException
     {
@@ -62,6 +63,7 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     protected void writeObject(Object value) throws IOException
     {
+        verifyOpen();
         if (value == null)
         {
             return;
@@ -137,6 +139,7 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     private void writeJsonArray(JSONArray jsonArray) throws XMLStreamException, IOException
     {
+        verifyOpen();
         for (int i = 0; i < jsonArray.length(); i++)
         {
             _xmlWriter.writeStartElement(ARRAY_ELEMENT_NAME);
@@ -154,6 +157,7 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     protected void writeJsonObjInternal(JSONObject obj) throws IOException, XMLStreamException
     {
+        verifyOpen();
         for (Map.Entry<String, Object> entry : obj.entrySet())
         {
             _xmlWriter.writeStartElement(escapeElementName(entry.getKey()));
@@ -172,6 +176,7 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     public void endResponse() throws IOException
     {
+        verifyOpen();
         assert _streamStack.size() == 1 : "called endResponse without a corresponding startResponse()!";
         closeDocument();
         _streamStack.pop();
@@ -179,19 +184,24 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     private void closeDocument() throws IOException
     {
-        try
+        if (!_closed)
         {
-            _xmlWriter.writeEndElement();
-            _xmlWriter.writeEndDocument();
-        }
-        catch (XMLStreamException e)
-        {
-            throw new IOException(e);
+            try
+            {
+                _xmlWriter.writeEndElement();
+                _xmlWriter.writeEndDocument();
+                _closed = true;
+            }
+            catch (XMLStreamException e)
+            {
+                throw new IOException(e);
+            }
         }
     }
 
     public void startMap(String name) throws IOException
     {
+        verifyOpen();
         StreamState state = _streamStack.peek();
         assert (null != state) : "startResponse will start the root-level map!";
         try
@@ -207,6 +217,7 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     public void endMap() throws IOException
     {
+        verifyOpen();
         try
         {
             _xmlWriter.writeEndElement();
@@ -220,6 +231,7 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     public void writeProperty(String name, Object value) throws IOException
     {
+        verifyOpen();
         try
         {
             _xmlWriter.writeStartElement(escapeElementName(name));
@@ -234,6 +246,7 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     public void startList(String name) throws IOException
     {
+        verifyOpen();
         StreamState state = _streamStack.peek();
         try
         {
@@ -255,6 +268,7 @@ public class ApiXmlWriter extends ApiResponseWriter
 
     public void endList() throws IOException
     {
+        verifyOpen();
         try
         {
             _xmlWriter.writeEndElement();
@@ -266,8 +280,17 @@ public class ApiXmlWriter extends ApiResponseWriter
         _streamStack.pop();
     }
 
+    private void verifyOpen()
+    {
+        if (_closed)
+        {
+            throw new IllegalStateException("Writer has already been closed");
+        }
+    }
+
     public void writeListEntry(Object entry) throws IOException
     {
+        verifyOpen();
         try
         {
             _xmlWriter.writeStartElement(ARRAY_ELEMENT_NAME);
