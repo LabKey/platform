@@ -124,10 +124,13 @@ public class GoogleOpenIdProvider implements AuthenticationProvider.RequestAuthe
     {
         OpenIdManager manager = new OpenIdManager();
         manager.setRealm(AppProps.getInstance().getBaseServerUrl());
-        String uri = returnUrl.getURIString();
-        if (uri.endsWith("?"))
-            uri = uri.substring(0,uri.length()-1);
-        manager.setReturnTo(uri);
+        if (null != returnUrl)
+        {
+            String uri = returnUrl.getURIString();
+            if (uri.endsWith("?"))
+                uri = uri.substring(0,uri.length()-1);
+            manager.setReturnTo(uri);
+        }
         return manager;
     }
 
