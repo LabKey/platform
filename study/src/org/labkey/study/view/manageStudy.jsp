@@ -157,10 +157,10 @@
 
         StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(study.getStudySnapshot());
         assert null != snapshot;
-        Container parent = ContainerManager.getForId(snapshot.getSource());
+        Container parent = null==snapshot.getSource() ? null : ContainerManager.getForId(snapshot.getSource());
 
         // Display a button if user has read permissions there.
-        if (parent.hasPermission(user, ReadPermission.class))
+        if (null != parent && parent.hasPermission(user, ReadPermission.class))
         {
 %>
 <%= button("Visit Source Study").href(urlProvider(ProjectUrls.class).getBeginURL(parent)) %>
