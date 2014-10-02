@@ -489,18 +489,6 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         Path path = Path.parse(moduleScript);
         Resource res = ModuleLoader.getInstance().getResource(path);
 
-        if (res == null || !res.isFile())
-        {
-            RhinoService.LOG.info("Returning null for path: " + path.toString());
-            Resource parent = ModuleLoader.getInstance().getResource(path.getParent());
-            if (parent != null)
-            {
-                RhinoService.LOG.info("Parent Children");
-                RhinoService.LOG.info(parent.listNames());
-            }
-            return null;
-        }
-
         if (path.toString().contains("Ext4"))
         {
             Resource p = ModuleLoader.getInstance().getResource(path.getParent());
@@ -520,6 +508,18 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
                     }
                 }
             }
+        }
+
+        if (res == null || !res.isFile())
+        {
+            RhinoService.LOG.info("Returning null for path: " + path.toString());
+            Resource parent = ModuleLoader.getInstance().getResource(path.getParent());
+            if (parent != null)
+            {
+                RhinoService.LOG.info("Parent Children");
+                RhinoService.LOG.info(parent.listNames());
+            }
+            return null;
         }
 
         RhinoService.LOG.info("Loading require()'ed resource '" + path.toString() + "'");
