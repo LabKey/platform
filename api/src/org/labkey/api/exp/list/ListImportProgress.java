@@ -23,5 +23,5 @@ package org.labkey.api.exp.list;
 public interface ListImportProgress
 {
     void setTotalRows(int rows);
-    void setCurrentRow(int currentRow); 
+    void setCurrentRow(int currentRow);
 }

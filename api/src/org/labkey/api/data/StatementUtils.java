@@ -61,6 +61,8 @@ import java.util.Set;
 // identify tests that exercise the code paths that will be changed.
 public class StatementUtils
 {
+    static Logger _log = Logger.getLogger(StatementUtils.class);
+
     private enum operation {insert, update, merge}
 
 
@@ -545,18 +547,15 @@ public class StatementUtils
         SQLFragment sqlfInsertInto = new SQLFragment();
         if (operation.insert == op || operation.merge == op)
         {
-            if (operation.merge == op)
-            {
-                sqlfInsertInto.append("IF ");
-                sqlfInsertInto.append(dialect.isSqlServer() ? "@@ROWCOUNT=0" :  "NOT FOUND");
-                sqlfInsertInto.append(ifTHEN).append("\n\t");
-            }
-
             // Create a standard INSERT INTO table (col1, col2) VALUES (val1, val2) statement
             // or (for degenerate, empty values case) INSERT INTO table VALUES (DEFAULT)
             sqlfInsertInto.append("INSERT INTO ").append(table.getSelectName());
 
-            if (!values.isEmpty())
+            if (values.isEmpty())
+            {
+                sqlfInsertInto.append("\nVALUES (DEFAULT)");
+            }
+            else
             {
                 sqlfInsertInto.append(" (");
                 comma = "";
@@ -567,18 +566,9 @@ public class StatementUtils
                     sqlfInsertInto.append(colSQL);
                 }
                 sqlfInsertInto.append(")");
-            }
 
-            sqlfInsertInto.append("\nVALUES (");
-
-            if (values.isEmpty())
-            {
-                sqlfInsertInto.append("DEFAULT");
-            }
-            else
-            {
+                sqlfInsertInto.append("\nSELECT ");
                 comma = "";
-
                 for (SQLFragment valueSQL : values)
                 {
                     sqlfInsertInto.append(comma);
@@ -586,8 +576,6 @@ public class StatementUtils
                     sqlfInsertInto.append(valueSQL);
                 }
             }
-
-            sqlfInsertInto.append(")");
 
             if (selectIds && null != autoIncrementColumn)
             {
@@ -599,10 +587,6 @@ public class StatementUtils
                 }
                 dialect.appendSelectAutoIncrement(sqlfInsertInto, autoIncrementColumn.getSelectName(), rowIdVar);
             }
-            sqlfInsertInto.append(";\n");
-
-            if (operation.merge == op)
-                sqlfInsertInto.append(ifEND).append(";\n");
         }
 
         //
@@ -610,14 +594,17 @@ public class StatementUtils
         //
 
         SQLFragment sqlfUpdate = new SQLFragment();
+        SQLFragment sqlfWherePK = new SQLFragment();
+
         if (operation.update == op || operation.merge == op)
         {
             // Create a standard UPDATE table SET col1 = val1, col2 = val2 statement
             sqlfUpdate.append("UPDATE ").append(table.getSelectName()).append("\nSET ");
             comma = "";
+            int updateCount = 0;
             for (int i = 0; i < cols.size(); i++)
             {
-                FieldKey fk = new FieldKey(null,cols.get(i).toString());
+                FieldKey fk = new FieldKey(null, cols.get(i).toString());
                 if (keys.containsKey(fk) || null != dontUpdate && dontUpdate.contains(fk.getName()))
                     continue;
                 sqlfUpdate.append(comma);
@@ -625,25 +612,54 @@ public class StatementUtils
                 sqlfUpdate.append(cols.get(i));
                 sqlfUpdate.append(" = ");
                 sqlfUpdate.append(values.get(i));
+                updateCount++;
             }
-            sqlfUpdate.append("\nWHERE ");
+            sqlfWherePK.append("\nWHERE ");
             String and = "";
-            for (Map.Entry<FieldKey,ColumnInfo> e : keys.entrySet())
+            for (Map.Entry<FieldKey, ColumnInfo> e : keys.entrySet())
             {
                 ColumnInfo keyCol = e.getValue();
-                sqlfUpdate.append(and);
-                sqlfUpdate.append("(");
-                sqlfUpdate.append(keyCol.getSelectName());
-                sqlfUpdate.append(" = ");
-                appendParameterOrVariable(sqlfUpdate, keyCol);
-                sqlfUpdate.append(" OR ");
-                sqlfUpdate.append(keyCol.getSelectName());
-                sqlfUpdate.append(" IS NULL AND ");
-                appendParameterOrVariable(sqlfUpdate, keyCol);
-                sqlfUpdate.append(" IS NULL)");
+                sqlfWherePK.append(and);
+                sqlfWherePK.append("(");
+                sqlfWherePK.append(keyCol.getSelectName());
+                sqlfWherePK.append(" = ");
+                appendParameterOrVariable(sqlfWherePK, keyCol);
+                if (keyCol.isNullable())
+                {
+                    sqlfWherePK.append(" OR ");
+                    sqlfWherePK.append(keyCol.getSelectName());
+                    sqlfWherePK.append(" IS NULL AND ");
+                    appendParameterOrVariable(sqlfWherePK, keyCol);
+                    sqlfWherePK.append(" IS NULL");
+                }
+                sqlfWherePK.append(")");
                 and = " AND ";
             }
+            sqlfUpdate.append(sqlfWherePK);
             sqlfUpdate.append(";\n");
+
+            if (operation.merge == op)
+            {
+                // updateCount can equal 0.  This happens particularly when inserting into junction tables where
+                // there are two columns and both are in the primary key
+                if (0 == updateCount)
+                {
+                    sqlfUpdate = new SQLFragment();
+                    sqlfInsertInto.append("\nWHERE NOT EXISTS (SELECT * FROM ").append(table.getSelectName());
+                    sqlfInsertInto.append(sqlfWherePK);
+                    sqlfInsertInto.append(")");
+                    sqlfInsertInto.append(";\n");
+                }
+                else
+                {
+                    sqlfUpdate.append("IF ");
+                    sqlfUpdate.append(dialect.isSqlServer() ? "@@ROWCOUNT=0" : "NOT FOUND");
+                    sqlfUpdate.append(ifTHEN).append("\n\t");
+
+                    sqlfInsertInto.append(";\n");
+                    sqlfInsertInto.append(ifEND).append(";\n");
+                }
+            }
         }
 
 
@@ -761,6 +777,7 @@ public class StatementUtils
             for (SQLFragment f : Arrays.asList(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds))
                 if (null != f && !f.isEmpty())
                     script.append(f);
+_log.info(script.toString());
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
         }
         else
@@ -833,6 +850,7 @@ public class StatementUtils
                 fn.append(";\n");
             }
             fn.append("END;\n$$ LANGUAGE plpgsql;\n");
+_log.info(fn.toString());
             new SqlExecutor(table.getSchema()).execute(fn);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
             ret.setDebugSql(fn.getSQL() + "--\n" + call.toString());
@@ -844,7 +862,7 @@ public class StatementUtils
                 }
                 catch (Exception x)
                 {
-                    Logger.getLogger(Table.class).error("Error dropping temp function.", x);
+                    _log.error("Error dropping temp function.", x);
                 }
             }});
         }

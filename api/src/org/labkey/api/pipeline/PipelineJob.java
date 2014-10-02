@@ -230,7 +230,7 @@ abstract public class PipelineJob extends Job implements Serializable
     private int _activeTaskRetries;
     private PipeRoot _pipeRoot;
     private File _logFile;
-    private boolean _interrupted;
+    volatile private boolean _interrupted;
     private boolean _submitted;
     private int _errors;
     private RecordedActionSet _actionSet = new RecordedActionSet();

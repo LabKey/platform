@@ -383,7 +383,8 @@ public class DbScope
 
     public boolean isTransactionActive()
     {
-        return getCurrentTransaction() != null;
+        DbScope.Transaction tx = getCurrentTransaction();
+        return null != tx;
     }
 
 

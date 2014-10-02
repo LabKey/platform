@@ -16,50 +16,35 @@
 
 package org.labkey.api.etl;
 
+import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.query.BatchValidationException;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * User: matthewb
  * Date: 2011-05-31
  * Time: 5:18 PM
  */
-public abstract class FilterDataIterator extends AbstractDataIterator
+public abstract class FilterDataIterator extends WrapperDataIterator
 {
-    protected FilterDataIterator(DataIteratorContext context)
+    protected FilterDataIterator(DataIterator in)
     {
-        super(context);
-    }
-
-    @Override
-    public int getColumnCount()
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ColumnInfo getColumnInfo(int i)
-    {
-        throw new UnsupportedOperationException();
+        super(in);
     }
 
     @Override
     public boolean next() throws BatchValidationException
     {
-        throw new UnsupportedOperationException();
+        while (super.next())
+        {
+            if (accept())
+                return true;
+        }
+        return false;
     }
 
-    @Override
-    public Object get(int i)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void close() throws IOException
-    {
-        throw new UnsupportedOperationException();
-    }
+    protected abstract boolean accept();
 }
