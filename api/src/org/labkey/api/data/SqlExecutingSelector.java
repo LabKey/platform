@@ -401,6 +401,14 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
                     sw.setQueryLogging(getQueryLogging());
                 }
             }
+            else
+            {
+                if (statement instanceof StatementWrapper)
+                {
+                    StatementWrapper sw = (StatementWrapper)statement;
+                    sw.setQueryLogging(getQueryLogging());
+                }
+            }
         }
 
         @Override
