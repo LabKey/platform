@@ -498,6 +498,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
                 {
                     if (f.isDirectory())
                     {
+                        RhinoService.LOG.info("Folder Path: " + f.getPath());
                         String result = "Folder Contents: [";
                         for (String file : f.list())
                         {
