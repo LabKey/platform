@@ -70,6 +70,7 @@ public class ParticipantTable extends BaseStudyTable
 
         _study = StudyManager.getInstance().getStudy(schema.getContainer());
         ColumnInfo rowIdColumn = new AliasedColumn(this, StudyService.get().getSubjectColumnName(getContainer()), _rootTable.getColumn("ParticipantId"));
+        rowIdColumn.setDisplayColumnFactory(ColumnInfo.NOLOOKUP_FACTORY);
         rowIdColumn.setFk(new TitleForeignKey(getBaseDetailsURL(), null, null, "participantId", getContainerContext()));
         addColumn(rowIdColumn);
 
@@ -145,15 +146,16 @@ public class ParticipantTable extends BaseStudyTable
 
         setDefaultVisibleColumns(getDefaultVisibleColumns());
 
+        addAliasesColumn();
+        addStudyColumn();
+
         // join in participant categories
         for (ParticipantCategoryImpl category : ParticipantGroupManager.getInstance().getParticipantCategories(getContainer(), _userSchema.getUser()))
         {
             ColumnInfo categoryColumn = new ParticipantCategoryColumn(category, this);
-            addColumn(categoryColumn);
+            if (!_columnMap.containsKey(categoryColumn.getName()))
+                addColumn(categoryColumn);
         }
-
-        addAliasesColumn();
-        addStudyColumn();
     }
 
     private void addAliasesColumn()
