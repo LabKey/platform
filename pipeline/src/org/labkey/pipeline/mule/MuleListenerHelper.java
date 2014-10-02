@@ -57,8 +57,9 @@ public class MuleListenerHelper implements ServletContext
     {
         _parentContext = parentContext;
         _initParameters.put(MuleXmlBuilderContextListener.INIT_PARAMETER_MULE_CONFIG, muleConfigPaths);
+        File configDir = SpringModule.getSpringConfigDir(_parentContext.getInitParameter(SpringModule.INIT_PARAMETER_CONFIG_PATH));
         _initParameters.put(MuleXmlBuilderContextListener.INIT_PARAMETER_WEBAPP_CLASSPATH,
-                _parentContext.getInitParameter(SpringModule.INIT_PARAMETER_CONFIG_PATH));
+                configDir.isDirectory() ? configDir.toString() : null);
         _muleContextListener = new MuleXmlBuilderContextListener();
 
         // HACK: Fix for MULE-2289
