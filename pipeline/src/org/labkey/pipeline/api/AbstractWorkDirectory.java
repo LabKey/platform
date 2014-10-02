@@ -486,6 +486,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
 
     public void discardFile(File fileWork) throws IOException
     {
+        _jobLog.debug("discarding file: " + fileWork.getPath());
         ensureDescendant(fileWork);
         if (fileWork.exists() && !fileWork.delete())
         {

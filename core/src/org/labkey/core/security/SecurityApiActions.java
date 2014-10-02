@@ -987,10 +987,14 @@ public class SecurityApiActions
             if (null == user)
                 throw new IllegalArgumentException("User id " + form.getId() + " does not exist");
 
+            //Issue 21648: allow deleting of any user from client API when using the root container
             Container c = getContainer();
-            List<User> projectUsers = SecurityManager.getProjectUsers(c);
-            if (!projectUsers.contains(user))
-                throw new IllegalArgumentException("User id " + form.getId() + " does not exist in the folder: " + c.getPath());
+            if (!c.isRoot())
+            {
+                List<User> projectUsers = SecurityManager.getProjectUsers(c);
+                if (!projectUsers.contains(user))
+                    throw new IllegalArgumentException("User id " + form.getId() + " does not exist in the folder: " + c.getPath());
+            }
 
             UserManager.deleteUser(user.getUserId());
 
