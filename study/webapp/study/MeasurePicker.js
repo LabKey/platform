@@ -727,6 +727,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     sourceCountSchema: null,
 
     sourceGroupHeader : 'Queries',
+    variablePanelHeader : 'Variables',
 
     // the "select all" column header for the measures grid
     measuresAllHeader : null,
@@ -734,9 +735,11 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     // group the 'selected' measures as a separate group from which the user can modify the current set
     supportSelectionGroup: false,
     supportSelectionLabel: 'Current columns',
+    supportSelectionDescription: 'Currently selected variables grouped by source',
 
     supportSessionGroup: false,
     supportSessionLabel: 'All variables from this session',
+    supportSessionDescription: 'All variables that have been selected from this session grouped by source',
 
     constructor : function(config) {
 
@@ -952,7 +955,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                 align: 'stretch'
             },
             cls : this.measurePanelCls + ' iScroll',
-            title : 'Variables',
+            title : this.variablePanelHeader,
             border: false,
             items: [ this.getMeasuresGrid() ]
         });
@@ -1085,7 +1088,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                         name: '',
                         queryName: null,
                         queryLabel: this.supportSelectionLabel,
-                        queryDescription: 'Currently selected variables grouped by source',
+                        queryDescription: this.supportSelectionDescription,
                         variableType: 'SELECTION'
                     });
                 }
@@ -1097,7 +1100,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                         name: '',
                         queryName: null,
                         queryLabel: this.supportSessionLabel,
-                        queryDescription: 'All variables that have been selected from this session grouped by source',
+                        queryDescription: this.supportSessionDescription,
                         variableType: 'SESSION'
                     });
                 }
