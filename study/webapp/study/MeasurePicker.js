@@ -721,6 +721,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     displaySourceCounts: false,
 
     // only used if displaySourceCounts is 'true'
+    updateSourceCountsOnLoad: true,
     sourceCountMemberSet: [],
     sourceCountSourceSet: [],
     sourceCountIdColumn: null,
@@ -789,7 +790,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             // Using a new MeasureStore, but we will only load data for the list of queryNames (i.e. Sources)
             this.sourcesStore = Ext4.create('LABKEY.ext4.MeasuresStore', {});
 
-            if (this.displaySourceCounts === true) {
+            if (this.displaySourceCounts === true && this.updateSourceCountsOnLoad === true) {
                 this.sourcesStore.on('load', this.getSourceCounts, this);
             }
         }
