@@ -837,8 +837,9 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                         {
                             renderCount : function(values) {
                                 var val = " <span class='maskit'>";
-                                if (values['variableType'] == null && Ext.isNumber(values['sourceCount'])) {
-                                    val += "(" + Ext.htmlEncode(values['sourceCount']) + ")";
+                                if (values['variableType'] == null && Ext4.isNumber(values['sourceCount'])) {
+                                    var count = Ext4.util.Format.number(values['sourceCount'], '0,000');
+                                    val += "(" + Ext4.util.Format.htmlEncode(count) + ")";
                                 }
                                 val += "</span>";
                                 return val;
@@ -860,7 +861,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         return this.sourcesView;
     },
 
-    getSourceCounts : function() {
+    getSourceCounts : function(altCountsConfig) {
         if (this.displaySourceCounts) {
             this.fireEvent('beforeMeasureSourceCountsLoad', this);
 
@@ -880,6 +881,18 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
                     var q = source.get('queryLabel') || source.get('queryName');
                     json.sources.push(q);
                 }, this);
+            }
+
+
+            // config param allows query of specific sources/members/colName different from the defaults
+            if (altCountsConfig)
+            {
+                if (!altCountsConfig.colName && !altCountsConfig.members && !altCountsConfig.sources)
+                    return;
+
+                json.colName = altCountsConfig.colName;
+                json.members = altCountsConfig.members;
+                json.sources = altCountsConfig.sources;
             }
 
             Ext4.Ajax.request({
@@ -923,6 +936,10 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
         // getSourceCounts API action will distinquish between null (no filters) vs empty array (no members that fit filters)
         this.sourceCountMemberSet = Ext.isArray(memberSet) ? memberSet : null;
         this.getSourceCounts();
+    },
+
+    getAltSourceCounts : function(config) {
+        this.getSourceCounts(config);
     },
 
     createMeasurePanel : function() {
