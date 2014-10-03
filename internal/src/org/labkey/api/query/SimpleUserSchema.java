@@ -49,7 +49,10 @@ import org.labkey.api.module.SimpleModule;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.NotFoundException;
 
 import java.sql.Connection;
@@ -180,6 +183,7 @@ public class SimpleUserSchema extends UserSchema
     {
         protected ColumnInfo _objectUriCol;
         protected Domain _domain;
+        protected boolean _readOnly;
 
         /**
          * Create the simple table.
@@ -438,6 +442,8 @@ public class SimpleUserSchema extends UserSchema
         @Override
         public boolean hasPermission(@NotNull UserPrincipal user, @NotNull Class<? extends Permission> perm)
         {
+            if (_readOnly && (perm == InsertPermission.class || perm == UpdatePermission.class || perm == DeletePermission.class))
+                return false;
             return _userSchema.getContainer().hasPermission(this.getClass().getName() + " " + getName(), user, perm);
         }
 
@@ -445,9 +451,12 @@ public class SimpleUserSchema extends UserSchema
         public QueryUpdateService getUpdateService()
         {
             // UNDONE: add an 'isUserEditable' bit to the schema and table?
-            TableInfo table = getRealTable();
-            if (table != null && table.getTableType() == DatabaseTableType.TABLE)
-                return new SimpleQueryUpdateService(this, table);
+            if (!_readOnly)
+            {
+                TableInfo table = getRealTable();
+                if (table != null && table.getTableType() == DatabaseTableType.TABLE)
+                    return new SimpleQueryUpdateService(this, table);
+            }
             return null;
         }
 
@@ -462,19 +471,19 @@ public class SimpleUserSchema extends UserSchema
         @Override
         public boolean insertSupported()
         {
-            return true;
+            return !_readOnly;
         }
 
         @Override
         public boolean updateSupported()
         {
-            return true;
+            return !_readOnly;
         }
 
         @Override
         public boolean deleteSupported()
         {
-            return true;
+            return !_readOnly;
         }
 
         @Override
@@ -542,6 +551,15 @@ public class SimpleUserSchema extends UserSchema
         {
             throw new UnsupportedOperationException();
         }
-    }
 
+        public boolean isReadOnly()
+        {
+            return _readOnly;
+        }
+
+        public void setReadOnly(boolean readOnly)
+        {
+            _readOnly = readOnly;
+        }
+    }
 }
