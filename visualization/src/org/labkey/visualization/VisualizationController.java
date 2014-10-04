@@ -46,6 +46,7 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
@@ -683,13 +684,14 @@ public class VisualizationController extends SpringActionController
                                 filter = new SimpleFilter(filterUrl, VisualizationController.FILTER_DATAREGION);
                             }
 
-                            SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+                            QueryLogging queryLogging = new QueryLogging();
+                            SQLFragment sql = QueryService.get().getSelectSQL(tinfo, Collections.singleton(col), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
                             SQLFragment distinctSql = new SQLFragment(sql);
                             int i = StringUtils.indexOf(sql.getSqlCharSequence(), "SELECT");
                             if (i >= 0)
                                 distinctSql.insert(i + "SELECT".length(), " DISTINCT");
 
-                            new SqlSelector(schema.getDbSchema(), distinctSql).forEach(new Selector.ForEachBlock<ResultSet>()
+                            new SqlSelector(schema.getDbSchema().getScope(), distinctSql, queryLogging).forEach(new Selector.ForEachBlock<ResultSet>()
                             {
                                 @Override
                                 public void exec(ResultSet rs) throws SQLException

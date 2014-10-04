@@ -2942,9 +2942,9 @@ public class QueryController extends SpringActionController
             ensureQueryExists(form);
 
             TableInfo table = form.getSchema().getTable(form.getQueryName());
-            SQLFragment sql = getDistinctSql(table, form, errors);
+            SqlSelector sqlSelector = getDistinctSql(table, form, errors);
 
-            if (errors.hasErrors())
+            if (errors.hasErrors() || null == sqlSelector)
                 return null;
 
             ApiResponseWriter writer = new ApiJsonWriter(getViewContext().getResponse());
@@ -2954,7 +2954,7 @@ public class QueryController extends SpringActionController
             writer.writeProperty("queryName", form.getQueryName());
             writer.startList("values");
 
-            try (ResultSet rs = new SqlSelector(table.getSchema(), sql).getResultSet())
+            try (ResultSet rs = sqlSelector.getResultSet())
             {
                 while (rs.next())
                 {
@@ -2972,7 +2972,7 @@ public class QueryController extends SpringActionController
         }
 
         @Nullable
-        private SQLFragment getDistinctSql(TableInfo table, SelectDistinctForm form, BindException errors)
+        private SqlSelector getDistinctSql(TableInfo table, SelectDistinctForm form, BindException errors)
         {
             QuerySettings settings = form.getQuerySettings();
             QueryService service = QueryService.get();
@@ -3031,7 +3031,15 @@ public class QueryController extends SpringActionController
                 filter.addUrlFilters(getViewContext().getActionURL(), dataRegionName);
             }
 
-            SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+            QueryLogging queryLogging = new QueryLogging();
+            SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
+
+            if (!queryLogging.isEmpty())
+            {
+                errors.reject(ERROR_MSG, "Cannot choose values from a column that requires logging.");
+                return null;
+            }
+
 
             // Regenerate the column since the alias may have changed after call to getSelectSQL()
             columns = service.getColumns(table, settings.getFieldKeys());
@@ -3052,7 +3060,7 @@ public class QueryController extends SpringActionController
                 service.validateNamedParameters(sql);
             }
 
-            return sql;
+            return new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
         }
     }
 

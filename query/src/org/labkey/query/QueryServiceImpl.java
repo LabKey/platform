@@ -1670,9 +1670,10 @@ public class QueryServiceImpl extends QueryService
 		if (q.getParseErrors().size() > 0)
 			throw q.getParseErrors().get(0);
 
-        SQLFragment sqlf = getSelectSQL(table, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET, false);
+        QueryLogging queryLogging = new QueryLogging();
+        SQLFragment sqlf = getSelectSQL(table, null, null, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
 
-		return new SqlSelector(table.getSchema(), sqlf).getResultSet(cached);
+		return new SqlSelector(table.getSchema().getScope(), sqlf, queryLogging).getResultSet(cached);
 	}
 
 
@@ -1739,10 +1740,11 @@ public class QueryServiceImpl extends QueryService
     @Override
     public Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Map<String, Object> parameters, boolean cache) throws SQLException
     {
-        SQLFragment sql = getSelectSQL(table, columns, filter, sort, Table.ALL_ROWS, Table.NO_OFFSET, false);
+        QueryLogging queryLogging = new QueryLogging();
+        SQLFragment sql = getSelectSQL(table, columns, filter, sort, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
         bindNamedParameters(sql, parameters);
         validateNamedParameters(sql);
-		ResultSet rs = new SqlSelector(table.getSchema(), sql).getResultSet(cache, cache);
+		ResultSet rs = new SqlSelector(table.getSchema().getScope(), sql, queryLogging).getResultSet(cache, cache);
 
         // Keep track of whether we've successfully created the ResultSetImpl to return. If not, we should
         // close the underlying ResultSet before returning since it won't be accessible anywhere else
