@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.Connection;
@@ -26,10 +27,20 @@ public class SqlSelector extends SqlExecutingSelector<SqlSelector.SimpleSqlFacto
     private final SQLFragment _sql;
 
     // Execute select SQL against a scope, with the ability to provide a connection
+    public SqlSelector(DbScope scope, @Nullable Connection conn, SQLFragment sql, @NotNull QueryLogging queryLogging)
+    {
+        super(scope, conn, queryLogging);
+        _sql = sql;
+    }
+
     public SqlSelector(DbScope scope, @Nullable Connection conn, SQLFragment sql)
     {
-        super(scope, conn);
-        _sql = sql;
+        this(scope, conn, sql, new QueryLogging());
+    }
+
+    public SqlSelector(DbScope scope, SQLFragment sql, @NotNull QueryLogging queryLogging)
+    {
+        this(scope, null, sql, queryLogging);
     }
 
     // Execute select SQL against a scope

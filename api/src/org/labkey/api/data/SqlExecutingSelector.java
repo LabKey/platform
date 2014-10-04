@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StatementWrapper;
@@ -39,6 +40,7 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
     private @Nullable AsyncQueryRequest _asyncRequest = null;
     private @Nullable StackTraceElement[] _loggingStacktrace = null;
+    private final QueryLogging _queryLogging;
 
     // SQL factory used for the duration of a single query execution. This allows reuse of instances, since query-specific
     // optimizations won't mutate the ExecutingSelector's externally set state.
@@ -51,7 +53,13 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
 
     protected SqlExecutingSelector(DbScope scope, Connection conn)
     {
+        this(scope, conn, new QueryLogging());
+    }
+
+    protected SqlExecutingSelector(DbScope scope, Connection conn, @NotNull QueryLogging queryLogging)
+    {
         super(scope, conn);
+        _queryLogging = queryLogging;
     }
 
     @Override
@@ -85,6 +93,13 @@ public abstract class SqlExecutingSelector<FACTORY extends SqlFactory, SELECTOR 
     {
         _namedParameters = namedParameters;
         return getThis();
+    }
+
+    @Override
+    @NotNull
+    public QueryLogging getQueryLogging()
+    {
+        return _queryLogging;
     }
 
     protected TableResultSet getResultSet(ResultSetFactory factory, boolean cache)
