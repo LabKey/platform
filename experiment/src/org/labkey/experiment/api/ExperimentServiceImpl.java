@@ -411,13 +411,13 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return data;
     }
 
-    public ExpDataImpl createData(Container container, DataType type)
+    public ExpDataImpl createData(Container container, @NotNull DataType type)
     {
         Lsid lsid = new Lsid(generateGuidLSID(container, type));
         return createData(container, lsid.getObjectId(), lsid.toString());
     }
 
-    public ExpDataImpl createData(Container container, DataType type, String name)
+    public ExpDataImpl createData(Container container, @NotNull DataType type, @NotNull String name)
     {
         return createData(container, name, generateLSID(container, type, name));
     }
@@ -764,7 +764,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return generateLSID(container, getNamespacePrefix(clazz), name);
     }
 
-    public String generateLSID(Container container, DataType type, String name)
+    public String generateLSID(@NotNull Container container, @NotNull DataType type, @NotNull String name)
     {
         return generateLSID(container, type.getNamespacePrefix(), name);
     }

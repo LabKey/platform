@@ -17,11 +17,13 @@
 package org.labkey.study.assay;
 
 import org.labkey.api.exp.ExperimentDataHandler;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.qc.TransformDataHandler;
 import org.labkey.api.qc.TsvDataExchangeHandler;
+import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayRunUploadContext;
 
@@ -56,6 +58,10 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
                 result.add(file);
             }
 
+            DataType dataType = context.getProvider().getDataType();
+            if (dataType == null)
+                dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+
             List<Map<String, Object>> data = context.getRawData();
             if (data.size() > 0)
             {
@@ -67,7 +73,7 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
                 pw.append('\t');
                 pw.append(runData.getAbsolutePath());
 
-                ExpData expData = ExperimentService.get().createData(context.getContainer(), context.getProvider().getDataType(), "ModuleRunTSVData");
+                ExpData expData = ExperimentService.get().createData(context.getContainer(), dataType, "ModuleRunTSVData");
                 expData.setRun(run);
 
                 ExperimentDataHandler handler = expData.findDataHandler();
@@ -75,7 +81,7 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
                 {
                     File dir = AssayFileWriter.ensureUploadDirectory(context.getContainer());
                     pw.append('\t');
-                    pw.append(form.getProvider().getDataType().getNamespacePrefix());
+                    pw.append(dataType.getNamespacePrefix());
 
                     // if the handler supports data transformation, we will include an additional column for the location of
                     // a transformed data file that a transform script may create.

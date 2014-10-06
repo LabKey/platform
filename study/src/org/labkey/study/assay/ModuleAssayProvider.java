@@ -767,8 +767,12 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
     public PipelineProvider getPipelineProvider()
     {
+        AssayDataType dataType = getDataType();
+        if (dataType == null)
+            return null;
+
         return new ModuleAssayPipelineProvider(StudyModule.class,
-                new PipelineProvider.FileTypesEntryFilter(_dataType.getFileType()), this, "Import " + getName());
+                new PipelineProvider.FileTypesEntryFilter(dataType.getFileType()), this, "Import " + getName());
     }
 
     static class ModuleAssayPipelineProvider extends AssayPipelineProvider
