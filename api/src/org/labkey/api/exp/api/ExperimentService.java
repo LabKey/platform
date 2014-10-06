@@ -117,8 +117,8 @@ public class ExperimentService
         /**
          * Create a data object.  The object will be unsaved, and will have a name which is a GUID.
          */
-        ExpData createData(Container container, DataType type);
-        ExpData createData(Container container, DataType type, String name);
+        ExpData createData(Container container, @NotNull DataType type);
+        ExpData createData(Container container, @NotNull DataType type, @NotNull String name);
         ExpData createData(Container container, String name, String lsid);
         ExpData createData(URI uri, XarSource source) throws XarFormatException;
 
@@ -196,7 +196,7 @@ public class ExperimentService
 
         String generateLSID(Container container, Class<? extends ExpObject> clazz, String name);
         String generateGuidLSID(Container container, Class<? extends ExpObject> clazz);
-        String generateLSID(Container container, DataType type, String name);
+        String generateLSID(@NotNull Container container, @NotNull DataType type, @NotNull String name);
         String generateGuidLSID(Container container, DataType type);
 
         DataType getDataType(String namespacePrefix);

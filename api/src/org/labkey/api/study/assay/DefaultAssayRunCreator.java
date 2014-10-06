@@ -414,7 +414,11 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
         else
         {
-            ExpData data = ExperimentService.get().createData(context.getContainer(), getProvider().getDataType());
+            DataType dataType = context.getProvider().getDataType();
+            if (dataType == null)
+                dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+
+            ExpData data = ExperimentService.get().createData(context.getContainer(), dataType);
             ExperimentDataHandler handler = data.findDataHandler();
 
             // this should assert to always be true
@@ -478,7 +482,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
     }
 
-    public static ExpData createData(Container c, File file, String name, DataType dataType, boolean reuseExistingDatas)
+    public static ExpData createData(Container c, File file, String name, @Nullable DataType dataType, boolean reuseExistingDatas)
     {
         ExpData data = null;
         if (file != null)
@@ -493,6 +497,9 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
         if (data == null)
         {
+            if (dataType == null)
+                dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+
             data = ExperimentService.get().createData(c, dataType, name);
             data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
             if (file != null)
@@ -502,7 +509,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         }
         else
         {
-            if (!dataType.matches(new Lsid(data.getLSID())))
+            if (dataType != null && !dataType.matches(new Lsid(data.getLSID())))
             {
                 // Reset its LSID so that it's the correct type
                 data.setLSID(ExperimentService.get().generateGuidLSID(c, dataType));
@@ -519,10 +526,10 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
     {
         Map<String, File> files = context.getUploadedData();
 
+        AssayDataType dataType = context.getProvider().getDataType();
         for (Map.Entry<String, File> entry : files.entrySet())
         {
-            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), getProvider().getDataType(), context.getReRunId() == null);
-            AssayDataType dataType = context.getProvider().getDataType();
+            ExpData data = DefaultAssayRunCreator.createData(context.getContainer(), entry.getValue(), entry.getValue().getName(), dataType, context.getReRunId() == null);
             String role = ExpDataRunInput.DEFAULT_ROLE;
             if (dataType != null && dataType.getFileType().isType(entry.getValue()))
             {

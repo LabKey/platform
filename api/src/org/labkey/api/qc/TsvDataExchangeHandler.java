@@ -175,9 +175,13 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         // All of the DataTypes that support
         Set<DataType> transformDataTypes = new HashSet<>();
 
+        DataType dataType = context.getProvider().getDataType();
+        if (dataType == null)
+            dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+
         for (File data : dataFiles)
         {
-            ExpData expData = ExperimentService.get().createData(context.getContainer(), context.getProvider().getDataType(), data.getName());
+            ExpData expData = ExperimentService.get().createData(context.getContainer(), dataType, data.getName());
             expData.setRun(run);
 
             ExperimentDataHandler handler = expData.findDataHandler();
@@ -541,13 +545,17 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
         ExpProtocolApplication scriptPA = ExperimentService.get().createSimpleRunExtraProtocolApplication(run, scriptFile.getName());
         scriptPA.save(context.getUser());
 
-        // Wire up the script's inputs 
+        DataType dataType = context.getProvider().getDataType();
+        if (dataType == null)
+            dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+
+        // Wire up the script's inputs
         for (File dataFile : inputDataFiles)
         {
             ExpData data = ExperimentService.get().getExpDataByURL(dataFile, context.getContainer());
             if (data == null)
             {
-                data = ExperimentService.get().createData(context.getContainer(), context.getProvider().getDataType(), dataFile.getName());
+                data = ExperimentService.get().createData(context.getContainer(), dataType, dataFile.getName());
                 data.setLSID(new Lsid(ExpData.DEFAULT_CPAS_TYPE, GUID.makeGUID()));
                 data.setDataFileURI(dataFile.toURI());
                 data.save(context.getUser());

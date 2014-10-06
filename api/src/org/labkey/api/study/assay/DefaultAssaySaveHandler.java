@@ -30,6 +30,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.XarFormatException;
 import org.labkey.api.exp.api.AssayJSONConverter;
+import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.exp.api.ExpExperiment;
@@ -319,7 +320,11 @@ public class DefaultAssaySaveHandler implements AssaySaveHandler
         // include any data rows
         if (dataArray.length() > 0 && outputData.isEmpty())
         {
-            newData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Analysis Results", _provider.getDataType(), true);
+            DataType dataType = getProvider().getDataType();
+            if (dataType == null)
+                dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+
+            newData = DefaultAssayRunCreator.createData(run.getContainer(), null, "Analysis Results", dataType, true);
             newData.save(context.getUser());
             outputData.put(newData, ExpDataRunInput.DEFAULT_ROLE);
         }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp.api;
 
+import com.google.common.base.Objects;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.exp.Lsid;
 
@@ -64,4 +65,14 @@ public class DataType
     {
         return _namespacePrefix != null ? _namespacePrefix.hashCode() : 0;
     }
+
+    @Override
+    public String toString()
+    {
+        return Objects.toStringHelper(this)
+                .omitNullValues()
+                .addValue(_namespacePrefix)
+                .toString();
+    }
+
 }

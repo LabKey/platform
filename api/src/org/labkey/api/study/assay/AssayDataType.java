@@ -15,6 +15,7 @@
  */
 package org.labkey.api.study.assay;
 
+import com.google.common.base.Objects;
 import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpDataRunInput;
 import org.labkey.api.util.FileType;
@@ -49,4 +50,17 @@ public class AssayDataType extends DataType
     {
         return _role;
     }
+
+    @Override
+    public String toString()
+    {
+        return Objects.toStringHelper(this)
+                .omitNullValues()
+                .addValue(_namespacePrefix)
+                .add("role", _role)
+                .add("fileType", _fileType)
+                .toString();
+    }
+
+
 }
