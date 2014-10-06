@@ -145,7 +145,7 @@
         <td><%=h(view.getName())%>
         </td>
         <td><%=text(StringUtils.join(flags, ","))%></td>
-        <td><%=h(userIdToString(view.getCustomViewOwner(), user))%>
+        <td><%=h(view.isShared() ? "<shared>" : userIdToString(view.getCustomViewOwner(), user))%>
         </td>
         <td><%=formatDateTime(view.getCreated())%></td>
         <td><%=h(userIdToString(view.getCreatedBy(), user))%></td>

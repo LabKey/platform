@@ -99,6 +99,8 @@ public class ListTable extends FilteredTable<ListQuerySchema> implements Updatea
                     {
                         colKey.setName(key.getName());
                         colKey.setLabel(key.getLabel());
+                        if (null != key.getLookupQuery())
+                            colKey.setFk(new PdLookupForeignKey(schema.getUser(), key, schema.getContainer()));
                     }
                     else
                     {
