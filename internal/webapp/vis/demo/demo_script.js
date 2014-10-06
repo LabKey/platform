@@ -341,6 +341,58 @@ var colorScatter = new LABKEY.vis.Plot({
     }
 });
 
+var binScatter = new LABKEY.vis.Plot({
+    renderTo: 'binScatter',
+    rendererType: 'd3',
+    width: 900,
+    height: 700,
+    clipRect: false,
+    labels: {
+        main: { value: 'Scatter With Hex Binning' },
+        x: { value: "X Axis" },
+        y: { value: "Y Axis" }
+    },
+    layers: [new LABKEY.vis.Layer({
+        data: scatterData,
+        geom: new LABKEY.vis.Geom.Bin({
+            // hex is default 'shape'
+            size: 15
+        }),
+        aes: {x:'x', y: 'y', color: 'y'}
+    })],
+    scales: {
+        y: {scaleType: 'continuous', trans: 'linear'},
+        color: {scaleType: 'continuous', trans: 'linear'}
+    }
+});
+
+var binScatter2 = new LABKEY.vis.Plot({
+    renderTo: 'binScatter2',
+    rendererType: 'd3',
+    width: 900,
+    height: 700,
+    clipRect: false,
+    labels: {
+        main: { value: 'Scatter With Square Binning & Color Range' },
+        x: { value: "X Axis" },
+        y: { value: "Y Axis" }
+    },
+    layers: [new LABKEY.vis.Layer({
+        data: scatterData,
+        geom: new LABKEY.vis.Geom.Bin({
+            shape: 'square',
+            size: 15,
+            colorRange: ['white', 'orange']
+        }),
+        aes: {x:'x', y: 'y', color: 'y'}
+    })],
+    scales: {
+        y: {scaleType: 'continuous', trans: 'linear'},
+        color: {scaleType: 'continuous', trans: 'linear'}
+    }
+});
+
+
 var selectionMade = false;
 var brushScatter = new LABKEY.vis.Plot({
     renderTo: 'brushing',
@@ -728,6 +780,8 @@ boxPlot.render();
 discreteScatter.render();
 scatterPlot.render();
 colorScatter.render();
+binScatter.render();
+binScatter2.render();
 brushScatter.render();
 mouseEventPlot.render();
 errorPlot.render();
