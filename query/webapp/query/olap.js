@@ -314,7 +314,6 @@ Ext4.define('LABKEY.query.olap.metadata.Member', {
     }
 });
 
-
 Ext4.define('LABKEY.query.olap.metadata.Level', {
     extend: 'LABKEY.query.olap.metadata.MetadataElement',
 
@@ -409,7 +408,6 @@ Ext4.define('LABKEY.query.olap.metadata.Level', {
     }
 });
 
-
 Ext4.define('LABKEY.query.olap.metadata.Hierarchy', {
     extend: 'LABKEY.query.olap.metadata.MetadataElement',
 
@@ -457,7 +455,6 @@ Ext4.define('LABKEY.query.olap.metadata.Hierarchy', {
     }
 });
 
-
 Ext4.define('LABKEY.query.olap.metadata.Dimension', {
     extend: 'LABKEY.query.olap.metadata.MetadataElement',
 
@@ -488,7 +485,6 @@ Ext4.define('LABKEY.query.olap.metadata.Dimension', {
     }
 });
 
-
 Ext4.define('LABKEY.query.olap.metadata.Cube', {
 
     extend: 'LABKEY.query.olap.metadata.MetadataElement',
@@ -517,22 +513,18 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
      */
     useServerMemberCache: false,
 
-    defaultContext: {},
-
-    dimensions: [],
-
-    dimensionMap: {},
-
-    hierarchyMap: {}, // names may not be unique use getByUniqueName
-
-    levelMap: {}, // names may not be unique use getByUniqueName
-
-    uniqueNameMap: {},
-
-    _isReady: false,
-
     constructor : function(config)
     {
+        Ext4.apply(this, {
+            _isReady: false,
+            defaultContext: {},
+            dimensions: [],
+            dimensionMap: {},
+            hierarchyMap: {}, // names may not be unique use getByUniqueName
+            levelMap: {},      // names may not be unique use getByUniqueName
+            uniqueNameMap: {}
+        });
+
         this.mixins.observable.constructor.call(this, config);
         this.initConfig = config;  // this is handed to the user in onReady
 
@@ -651,7 +643,6 @@ Ext4.define('LABKEY.query.olap.metadata.Cube', {
 
 LABKEY.query.olap.CubeManager = new function()
 {
-
     var _cubes = {};
 
     var getCube = function(config)
@@ -763,7 +754,6 @@ Ext4.define('LABKEY.query.olap.MDX', {
 
     clearNamedFilter : function(name, callback, scope)
     {
-        var found = false;
         if (this._filter[name]) {
             delete this._filter[name];
         }
@@ -855,7 +845,7 @@ Ext4.define('LABKEY.query.olap.MDX', {
         var c = Ext4.apply({}, config, {filter:[], useNamedFilters:[]});
         for (var f=0 ; f<c.useNamedFilters.length ; f++)
         {
-            var filter = this._filter[c.useNamedFilters[f]];
+            var filter = this.getNamedFilter(c.useNamedFilters[f]);
             if (!filter)
                 continue;
             if (!Ext4.isArray(filter))
@@ -867,68 +857,15 @@ Ext4.define('LABKEY.query.olap.MDX', {
     },
 
 
-    _queryJS : function(config)
-    {
-        var mdx = this;
-        var query = this._generateMdx(config);
-
-        var queryConfig =
-        {
-            configId : config.configId || this._cube.configId,
-            query : query,
-            log : config.log,
-            originalConfig : config,
-            scope : this,
-            success : function(cellset,queryConfig)
-            {
-                var config = queryConfig.originalConfig;
-                if (Ext4.isFunction(config.success))
-                    config.success.apply(config.scope||window, [cellset, mdx, config]);
-            }
-        };
-        LABKEY.query.olap._private.executeMdx(queryConfig);
-    },
-
-
-    _queryJava : function(config)
-    {
-        var queryConfig =
-        {
-            configId : config.configId || this._cube.configId,
-            schemaName : config.schemaName || this._cube.schemaName,
-            cubeName : config.cubeName || this._cube.name,
-            query :
-                {
-                    showEmpty:config.showEmpty,
-                    onRows:config.onRows,
-                    onColumns:(config.onColumns||config.onCols),
-                    countDistinctLevel:config.countDistinctLevel,
-                    countFilter:config.countFilter||config.filter,
-                    joinLevel:config.joinLevel,
-                    whereFilter:config.whereFilter
-                },
-            log : config.log,
-            originalConfig : config,
-            scope : this,
-            success : function(cellset,queryConfig)
-            {
-                var config = queryConfig.originalConfig;
-                if (Ext4.isFunction(config.success))
-                    config.success.apply(config.scope||window, [cellset, this, config]);
-            }
-        };
-        LABKEY.query.olap._private.executeJson(queryConfig);
-    },
-
-
     query : function(config)
     {
         var copy = Ext4.apply({},config,{filter:[], useNamedFilters:[]});
         copy.filter = copy.filter ? copy.filter.slice() : [];
+
         var namedFilters = copy.useNamedFilters || [];
         for (var f=0; f < namedFilters.length; f++)
         {
-            var filters = this._filter[namedFilters[f]];
+            var filters = this.getNamedFilter(namedFilters[f]);
 
             if (!filters)
                 continue;
@@ -936,49 +873,65 @@ Ext4.define('LABKEY.query.olap.MDX', {
             if (!Ext4.isArray(filters))
                 filters = [filters];
 
-            if (this._cube.usePerspectives === true && filters.length > 0) {
-                var _default = this._cube.mdx.defaultPerspective;
-                if (!copy.perspective) {
-                    console.warn('Query generated without providing perspective. Using default perspective: \'' + _default + '\'');
-                    copy.perspective = _default;
-                }
-                var perspectiveFilters = [];
-
-                Ext4.each(filters, function(filter) {
-
-                    if (!filter.perspective) {
-                        console.warn('Filter generated/saved without providing perspective. Using default perspective: \'' + _default + '\'');
-                        filter.perspective = _default;
-                    }
-
-                    if (filter.perspective !== copy.perspective) {
-
-                        // generate a wrapped filter
-                        var wrapped = {
-                            operator: 'INTERSECT',
-                            arguments: [{
-                                level: this._cube.mdx.perspectives[copy.perspective].level,
-                                membersQuery: filter
-                            }]
-                        };
-                        perspectiveFilters.push(wrapped);
-                    }
-                    else {
-                        perspectiveFilters.push(filter);
-                    }
-                }, this);
-
-                filters = perspectiveFilters;
-            }
+            filters = this._wrapFilterPerspectives(filters, copy);
 
             copy.filter = copy.filter.concat(filters);
         }
         copy.sql = config.sql;
 //        console.debug(JSON.stringify({showEmpty:copy.showEmpty, onRows:copy.onRows, onCols:copy.onCols, filter:copy.filter}));
-        return this._queryJava(copy);
+        return this._executeQuery(copy);
     },
 
+    /**
+     * @paran {[Object]} configs
+     * @param {function([query.SelectRowsResults], configs} success
+     * @param {function() failure
+     */
+    queryMultiple : function(configs, success, failure, scope)
+    {
+        var outstandingQueries = configs.length;
+        var results = new Array(configs.length);
+        var failed = false;
+        var checkDone = function()
+        {
+            if (outstandingQueries > 0)
+                return;
+            if (failed)
+                failure.call(scope);
+            else
+                success.call(scope, results, configs);
+        };
+        var innerSuccess = function(qr, mdx, config)
+        {
+            if (Ext4.isFunction(config.originalConfig.success))
+                config.originalConfig.success.call(config.originalConfig,scope||window, qr, config.originalConfig);
+            results[config.queryIndex] = qr;
+            outstandingQueries--;
+            checkDone();
+        };
+        var innerFailure = function(a,b,c)
+        {
+            console.log("NYI: finish failure handling");
+            if (Ext4.isFunction(config.originalConfig.failure))
+                config.originalConfig.failure.apply(config.originalConfig.scope||window, arguments.concat([config.originalConfig]));
+            failed = true;
+            outstandingQueries--;
+            checkDone();
+        };
+        for (var c=0 ; c<configs.length ; c++)
+        {
+            var config = Ext4.apply({},configs[c]);
+            config.originalConfig = configs[c];
+            config.queryIndex = c;
+            config.success = innerSuccess;
+            config.failure = innerFailure;
+            this.query(config);
+        }
+    },
 
+    /**
+     * @deprecated This is hard-coded wrapper to look at specific subject/patient/participant levels. Just do it yourself.
+     */
     queryParticipantList : function(config)
     {
         if (config.onCols || config.onColumns)
@@ -997,15 +950,45 @@ Ext4.define('LABKEY.query.olap.MDX', {
     },
 
     hasFilter : function (filterName) {
-        return this._filter[filterName] && this._filter[filterName].length > 0;
+        return !Ext4.isEmpty(this.getNamedFilter(filterName));
     },
 
-
-    _callOperator : function(op, expr)
+    /**
+     * @private
+     */
+    _executeQuery : function(config)
     {
+        var queryConfig =
+        {
+            configId : config.configId || this._cube.configId,
+            schemaName : config.schemaName || this._cube.schemaName,
+            cubeName : config.cubeName || this._cube.name,
+            query :
+            {
+                showEmpty: config.showEmpty,
+                onRows: config.onRows,
+                onColumns: (config.onColumns||config.onCols),
+                countDistinctLevel: config.countDistinctLevel,
+                countFilter: config.countFilter||config.filter,
+                joinLevel: config.joinLevel,
+                whereFilter: config.whereFilter
+            },
+            log : config.log,
+            originalConfig : config,
+            scope : this,
+            success : function(cellset,queryConfig)
+            {
+                var config = queryConfig.originalConfig;
+                if (Ext4.isFunction(config.success))
+                    config.success.apply(config.scope||window, [cellset, this, config]);
+            }
+        };
+        LABKEY.query.olap._private.executeJson(queryConfig);
     },
 
-
+    /**
+     * @private
+     */
     _processExpr : function(expr, defaultOperator, defaultArrayOperator)
     {
         if (Ext4.isArray(expr))
@@ -1031,8 +1014,10 @@ Ext4.define('LABKEY.query.olap.MDX', {
         throw "unexpected operator: " + op;
     },
 
-
-    // smart cross-join: intersect within level, crossjoin across levels
+    /**
+     * @private
+     * smart cross-join: intersect within level, crossjoin across levels
+     */
     _toSmartCrossJoinExpr : function(expr)
     {
         var arguments = Ext4.isArray(expr) ? expr : expr.arguments;     // handle array for old olap_test.js tests
@@ -1061,7 +1046,9 @@ Ext4.define('LABKEY.query.olap.MDX', {
             return {fn:'CrossJoin', type:"set", arguments:sets};
     },
 
-
+    /**
+     * @private
+     */
     _toCrossJoinExpr : function(expr)
     {
         var arguments = expr.arguments;
@@ -1077,7 +1064,9 @@ Ext4.define('LABKEY.query.olap.MDX', {
             return {fn:'CrossJoin', type:"set", arguments:sets};
     },
 
-
+    /**
+     * @private
+     */
     _toUnionExpr : function(expr)
     {
         var arguments = expr.arguments;
@@ -1106,7 +1095,9 @@ Ext4.define('LABKEY.query.olap.MDX', {
         }
     },
 
-
+    /**
+     * @private
+     */
     _toIntersectExpr : function(expr)
     {
         var arguments = expr.arguments;
@@ -1127,6 +1118,9 @@ Ext4.define('LABKEY.query.olap.MDX', {
         }
     },
 
+    /**
+     * @private
+     */
     _resolveUniqueName : function(md)
     {
         if (md.uniqueName)
@@ -1136,7 +1130,9 @@ Ext4.define('LABKEY.query.olap.MDX', {
         return null;
     },
 
-
+    /**
+     * @private
+     */
     _resolveLevelOrHierarchy : function(membersDef)
     {
         var level;
@@ -1175,7 +1171,9 @@ Ext4.define('LABKEY.query.olap.MDX', {
         throw "level not found: " + (membersDef.level ||membersDef.hierarchy);
     },
 
-
+    /**
+     * @private
+     */
     _toMembersExpr : function(membersDef)
     {
         var hierarchy, level;
@@ -1212,7 +1210,10 @@ Ext4.define('LABKEY.query.olap.MDX', {
     },
 
 
-    // there might be a way to write this filter without a measure, but this is my current attempt
+    /**
+     * @private
+     * there might be a way to write this filter without a measure, but this is my current attempt
+     */
     _toFilterExistsExpr : function(levelExpr, members, op, measure)
     {
         op = " " + op + " ";
@@ -1228,14 +1229,18 @@ Ext4.define('LABKEY.query.olap.MDX', {
         return {fn:"Filter", type:"set", level:levelExpr.level, arguments:[levelExpr, filterExpr]};
     },
 
-
+    /**
+     * @private
+     */
     _toMemberExpr : function(level, member)
     {
         var uniqueName = Ext4.isString(member) ? member :this._resolveUniqueName(member);
         return {fn:"", type:"member", level:level, arguments:[uniqueName]};
     },
 
-
+    /**
+     * @private
+     */
     _toSetString : function (expr)
     {
         if (Ext4.isString(expr))
@@ -1291,7 +1296,9 @@ Ext4.define('LABKEY.query.olap.MDX', {
     },
 
 
-    // @private
+    /**
+     * @private
+     */
     _generateMdx : function(config)
     {
         var rowset, columnset;
@@ -1323,76 +1330,52 @@ Ext4.define('LABKEY.query.olap.MDX', {
         return query;
     },
 
-    // @private
-    _generateParticipantMdx : function(config)
-    {
-        var columnset = "[Measures].members",
-                countMeasure = "ParticipantList",
-                filterset,
-                withDefinition = "";
-
-        if (config.filter && config.filter.length > 0)
-            filterset = this._toSetString(this._processExpr(config.filter,"XINTERSECT","XINTERSECT"));
-        else
-            filterset = "[Subject].[Subject].members";
-
-        if (filterset)
-            withDefinition = "WITH SET " + countMeasure + " AS " + filterset + "\n";
-
-        var query = withDefinition + "SELECT\n" + "  "  + columnset + " ON COLUMNS\n";
-        if (countMeasure)
-            query += ", " + (config.showEmpty ? "" : " NON EMPTY ")  + countMeasure + " ON ROWS\n";
-        query += "FROM [" + this._cube.getName() + "]\n";
-
-        return query;
-    },
-
-
     /**
-     * @paran {[Object]} configs
-     * @param {function([query.SelectRowsResults], configs} success
-     * @param {function() failure
+     * @private
+     * When using perspectives, each filter is wrapped with the associated persepective query. A default perspective
+     * can be provided by the cube configuration and will be used if a filter does not specify it's perspective.
      */
-    queryMultiple : function(configs, success, failure, scope)
+    _wrapFilterPerspectives : function(filters, copy)
     {
-        var outstandingQueries = configs.length;
-        var results = new Array(configs.length);
-        var failed = false;
-        var checkDone = function()
+        if (this._cube.usePerspectives === true && !Ext4.isEmpty(filters))
         {
-            if (outstandingQueries > 0)
-                return;
-            if (failed)
-                failure.call(scope);
-            else
-                success.call(scope, results, configs);
-        };
-        var innerSuccess = function(qr, mdx, config)
-        {
-            if (Ext4.isFunction(config.originalConfig.success))
-                config.originalConfig.success.call(config.originalConfig,scope||window, qr, config.originalConfig);
-            results[config.queryIndex] = qr;
-            outstandingQueries--;
-            checkDone();
-        };
-        var innerFailure = function(a,b,c)
-        {
-            console.log("NYI: finish failure handling");
-            if (Ext4.isFunction(config.originalConfig.failure))
-                config.originalConfig.failure.apply(config.originalConfig.scope||window, arguments.concat([config.originalConfig]));
-            failed = true;
-            outstandingQueries--;
-            checkDone();
-        };
-        for (var c=0 ; c<configs.length ; c++)
-        {
-            var config = Ext4.apply({},configs[c]);
-            config.originalConfig = configs[c];
-            config.queryIndex = c;
-            config.success = innerSuccess;
-            config.failure = innerFailure;
-            this.query(config);
+            var _default = this._cube.mdx.defaultPerspective;
+            if (!copy.perspective)
+            {
+                console.warn('Query generated without providing perspective. Using default perspective: \'' + _default + '\'');
+                copy.perspective = _default;
+            }
+            var perspectiveFilters = [];
+
+            Ext4.each(filters, function(filter)
+            {
+                if (!filter.perspective)
+                {
+                    console.warn('Filter generated/saved without providing perspective. Using default perspective: \'' + _default + '\'');
+                    filter.perspective = _default;
+                }
+
+                if (filter.perspective === copy.perspective)
+                {
+                    perspectiveFilters.push(filter);
+                }
+                else
+                {
+                    // generate a wrapped filter
+                    perspectiveFilters.push({
+                        operator: 'INTERSECT',
+                        arguments: [{
+                            level: this._cube.mdx.perspectives[copy.perspective].level,
+                            membersQuery: filter
+                        }]
+                    });
+                }
+            }, this);
+
+            filters = perspectiveFilters;
         }
+
+        return filters;
     }
 });
 
