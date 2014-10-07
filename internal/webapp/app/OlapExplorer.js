@@ -247,7 +247,8 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
 
         var hasSubjectLevel = targetLevels[targetLevels.length-1].name === this.subjectName;
         var hasGrpLevel = targetLevels.length > (hasSubjectLevel ? 3 : 2);
-        var grpLevelID = targetLevels[1].id, subPosition;
+        var grpLevelID = targetLevels[1] ? targetLevels[1].id : null;
+        var subPosition;
         var customGroups = {};
 
         // skip (All)
