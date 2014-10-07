@@ -278,12 +278,13 @@ public class CoreController extends SpringActionController
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
         {
-            Container c = getContainer();
-            Content content = _themeStylesheetCache.get(c);
+            Container container = getContainer();
+            Content content = null;
             Integer dependsOn = AppProps.getInstance().getLookAndFeelRevision();
 
-            if(AppProps.getInstance().isDevMode()){
-                content = null;
+            if (container != null && !AppProps.getInstance().isDevMode()) // in dev mode we don't use the caching
+            {
+                content = _themeStylesheetCache.get(container);
             }
             
             if (null == content || !dependsOn.equals(content.dependencies))
@@ -294,7 +295,9 @@ public class CoreController extends SpringActionController
                 content  = new Content(compileCSS(contentRaw.content));
                 content.dependencies = dependsOn;
                 content.compressed = compressCSS(content.content);
-                _themeStylesheetCache.put(c, content);
+
+                if (container != null)
+                    _themeStylesheetCache.put(container, content);
             }
             return content;
         }
