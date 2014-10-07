@@ -23,6 +23,17 @@ import java.util.HashSet;
 public class FileNameUniquifier
 {
     private Set<String> _previous = new HashSet<>();
+    private boolean _preserveExtension;
+
+    public FileNameUniquifier()
+    {
+        this(true);
+    }
+
+    public FileNameUniquifier(boolean preserveExtension)
+    {
+        _preserveExtension = preserveExtension;
+    }
 
     public String uniquify(String name)
     {
@@ -33,7 +44,7 @@ public class FileNameUniquifier
         while (_previous.contains(candidateName))
         {
             i++;
-            int dot = name.lastIndexOf('.');
+            int dot = _preserveExtension ? name.lastIndexOf('.') : -1;
 
             if (-1 == dot)
                 candidateName = name + '_' + i;
