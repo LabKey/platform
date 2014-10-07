@@ -116,9 +116,9 @@ public class PipelineJobServiceImpl extends PipelineJobService
         return pjs;
     }
     
-    private HashMap<TaskId, TaskPipeline> _taskPipelineStore = new HashMap<>();
-    private HashMap<TaskId, TaskFactory> _taskFactoryStore = new HashMap<>();
-    private HashMap<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories = new HashMap<>();
+    private Map<TaskId, TaskPipeline> _taskPipelineStore = new HashMap<>();
+    private Map<TaskId, TaskFactory> _taskFactoryStore = new HashMap<>();
+    private Map<SchemaType, XMLBeanTaskFactoryFactory> _taskFactoryFactories = new HashMap<>();
 
     private final ModuleResourceCache<TaskFactory> TASK_FACTORY_CACHE = ModuleResourceCaches.create(
             new Path(PipelineJobServiceImpl.MODULE_PIPELINE_DIR, TaskFactoryCacheHandler.MODULE_TASKS_DIR), "TaskFactory cache", new TaskFactoryCacheHandler());
@@ -161,6 +161,8 @@ public class PipelineJobServiceImpl extends PipelineJobService
             _taskPipelineStore = current._taskPipelineStore;
             current._taskFactoryStore.putAll(_taskFactoryStore);
             _taskFactoryStore = current._taskFactoryStore;
+            current._taskFactoryFactories.putAll(_taskFactoryFactories);
+            _taskFactoryFactories = current._taskFactoryFactories;
 
             _appProperties = current._appProperties;
             _configProperties = current._configProperties;
