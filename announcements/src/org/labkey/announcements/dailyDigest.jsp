@@ -78,8 +78,11 @@
 <hr size="1">
 
 <table width=100%>
-    <tr><td>You have received this email because you are signed up for a daily digest of new posts to <a href="<%=h(boardURL.getURIString())%>"><%= h(boardPath) %></a> at <a href="<%=h(siteUrl)%>"><%=h(siteUrl)%></a>.
-  If you no longer wish to receive these notifications, please <a href="<%=h(removeURL.getURIString())%>">change your email preferences</a>.</td></tr>
+    <tr><td>
+        You have received this email because you are signed up for a daily digest of new posts to <a href="<%=h(boardURL.getURIString())%>"><%= h(boardPath) %></a> at <a href="<%=h(siteUrl)%>"><%=h(siteUrl)%></a>.
+        You must login to respond to this message.
+        If you no longer wish to receive these notifications, please <a href="<%=h(removeURL.getURIString())%>">change your email preferences</a>.
+    </td></tr>
 </table>    
 </body>
 </html>

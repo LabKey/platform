@@ -48,17 +48,19 @@ View this <%=text(settings.getConversationName().toLowerCase())%> here:
 <%=text(threadURL.getURIString())%>
 
 
-You have received this email because <%
+You have received this email because you are you are <%
     switch(reason)
     {
         case signedUp:
-%>you are signed up to receive notifications about new posts to <%=text(boardPath)%> at <%=text(siteURL)%>.
+%>signed up to receive notifications about new posts to <%=text(boardPath)%> at <%=text(siteURL)%>.
+You must login to respond to this message.
 If you no longer wish to receive these notifications you can change your email preferences by
 navigating here: <%=text(removeURL.getURIString())%>.<%
         break;
 
         case memberList:
-%>you are on the member list for this <%=text(settings.getConversationName().toLowerCase())%>.
+%>on the member list for this <%=text(settings.getConversationName().toLowerCase())%>.
+You must login to respond to this message.
 If you no longer wish to receive these notifications you can remove yourself from
 the member list by navigating here: <%=text(removeURL.getURIString())%><%
         break;

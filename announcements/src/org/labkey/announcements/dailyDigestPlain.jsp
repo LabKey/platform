@@ -70,4 +70,5 @@ View this <%=text(conversationName)%> here:
 
 
 You have received this email because you are signed up for a daily digest of new posts to <%=text(boardPath)%> at <%=text(siteUrl)%>.
+You must login to respond to this message.
 If you no longer wish to receive these notifications, please change your email preferences here: <%=text(removeURL.getURIString())%>
