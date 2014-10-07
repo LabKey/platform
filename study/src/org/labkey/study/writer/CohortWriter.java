@@ -103,10 +103,13 @@ public class CohortWriter implements InternalStudyWriter
             if (cohort.getDescription() != null)
                 cohortXml.setDescription(cohort.getDescription());
 
-            Collection<String> ids = participantsInEachCohort.get(cohort.getRowId());
-
-            if (null != ids)
-                cohortXml.setIdArray(ids.toArray(new String[ids.size()]));
+            // only add the list of participants in the manual assignment case
+            if (study.isManualCohortAssignment())
+            {
+                Collection<String> ids = participantsInEachCohort.get(cohort.getRowId());
+                if (null != ids)
+                    cohortXml.setIdArray(ids.toArray(new String[ids.size()]));
+            }
         }
 
         vf.saveXmlBean(COHORTS_FILENAME, cohortFileXml);
