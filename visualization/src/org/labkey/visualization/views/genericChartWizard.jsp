@@ -103,7 +103,7 @@
             autoColumnYName  : <%=q(form.getAutoColumnYName() != null ? form.getAutoColumnYName() : null) %>,
             autoColumnXName  : <%=q(form.getAutoColumnXName() != null ? form.getAutoColumnXName() : null) %>,
             defaultNumberFormat: eval("<%=text(numberFormatFn)%>"),
-            allowEditMode: <%=!user.isGuest() && form.allowToggleMode()%>,
+            allowEditMode: <%=form.allowToggleMode()%>,
             editModeURL: <%=q(editUrl != null ? editUrl.toString() : null) %>,
             restrictColumnsEnabled: <%=FolderSettingsCache.areRestrictedColumnsEnabled(c)%>,
             firstLoad: true

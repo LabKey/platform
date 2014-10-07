@@ -1580,7 +1580,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
             method  : 'GET',
             params  : {reportId : reportId},
             success : function(response){
-                this.saveAsBtn.setVisible(true);
+                this.saveAsBtn.setVisible(!this.isNew() && !this.hideSave);
                 this.loadSavedConfig(Ext4.decode(response.responseText).reportConfig);
             },
             failure : this.onFailure,
@@ -2261,7 +2261,7 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                     otherFields.push(fields[i]);
                 }
             }
-            
+
             participantFields.sort(sortFunction);
             otherFields.sort(sortFunction);
 
