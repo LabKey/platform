@@ -1857,8 +1857,8 @@ public class PageFlowUtil
         {
             if (!commentStarted)
             {
-                stateChange = (trimmedHtml.substring(i, i + 4).equals("<!--"));
-                if (stateChange == true)
+                stateChange = (trimmedHtml.length() >= i + 4) && (trimmedHtml.substring(i, i + 4).equals("<!--"));
+                if (stateChange)
                 {
                     commentStarted = true;
                     i += 4;
@@ -1867,7 +1867,7 @@ public class PageFlowUtil
                 else
                     break;
             }
-            else if (trimmedHtml.substring(i,i+3).equals("-->"))
+            else if ((trimmedHtml.length() >= i + 3) && trimmedHtml.substring(i,i+3).equals("-->"))
             {
                 commentStarted = false;
                 i += 3;
