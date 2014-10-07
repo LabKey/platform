@@ -445,7 +445,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
      */
     public boolean hasAncestor(Container possibleAncestor)
     {
-        if (isRoot())
+        if (isRoot() || getParent() == null)
             return false;
         if (getParent().equals(possibleAncestor))
             return true;
