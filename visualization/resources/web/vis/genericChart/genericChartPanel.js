@@ -1313,11 +1313,11 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 listeners   : {
                     change : {fn : function(cmp, newValue) {
                         this.schemaName = newValue;
-                        this.queryLabel = null;
-                        this.queryName = null;
                         var proxy = queryStore.getProxy();
-                        if (proxy)
-                            queryStore.load({params : {schemaName : newValue}});
+                        if (proxy) {
+                            proxy.extraParams = {schemaName : newValue};
+                            queryStore.load();
+                        }
 
                         var queryCombo = Ext4.getCmp(queryId);
                         if (queryCombo)
@@ -1342,8 +1342,8 @@ Ext4.define('LABKEY.ext4.GenericChartPanel', {
                 listeners   : {
                     change : {fn : function(cmp, newValue) {
                         var selected = cmp.getStore().getAt(cmp.getStore().find('name', newValue));
-                        this.queryLabel = selected.data.title;
-                        this.queryName = selected.data.name;
+                        this.queryLabel = selected ? selected.data.title : null;
+                        this.queryName = selected ? selected.data.name : null;
                     }, scope : this}
                 }
             });
