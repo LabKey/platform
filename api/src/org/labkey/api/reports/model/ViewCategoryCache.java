@@ -104,7 +104,8 @@ public class ViewCategoryCache
 
             for (ViewCategory category : categories)
             {
-                assert null == rowIdMap.put(category.getRowId(), category);
+                ViewCategory previous = rowIdMap.put(category.getRowId(), category);
+                assert null == previous;
             }
 
             _rowIdMap = Collections.unmodifiableMap(rowIdMap);
@@ -129,7 +130,8 @@ public class ViewCategoryCache
                     path = new Path(category.getLabel());
                 }
 
-                assert null == pathMap.put(path, category);
+                ViewCategory previous = pathMap.put(path, category);
+                assert null == previous;
             }
 
             _pathMap = Collections.unmodifiableMap(pathMap);
