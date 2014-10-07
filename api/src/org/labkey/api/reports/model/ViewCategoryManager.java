@@ -472,7 +472,8 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
             if (null == category.getParentCategory())
             {
                 ViewCategoryTreeNode treeNode = makeTreeNode(category, subscriptionSet);
-                List<ViewCategory> subCategories = category.getSubcategories();
+                // Make a modifiable copy, #21696
+                List<ViewCategory> subCategories = new ArrayList<>(category.getSubcategories());
                 sortViewCategories(subCategories);
                 for (ViewCategory subCategory : subCategories)
                 {
