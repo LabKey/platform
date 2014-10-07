@@ -951,10 +951,22 @@ public class UserController extends SpringActionController
 
     private static class UserQueryForm extends QueryForm
     {
+        private int _userId;
+
+        public int getUserId()
+        {
+            return _userId;
+        }
+
+        public void setUserId(int userId)
+        {
+            _userId = userId;
+        }
+
         @Override
         public UserSchema getSchema()
         {
-            int userId = NumberUtils.toInt(getViewContext().getActionURL().getParameter("userId"));
+            int userId = getUserId();
             boolean checkPermission = mustCheckPermissions(getUser(), userId);
 
             return new CoreQuerySchema(getViewContext().getUser(), getViewContext().getContainer(), checkPermission);
@@ -1326,11 +1338,11 @@ public class UserController extends SpringActionController
 
 
     @RequiresLogin
-    public class DetailsAction extends SimpleViewAction<UserForm>
+    public class DetailsAction extends SimpleViewAction<UserQueryForm>
     {
         private int _detailsUserId;
 
-        public ModelAndView getView(UserForm form, BindException errors) throws Exception
+        public ModelAndView getView(UserQueryForm form, BindException errors) throws Exception
         {
             User user = getUser();
             int userId = user.getUserId();
@@ -1363,7 +1375,7 @@ public class UserController extends SpringActionController
                 // Allow display and edit of users with invalid email addresses so they can be fixed, #12276.
             }
 
-            UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
+            UserSchema schema = form.getSchema();
             if (schema == null)
                 throw new NotFoundException(CoreQuerySchema.NAME + " schema");
 
