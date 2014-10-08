@@ -70,8 +70,6 @@ public class UpgradeUtils
 
             try (DbScope.Transaction transction = scope.ensureTransaction())
             {
-                scope.ensureTransaction();
-
                 // Fix up the values in each container
                 for (String cid : containersToCorrect)
                     uniquifyValuesInContainer(column, cid, sort, caseSensitive, ignoreNulls);
