@@ -578,6 +578,11 @@ LABKEY.Query = new function()
                 }
             }
 
+            if (config.ignoreFilter)
+            {
+                dataObject[config.dataRegionName + '.ignoreFilter'] = true;
+            }
+
             return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'selectDistinct', config.containerPath),
                 method : 'GET',

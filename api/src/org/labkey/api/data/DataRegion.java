@@ -1022,6 +1022,11 @@ public class DataRegion extends AbstractDataRegion
         // Write out a pretty-printed version in dev mode
         dataRegionJSON.put("columns", columnsJSON);
 
+        boolean ignoreFilter = false;
+        if (getSettings() != null)
+            ignoreFilter = getSettings().getIgnoreUserFilter();
+        dataRegionJSON.put("ignoreFilter", ignoreFilter);
+
         // TODO: Don't get available container filters from render context.
         // 11082: Populate customize view with list of allowable container filters from the QueryView
         List<ContainerFilter.Type> allowableContainerFilterTypes = (List<ContainerFilter.Type>) ctx.get("allowableContainerFilterTypes");

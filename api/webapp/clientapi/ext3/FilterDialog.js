@@ -1232,6 +1232,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             containerFilter: dr.containerFilter,
             parameters: dr.getParameters(),
             maxRows: this.MAX_FILTER_CHOICES+1,
+            ignoreFilter: dr.ignoreFilter,
             success : function(d) {
                 if (d && d.values) {
                     var recs = [], v, i=0, hasBlank = false, isString, formattedValue;

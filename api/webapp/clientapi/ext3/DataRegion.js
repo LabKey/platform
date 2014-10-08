@@ -56,6 +56,8 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                  *  rowCount   - (may be undefined)
                  *  showRows
                  *  showRecordSelectors
+                 *  ignoreFilter - true/false if this DataRegion was configured to ignore view filters
+                 *                 (Most easily set by toggling 'Apply View Filter')
                  *  showInitialSelectMessage
                  *  selectionKey - Unique string used to associate the selected items with this DataRegion, schema, query, and view.
                  *  selectorCols
