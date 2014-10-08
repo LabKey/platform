@@ -1593,10 +1593,14 @@ public class ReportsController extends SpringActionController
                         responseHeaders.put("Pragma", "private");
                         responseHeaders.put("Cache-Control", "private");
                         responseHeaders.put("Cache-Control", "max-age=3600");
+                        _log.debug("Caching file: " + file.getAbsolutePath());
                     }
                     PageFlowUtil.streamFile(getViewContext().getResponse(), responseHeaders, file, BooleanUtils.toBoolean(attachment));
                     if (BooleanUtils.toBoolean(deleteFile))
+                    {
                         file.delete();
+                        _log.debug("Deleting file: " + file.getAbsolutePath());
+                    }
                     return null;
                 }
             }
