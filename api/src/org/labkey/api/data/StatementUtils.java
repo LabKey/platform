@@ -648,7 +648,6 @@ public class StatementUtils
                     sqlfInsertInto.append("\nWHERE NOT EXISTS (SELECT * FROM ").append(table.getSelectName());
                     sqlfInsertInto.append(sqlfWherePK);
                     sqlfInsertInto.append(")");
-                    sqlfInsertInto.append(";\n");
                 }
                 else
                 {
@@ -657,11 +656,13 @@ public class StatementUtils
                     sqlfUpdate.append(ifTHEN).append("\n\t");
 
                     sqlfInsertInto.append(";\n");
-                    sqlfInsertInto.append(ifEND).append(";\n");
+                    sqlfInsertInto.append(ifEND);
                 }
             }
         }
 
+        if (operation.insert == op || operation.merge == op)
+            sqlfInsertInto.append(";\n");
 
         if (selectIds && (null != objectIdVar || null != rowIdVar))
         {
