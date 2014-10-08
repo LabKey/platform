@@ -605,7 +605,7 @@ public class BitSetQueryImpl
     }
 
 
-    void addChildrenInLevel(Member m, Level filter, Collection<Member> list) throws OlapException
+    void addChildrenOrParentInLevel(Member m, Level filter, Collection<Member> list) throws OlapException
     {
         assert same(m.getHierarchy(), filter.getHierarchy());
 
@@ -614,14 +614,21 @@ public class BitSetQueryImpl
             list.add(m);
             return;
         }
-        if (m.getLevel().getDepth()+1 == filter.getDepth())
+        else if (m.getLevel().getDepth() > filter.getDepth())
         {
-            list.addAll(m.getChildMembers());
-            return;
+            addChildrenOrParentInLevel(m.getParentMember(), filter, list);
         }
-        for (Member c : m.getChildMembers())
+        else
         {
-            addChildrenInLevel(c, filter, list);
+            if (m.getLevel().getDepth() + 1 == filter.getDepth())
+            {
+                list.addAll(m.getChildMembers());
+                return;
+            }
+            for (Member c : m.getChildMembers())
+            {
+                addChildrenOrParentInLevel(c, filter, list);
+            }
         }
     }
 
@@ -909,9 +916,9 @@ public class BitSetQueryImpl
 
 
         // load cache in bulk to avoid one-at-a-time queries
-        if (null != colsExpr)
+        if (null != colsExpr && joinLevel.getHierarchy() != colsExpr.getHierarchy())
             _dataSourceHelper.populateCache(joinLevel, colsExpr);
-        if (null != rowsExpr)
+        if (null != rowsExpr && joinLevel.getHierarchy() != rowsExpr.getHierarchy())
             _dataSourceHelper.populateCache(joinLevel, rowsExpr);
         if (measureLevel != joinLevel)
             _dataSourceHelper.populateCache(measureLevel, new MemberSetResult(joinLevel));
@@ -1547,7 +1554,7 @@ public class BitSetQueryImpl
                 else
                 {
                     MemberSet s = new MemberSet();
-                    addChildrenInLevel(sub, outer, s);
+                    addChildrenOrParentInLevel(sub, outer, s);
                     return s;
                 }
             }
@@ -1977,7 +1984,7 @@ public class BitSetQueryImpl
                 else
                 {
                     MemberSet s = new MemberSet();
-                    addChildrenInLevel(sub, outer, s);
+                    addChildrenOrParentInLevel(sub, outer, s);
                     return s;
                 }
             }
