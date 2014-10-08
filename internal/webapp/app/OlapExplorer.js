@@ -191,7 +191,8 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 queryConfig.countDistinctLevel = distinctLevel;
             }
 
-            mdx.query(queryConfig);
+            var config = this.appendAdditionalQueryConfig(queryConfig);
+            mdx.query(config);
 
             if (hasSelection) {
                 me.requestSelection(this.mflight, function(qr, _mdx, x) {
@@ -202,6 +203,11 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 }, this);
             }
         }, this);
+    },
+
+    appendAdditionalQueryConfig : function(config) {
+        // overrides can add additional properties (ex. joinLevel and whereFilter)
+        return config;
     },
 
     processMaxCount : function(qr) {
@@ -397,7 +403,8 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
             queryConfig.countDistinctLevel = this.dim.distinctLevel;
         }
 
-        this.mdx.query(queryConfig);
+        var config = this.appendAdditionalQueryConfig(queryConfig);
+        this.mdx.query(config);
     },
 
     loadSelection : function() {
