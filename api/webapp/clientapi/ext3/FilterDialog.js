@@ -1229,7 +1229,7 @@ LABKEY.FilterDialog.View.Faceted = Ext.extend(LABKEY.FilterDialog.ViewPanel, {
             viewName: dr.viewName,
             column: this.fieldKey,
             containerPath: dr.container || dr.containerPath || LABKEY.container.path,
-            containerFilter: dr.containerFilter,
+            containerFilter: dr.getContainerFilter(),
             parameters: dr.getParameters(),
             maxRows: this.MAX_FILTER_CHOICES+1,
             ignoreFilter: dr.ignoreFilter,

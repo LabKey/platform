@@ -47,6 +47,9 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                  *  schemaName - Schema name of the query to which this DataRegion is bound. Read-only.
                  *  queryName  - Name of the query to which this DataRegion is bound. Read-only.
                  *  viewName   - Name of the custom view to which this DataRegion is bound, may be blank. Read-only.
+                 *  containerFilter - The currently applied container filter. Note, this is only if it is set on the URL, otherwise
+                 *                    the containerFilter could come from the view configuration. Use getContainerFilter()
+                 *                    on this object to get the right value.
                  *  view
                  *  sortFilter
                  *  complete
@@ -150,7 +153,6 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                 this._initElements();
                 this._showPagination(this.header);
                 this._showPagination(this.footer);
-//        this._ensureFaceting();
 
                 if (this.view && this.view.session)
                 {
@@ -175,7 +177,7 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                     }
 
                     // add the customize view message, the link handlers will get added after render in _onRenderMessageArea
-                    var el = this.addMessage(msg, 'customizeview');
+                    this.addMessage(msg, 'customizeview');
                 }
 
                 if (this.showInitialSelectMessage)
@@ -487,6 +489,23 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
                         toggle.checked = false;
                     this.removeMessage('selection');
                 }
+            },
+
+            /**
+             * Returns the {@link LABKEY.Query.containerFilter} currently applied to the DataRegion. Defaults to LABKEY.Query.containerFilter.current.
+             * @returns {String} The container filter currently applied to this DataRegion.
+             * @see LABKEY.DataRegion#getUserContainerFilter to get the containerFilter value from the URL.
+             */
+            getContainerFilter : function()
+            {
+                var cf = LABKEY.Query.containerFilter.current; // consider: should be pushed from server?
+                if (!Ext.isEmpty(this.containerFilter)) {
+                    cf = this.containerFilter;
+                }
+                else if (Ext.isObject(this.view) && !Ext.isEmpty(this.view.containerFilter)) {
+                    cf = this.view.containerFilter;
+                }
+                return cf;
             },
 
             /**
