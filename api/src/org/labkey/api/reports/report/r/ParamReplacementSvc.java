@@ -238,6 +238,7 @@ public class ParamReplacementSvc
                 }
                 outputReplacements.add(param);
                 m.appendReplacement(sb, resultFileName);
+                _log.debug("Found output parameter '" + param.getName() + "'.  Mapping local file '" + resultFile.getAbsolutePath() + "' to '" + resultFileName + "'");
             }
         }
         m.appendTail(sb);

@@ -49,7 +49,7 @@ public interface ParamReplacement
 
     /**
      * Convert the substitution to it's eventual generated file.
-     * @param directory - the parent directory to crete the generated file (if any, can be null)
+     * @param directory - the parent directory to create the generated file (if any, can be null)
      */
     public File convertSubstitution(File directory) throws Exception;
 

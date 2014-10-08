@@ -133,7 +133,14 @@ public class ImageOutput extends AbstractParamReplacement
                     }
                 }
                 else
+                {
                     getFile().delete();
+                    LOG.debug("File for the output parameter '" + getName() + "' is empty.  No artifact generated.");
+                }
+            }
+            else
+            {
+                LOG.debug("No file exists for parameter: " + getName());
             }
 
             return imgUrl;

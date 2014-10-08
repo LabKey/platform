@@ -16,6 +16,7 @@
 
 package org.labkey.api.reports.report.r.view;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ScriptEngineReport;
@@ -37,14 +38,17 @@ import java.util.Map;
 public class ROutputView extends HttpView
 {
     private String _label;
+    private String _name;
     private boolean _collapse;
     private boolean _showHeader = true;
     private File _file;
     private Map<String, String> _properties;
+    protected static Logger LOG = Logger.getLogger(ROutputView.class);
 
     public ROutputView(ParamReplacement param)
     {
         _file = param.getFile();
+        _name = param.getName();
         _showHeader = param.getHeaderVisible();
         _properties = param.getProperties();
     }
@@ -52,6 +56,11 @@ public class ROutputView extends HttpView
     public String getLabel()
     {
         return _label;
+    }
+
+    protected String getName()
+    {
+        return _name;
     }
 
     public void setLabel(String label)
@@ -135,9 +144,11 @@ public class ROutputView extends HttpView
         File newFile = new File(root, FileUtil.makeFileNameWithTimestamp(FileUtil.getBaseName(file.getName()), FileUtil.getExtension(file)));
         newFile.delete();
 
+        LOG.debug("Moving '" + file.getAbsolutePath() + "' to '" + newFile.getAbsolutePath() + "'");
         if (file.renameTo(newFile))
             return newFile;
 
+        LOG.debug("Failed to move " + file.getAbsolutePath() + "' to '" + newFile.getAbsolutePath() + "'");
         return null;
     }
 

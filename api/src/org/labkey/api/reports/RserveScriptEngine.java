@@ -181,12 +181,16 @@ public class RserveScriptEngine extends RScriptEngine
         {
             REXP rexp = rconn.eval(script);
             if (rexp.inherits("try-error"))
+            {
+                LOG.debug("Failed to execute script; rexp inherits 'try-error'!");
                 throw new RuntimeException(getRserveOutput(rexp));
+            }
 
             return getRserveOutput(rexp);
         }
         catch (RserveException re)
         {
+            LOG.debug("Failed to execute script; eval threw an RserveException!");
             throw new RuntimeException(getRserveError(rconn, re));
         }
     }

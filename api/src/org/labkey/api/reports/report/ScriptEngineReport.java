@@ -503,7 +503,14 @@ public abstract class ScriptEngineReport extends ScriptReport implements Report.
                     //
                     ScriptOutput output = param.renderAsScriptOutput();
                     if (null != output)
+                    {
                         scriptOutputs.add(output);
+                        _log.debug("ExecuteScript:  Added output parameter for: " + param.getName());
+                    }
+                    else
+                    {
+                        _log.debug("ExecuteScript:  Could not add output parameter for: " + param.getName());
+                    }
                 }
                 catch(Exception e)
                 {
