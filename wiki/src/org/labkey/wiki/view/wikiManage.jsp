@@ -98,8 +98,8 @@
 <labkey:form method="post" name="manage" action="<%=h(buildURL(WikiController.ManageAction.class))%>" enctype="multipart/form-data" onsubmit="return checkWikiName(name.value)">
 <input type="hidden" name="containerPath" value="<%=h(c.getPath())%>">
 
-<table><tr>
-  <td><table>
+<table width="100%"><tr>
+  <td><table width="100">
 <%
     FieldError nameError = errors.getFieldError("name");
 	if (null != nameError)
@@ -142,7 +142,7 @@
     </tr>
   </table></td>
 
-  <td><table>
+  <td><table width="100%">
     <tr>
       <td class='labkey-form-label'>Sibling Order</td>
       <td>
