@@ -691,6 +691,7 @@ public class QueryServiceImpl extends QueryService
         ret.put("savable", !view.getQueryDefinition().isTemporary());
         // module custom views have no container
         ret.put("containerPath", view.getContainer() != null ? view.getContainer().getPath() : "");
+        ret.put("containerFilter", view.getContainerFilterName());
 
         // Include view information about shadowed view
         if (includeShadowed && view.isSession())
