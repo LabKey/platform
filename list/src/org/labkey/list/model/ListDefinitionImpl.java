@@ -498,8 +498,8 @@ public class ListDefinitionImpl implements ListDefinition
         if (null != table)
             qus = table.getUpdateService();
 
-        // In certain cases we may create a list that is not viable (i.e., one in which a table was never created becase
-        // the metadata wasn't valid).  Still allow deleting the list
+        // In certain cases we may create a list that is not viable (i.e., one in which a table was never created because
+        // the metadata wasn't valid). Still allow deleting the list
         try (DbScope.Transaction transaction = (table != null) ? table.getSchema().getScope().ensureTransaction() :
              ExperimentService.get().ensureTransaction())
         {
