@@ -959,13 +959,52 @@
                 cubeName : config.cubeName || this._cube.name,
                 query :
                 {
-                    showEmpty: config.showEmpty,
+                    // TODO: Move this delcaration to a place where it can be more appropriately documented. Its own object?
+
+                    /**
+                     * A set of members to select on the rows of the returned cellset
+                     * (required)
+                     */
                     onRows: config.onRows,
-                    onColumns: (config.onColumns||config.onCols),
+
+                    /**
+                     * A set of members to select on the columns of the returned cellset
+                     * (optional)
+                     */
+                    onColumns: config.onColumns || config.onCols,
+
+                    /**
+                     * Name of the level that contains the members we are counting in the query result
+                     * (required)
+                     */
                     countDistinctLevel: config.countDistinctLevel,
-                    countFilter: config.countFilter||config.filter,
+
+                    /**
+                     * The filter is used to specify a subset of members in the countDistinctLevel to be counted in the query result
+                     * (optional)
+                     */
+                    countFilter: config.countFilter || config.filter,
+
+                    /**
+                     * Name of the level that relates the row, column, and dataFilter results (e.g. ParticipantVisit).
+                     * If not specified, this is the same as the countDistinctLevel
+                     * (optional)
+                     */
                     joinLevel: config.joinLevel,
-                    whereFilter: config.whereFilter
+
+                    /**
+                     * This filter is used on the data processed by the query. The result will be a set of members of the
+                     * joinLevel. If joinLevel == countDistinctLevel then this will be functionally equivalent to the countFilter.
+                     * e.g. ParticipantVisit
+                     * (optional)
+                     */
+                    whereFilter: config.whereFilter,
+
+                    /**
+                     * A boolean flag for whether results containing rows with a count of 0 will be a part of the response. Defaults to true.
+                     * (optional)
+                     */
+                    showEmpty: config.showEmpty === true
                 },
                 log : config.log,
                 originalConfig : config,
