@@ -44,7 +44,7 @@ public class ViewCategoryWriter implements InternalStudyWriter
     @Override
     public void write(StudyImpl object, StudyExportContext ctx, VirtualFile vf) throws Exception
     {
-        List<ViewCategory> categories = ViewCategoryManager.getInstance().getCategories(ctx.getContainer());
+        List<ViewCategory> categories = ViewCategoryManager.getInstance().getAllCategories(ctx.getContainer());
 
         if (!categories.isEmpty())
         {

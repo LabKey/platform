@@ -45,7 +45,6 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentForm;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.collections.ArrayListMap;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
@@ -3317,24 +3316,25 @@ public class ReportsController extends SpringActionController
             final List<ViewCategory> categories;
             int parent = form.getParent();
 
-            // Default, no parent specifically requested
-            if (parent == -2)
+            switch (parent)
             {
-                categories = ViewCategoryManager.getInstance().getCategories(getContainer());
-            }
-            else if (parent == 0)
-            {
-                // parent filter on non-existent category
-                categories = Collections.emptyList();
-            }
-            else
-            {
-                ViewCategory parentCategory = ViewCategoryManager.getInstance().getCategory(getContainer(), parent);
-
-                if (null != parentCategory)
-                    categories = parentCategory.getSubcategories();
-                else
+                case -2:  // Return ALL categories (top-level and subcategories)
+                    categories = ViewCategoryManager.getInstance().getAllCategories(getContainer());
+                    break;
+                case -1:  // Return just the top-level categories
+                    categories = ViewCategoryManager.getInstance().getTopLevelCategories(getContainer());
+                    break;
+                case 0:   // Nothing
                     categories = Collections.emptyList();
+                    break;
+                default:
+                    ViewCategory parentCategory = ViewCategoryManager.getInstance().getCategory(getContainer(), parent);
+
+                    if (null != parentCategory)
+                        categories = parentCategory.getSubcategories();
+                    else
+                        categories = Collections.emptyList();
+                    break;
             }
 
             for (ViewCategory c : categories)

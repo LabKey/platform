@@ -204,7 +204,7 @@ public class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDatasetCh
         uncategoriedCategory.setRowId(ViewCategoryManager.UNCATEGORIZED_ROWID);
         viewCategoryMap.put(ViewCategoryManager.UNCATEGORIZED_ROWID, uncategoriedCategory);
 
-        for (ViewCategory viewCategory : ViewCategoryManager.getInstance().getCategories(container))
+        for (ViewCategory viewCategory : ViewCategoryManager.getInstance().getAllCategories(container))
         {
             viewCategoryMap.put(viewCategory.getRowId(), viewCategory);
         }
