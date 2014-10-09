@@ -493,12 +493,12 @@ LABKEY.DataRegion = Ext.extend(Ext.Component,
 
             /**
              * Returns the {@link LABKEY.Query.containerFilter} currently applied to the DataRegion. Defaults to LABKEY.Query.containerFilter.current.
-             * @returns {String} The container filter currently applied to this DataRegion.
+             * @returns {String} The container filter currently applied to this DataRegion. Defaults to 'undefined' if a container filter is not specified by the configuration.
              * @see LABKEY.DataRegion#getUserContainerFilter to get the containerFilter value from the URL.
              */
             getContainerFilter : function()
             {
-                var cf = LABKEY.Query.containerFilter.current; // consider: should be pushed from server?
+                var cf;
                 if (!Ext.isEmpty(this.containerFilter)) {
                     cf = this.containerFilter;
                 }
