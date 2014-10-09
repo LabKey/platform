@@ -162,6 +162,10 @@ Ext4.define('File.panel.Upload', {
                 done();
             },
 
+            canceled : function (file) {
+                //console.info("canceled: ", file);
+            },
+
             init : function () {
 
                 this.on('processing', function (file) {
@@ -339,6 +343,7 @@ Ext4.define('File.panel.Upload', {
             }
         });
 
+        this.dropzone = dropzone;
         dropzone.uploadPanel = this;
     },
 
@@ -563,6 +568,12 @@ Ext4.define('File.panel.Upload', {
         });
     },
 
+    cancelUpload : function () {
+        if (this.dropzone) {
+            this.dropzone.removeAllFiles(true);
+        }
+    },
+
     submitFileUploadForm : function(fb, v) {
 
         var cwd = this.getWorkingDirectory('cwd');
@@ -622,6 +633,16 @@ Ext4.define('File.panel.Upload', {
                                                 this.doPost(true);
                                         },
                                         scope : this
+                                    });
+                                }
+                                else if (response.status == 401 || response.status == 403)
+                                {
+                                    Ext4.Msg.show({
+                                        title: "Unauthorized",
+                                        msg: "You do not have privileges to this directory. Verify that you are signed in appropriately.",
+                                        cls : 'data-window',
+                                        icon: Ext4.Msg.ERROR,
+                                        buttons: Ext4.Msg.OK
                                     });
                                 }
                                 else
@@ -718,7 +739,12 @@ Ext4.define('File.panel.Upload', {
             layout: 'vbox',
             bodyPadding: 5,
             closable: false,
-            items: [this.statusText, progressBarContainer]
+            items: [this.statusText, progressBarContainer],
+            buttons: [{
+                text: 'Cancel Upload',
+                handler: this.cancelUpload,
+                scope: this
+            }]
         });
 
         return this.uploadStatusWindow;
