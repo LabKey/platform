@@ -397,7 +397,7 @@ LABKEY.Utils = new function()
         },
 
         /**
-         * Retrieves a client-side cookie.  Useful for retrieving non-essential state to provide a better
+         * Retrieves a cookie.  Useful for retrieving non-essential state to provide a better
          * user experience.  Note that some browser settings may prevent cookies from being saved,
          * and users can clear browser cookies at any time, so previously saved cookies should not be assumed
          * to be available.
@@ -419,8 +419,11 @@ LABKEY.Utils = new function()
         },
 
         /**
-         * Retrieves the current LabKey Server session ID.
-         * @returns {String} sessionid The current session id.
+         * Retrieves the current LabKey Server session ID. Note that this may only be made available when the
+         * session ID cookie is marked as httpOnly = false.
+         * @returns {String} sessionid The current session id. Defaults to ''.
+         * @see {@link https://www.owasp.org/index.php/HttpOnly|OWASP HttpOnly}
+         * @see {@link https://tomcat.apache.org/tomcat-7.0-doc/config/context.html#Common_Attributes|Tomcat Attributes}
          */
         getSessionID : function()
         {
@@ -428,7 +431,7 @@ LABKEY.Utils = new function()
         },
 
         /**
-         * Deletes a client-side cookie.  Note that 'name' and 'pageonly' should be exactly the same as when the cookie
+         * Deletes a cookie.  Note that 'name' and 'pageonly' should be exactly the same as when the cookie
          * was set.
          * @param {String} name The name of the cookie to be deleted.
          * @param {Boolean} pageonly Whether the cookie is scoped to the entire site, or just this page.
