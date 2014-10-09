@@ -75,6 +75,11 @@ public class ViewCategoryCache
         return getCollections(cid).getViewCategories();
     }
 
+    List<ViewCategory> getTopLevelCategories(String cid)
+    {
+        return getCollections(cid).getSubcategories(null);
+    }
+
     void clear(Container c)
     {
         VIEW_CATEGORY_CACHE.remove(c.getId());
@@ -115,12 +120,14 @@ public class ViewCategoryCache
 
             for (ViewCategory category : categories)
             {
-                Integer parentId = category.getParent();
+                @Nullable Integer parentId = category.getParent();
+                // Note: ParentId may be null, but MultiHashMap supports null keys, so we use this to collect the top-level categories
+                _childrenMap.put(parentId, category);
+
                 final Path path;
 
                 if (null != parentId)
                 {
-                    _childrenMap.put(parentId, category);
                     ViewCategory parent = _rowIdMap.get(parentId);
                     // Note: Only supports two levels of hierarchy
                     path = new Path(parent.getLabel(), category.getLabel());
@@ -147,7 +154,7 @@ public class ViewCategoryCache
             return new ArrayList<>(_rowIdMap.values());
         }
 
-        private List<ViewCategory> getSubcategories(int id)
+        private List<ViewCategory> getSubcategories(@Nullable Integer id)
         {
             Collection<ViewCategory> children = _childrenMap.get(id);
 

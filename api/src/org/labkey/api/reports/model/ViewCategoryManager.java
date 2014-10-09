@@ -69,9 +69,14 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
         return CoreSchema.getInstance().getSchema().getTable("ViewCategory");
     }
 
-    public List<ViewCategory> getCategories(Container c)
+    public List<ViewCategory> getAllCategories(Container c)
     {
         return ViewCategoryCache.get().getAllCategories(c.getId());
+    }
+
+    public List<ViewCategory> getTopLevelCategories(Container c)
+    {
+        return ViewCategoryCache.get().getTopLevelCategories(c.getId());
     }
 
     public ViewCategory getCategory(Container c, int rowId)
@@ -458,7 +463,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
     public List<ViewCategoryTreeNode> getCategorySubcriptionTree(Container container, Set<Integer> subscriptionSet)
     {
         // We take advantage of the fact that this is at most 2 levels; the 1st level may have multiple categories
-        List<ViewCategory> categories = getCategories(container);
+        List<ViewCategory> categories = getAllCategories(container);
         sortViewCategories(categories);
         List<ViewCategoryTreeNode> viewCategoryTreeNodes = new ArrayList<>();
 
@@ -616,7 +621,7 @@ public class ViewCategoryManager extends ContainerManager.AbstractContainerListe
 
             // get top-level categories
             Map<String, ViewCategory> categoryMap = new HashMap<>();
-            for (ViewCategory cat : mgr.getCategories(c))
+            for (ViewCategory cat : mgr.getAllCategories(c))
             {
                 if (null == cat.getParentCategory())
                     categoryMap.put(cat.getLabel(), cat);
