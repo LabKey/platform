@@ -4416,6 +4416,15 @@ public class DavController extends SpringActionController
                 }
 
                 File file = null==gz ? resource.getFile() : gz.getFile();
+                if (file != null && WebdavService.get().getPreGzippedExtensions().contains(FileUtil.getExtension(file)))
+                {
+                    String accept = getRequest().getHeader("accept-encoding");
+                    if (null != accept && accept.contains("gzip"))
+                    {
+                        getResponse().setContentEncoding("gzip");
+                    }
+                }
+
                 HttpServletRequest request = getRequest();
                 if (true && null != file && Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
                 {
