@@ -16,7 +16,9 @@
 
 package org.labkey.query.olap;
 
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
+import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.olap4j.Cell;
 import org.olap4j.CellSet;
 import org.olap4j.CellSetAxis;
@@ -98,8 +100,6 @@ public class Olap4Js
 
         void write(CellSet cs, boolean withMetaData, Writer out) throws IOException, OlapException
         {
-            _includeMemberProperties = false;
-
             CellSetMetaData csmd = cs.getMetaData();
             NamedList<Property> cellProperties = csmd.getCellProperties();
 
@@ -189,7 +189,7 @@ public class Olap4Js
             indent(out, "{");
             _indent++;
             indent(out, "\"cube\":");
-            write(md.getCube(), false, out);
+            write(md.getCube(), null, false, out);
             indent(",",out);
             out.write("\"axesMetaData\":");
             indent(out, "[");
@@ -207,7 +207,7 @@ public class Olap4Js
         }
 
 
-        void write(Cube cube, boolean showAll, Writer out) throws IOException
+        void write(Cube cube, @Nullable RolapCubeDef rolap, boolean showAll, Writer out) throws IOException
         {
             indent(out);
             out.write("{");
@@ -227,7 +227,10 @@ public class Olap4Js
                 if (!showAll && null == idFor(Dimension.class, d, false))
                     continue;
                 indent(comma, out); comma = ",";
-                write(d, showAll, out);
+                RolapCubeDef.DimensionDef def = null;
+                if (null != rolap)
+                    def = rolap.getDimension(d.getName());
+                write(d, def, showAll, out);
             }
             _indent--;
             indent(out,"]");
@@ -278,7 +281,7 @@ public class Olap4Js
         }
 
 
-        void write(Dimension d, boolean showAll, Writer out) throws IOException
+        void write(Dimension d, @Nullable RolapCubeDef.DimensionDef rolap, boolean showAll, Writer out) throws IOException
         {
             indent(out);
             out.write("{");
@@ -296,7 +299,10 @@ public class Olap4Js
                 if (!showAll && null == idFor(Hierarchy.class, h, false))
                     continue;
                 indent(comma, out); comma = ",";
-                write(h, showAll, out);
+                RolapCubeDef.HierarchyDef hdef = null;
+                if (null != rolap)
+                    hdef = rolap.getHierarchy(h.getName());
+                write(h, hdef, showAll, out);
             }
             _indent--;
             indent(out, "]");
@@ -313,7 +319,7 @@ public class Olap4Js
         }
 
 
-        void write(Hierarchy h, boolean showAll, Writer out) throws IOException
+        void write(Hierarchy h, @Nullable RolapCubeDef.HierarchyDef rolap, boolean showAll, Writer out) throws IOException
         {
             indent(out);
             out.write("{");
@@ -331,7 +337,10 @@ public class Olap4Js
                 if (!showAll && null == idFor(Level.class, l, false))
                     continue;
                 indent(comma, out); comma = ",";
-                write(l, showAll, out);
+                RolapCubeDef.LevelDef ldef = null;
+                if (null != rolap)
+                    ldef = rolap.getLevel(l.getName());
+                write(l, ldef, showAll, out);
             }
             _indent--;
             indent(out, "]");
@@ -352,19 +361,27 @@ public class Olap4Js
         }
 
 
-        void write(Level l, Writer out) throws IOException
+        void write(Level l, RolapCubeDef.LevelDef rolap, Writer out) throws IOException
         {
-            write(l, _includeLevelMembers, out);
+            write(l, rolap, _includeLevelMembers, out);
         }
 
 
-        void write(Level l, boolean withMembers, Writer out) throws IOException
+        void write(Level l, RolapCubeDef.LevelDef rolap, boolean withMembers, Writer out) throws IOException
         {
             out.write("{");
             out.write("\"id\":" + valueToString(idFor(Level.class, l, true)) + ",");
             out.write("\"name\":" + valueToString(l.getName()) + ",");
             out.write("\"uniqueName\":" + valueToString(l.getUniqueName()) + ",");
             out.write("\"depth\":" + l.getDepth());
+
+            if (null != rolap)
+            {
+                out.write("\"schemaName\":" + valueToString(rolap.getSchemaName()) + ",");
+                out.write("\"tableName\":" + valueToString(rolap.getTableName()) + ",");
+                out.write("\"keyExpression\":" + valueToString(rolap.getKeyExpression()) + ",");
+                out.write("\"jdbcType\":" + valueToString(rolap.getJdbcType().name()) + ",");
+            }
 
             if (_includeMemberProperties)
             {
@@ -452,19 +469,21 @@ public class Olap4Js
         void write(Member member, boolean withLevel, Writer out) throws IOException, OlapException
         {
             out.write("{");
-//            out.write("\"dimension":{"\"name\"":" + valueToString(member.getDimension().getName()) + "},");
             out.write("\"name\":" + valueToString(member.getName()));
             out.write(",");
             out.write("\"uniqueName\":" + valueToString(member.getUniqueName()));
             int ordinal = member.getOrdinal();
             if (0 <= ordinal)
                 out.write(",\"ordinal\":" + ordinal);
+
+            if (member.isHidden())
+                out.write(",\"hidden\":true");
+            if (member.isCalculated())
+                out.write(",\"calculated\":true");
+
             if (withLevel)
             {
                 out.write(",");
-    //            out.write("\"hierarchy\":");
-    //            writeRef(member.getHierarchy(), out);
-    //            out.write(",");
                 out.write("\"level\":");
                 writeRef(member.getLevel(), out);
             }
@@ -475,14 +494,12 @@ public class Olap4Js
                 String suffix = "";
                 for (Property p : member.getProperties())
                 {
-                    //                if (p instanceof Property.StandardMemberProperty)
-                    //                    continue;
                     if (!p.isVisible())
                         continue;
                     Object value = member.getPropertyValue(p);
                     if (null == value)
                         continue;
-                    if ((p.getUniqueName().equals("KEY") || p.getUniqueName().equals("MEMBER_CAPTION")) && member.getName().equals(value))
+                    if ((p.getName().equals("KEY") || p.getName().equals("MEMBER_CAPTION")) && member.getName().equals(value))
                         continue;
                     out.write(prefix);
                     prefix = ",";
@@ -535,10 +552,18 @@ public class Olap4Js
         new CellSetWriter().write(cs,out);
     }
 
+
     public static void convertCube(Cube cube, boolean includeMembers, Writer out) throws IOException
+    {
+        convertCube(cube, null, includeMembers, true, out);
+    }
+
+
+    public static void convertCube(Cube cube, RolapCubeDef rolap, boolean includeMembers, boolean includeMemberProperties, Writer out) throws IOException
     {
         CellSetWriter w = new CellSetWriter();
         w._includeLevelMembers = includeMembers;
-        w.write(cube, true, out);
+        w._includeMemberProperties = includeMemberProperties;
+        w.write(cube, rolap, true, out);
     }
 }

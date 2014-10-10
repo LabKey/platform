@@ -254,6 +254,14 @@ public class RolapCubeDef
         return Collections.unmodifiableList(dimensions);
     }
 
+    public DimensionDef getDimension(String name)
+    {
+        for (DimensionDef d : dimensions)
+            if (d.getName().equalsIgnoreCase(name))
+                return d;
+        return null;
+    }
+
 
     public List<MeasureDef> getMeasures()
     {
@@ -332,6 +340,14 @@ public class RolapCubeDef
         public List<HierarchyDef> getHierarchies()
         {
             return Collections.unmodifiableList(hierarchies);
+        }
+
+        public HierarchyDef getHierarchy(String name)
+        {
+            for (HierarchyDef h : hierarchies)
+                if (h.getName().equalsIgnoreCase(name))
+                    return h;
+            return null;
         }
     }
 
@@ -526,6 +542,13 @@ public class RolapCubeDef
             return Collections.unmodifiableList(levels);
         }
 
+        public LevelDef getLevel(String name)
+        {
+            for (LevelDef l : levels)
+                if (l.getName().equalsIgnoreCase(name))
+                    return l;
+            return null;
+        }
 
         private void validate()
         {
@@ -612,6 +635,48 @@ public class RolapCubeDef
         {
             return uniqueName;
         }
+
+
+        public String getSchemaName()
+        {
+            String schemaName = findSchemaNameForTable(table, hierarchy.join);
+            if (null != schemaName)
+                return schemaName;
+            schemaName = findSchemaNameForTable(table, cube.factTable);
+            if (null != schemaName)
+                return schemaName;
+            return cube.factTable.schemaName;
+        }
+
+
+        private String findSchemaNameForTable(String table, JoinOrTable jt)
+        {
+            if (StringUtils.equalsIgnoreCase(jt.tableName,table))
+                return jt.schemaName;
+            String schemaName = null;
+            if (null != jt.left)
+                schemaName = findSchemaNameForTable(table, jt.left);
+            if (null == jt && null != jt.right)
+                schemaName = findSchemaNameForTable(table, jt.right);
+            return schemaName;
+        }
+
+
+        public String getTableName()
+        {
+            return table;
+        }
+
+        public String getKeyExpression()
+        {
+            return keyExpression;
+        }
+
+        public JdbcType getJdbcType()
+        {
+            return jdbcType;
+        }
+
 
         public String getAllColumnsSQL()
         {

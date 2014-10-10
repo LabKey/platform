@@ -193,6 +193,7 @@ public class OlapController extends SpringActionController
         }
     }
 
+
     public static class CubeForm extends OlapForm
     {
         private boolean includeMembers = true;
@@ -240,6 +241,8 @@ public class OlapController extends SpringActionController
         public ApiResponse execute(CubeForm form, BindException errors) throws Exception
         {
             Cube cube = null;
+            RolapCubeDef rolap = null;
+
             try
             {
                 cube = getCube(form, errors);
@@ -266,6 +269,12 @@ public class OlapController extends SpringActionController
                 return null;
             }
 
+            if (strategy == ImplStrategy.rolapYourOwn)
+            {
+                OlapSchemaDescriptor d = ServerManager.getDescriptor(getContainer(), form.getConfigId());
+                rolap = d.getRolapCubeDefinitionByName(cube.getName());
+            }
+
             Map<String, Object> context = null;
             if (StringUtils.isNotBlank(form.getContextName()))
             {
@@ -285,7 +294,7 @@ public class OlapController extends SpringActionController
             Writer writer = response.getWriter();
             writer.write("{");
             writer.write("\"cube\":");
-            Olap4Js.convertCube(cube, form.isIncludeMembers(), writer);
+            Olap4Js.convertCube(cube, rolap, form.isIncludeMembers(), true, writer);
 
             if (context != null)
             {
@@ -300,6 +309,7 @@ public class OlapController extends SpringActionController
             return null;
         }
     }
+
 
     public static class CustomOlapDescriptorForm extends BeanViewForm<OlapDef>
     {
