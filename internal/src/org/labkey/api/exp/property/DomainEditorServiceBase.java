@@ -17,6 +17,7 @@
 package org.labkey.api.exp.property;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -198,12 +199,14 @@ public class DomainEditorServiceBase extends BaseRemoteService
         return DomainUtil.getDomainDescriptor(getUser(), typeURI, domainContainer);
     }
 
-    public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)
+    /** @return Errors encountered during the save attempt */
+    @NotNull
+    public List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update)
     {
         return DomainUtil.updateDomainDescriptor(orig, update, getContainer(), getUser());
     }
 
-    protected GWTDomain getDomainDescriptor(String typeURI, Container domainContainer)
+    protected GWTDomain<? extends GWTPropertyDescriptor> getDomainDescriptor(String typeURI, Container domainContainer)
     {
         return DomainUtil.getDomainDescriptor(getUser(), typeURI, domainContainer);
     }

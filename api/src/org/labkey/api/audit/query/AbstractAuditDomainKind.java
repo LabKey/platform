@@ -38,6 +38,7 @@ import org.labkey.api.exp.property.DomainKind;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.xar.LsidUtils;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
@@ -219,7 +220,7 @@ public abstract class AbstractAuditDomainKind extends DomainKind
     }
 
     @Override
-    public List<String> updateDomain(GWTDomain original, GWTDomain update, Container container, User user)
+    public List<String> updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
         return null;
     }

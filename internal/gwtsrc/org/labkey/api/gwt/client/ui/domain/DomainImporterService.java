@@ -15,8 +15,8 @@
  */
 package org.labkey.api.gwt.client.ui.domain;
 
-import com.google.gwt.user.client.rpc.RemoteService;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.LookupService;
 
 import java.util.List;
@@ -29,7 +29,7 @@ import java.util.Map;
 public interface DomainImporterService extends LookupService
 {
     public List<InferencedColumn> inferenceColumns() throws ImportException;
-    public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain dd);
+    public List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> dd);
     public GWTDomain getDomainDescriptor(String typeURI);
     public ImportStatus importData(GWTDomain domain, Map<String, String> mappedColumnNames) throws ImportException;
     public ImportStatus getStatus(String jobId) throws ImportException;

@@ -20,6 +20,7 @@ import com.google.gwt.user.client.rpc.SerializableException;
 import org.labkey.api.gwt.client.assay.model.GWTProtocol;
 import org.labkey.api.gwt.client.model.GWTContainer;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.LookupService;
 
 import java.util.List;
@@ -42,7 +43,7 @@ public interface AssayService extends LookupService
      * @param update Edited domain
      * @return list of errors
      */
-    List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update) throws AssayException;
+    List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update) throws AssayException;
 
     /** Get the list of containers with studies that are readable by the current user */
     List<GWTContainer> getStudyContainers();

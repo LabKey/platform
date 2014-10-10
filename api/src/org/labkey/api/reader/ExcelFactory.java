@@ -88,10 +88,7 @@ public class ExcelFactory
         }
         finally
         {
-            if (fIn != null)
-            {
-                try { fIn.close(); } catch (IOException ignored) {}
-            }
+            try { fIn.close(); } catch (IOException ignored) {}
         }
     }
 

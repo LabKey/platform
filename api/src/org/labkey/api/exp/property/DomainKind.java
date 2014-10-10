@@ -27,6 +27,7 @@ import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.security.User;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NavTree;
@@ -104,7 +105,7 @@ abstract public class DomainKind implements Handler<String>
      * @param user User
      * @return A list of errors collected during the update.
      */
-    abstract public List<String> updateDomain(GWTDomain original, GWTDomain update, Container container, User user);
+    abstract public List<String> updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user);
 
     abstract public Set<PropertyStorageSpec> getBaseProperties();
 

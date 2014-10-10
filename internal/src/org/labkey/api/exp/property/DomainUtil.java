@@ -265,7 +265,8 @@ public class DomainUtil
         return gwtProp;
     }
 
-    @SuppressWarnings("unchecked")
+    /** @return Errors encountered during the save attempt */
+    @NotNull
     public static List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
         assert orig.getDomainURI().equals(update.getDomainURI());
@@ -446,16 +447,12 @@ public class DomainUtil
                 }
             }
         }
-        catch (IllegalStateException x)
-        {
-            errors.add(x.getMessage() == null ? x.toString() : x.getMessage());
-        }
-        catch (ChangePropertyDescriptorException x)
+        catch (IllegalStateException | ChangePropertyDescriptorException x)
         {
             errors.add(x.getMessage() == null ? x.toString() : x.getMessage());
         }
 
-        return errors.size() > 0 ? errors : null;
+        return errors;
     }
 
     public static DomainProperty addProperty(Domain domain, GWTPropertyDescriptor pd, Map<DomainProperty, Object> defaultValues, Set<String> propertyUrisInUse, List<String> errors)
