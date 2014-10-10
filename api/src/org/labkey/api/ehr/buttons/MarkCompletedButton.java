@@ -34,6 +34,7 @@ public class MarkCompletedButton extends SimpleButtonConfigFactory
 {
     protected String _schemaName;
     protected String _queryName;
+    protected Boolean _forceDateOnlyField;
     private Class<? extends Permission> _perm;
 
     public MarkCompletedButton(Module owner, String schemaName, String queryName)
@@ -43,16 +44,27 @@ public class MarkCompletedButton extends SimpleButtonConfigFactory
 
     public MarkCompletedButton(Module owner, String schemaName, String queryName, String label)
     {
-        this(owner, schemaName, queryName, label, EHRCompletedUpdatePermission.class);
+        this(owner, schemaName, queryName, label, EHRCompletedUpdatePermission.class, false);
+    }
+
+    public MarkCompletedButton(Module owner, String schemaName, String queryName, String label, boolean forceDateOnlyField)
+    {
+        this(owner, schemaName, queryName, label, EHRCompletedUpdatePermission.class, forceDateOnlyField);
     }
 
     public MarkCompletedButton(Module owner, String schemaName, String queryName, String label, Class<? extends Permission> perm)
+    {
+        this(owner, schemaName, queryName, label, perm, false);
+    }
+
+    public MarkCompletedButton(Module owner, String schemaName, String queryName, String label, Class<? extends Permission> perm, boolean forceDateOnlyField)
     {
         super(owner, label, "");
         setClientDependencies(ClientDependency.fromModuleName("ehr"));
         _schemaName = schemaName;
         _queryName = queryName;
         _perm = perm;
+        _forceDateOnlyField = forceDateOnlyField;
     }
 
     public boolean isAvailable(TableInfo ti)
@@ -69,9 +81,11 @@ public class MarkCompletedButton extends SimpleButtonConfigFactory
     @Override
     protected String getJsHandler(TableInfo ti)
     {
+        // NOTE: we have a problem if this is called before all XML metadata is applied.  for example, a dataset could call the tablecustomizer from studyData.query.xml
+        // but the dataset-specific query.xml file will apply a different format to the enddate column.  as a result, defer creating the JS handler as long as we can.
         ColumnInfo col = ti.getColumn("enddate");
         String xtype = "datefield";
-        if (col != null && col.getFormat() != null && col.getFormat().contains("HH"))
+        if (!_forceDateOnlyField && col != null && col.getFormat() != null && col.getFormat().contains("HH"))
             xtype = "xdatetime";
 
         String pkColName = null;

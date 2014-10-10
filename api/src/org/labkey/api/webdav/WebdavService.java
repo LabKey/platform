@@ -18,15 +18,14 @@ package org.labkey.api.webdav;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -41,6 +40,7 @@ public class WebdavService
 {
     WebdavResolver _resolver = null;
     CopyOnWriteArrayList<Provider> _providers = new CopyOnWriteArrayList<>();
+    private Set<String> _preGzippedExtensions = new CaseInsensitiveHashSet();
 
     final static WebdavService _instance = new WebdavService();
 
@@ -171,5 +171,19 @@ public class WebdavService
     public WebdavResolver getRootResolver()
     {
         return ServiceRegistry.get(WebdavResolver.class);
+    }
+
+    /**
+     * If an extension is registered, when a file of that extension is requested via webdav, the server will always
+     * set ContentEncoding=gzip in the response.
+     */
+    public void registerPreGzippedExtensions(String extension)
+    {
+        _preGzippedExtensions.add(extension);
+    }
+
+    public Set<String> getPreGzippedExtensions()
+    {
+        return _preGzippedExtensions;
     }
 }
