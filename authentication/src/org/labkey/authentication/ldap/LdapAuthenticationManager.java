@@ -298,6 +298,11 @@ public class LdapAuthenticationManager
         Attributes attributes;
         try
         {
+            if (!results.hasMoreElements())
+            {
+                _log.debug("No LDAP user found with email: " + email);
+                return null;
+            }
             attributes = results.next().getAttributes();
         }
         catch (NamingException ne)
