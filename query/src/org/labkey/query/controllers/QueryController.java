@@ -155,6 +155,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -3031,6 +3032,8 @@ public class QueryController extends SpringActionController
                 filter.addUrlFilters(getViewContext().getActionURL(), dataRegionName);
             }
 
+            // Strip out filters on columns that don't exist - issue 21669
+            service.ensureRequiredColumns(table, columns.values(), filter, null, new HashSet<FieldKey>());
             QueryLogging queryLogging = new QueryLogging();
             SQLFragment selectSql = service.getSelectSQL(table, columns.values(), filter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
 

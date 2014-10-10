@@ -315,8 +315,10 @@ public class QueryServiceImpl extends QueryService
     public List<QueryDefinition> getFileBasedQueryDefs(User user, Container container, String schemaName, Path path, Module... extraModules)
     {
         Collection<Module> modules = container.getActiveModules(user);
-        HashSet<Module> allModules = new HashSet<>(modules);
+        Collection<Module> allModules = new HashSet<>(modules);
         allModules.addAll(Arrays.asList(extraModules));
+
+        allModules = reorderModules(allModules);
 
         List<QueryDefinition> ret = new ArrayList<>();
         for (Module module : allModules)
@@ -515,8 +517,10 @@ public class QueryServiceImpl extends QueryService
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)
     {
         Collection<Module> modules = container.getActiveModules();
-        HashSet<Module> allModules = new HashSet<>(modules);
+        Collection<Module> allModules = new HashSet<>(modules);
         allModules.addAll(Arrays.asList(extraModules));
+
+        allModules = reorderModules(allModules);
 
         String schema = qd.getSchema().getSchemaName();
         Pair<String, String> schemaQuery = Pair.of(schema, query);
@@ -537,6 +541,21 @@ public class QueryServiceImpl extends QueryService
         }
 
         return customViews;
+    }
+
+    /** Sort the modules in reverse dependency order, to help us get the most specific version of a particular resource */
+    private Collection<Module> reorderModules(Collection<Module> selectedModules)
+    {
+        List<Module> result = new ArrayList<>(selectedModules.size());
+        for (Module module : ModuleLoader.getInstance().getModules())
+        {
+            if (selectedModules.contains(module))
+            {
+                result.add(module);
+            }
+        }
+        Collections.reverse(result);
+        return result;
     }
 
     private static class CustomViewResourceCacheHandler implements ModuleResourceCacheHandler<Path, Collection<ModuleCustomViewDef>>
