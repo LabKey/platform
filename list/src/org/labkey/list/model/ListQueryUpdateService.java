@@ -30,6 +30,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -72,10 +73,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /*
 * User: Nick Arnold
@@ -452,34 +451,77 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
         return result;
     }
 
+
+    //
+    // Used to stream all the entity ids for a given list.  The related list
+    // items are deleted after every 1000 entry ids are fetched.  When the
+    // records are done streaming, clients of the class must process any remaining
+    // entity ids.
+    //
+    private class ListEntityIdBlock implements Selector.ForEachBlock<String>
+    {
+        private List<String> _entityIds = new ArrayList<>();
+        private final ListQueryUpdateService _qus;
+        private final User _user;
+        private final Container _container;
+        private final int _blockSize = 1000;
+
+        private ListEntityIdBlock(User user, Container container, ListQueryUpdateService queryUpdateService)
+        {
+            _qus = queryUpdateService;
+            _user = user;
+            _container = container;
+        }
+
+        @Override
+        public void exec(String entityId) throws SQLException
+        {
+            if (null != entityId)
+                _entityIds.add(entityId);
+
+            // if we have collected 1000 entityIds then
+            // delete the related list data for this block
+            if (_entityIds.size() == _blockSize)
+            {
+                _qus.deleteRelatedListData(_user, _container, _entityIds);
+                _entityIds.clear();
+            }
+        }
+
+        private List<String> getEntityIds()
+        {
+            return _entityIds;
+        }
+    }
+
     // Deletes attachments and discussions associated with a list.
     // Removes list from indices.
     public void deleteRelatedListData(User user, Container container)
     {
-        // Delete related list data in all the rows
-        List<String> listItemEntityIds = new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId")).getArrayList(String.class);
-        int size = listItemEntityIds.size();
+        ListEntityIdBlock block = new ListEntityIdBlock(user, container, this);
 
-        int increment = 1000;
-        int index = 0;
-        int offset = increment;
+        TableSelector ts = new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId"));
+        ts.forEach(block, String.class);
 
-        while (index < size)
+        // Be sure to delete any remaining entityIds that were fetched.  This is the normal case since unless we have
+        // exactly (numEntityIds % 1000) == 0 we'll always have remaining entityIds that need to be processed.
+        deleteRelatedListData(user, container, block.getEntityIds());
+
+        // Unindex all item docs and the entire list doc
+        ListManager.get().deleteIndexedList(_list);
+    }
+
+    // delete the related list data for this block of entityIds
+    private void deleteRelatedListData(User user, Container container, List<String> entityIds)
+    {
+        if (entityIds.size() > 0)
         {
             // Build up set of entityIds and AttachmentParents
-            Set<String> entityIds = new HashSet<>();
             List<AttachmentParent> attachmentParents = new ArrayList<>();
 
-            int start = index;
-            int end = Math.min(offset, size);
-            for (int i = start; i < end; i++)
+            for (String entityId : entityIds)
             {
-                String eid = listItemEntityIds.get(i); // LQUS.ID property
-                if (null != eid)
-                {
-                    entityIds.add(eid);
-                    attachmentParents.add(new ListItemAttachmentParent(eid, container));
-                }
+                attachmentParents.add(new ListItemAttachmentParent(entityId, container));
             }
 
             // Delete Discussions
@@ -487,13 +529,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
             // Delete Attachments
             AttachmentService.get().deleteAttachments(attachmentParents);
-
-            index = end;
-            offset += increment;
         }
-
-        // Unindex all item docs and the entire list doc
-        ListManager.get().deleteIndexedList(_list);
     }
 
     @Override
