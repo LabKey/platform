@@ -1532,13 +1532,33 @@ public class SecurityController extends SpringActionController
         }
     }
 
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(AdminPermission.class)
     public class ShowRegistrationEmailAction extends AbstractEmailAction
     {
-        // TODO: Allow project admins to view verification emails for users they've added?
         protected SecurityMessage createMessage(EmailForm form) throws Exception
         {
-            return SecurityManager.getRegistrationMessage(form.getMailPrefix(), false);
+            // Site admins can see the email for everyone, but project admins can only see it for users they added
+            if (!getUser().isSiteAdmin())
+            {
+                try
+                {
+                    ValidEmail email = new ValidEmail(form.getEmail());
+                    User user = UserManager.getUser(email);
+                    if (user == null)
+                    {
+                        throw new NotFoundException();
+                    }
+                    if (user.getCreatedBy() == null || getUser().getUserId() != user.getCreatedBy().intValue())
+                    {
+                        throw new UnauthorizedException();
+                    }
+                }
+                catch (ValidEmail.InvalidEmailException e)
+                {
+                    throw new NotFoundException("Invalid email address: " + form.getEmail());
+                }
+            }
+                return SecurityManager.getRegistrationMessage(form.getMailPrefix(), false);
         }
     }
 
@@ -1893,9 +1913,9 @@ public class SecurityController extends SpringActionController
             User site = TestContext.get().getUser();
             assertTrue(site.isSiteAdmin());
 
-            User guest = SecurityManager.addUser(new ValidEmail("guest@scjutc.com")).getUser();
-            User user = SecurityManager.addUser(new ValidEmail("user@scjutc.com")).getUser();
-            User admin = SecurityManager.addUser(new ValidEmail("admin@scjutc.com")).getUser();
+            User guest = SecurityManager.addUser(new ValidEmail("guest@scjutc.com"), null).getUser();
+            User user = SecurityManager.addUser(new ValidEmail("user@scjutc.com"), null).getUser();
+            User admin = SecurityManager.addUser(new ValidEmail("admin@scjutc.com"), null).getUser();
 
             MutableSecurityPolicy policy = new MutableSecurityPolicy(c, c.getPolicy());
             policy.addRoleAssignment(admin, RoleManager.getRole(SiteAdminRole.class));

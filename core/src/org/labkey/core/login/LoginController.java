@@ -1175,7 +1175,7 @@ public class LoginController extends SpringActionController
                 ValidEmail email = new ValidEmail(form.getEmail());
 
                 // Add the initial user
-                SecurityManager.NewUserStatus newUserBean = SecurityManager.addUser(email);
+                SecurityManager.NewUserStatus newUserBean = SecurityManager.addUser(email, null);
                 // Set the password
                 success = super.handlePost(form, errors);
 
