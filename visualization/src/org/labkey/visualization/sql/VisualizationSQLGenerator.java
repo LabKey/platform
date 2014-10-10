@@ -164,6 +164,24 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         query.setSkipVisitJoin((Boolean) measureProperties.get("isDemographic"));
                 }
 
+                Object filterArray = measureInfo.get("filterArray");
+                if (null != filterArray)
+                {
+                    JSONArray filters = ((JSONArray) filterArray);
+                    for (int i = 0; i < filters.length(); i++)
+                    {
+                        String q = (String) filters.get(i);
+                        if (null != q)
+                        {
+                            SimpleFilter filter = SimpleFilter.createFilterFromParameter(q);
+                            if (filter != null)
+                            {
+                                query.addFilter(filter);
+                            }
+                        }
+                    }
+                }
+
                 Object timeAxis = measureInfo.get("time");
                 VisualizationProvider.ChartType type;
                 if (timeAxis instanceof String)
@@ -282,7 +300,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             if (query != null)
             {
                 SimpleFilter filter = new SimpleFilter(filterUrl, VisualizationController.FILTER_DATAREGION);
-                query.setFilter(filter);
+                query.addFilter(filter);
             }
         }
 
@@ -851,10 +869,13 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         String sep = "";
         for (VisualizationSourceQuery query : _sourceQueries.values())
         {
-            if (query.getFilter() != null)
+            for (SimpleFilter filter : query.getFilters())
             {
-                builder.append(sep).append(query.getFilter().getFilterText());
-                sep = " AND ";
+                if (filter != null)
+                {
+                    builder.append(sep).append(filter.getFilterText());
+                    sep = " AND ";
+                }
             }
         }
         return builder.toString();

@@ -15,6 +15,7 @@
  */
 package org.labkey.visualization.sql;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.JdbcType;
@@ -61,7 +62,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     private Set<VisualizationSourceColumn> _sorts = new LinkedHashSet<>();
     private IVisualizationSourceQuery _joinTarget;  // query this query must join to when building SQL
     private List<Pair<VisualizationSourceColumn, VisualizationSourceColumn>> _joinConditions;
-    private SimpleFilter _filter;
+    private List<SimpleFilter> _filters = new ArrayList<>();
     private boolean _skipVisitJoin;
 
     public VisualizationSourceQuery(Container container, UserSchema schema, String queryName, VisualizationSourceQuery joinTarget, int uniq)
@@ -176,7 +177,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     @Override
     public String getSelectListName(Set<VisualizationSourceColumn> selectAliases)
     {
-        // If there is more than one available alias for a given value, just choose the first: 
+        // If there is more than one available alias for a given value, just choose the first:
         return selectAliases.iterator().next().getAlias();
     }
 
@@ -540,9 +541,13 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     {
         StringBuilder where = new StringBuilder();
         String sep = "WHERE ";
-        if (_filter != null)
-            sep = appendSimpleFilter(where, _filter, sep);
-
+        for (SimpleFilter filter : _filters)
+        {
+            if (filter != null)
+            {
+                sep = appendSimpleFilter(where, filter, sep);
+            }
+        }
         for (VisualizationSourceColumn select : _selects)
         {
             if (select.getValues() != null && !select.getValues().isEmpty())
@@ -605,14 +610,15 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         return _queryName;
     }
 
-    public void setFilter(SimpleFilter filter)
+    public void addFilter(@NotNull SimpleFilter filter)
     {
-        _filter = filter;
+        if (null != filter)
+            _filters.add(filter);
     }
 
-    public SimpleFilter getFilter()
+    public SimpleFilter[] getFilters()
     {
-        return _filter;
+        return _filters.toArray(new SimpleFilter[_filters.size()]);
     }
 
     public boolean isSkipVisitJoin()
