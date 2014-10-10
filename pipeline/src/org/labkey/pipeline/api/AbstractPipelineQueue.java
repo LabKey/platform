@@ -20,6 +20,8 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.security.permissions.ReadPermission;
 
 import java.io.File;
 
@@ -38,6 +40,21 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
             throw new NullPointerException();
 
         job.validateParameters();
+        User user = job.getUser();
+        if (user == null)
+        {
+            throw new PipelineValidationException("No User associated with job " + job);
+        }
+        if (!user.isActive())
+        {
+            throw new PipelineValidationException("The account for user " + user + " is not active");
+        }
+        // Treat the guest user like a system account.
+        // Important for some unit tests, like PipelineQueueImpl.TestCase.testPipeline()
+        if (!user.isGuest() && !job.getContainer().hasPermission(user, ReadPermission.class))
+        {
+            throw new PipelineValidationException("User " + user + " does not have access to " + job.getContainer());
+        }
 
         LOG.debug("PENDING:   " + job.toString());
 
@@ -48,7 +65,7 @@ public abstract class AbstractPipelineQueue implements PipelineQueue
             PipelineStatusFileImpl pipelineStatusFile = PipelineStatusManager.getStatusFile(logFile);
             if (pipelineStatusFile == null)
             {
-                PipelineStatusManager.setStatusFile(job, job.getUser(), PipelineJob.TaskStatus.waiting, null, true);
+                PipelineStatusManager.setStatusFile(job, user, PipelineJob.TaskStatus.waiting, null, true);
             }
 
             PipelineStatusManager.resetJobId(job.getLogFile(), job.getJobGUID());
