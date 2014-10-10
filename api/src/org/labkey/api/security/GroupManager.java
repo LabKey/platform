@@ -365,7 +365,7 @@ public class GroupManager
             _user = loggedIn.cloneUser();
 
             ValidEmail email = new ValidEmail("junit_test_user@test.com");
-            SecurityManager.NewUserStatus status = SecurityManager.addUser(email);
+            SecurityManager.NewUserStatus status = SecurityManager.addUser(email, null);
             _testUser = status.getUser();
             assertNotNull(_testUser);
         }

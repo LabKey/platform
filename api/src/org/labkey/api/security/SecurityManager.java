@@ -388,7 +388,7 @@ public class SecurityManager
         // must be an LDAP or SSO user's first visit
         if (null == u)
         {
-            NewUserStatus bean = addUser(email, false);
+            NewUserStatus bean = addUser(email, null, false);
             u = bean.getUser();
             UserManager.addToUserHistory(u, u.getEmail() + " authenticated successfully and was added to the system automatically.");
         }
@@ -705,15 +705,18 @@ public class SecurityManager
         }
     }
 
-    public static NewUserStatus addUser(ValidEmail email) throws UserManagementException
+    /** @param currentUser the user who is adding the new user. Used to set createdBy on the new user record */
+    public static NewUserStatus addUser(ValidEmail email, @Nullable User currentUser) throws UserManagementException
     {
-        return addUser(email, true);
+        return addUser(email, currentUser, true);
     }
 
-    // createLogin == false in the case of a new LDAP or SSO user authenticating for the first time.
-    // createLogin == true in any other case (e.g., manually added LDAP user), so we need an additional check below
-    // to avoid sending verification emails to an LDAP user.
-    public static @NotNull NewUserStatus addUser(ValidEmail email, boolean createLogin) throws UserManagementException
+    /** @param currentUser the user who is adding the new user. Used to set createdBy on the new user record
+     * @param createLogin false in the case of a new LDAP or SSO user authenticating for the first time, or true
+     *                    in any other case (e.g., manually added LDAP user), so we need an additional check below
+     *                    to avoid sending verification emails to an LDAP user.
+     */
+    public static @NotNull NewUserStatus addUser(ValidEmail email, @Nullable User currentUser, boolean createLogin) throws UserManagementException
     {
         NewUserStatus status = new NewUserStatus(email);
 
@@ -745,7 +748,7 @@ public class SecurityManager
 
                 try
                 {
-                    Map returnMap = Table.insert(null, core.getTableInfoPrincipals(), fieldsIn);
+                    Map returnMap = Table.insert(currentUser, core.getTableInfoPrincipals(), fieldsIn);
                     userId = (Integer) returnMap.get("UserId");
                 }
                 catch (RuntimeSQLException e)
@@ -779,7 +782,7 @@ public class SecurityManager
                     m.put("UserId", userId);
                     String displayName = displayNameFromEmail(email, userId);
                     m.put("DisplayName", displayName);
-                    Table.insert(null, core.getTableInfoUsersData(), m);
+                    Table.insert(currentUser, core.getTableInfoUsersData(), m);
                 }
                 catch (RuntimeSQLException x)
                 {
@@ -2266,7 +2269,7 @@ public class SecurityManager
             // Test create user, verify, login, and delete
             try
             {
-                NewUserStatus status = addUser(email);
+                NewUserStatus status = addUser(email, null);
                 user = status.getUser();
                 assertTrue("addUser", user.getUserId() != 0);
 
@@ -2455,12 +2458,11 @@ public class SecurityManager
         NewUserStatus newUserStatus;
 
         ActionURL messageContentsURL = null;
-        boolean appendClickToSeeMail = false;
         User currentUser = context.getUser();
 
         try
         {
-            newUserStatus = SecurityManager.addUser(email);
+            newUserStatus = SecurityManager.addUser(email, currentUser);
 
             if (newUserStatus.getHasLogin() && sendMail)
             {
@@ -2476,7 +2478,6 @@ public class SecurityManager
                     msg.setTo(email.getEmailAddress());
                     SecurityManager.sendEmail(c, currentUser, msg, currentUser.getEmail(), verificationURL);
                 }
-                appendClickToSeeMail = currentUser.isSiteAdmin();
             }
 
             User newUser = newUserStatus.getUser();
@@ -2495,13 +2496,10 @@ public class SecurityManager
             {
                 message.append(email.getEmailAddress()).append(" added as a new user to the system, but no email was sent.");
 
-                if (appendClickToSeeMail)
-                {
-                    message.append("  Click ");
-                    String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
-                            email, newUserStatus.getVerification(), extraParameters)) + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
-                    message.append(href).append(" to change the password from the random one that was assigned.");
-                }
+                message.append("  Click ");
+                String href = "<a href=\"" + PageFlowUtil.filter(createVerificationURL(context.getContainer(),
+                        email, newUserStatus.getVerification(), extraParameters)) + "\" target=\"" + email.getEmailAddress() + "\">here</a>";
+                message.append(href).append(" to change the password from the random one that was assigned.");
 
                 UserManager.addToUserHistory(newUser, newUser.getEmail() + " was added to the system and the administrator chose not to send a verification email.");
             }
@@ -2525,7 +2523,7 @@ public class SecurityManager
             message.append("Failed to create user ").append(email).append(": ").append(e.getMessage());
         }
 
-        if (appendClickToSeeMail && messageContentsURL != null)
+        if (messageContentsURL != null)
         {
             String href = "<a href=" + PageFlowUtil.filter(messageContentsURL) + " target=\"_blank\">here</a>";
             message.append(" Click ").append(href).append(" to see the email.");
