@@ -146,7 +146,7 @@ else
 
 <h2>Linked Schemas</h2>
 <p>
-    Linked schemas can be created by refrencing an existing LabKey schema in the current or different folder.
+    Linked schemas can be created by referencing an existing LabKey schema in the current or different folder.
     The linked schema may expose some or all of the tables and queries from the original schema.
     The linked tables and queries may be filtered such that only a subset of the rows are available.
 </p>
