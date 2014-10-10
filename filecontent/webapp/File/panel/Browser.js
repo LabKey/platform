@@ -2115,17 +2115,17 @@ Ext4.define('File.panel.Browser', {
                                         this.on('pipelineconfigured', function() {
                                             this.clearGridSelection();
 
-                                            //
-                                            // Delete is a bit of a special case -- we want to reset the store
-                                            // completly so there are no longer any cached records
-                                            //
-                                            var grid = this.getGrid();
-                                            if (grid) {
-                                                grid.getStore().data.clear();
-                                                this.onRefresh();
-                                            }
                                         }, this, {single: true});
                                         this.configureActions();
+
+                                        // Delete is a bit of a special case -- we want to reset the store
+                                        // completly so there are no longer any cached records
+
+                                        var grid = this.getGrid();
+                                        if (grid) {
+                                            grid.getStore().data.clear();
+                                            this.onRefresh();
+                                        }
                                     }
                                 },
                                 failure : function(response) {
