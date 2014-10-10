@@ -959,7 +959,7 @@
                 cubeName : config.cubeName || this._cube.name,
                 query :
                 {
-                    // TODO: Move this delcaration to a place where it can be more appropriately documented. Its own object?
+                    // TODO: Move this declaration to a place where it can be more appropriately documented. Its own object?
 
                     /**
                      * A set of members to select on the rows of the returned cellset
