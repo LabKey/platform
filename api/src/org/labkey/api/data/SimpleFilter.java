@@ -34,6 +34,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.TestContext;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ActionURL;
 import org.labkey.data.xml.queryCustomView.FilterType;
 
 import java.net.URISyntaxException;
@@ -63,6 +64,29 @@ public class SimpleFilter implements Filter
     public static SimpleFilter createContainerFilter(Container c)
     {
         return new SimpleFilter(new FieldKey(null, "Container"), c);
+    }
+
+    /**
+     * Creates a SimpleFilter from a queryParmeter.
+     * @param queryParameter A query parameter, as would be found on a URL. e.g. 'query.Column~gt=value'
+     * @return The SimpleFilter that was created. If the string is not formatted correctly, will return null.
+     */
+    @Nullable
+    public static SimpleFilter createFilterFromParameter(@NotNull String queryParameter)
+    {
+        SimpleFilter filter = null;
+        if (queryParameter != null)
+        {
+            String[] parts = queryParameter.split("\\.");
+            if (parts.length > 1)
+            {
+                String regionName = parts[0];
+                ActionURL url = new ActionURL();
+                url.setRawQuery(queryParameter);
+                filter = new SimpleFilter(url, regionName);
+            }
+        }
+        return filter;
     }
 
     public static abstract class FilterClause

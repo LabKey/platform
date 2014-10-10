@@ -233,15 +233,64 @@ LABKEY.Query.Visualization = new function() {
         getData : function(config) {
 
             var params = {
-                measures : config.measures,
+                measures : [],
                 sorts : config.sorts,
-                filterUrl: config.filterUrl,
-                filterQuery: config.filterQuery,
+
+                // @deprecated -- created for issue 11627
+                // The filterUrl and filterQuery are used in tandem to apply a filter from a URL. Use the filterArray
+                // option on each measure to apply filters.
+                filterQuery: config.filterQuery, // e.g. 'study.Lab Results'
+                filterUrl: config.filterUrl, // e.g. '/labkey/study/StudyFolder/dataset.view?Dataset.Column%7Egt=value'
+
                 limit   : config.limit,
                 groupBys: config.groupBys,
                 metaDataOnly: config.metaDataOnly,
-                joinToFirst: config.joinToFirst
+
+                // specify that all source queries should join back to the first measure
+                joinToFirst: config.joinToFirst === true
             };
+
+            // clone measures
+            var measure, filters, m, f, asURL, fa;
+            for (m=0; m < config.measures.length; m++)
+            {
+                var c = config.measures[m];
+
+                measure = {
+                    measure: c.measure,
+                    time: c.time
+                };
+
+                if (c.dimension)
+                {
+                    measure.dimension = c.dimension;
+                }
+
+                if (c.dateOptions)
+                {
+                    measure.dateOptions = c.dateOptions;
+                }
+
+                if (c.filterArray)
+                {
+                    measure.filterArray = c.filterArray;
+
+                    // assume it is an array of LABKEY.Filter instances, convert each filter to it's URL parameter equivalent
+                    filters = [];
+                    for (f=0; f < measure.filterArray.length; f++)
+                    {
+                        fa = measure.filterArray[f];
+                        if (fa)
+                        {
+                            asURL = fa.getURLParameterName() + "=" + fa.getURLParameterValue();
+                            filters.push(asURL);
+                        }
+                    }
+                    measure['filterArray'] = filters;
+                }
+
+                params.measures.push(measure);
+            }
 
             LABKEY.Ajax.request(
             {
