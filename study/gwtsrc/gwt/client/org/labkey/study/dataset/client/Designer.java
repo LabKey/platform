@@ -290,7 +290,7 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
 
             public void onSuccess(List<String> errors)
             {
-                if (null == errors)
+                if (errors.isEmpty())
                 {
                     _saved = true;  // avoid popup warning
                     if (listener != null)

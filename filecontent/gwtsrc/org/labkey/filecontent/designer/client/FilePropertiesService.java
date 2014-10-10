@@ -15,8 +15,8 @@
  */
 package org.labkey.filecontent.designer.client;
 
-import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.LookupService;
 
 import java.util.List;
@@ -29,5 +29,5 @@ import java.util.List;
 public interface FilePropertiesService extends LookupService
 {
     public GWTDomain getDomainDescriptor(String typeURI);
-    public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain dd);
+    public List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> dd);
 }

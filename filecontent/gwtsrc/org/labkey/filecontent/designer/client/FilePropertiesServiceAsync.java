@@ -17,6 +17,7 @@ package org.labkey.filecontent.designer.client;
 
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.LookupServiceAsync;
 
 import java.util.List;
@@ -29,5 +30,5 @@ import java.util.List;
 public interface FilePropertiesServiceAsync extends LookupServiceAsync
 {
     void getDomainDescriptor(String typeURI, AsyncCallback<GWTDomain> async);
-    void updateDomainDescriptor(GWTDomain orig, GWTDomain dd, AsyncCallback<List<String>> async);
+    void updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> dd, AsyncCallback<List<String>> async);
 }

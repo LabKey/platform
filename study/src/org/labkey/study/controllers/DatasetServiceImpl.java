@@ -18,6 +18,7 @@ package org.labkey.study.controllers;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
@@ -132,6 +133,8 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
     }
 
 
+    /** @return Errors encountered during the save attempt */
+    @NotNull
     public List<String> updateDatasetDefinition(GWTDataset ds, GWTDomain orig, GWTDomain update)
     {
         assert orig.getDomainURI().equals(update.getDomainURI());
@@ -169,10 +172,10 @@ class DatasetServiceImpl extends DomainEditorServiceBase implements DatasetServi
         update.setFields(updatedProps);
 
         errors = updateDomainDescriptor(orig, update);
-        if (errors == null)
+        if (errors.isEmpty())
             errors = updateDataset(ds, orig.getDomainURI());
 
-        return errors.isEmpty() ? null : errors;
+        return errors;
     }
 
     private List updateDataset(GWTDataset ds, String domainURI)

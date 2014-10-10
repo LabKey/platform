@@ -15,17 +15,22 @@
  */
 package org.labkey.pipeline.analysis;
 
-import org.labkey.api.pipeline.*;
-import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
-import org.labkey.api.pipeline.cmd.ConvertTaskId;
+import common.Logger;
+import org.labkey.api.pipeline.AbstractTaskFactory;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.TaskFactory;
+import org.labkey.api.pipeline.TaskFactorySettings;
+import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.cmd.ConvertTaskFactorySettings;
+import org.labkey.api.pipeline.cmd.ConvertTaskId;
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
 
-import java.io.IOException;
 import java.io.File;
-import java.sql.SQLException;
-import java.util.List;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * <code>ConvertTaskFactory</code> a task for converting from multiple possible
@@ -38,6 +43,8 @@ import java.util.ArrayList;
  */
 public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySettings, ConvertTaskFactory>
 {
+    private static final Logger LOG = Logger.getLogger(ConvertTaskFactory.class);
+
     private String _statusName = "CONVERSION";
     private TaskId[] _commands;
     private List<FileType> _initialTypes;
@@ -184,7 +191,9 @@ public class ConvertTaskFactory extends AbstractTaskFactory<ConvertTaskFactorySe
         TaskFactory factory = findCommandFactory(job);
         if (factory == null)
         {
-            throw new IllegalStateException("Unexpected missing converter for job: \n" + PipelineJobService.get().getJobStore().toXML(job));
+            job.warn("Unexpected missing converter for job. The pipeline configuration may have changed to remove a previously configured converter.");
+            LOG.warn("Unexpected missing converter for job. The pipeline configuration may have changed to remove a previously configured converter. \n" + PipelineJobService.get().getJobStore().toXML(job));
+            return true;
         }
 
         return factory.isJobComplete(job);

@@ -187,7 +187,7 @@ public class Designer implements EntryPoint, Saveable<GWTDomain>
         {
             public void onSuccess(List<String> errors)
             {
-                if (null == errors)
+                if (errors.isEmpty())
                 {
                     _saved = true;  // avoid popup warning
                     if (listener != null)

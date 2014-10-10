@@ -90,19 +90,16 @@ public class SpecimenServiceImpl extends DomainEditorServiceBase implements Spec
         try (DbScope.Transaction tx = StudySchema.getInstance().getScope().ensureTransaction())
         {
             List<String> list = super.updateDomainDescriptor(domains.get(0), updateEvent);
-            if (null != list)
-                errors.addAll(list);
+            errors.addAll(list);
             list = super.updateDomainDescriptor(domains.get(1), updateVial);
-            if (null != list)
-                errors.addAll(list);
+            errors.addAll(list);
             list = super.updateDomainDescriptor(domains.get(2), updateSpecimen);
-            if (null != list)
-                errors.addAll(list);
+            errors.addAll(list);
 
             if (errors.isEmpty())
             {
                 tx.commit();
-                return null;
+                return errors;
             }
         }
 

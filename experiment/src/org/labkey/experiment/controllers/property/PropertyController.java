@@ -16,16 +16,27 @@
 
 package org.labkey.experiment.controllers.property;
 
-import org.apache.commons.io.IOUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.labkey.api.action.*;
+import org.labkey.api.action.AbstractFileUploadAction;
+import org.labkey.api.action.ApiAction;
+import org.labkey.api.action.ApiResponse;
+import org.labkey.api.action.ApiSimpleResponse;
+import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.SimpleApiJsonForm;
+import org.labkey.api.action.SimpleViewAction;
+import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.Lsid;
-import org.labkey.api.exp.property.*;
+import org.labkey.api.exp.property.Domain;
+import org.labkey.api.exp.property.DomainEditorServiceBase;
+import org.labkey.api.exp.property.DomainKind;
+import org.labkey.api.exp.property.DomainUtil;
+import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
@@ -44,7 +55,12 @@ import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.SessionTempFileHolder;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.*;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.GWTView;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -53,8 +69,18 @@ import org.springframework.web.servlet.ModelAndView;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 public class PropertyController extends SpringActionController
 {
@@ -216,9 +242,8 @@ public class PropertyController extends SpringActionController
             GWTDomain originalDomain = getDomain(schema, query, getContainer(), getUser());
 
             List<String> updateErrors = updateDomain(originalDomain, newDomain, getContainer(), getUser());
-            if (updateErrors != null)
-                for (String msg : updateErrors)
-                    errors.reject(ERROR_MSG, msg);
+            for (String msg : updateErrors)
+                errors.reject(ERROR_MSG, msg);
 
             return new ApiSimpleResponse();
         }
@@ -475,7 +500,9 @@ public class PropertyController extends SpringActionController
         return created;
     }
 
-    private static List<String> updateDomain(GWTDomain original, GWTDomain update, Container container, User user)
+    /** @return Errors encountered during the save attempt */
+    @NotNull
+    private static List<String> updateDomain(GWTDomain<? extends GWTPropertyDescriptor> original, GWTDomain<? extends GWTPropertyDescriptor> update, Container container, User user)
     {
         DomainKind kind = PropertyService.get().getDomainKind(original.getDomainURI());
         if (kind == null)

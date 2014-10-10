@@ -15,9 +15,11 @@
  */
 package org.labkey.study.controllers;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.property.DomainImporterServiceBase;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.client.ui.domain.ImportException;
 import org.labkey.api.gwt.client.ui.domain.ImportStatus;
 import org.labkey.api.study.TimepointType;
@@ -116,7 +118,8 @@ public class DatasetImportServiceImpl extends DomainImporterServiceBase
 
 
     @Override
-    public List<String> updateDomainDescriptor(GWTDomain orig, GWTDomain update)
+    @NotNull
+    public List<String> updateDomainDescriptor(GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update)
     {
         Container container = getContainer();
         StudyImpl study = StudyManager.getInstance().getStudy(container);

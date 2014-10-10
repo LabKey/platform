@@ -452,12 +452,9 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                     {
                         List<String> domainErrors = updateDomainDescriptor(domain, protocol.getName(), getContainer());
-                        if (domainErrors != null)
+                        for (String error : domainErrors)
                         {
-                            for (String error : domainErrors)
-                            {
-                                errors.append(error).append("\n");
-                            }
+                            errors.append(error).append("\n");
                         }
                     }
                     if (errors.length() > 0)
@@ -484,7 +481,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
     private List<String> updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, String protocolName, Container protocolContainer)
     {
-        GWTDomain previous = getDomainDescriptor(domain.getDomainURI(), protocolContainer);
+        GWTDomain<? extends GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), protocolContainer);
         for (GWTPropertyDescriptor prop : domain.getFields())
         {
             if (prop.getLookupQuery() != null)

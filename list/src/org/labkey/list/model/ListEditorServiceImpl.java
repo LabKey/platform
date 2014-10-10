@@ -16,6 +16,7 @@
 package org.labkey.list.model;
 
 import org.apache.axis.utils.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
@@ -270,7 +271,8 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         defn.setTitleColumn(gwt.getTitleField());
     }
 
-
+    /** @return Errors encountered during the save attempt */
+    @NotNull
     public List<String> updateListDefinition(GWTList list, GWTDomain orig, GWTDomain dd) throws ListEditorService.ListImportException
     {
         if (!getContainer().hasPermission(getUser(), DesignListPermission.class))
@@ -299,7 +301,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            List<String> errors = null;
+            List<String> errors;
             try
             {
                  errors = super.updateDomainDescriptor(orig, dd);
@@ -317,7 +319,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
 
                 throw new ListImportException(message);
             }
-            if (errors != null && !errors.isEmpty())
+            if (!errors.isEmpty())
             {
                 return errors;
             }
@@ -325,7 +327,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
             {
                 // Check for legalName problems -- GWT designer does not catch them (and doesn't have support on the client to easily check)
                 errors = checkLegalNameConflicts(dd);
-                if (errors != null && !errors.isEmpty())
+                if (!errors.isEmpty())
                     return errors;
             }
 
@@ -349,6 +351,7 @@ public class ListEditorServiceImpl extends DomainEditorServiceBase implements Li
         return new ArrayList<>(); // GWT error Collections.emptyList();
     }
 
+    @NotNull
     private List<String> checkLegalNameConflicts(GWTDomain dd)
     {
         List<String> errors = new ArrayList<>();

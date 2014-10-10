@@ -39,7 +39,6 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.ResultSetUtil;
 import org.labkey.di.TransformDataIteratorBuilder;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
@@ -51,7 +50,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -148,7 +146,6 @@ public class SimpleQueryTransformStep extends TransformTask
         DbScope targetScope = targetSchema.getDbSchema().getScope();
         DbScope sourceScope = getSourceScope(sourceSchema, targetScope);
 
-        ResultSet rs = null;
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
         context.setFailFast(true);
@@ -187,7 +184,6 @@ public class SimpleQueryTransformStep extends TransformTask
         }
         finally
         {
-            ResultSetUtil.close(rs);
             targetScope.closeConnection();
             if (null != sourceScope)
                 sourceScope.closeConnection();
