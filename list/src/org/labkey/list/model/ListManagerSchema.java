@@ -93,7 +93,7 @@ public class ListManagerSchema extends UserSchema
     @Override
     protected TableInfo createTable(String name)
     {
-        if(LIST_MANAGER.equalsIgnoreCase(name))
+        if (LIST_MANAGER.equalsIgnoreCase(name))
         {
             TableInfo dbTable = getDbSchema().getTable("list");
             ListManagerTable table = new ListManagerTable(this, dbTable);
@@ -120,20 +120,24 @@ public class ListManagerSchema extends UserSchema
     @Override
     public QueryView createView(ViewContext context, QuerySettings settings, BindException errors)
     {
-        if(settings.getQueryName().equalsIgnoreCase(LIST_MANAGER))
+        if (settings.getQueryName().equalsIgnoreCase(LIST_MANAGER))
         {
             return new QueryView(this, settings, errors)
             {
                 QuerySettings s = getSettings();
+
                 @Override
                 protected void populateButtonBar(DataView view, ButtonBar bar)
                 {
                     bar.add(super.createViewButton(getViewItemFilter()));
-                    bar.add(super.createPrintButton());
-                    bar.add(createExportButton());
-                    bar.add(createDeleteButton());
                     bar.add(createCreateNewListButton());
+                    bar.add(createDeleteButton());
+                    bar.add(super.createExportButton(false));
+//  TODO: Might be nice to add these, but these start making the grid very wide...
+//                    bar.add(super.createPrintButton());
+//                    bar.add(super.createPageSizeMenuButton());
                     bar.add(createImportListArchiveButton());
+                    bar.add(createExportArchiveButton());
                 }
 
                 private ActionButton createCreateNewListButton()
@@ -169,22 +173,24 @@ public class ListManagerSchema extends UserSchema
                     return btnDelete;
                 }
 
-                private ActionButton createExportButton()
+                private ActionButton createExportArchiveButton()
                 {
                     ActionURL urlExport;
                     ActionButton btnExport;
-                    if(s.getContainerFilterName() != null && s.getContainerFilterName().equals("CurrentAndSubfolders"))
+
+                    if (s.getContainerFilterName() != null && s.getContainerFilterName().equals("CurrentAndSubfolders"))
                     {
                         urlExport = new ActionURL(getReturnURL().toString());
-                        btnExport = new ActionButton(urlExport, "Export Archives");
+                        btnExport = new ActionButton(urlExport, "Export List Archive");
                         btnExport.setRequiresSelection(true, 1, 0, "You cannot export while viewing subFolders", "You cannot export while viewing subFolders", null);
                     }
                     else
                     {
                         urlExport = new ActionURL(ListController.ExportListArchiveAction.class, getContainer());
-                        btnExport = new ActionButton(urlExport, "Export Archives");
+                        btnExport = new ActionButton(urlExport, "Export List Archive");
                         btnExport.setRequiresSelection(true);
                     }
+
                     btnExport.setActionType(ActionButton.Action.POST);
                     btnExport.setDisplayPermission(DesignListPermission.class);
                     return btnExport;
@@ -194,6 +200,7 @@ public class ListManagerSchema extends UserSchema
                 protected void addDetailsAndUpdateColumns(List<DisplayColumn> ret, TableInfo table)
                 {
                     super.addDetailsAndUpdateColumns(ret, table);
+
                     if (getContainer().hasPermission(getUser(), DesignListPermission.class))
                     {
                         SimpleDisplayColumn designColumn = new SimpleDisplayColumn()
@@ -209,6 +216,7 @@ public class ListManagerSchema extends UserSchema
                         };
                         ret.add(designColumn);
                     }
+
                     if (AuditLogService.get().isViewable())
                     {
                         SimpleDisplayColumn historyColumn = new SimpleDisplayColumn()
@@ -227,7 +235,7 @@ public class ListManagerSchema extends UserSchema
                 }
             };
         }
-        return  super.createView(context, settings, errors);
+        return super.createView(context, settings, errors);
     }
     @Override
     public Set<String> getTableNames()
