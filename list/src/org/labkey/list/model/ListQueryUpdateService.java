@@ -453,12 +453,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
 
     //
-    // Used to stream all the entity ids for a given list.  The related list
-    // items are deleted after every 1000 entry ids are fetched.  When the
-    // records are done streaming, clients of the class must process any remaining
-    // entity ids.
+    // Stream all the entity ids for a given list.  The related list
+    // items are deleted after every 1000 entry ids are fetched.  On close()
+    // process any remaining ids.
     //
-    private class ListEntityIdBlock implements Selector.ForEachBlock<String>
+    private class ListEntityIdBlock implements Selector.ForEachBlock<String>, AutoCloseable
     {
         private List<String> _entityIds = new ArrayList<>();
         private final ListQueryUpdateService _qus;
@@ -488,9 +487,15 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             }
         }
 
-        private List<String> getEntityIds()
+        // Be sure to delete any remaining entityIds that were fetched.  This is the normal case since unless we have
+        // exactly (numEntityIds % 1000) == 0 we'll always have remaining entityIds that need to be processed.
+        @Override
+        public void close()
         {
-            return _entityIds;
+            if (_entityIds.size() > 0)
+            {
+                _qus.deleteRelatedListData(_user, _container, _entityIds);
+            }
         }
     }
 
@@ -498,14 +503,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     // Removes list from indices.
     public void deleteRelatedListData(User user, Container container)
     {
-        ListEntityIdBlock block = new ListEntityIdBlock(user, container, this);
-
-        TableSelector ts = new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId"));
-        ts.forEach(block, String.class);
-
-        // Be sure to delete any remaining entityIds that were fetched.  This is the normal case since unless we have
-        // exactly (numEntityIds % 1000) == 0 we'll always have remaining entityIds that need to be processed.
-        deleteRelatedListData(user, container, block.getEntityIds());
+        try(ListEntityIdBlock block = new ListEntityIdBlock(user, container, this))
+        {
+            TableSelector ts = new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId"));
+            ts.forEach(block, String.class);
+        }
 
         // Unindex all item docs and the entire list doc
         ListManager.get().deleteIndexedList(_list);
@@ -514,22 +516,19 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     // delete the related list data for this block of entityIds
     private void deleteRelatedListData(User user, Container container, List<String> entityIds)
     {
-        if (entityIds.size() > 0)
+        // Build up set of entityIds and AttachmentParents
+        List<AttachmentParent> attachmentParents = new ArrayList<>();
+
+        for (String entityId : entityIds)
         {
-            // Build up set of entityIds and AttachmentParents
-            List<AttachmentParent> attachmentParents = new ArrayList<>();
-
-            for (String entityId : entityIds)
-            {
-                attachmentParents.add(new ListItemAttachmentParent(entityId, container));
-            }
-
-            // Delete Discussions
-            DiscussionService.get().deleteDiscussions(container, user, entityIds);
-
-            // Delete Attachments
-            AttachmentService.get().deleteAttachments(attachmentParents);
+            attachmentParents.add(new ListItemAttachmentParent(entityId, container));
         }
+
+        // Delete Discussions
+        DiscussionService.get().deleteDiscussions(container, user, entityIds);
+
+        // Delete Attachments
+        AttachmentService.get().deleteAttachments(attachmentParents);
     }
 
     @Override
