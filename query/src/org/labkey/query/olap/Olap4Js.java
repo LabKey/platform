@@ -377,10 +377,11 @@ public class Olap4Js
 
             if (null != rolap)
             {
+                out.write(",");
                 out.write("\"schemaName\":" + valueToString(rolap.getSchemaName()) + ",");
                 out.write("\"tableName\":" + valueToString(rolap.getTableName()) + ",");
                 out.write("\"keyExpression\":" + valueToString(rolap.getKeyExpression()) + ",");
-                out.write("\"jdbcType\":" + valueToString(rolap.getJdbcType().name()) + ",");
+                out.write("\"jdbcType\":" + valueToString(rolap.getJdbcType().name()));
             }
 
             if (_includeMemberProperties)
