@@ -427,10 +427,11 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
         if (null != result)
         {
-            if (null != result.get(ID))
+            String entityId = (String) result.get(ID);
+
+            if (null != entityId)
             {
                 ListManager mgr = ListManager.get();
-                String entityId = (String) result.get(ID);
                 String deletedRecord = mgr.formatAuditItem(_list, user, result);
 
                 // Audit
@@ -453,17 +454,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
 
     //
-    // Stream all the entity ids for a given list.  The related list
-    // items are deleted after every 1000 entry ids are fetched.  On close()
-    // process any remaining ids.
+    // Stream all the entity ids for a given list. The related list items are deleted after every 1,000 entity ids
+    // are fetched. On close(), process any remaining ids.
     //
     private class ListEntityIdBlock implements Selector.ForEachBlock<String>, AutoCloseable
     {
-        private List<String> _entityIds = new ArrayList<>();
+        private static final int BLOCK_SIZE = 1000;
+
+        private final List<String> _entityIds = new ArrayList<>(BLOCK_SIZE);
         private final ListQueryUpdateService _qus;
         private final User _user;
         private final Container _container;
-        private final int _blockSize = 1000;
 
         private ListEntityIdBlock(User user, Container container, ListQueryUpdateService queryUpdateService)
         {
@@ -478,16 +479,16 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             if (null != entityId)
                 _entityIds.add(entityId);
 
-            // if we have collected 1000 entityIds then
+            // if we have collected 1,000 entityIds then
             // delete the related list data for this block
-            if (_entityIds.size() == _blockSize)
+            if (_entityIds.size() == BLOCK_SIZE)
             {
                 _qus.deleteRelatedListData(_user, _container, _entityIds);
                 _entityIds.clear();
             }
         }
 
-        // Be sure to delete any remaining entityIds that were fetched.  This is the normal case since unless we have
+        // Be sure to delete any remaining entityIds that were fetched. This is the normal case since unless we have
         // exactly (numEntityIds % 1000) == 0 we'll always have remaining entityIds that need to be processed.
         @Override
         public void close()
@@ -503,6 +504,7 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     // Removes list from indices.
     public void deleteRelatedListData(User user, Container container)
     {
+        // TODO: Could use forEachBatch() instead
         try(ListEntityIdBlock block = new ListEntityIdBlock(user, container, this))
         {
             TableSelector ts = new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId"));
