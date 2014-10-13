@@ -54,6 +54,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     private final int _uniq;
     private String _alias = null;
     private TableInfo _tinfo;
+    private boolean _requireLeftJoin;
     private VisualizationSourceColumn _pivot;
     private Set<VisualizationSourceColumn> _measures = new LinkedHashSet<>();
     private Set<VisualizationSourceColumn> _selects = new LinkedHashSet<>();
@@ -111,6 +112,9 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
 
     public boolean requireInnerJoin()
     {
+        if (isRequireLeftJoin())
+            return true;
+
         for (VisualizationSourceColumn col : _selects)
         {
             if (!col.isAllowNullResults())
@@ -129,10 +133,25 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         return _queryName.startsWith("VisualizationVisitTag");
     }
 
+    public boolean isRequireLeftJoin()
+    {
+        return _requireLeftJoin;
+    }
+
+    // This can only be toggeled based on the set of columns/aggregates configurations, thus it is private
+    private void setRequireLeftJoin(boolean requireLeftJoin)
+    {
+        _requireLeftJoin = requireLeftJoin;
+    }
+
     public void addSelect(VisualizationSourceColumn select, boolean measure)
     {
         ensureSameQuery(select);
         _selects.add(select);
+        if (select.isRequireLeftJoin())
+        {
+            setRequireLeftJoin(true);
+        }
         if (measure)
         {
             _measures.add(select);
@@ -152,8 +171,8 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             }
             return _allSelects;
         }
-        else
-            return _selects;
+
+        return _selects;
     }
 
     public void addAggregate(VisualizationAggregateColumn aggregate)
@@ -161,6 +180,10 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
         ensureSameQuery(aggregate);
         aggregate.ensureColumn();
         _aggregates.add(aggregate);
+        if (aggregate.isRequireLeftJoin())
+        {
+            setRequireLeftJoin(true);
+        }
     }
 
     public Set<VisualizationAggregateColumn> getAggregates()
@@ -201,7 +224,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
 
         PivotSourceColumn(VisualizationAggregateColumn agg, Object pivotValue, String clientAlias)
         {
-            super(VisualizationSourceQuery.this.getSchema(), VisualizationSourceQuery.this.getQueryName(), pivotValue.toString() + "_" + agg.getOriginalName(), true);
+            super(VisualizationSourceQuery.this.getSchema(), VisualizationSourceQuery.this.getQueryName(), pivotValue.toString() + "_" + agg.getOriginalName(), true, false);
             _originalName = agg.getOriginalName();
             this._alias = pivotValue.toString() + "::" + agg.getAlias();
             if (null != agg.getLabel())

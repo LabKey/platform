@@ -108,7 +108,7 @@ public class StudyQuerySchema extends UserSchema
     public static final String VISIT_TAG_MAP_TABLE_NAME = "VisitTagMap";
     public static final String ASSAY_SPECIMEN_TABLE_NAME = "AssaySpecimen";
     public static final String ASSAY_SPECIMEN_VISIT_TABLE_NAME = "AssaySpecimenVisit";
-    public static final String VISUALIZTION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
+    public static final String VISUALIZATION_VISIT_TAG_TABLE_NAME = "VisualizationVisitTag";
 
     // extensible study data tables
     public static final String STUDY_DESIGN_SCHEMA_NAME = "studydesign";
@@ -692,10 +692,10 @@ public class StudyQuerySchema extends UserSchema
         {
             return new VisitTagMapTable(this, null);
         }
-        if (name.startsWith(VISUALIZTION_VISIT_TAG_TABLE_NAME))
+        if (name.startsWith(VISUALIZATION_VISIT_TAG_TABLE_NAME))
         {
             // Name is encoded with useProtocolDay boolean, interval, tag name
-            String params = name.replace(VISUALIZTION_VISIT_TAG_TABLE_NAME, "");
+            String params = name.replace(VISUALIZATION_VISIT_TAG_TABLE_NAME, "");
             boolean useProtocolDay;
             if (params.startsWith("-true"))
             {

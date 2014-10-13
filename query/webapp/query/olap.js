@@ -853,8 +853,9 @@
 
         query : function(config)
         {
-            var copy = Ext4.apply({},config,{filter:[], useNamedFilters:[]});
-            copy.filter = copy.filter ? copy.filter.slice() : [];
+            var copy = Ext4.apply({},config,{countFilter:[], whereFilter: [], useNamedFilters:[]});
+            copy.countFilter = copy.countFilter ? copy.countFilter.slice() : [];
+            copy.whereFilter = copy.whereFilter ? copy.whereFilter.slice() : [];
 
             var namedFilters = copy.useNamedFilters || [];
             for (var f=0; f < namedFilters.length; f++)
@@ -867,9 +868,34 @@
                 if (!Ext4.isArray(filters))
                     filters = [filters];
 
-                filters = this._wrapFilterPerspectives(filters, copy);
+                // process count vs where filters
+                var counts = [], wheres = [], ft;
+                for (var d=0; d < filters.length; d++) {
+                    if (filters[d]) {
+                        ft = filters[d].filterType;
+                        if (ft === 'WHERE') {
+                            wheres.push(filters[d]);
+                        }
+                        else if (ft === 'COUNT') {
+                            counts.push(filters[d]);
+                        }
+                        else {
+                            console.warn('Filter did not supply a valid \'filterType\'. Defaulting to COUNT');
+                            counts.push(filters[d]);
+                        }
+                    }
+                }
 
-                copy.filter = copy.filter.concat(filters);
+                counts = this._wrapFilterPerspectives(counts, copy);
+
+                copy.countFilter = copy.countFilter.concat(counts);
+                copy.whereFilter = copy.whereFilter.concat(wheres);
+
+                // trial
+//                if (!Ext4.isEmpty(copy.whereFilter)) {
+//                    copy.countDistinctLevel = "[Subject].[Subject]";
+//                    copy.joinLevel = "[SubjectVisit].[Day]";
+//                }
             }
             copy.sql = config.sql;
 //        console.debug(JSON.stringify({showEmpty:copy.showEmpty, onRows:copy.onRows, onCols:copy.onCols, filter:copy.filter}));
@@ -880,7 +906,7 @@
          * @paran {[Object]} configs
          * @param {function([query.SelectRowsResults], configs} success
          * @param {function() failure
-     */
+         */
         queryMultiple : function(configs, success, failure, scope)
         {
             var outstandingQueries = configs.length;
@@ -986,7 +1012,7 @@
                     countFilter: config.countFilter || config.filter,
 
                     /**
-                     * Name of the level that relates the row, column, and dataFilter results (e.g. ParticipantVisit).
+                     * Name of the level that relates the onRows, onColumns, and whereFilter results (e.g. ParticipantVisit).
                      * If not specified, this is the same as the countDistinctLevel
                      * (optional)
                      */

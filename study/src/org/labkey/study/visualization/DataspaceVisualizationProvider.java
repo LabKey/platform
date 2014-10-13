@@ -15,7 +15,6 @@
  */
 package org.labkey.study.visualization;
 
-import org.labkey.api.data.Container;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.util.Pair;
@@ -24,7 +23,6 @@ import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * Created by cnathe on 9/9/14.
@@ -61,28 +59,5 @@ public class DataspaceVisualizationProvider extends StudyVisualizationProvider
         String subjectVisit = subjectNounSingular + "Visit";
         String colName = (query.getQueryName().equalsIgnoreCase(subjectVisit) ? "" : subjectVisit + "/") + "sequencenum";
         return factory.create(query.getSchema(), query.getQueryName(), colName, true);
-    }
-
-    @Override
-    public String getAlternateJoinOperator(Container container, IVisualizationSourceQuery query)
-    {
-        // issue 20526: use left join for Dataspace when adding color variable to plot (see Scatter.js use of allowNullResults)
-        Study study = StudyService.get().getStudy(container);
-        if (study != null && study.isDataspaceStudy() && !query.getQueryName().contains("VisualizationVisitTag"))
-            return "LEFT JOIN";
-        else
-            return super.getAlternateJoinOperator(container, query);
-    }
-
-    @Override
-    public void addExtraSelectColumns(VisualizationSourceColumn.Factory factory, IVisualizationSourceQuery query)
-    {
-        // noop - not needed for Dataspace studies
-    }
-
-    @Override
-    public void addExtraResponseProperties(Map<String, Object> extraProperties)
-    {
-        // noop - not needed for Dataspace studies
     }
 }

@@ -233,4 +233,8 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
         return false;
     }
 
+    public boolean isRequireLeftJoin()
+    {
+        return false;
+    }
 }

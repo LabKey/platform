@@ -42,7 +42,15 @@ import org.labkey.api.visualization.VisualizationProvider;
 import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.labkey.visualization.VisualizationController;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -643,19 +651,22 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 {
                     column = orderBy;
                 }
+
                 if (!orderBys.containsKey(column))
                 {
                     orderBys.put(orderBy, query);
                 }
             }
+
             if (sql.length() == 0)
+            {
                 sql.append("SELECT ").append(masterSelectList).append(" FROM\n");
+            }
             else
             {
-                VisualizationProvider provider = getVisualizationProvider(query.getSchema().getSchemaName());
-                String altJoinOperator = parentQuery == null ? provider.getAlternateJoinOperator(getViewContext().getContainer(), query): null;
-                sql.append("\n").append(altJoinOperator != null ? altJoinOperator : joinOperator).append("\n");
+                sql.append("\n").append(query.isRequireLeftJoin() ? "LEFT JOIN" : joinOperator).append("\n");
             }
+
             String querySql = query.getSQL(factory);
             sql.append("(").append(querySql).append(") AS ").append(query.getSQLAlias()).append("\n");
             if (query.getJoinTarget() != null)
