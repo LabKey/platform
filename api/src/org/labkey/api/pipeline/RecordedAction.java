@@ -40,6 +40,7 @@ public class RecordedAction
     private Set<DataFile> _inputs = new LinkedHashSet<>();
     private Set<DataFile> _outputs = new LinkedHashSet<>();
     private Map<ParameterType, Object> _params = new LinkedHashMap<>();
+    private Map<ParameterType, Object> _outputParams = new LinkedHashMap<>();
     private Map<PropertyDescriptor, Object> _props = new LinkedHashMap<>();
     private String _name;
     private String _description;
@@ -48,10 +49,10 @@ public class RecordedAction
     private Integer _recordCount;
 
     // No-args constructor to support de-serialization in Java 7
-    @SuppressWarnings({"UnusedDeclaration"})
-    public RecordedAction()
-    {
-    }
+              @SuppressWarnings({"UnusedDeclaration"})
+              public RecordedAction()
+              {
+              }
 
     public RecordedAction(String name)
     {
@@ -144,6 +145,11 @@ public class RecordedAction
         _params.put(type, value);
     }
 
+    public void addOutputParameter(ParameterType type, Object value)
+    {
+        _outputParams.put(type, value);
+    }
+
     public void addProperty(PropertyDescriptor pd, Object value )
     {
         _props.put(pd,value);
@@ -154,6 +160,11 @@ public class RecordedAction
         return Collections.unmodifiableMap(_params);
     }
 
+    public Map<ParameterType, Object> getOutputParams()
+    {
+        return Collections.unmodifiableMap(_outputParams);
+    }
+
     public Map<PropertyDescriptor, Object> getProps()
     {
         return Collections.unmodifiableMap(_props);
@@ -161,6 +172,11 @@ public class RecordedAction
 
     public static class ParameterType
     {
+        public static String createUri(String name)
+        {
+            return "terms.labkey.org#" + name.replaceAll("\\s","");
+        }
+
         private String _uri;
         private String _name;
         private PropertyType _type;
@@ -169,6 +185,11 @@ public class RecordedAction
         @SuppressWarnings({"UnusedDeclaration"})
         public ParameterType()
         {
+        }
+
+        public ParameterType(String name, PropertyType type)
+        {
+            this(name, createUri(name), type);
         }
 
         public ParameterType(String name, String uri, PropertyType type)

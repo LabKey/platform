@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.TSVMapWriter;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ExperimentUrls;
@@ -26,6 +27,7 @@ import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
+import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.settings.AppProps;
@@ -42,6 +44,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 /**
@@ -66,7 +69,6 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
     private Map<String, String> _parametersDefaults;
     private Map<String, String> _parametersOverrides;
 
-    private transient Map<String, String> _parameters;
     private static final String ANALYSIS_PARAMETERS_ROLE_NAME = "AnalysisParameters";
 
     public AbstractFileAnalysisJob(AbstractFileAnalysisProtocol protocol,
@@ -148,7 +150,6 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
         _dirData = job._dirData;
         _dirAnalysis = job._dirAnalysis;
         _fileParameters = job._fileParameters;
-        _parameters = job._parameters;
         _parametersDefaults = job._parametersDefaults;
         _parametersOverrides = job._parametersOverrides;
         _splittable = job._splittable;
@@ -276,13 +277,22 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 
     public Map<String, String> getParameters()
     {
-        if (_parameters == null)
+        HashMap<String, String> params = new HashMap<>(_parametersDefaults);
+        params.putAll(_parametersOverrides);
+
+        // Add previous output parameters to the current set
+        for (RecordedAction action : getActionSet().getActions())
         {
-            _parameters = new HashMap<>(_parametersDefaults);
-            _parameters.putAll(_parametersOverrides);
+            for (Map.Entry<RecordedAction.ParameterType, Object> entry : action.getOutputParams().entrySet())
+            {
+                RecordedAction.ParameterType p = entry.getKey();
+                Object value = entry.getValue();
+                if (p.getType() != PropertyType.ATTACHMENT)
+                    params.put(p.getName(), Objects.toString(value, null));
+            }
         }
 
-        return _parameters;
+        return Collections.unmodifiableMap(params);
     }
 
     public ParamParser getInputParameters() throws IOException

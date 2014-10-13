@@ -88,6 +88,8 @@ abstract public class PipelineJob extends Job implements Serializable
     public static final String PIPELINE_PROTOCOL_DESCRIPTION_PARAM = "pipeline, protocol description";
     public static final String PIPELINE_LOAD_FOLDER_PARAM = "pipeline, load folder";
     public static final String PIPELINE_JOB_INFO_PARAM = "pipeline, jobInfo";
+    public static final String PIPELINE_TASK_INFO_PARAM = "pipeline, taskInfo";
+    public static final String PIPELINE_TASK_OUTPUT_PARAMS_PARAM = "pipeline, taskOutputParams";
 
     private static Logger _log = Logger.getLogger(PipelineJob.class);
     // Send start/stop messages to a separate logger because the default logger for this class is set to
@@ -319,7 +321,7 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public Map<String, String> getParameters()
     {
-        return new HashMap<>();
+        return Collections.emptyMap();
     }
 
     public String getJobGUID()
@@ -553,6 +555,8 @@ abstract public class PipelineJob extends Job implements Serializable
             for (TaskId taskId : taskPipeline.getTaskProgression())
             {
                 TaskFactory taskFactory = PipelineJobService.get().getTaskFactory(taskId);
+                if (taskFactory == null)
+                    throw new PipelineValidationException("Task '" + taskId + "' not found");
                 taskFactory.validateParameters(this);
             }
         }
