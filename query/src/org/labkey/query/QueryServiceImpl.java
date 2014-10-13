@@ -1105,7 +1105,7 @@ public class QueryServiceImpl extends QueryService
 
         if (unresolvedColumns != null && !unresolvedColumns.isEmpty())
         {
-            _log.warn("Unable to resolve the following columns on table " + table.getName() + ": " + unresolvedColumns.toString());
+            _log.debug("Unable to resolve the following columns on table " + table.getName() + ": " + unresolvedColumns.toString());
 
             for (FieldKey field : unresolvedColumns)
             {
