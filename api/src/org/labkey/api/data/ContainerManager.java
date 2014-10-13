@@ -1181,7 +1181,7 @@ public class ContainerManager
     // NOTE: Beware side-effect of changing ACLs and GROUPS if a container changes projects
     //
     // @return true if project has changed (should probably redirect to security page)
-    public static boolean move(Container c, Container newParent, User user) throws ValidationException
+    public static boolean move(Container c, final Container newParent, User user) throws ValidationException
     {
         if (c.isRoot())
             throw new IllegalArgumentException("can't move root container");
@@ -1227,10 +1227,19 @@ public class ContainerManager
             if (changedProjects)
                 SecurityManager.changeProject(c, oldProject, newProject);
 
-            t.commit();
+            // Clear after the commit has propagated the state to other threads and transactions
+            // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
+            t.addCommitTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    clearCache();
+                    getChildrenMap(newParent); // reload the cache
+                }
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
 
-            clearCache();  // Clear the entire cache, since containers cache their full paths
-            getChildrenMap(newParent); // reload the cache
+            t.commit();
         }
 
         Container newContainer = getForId(c.getId());
@@ -1263,6 +1272,16 @@ public class ContainerManager
             //Get new version since name has changed.
             c = getForId(c.getId());
             fireRenameContainer(c, user, oldName);
+            // Clear again after the commit has propagated the state to other threads and transactions
+            // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
+            t.addCommitTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    clearCache();
+                }
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
             t.commit();
         }
     }
@@ -1292,8 +1311,18 @@ public class ContainerManager
                 new SqlExecutor(CORE.getSchema()).execute("UPDATE " + CORE.getTableInfoContainers() + " SET SortOrder = ? WHERE EntityId = ?",
                         resetToAlphabetical ? 0 : index, current.getId());
             }
+            // Clear after the commit has propagated the state to other threads and transactions
+            // Do this in a commit task in case we've joined another existing DbScope.Transaction instead of starting our own
+            t.addCommitTask(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    clearCache();
+                }
+            }, DbScope.CommitTaskOption.POSTCOMMIT);
+
             t.commit();
-            clearCache();  // Clear the entire cache, since container lists are cached in order
         }
     }
 
@@ -1388,7 +1417,7 @@ public class ContainerManager
             throw new UnauthorizedException("You don't have delete permissions to all folders");
 
         LOG.debug("Starting container (and children) delete for " + root.getContainerNoun(true) + " " + root.getPath());
-        LinkedHashSet<Container> depthFirst = getAllChildrenDepthFirst(root);
+        Set<Container> depthFirst = getAllChildrenDepthFirst(root);
         depthFirst.add(root);
 
         for (Container c : depthFirst)
@@ -1415,9 +1444,9 @@ public class ContainerManager
         }
     }
 
-    private static LinkedHashSet<Container> getAllChildrenDepthFirst(Container c)
+    private static Set<Container> getAllChildrenDepthFirst(Container c)
     {
-        LinkedHashSet<Container> set = new LinkedHashSet<>();
+        Set<Container> set = new LinkedHashSet<>();
         getAllChildrenDepthFirst(c, set);
         return set;
     }

@@ -1246,7 +1246,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return containerList;
     }
 
-    public int compareTo(Container other)
+    public int compareTo(@NotNull Container other)
     {
         // Container returns itself as a parent if it's root, so we need to special case that
         if (isRoot())
