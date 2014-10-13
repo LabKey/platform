@@ -17,10 +17,13 @@ package org.labkey.api.data;
 
 import org.apache.commons.lang3.mutable.MutableInt;
 import org.junit.Assert;
+import org.labkey.api.data.Selector.ForEachBatchBlock;
+import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.util.ResultSetUtil;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extends Assert
@@ -44,7 +47,7 @@ public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extend
         assertEquals(count, selector.getMapArray().length);
 
         rowCount.setValue(0);
-        selector.forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+        selector.forEachMap(new ForEachBlock<Map<String, Object>>()
         {
             @Override
             public void exec(Map object) throws SQLException
@@ -61,7 +64,7 @@ public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extend
         assertEquals(count, selector.getArray(clazz).length);
 
         rowCount.setValue(0);
-        selector.forEach(new Selector.ForEachBlock<K>()
+        selector.forEach(new ForEachBlock<K>()
         {
             @Override
             public void exec(K bean) throws SQLException
@@ -71,10 +74,36 @@ public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extend
         }, clazz);
         assertEquals(count, rowCount.intValue());
 
+        rowCount.setValue(0);
+        selector.forEachBatch(new ForEachBatchBlock<K>()
+        {
+            @Override
+            public void exec(List<K> batch) throws SQLException
+            {
+                assertFalse(batch.isEmpty());
+                assertTrue(batch.size() <= 3);
+                rowCount.add(batch.size());
+            }
+        }, clazz, 3);
+        assertEquals(count, rowCount.intValue());
+
+        rowCount.setValue(0);
+        selector.forEachMapBatch(new ForEachBatchBlock<Map<String, Object>>()
+        {
+            @Override
+            public void exec(List<Map<String, Object>> batch) throws SQLException
+            {
+                assertFalse(batch.isEmpty());
+                assertTrue(batch.size() <= 5);
+                rowCount.add(batch.size());
+            }
+        }, 5);
+        assertEquals(count, rowCount.intValue());
+
         // Test ResultSet operations
 
         rowCount.setValue(0);
-        selector.forEach(new Selector.ForEachBlock<ResultSet>()
+        selector.forEach(new ForEachBlock<ResultSet>()
         {
             @Override
             public void exec(ResultSet object) throws SQLException

@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -65,9 +66,25 @@ public interface Selector
 
     void forEach(ForEachBlock<ResultSet> block);
 
+    /** Stream maps from the database. Convert each result row into a Map<String, Object> and invoke block.exec() on it. */
     void forEachMap(ForEachBlock<Map<String, Object>> block);
 
+    /**
+     *  Stream maps from the database in batches. Convert rows to maps and pass them to batchBlock.exec() in batches no
+     *  larger than batchSize. This is convenient for cases where streaming is desired, but processing in batches is more
+     *  efficient than one-by-one. All batches are of size batchSize, except the last batch which is typically smaller.
+     */
+    void forEachMapBatch(ForEachBatchBlock<Map<String, Object>> batchBlock, int batchSize);
+
+    /** Stream objects from the database. Convert each result row into an object specified by clazz and invoke block.exec() on it. */
     <T> void forEach(ForEachBlock<T> block, Class<T> clazz);
+
+    /**
+     *  Stream objects from the database in batches. Convert rows to objects and pass them to batchBlock.exec() in batches
+     *  no larger than batchSize. This is convenient for cases where streaming is desired, but processing in batches is more
+     *  efficient than one-by-one. All batches are of size batchSize, except the last batch which is typically smaller.
+     */
+    <T> void forEachBatch(ForEachBatchBlock<T> batchBlock, Class<T> clazz, int batchSize);
 
     /** Return a new map from a two-column query; the first column is the key, the second column is the value. */
     @NotNull <K, V> Map<K, V> getValueMap();
@@ -75,10 +92,17 @@ public interface Selector
     /** Populate an existing map from a two-column query; the first column is the key, the second column is the value. */
     @NotNull <K, V> Map<K, V> fillValueMap(@NotNull Map<K, V> map);
 
-    /** Callback interface for dealing with result set rows */
+    /** Callback interface for dealing with objects streamed from the database one-by-one */
     interface ForEachBlock<T>
     {
         /** Invoked once for each row returned by the selector */
         void exec(T object) throws SQLException;
+    }
+
+    /** Callback interface for dealing with objects streamed from the database in batches */
+    interface ForEachBatchBlock<T>
+    {
+        /** Invoked once for each batch of rows returned by the selector */
+        void exec(List<T> batch) throws SQLException;
     }
 }

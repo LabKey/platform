@@ -152,6 +152,19 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         });
         assertEquals(count, forEachMapCount.intValue());
 
+        final MutableInt forEachBatchCount = new MutableInt(0);
+        selector.forEachBatch(new Selector.ForEachBatchBlock<User>()
+        {
+            @Override
+            public void exec(List<User> batch) throws SQLException
+            {
+                assertFalse(batch.isEmpty());
+                assertTrue(batch.size() <= 3);
+                forEachBatchCount.add(batch.size());
+            }
+        }, User.class, 3);
+        assertEquals(count, forEachBatchCount.intValue());
+
         // The following methods should succeed with stable ordered column lists but fail with unstable ordered column lists
 
         try
