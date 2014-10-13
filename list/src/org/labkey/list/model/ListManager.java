@@ -460,7 +460,7 @@ public class ListManager implements SearchService.DocumentProvider
             return 0;
 
         FieldKeyStringExpression titleTemplate = createEachItemTitleTemplate(list, listTable);
-        FieldKeyStringExpression bodyTemplate = createBodyTemplate(list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
+        FieldKeyStringExpression bodyTemplate = createBodyTemplate(list, "\"each item as a separate document\" custom indexing template", list.getEachItemBodySetting(), list.getEachItemBodyTemplate(), listTable);
 
         FieldKey keyKey = new FieldKey(null, list.getKeyName());
         FieldKey entityIdKey = new FieldKey(null, "EntityId");
@@ -576,7 +576,7 @@ public class ListManager implements SearchService.DocumentProvider
 
             if (ti != null)
             {
-                FieldKeyStringExpression template = createBodyTemplate(list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
+                FieldKeyStringExpression template = createBodyTemplate(list, "\"entire list as a single document\" custom indexing template", list.getEntireListBodySetting(), list.getEntireListBodyTemplate(), ti);
                 StringBuilder data = new StringBuilder();
 
                 // All columns, all rows, no filters, no sorts
@@ -643,48 +643,91 @@ public class ListManager implements SearchService.DocumentProvider
 
     private FieldKeyStringExpression createEachItemTitleTemplate(ListDefinition list, TableInfo listTable)
     {
-        String template;
+        FieldKeyStringExpression template;
+        StringBuilder error = new StringBuilder();
 
-        if (list.getEachItemTitleSetting() == ListDefinition.TitleSetting.Standard || StringUtils.isBlank(list.getEachItemTitleTemplate()))
-            template = "List " + list.getName() + " - ${" + listTable.getTitleColumn() + "}";
-        else
-            template = list.getEachItemTitleTemplate();
+        if (list.getEachItemTitleSetting() != ListDefinition.TitleSetting.Standard && !StringUtils.isBlank(list.getEachItemTitleTemplate()))
+        {
+            template = createValidStringExpression(list.getEachItemTitleTemplate(), error);
 
-        // Don't URL encode and use lenient substitution (replace nulls with blank)
-        return FieldKeyStringExpression.create(template, false, NullValueBehavior.ReplaceNullWithBlank);
+            if (null != template)
+                return template;
+            else
+                LOG.warn(getTemplateErrorMessage(list, "\"each item as a separate document\" title template", error));
+        }
+
+        template = createValidStringExpression("List " + list.getName() + " - ${" + listTable.getTitleColumn() + "}", error);
+
+        if (null == template)
+            throw new IllegalStateException(getTemplateErrorMessage(list, "auto-generated title template", error));
+
+        return template;
     }
 
 
-    private FieldKeyStringExpression createBodyTemplate(ListDefinition.BodySetting setting, @Nullable String customTemplate, TableInfo listTable)
+    private FieldKeyStringExpression createBodyTemplate(ListDefinition list, String templateType, ListDefinition.BodySetting setting, @Nullable String customTemplate, TableInfo listTable)
     {
-        String template;
+        FieldKeyStringExpression template;
+        StringBuilder error = new StringBuilder();
 
         if (setting == ListDefinition.BodySetting.Custom && !StringUtils.isBlank(customTemplate))
         {
-            template = customTemplate;
+            template = createValidStringExpression(customTemplate, error);
+
+            if (null != template)
+                return template;
+            else
+                LOG.warn(getTemplateErrorMessage(list, templateType, error));
         }
-        else
+
+        StringBuilder sb = new StringBuilder();
+        String sep = "";
+
+        for (ColumnInfo column : listTable.getColumns())
         {
-            StringBuilder sb = new StringBuilder();
-            String sep = "";
-
-            for (ColumnInfo column : listTable.getColumns())
+            if (setting.accept(column))
             {
-                if (setting.accept(column))
-                {
-                    sb.append(sep);
-                    sb.append("${");
-                    sb.append(column.getFieldKey());
-                    sb.append("}");
-                    sep = " ";
-                }
+                sb.append(sep);
+                sb.append("${");
+                sb.append(column.getFieldKey());
+                sb.append("}");
+                sep = " ";
             }
-
-            template = sb.toString();
         }
 
+        template = createValidStringExpression(sb.toString(), error);
+
+        if (null == template)
+            throw new IllegalStateException(getTemplateErrorMessage(list, "auto-generated indexing template", error));
+
+        return template;
+    }
+
+
+    // Perform some simple validation of custom indexing template, #21726.
+    private @Nullable FieldKeyStringExpression createValidStringExpression(String template, StringBuilder error)
+    {
         // Don't URL encode and use lenient substitution (replace nulls with blank)
-        return FieldKeyStringExpression.create(template, false, NullValueBehavior.ReplaceNullWithBlank);
+        FieldKeyStringExpression se = FieldKeyStringExpression.create(template, false, NullValueBehavior.ReplaceNullWithBlank);
+
+        try
+        {
+            // TODO: Is there a more official way to validate a StringExpression?
+            se.eval(Collections.emptyMap());
+        }
+        catch (IllegalArgumentException e)
+        {
+            error.append(e.getMessage());
+            se = null;
+        }
+
+        return se;
+    }
+
+
+    private String getTemplateErrorMessage(ListDefinition list, String templateType, CharSequence message)
+    {
+        return "Invalid " + templateType + " for list \"" + list.getName() + "\" in " + list.getContainer().getPath() + ": " + message;
     }
 
 
