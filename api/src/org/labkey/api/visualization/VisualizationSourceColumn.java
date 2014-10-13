@@ -41,6 +41,7 @@ public class VisualizationSourceColumn
     private String _queryName;
     private UserSchema _schema;
     private boolean _allowNullResults;
+    private boolean _requireLeftJoin;
     private String _name;
     protected String _alias;
     protected String _clientAlias;
@@ -100,13 +101,13 @@ public class VisualizationSourceColumn
 
         public VisualizationSourceColumn create(UserSchema schema, String queryName, String name, Boolean allowNullResults)
         {
-            VisualizationSourceColumn col = new VisualizationSourceColumn(schema, queryName, name, allowNullResults);
+            VisualizationSourceColumn col = new VisualizationSourceColumn(schema, queryName, name, allowNullResults, false);
             return findOrAdd(col);
         }
 
         public VisualizationSourceColumn create(UserSchema schema, String queryName, String name, String alias, Boolean allowNullResults)
         {
-            VisualizationSourceColumn col = new VisualizationSourceColumn(schema, queryName, name, allowNullResults);
+            VisualizationSourceColumn col = new VisualizationSourceColumn(schema, queryName, name, allowNullResults, false);
             col._alias = alias;
             return findOrAdd(col);
         }
@@ -121,7 +122,7 @@ public class VisualizationSourceColumn
                                                 String visitTagName, boolean useProtocolDay, String interval)
         {
             String encodedQueryName = queryName + "-" + (useProtocolDay ? "true" : "false") + "-" + interval + "-" + visitTagName;
-            VisualizationSourceColumn col = new VisualizationSourceColumn(schema, encodedQueryName, name, allowNullResults);
+            VisualizationSourceColumn col = new VisualizationSourceColumn(schema, encodedQueryName, name, allowNullResults, false);
             return findOrAdd(col);
         }
 
@@ -131,7 +132,7 @@ public class VisualizationSourceColumn
         }
     }
 
-    protected VisualizationSourceColumn(UserSchema schema, String queryName, String name, Boolean allowNullResults)
+    protected VisualizationSourceColumn(UserSchema schema, String queryName, String name, Boolean allowNullResults, Boolean requireLeftJoin)
     {
         _name = name;
         _queryName = queryName;
@@ -141,12 +142,13 @@ public class VisualizationSourceColumn
         }
         _schema = schema;
         _allowNullResults = allowNullResults == null || allowNullResults;
+        _requireLeftJoin = (requireLeftJoin == null ? false : requireLeftJoin);
     }
 
     protected VisualizationSourceColumn(ViewContext context, Map<String, Object> properties)
     {
         this(getUserSchema(context, (String) properties.get("schemaName")), (String) properties.get("queryName"),
-             (String) properties.get("name"), (Boolean) properties.get("allowNullResults"));
+             (String) properties.get("name"), (Boolean) properties.get("allowNullResults"), (Boolean) properties.get("requireLeftJoin"));
         JSONArray values = (JSONArray) properties.get("values");
         _clientAlias = (String)properties.get("alias");
         if (values != null)
@@ -212,6 +214,16 @@ public class VisualizationSourceColumn
     public void setAllowNullResults(boolean allowNullResults)
     {
         _allowNullResults = allowNullResults;
+    }
+
+    public boolean isRequireLeftJoin()
+    {
+        return _requireLeftJoin;
+    }
+
+    public void setRequireLeftJoin(boolean requireLeftJoin)
+    {
+        _requireLeftJoin = requireLeftJoin;
     }
 
     public void ensureColumn() throws IllegalArgumentException

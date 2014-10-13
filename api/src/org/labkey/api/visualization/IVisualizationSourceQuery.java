@@ -64,4 +64,11 @@ public interface IVisualizationSourceQuery
     public boolean isSkipVisitJoin();
 
     public boolean isVisitTagQuery();
+
+    /**
+     * True if any select or aggregate requires a left join explictly. This is an override for any columns
+     * that might require some form of an INNER JOIN.
+     * @return
+     */
+    public boolean isRequireLeftJoin();
 }

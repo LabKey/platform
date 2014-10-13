@@ -602,7 +602,7 @@ Ext.define('LABKEY.app.controller.State', {
 
                 var proceed = true;
                 Ext.each(olapFilters, function(of) {
-                    if (of.arguments.length == 0) {
+                    if (!of.getData && of.arguments.length == 0) {
                         alert('EMPTY ARGUMENTS ON FILTER');
                         proceed = false;
                     }

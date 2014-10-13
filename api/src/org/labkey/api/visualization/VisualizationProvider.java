@@ -285,11 +285,6 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
         builtIn,
         custom,
         datasets,
-        all,
-    }
-
-    public String getAlternateJoinOperator(Container container, IVisualizationSourceQuery query)
-    {
-        return null;
+        all
     }
 }

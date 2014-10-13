@@ -58,7 +58,10 @@ Ext.define('LABKEY.app.model.Filter', {
 
             return arr;
         }}, // array of measures
-        {name : 'plotScales', defaultValue: []} // array of scales
+        {name : 'plotScales', defaultValue: []}, // array of scales
+
+        {name : 'isWhereFilter', type: 'boolean', defaultValue: false},
+        {name : 'filterSource', defaultValue: 'OLAP'} // OLAP or GETDATA
     ],
 
     statics : {
@@ -382,62 +385,80 @@ Ext.define('LABKEY.app.model.Filter', {
             return 'Unknown';
         },
 
+        _buildGetDataFilter : function(filter, data) {
+            // TODO: Determine a better override scheme so that app level services can be called to construct getData configs
+            if (Ext.isDefined(window.Connector)) {
+                filter = Connector.getService('Query').getDataFilter(filter, data);
+            }
+            return filter;
+        },
+
         getOlapFilter : function(mdx, data, subjectName) {
-            if (!Ext.isFunction(mdx.getDimension)) {
+            if (!Ext.isDefined(mdx) || mdx.$className !== 'LABKEY.query.olap.MDX') {
                 console.error('must provide mdx to getOlapFilter');
             }
+
             var filter = {
-                operator : LABKEY.app.model.Filter.lookupOperator(data),
-                arguments: []
+                filterType: data.isWhereFilter === true ? 'WHERE' : 'COUNT'
             };
 
-            if (data.perspective) {
-
-                filter.perspective = data.perspective;
-
-                //
-                // The target hierarchy is
-                //
-                if (data.hierarchy == subjectName) {
-                    filter.arguments.push({
-                        hierarchy: subjectName,
-                        members: data.members
-                    });
-                }
-                else {
-                    Ext.each(data.members, function(member) {
-                        filter.arguments.push({
-                            level: mdx.perspectives[data.perspective].level,
-                            membersQuery: {
-                                hierarchy: data.hierarchy,
-                                members: [member]
-                            }
-                        });
-                    });
-                }
+            if (data.filterSource === 'GETDATA') {
+                // TODO: Figure out how this works with perspectives, maybe it doesn't care at all?
+                filter = LABKEY.app.model.Filter._buildGetDataFilter(filter, data);
             }
             else {
-                if (LABKEY.app.model.Filter.usesMemberName(data, subjectName)) {
 
-                    var m = data.members;
-                    if (data.membersName && data.membersName.length > 0) {
-                        m = { namedSet: data.membersName };
+                filter.operator = LABKEY.app.model.Filter.lookupOperator(data);
+                filter.arguments = [];
+
+                if (data.perspective) {
+
+                    filter.perspective = data.perspective;
+
+                    //
+                    // The target hierarchy is
+                    //
+                    if (data.hierarchy == subjectName) {
+                        filter.arguments.push({
+                            hierarchy: subjectName,
+                            members: data.members
+                        });
                     }
-
-                    filter.arguments.push({
-                        hierarchy: subjectName,
-                        members: m
-                    });
+                    else {
+                        Ext.each(data.members, function(member) {
+                            filter.arguments.push({
+                                level: mdx.perspectives[data.perspective].level,
+                                membersQuery: {
+                                    hierarchy: data.hierarchy,
+                                    members: [member]
+                                }
+                            });
+                        });
+                    }
                 }
                 else {
-                    for (var m=0; m < data.members.length; m++) {
+                    if (LABKEY.app.model.Filter.usesMemberName(data, subjectName)) {
+
+                        var m = data.members;
+                        if (data.membersName && data.membersName.length > 0) {
+                            m = { namedSet: data.membersName };
+                        }
+
                         filter.arguments.push({
-                            hierarchy : subjectName,
-                            membersQuery : {
-                                hierarchy : data.hierarchy,
-                                members   : [data.members[m]]
-                            }
+                            hierarchy: subjectName,
+                            members: m
                         });
+                    }
+                    else {
+                        for (var m=0; m < data.members.length; m++) {
+                            filter.arguments.push({
+                                hierarchy : subjectName,
+                                membersQuery : {
+                                    hierarchy : data.hierarchy,
+                                    members   : [data.members[m]]
+                                }
+                            });
+                        }
                     }
                 }
             }
@@ -647,6 +668,10 @@ Ext.define('LABKEY.app.model.Filter', {
 
     isPlot : function() {
         return this.get('isPlot');
+    },
+
+    isWhereFilter : function() {
+        return this.get('isWhereFilter');
     },
 
     usesCaching : function(subjectName) {
