@@ -327,7 +327,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         }
         else if (f == Function.output)
         {
-            // TODO: Issue 20792: pipeline: Custom output directory for task outputs
+            // TODO: Issue 20143: pipeline: Custom output directory for task outputs
             return newFile(f, type.getName(_dir, _support.getBaseName()));
         }
         throw new IllegalArgumentException("input or output expected");

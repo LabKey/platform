@@ -22,11 +22,13 @@ import org.jmock.lib.legacy.ClassImposteriser;
 import org.junit.Test;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.TSVMapWriter;
+import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.*;
 import org.labkey.api.pipeline.cmd.CommandTask;
 import org.labkey.api.pipeline.cmd.*;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.settings.AppProps;
@@ -48,6 +50,8 @@ import java.util.regex.Pattern;
  */
 public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> implements CommandTask
 {
+    public static FileType OUTPUT_PARAMS = new FileType(".params-out.tsv");
+
     public static class Factory extends AbstractTaskFactory<CommandTaskFactorySettings, Factory>
     {
         private String _statusName = "COMMAND";
@@ -542,6 +546,9 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             if (!runCommand(action))
                 return new RecordedActionSet();
 
+            // Read output parameters file, record output parameters, and discard it.
+            readOutputParameters(action);
+
             // Get rid of any copied input files.
             _wd.discardCopiedInputs();
 
@@ -663,6 +670,38 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
         for (Map.Entry<String, String> entry : _factory._environment.entrySet())
         {
             pb.environment().put(entry.getKey(), variableSubstitution(entry.getValue(), originalEnvironment));
+        }
+    }
+
+    protected void readOutputParameters(RecordedAction action) throws IOException
+    {
+        File file = _wd.newFile(CommandTaskImpl.OUTPUT_PARAMS);
+        if (file.exists())
+        {
+            getJob().header("Output parameters");
+            Map<String, String> currParams = new HashMap<>(getJob().getParameters());
+
+            TabLoader loader = new TabLoader(file, true, null);
+            loader.setInferTypes(false);
+            for (Map<String, Object> row : loader.load())
+            {
+                String name = (String) row.get("Name");
+                String value = (String) row.get("Value");
+                String type = (String) row.get("Type");
+                if (name == null || value == null)
+                    continue;
+
+                // Skip null values and parameters that haven't changed
+                String prevValue = currParams.get(name);
+                if (prevValue == null || !prevValue.equals(value))
+                {
+                    // Record the new parameter -- it will be merged into the job's parameters automatically
+                    getJob().info(name + ": " + value);
+                    action.addOutputParameter(new RecordedAction.ParameterType(name, PropertyType.STRING), value);
+                }
+            }
+
+            _wd.discardFile(file);
         }
     }
 }

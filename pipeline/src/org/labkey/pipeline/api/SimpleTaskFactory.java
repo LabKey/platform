@@ -72,11 +72,10 @@ import java.util.Set;
  */
 public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
 {
-    public static String PIPELINE_TASK_INFO_PARAM = "pipeline, taskInfo";
-
     protected static Set<String> RESERVED_TOKENS = new CaseInsensitiveHashSet(
             PipelineJob.PIPELINE_JOB_INFO_PARAM,
-            PIPELINE_TASK_INFO_PARAM,
+            PipelineJob.PIPELINE_TASK_INFO_PARAM,
+            PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM,
             // The following replacements aren't used yet, but are reserved for future use.
             DefaultDataTransformer.RUN_INFO_REPLACEMENT,
             DefaultDataTransformer.SRC_DIR_REPLACEMENT,

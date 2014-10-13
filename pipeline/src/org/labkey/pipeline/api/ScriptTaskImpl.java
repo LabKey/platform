@@ -133,7 +133,12 @@ public class ScriptTaskImpl extends CommandTaskImpl
         // Task info replacement
         File taskInfoFile = getTaskInfoFile();
         String taskInfoRelativePath = _wd.getRelativePath(taskInfoFile);
-        replacements.put(ScriptTaskFactory.PIPELINE_TASK_INFO_PARAM, taskInfoRelativePath);
+        replacements.put(PipelineJob.PIPELINE_TASK_INFO_PARAM, taskInfoRelativePath);
+
+        // Task output parameters file replacement
+        File taskOutputParamsFile = _wd.newFile(CommandTaskImpl.OUTPUT_PARAMS);
+        String taskOutputParamsRelativePath = _wd.getRelativePath(taskOutputParamsFile);
+        replacements.put(PipelineJob.PIPELINE_TASK_OUTPUT_PARAMS_PARAM, taskOutputParamsRelativePath);
 
         return replacements;
     }
