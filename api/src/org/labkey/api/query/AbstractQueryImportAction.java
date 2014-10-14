@@ -360,13 +360,13 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
     {
         if (_target != null)
         {
-            try (DbScope.Transaction transction = _target.getSchema().getScope().ensureTransaction())
+            try (DbScope.Transaction transaction = _target.getSchema().getScope().ensureTransaction())
             {
 //                List res = _updateService.insertRows(getUser(), getContainer(), dl.load(), errors, new HashMap<String, Object>());
                 int count = _updateService.importRows(getUser(), getContainer(), dl, errors, new HashMap<String, Object>());
                 if (errors.hasErrors())
                     return 0;
-                transction.commit();
+                transaction.commit();
                 return count;
             }
             /* catch (BatchValidationException x)
