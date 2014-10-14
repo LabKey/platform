@@ -188,7 +188,7 @@ public class FilePropertiesDesigner implements EntryPoint, Saveable<GWTDomain>
         {
             public void onSuccess(List<String> errors)
             {
-                if (null == errors)
+                if (errors.isEmpty())
                 {
                     if (listener != null)
                         listener.saveSuccessful(_domain, PropertyUtil.getCurrentURL());
