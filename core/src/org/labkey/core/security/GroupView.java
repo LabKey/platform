@@ -22,7 +22,6 @@ import org.labkey.api.security.Group;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.JspView;
-import org.labkey.api.util.Pair;
 import org.springframework.validation.BindException;
 
 import java.util.Collection;

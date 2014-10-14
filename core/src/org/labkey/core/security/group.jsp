@@ -23,14 +23,15 @@
 <%@ page import="org.labkey.api.security.User" %>
 <%@ page import="org.labkey.api.security.UserPrincipal" %>
 <%@ page import="org.labkey.api.security.UserUrls" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.WebPartView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.core.security.GroupView" %>
 <%@ page import="org.labkey.core.security.SecurityApiActions" %>
 <%@ page import="org.labkey.core.security.SecurityController" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
@@ -39,6 +40,15 @@
 
     ActionURL completionUrl = new ActionURL(SecurityController.CompleteMemberAction.class, c);
     completionUrl.addParameter("groupId", bean.group.getUserId());
+%>
+
+<%!
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
+        resources.add(ClientDependency.fromFilePath("Ext4"));
+        return resources;
+    }
 %>
 
 <style type="text/css">
@@ -76,7 +86,7 @@
     function selectAllForRemoval(value)
     {
         <% for (UserPrincipal redundantMember : bean.redundantMembers.keySet()) {
-            %>selectForRemoval('<%= redundantMember.getUserId() %>', '<%= redundantMember.getName() %>', value);<%
+            %>selectForRemoval('<%= redundantMember.getUserId() %>', <%= q(redundantMember.getName()) %>, value);<%
         } %>
         return false;
     }
@@ -102,12 +112,12 @@
         return ok;
     }
 
-    Ext.onReady(function()
+    Ext4.onReady(function()
     {
         form = new LABKEY.Form('groupMembersForm');
 
-        Ext.QuickTips.init();
-        Ext.apply(Ext.QuickTips.getQuickTip(), {
+        Ext4.tip.QuickTipManager.init();
+        Ext4.apply(Ext4.tip.QuickTipManager.getQuickTip(), {
             dismissDelay: 15000,
             trackMouse: true
         });
@@ -123,7 +133,7 @@ if (bean.messages.size() > 0)
     <div id="messages"><%
     for (String message : bean.messages)
     {
-        %><%= message %><br><%
+        %><%= text(message) %><br><%
     }
     %></div><br><%
 }
@@ -196,7 +206,7 @@ else
             String displayName = u.getDisplayName(getUser());
             if (!u.isActive()) // issue 13849
             {
-                %><span class="lowlight" ext:qtitle="User Inactive" ext:qtip="This user account has been disabled."><%= h(memberName) %></span>&nbsp;<%
+                %><span class="lowlight" data-qtitle="User Inactive" data-qtip="This user account has been disabled."><%= h(memberName) %></span>&nbsp;<%
             }
             else
             {
@@ -209,7 +219,7 @@ else
 
         if (bean.redundantMembers.containsKey(member))
         {
-            %><a ext:qtitle="Redundant Member" ext:qtip="<%=bean.displayRedundancyReasonHTML(member)%>">*</a><%
+            %><a data-qtitle="Redundant Member" data-qtip="<%=text(bean.displayRedundancyReasonHTML(member))%>">*</a><%
         }
         %>
             </td>
@@ -260,12 +270,12 @@ else
     <input type="checkbox" name="sendEmail" value="true" checked>Send notification emails to all new<%
 if (null != bean.ldapDomain && bean.ldapDomain.length() != 0 && !org.labkey.api.security.AuthenticationManager.ALL_DOMAINS.equals(bean.ldapDomain))
 {
-    %>, non-<%= bean.ldapDomain %><%
+    %>, non-<%= h(bean.ldapDomain) %><%
 }
 %> users.<br><br>
 <span style="font-weight:bold">Include a message</span> with the new user mail (optional):<br>
     <textarea rows="8" cols="60" name="mailPrefix"></textarea><br>
-<input type="hidden" name="group" value="<%= bean.groupName %>">
+<input type="hidden" name="group" value="<%= h(bean.groupName) %>">
 <%= button("Update Group Membership").submit(true).onClick("return confirmRemoveUsers();") %>
 </div>
 </labkey:form>
@@ -278,7 +288,7 @@ if (!bean.isSystemGroup)
         %>
         <labkey:form action="<%=h(buildURL(SecurityController.StandardDeleteGroupAction.class))%>" method="POST">
         <%= button("Delete Empty Group").submit(true).onClick("return confirm('Permanently delete group " + bean.groupName + "?')") %>
-        <input type="hidden" name="group" value="<%= bean.groupName %>">
+        <input type="hidden" name="group" value="<%= h(bean.groupName) %>">
         </labkey:form>
         <%
     }
