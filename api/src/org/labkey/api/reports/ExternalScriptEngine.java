@@ -15,7 +15,10 @@
  */
 package org.labkey.api.reports;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.miniprofiler.CustomTiming;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
@@ -99,13 +102,16 @@ public class ExternalScriptEngine extends AbstractScriptEngine
 
         StringBuffer output = new StringBuffer();
 
-        int exitCode = runProcess(context, pb, output);
-        if (exitCode != 0)
+        try (CustomTiming t = MiniProfiler.custom("exec", StringUtils.join(pb.command(), " ")))
         {
-            throw new ScriptException("An error occurred when running the script '" + scriptFile.getName () + "', exit code: " + exitCode + ").\n" + output.toString());
+            int exitCode = runProcess(context, pb, output);
+            if (exitCode != 0)
+            {
+                throw new ScriptException("An error occurred when running the script '" + scriptFile.getName() + "', exit code: " + exitCode + ").\n" + output.toString());
+            }
+            else
+                return output.toString();
         }
-        else
-            return output.toString();
     }
 
     public Object eval(Reader reader, ScriptContext context) throws ScriptException

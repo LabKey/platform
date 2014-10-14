@@ -16,6 +16,8 @@
 
 package org.labkey.api.action;
 
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.view.WebPartView;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
@@ -41,20 +43,30 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
     public ModelAndView handleRequest() throws Exception
     {
         BindException errors;
-        if (null == getCommandClass())
-            errors = new NullSafeBindException(new Object(), "command");
-        else
-            errors = bindParameters(getPropertyValues());
+        try (Timing t = MiniProfiler.step("bind"))
+        {
+            if (null == getCommandClass())
+                errors = new NullSafeBindException(new Object(), "command");
+            else
+                errors = bindParameters(getPropertyValues());
+        }
 
-        FORM form = (FORM)errors.getTarget();
-        validate(form, errors);
+        FORM form;
+        try (Timing t = MiniProfiler.step("validate"))
+        {
+            form = (FORM) errors.getTarget();
+            validate(form, errors);
+        }
 
         ModelAndView v;
 
-        if (_print)
-            v = getPrintView(form, errors);
-        else
-            v = getView(form, errors);
+        try (Timing t = MiniProfiler.step("createView"))
+        {
+            if (_print)
+                v = getPrintView(form, errors);
+            else
+                v = getView(form, errors);
+        }
 
         return v;
     }

@@ -22,6 +22,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.module.SpringModule;
@@ -147,10 +148,9 @@ public class ViewServlet extends HttpServlet
         }
 
         MemoryUsageLogger.logMemoryUsage(_requestCount.incrementAndGet());
-        MemTracker.getInstance().startNewRequest(request);
-        try
+        try (RequestInfo r = MemTracker.getInstance().startNewRequest(request))
         {
-
+            r.setName(request.getRequestURI());
             SessionAppender.initThread(request);
 
             ActionURL url;
@@ -167,6 +167,7 @@ public class ViewServlet extends HttpServlet
                 request.setAttribute(REQUEST_ACTION, url.getAction());
                 request.setAttribute(REQUEST_CONTROLLER, url.getController());
                 request.setAttribute(REQUEST_CONTAINER, url.getExtraPath());
+                r.setName(url.getController() + "/" + url.getAction());
             }
             catch (RedirectException e)
             {
@@ -192,10 +193,6 @@ public class ViewServlet extends HttpServlet
             {
                 _log.debug("<< " + request.getMethod());
             }
-        }
-        finally
-        {
-            MemTracker.getInstance().requestComplete(request);
         }
     }
 
@@ -568,8 +565,9 @@ public class ViewServlet extends HttpServlet
             }
         };
 
-        try
+        try (RequestInfo r = MemTracker.getInstance().startNewRequest(request))
         {
+            r.setName(url.getController() + "/" + url.getAction());
             Module module = ModuleLoader.getInstance().getModuleForController(url.getController());
             if (module == null)
             {

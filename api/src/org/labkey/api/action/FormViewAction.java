@@ -16,6 +16,8 @@
 
 package org.labkey.api.action;
 
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.HttpView;
 import org.springframework.beans.PropertyValues;
@@ -59,17 +61,20 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
     {
         FORM form;
         BindException errors;
-        if (null != getCommandClass())
+        try (Timing t = MiniProfiler.step("bind"))
         {
-            errors = bindParameters(getPropertyValues());
-            form = (FORM)errors.getTarget();
-        }
-        else
-        {
-            // If the action has not specified a generic form, we should not hand them
-            // a null BindException -- just new one up
-            form = (FORM)new Object();
-            errors = new NullSafeBindException(form, getCommandName());
+            if (null != getCommandClass())
+            {
+                errors = bindParameters(getPropertyValues());
+                form = (FORM)errors.getTarget();
+            }
+            else
+            {
+                // If the action has not specified a generic form, we should not hand them
+                // a null BindException -- just new one up
+                form = (FORM)new Object();
+                errors = new NullSafeBindException(form, getCommandName());
+            }
         }
 
         return handleRequest(form, errors);
@@ -83,25 +88,37 @@ public abstract class FormViewAction<FORM> extends BaseViewAction<FORM> implemen
         {
             setReshow(true);
 
-            if (success && null != form)
-                validate(form, errors);
+            try (Timing t = MiniProfiler.step("validate"))
+            {
+                if (success && null != form)
+                    validate(form, errors);
+            }
             success = errors == null || !errors.hasErrors();
 
-            if (success)
-                success = handlePost(form, errors);
+            try (Timing t = MiniProfiler.step("handlePost"))
+            {
+                if (success)
+                    success = handlePost(form, errors);
+            }
 
             if (success)
             {
                 URLHelper url = getSuccessURL(form);
                 if (null != url)
                     return HttpView.redirect(url);
-                ModelAndView successView = getSuccessView(form);
-                if (null != successView)
-                    return successView;
+                try (Timing t = MiniProfiler.step("createView"))
+                {
+                    ModelAndView successView = getSuccessView(form);
+                    if (null != successView)
+                        return successView;
+                }
             }
         }
 
-        return getView(form, getReshow(), errors);
+        try (Timing t = MiniProfiler.step("createView"))
+        {
+            return getView(form, getReshow(), errors);
+        }
     }
 
 

@@ -19,6 +19,8 @@ package org.labkey.api.view;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.jsp.JspBase;
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
@@ -129,12 +131,12 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
             exposeModelAsRequestAttributes(((BindException)_errors).getModel(), request, response);
         exposeModelAsRequestAttributes(_renderMap, request, response);
 
-        boolean devMode = AppProps.getInstance().isDevMode();
+        boolean devMode = AppProps.getInstance().isDevMode() || _viewContext.getUser().isDeveloper();
         boolean isDebugHtml = devMode && this.getFrame() != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
         if (isDebugHtml)
             response.getWriter().print("<!--" + _page.getClass() + "-->");
 
-        try
+        try (Timing t = MiniProfiler.step(_page.getClass().getSimpleName()))
         {
             _page._jspService(request, response);
         }

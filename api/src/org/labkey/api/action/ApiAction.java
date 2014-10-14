@@ -24,6 +24,8 @@ import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.InvalidKeyException;
 import org.labkey.api.query.QueryException;
@@ -162,11 +164,19 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                 createResponseWriter().write((Errors)errors);
             else
             {
-                Object response = execute(form, errors);
-                if (isFailure(errors))
-                    createResponseWriter().write((Errors)errors);
-                else if (null != response)
-                    createResponseWriter().writeResponse(response);
+                Object response;
+                try (Timing t = MiniProfiler.step("execute"))
+                {
+                    response = execute(form, errors);
+                }
+
+                try (Timing t = MiniProfiler.step("render"))
+                {
+                    if (isFailure(errors))
+                        createResponseWriter().write((Errors) errors);
+                    else if (null != response)
+                        createResponseWriter().writeResponse(response);
+                }
             }
         }
         catch (BindException e)
@@ -233,22 +243,25 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     @NotNull
     protected Pair<FORM, BindException> populateForm() throws Exception
     {
-        String contentType = getViewContext().getRequest().getContentType();
-        if (null != contentType)
+        try (Timing t = MiniProfiler.step("bind"))
         {
-            if (contentType.contains(ApiJsonWriter.CONTENT_TYPE_JSON))
+            String contentType = getViewContext().getRequest().getContentType();
+            if (null != contentType)
             {
-                _reqFormat = ApiResponseWriter.Format.JSON;
-                return populateJsonForm();
+                if (contentType.contains(ApiJsonWriter.CONTENT_TYPE_JSON))
+                {
+                    _reqFormat = ApiResponseWriter.Format.JSON;
+                    return populateJsonForm();
+                }
+//              else if (contentType.contains(ApiXmlWriter.CONTENT_TYPE))
+//              {
+//                  _reqFormat = ApiResponseWriter.Format.XML;
+//                  return populateXmlForm();
+//              }
             }
-//            else if (contentType.contains(ApiXmlWriter.CONTENT_TYPE))
-//            {
-//                _reqFormat = ApiResponseWriter.Format.XML;
-//                return populateXmlForm();
-//            }
-        }
 
-        return defaultPopulateForm();
+            return defaultPopulateForm();
+        }
     }
 
     // CONSIDER: Extract ApiRequestReader similar to the ApiResponseWriter
@@ -451,7 +464,10 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
 
     public final void validate(Object form, Errors errors)
     {
-        validateForm((FORM)form, errors);
+        try (Timing t = MiniProfiler.step("validate"))
+        {
+            validateForm((FORM) form, errors);
+        }
     }
 
     /**

@@ -91,8 +91,11 @@ public class ExceptionUtil
 
         for (int i = 2; i < stackTrace.length; i++)
         {
+            String line = stackTrace[i].toString();
+            if (line.startsWith("javax.servlet.http.HttpServlet.service("))
+                break;
             trace.append("\n\tat ");
-            trace.append(stackTrace[i]);
+            trace.append(line);
         }
 
         return trace.toString();

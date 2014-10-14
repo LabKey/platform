@@ -18,11 +18,9 @@ package org.labkey.api.module;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
-import org.labkey.api.resource.FileResource;
 import org.labkey.api.resource.Resolver;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.security.permissions.Permission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.UniqueID;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.ModuleHtmlViewCacheHandler;
@@ -59,8 +57,7 @@ public class ModuleHtmlView extends HtmlView
     public ModuleHtmlView(@NotNull Resource r, @Nullable Portal.WebPart webpart)
     {
         super(null);
-        _debugViewDescription = this.getClass().toString() + ": " + PageFlowUtil.filter((r instanceof FileResource && null != ((FileResource) r).getFile()) ?
-                    ((FileResource) r).getFile().toString() : r.getPath().toString());
+        _debugViewDescription = this.getClass().getSimpleName() + ": " + r.getPath().toString();
 
         // This is hackery, but at least we're now explicit about it
         Resolver resolver = r.getResolver();

@@ -21,20 +21,22 @@ import org.apache.commons.collections15.map.ReferenceIdentityMap;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.action.IgnoresAllocationTracking;
+import org.labkey.api.miniprofiler.RequestInfo;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.IdentityHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * User: brittp
@@ -48,10 +50,12 @@ public class MemTracker
     private final ThreadLocal<RequestInfo> _requestTracker = new ThreadLocal<>();
     private final List<RequestInfo> _recentRequests = new LinkedList<>();
 
+    private static final String UNVIEWED_KEY = "memtracker-unviewed-requests";
+
     /** Only keep a short history of allocations for the most recent requests */
     private static final int MAX_TRACKED_REQUESTS = 500;
 
-    public synchronized List<RequestInfo> getNewRequests(int requestId)
+    public synchronized List<RequestInfo> getNewRequests(long requestId)
     {
         List<RequestInfo> result = new ArrayList<>(_recentRequests.size());
         for (RequestInfo recentRequest : _recentRequests)
@@ -158,27 +162,45 @@ public class MemTracker
         }
     }
 
+    public static MemTracker get()
+    {
+        return _instance;
+    }
+
     public static MemTracker getInstance()
     {
         return _instance;
     }
 
-    public synchronized void startNewRequest(HttpServletRequest request)
+    public synchronized RequestInfo startNewRequest(HttpServletRequest request)
     {
-        _requestTracker.set(new RequestInfo(request));
+        RequestInfo req = new RequestInfo(request);
+        _requestTracker.set(req);
+        return req;
+    }
+
+    public RequestInfo current()
+    {
+        return _requestTracker.get();
     }
 
     public synchronized void requestComplete(HttpServletRequest request)
     {
+        RequestInfo requestInfo = _requestTracker.get();
         boolean shouldTrack = !Boolean.TRUE.equals(request.getAttribute(IgnoresAllocationTracking.class.getName()));
-        if (shouldTrack)
+        if (requestInfo != null)
         {
-            RequestInfo requestInfo = _requestTracker.get();
-            if (requestInfo != null)
+            if (shouldTrack)
             {
                 // Now that we're done, move it into the set of recent requests
                 _recentRequests.add(requestInfo);
                 trimOlderRequests();
+                addUnviewed(request.getUserPrincipal(), requestInfo.getId());
+            }
+            else
+            {
+                // Remove it from the list of unviewed requests
+                setViewed(request.getUserPrincipal(), requestInfo.getId());
             }
         }
         _requestTracker.remove();
@@ -190,6 +212,78 @@ public class MemTracker
         {
             _recentRequests.remove(0);
         }
+    }
+
+    private void addUnviewed(Principal user, long id)
+    {
+        ViewContext context = HttpView.getRootContext();
+        if (context == null)
+            return;
+
+        HttpSession session = context.getSession();
+        if (session == null)
+            return;
+
+        synchronized (SessionHelper.getSessionLock(session))
+        {
+            List<Long> unviewed = (List<Long>)session.getAttribute(UNVIEWED_KEY);
+            if (unviewed == null)
+                session.setAttribute(UNVIEWED_KEY, unviewed = new ArrayList<>());
+            unviewed.add(id);
+        }
+    }
+
+    public List<Long> getUnviewed(Principal user)
+    {
+        ViewContext context = HttpView.getRootContext();
+        if (context == null)
+            return Collections.emptyList();
+
+        HttpSession session = context.getSession();
+        if (session == null)
+            return Collections.emptyList();
+
+        synchronized (SessionHelper.getSessionLock(session))
+        {
+            List<Long> unviewed = (List<Long>)session.getAttribute(UNVIEWED_KEY);
+            if (unviewed == null)
+                session.setAttribute(UNVIEWED_KEY, unviewed = new ArrayList<>());
+
+            return new ArrayList<>(unviewed);
+        }
+    }
+
+    public void setViewed(Principal user, long id)
+    {
+        ViewContext context = HttpView.getRootContext();
+        if (context == null)
+            return;
+
+        HttpSession session = context.getSession();
+        if (session == null)
+            return;
+
+        synchronized (SessionHelper.getSessionLock(session))
+        {
+            List<Long> unviewed = (List<Long>)session.getAttribute(UNVIEWED_KEY);
+            if (unviewed == null)
+                session.setAttribute(UNVIEWED_KEY, unviewed = new ArrayList<>());
+
+            unviewed.remove(id);
+        }
+    }
+
+    public synchronized RequestInfo getRequest(long id)
+    {
+        // search recent requests backwards looking for the matching id
+        for (int i = _recentRequests.size() - 1; i > 0; i--)
+        {
+            RequestInfo req = _recentRequests.get(i);
+            if (req.getId() == id)
+                return req;
+        }
+
+        return null;
     }
 
     public boolean put(Object object)
@@ -271,59 +365,6 @@ public class MemTracker
             }
         });
         return refs;
-    }
-
-    public static class RequestInfo
-    {
-        private static final AtomicLong NEXT_ID = new AtomicLong(0);
-
-        private final long _id = NEXT_ID.incrementAndGet();
-        private final String _url;
-        private final Date _date = new Date();
-        private Map<String, Integer> _objects = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-
-        public RequestInfo(HttpServletRequest request)
-        {
-            _url = request.getRequestURI() + (request.getQueryString() == null ? "" : "?" + request.getQueryString());
-        }
-
-        public void addObject(Object object)
-        {
-            if (object != null)
-            {
-                String s;
-                if (object instanceof MemTrackable)
-                {
-                    s = ((MemTrackable)object).toMemTrackerString();
-                }
-                else
-                {
-                    s = object.getClass().getName();
-                }
-                Integer count = _objects.get(s);
-                _objects.put(s, count == null ? 1 : count.intValue() + 1);
-            }
-        }
-
-        public long getId()
-        {
-            return _id;
-        }
-
-        public String getUrl()
-        {
-            return _url;
-        }
-
-        public Date getDate()
-        {
-            return _date;
-        }
-
-        public Map<String, Integer> getObjects()
-        {
-            return Collections.unmodifiableMap(_objects);
-        }
     }
 
     public static class TestCase extends Assert

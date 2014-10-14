@@ -28,6 +28,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TSVWriter;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ContextListener;
@@ -205,6 +206,8 @@ public class QueryProfiler
                         (Container)QueryService.get().getEnvironment(QueryService.Environment.CONTAINER), listenerEnvironment, queryLogging);
             }
         }
+
+        MiniProfiler.addQuery(elapsed, sql, stackTrace);
 
         // Don't block if queue is full
         _queue.offer(new Query(scope, sql, parameters, elapsed, stackTrace, requestThread));

@@ -52,14 +52,14 @@ public class SessionHelper
 
 
     /** If value is not found in session it is created and added */
-    public static Object getAttribute(@NotNull HttpServletRequest req, @NotNull String key, @Nullable Callable initializeValue)
+    public static <Q> Q getAttribute(@NotNull HttpServletRequest req, @NotNull String key, @Nullable Callable<Q> initializeValue)
     {
         HttpSession s = req.getSession(true);
         if (null == s)
             return null;
         synchronized (getSessionLock(s))
         {
-            Object value = s.getAttribute(key);
+            Q value = (Q)s.getAttribute(key);
             if (null == value && initializeValue != null)
             {
                 try

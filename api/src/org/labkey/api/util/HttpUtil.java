@@ -26,6 +26,8 @@ import org.apache.http.impl.client.ContentEncodingHttpClient;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.log4j.Logger;
+import org.labkey.api.miniprofiler.CustomTiming;
+import org.labkey.api.miniprofiler.MiniProfiler;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -57,24 +59,27 @@ public class HttpUtil
      */
     public static Pair<InputStream, URI> get(URI uri) throws IOException
     {
-        HttpClient client = new ContentEncodingHttpClient();
-        HttpGet get = new HttpGet(uri);
-        BasicHttpContext context = new BasicHttpContext();
-        HttpResponse resp = client.execute(get, context);
+        try (CustomTiming t = MiniProfiler.custom("http", "HTTP get " + uri.getHost() + "/" + uri.getPath()))
+        {
+            HttpClient client = new ContentEncodingHttpClient();
+            HttpGet get = new HttpGet(uri);
+            BasicHttpContext context = new BasicHttpContext();
+            HttpResponse resp = client.execute(get, context);
 
-        // UNDONE: check status code
-        //resp.getStatusLine().getStatusCode()
+            // UNDONE: check status code
+            //resp.getStatusLine().getStatusCode()
 
-        HttpHost target = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
-        HttpUriRequest req = (HttpUriRequest) context.getAttribute(ExecutionContext.HTTP_REQUEST);
+            HttpHost target = (HttpHost) context.getAttribute(ExecutionContext.HTTP_TARGET_HOST);
+            HttpUriRequest req = (HttpUriRequest) context.getAttribute(ExecutionContext.HTTP_REQUEST);
 
-        URI finalURI = URI.create(target.toURI() + req.getURI());
-        LOG.debug("HTTP GET '" + uri + "' -> resolved to '" + finalURI + "'");
+            URI finalURI = URI.create(target.toURI() + req.getURI());
+            LOG.debug("HTTP GET '" + uri + "' -> resolved to '" + finalURI + "'");
 
-        HttpEntity entity = resp.getEntity();
-        InputStream is = entity.getContent();
+            HttpEntity entity = resp.getEntity();
+            InputStream is = entity.getContent();
 
-        return Pair.of(is, finalURI);
+            return Pair.of(is, finalURI);
+        }
     }
 
     /**

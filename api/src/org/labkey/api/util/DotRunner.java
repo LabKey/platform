@@ -17,6 +17,8 @@ package org.labkey.api.util;
 
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.miniprofiler.CustomTiming;
+import org.labkey.api.miniprofiler.MiniProfiler;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -159,28 +161,31 @@ public class DotRunner
 
     private static ProcessResult executeProcess(ProcessBuilder pb, String stdIn) throws IOException, InterruptedException
     {
-        StringBuilder sb = new StringBuilder();
-        pb.redirectErrorStream(true);
-        Process p = pb.start();
-
-        try (PrintWriter writer = new PrintWriter(p.getOutputStream()))
+        try (CustomTiming t = MiniProfiler.custom("exec", StringUtils.join(pb.command(), " ")))
         {
-            writer.write(stdIn);
-        }
+            StringBuilder sb = new StringBuilder();
+            pb.redirectErrorStream(true);
+            Process p = pb.start();
 
-        try (BufferedReader procReader = new BufferedReader(new InputStreamReader(p.getInputStream())))
-        {
-            String line;
-
-            while ((line = procReader.readLine()) != null)
+            try (PrintWriter writer = new PrintWriter(p.getOutputStream()))
             {
-                sb.append(line);
-                sb.append("\n");
+                writer.write(stdIn);
             }
-        }
 
-        int returnCode = p.waitFor();
-        return new ProcessResult(returnCode, sb.toString());
+            try (BufferedReader procReader = new BufferedReader(new InputStreamReader(p.getInputStream())))
+            {
+                String line;
+
+                while ((line = procReader.readLine()) != null)
+                {
+                    sb.append(line);
+                    sb.append("\n");
+                }
+            }
+
+            int returnCode = p.waitFor();
+            return new ProcessResult(returnCode, sb.toString());
+        }
     }
 
     private static class ProcessResult

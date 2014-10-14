@@ -807,6 +807,10 @@ api/src/org/labkey/api/mbean/ErrorsMXBean.java -text
 api/src/org/labkey/api/mbean/LabKeyManagement.java -text
 api/src/org/labkey/api/microarray/ExtractionConfigException.java -text
 api/src/org/labkey/api/microarray/ExtractionException.java -text
+api/src/org/labkey/api/miniprofiler/CustomTiming.java -text
+api/src/org/labkey/api/miniprofiler/MiniProfiler.java -text
+api/src/org/labkey/api/miniprofiler/RequestInfo.java -text
+api/src/org/labkey/api/miniprofiler/Timing.java -text
 api/src/org/labkey/api/module/AllowedBeforeInitialUserIsSet.java -text
 api/src/org/labkey/api/module/AllowedDuringUpgrade.java -text
 api/src/org/labkey/api/module/CustomFolderType.java -text
@@ -8008,9 +8012,13 @@ internal/webapp/index.html -text
 internal/webapp/internal-FileDrop.lib.xml -text
 internal/webapp/internal.lib.xml -text
 internal/webapp/internal/FileDrop/FileDrop.js -text
+internal/webapp/internal/MiniProfiler/miniprofiler.css -text
+internal/webapp/internal/MiniProfiler/miniprofiler.js -text
+internal/webapp/internal/MiniProfiler/miniprofiler.tmpl -text
 internal/webapp/js_color_picker_v2.css -text
 internal/webapp/js_color_picker_v2.js -text
 internal/webapp/labkey.js -text
+internal/webapp/miniprofiler.lib.xml -text
 internal/webapp/mothership.js -text
 internal/webapp/nav/betanav.css -text
 internal/webapp/query/column.gif -text

@@ -22,6 +22,8 @@ import org.labkey.api.action.ApiJsonWriter;
 import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiResponseWriter;
 import org.labkey.api.data.Container;
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ErrorRenderer;
@@ -365,63 +367,67 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         Throwable exceptionToRender = _prepareException;
         String errorMessage = null;
 
-        boolean isDebugHtml = _devMode && _frame != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(),"text/html");
-        if (isDebugHtml)
-            response.getWriter().print("<!--" + StringUtils.defaultString(_debugViewDescription,this.getClass().toString()) + "-->");
-        doStartTag(getViewContext().getExtendedProperties(), response.getWriter());
-
-        if (exceptionToRender == null)
+        String name = StringUtils.defaultString(_debugViewDescription, this.getClass().getSimpleName());
+        try (Timing timing = MiniProfiler.step(name))
         {
-            try
-            {
-                renderView(getModelBean(), request, response);
-            }
-            catch (RedirectException x)
-            {
-                Logger.getLogger(WebPartView.class).warn("Shouldn't throw redirect during renderView()", x);
-                throw x;
-            }
-            catch (UnauthorizedException x)
-            {
-                Logger.getLogger(WebPartView.class).warn("Shouldn't throw unauthorized during renderView()", x);
-                errorMessage = ExceptionUtil.getUnauthorizedMessage(getViewContext());
-            }
-            catch (Throwable t)
-            {
-                exceptionToRender = ExceptionUtil.unwrapException(t);
+            boolean isDebugHtml = _devMode && _frame != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
+            if (isDebugHtml)
+                response.getWriter().print("<!--" + name + "-->");
+            doStartTag(getViewContext().getExtendedProperties(), response.getWriter());
 
-                //
-                // issue:21209 - don't hide exceptions that we should be showing to the user (configuration, incorrect JSON, etc)
-                // Render these now so that the user can at least know what is wrong instead of just getting a blank webpart. The one
-                // difference is that we won't log the exception if it is deemed ignorable.
-                //
-
-                if (!ExceptionUtil.isIgnorable(exceptionToRender))
+            if (exceptionToRender == null)
+            {
+                try
                 {
-                    Logger log = Logger.getLogger(WebPartView.class);
-                    ActionURL url = getViewContext().getActionURL();
-                    log.error("renderView() exception in " + getClass().getName() + (null != url ? " while responding to " + getViewContext().getActionURL().getLocalURIString() : ""), exceptionToRender);
-                    log.error("View creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
+                    renderView(getModelBean(), request, response);
+                }
+                catch (RedirectException x)
+                {
+                    Logger.getLogger(WebPartView.class).warn("Shouldn't throw redirect during renderView()", x);
+                    throw x;
+                }
+                catch (UnauthorizedException x)
+                {
+                    Logger.getLogger(WebPartView.class).warn("Shouldn't throw unauthorized during renderView()", x);
+                    errorMessage = ExceptionUtil.getUnauthorizedMessage(getViewContext());
+                }
+                catch (Throwable t)
+                {
+                    exceptionToRender = ExceptionUtil.unwrapException(t);
+
+                    //
+                    // issue:21209 - don't hide exceptions that we should be showing to the user (configuration, incorrect JSON, etc)
+                    // Render these now so that the user can at least know what is wrong instead of just getting a blank webpart. The one
+                    // difference is that we won't log the exception if it is deemed ignorable.
+                    //
+
+                    if (!ExceptionUtil.isIgnorable(exceptionToRender))
+                    {
+                        Logger log = Logger.getLogger(WebPartView.class);
+                        ActionURL url = getViewContext().getActionURL();
+                        log.error("renderView() exception in " + getClass().getName() + (null != url ? " while responding to " + getViewContext().getActionURL().getLocalURIString() : ""), exceptionToRender);
+                        log.error("View creation stacktrace:" + ExceptionUtil.renderStackTrace(_creationStackTrace));
+                    }
                 }
             }
-        }
 
-        //if we received an exception during prepare or render, we'll display it here
-        if (exceptionToRender != null || errorMessage != null)
-        {
-            if (errorMessage != null)
+            //if we received an exception during prepare or render, we'll display it here
+            if (exceptionToRender != null || errorMessage != null)
             {
-                response.getWriter().write(errorMessage);
+                if (errorMessage != null)
+                {
+                    response.getWriter().write(errorMessage);
+                }
+                if (exceptionToRender != null)
+                {
+                    renderException(exceptionToRender, request, response);
+                }
             }
-            if (exceptionToRender != null)
-            {
-                renderException(exceptionToRender, request, response);
-            }
-        }
 
-        doEndTag(getViewContext().getExtendedProperties(), response.getWriter());
-        if (isDebugHtml)
-            response.getWriter().print("<!--/" + this.getClass() + "-->");
+            doEndTag(getViewContext().getExtendedProperties(), response.getWriter());
+            if (isDebugHtml)
+                response.getWriter().print("<!--/" + this.getClass() + "-->");
+        }
     }
 
     /**

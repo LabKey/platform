@@ -55,6 +55,15 @@ public class CPUTimer
 		return true;
     }
 
+    public long getStart()
+    {
+        return _start;
+    }
+
+    public boolean started()
+    {
+        return _start > 0;
+    }
 
 	public boolean stop()
     {
@@ -75,6 +84,10 @@ public class CPUTimer
         return true;
     }
 
+    public String getName()
+    {
+        return _name;
+    }
 
 	public long getTotal()
     {

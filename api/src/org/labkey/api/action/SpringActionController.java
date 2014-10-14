@@ -23,6 +23,8 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.AdminUrls;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.Module;
@@ -37,6 +39,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
@@ -79,6 +82,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -346,10 +350,25 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 ((HasPageConfig)action).setPageConfig(pageConfig);
 
             Class<? extends Controller> actionClass = action.getClass();
-
-            if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class))
+            if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
             {
                 request.setAttribute(IgnoresAllocationTracking.class.getName(), Boolean.TRUE);
+            }
+            else
+            {
+                // Don't send back mini-profiler id if the user won't be able to get the profiler info
+                if (MiniProfiler.isEnabled(context))
+                {
+                    RequestInfo req = MemTracker.get().current();
+                    if (req != null)
+                    {
+                        LinkedHashSet<Long> ids = new LinkedHashSet<>();
+                        ids.add(req.getId());
+                        ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
+
+                        response.setHeader("X-MiniProfiler-Ids", ids.toString());
+                    }
+                }
             }
 
             if (action instanceof PermissionCheckable)

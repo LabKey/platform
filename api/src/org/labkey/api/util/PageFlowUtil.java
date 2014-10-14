@@ -41,6 +41,8 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataRegion;
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.QueryParam;
@@ -1525,10 +1527,36 @@ public class PageFlowUtil
         if (null == c)
             c = ContainerManager.getRoot();
 
+        if (resources == null)
+            resources = new LinkedHashSet<>();
+
+        // Add mini-profilter as depenency if enabled
+        long currentId = -1;
+        if (MiniProfiler.isEnabled(context))
+        {
+            RequestInfo req = MemTracker.getInstance().current();
+            if (req != null)
+            {
+                currentId = req.getId();
+                resources.add(ClientDependency.fromFilePath("miniprofiler"));
+            }
+        }
+
+
         StringBuilder sb = getFaviconIncludes(c);
         sb.append(getLabkeyJS(context, resources));
         sb.append(getStylesheetIncludes(c, resources, true));
         sb.append(getJavaScriptIncludes(c, resources));
+
+        if (currentId != -1)
+        {
+            LinkedHashSet<Long> ids = new LinkedHashSet<>();
+            ids.add(currentId);
+            ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
+
+            sb.append(MiniProfiler.renderInitScript(currentId, ids, getServerSessionHash()));
+        }
+
         return sb.toString();
     }
 

@@ -183,13 +183,6 @@
 <!--
 <%= h(request.getHeader("User-Agent")) %>-->
 <%
-    if (null != request.getAttribute(ViewServlet.REQUEST_STARTTIME))
-    {
-%>
-<!--<%= text("time " + (System.currentTimeMillis() - (Long)request.getAttribute(ViewServlet.REQUEST_STARTTIME)) + "ms") %> -->
-<%
-    }
-
     ActionURL permaLink = getViewContext().cloneActionURL();
     permaLink.setExtraPath("__r" + Integer.toString(c.getRowId()));
 %>
