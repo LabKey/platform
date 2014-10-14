@@ -15,6 +15,7 @@
  */
 package org.labkey.study.pipeline;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
@@ -339,7 +340,10 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
     private String getComments()
     {
-        return getJob().getParameters().get("assay comments");
+        String comments = getJob().getParameters().get("assay comments");
+        if (StringUtils.isEmpty(comments))
+            comments = getJob().getParameters().get(PipelineJob.PIPELINE_PROTOCOL_DESCRIPTION_PARAM);
+        return comments;
     }
 
     private String getTargetStudy()
