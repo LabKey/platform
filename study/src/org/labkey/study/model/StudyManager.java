@@ -757,6 +757,7 @@ public class StudyManager
             }
             Object[] pk = new Object[]{datasetDefinition.getContainer().getId(), datasetDefinition.getDatasetId()};
             ensureViewCategory(user, datasetDefinition);
+            updateDomainDescriptorIfNeeded(datasetDefinition.getContainer(), user, datasetDefinition);
             _datasetHelper.update(user, datasetDefinition, pk);
 
             if (!old.getName().equals(datasetDefinition.getName()))
@@ -3652,10 +3653,6 @@ public class StudyManager
                     {
                         def.setTypeURI(getDomainURI(c, user, def));
                     }
-                    else
-                    {
-                        upgradeDomainURI(c, user, def);
-                    }
 
                     def.setVisitDatePropertyName(info.visitDatePropertyName);
                     def.setShowByDefault(!info.isHidden);
@@ -3687,7 +3684,8 @@ public class StudyManager
     // and update the domain descriptor URI
     // old:  urn:lsid:labkey.com:StudyDataset.Folder-6:DEM
     // new:  urn:lsid:labkey.com:StudyDataset.Folder-6:DEM-cbffdfa1-f19b-1030-90dd-bf4ca488b2d0
-    private void upgradeDomainURI(Container c, User user, DataSetDefinition def)
+    // Also, the URI will change if the dataset name changes
+    private void updateDomainDescriptorIfNeeded(Container c, User user, DataSetDefinition def)
     {
         String oldURI = def.getTypeURI();
         String newURI = getDomainURI(c, user, def);
@@ -3703,6 +3701,7 @@ public class StudyManager
         if (null != dd)
         {
             dd.setDomainURI(newURI);
+            dd.setName(def.getName());      // Name may have changed too; it's part of URI
             OntologyManager.updateDomainDescriptor(dd);
         }
     }

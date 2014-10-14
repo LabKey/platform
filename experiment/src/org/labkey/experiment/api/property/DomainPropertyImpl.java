@@ -190,6 +190,14 @@ public class DomainPropertyImpl implements DomainProperty
         return _pd.isMvEnabled();
     }
 
+    @Override
+    public boolean isMvEnabledForDrop()
+    {
+        if (null != _pdOld)
+            return _pdOld.isMvEnabled();    // if we need to drop/recreate we care about the old one
+        return _pd.isMvEnabled();
+    }
+
     public void delete()
     {
         _deleted = true;
