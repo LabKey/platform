@@ -389,7 +389,7 @@ public class StorageProvisioner
             if (base.contains(prop.getName()))
                 continue;
             change.addColumn(prop.getPropertyDescriptor());
-            if (prop.isMvEnabled())
+            if (prop.isMvEnabledForDrop())
             {
                 change.addColumn(makeMvColumn(prop));
             }

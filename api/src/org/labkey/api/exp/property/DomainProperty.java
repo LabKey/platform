@@ -51,6 +51,7 @@ public interface DomainProperty extends ImportAliasable
     DefaultScaleType getDefaultScale();
     boolean isProtected();
     boolean isExcludeFromShifting();
+    boolean isMvEnabledForDrop();
 
     /** Mark as deleted, without actually saving to the database */
     void delete();
