@@ -7144,7 +7144,7 @@ public class StudyController extends BaseStudyController
         }
     }
 
-    public static class DefineDatasetForm implements CustomApiForm
+    public static class DefineDatasetForm implements CustomApiForm, HasViewContext
     {
         enum Type
         {
@@ -7156,6 +7156,7 @@ public class StudyController extends BaseStudyController
             linkImport,
         }
 
+        private ViewContext _context;
         private DefineDatasetForm.Type _type;
         private String _name;
         private ViewCategory _category;
@@ -7193,7 +7194,7 @@ public class StudyController extends BaseStudyController
             Object categoryProp = props.get("category");
             if (categoryProp instanceof JSONObject)
             {
-                _category = ViewCategory.fromJSON((JSONObject)categoryProp);
+                _category = ViewCategory.fromJSON(_context.getContainer(), (JSONObject)categoryProp);
             }
 
             _name = (String)props.get("name");
@@ -7204,6 +7205,18 @@ public class StudyController extends BaseStudyController
 
             _expectationDataset = (Integer)props.get("expectationDataset");
             _targetDataset = (Integer)props.get("targetDataset");
+        }
+
+        @Override
+        public void setViewContext(ViewContext context)
+        {
+            _context = context;
+        }
+
+        @Override
+        public ViewContext getViewContext()
+        {
+            return _context;
         }
     }
 

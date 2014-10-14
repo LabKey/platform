@@ -32,12 +32,14 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.UpgradeCode;
+import org.labkey.api.data.UpgradeUtils;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.settings.AbstractSettingsGroup;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.SystemMaintenance;
@@ -284,5 +286,21 @@ public class CoreUpgradeCode implements UpgradeCode
         }
 
         UsersDomainKind.ensureDomainPropertyScales(domain, context.getUpgradeUser());
+    }
+
+    // will be invoked by core-14.22-14.23.sql (future commit)
+    //
+    // PostgreSQL only. Current PostgreSQL UNIQUE CONSTRAINT has two problems:
+    // 1. It allows multiple top-level categories with the same name (Parent column is NULLABLE and PostgreSQL doesn't treat NULL as unique)
+    // 2. It treats Label as case-sensitive (although the UI prevents entry of multiples that differ by case only)
+    // We run this to uniquify the labels so we can add a more constraining constraint. See #21698.
+    @SuppressWarnings({"UnusedDeclaration"})
+    public void uniquifyViewCategoryLabels(final ModuleContext context) throws SQLException
+    {
+        if (context.isNewInstall())
+            return;
+
+        TableInfo ti = ViewCategoryManager.getInstance().getTableInfoCategories();
+        UpgradeUtils.uniquifyValues(ti.getColumn("Label"), ti.getColumn("Parent"), new Sort("RowId"), false, false);
     }
 }

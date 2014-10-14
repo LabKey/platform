@@ -33,6 +33,7 @@ import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.GWTServiceAction;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -3379,9 +3380,10 @@ public class ReportsController extends SpringActionController
         }
     }
 
-    public static class CategoriesForm implements CustomApiForm
+    public static class CategoriesForm implements CustomApiForm, HasViewContext
     {
-        List<ViewCategory> _categories = new ArrayList<>();
+        private List<ViewCategory> _categories = new ArrayList<>();
+        private ViewContext _context;
 
         public List<ViewCategory> getCategories()
         {
@@ -3401,9 +3403,21 @@ public class ReportsController extends SpringActionController
             {
                 for (JSONObject categoryInfo : ((JSONArray) categoriesProp).toJSONObjectArray())
                 {
-                    _categories.add(ViewCategory.fromJSON(categoryInfo));
+                    _categories.add(ViewCategory.fromJSON(_context.getContainer(), categoryInfo));
                 }
             }
+        }
+
+        @Override
+        public void setViewContext(ViewContext context)
+        {
+            _context = context;
+        }
+
+        @Override
+        public ViewContext getViewContext()
+        {
+            return _context;
         }
     }
 
