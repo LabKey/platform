@@ -20,12 +20,6 @@ import org.labkey.api.action.FormArrayList;
 import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
-import org.labkey.api.data.CoreSchema;
-import org.labkey.api.data.DbSchema;
-import org.labkey.api.data.Sort;
-import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.UpgradeUtils;
-import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -89,8 +83,7 @@ public class TestController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            TableInfo ti = ViewCategoryManager.getInstance().getTableInfoCategories();
-            UpgradeUtils.uniquifyValues(ti.getColumn("Label"), ti.getColumn("Parent"), new Sort("RowId"), false, false);
+            // Add code here
 
             return null;
         }
