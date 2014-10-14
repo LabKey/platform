@@ -1940,7 +1940,7 @@ public class StudyManager
         if (updateLsids.isEmpty())
             return;
 
-        try (Transaction transction = scope.ensureTransaction())
+        try (Transaction transaction = scope.ensureTransaction())
         {
             // TODO fix updating across study data
             SQLFragment sql = new SQLFragment("UPDATE " + def.getStorageTableInfo().getSelectName() + "\n" +
@@ -1983,7 +1983,7 @@ public class StudyManager
 
             clearCaches(container, false);
 
-            transction.commit();
+            transaction.commit();
         }
     }
     
