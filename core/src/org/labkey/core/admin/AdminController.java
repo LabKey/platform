@@ -78,6 +78,7 @@ import org.labkey.api.data.queryprofiler.QueryProfiler;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.api.StorageProvisioner;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.AllowedBeforeInitialUserIsSet;
 import org.labkey.api.module.AllowedDuringUpgrade;
 import org.labkey.api.module.DefaultModule;
@@ -549,6 +550,7 @@ public class AdminController extends SpringActionController
      */
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @IgnoresAllocationTracking
     public class MaintenanceAction extends SimpleViewAction<ReturnUrlForm>
     {
         public ModelAndView getView(ReturnUrlForm form, BindException errors) throws Exception
@@ -624,6 +626,7 @@ public class AdminController extends SpringActionController
      */
     @RequiresNoPermission
     @AllowedDuringUpgrade
+    @IgnoresAllocationTracking
     public class StartupStatusAction extends ApiAction
     {
         @Override
@@ -3323,6 +3326,7 @@ public class AdminController extends SpringActionController
 
     @RequiresSiteAdmin
     @AllowedDuringUpgrade
+    @IgnoresAllocationTracking
     public class ModuleStatusAction extends SimpleViewAction<ReturnUrlForm>
     {
         @Override
@@ -5172,17 +5176,17 @@ public class AdminController extends SpringActionController
         @Override
         public ApiResponse execute(Object o, BindException errors) throws Exception
         {
-            int requestId = 0;
+            long requestId = 0;
             try
             {
                 String s = getViewContext().getRequest().getParameter("requestId");
                 if (null != s)
-                    requestId = Integer.parseInt(s);
+                    requestId = Long.parseLong(s);
             }
             catch (NumberFormatException ignored) {}
-            List<MemTracker.RequestInfo> requests = MemTracker.getInstance().getNewRequests(requestId);
+            List<RequestInfo> requests = MemTracker.getInstance().getNewRequests(requestId);
             List<Map<String, Object>> jsonRequests = new ArrayList<>(requests.size());
-            for (MemTracker.RequestInfo requestInfo : requests)
+            for (RequestInfo requestInfo : requests)
             {
                 Map<String, Object> m = new HashMap<>();
                 m.put("requestId", requestInfo.getId());
@@ -5206,7 +5210,7 @@ public class AdminController extends SpringActionController
             return new ApiSimpleResponse("requests", jsonRequests);
         }
 
-        private List<Map.Entry<String, Integer>> sortByCounts(MemTracker.RequestInfo requestInfo)
+        private List<Map.Entry<String, Integer>> sortByCounts(RequestInfo requestInfo)
         {
             List<Map.Entry<String, Integer>> objects = new ArrayList<>(requestInfo.getObjects().entrySet());
             Collections.sort(objects, new Comparator<Map.Entry<String, Integer>>()

@@ -22,6 +22,8 @@ package org.labkey.core.webdav;
  * Time: 2:03:32 PM
  */
 
+import org.labkey.api.miniprofiler.RequestInfo;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HttpView;
@@ -86,8 +88,11 @@ public class WebdavServlet extends HttpServlet
         dav.setViewContext(context);
         dav.setUrlResourcePath(fullPath);
         int stackSize = HttpView.getStackSize();
-        try
+        // Only track non-GET requests
+        try (RequestInfo t = "get".equalsIgnoreCase(method) ? null : MemTracker.getInstance().startNewRequest(request))
         {
+            if (t != null)
+                t.setName(method.toUpperCase() + " " + fullPath);
             HttpView.initForRequest(context, request, response);
             dav.handleRequest(request, response);
         }

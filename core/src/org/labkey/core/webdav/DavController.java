@@ -30,6 +30,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONWriter;
 import org.labkey.api.action.BaseViewAction;
+import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.ConcurrentHashSet;
@@ -41,6 +42,8 @@ import org.labkey.api.exp.api.DataType;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.files.FileContentService;
+import org.labkey.api.miniprofiler.MiniProfiler;
+import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.resource.Resource;
@@ -61,6 +64,7 @@ import org.labkey.api.util.FileStream;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HeartBeat;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -271,6 +275,29 @@ public class DavController extends SpringActionController
 
         String method = getViewContext().getActionURL().getAction();
         Controller action = resolveAction(method.toLowerCase());
+
+        Class<? extends Controller> actionClass = action.getClass();
+        if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
+        {
+            request.setAttribute(IgnoresAllocationTracking.class.getName(), Boolean.TRUE);
+        }
+        else
+        {
+            // Don't send back mini-profiler id if the user won't be able to get the profiler info
+            if (MiniProfiler.isEnabled(getViewContext()))
+            {
+                RequestInfo req = MemTracker.get().current();
+                if (req != null)
+                {
+                    LinkedHashSet<Long> ids = new LinkedHashSet<>();
+                    ids.add(req.getId());
+                    ids.addAll(MemTracker.get().getUnviewed(context.getUser()));
+
+                    response.setHeader("X-MiniProfiler-Ids", ids.toString());
+                }
+            }
+        }
+
         try
         {
             if (null == action)

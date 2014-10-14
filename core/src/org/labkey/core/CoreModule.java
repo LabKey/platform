@@ -133,6 +133,7 @@ import org.labkey.core.admin.importer.PageImporterFactory;
 import org.labkey.core.admin.importer.SearchSettingsImporterFactory;
 import org.labkey.core.admin.importer.SubfolderImporterFactory;
 import org.labkey.core.admin.logger.LoggerController;
+import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.admin.writer.FolderSerializationRegistryImpl;
 import org.labkey.core.admin.writer.FolderTypeWriterFactory;
@@ -249,6 +250,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         addController("project", ProjectController.class);
         addController("util", UtilController.class);
         addController("logger", LoggerController.class);
+        addController("mini-profiler", MiniProfilerController.class);
 
         AuthenticationManager.registerProvider(new DbLoginAuthenticationProvider(), Priority.Low);
         AttachmentService.register(new AttachmentServiceImpl());

@@ -26,6 +26,7 @@ import org.labkey.api.action.ApiResponse;
 import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ApiUsageException;
 import org.labkey.api.action.ExportAction;
+import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
 import org.labkey.api.action.SimpleRedirectAction;
@@ -274,6 +275,7 @@ public class CoreController extends SpringActionController
     @IgnoresTermsOfUse
     @AllowedDuringUpgrade
     @AllowedBeforeInitialUserIsSet
+    @IgnoresAllocationTracking
     public class ThemeStylesheetAction extends BaseStylesheetAction
     {
         Content getContent(HttpServletRequest request, HttpServletResponse response) throws Exception
