@@ -680,14 +680,14 @@ LABKEY.internal.MiniProfiler = new function () {
             toggleClass(sibling, "profiler-custom-min");
 
             // Change the toggle icon
-            var hideText = data(link, 'hideText'),
-                showText = data(link, 'showText'), // first call will be null
+            var hideText = data(link, 'hidetext'),
+                showText = data(link, 'showtext'), // first call will be null
                 isHidden = link.innerText != hideText;
 
             // save our initial text to allow reverting
             if (!showText) {
                 showText = link.innerText;
-                data(link, 'showText', showText);
+                data(link, 'showtext', showText);
             }
             link.innerText = isHidden ? hideText : showText;
         });
