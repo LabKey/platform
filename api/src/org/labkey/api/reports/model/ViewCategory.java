@@ -161,9 +161,11 @@ public class ViewCategory extends Entity implements Comparable
         return o;
     }
 
-    public static ViewCategory fromJSON(JSONObject info)
+    public static ViewCategory fromJSON(Container c, JSONObject info)
     {
         ViewCategory category = new ViewCategory();
+
+        category.setContainer(c.getId());
 
         Object row = info.get("rowid");
         if (row instanceof Integer)

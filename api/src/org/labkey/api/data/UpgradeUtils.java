@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.PageFlowUtil;
@@ -26,6 +27,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -57,41 +59,36 @@ public class UpgradeUtils
      *      UNIQUE constraint, some don't.)
      * @throws SQLException
      */
-    public static void uniquifyValues(ColumnInfo column, Sort sort, boolean caseSensitive, boolean ignoreNulls) throws SQLException
+    public static void uniquifyValues(ColumnInfo column, @Nullable ColumnInfo additionalGroupingColumn, Sort sort, boolean caseSensitive, boolean ignoreNulls) throws SQLException
     {
         LOG.info("Removing duplicate values from " + column.getParentTable().toString() + "." + column.getName());
 
-        // Do an aggregate query to determine all containers with uniqueness problems in this column
-        List<String> containersToCorrect = getContainersWithDuplicateValues(column, caseSensitive, ignoreNulls);
+        // Do an aggregate query to determine all groups (containers or container + additional grouping column combinations) with uniqueness problems in this column
+        List<SimpleFilter> groupFilters = getFiltersForGroupsWithDuplicateValues(column, additionalGroupingColumn, caseSensitive, ignoreNulls);
 
-        if (!containersToCorrect.isEmpty())
+        if (!groupFilters.isEmpty())
         {
             DbScope scope = column.getParentTable().getSchema().getScope();
 
-            try (DbScope.Transaction transction = scope.ensureTransaction())
+            try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                // Fix up the values in each container
-                for (String cid : containersToCorrect)
-                    uniquifyValuesInContainer(column, cid, sort, caseSensitive, ignoreNulls);
+                // Fix up the values in each group
+                for (SimpleFilter filter : groupFilters)
+                    uniquifyValuesInGroup(column, filter, sort, caseSensitive);
 
-                transction.commit();
+//                transaction.commit();
             }
         }
     }
 
 
-    private static void uniquifyValuesInContainer(ColumnInfo col, String cid, Sort sort, boolean caseSensitive, boolean ignoreNulls) throws SQLException
+    private static void uniquifyValuesInGroup(ColumnInfo col, SimpleFilter filter, Sort sort, boolean caseSensitive) throws SQLException
     {
         TableInfo table = col.getParentTable();
         String columnName = col.getName();
         Set<ColumnInfo> selectColumns = Collections.singleton(col);
 
-        LOG.info("  Updating duplicate values in container " + cid);
-
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), cid);
-
-        if (ignoreNulls)
-            filter.addCondition(col, null, CompareType.NONBLANK);
+        LOG.info("  Updating duplicate values in group represented by: " + filter.getFilterText());
 
         // First, grab all the existing values so when we have to change a value we don't collide with another existing value.
         Set<String> existingValues = getSet(caseSensitive);
@@ -147,9 +144,10 @@ public class UpgradeUtils
     }
 
 
-    private static List<String> getContainersWithDuplicateValues(ColumnInfo column, boolean caseSensitive, boolean ignoreNulls) throws SQLException
+    private static List<SimpleFilter> getFiltersForGroupsWithDuplicateValues(final ColumnInfo column, @Nullable final ColumnInfo additionalGroupingColumn, boolean caseSensitive, final boolean ignoreNulls) throws SQLException
     {
         TableInfo table = column.getParentTable();
+        String selectColumns = "Container";
         String groupBy;
 
         if (caseSensitive)
@@ -157,8 +155,16 @@ public class UpgradeUtils
         else
             groupBy = "LOWER(t." + column.getSelectName() + ")";
 
+        if (null != additionalGroupingColumn)
+        {
+            selectColumns = selectColumns + ", " + additionalGroupingColumn.getSelectName();
+            groupBy = groupBy + ", " + additionalGroupingColumn.getSelectName();
+        }
+
         SQLFragment sql = new SQLFragment();
-        sql.append("SELECT DISTINCT Container FROM ");
+        sql.append("SELECT DISTINCT ");
+        sql.append(selectColumns);
+        sql.append(" FROM ");
         sql.append(table, "t");
 
         if (ignoreNulls)
@@ -172,6 +178,34 @@ public class UpgradeUtils
         sql.append(groupBy);
         sql.append(" HAVING COUNT(*) > 1");
 
-        return new SqlSelector(table.getSchema(), sql).getArrayList(String.class);
+        final List<SimpleFilter> filters = new LinkedList<>();
+
+        new SqlSelector(table.getSchema(), sql).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+        {
+            @Override
+            public void exec(Map<String, Object> map) throws SQLException
+            {
+                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Container"), map.get("Container"));
+
+                if (null != additionalGroupingColumn)
+                {
+                    String alias = additionalGroupingColumn.getAlias();
+                    assert map.containsKey(alias);
+                    Object value = map.get(alias);
+
+                    if (null != value)
+                        filter.addCondition(additionalGroupingColumn, value);
+                    else
+                        filter.addCondition(additionalGroupingColumn, null, CompareType.ISBLANK);
+                }
+
+                if (ignoreNulls)
+                    filter.addCondition(column, null, CompareType.NONBLANK);
+
+                filters.add(filter);
+            }
+        });
+
+        return filters;
     }
 }
