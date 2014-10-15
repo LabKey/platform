@@ -660,8 +660,6 @@ public class AttachmentServiceImpl implements AttachmentService.Service, Contain
     public List<Pair<String,String>> listAttachmentsForIndexing(Collection<String> parents, Date modifiedSince)
     {
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("Parent"), parents, CompareType.IN);
-        if (null != modifiedSince)
-            filter.addCondition(FieldKey.fromParts("Modified"), modifiedSince, CompareType.GTE);
         SimpleFilter.FilterClause since = new SearchService.LastIndexedClause(coreTables().getTableInfoDocuments(), modifiedSince, null);
         filter.addClause(since);
 
