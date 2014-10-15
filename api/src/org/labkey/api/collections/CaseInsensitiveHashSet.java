@@ -24,10 +24,8 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * Simple case-insensitive version of HashSet --
- * simply forces all Strings to lowercase before adding, removing,
- * or searching.  Could easily extend this to preserve the case...
- * just add a lowercase version to uppercase version map.
+ * Simple case-insensitive version of HashSet -- simply forces all Strings to lowercase before adding, removing,
+ * or searching. Could easily extend this to preserve the case... just add a lowercase version to uppercase version map.
  *
  * User: arauch
  * Date: Dec 25, 2004

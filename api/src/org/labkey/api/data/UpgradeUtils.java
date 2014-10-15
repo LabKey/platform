@@ -43,19 +43,19 @@ public class UpgradeUtils
 
     /**
      * Uniquifies values in a column, making it possible to add a UNIQUE CONSTRAINT/INDEX OR change a case-sensitive
-     * UNIQUE CONSTRAINT/INDEX to case-insensitive. This is designed to be called from UpdateCode that's invoked by an
+     * UNIQUE CONSTRAINT/INDEX to case-insensitive. This is designed to be called from UpgradeCode that's invoked by an
      * upgrade script. Column is uniquified by adding _2, _3, etc. to any values that duplicate previous values in that
-     * container.
+     * group.
      *
      * Note: PostgreSQL UNIQUE CONSTRAINTs are ALWAYS case-sensitive; you must create a UNIQUE INDEX to constrain in
      * a case-insensitive manner.
      *
-     * @param column Column to uniquify.  Must have a character type.  Parent table must have a Container column.
+     * @param column Column to uniquify. Must have a character type. Parent table must have a Container column.
      *      (It wouldn't be hard to add support for global tables, but there's no need right now.)
-     * @param sort Determines the order that rows are uniquifyied; those earlier in the sort take precedence.
+     * @param sort Determines the order that rows are uniquified; those earlier in the sort take precedence.
      * @param caseSensitive Determines whether uniquifying is done on a case-sensitive or case-insensitive basis
-     * @param ignoreNulls If true, multiple null values are ignored (not updated).  If false, subsequent null values are
-     *      updated with a value of _ followed by a unique integer.  (Some databases allow multiple null values in a
+     * @param ignoreNulls If true, multiple null values are ignored (not updated). If false, subsequent null values are
+     *      updated with a value of _ followed by a unique integer. (Some databases allow multiple null values in a
      *      UNIQUE constraint, some don't.)
      * @throws SQLException
      */
@@ -76,7 +76,7 @@ public class UpgradeUtils
                 for (SimpleFilter filter : groupFilters)
                     uniquifyValuesInGroup(column, filter, sort, caseSensitive);
 
-//                transaction.commit();
+                transaction.commit();
             }
         }
     }
