@@ -512,7 +512,6 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 anchorOffset : 100,
                 showDelay: 850,
                 cls      : 'data-views-tip-panel',
-                defaults : { border: false, frame: false },
                 items    : [{
                     xtype  : 'panel',
                     border : false, frame : false,
@@ -520,7 +519,7 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                 }],
                 listeners: {
                     // Change content dynamically depending on which element triggered the show.
-                    beforeshow: function(tip) {
+                    beforeshow : function(tip) {
                         var rec = this.getRecord(tip.triggerElement.parentNode);
 
                         if (!rec || (rec.childNodes && rec.childNodes.length > 0)) {
@@ -532,7 +531,12 @@ Ext4.define('LABKEY.ext4.DataViewsPanel', {
                             tip.down('panel').update(rec);
                         }
                     },
-                    show: function(tip){
+                    show : function(tip) {
+                        var h = tip.getHeader();
+                        if (h && !Ext4.isEmpty(h.title)) {
+                            h.setTitle(Ext4.htmlEncode(h.title));
+                        }
+
                         // Have to load the image on show and force layout after image loads because Ext assumes 0
                         // width/height since the image has not been loaded when it calculates the layout.
                         var rec = this.getRecord(tip.triggerElement.parentNode);
