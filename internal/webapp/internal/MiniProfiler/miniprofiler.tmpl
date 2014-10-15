@@ -128,13 +128,13 @@
           <td class="profiler-info">
             <div>Object allocations</div>
             <div>
-              <a href="{{= this.allocationsUrl(it.id) }}" target="_blank">
+              <a href="{{! this.allocationsUrl(it.id) }}" target="_blank">
                 details
               </a>
             </div>
           </td>
           <td>
-            <pre>{{= this.formatAllocations(it.objects, false) }}</pre>
+            <pre>{{! this.formatAllocations(it.objects, false) }}</pre>
           </td>
         </tr>
         {{?}}
