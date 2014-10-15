@@ -1053,7 +1053,9 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
     public int getUpdateCount()
             throws SQLException
     {
-        return _stmt.getUpdateCount();
+        int updateCount;
+        updateCount = _stmt.getUpdateCount();
+        return updateCount;
     }
 
     public boolean getMoreResults()
