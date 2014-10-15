@@ -368,19 +368,28 @@ public class StudyVisualizationProvider extends VisualizationProvider<StudyQuery
         String selectSql = "SELECT DataSet.Label, COUNT(DISTINCT ParticipantId) AS value FROM StudyData ";
         String innerSql = "";
         String sep = "";
-        if (members != null && members.length() > 0)
+        if (members != null)
         {
-            innerSql += "WHERE ParticipantId IN (";
-            for (int i = 0; i < members.length(); i++)
+            if (members.length() > 0)
             {
-                innerSql += sep + toSqlString(members.getString(i));
-                sep = ", ";
+                innerSql += "WHERE ParticipantId IN (";
+                for (int i = 0; i < members.length(); i++)
+                {
+                    innerSql += sep + toSqlString(members.getString(i));
+                    sep = ", ";
+                }
+                innerSql += ") ";
             }
-            innerSql += ") ";
+            else
+            {
+                // empty members array means that there are no patients that match the fitlers, so force empty results
+                innerSql += "WHERE 1=0 ";
+            }
+
             selectSql += innerSql;
         }
 
-        if (members != null && members.length() > 0 && sources.length() > 0)
+        if (members != null && sources.length() > 0)
             innerSql = "AND ";
         else if (sources.length() > 0)
             innerSql = "WHERE ";

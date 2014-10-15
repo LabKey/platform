@@ -722,7 +722,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
 
     // only used if displaySourceCounts is 'true'
     updateSourceCountsOnLoad: true,
-    sourceCountMemberSet: [],
+    sourceCountMemberSet: null,
     sourceCountSourceSet: [],
     sourceCountIdColumn: null,
     sourceCountSchema: null,
@@ -791,7 +791,7 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
             this.sourcesStore = Ext4.create('LABKEY.ext4.MeasuresStore', {});
 
             if (this.displaySourceCounts === true && this.updateSourceCountsOnLoad === true) {
-                this.sourcesStore.on('load', this.getSourceCounts, this);
+                this.sourcesStore.on('load', function(){ this.getSourceCounts(); }, this);
             }
         }
         return this.sourcesStore;
