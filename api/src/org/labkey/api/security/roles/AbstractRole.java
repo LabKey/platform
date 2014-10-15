@@ -147,7 +147,7 @@ public abstract class AbstractRole implements Role
     @Override
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
-        return resource instanceof Container;
+        return resource instanceof Container && !((Container)resource).isRoot();
     }
 
     protected void addExcludedPrincipal(UserPrincipal principal)

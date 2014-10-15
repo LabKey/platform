@@ -38,6 +38,6 @@ public class ReaderRole extends AbstractRole
     @Override
     public boolean isApplicable(SecurityPolicy policy, SecurableResource resource)
     {
-        return resource instanceof Container || resource instanceof DataSet;
+        return super.isApplicable(policy,resource) || resource instanceof DataSet;
     }
 }
