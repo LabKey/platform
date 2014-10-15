@@ -634,22 +634,13 @@ public class SecurityApiActions
 
             List<String> relevantRoles = new ArrayList<>();
 
-            if (container.isRoot())
+            if (container.isRoot() && !resource.equals(container))
             {
-                if (resource.equals(container))
-                {
-                    // Troubleshooter, SeeEmailAddresses, & CanSeeAuditLog are the only roles assignable in the root container
-                    relevantRoles.add(RoleManager.getRole(TroubleshooterRole.class).getUniqueName());
-                    relevantRoles.add(RoleManager.getRole(SeeEmailAddressesRole.class).getUniqueName());
-                    relevantRoles.add(RoleManager.getRole(CanSeeAuditLogRole.class).getUniqueName());
-                }
-                else
-                    // ExternalIndex case    
-                    relevantRoles.add(RoleManager.getRole(ReaderRole.class).getUniqueName());
+                // ExternalIndex case
+                relevantRoles.add(RoleManager.getRole(ReaderRole.class).getUniqueName());
             }
             else
             {
-                //add the relevant roles for non-root
                 for (Role role : RoleManager.getAllRoles())
                 {
                     if (role.isAssignable() && role.isApplicable(policy, resource))
