@@ -15,6 +15,7 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlObject;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
@@ -49,17 +50,17 @@ import org.labkey.api.writer.VirtualFile;
 import org.labkey.data.xml.TableType;
 import org.labkey.data.xml.TablesDocument;
 import org.labkey.data.xml.TablesType;
-import org.labkey.study.model.StudyManager;
 import org.labkey.study.query.StudyQuerySchema;
 
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Created by klum on 1/24/14.
@@ -335,7 +336,7 @@ public class DefaultStudyDesignImporter
             {
                 if (null != inserted.get(_fieldName))
                 {
-                    Map<String, Object> orig = rowMap.get(inserted.get(_fieldName));
+                    Map<String, Object> orig = rowMap.get((String)inserted.get(_fieldName));
                     if (orig.containsKey("RowId") && inserted.containsKey("RowId"))
                     {
                         _idMap.put(orig.get("RowId"), inserted.get("RowId"));
@@ -383,17 +384,27 @@ public class DefaultStudyDesignImporter
      */
     protected class PreserveExistingProjectData implements TransformHelper
     {
-        protected User _user;
-        protected TableInfo _tableInfo;
-        protected String _fieldName;          // field to match on
-        protected String _keyName;            // key field name
+        protected final User _user;
+        protected final TableInfo _tableInfo;
+        protected final SortedSet<String> _fieldNames = new TreeSet<>();    // fields to match on
+        protected final String _keyName;            // key field name
+        protected final Map _keyMap;
+        protected final boolean _verifyDuplicateFieldKeys;
         protected Map<String, Object> _existingValues;
-        protected Map _keyMap;
-        protected boolean _verifyDuplicateFieldKeys;
 
         public PreserveExistingProjectData(User user, TableInfo table, String fieldName, @Nullable String keyName, @Nullable Map<Object, Object> keyMap)
         {
             this(user, table, fieldName, keyName, keyMap, false);
+        }
+
+        public PreserveExistingProjectData(User user, TableInfo table, Set<String> fieldNames)
+        {
+            _user = user;
+            _tableInfo = table;
+            _fieldNames.addAll(fieldNames);
+            _keyName = null;
+            _keyMap = null;
+            _verifyDuplicateFieldKeys = false;
         }
 
         public PreserveExistingProjectData(User user, TableInfo table, String fieldName, @Nullable String keyName, @Nullable Map<Object, Object> keyMap,
@@ -401,7 +412,7 @@ public class DefaultStudyDesignImporter
         {
             _user = user;
             _tableInfo = table;
-            _fieldName = fieldName;
+            _fieldNames.add(fieldName);
             _keyName = keyName;
             _keyMap = keyMap;
             _verifyDuplicateFieldKeys = verifyDuplicateFieldKeys;
@@ -421,7 +432,7 @@ public class DefaultStudyDesignImporter
                     }
 
                     Set<String> columnNames = new HashSet<>();
-                    columnNames.add(_fieldName);
+                    columnNames.addAll(_fieldNames);
                     if (null != _keyName)
                         columnNames.add(_keyName);
                     Collection<Map<String, Object>> existingRows;
@@ -431,12 +442,13 @@ public class DefaultStudyDesignImporter
                     _existingValues = new CaseInsensitiveHashMap<>();
                     for (Map<String, Object> row : existingRows)
                     {
-                        _existingValues.put(row.get(_fieldName).toString(), row.get(_keyName));
+                        String existingValueKey = getExistingValueKey(row, _fieldNames);
+                        _existingValues.put(existingValueKey, row.get(_keyName));
                     }
                 }
                 finally
                 {
-                    if (_tableInfo instanceof ContainerFilterable && currentFilter != null)
+                        if (_tableInfo instanceof ContainerFilterable && currentFilter != null)
                         ((ContainerFilterable)_tableInfo).setContainerFilter(currentFilter);
                 }
             }
@@ -454,28 +466,45 @@ public class DefaultStudyDesignImporter
                 Map<String, Object> currentRow = new CaseInsensitiveHashMap<>();
                 currentRow.putAll(row);
 
-                if (currentRow.containsKey(_fieldName))
+                String existingValueKey = getExistingValueKey(currentRow, _fieldNames);
+                if (StringUtils.isNotEmpty(existingValueKey))
                 {
-                    String fieldNameValue = currentRow.get(_fieldName).toString();
-                    if (!_existingValues.containsKey(fieldNameValue))
+                    if (!_existingValues.containsKey(existingValueKey))
                     {
                         // make sure there are no duplicate keys
-                        if (!keys.contains(fieldNameValue))
+                        if (!keys.contains(existingValueKey))
                         {
                             newRows.add(currentRow);
                             if (_verifyDuplicateFieldKeys)
-                                keys.add(fieldNameValue);
+                                keys.add(existingValueKey);
                         }
                     }
                     else if (null != _keyMap)
                     {
                         Object key = currentRow.get(_keyName);
                         if (null != key)
-                            _keyMap.put(key, _existingValues.get(fieldNameValue));
+                            _keyMap.put(key, _existingValues.get(existingValueKey));
                     }
                 }
             }
             return newRows;
+        }
+
+        protected String getExistingValueKey(Map<String, Object> currentRow, Set<String> fieldNames)
+        {
+            StringBuilder result = new StringBuilder();
+            String sep = "";
+            for (String fieldName : fieldNames)
+                if (currentRow.containsKey(fieldName))
+                {
+                    Object obj = currentRow.get(fieldName);
+                    if (null != obj)
+                    {
+                        result.append(sep).append(obj.toString());
+                        sep = "-";
+                    }
+                }
+            return result.toString();
         }
     }
 }

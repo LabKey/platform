@@ -30,8 +30,10 @@ import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by klum on 1/22/14.
@@ -51,6 +53,16 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
     private ProductAntigenTableTransform _productAntigenTableTransform = new ProductAntigenTableTransform();
     private NonSharedTableMapBuilder _treatmentTableMapBuilder = new NonSharedTableMapBuilder(_treatmentIdMap);
     private TreatmentProductTransform _treatmentProductTransform = new TreatmentProductTransform();
+
+    private static final Set<String> _productAntigenFieldNames = new HashSet<>();
+    static
+    {
+        _productAntigenFieldNames.add("ProductId");
+        _productAntigenFieldNames.add("Gene");
+        _productAntigenFieldNames.add("SubType");
+        _productAntigenFieldNames.add("GenBankId");
+        _productAntigenFieldNames.add("Sequence");
+    }
 
     @Override
     public String getDescription()
@@ -103,8 +115,8 @@ public class TreatmentDataImporter extends DefaultStudyDesignImporter implements
                     List<TransformHelper> transformHelpers = new ArrayList<>();
                     TransformHelper transformHelperComp = null;
 
-//                    transformHelpers.add(new PreserveExistingProjectData(ctx.getUser(), productAntigenTablePackage.getTableInfo(), "GenBankId", "RowId", _productAntigenIdMap));   // TODO: this table needs a Label field or something
-                    transformHelpers.add(_productAntigenTableTransform);
+                    transformHelpers.add(_productAntigenTableTransform);        // Transform ProductIds first
+                    transformHelpers.add(new PreserveExistingProjectData(ctx.getUser(), productAntigenTablePackage.getTableInfo(), _productAntigenFieldNames));
                     transformHelperComp = new TransformHelperComposition(transformHelpers);
                     importTableData(ctx, vf, productAntigenTablePackage, _productAntigenTableMapBuilder, transformHelperComp);
 
