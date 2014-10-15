@@ -48,6 +48,7 @@ import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.util.StringExpression;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.data.xml.ColumnType;
 
 import java.sql.ResultSet;
@@ -327,6 +328,10 @@ public class QueryPivot extends QueryRelation
         {
             parseError("When used with parameterized query, PIVOT requires an explicit values list", null);
             parseError(npnp.getMessage(), null);
+        }
+        catch (UnauthorizedException e)
+        {
+            parseError("Pivot query unauthorized.", null);
         }
 
         return _pivotValues;
