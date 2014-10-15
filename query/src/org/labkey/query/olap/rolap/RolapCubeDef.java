@@ -100,6 +100,10 @@ public class RolapCubeDef
 
     public String getSchemaName() { return factTable.schemaName; }
 
+    public Map<String,String> getAnnotations()
+    {
+        return annotations;
+    }
 
     public String getMembersSQL(HierarchyDef hdef)
     {
@@ -639,7 +643,9 @@ public class RolapCubeDef
 
         public String getSchemaName()
         {
-            String schemaName = findSchemaNameForTable(table, hierarchy.join);
+            String schemaName = null;
+            if (null != hierarchy.join)
+                schemaName = findSchemaNameForTable(table, hierarchy.join);
             if (null != schemaName)
                 return schemaName;
             schemaName = findSchemaNameForTable(table, cube.factTable);
@@ -651,12 +657,14 @@ public class RolapCubeDef
 
         private String findSchemaNameForTable(String table, JoinOrTable jt)
         {
+            if (null == jt)
+                return null;
             if (StringUtils.equalsIgnoreCase(jt.tableName,table))
                 return jt.schemaName;
             String schemaName = null;
             if (null != jt.left)
                 schemaName = findSchemaNameForTable(table, jt.left);
-            if (null == jt && null != jt.right)
+            if (null == schemaName && null != jt.right)
                 schemaName = findSchemaNameForTable(table, jt.right);
             return schemaName;
         }
