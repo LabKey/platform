@@ -299,7 +299,7 @@
                 fieldLabel       : Ext4.util.Format.htmlEncode(meta.label || meta.caption || meta.caption || meta.header || meta.name),
                 originalConfig   : meta,
                 //we assume the store's translateMeta() will handle this
-                allowBlank       : meta.required!==true,
+                allowBlank       : (meta.allowBlank === true) || (meta.required !==true),
                 //disabled: meta.editable===false,
                 name             : meta.name,
                 dataIndex        : meta.dataIndex || meta.name,
@@ -976,7 +976,7 @@
             field.fieldLabel = Ext4.util.Format.htmlEncode(field.label || field.caption || field.header || field.name);
             field.dataIndex  = field.dataIndex || field.name;
             field.editable   = (field.userEditable!==false && !field.readOnly && !field.autoIncrement && !field.calculated);
-            field.allowBlank = field.nullable;
+            field.allowBlank = (field.nullable === true) || (field.required !== true);
             field.jsonType   = field.jsonType || Util.findJsonType(field);
 
             //this will convert values from strings to the correct type (such as booleans)
