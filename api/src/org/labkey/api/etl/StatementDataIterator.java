@@ -286,8 +286,9 @@ class StatementDataIterator extends AbstractDataIterator
             if (StringUtils.startsWith(x.getSQLState(), "22") || RuntimeSQLException.isConstraintException(x))
             {
                 getRowError().addGlobalError(x);
-                _context.checkShouldCancel();
-                return hasNextRow;
+//              see bug21719
+//              Sometimes (always?) Postgres leaves the connection unusable after a constraint exception, so we can't continue even if we want to
+                throw _errors;
             }
             // table does not exists
             else if (SqlDialect.isObjectNotFoundException(x))
