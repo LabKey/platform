@@ -144,7 +144,6 @@ public class FileContentModule extends DefaultModule
 
         // initialize message digests
         ShortMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.SHORT_DIGEST));
-        DailyMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.DAILY_DIGEST));
         ContextListener.addStartupListener(new StartupListener()
         {
             @Override
@@ -159,6 +158,9 @@ public class FileContentModule extends DefaultModule
                 ShortMessageDigest.getInstance().initializeTimer();
             }
         });
+
+        // Note: DailyMessageDigest timer is initialized by the AnnouncementModule
+        DailyMessageDigest.getInstance().addProvider(new FileContentDigestProvider(FileEmailConfig.DAILY_DIGEST));
 
         // initialize message config provider
         MessageConfigService.getInstance().registerConfigType(new FileEmailConfig());

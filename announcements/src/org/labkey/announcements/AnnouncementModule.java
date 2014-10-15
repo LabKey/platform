@@ -50,13 +50,16 @@ import org.labkey.api.security.roles.EditorRole;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.StartupListener;
 import org.labkey.api.view.AlwaysAvailableWebPartFactory;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
+import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -159,8 +162,21 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
         editor.addPermission(SecureMessageBoardRespondPermission.class);
 
         // initialize message digests
-        DailyMessageDigest.getInstance().initializeTimer();
         DailyMessageDigest.getInstance().addProvider(new AnnouncementDigestProvider());
+        ContextListener.addStartupListener(new StartupListener()
+        {
+            @Override
+            public String getName()
+            {
+                return "Daily Message Digest";
+            }
+
+            @Override
+            public void moduleStartupComplete(ServletContext servletContext)
+            {
+                DailyMessageDigest.getInstance().initializeTimer();
+            }
+        });
 
         // initialize message config service and add a config provider for announcements
         ServiceRegistry.get().registerService(MessageConfigService.I.class, new MessageConfigServiceImpl());

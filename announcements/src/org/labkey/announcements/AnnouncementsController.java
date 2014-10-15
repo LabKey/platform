@@ -1724,22 +1724,38 @@ public class AnnouncementsController extends SpringActionController
 
     // Used for testing the daily digest email notifications
     @RequiresSiteAdmin
-    public class SendDailyDigest extends SimpleRedirectAction
+    public class SendDailyDigestAction extends SimpleRedirectAction
     {
         @Override
         public URLHelper getRedirectURL(Object o) throws Exception
         {
-            // Normally, daily digest stops at previous midnight; override to include all messages through now
-            DailyMessageDigest messageDigest = new DailyMessageDigest() {
+            Thread digestThread = new Thread(){
                 @Override
-                protected Date getEndRange(Date current, Date last)
+                public void run()
                 {
-                    return current;
+                    // Normally, daily digest stops at previous midnight; override to include all messages through now
+                    DailyMessageDigest messageDigest = new DailyMessageDigest() {
+                        @Override
+                        protected Date getEndRange(Date current, Date last)
+                        {
+                            return current;
+                        }
+                    };
+
+                    // Just announcements
+                    messageDigest.addProvider(new AnnouncementDigestProvider());
+
+                    try
+                    {
+                        messageDigest.sendMessageDigest();
+                    }
+                    catch (Exception e)
+                    {
+                        e.printStackTrace();
+                    }
                 }
             };
-            // Just announcements
-            messageDigest.addProvider(new AnnouncementDigestProvider());
-            messageDigest.sendMessageDigest();
+            digestThread.start();
 
             return getBeginURL(getContainer());
         }
