@@ -18,17 +18,16 @@ package org.labkey.search.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.SqlSelector;
-import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -132,17 +131,37 @@ public class SavePaths implements DavCrawler.SavePaths
         // However, we need this for the primary key
         int parent = _getParentId(path);
 
-        Map<String, Object> map = new CaseInsensitiveHashMap<>();
-        map.put("Path", toPathString(path));
-        map.put("Name", path.equals(Path.rootPath) ? "/" : path.getName());   // "" is treated like NULL
-        map.put("Parent", parent);
-        map.put("NextCrawl", new Date());
-        map.put("LastCrawled", nullDate);
+        String valuePath = toPathString(path);
+        String valueName = path.equals(Path.rootPath) ? "/" : path.getName();   // "" is treated like NULL
+        int valueParent = parent;
+        Date valueNextCrawl = new Date();
+        Date valueLastCrawled = nullDate;
+
+        DbSchema db = getSearchSchema();
+        TableInfo coll = getSearchSchema().getTable("CrawlCollections");
+        ColumnInfo id = coll.getColumn("id");
+
         try
         {
-            // UNDONE : this has side-effect of setting Modified field (which we're not using anyway)
-            map = Table.insert(User.getSearchUser(), getSearchSchema().getTable("CrawlCollections"), map);
-            return ((Integer)map.get("id"));
+            SQLFragment insert = new SQLFragment(
+                    "INSERT INTO search.crawlcollections (parent, name, path, lastcrawled, nextcrawl)\n" +
+                    "SELECT ? as parent, ? as name, ? as path, ? as lastcrawled, ? as nextcrawl\n" +
+                    "WHERE NOT EXISTS (SELECT * FROM search.crawlcollections WHERE parent=? and name=?)");
+            // values
+            insert.add(valueParent);
+            insert.add(valueName);
+            insert.add(valuePath);
+            insert.add(valueNextCrawl);
+            insert.add(valueLastCrawled);
+            // where
+            insert.add(valueParent);
+            insert.add(valueName);
+            db.getSqlDialect().appendSelectAutoIncrement(insert, id);
+
+            Integer ident = new SqlSelector(getSearchSchema(),insert).getObject(Integer.class);
+            if (null == ident)
+                return getId(path);
+            return ident;
         }
         catch (RuntimeSQLException x)
         {
