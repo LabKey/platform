@@ -288,9 +288,9 @@ public class CoreUpgradeCode implements UpgradeCode
         UsersDomainKind.ensureDomainPropertyScales(domain, context.getUpgradeUser());
     }
 
-    // will be invoked by core-14.22-14.23.sql (future commit)
+    // invoked by core-14.23-14.24.sql
     //
-    // PostgreSQL only. Current PostgreSQL UNIQUE CONSTRAINT has two problems:
+    // PostgreSQL only. Current PostgreSQL uq_container_label_parent UNIQUE CONSTRAINT has two problems:
     // 1. It allows multiple top-level categories with the same name (Parent column is NULLABLE and PostgreSQL doesn't treat NULL as unique)
     // 2. It treats Label as case-sensitive (although the UI prevents entry of multiples that differ by case only)
     // We run this to uniquify the labels so we can add a more constraining constraint. See #21698.
