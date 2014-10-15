@@ -3160,6 +3160,7 @@ study/resources/schemas/dbscripts/postgresql/study-14.14-14.15.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.15-14.16.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.16-14.17.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.17-14.18.sql -text
+study/resources/schemas/dbscripts/postgresql/study-14.20-14.21.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
 study/resources/schemas/dbscripts/sqlserver/obsolete/study-0.00-1.11.sql -text
@@ -3395,6 +3396,7 @@ study/resources/schemas/dbscripts/sqlserver/study-14.13-14.14.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.14-14.15.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.16-14.17.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.17-14.18.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-14.20-14.21.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
 study/resources/schemas/study.xml -text
