@@ -865,6 +865,9 @@
       <ns:column columnName="StringValue"/>
       <ns:column columnName="DatetimeValue"/>
       <ns:column columnName="MvIndicator"/>
+      <ns:column columnName="PropertyId"/>
+      <ns:column columnName="ConceptURI"/>
+      <ns:column columnName="Format"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="ExperimentRunDataInputs" tableDbType="VIEW">
