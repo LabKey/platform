@@ -489,7 +489,7 @@ public class Olap4Js
                 writeRef(member.getLevel(), out);
             }
 
-            if (_includeMemberProperties)
+            if (_includeMemberProperties && null != member.getProperties())
             {
                 String prefix = ",\"properties\":{";
                 String suffix = "";
