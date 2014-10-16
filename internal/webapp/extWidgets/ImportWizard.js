@@ -176,7 +176,7 @@ Ext4.define('LABKEY.ext.ImportWizard', {
             typeAhead: true,
             minChars: 0,
             listConfig: {
-                itemTpl: Ext4.create('Ext.XTemplate', '<tpl for=".">{Title} ({RowId})</tpl>').compile()
+                itemTpl: Ext4.create('Ext.XTemplate', '<tpl for=".">{Title} ({Name})</tpl>').compile()
             },
             width: 400,
             queryMode: 'local',

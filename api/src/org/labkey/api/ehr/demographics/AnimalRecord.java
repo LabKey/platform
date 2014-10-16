@@ -54,6 +54,8 @@ public interface AnimalRecord
 
     public Date getBirth();
 
+    public boolean hasBirthRecord();
+
     public Date getDeath();
 
     public String getGeographicOrigin();
