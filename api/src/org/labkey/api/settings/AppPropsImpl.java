@@ -563,4 +563,11 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     {
         return useContainerRelativeURLByDefault || isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_CONTAINER_RELATIVE_URL);
     }
+
+    @Override
+    public boolean isTeamCityEnviornment()
+    {
+        String buildConfName = System.getProperty("teamcity.buildConfName");
+        return StringUtils.isNotBlank(buildConfName);
+    }
 }

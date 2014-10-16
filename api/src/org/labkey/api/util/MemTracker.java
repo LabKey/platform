@@ -51,6 +51,7 @@ public class MemTracker
     private final List<RequestInfo> _recentRequests = new LinkedList<>();
 
     private static final String UNVIEWED_KEY = "memtracker-unviewed-requests";
+    private static final int MAX_UNVIEWED = 100;
 
     /** Only keep a short history of allocations for the most recent requests */
     private static final int MAX_TRACKED_REQUESTS = 500;
@@ -208,9 +209,9 @@ public class MemTracker
 
     private void trimOlderRequests()
     {
-        while (_recentRequests.size() > MAX_TRACKED_REQUESTS)
+        if (_recentRequests.size() > MAX_TRACKED_REQUESTS)
         {
-            _recentRequests.remove(0);
+            _recentRequests.subList(0, _recentRequests.size() - MAX_TRACKED_REQUESTS).clear();
         }
     }
 
@@ -230,6 +231,10 @@ public class MemTracker
             if (unviewed == null)
                 session.setAttribute(UNVIEWED_KEY, unviewed = new ArrayList<>());
             unviewed.add(id);
+            if (unviewed.size() > MAX_UNVIEWED)
+            {
+                unviewed.subList(0, unviewed.size() - MAX_UNVIEWED).clear();
+            }
         }
     }
 

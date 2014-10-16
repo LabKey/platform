@@ -923,19 +923,19 @@ LABKEY.internal.MiniProfiler = new function () {
 
             XMLHttpRequest.prototype.send = function sendReplacement(data) {
                 if (this.onreadystatechange) {
-                    //if (!this._onreadystatechange) {
-                    this._onreadystatechange = this.onreadystatechange;
+                    if (!this._onreadystatechange) {
+                        this._onreadystatechange = this.onreadystatechange;
 
-                    this.onreadystatechange = function onReadyStateChangeReplacement()
-                    {
-                        if (this.readyState == 4) {
-                            var stringIds = this.getResponseHeader('X-MiniProfiler-Ids');
-                            fetchIds(stringIds);
-                        }
+                        this.onreadystatechange = function onReadyStateChangeReplacement()
+                        {
+                            if (this.readyState == 4) {
+                                var stringIds = this.getResponseHeader('X-MiniProfiler-Ids');
+                                fetchIds(stringIds);
+                            }
 
-                        return this._onreadystatechange.apply(this, arguments);
+                            return this._onreadystatechange.apply(this, arguments);
+                        };
                     }
-                    //}
                 }
 
                 return _send.apply(this, arguments);

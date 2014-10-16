@@ -27,6 +27,10 @@ public class MiniProfiler
 
     public static boolean isEnabled(ViewContext context)
     {
+        // Disable when running within TeamCity
+        if (AppProps.getInstance().isTeamCityEnviornment())
+            return false;
+
         // TODO: site-level and/or user-level settings to enable/disable
 //        if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_MINI_PROFILER))
 //            return false;

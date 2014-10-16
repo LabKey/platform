@@ -99,6 +99,7 @@ public class AppProps
         public String getWebappConfigurationFilename();
         public String getAdministratorContactEmail();
         public boolean getUseContainerRelativeURL();
+        public boolean isTeamCityEnviornment();
     }
 
     public static final String EXPERIMENTAL_CONTAINER_RELATIVE_URL = "containerRelativeURL";
