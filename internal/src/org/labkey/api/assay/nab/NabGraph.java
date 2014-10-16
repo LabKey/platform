@@ -331,14 +331,8 @@ public class NabGraph
 
             pointDataset.addSeries(pointSeries);
             int pointDatasetCount = pointDataset.getSeriesCount();
-            Color currentColor;
-            if (pointDatasetCount <= GRAPH_COLORS.length)
-            {
-                currentColor = GRAPH_COLORS[pointDatasetCount - 1];
-                plot.getRenderer(0).setSeriesPaint(pointDatasetCount - 1, currentColor);
-            }
-            else
-                currentColor = (Color) plot.getRenderer(0).getSeriesPaint(pointDatasetCount - 1);
+            Color currentColor = GRAPH_COLORS[(pointDatasetCount - 1) % GRAPH_COLORS.length];
+            plot.getRenderer(0).setSeriesPaint(pointDatasetCount - 1, currentColor);
 
             try
             {
@@ -347,8 +341,7 @@ public class NabGraph
                 for (DoublePoint point : curve)
                     curvedSeries.add(point.getX(), point.getY());
                 curvesDataset.addSeries(curvedSeries);
-                if (currentColor != null)
-                    plot.getRenderer(1).setSeriesPaint(curvesDataset.getSeriesCount() - 1, currentColor);
+                plot.getRenderer(1).setSeriesPaint(curvesDataset.getSeriesCount() - 1, currentColor);
             }
             catch (FitFailedException e)
             {
