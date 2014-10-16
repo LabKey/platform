@@ -44,12 +44,15 @@
 
     String containerPath = (String)ctx.getForm().get(ThawListResolverType.THAW_LIST_LIST_CONTAINER_INPUT_NAME);
     Container container = containerPath == null ? null : ContainerManager.getForPath(containerPath);
+
+    String textTypeId = "RadioBtn-" + ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME + "-" + ThawListResolverType.TEXT_NAMESPACE_SUFFIX;
+    String listTypeId = "RadioBtn-" + ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME + "-" + ThawListResolverType.LIST_NAMESPACE_SUFFIX;
 %>
 <table>
     <% if (renderAll)
     { %>
         <tr>
-            <td><input type="radio" name="<%= text(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME) %>" <%=checked(textType)%> value="<%= text(ThawListResolverType.TEXT_NAMESPACE_SUFFIX) %>" onClick="document.getElementById('SQVPicker').style.display='none'; document.getElementById('ThawListDiv-TextArea').style.display='block';"></td>
+            <td><input type="radio" id="<%= text(textTypeId)%>" name="<%= text(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME) %>" <%=checked(textType)%> value="<%= text(ThawListResolverType.TEXT_NAMESPACE_SUFFIX) %>" onClick="document.getElementById('SQVPicker').style.display='none'; document.getElementById('ThawListDiv-TextArea').style.display='block'; toggleDisableResetDefault(true);"></td>
             <td>Paste a sample list as a TSV (tab-separated values)<%= helpPopup("Sample Lookup", "A lookup lets you assign a mapping from your own specimen numbers to participants and visits. The format is a tab-separated values (TSV), requiring the columns 'Index' and using the values of the columns 'SpecimenID', 'ParticipantID', and 'VisitID', and 'Date'. All columns headers are required, even if the fields are not populated.<p>To use the template, fill in the values, select the entire spreadsheet (Ctrl-A), copy it to the clipboard, and paste it into the text area below.", true) %> <%=textLink("download template", request.getContextPath()+"/study/assay/SampleLookupTemplate.xls")%></td>
         </tr>
         <tr>
@@ -59,7 +62,7 @@
     <%
     } %>
     <tr>
-        <td><input type="radio" name="<%= text(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME) %>"<%=checked(listType)%> value="<%= text(ThawListResolverType.LIST_NAMESPACE_SUFFIX) %>" onClick="showChooseList()"></td>
+        <td ><input type="radio" id="<%= text(listTypeId)%>" name="<%= text(ThawListResolverType.THAW_LIST_TYPE_INPUT_NAME) %>"<%=checked(listType || !renderAll)%> value="<%= text(ThawListResolverType.LIST_NAMESPACE_SUFFIX) %>" onClick="showChooseList(); toggleDisableResetDefault(false);"></td>
         <td>Use an existing sample list<%= helpPopup("Sample Lookup", "A lookup lets you assign a mapping from your own specimen numbers to participants and visits. The target list must have your own specimen identifier as its primary key, and uses the values of the 'SpecimenID', 'ParticipantID', 'Date', and 'VisitID' columns. All columns are required, even if they are not populated in the list.") %></td>
     </tr>
     <tr>
@@ -132,6 +135,28 @@
         if (thawListTextArea != null)
                 thawListTextArea.style.display='none';
     };
+
+    var handleAllowedDefaultOptionsForThawList = function() {
+
+        if (document.getElementById('RadioBtn-Lookup').checked)
+        {
+            if (<%=textType%>)
+                toggleDisableResetDefault(true); // Don't allow trying to set the default to the text type, as this is not supported.
+        }
+        else
+            toggleDisableResetDefault(false);
+    };
+
+    var toggleDisableResetDefault = function(disabled) {
+        var resetDefaultBtn = Ext.get('Btn-ResetDefaultValues');
+        if (resetDefaultBtn)
+        {
+            if (disabled)
+                resetDefaultBtn.replaceClass('labkey-button', 'labkey-disabled-button');
+            else resetDefaultBtn.replaceClass('labkey-disabled-button', 'labkey-button');
+        }
+    };
+
     <% if (renderAll)
     { %>
     // Allow tabs in the TSV text area

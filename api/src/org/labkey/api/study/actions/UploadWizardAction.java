@@ -359,6 +359,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
         ActionButton resetDefaultsButton = new ActionButton(getViewContext().cloneActionURL().deleteParameters(), "Reset Default Values");
         resetDefaultsButton.setScript("this.form.action=\"" + getViewContext().getActionURL().getAction() + ".view" + "\"; " + insertView.getDataRegion().getJavascriptFormReference(false) + ".resetDefaultValues.value = \"true\";");
         resetDefaultsButton.setActionType(ActionButton.Action.POST);
+        resetDefaultsButton.setId("Btn-ResetDefaultValues");
         bbar.add(resetDefaultsButton);
     }
 
