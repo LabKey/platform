@@ -26,6 +26,7 @@ import org.labkey.api.study.assay.AssayService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.RedirectException;
+import org.labkey.api.view.UnauthorizedException;
 import org.labkey.api.view.ViewForm;
 
 /**
@@ -123,7 +124,7 @@ public class ProtocolIdForm extends ViewForm
             // even if we don't validate that the protocol is from the current or project container,
             // we still make sure that the current user can read from the protocol container:
             if (!protocol.getContainer().hasPermission(getViewContext().getUser(), ReadPermission.class))
-                throw new NotFoundException();
+                throw new UnauthorizedException();
 
             AssayProvider provider = AssayService.get().getProvider(protocol);
             if (provider == null)
