@@ -601,7 +601,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     @Override
     public boolean isTeamCityEnviornment()
     {
-        String buildConfName = System.getProperty("teamcity.buildConfName");
+        String buildConfName = System.getProperty("teamcity.build.id");
         return StringUtils.isNotBlank(buildConfName);
     }
 }
