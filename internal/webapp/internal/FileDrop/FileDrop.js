@@ -172,8 +172,6 @@ LABKEY.internal.FileDrop = new function () {
                 "</span>" +
                 "</div>";
 
-        document.body.appendChild(zone);
-
         return zone;
     }
 
@@ -188,11 +186,35 @@ LABKEY.internal.FileDrop = new function () {
         var el = config.el || createDefaultZone();
         // TODO: listen for el removed event to cleanup the Dropzone
 
+        // this (passing the dropzone) is silly but it works.
+        Dropzone.prototype.setEnabled = function(bool) {
+            if (bool)
+            {
+                this.enable();
+                document.body.appendChild(this.element);
+            }
+            else
+            {
+                this.disable();
+                try {
+                    document.body.removeChild(this.element);
+                }
+                catch (e) {
+                    if (e.name != 'NotFoundError') throw e;
+                }
+            }
+        };
+
         var dropzone = new Dropzone(el, config);
         dropzone.peer = peer;
         dropzone.on("dragenter", zoneDragEnter);
         dropzone.on("dragover", zoneDragOver);
         dropzone.on("drop", zoneDrop);
+
+        if (config.disabled)
+            dropzone.disable();
+        else
+            document.body.appendChild(dropzone.element);
 
         registered.push(dropzone);
 
