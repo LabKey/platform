@@ -123,6 +123,7 @@
                         extensions: R_EXTENSIONS,
                         machine:'<%=text(RReport.DEFAULT_R_MACHINE)%>',
                         port:<%=RReport.DEFAULT_R_PORT%>,
+                        exeCommand:'<%=text(RReport.DEFAULT_RSERVE_CMD)%>',
                         outputFileName: <%= q(ExternalScriptEngine.SCRIPT_NAME_REPLACEMENT + ".Rout") %>,
                         external: true,
                         enabled: true,
@@ -568,10 +569,10 @@
         else
         {
             panelItems.push(itemPath);
-            panelItems.push(itemCmd);
         }
 
         // common items for both local and remote
+        panelItems.push(itemCmd);
         panelItems.push(itemOutputFileName);
         panelItems.push(itemEnabled);
         panelItems.push(itemExternal);
