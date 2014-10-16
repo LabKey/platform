@@ -276,6 +276,12 @@ public class DavController extends SpringActionController
         String method = getViewContext().getActionURL().getAction();
         Controller action = resolveAction(method.toLowerCase());
 
+        if (null == action)
+        {
+            _webdavresponse.sendError(WebdavStatus.SC_METHOD_NOT_ALLOWED);
+            return null;
+        }
+
         Class<? extends Controller> actionClass = action.getClass();
         if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
         {
