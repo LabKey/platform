@@ -15,6 +15,7 @@
  */
 package org.labkey.api.settings;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.util.ExceptionReportingLevel;
@@ -57,6 +58,7 @@ public class AppProps
         public boolean isMailRecorderEnabled();
         public boolean isExperimentalFeatureEnabled(String feature);
         public boolean isDevMode();
+        public @Nullable String getEnlistmentId();
         public boolean isCachingAllowed();
         public boolean isRecompileJspEnabled();
         public void setProjectRoot(String projectRoot);

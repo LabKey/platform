@@ -22,6 +22,7 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.ExceptionReportingLevel;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -36,12 +37,16 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -56,6 +61,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     private String _scheme;
     private String _serverName;
     private String _projectRoot = null;
+    private String _enlistmentId = null;
 
     protected static final String LOOK_AND_FEEL_REVISION = "logoRevision";
     protected static final String DEFAULT_DOMAIN_PROP = "defaultDomain";
@@ -184,6 +190,8 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         _serverPort = request.getServerPort();
         _scheme = request.getScheme();
         _serverName = request.getServerName();
+
+
     }
 
 
@@ -462,6 +470,12 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         return Boolean.getBoolean("devmode");
     }
 
+    @Override
+    public @Nullable String getEnlistmentId()
+    {
+        return _enlistmentId;
+    }
+
     public boolean isCachingAllowed()
     {
         return Boolean.getBoolean("caching") || !isDevMode();
@@ -475,6 +489,26 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     public void setProjectRoot(String projectRoot)
     {
         _projectRoot = projectRoot;
+
+        if (null != _projectRoot)
+        {
+            File file = new File(_projectRoot, "enlistment.properties");
+
+            if (file.exists())
+            {
+                Properties props = new Properties();
+
+                try (InputStream is = new FileInputStream(file))
+                {
+                    props.load(is);
+                    _enlistmentId = props.getProperty("enlistment.id");
+                }
+                catch (IOException e)
+                {
+                    ExceptionUtil.logExceptionToMothership(null, e);
+                }
+            }
+        }
     }
 
     // Return the root of the main source tree

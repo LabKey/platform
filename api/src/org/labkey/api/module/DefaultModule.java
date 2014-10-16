@@ -137,6 +137,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     private String _buildPath = null;
     private String _sourcePath = null;
     private String _buildNumber = null;
+    private String _enlistmentId = null;
     private File _explodedPath = null;
     protected String _resourcePath = null;
     private boolean _requireSitePermission = false;
@@ -782,6 +783,17 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         _buildNumber = buildNumber;
     }
 
+    public String getEnlistmentId()
+    {
+        return _enlistmentId;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setEnlistmentId(String enlistmentId)
+    {
+        _enlistmentId = enlistmentId;
+    }
+
     public Map<String, String> getProperties()
     {
         Map<String, String> props = new LinkedHashMap<>();
@@ -798,6 +810,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         props.put("Build Path", getBuildPath());
         props.put("Source Path", getSourcePath());
         props.put("Build Number", getBuildNumber());
+        props.put("Enlistment ID", getEnlistmentId());
         props.put("Module Dependencies", StringUtils.trimToNull(getModuleDependencies()) == null ? "<none>" : getModuleDependencies());
 
         return props;
@@ -1122,16 +1135,34 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     @NotNull
     protected List<File> getResourceDirectories()
     {
+        // We load resources from the module's source directory if all of the following conditions are true:
+        //
+        // - devmode = true
+        // - The module has an enlistment ID set
+        // - The web server has a source path that matches the core module's source path
+        // - The enlistment ID in the web servers source root matches the module's enlistment ID
+        // - The module's source path exists on the web server
+        //
         if (AppProps.getInstance().isDevMode())
         {
-            String sourcePath = getSourcePath();
+            String moduleEnlistmentId = getEnlistmentId();
 
-            if (null != sourcePath)
+            if (null != moduleEnlistmentId)
             {
-                File sourceDir = new File(sourcePath);
+                String serverEnlisthmentId = AppProps.getInstance().getEnlistmentId();
 
-                if (sourceDir.isDirectory())
-                    return getResourceDirectory(sourceDir);
+                if (null != serverEnlisthmentId && serverEnlisthmentId.equals(moduleEnlistmentId))
+                {
+                    String sourcePath = getSourcePath();
+
+                    if (null != sourcePath)
+                    {
+                        File sourceDir = new File(sourcePath);
+
+                        if (sourceDir.isDirectory())
+                            return getResourceDirectory(sourceDir);
+                    }
+                }
             }
         }
 
