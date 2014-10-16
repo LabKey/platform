@@ -125,7 +125,11 @@
     //noinspection JSUnresolvedFunction
     addParticipantVisitResolverSelectionChangeListener(function()
     {
-        thawListQueryPickerPanel.doLayout();
+        handleAllowedDefaultOptionsForThawList();
+        if (document.getElementById('<%=text(listTypeId)%>').checked)
+            showChooseList();
+        else
+            thawListQueryPickerPanel.doLayout();
     });
 
     var showChooseList = function(){
@@ -140,7 +144,8 @@
 
         if (document.getElementById('RadioBtn-Lookup').checked)
         {
-            if (<%=textType%>)
+            var textRadio = Ext.get('<%=text(textTypeId)%>');
+            if ((textRadio && textRadio.dom.checked) || <%=textType%>)
                 toggleDisableResetDefault(true); // Don't allow trying to set the default to the text type, as this is not supported.
         }
         else

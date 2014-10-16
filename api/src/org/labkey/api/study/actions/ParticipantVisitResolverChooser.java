@@ -100,8 +100,7 @@ public class ParticipantVisitResolverChooser extends SimpleDisplayColumn
                 out.write(" onClick=\"typeElements = document.getElementsByName('" + _typeInputName+ "'); " +
                         "for (i = 0; i < typeElements.length; i++) " +
                         "{ var resolverSubSectionDiv = document.getElementById('ResolverDiv-' + typeElements[i].value); " +
-                        " if (resolverSubSectionDiv != null) resolverSubSectionDiv.style.display='none'; } " +
-                        " if (Ext.isFunction(handleAllowedDefaultOptionsForThawList)) handleAllowedDefaultOptionsForThawList();"
+                        " if (resolverSubSectionDiv != null) resolverSubSectionDiv.style.display='none'; } "
                 );
 
                 RenderSubSelectors renderSubs = renderResolverSubSelectors(resolver);
