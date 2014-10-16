@@ -15,6 +15,8 @@
  */
 package org.labkey.api.study.assay;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -26,8 +28,12 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerFilterable;
 import org.labkey.api.data.ContainerForeignKey;
+import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DisplayColumn;
+import org.labkey.api.data.DisplayColumnFactory;
 import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
@@ -76,6 +82,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.data.xml.TableType;
 import org.springframework.validation.BindException;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -687,7 +694,7 @@ public abstract class AssayProtocolSchema extends AssaySchema
 
     public void fixupRenderers(final ColumnRenderProperties col, ColumnInfo columnInfo)
     {
-        if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equals(col.getName()))
+        if (AbstractAssayProvider.TARGET_STUDY_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
         {
             columnInfo.setFk(new LookupForeignKey("Folder", "Label")
             {
@@ -705,6 +712,14 @@ public abstract class AssayProtocolSchema extends AssaySchema
                 }
             });
         }
+        else if (AbstractAssayProvider.PARTICIPANT_VISIT_RESOLVER_PROPERTY_NAME.equalsIgnoreCase(col.getName()))
+            columnInfo.setDisplayColumnFactory(new DisplayColumnFactory()
+            {
+                public DisplayColumn createRenderer(ColumnInfo colInfo)
+                {
+                    return new ParticipantVisitResolverColumn(colInfo);
+                }
+            });
     }
 
     /**
@@ -749,5 +764,41 @@ public abstract class AssayProtocolSchema extends AssaySchema
         // Include the legacy schema/query name so we don't lose old reports
         result.add(ReportUtil.getReportKey(AssaySchema.NAME, getLegacyProtocolTableName(getProtocol(), queryName)));
         return result;
+    }
+
+    private class ParticipantVisitResolverColumn extends DataColumn
+    {
+        public ParticipantVisitResolverColumn(ColumnInfo colInfo)
+        {
+            super(colInfo);
+        }
+
+        @Override
+        public String getFormattedValue(RenderContext ctx)
+        {
+            // Value may be a simple string (legacy), or JSON.
+
+            Object val = super.getDisplayValue(ctx);
+
+            try
+            {
+                Map<String, String> decodedVals = new ObjectMapper().readValue(val.toString(), Map.class);
+                StringBuilder sb = new StringBuilder(decodedVals.remove(ParticipantVisitResolverType.Serializer.STRING_VALUE_PROPERTY_NAME));
+                for (Map.Entry<String, String> decodedVal : decodedVals.entrySet())
+                {
+                    sb.append("<br/>");
+                    sb.append(StringUtils.substringAfter(decodedVal.getKey(), ThawListResolverType.NAMESPACE_PREFIX));
+                    sb.append(" : ");
+                    sb.append(decodedVal.getValue());
+                }
+
+                return sb.toString();
+            }
+            catch (IOException e)
+            {
+                // Value wasn't JSON, was a legacy simple string. Output it
+                return  val.toString();
+            }
+        }
     }
 }
