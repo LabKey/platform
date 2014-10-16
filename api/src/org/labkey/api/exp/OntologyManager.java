@@ -1052,6 +1052,7 @@ public class OntologyManager
                 {
                     for (Map.Entry<String, ObjectProperty> entry : mtemp.entrySet())
                     {
+                        entry.getValue().setPropertyId(0);
                         if (entry.getValue().getPropertyURI().equals(propURI))
                             mObjsUsingMyProps.put(entry.getKey(), entry.getValue());
                     }
@@ -1265,8 +1266,11 @@ public class OntologyManager
                 for (ObjectProperty op : mMyObjsThatRefProjProps.values())
                 {
                     deleteProperty(op.getObjectURI(), op.getPropertyURI(), op.getContainer(), oldProject);
+                    // Treat it as new so it's created in the target container as needed
+                    op.setPropertyId(0);
                     insertProperties(op.getContainer(), op.getObjectURI(), op);
                 }
+                clearCaches();
             }
 
             transaction.commit();
