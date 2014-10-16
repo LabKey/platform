@@ -15,6 +15,7 @@
  */
 package org.labkey.study.importer;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -107,10 +108,10 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                 Map<String, Object> currentRow = new CaseInsensitiveHashMap<>();
                 currentRow.putAll(row);
 
-                if (currentRow.containsKey(_fieldName))
+                String existingValueKey = getExistingValueKey(currentRow, _fieldNames);
+                if (StringUtils.isNotEmpty(existingValueKey))
                 {
-                    String fieldNameValue = currentRow.get(_fieldName).toString();
-                    if (!_existingValues.containsKey(fieldNameValue))
+                    if (!_existingValues.containsKey(existingValueKey))
                     {
                         // try to line up the userId field with an existing user with the same exported display name
                         currentRow.put("userId", null);
@@ -135,7 +136,7 @@ public class StudyPropertiesImporter extends DefaultStudyDesignImporter
                     {
                         Object key = currentRow.get(_keyName);
                         if (null != key)
-                            _keyMap.put(key, _existingValues.get(fieldNameValue));
+                            _keyMap.put(key, _existingValues.get(existingValueKey));
                     }
                 }
             }
