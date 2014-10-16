@@ -19,6 +19,7 @@ package org.labkey.api.reports.report;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerManager;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -43,6 +44,8 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.JspTemplate;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.writer.ContainerUser;
+import org.labkey.api.writer.DefaultContainerUser;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -401,9 +404,10 @@ public class RReport extends ExternalScriptEngineReport
 
             if (reportId != null)
             {
-                Report report = reportId.getReport(context);
+                ContainerUser containerUser = new DefaultContainerUser(getOwningContainer(context), context.getUser());
+                Report report = reportId.getReport(containerUser);
 
-                if (validateSharedPermissions(context, report) && RReport.class.isAssignableFrom(report.getClass()))
+                if (validateSharedPermissions(containerUser, report) && RReport.class.isAssignableFrom(report.getClass()))
                 {
                     final String rName = report.getDescriptor().getProperty(ReportDescriptor.Prop.reportName);
                     final String rScript = report.getDescriptor().getProperty(ScriptReportDescriptor.Prop.script);
@@ -508,7 +512,7 @@ public class RReport extends ExternalScriptEngineReport
         outputSubst.add(param);
     }
 
-    private boolean validateSharedPermissions(ViewContext context, Report report)
+    private boolean validateSharedPermissions(ContainerUser context, Report report)
     {
         if (report != null)
         {
@@ -529,14 +533,29 @@ public class RReport extends ExternalScriptEngineReport
         return false;
     }
 
+    private Container getOwningContainer(ViewContext context)
+    {
+        Container c = context.getContainer();
+
+        // issue 20205 if this is a shared report the sharable scripts should come from the owning container
+        if (ReportUtil.isReportInherited(c, this))
+        {
+            Container base = ContainerManager.getForId(this.getContainerId());
+            if (base != null)
+                c = base;
+        }
+        return c;
+    }
+
     public List<Report> getAvailableSharedScripts(ViewContext context, ScriptReportBean bean) throws Exception
     {
         List<Report> scripts = new ArrayList<>();
 
         String reportKey = ReportUtil.getReportKey(bean.getSchemaName(), bean.getQueryName());
         String reportName = bean.getReportName();
+        Container c = getOwningContainer(context);
 
-        for (Report r : ReportUtil.getReports(context.getContainer(), context.getUser(), reportKey, true))
+        for (Report r : ReportUtil.getReports(c, context.getUser(), StringUtils.isBlank(reportKey) ? null : reportKey, true))
         {
             // List only R scripts.  TODO: Need better, more general mechanism for this
             if (!RReportDescriptor.class.isAssignableFrom(r.getDescriptor().getClass()))
