@@ -110,6 +110,8 @@ Ext4.define('File.panel.Upload', {
             clickable: true,
             createImageThumbnails: false,
 
+            disabled: true,
+
             previewsContainer: false,
 
             maxFiles: 5000,
@@ -136,13 +138,6 @@ Ext4.define('File.panel.Upload', {
 
                 var record = this.uploadPanel.getWorkingDirectory('model');
                 var path = this.uploadPanel.getWorkingDirectory('path');
-
-                if (!record || path == '/') {
-                    // TODO: The browser's tree store doesn't include a model record for the root node,
-                    // TODO: so just allow the upload and let the server send back an error if it fails.
-                    done();
-                    return;
-                }
 
                 // Check permissions before sending
                 var canWrite = this.uploadPanel.fileSystem.canWrite(record);
@@ -681,6 +676,12 @@ Ext4.define('File.panel.Upload', {
     changeWorkingDirectory : function(path, model, cwd) {
         this.workingDirectory = {path: path, model: model, cwd: cwd};
         this.fireEvent('cwd', model, path);
+    },
+
+    onLoad : function() {
+        var record = this.dropzone.uploadPanel.getWorkingDirectory('model');
+        var canWrite = this.dropzone.uploadPanel.fileSystem.canWrite(record);
+        this.dropzone.setEnabled(canWrite);
     },
 
     getWorkingDirectory : function(variable) {

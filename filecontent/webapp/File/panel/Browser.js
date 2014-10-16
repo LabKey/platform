@@ -1155,7 +1155,7 @@ Ext4.define('File.panel.Browser', {
         if (!skipStore) {
 
             var listeners = {
-                load : {
+                load: {
                     fn : function(s) {
                         this.loadRootNode();
                         this.ensureVisible(this.fileSystem.getOffsetURL());
@@ -1209,6 +1209,7 @@ Ext4.define('File.panel.Browser', {
         var tree = this.getComponent('treenav');
         if (tree) {
             var store = tree.getView().getTreeStore();
+            var uploadPanel = this.uploadPanel;
             proxy.read(new Ext4.data.Operation({action: 'read'}), function(s) {
                 var options;
                 if (s.success) {
@@ -1219,6 +1220,7 @@ Ext4.define('File.panel.Browser', {
                     options = {COPY: false, DELETE: false, GET: false, HEAD: false, LOCK: false, MKCOL: false, MOVE: false, OPTIONS: false, POST: false, PROPFIND: false, PUT: false, UNLOCK: false };
                 }
                 store.tree.root.data.options = options;
+                uploadPanel.onLoad();
             });
         }
     },
@@ -1908,8 +1910,8 @@ Ext4.define('File.panel.Browser', {
                 },
                 render : {
                     fn : function(up) {
-                        // TODO: we need a model for the root node so we can check fileSystem.canWrite(model) in the upload panel
-                        up.changeWorkingDirectory(this.getFolderOffset(), null, this.getCurrentDirectory());
+                        var store = this.getComponent('treenav').getView().getTreeStore();
+                        up.changeWorkingDirectory(this.getFolderOffset(), store.tree.root, this.getCurrentDirectory());
                     },
                     single: true
                 },
