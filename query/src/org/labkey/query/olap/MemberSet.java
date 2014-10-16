@@ -259,6 +259,23 @@ public class MemberSet extends AbstractSet<Member>
         return count;
     }
 
+    public static MemberSet createRegularMembers(Level level) throws OlapException
+    {
+        MemberSet ret = new MemberSet();
+        for (Member m : level.getMembers())
+            if (!m.isCalculated())
+                ret.add(m);
+        return ret;
+    }
+
+    public static MemberSet createRegularMembers(Member member) throws OlapException
+    {
+        MemberSet ret = new MemberSet();
+        for (Member m : member.getChildMembers())
+            if (!m.isCalculated())
+                ret.add(m);
+        return ret;
+    }
 
     /** return level if all members are from one level, else null */
     @Nullable

@@ -44,7 +44,11 @@ import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.LimitedUser;
+import org.labkey.api.security.PrincipalType;
 import org.labkey.api.security.User;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
@@ -238,13 +242,13 @@ public class ServerManager
     }
 
 
-    public static Cube getCachedCube(OlapSchemaDescriptor d, OlapConnection conn, final Container c, final User user, String schemaName, String cubeName, BindException errors)
+    public static Cube getCachedCube(@NotNull OlapSchemaDescriptor sd, OlapConnection conn, final Container c, final User user, String schemaName, String cubeName, BindException errors)
             throws SQLException, IOException
     {
-        if (OlapController.strategy == OlapController.ImplStrategy.rolapYourOwn)
-            return getCachedCubeRolap(d,c,user,cubeName,null);
+        if (sd.usesRolap())
+            return getCachedCubeRolap(sd, c, user, cubeName, null);
         else
-            return getCachedCubeMondrian(d,conn,c,user,schemaName,cubeName,errors);
+            return getCachedCubeMondrian(sd, conn, c, user, schemaName, cubeName, errors);
     }
 
 
@@ -404,9 +408,10 @@ public class ServerManager
     }
 
 
-    public static String warmCube(User u, Container c, String schemaName, String configId, String cubeName)
+    public static String warmCube(User user, Container c, String schemaName, String configId, String cubeName)
     {
         String result;
+
         try
         {
             result = "Starting warm of " + cubeName + " in container " + c.getName();
@@ -417,13 +422,29 @@ public class ServerManager
             if (null == sd)
                 return "Error: No cached descriptor found for " + configId + " in container " + c.getName();
 
-            OlapConnection conn = sd.getConnection(c, u);
-            if (null == conn)
-                return "Error: No olap connection for " + cubeName + " in container " + c.getName();
+            User warmCubeUser;
+            OlapConnection conn = null;
+
+            if (sd.usesMondrian())
+            {
+                warmCubeUser = user;
+                conn = sd.getConnection(c, warmCubeUser);
+                if (null == conn)
+                    return "Error: No olap connection for " + cubeName + " in container " + c.getName();
+            }
+            else
+            {
+                // OK: to leave OlapConnection null as it is not used in any configuration except Mondrian
+                warmCubeUser = new LimitedUser(User.guest, new int[0], Collections.singleton(RoleManager.getRole(ReaderRole.class)), false);
+                warmCubeUser.setPrincipalType(PrincipalType.SERVICE);
+                warmCubeUser.setDisplayName("Warm OLAP Cache User");
+                warmCubeUser.setEmail("warmolapcache@labkey.org");
+                warmCubeUser.setEntityId(new GUID());
+            }
 
             long s = System.currentTimeMillis();
 
-            Cube cube = getCachedCube(sd, conn, c, u, schemaName, cubeName, getDummyBindException());
+            Cube cube = getCachedCube(sd, conn, c, warmCubeUser, schemaName, cubeName, getDummyBindException());
 
             if (null == cube)
                 return "Error: No cached cube for " + cubeName + " in container " + c.getName();

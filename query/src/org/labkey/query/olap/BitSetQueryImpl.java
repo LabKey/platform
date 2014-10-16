@@ -43,7 +43,6 @@ import org.labkey.api.util.GUID;
 import org.labkey.api.util.ResultSetUtil;
 import org.labkey.api.visualization.SQLGenerationException;
 import org.labkey.api.visualization.VisualizationService;
-import org.labkey.query.controllers.OlapController;
 import org.labkey.query.olap.metadata.CachedCube;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.olap4j.CellSet;
@@ -78,6 +77,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+
 import static org.labkey.query.olap.QubeQuery.OP;
 
 /**
@@ -110,11 +110,7 @@ public class BitSetQueryImpl
     SqlDialect dialect = null;
     final User serviceUser;
     final User user;
-
-    CubeDataSourceHelper _cdsh = new CubeDataSourceHelper();
-    SqlDataSourceHelper _sdsh = new SqlDataSourceHelper();
-    IDataSourceHelper _dataSourceHelper = OlapController.strategy == OlapController.ImplStrategy.rolapYourOwn ? _sdsh : _cdsh;
-
+    IDataSourceHelper _dataSourceHelper; // configured based on the provided OlapSchemaDescriptor
 
     MemberSet containerMembers = null;  // null == all
 
@@ -129,6 +125,11 @@ public class BitSetQueryImpl
         this.qq = qq;
         this.cube = qq.getCube();
         this.errors = errors;
+
+        if (sd.usesRolap())
+            _dataSourceHelper = new SqlDataSourceHelper();
+        else
+            _dataSourceHelper = new CubeDataSourceHelper();
 
         RolapCubeDef r = null;
         List<RolapCubeDef> defs = sd.getRolapCubeDefinitions();
@@ -612,7 +613,6 @@ public class BitSetQueryImpl
         if (m.getLevel().getDepth() == filter.getDepth())
         {
             list.add(m);
-            return;
         }
         else if (m.getLevel().getDepth() > filter.getDepth())
         {
@@ -622,12 +622,12 @@ public class BitSetQueryImpl
         {
             if (m.getLevel().getDepth() + 1 == filter.getDepth())
             {
-                list.addAll(m.getChildMembers());
-                return;
+                list.addAll(MemberSet.createRegularMembers(m));
             }
-            for (Member c : m.getChildMembers())
+            else
             {
-                addChildrenOrParentInLevel(c, filter, list);
+                for (Member c : m.getChildMembers())
+                    addChildrenOrParentInLevel(c, filter, list);
             }
         }
     }
@@ -1977,23 +1977,19 @@ public class BitSetQueryImpl
         @Override
         public MemberSet membersQuery(Level outer, Member sub) throws SQLException
         {
-            if (same(sub.getHierarchy(), outer.getHierarchy()))
-            {
-                if (sub.isAll())
-                    return new MemberSet(outer, outer.getMembers());
-                else
-                {
-                    MemberSet s = new MemberSet();
-                    addChildrenOrParentInLevel(sub, outer, s);
-                    return s;
-                }
-            }
-
             if (sub.isAll())
             {
-                return new MemberSet(outer, outer.getMembers());
+                return MemberSet.createRegularMembers(outer);
             }
-            else if (mondrianCompatibleNullHandling && "#null".equals(sub.getName()))
+
+            if (same(sub.getHierarchy(), outer.getHierarchy()))
+            {
+                MemberSet s = new MemberSet();
+                addChildrenOrParentInLevel(sub, outer, s);
+                return s;
+            }
+
+            if (mondrianCompatibleNullHandling && "#null".equals(sub.getName()))
             {
                 // there's no particularly easy way to compute this, compute the whole dang level..
                 populateCache(outer, new MemberSetResult(sub.getLevel()));
@@ -2002,33 +1998,31 @@ public class BitSetQueryImpl
                 if (null != s)
                     return s;
             }
-//            else
+
+            String query = queryIsNotEmpty(outer, sub);
+            MemberSet s = resultsCacheGet(query);
+            if (null != s)
+                return s;
+
+            MemberSet set = new MemberSet();
+
+            try (ResultSet rs = execute(serviceUser, query))
             {
-                String query = queryIsNotEmpty(outer, sub);
-                MemberSet s = resultsCacheGet(query);
-                if (null != s)
-                    return s;
-
-                MemberSet set = new MemberSet();
-
-                try (ResultSet rs = execute(serviceUser, query))
+                RolapCubeDef.LevelDef ldef = getRolapFromCube(outer);
+                while (rs.next())
                 {
-                    RolapCubeDef.LevelDef ldef = getRolapFromCube(outer);
-                    while (rs.next())
+                    String uniqueName = ldef.getMemberUniqueNameFromResult(rs);
+                    Member m = ((NamedList<Member>) outer.getMembers()).get(uniqueName);
+                    if (null == m)
                     {
-                        String uniqueName = ldef.getMemberUniqueNameFromResult(rs);
-                        Member m = ((NamedList<Member>) outer.getMembers()).get(uniqueName);
-                        if (null == m)
-                        {
-                            logWarn("member not found: " + uniqueName);
-                            continue;
-                        }
-                        set.add(m);
+                        logWarn("member not found: " + uniqueName);
+                        continue;
                     }
+                    set.add(m);
                 }
-                resultsCachePut(query, set);
-                return set;
             }
+            resultsCachePut(query, set);
+            return set;
         }
 
 
@@ -2243,60 +2237,6 @@ resultLoop:     while (rs.next())
             {
                 resultsCachePut(nullQuery,nullMemberSet);
             }
-        }
-    }
-
-
-    class DoubleDownHelper implements IDataSourceHelper
-    {
-        @Override
-        public MemberSet membersQuery(MemberSetResult outer, MemberSetResult sub) throws SQLException
-        {
-            MemberSet mdx = _cdsh.membersQuery(outer,sub);
-            MemberSet sql = _sdsh.membersQuery(outer,sub);
-            if (!sql.equals(mdx))
-            {
-                logWarn(outer + " x " + sub);
-            }
-            return sql;
-        }
-
-        @Override
-        public MemberSet membersQuery(Level outer, Member sub) throws SQLException
-        {
-            MemberSet mdx = _cdsh.membersQuery(outer,sub);
-            MemberSet sql = _sdsh.membersQuery(outer,sub);
-            if (!sql.equals(mdx))
-            {
-                MemberSet inMdxButNotSql = new MemberSet(mdx);
-                inMdxButNotSql.removeAll(sql);
-
-                MemberSet inSqlButNotMdx = new MemberSet(sql);
-                inSqlButNotMdx.removeAll(mdx);
-
-                if (!"#null".equals(sub.getName()))
-                    logWarn(outer.getUniqueName() + " x " + sub.getUniqueName());
-            }
-            return sql;
-        }
-
-        @Override
-        public MemberSet membersQuery(MemberSetResult outer, CrossResult sub) throws SQLException
-        {
-            MemberSet mdx = _cdsh.membersQuery(outer,sub);
-            MemberSet sql = _sdsh.membersQuery(outer,sub);
-            if (!sql.equals(mdx))
-            {
-                logWarn(outer + " x " + sub);
-            }
-            return sql;
-        }
-
-        @Override
-        public void populateCache(Level outerLevel, Result inner) throws SQLException
-        {
-            _sdsh.populateCache(outerLevel,inner);
-            _cdsh.populateCache(outerLevel,inner);
         }
     }
 

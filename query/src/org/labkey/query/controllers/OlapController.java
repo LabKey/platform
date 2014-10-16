@@ -95,6 +95,7 @@ import org.labkey.query.olap.OlapDef;
 import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.QubeQuery;
 import org.labkey.query.olap.ServerManager;
+import org.labkey.query.olap.metadata.CachedCube;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.labkey.query.olap.rolap.RolapReader;
 import org.labkey.query.persist.QueryManager;
@@ -141,11 +142,6 @@ import java.util.Map;
  */
 public class OlapController extends SpringActionController
 {
-    public enum ImplStrategy {mondrian, rolapYourOwn}
-    public static ImplStrategy strategy = ImplStrategy.mondrian;
-//    public static ImplStrategy strategy = ImplStrategy.rolapYourOwn;
-
-
     private static final Logger _log = Logger.getLogger(OlapController.class);
 
     private static final DefaultActionResolver _actionResolver = new DefaultActionResolver(OlapController.class);
@@ -269,9 +265,16 @@ public class OlapController extends SpringActionController
                 return null;
             }
 
-            if (strategy == ImplStrategy.rolapYourOwn)
+            OlapSchemaDescriptor d = ServerManager.getDescriptor(getContainer(), form.getConfigId());
+
+            if (null == d)
             {
-                OlapSchemaDescriptor d = ServerManager.getDescriptor(getContainer(), form.getConfigId());
+                errors.reject(ERROR_MSG, "Cube descriptor not found: " + form.getCubeName());
+                return null;
+            }
+
+            if (d.usesRolap())
+            {
                 rolap = d.getRolapCubeDefinitionByName(cube.getName());
             }
 
@@ -999,19 +1002,25 @@ public class OlapController extends SpringActionController
     }
 
 
-
+    @Nullable
     private String getAnnotation(Cube cube, String name)  throws SQLException
     {
         Annotated annotated = cube instanceof Annotated ? (Annotated)cube :
                 cube instanceof OlapWrapper ? ((OlapWrapper)cube).unwrap(Annotated.class) :
                 null;
-        if (null == annotated)
-            return null;
-        Map<String,Annotation> annotations = annotated.getAnnotationMap();
-        if (null == annotations)
-            return null;
-        Annotation a = annotations.get(name);
-        return null==a ? null : null == a.getValue() ? null : String.valueOf(a.getValue());
+        if (null != annotated)
+        {
+            Map<String,Annotation> annotations = annotated.getAnnotationMap();
+            if (null == annotations)
+                return null;
+            Annotation a = annotations.get(name);
+            return null==a ? null : null == a.getValue() ? null : String.valueOf(a.getValue());
+        }
+        else if (cube instanceof CachedCube)
+        {
+            return ((CachedCube) cube).getAnnotationMap().get(name);
+        }
+        return null;
     }
 
 
@@ -1037,7 +1046,7 @@ public class OlapController extends SpringActionController
         }
 
         OlapConnection conn = null;
-        if (strategy == ImplStrategy.mondrian)
+        if (d.usesMondrian())
             conn = getConnection(d);
         Cube cube = ServerManager.getCachedCube(d, conn, getContainer(), getUser(), form.getSchemaName(), form.getCubeName(), errors);
         if (errors.hasErrors())
@@ -1074,15 +1083,18 @@ public class OlapController extends SpringActionController
 
     OlapConnection _connection = null;
 
+    @Nullable
     OlapConnection getConnection(OlapSchemaDescriptor d) throws SQLException
     {
-        if (strategy == ImplStrategy.rolapYourOwn)
+        if (d == null || d.usesRolap())
             return null;
+
         if (null == _connection)
         {
             _connection = d.getConnection(getContainer(), getUser());
             MemTracker.getInstance().put(_connection);
         }
+
         return _connection;
     }
 

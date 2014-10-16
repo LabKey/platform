@@ -654,18 +654,22 @@ public class RolapCubeDef
             return cube.factTable.schemaName;
         }
 
-
+        @Nullable
         private String findSchemaNameForTable(String table, JoinOrTable jt)
         {
-            if (null == jt)
-                return null;
-            if (StringUtils.equalsIgnoreCase(jt.tableName,table))
-                return jt.schemaName;
             String schemaName = null;
-            if (null != jt.left)
-                schemaName = findSchemaNameForTable(table, jt.left);
-            if (null == schemaName && null != jt.right)
-                schemaName = findSchemaNameForTable(table, jt.right);
+            if (null != jt)
+            {
+                if (StringUtils.equalsIgnoreCase(jt.tableName,table))
+                    schemaName = jt.schemaName;
+                else
+                {
+                    if (null != jt.left)
+                        schemaName = findSchemaNameForTable(table, jt.left);
+                    if (null == schemaName && null != jt.right)
+                        schemaName = findSchemaNameForTable(table, jt.right);
+                }
+            }
             return schemaName;
         }
 

@@ -15,8 +15,6 @@
  */
 package org.labkey.query.olap.metadata;
 
-import mondrian.olap.Annotated;
-import mondrian.olap.Annotation;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcType;
@@ -58,11 +56,11 @@ import java.util.Set;
  *
  * TODO consider hardening this class so that it can be made read-only after construction.
 */
-public class CachedCube extends MetadataElementBase implements Cube, Annotated
+public class CachedCube extends MetadataElementBase implements Cube
 {
     Long hash = null;
     final _NamedList<_Dimension,Dimension> dimensions = new _NamedList<>();
-    Map<String, Annotation> annotations;
+    Map<String, String> annotations;
 
     /* TODO redo compute hash code */
     CachedCube(Cube c) throws SQLException
@@ -191,8 +189,7 @@ public class CachedCube extends MetadataElementBase implements Cube, Annotated
         return false;
     }
 
-    @Override
-    public Map<String, Annotation> getAnnotationMap()
+    public Map<String, String> getAnnotationMap()
     {
         return annotations;
     }

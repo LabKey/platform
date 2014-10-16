@@ -16,7 +16,6 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
 import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.TestContext;
-import org.labkey.query.controllers.OlapController;
 import org.labkey.query.olap.BitSetQueryImpl;
 import org.labkey.query.olap.OlapSchemaDescriptor;
 import org.labkey.query.olap.QubeQuery;
@@ -173,8 +172,8 @@ public class RolapTestCase extends Assert
 
         Map<String,Integer> ret = new CaseInsensitiveTreeMap<>();
         OlapConnection conn = null;
-        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
-            conn = sd.getConnection(getContainer(), getUser());
+        if (sd.usesMondrian())
+            sd.getConnection(getContainer(), getUser());
         BitSetQueryImpl bitsetquery = new BitSetQueryImpl(getContainer(), getUser(), sd, cube, conn, qquery, errors);
         assertFalse(errors.hasErrors());
         try (CellSet cs = bitsetquery.executeQuery())
@@ -213,9 +212,6 @@ public class RolapTestCase extends Assert
     @Test
     public void testNoFilters() throws Exception
     {
-        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
-            return;
-
         Map<String,Integer> cs;
 
         cs = oneAxisQuery(
@@ -273,9 +269,6 @@ public class RolapTestCase extends Assert
     @Test
     public void testSimpleFilter() throws Exception
     {
-        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
-            return;
-
         Map<String,Integer> cs;
 
         cs = oneAxisQuery(
@@ -396,9 +389,6 @@ public class RolapTestCase extends Assert
     @Test
     public void testSimpleNullFilter() throws Exception
     {
-        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
-            return;
-
         Map<String,Integer> cs;
 
         cs = oneAxisQuery(
@@ -471,9 +461,6 @@ public class RolapTestCase extends Assert
     @Test
     public void testNotNullFilter() throws Exception
     {
-        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
-            return;
-
         Map<String,Integer> cs;
 
 
@@ -582,8 +569,6 @@ public class RolapTestCase extends Assert
     @Test
     public void testComplexFilter() throws Exception
     {
-        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
-            return;
         Map<String,Integer> cs;
 
         // female
@@ -713,8 +698,6 @@ public class RolapTestCase extends Assert
     @Test
     public void testShorthandSyntax() throws Exception
     {
-        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
-            return;
         Map<String,Integer> cs;
 
         // members:STRING
@@ -786,8 +769,6 @@ public class RolapTestCase extends Assert
     @Test
     public void testDataFilter() throws Exception
     {
-        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
-            return;
         Map<String,Integer> cs;
 
 
@@ -838,8 +819,6 @@ public class RolapTestCase extends Assert
     @Test
     public void testRegressionsUnion() throws Exception
     {
-        if (OlapController.strategy == OlapController.ImplStrategy.mondrian)
-            return;
         Map<String,Integer> cs;
 
         cs = oneAxisQuery(

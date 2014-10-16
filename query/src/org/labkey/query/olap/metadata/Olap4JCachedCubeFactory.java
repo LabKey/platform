@@ -78,12 +78,20 @@ public class Olap4JCachedCubeFactory
         }
         cube.dimensions.seal();
 
-        Map<String,Annotation> map = new HashMap<>();
+        Map<String,String> map = new HashMap<>();
         if (c instanceof OlapWrapper)
         {
             Annotated annotated = ((OlapWrapper)c).unwrap(Annotated.class);
             Map<String, Annotation> annotations = annotated.getAnnotationMap();
-            map.putAll(annotations);
+            for (Map.Entry<String,Annotation> e : annotations.entrySet())
+            {
+                if (null != e.getValue())
+                {
+                    Annotation ann = e.getValue();
+                    if (null != ann.getValue())
+                        map.put(ann.getName(), String.valueOf(ann.getValue()));
+                }
+            }
         }
         cube.annotations = Collections.unmodifiableMap(map);
     }

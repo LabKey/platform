@@ -18,6 +18,7 @@ package org.labkey.query.olap.metadata;
 import com.drew.lang.annotations.Nullable;
 import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveTreeMap;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
@@ -67,6 +68,9 @@ public class RolapCachedCubeFactory
     public CachedCube createCachedCube() throws SQLException
     {
         CachedCube cube = new CachedCube(rolap.getName());
+
+        cube.annotations = new CaseInsensitiveTreeMap<>();
+        cube.annotations.putAll(rolap.getAnnotations());
 
         generateMeasuresDimension(cube);
 

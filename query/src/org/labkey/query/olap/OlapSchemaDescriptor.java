@@ -47,12 +47,14 @@ import java.util.List;
  */
 public abstract class OlapSchemaDescriptor
 {
+    public enum ImplStrategy {mondrian, rolapYourOwn}
     final static Logger _log = Logger.getLogger(OlapSchemaDescriptor.class);
 
     final Module _module;
     final String _id;
     final String _name;
     final String _queryTag;
+    final ImplStrategy _strategy;
 
     protected OlapSchemaDescriptor(@NotNull String id, @NotNull Module module)
     {
@@ -64,6 +66,26 @@ public abstract class OlapSchemaDescriptor
         // only look for module-specific query tags used for auditing.
         OlapSchemaInfo olapSchemaInfo = module.getOlapSchemaInfo();
         _queryTag = (olapSchemaInfo == null) ? "" : olapSchemaInfo.getQueryTag();
+
+        if (_name.equalsIgnoreCase("Argos"))
+            _strategy = ImplStrategy.mondrian;
+        else
+            _strategy = ImplStrategy.rolapYourOwn;
+    }
+
+    public ImplStrategy getStrategy()
+    {
+        return _strategy;
+    }
+
+    public boolean usesMondrian()
+    {
+        return _strategy == ImplStrategy.mondrian;
+    }
+
+    public boolean usesRolap()
+    {
+        return _strategy == ImplStrategy.rolapYourOwn;
     }
 
     static String makeCatalogName(OlapSchemaDescriptor d, Container c)
