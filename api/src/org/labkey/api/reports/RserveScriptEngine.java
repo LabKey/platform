@@ -147,25 +147,17 @@ public class RserveScriptEngine extends RScriptEngine
         {
             rconn = getConnection(rh, context);
 
-            //
-            // use the source command to load in the script.  this is good because we aren't parsing the script at all
-            // but for short scripts on a local machine it is slower than evaluating the script
-            // line by line
-            //
-            StringBuilder sb = new StringBuilder();
-
-            //
-            // wrap the command to capture the output
-            // We use .try_quietly instead of try so the R stack is included in the error
-            // See http://stackoverflow.com/questions/16879821/save-traceback-on-error-using-trycatch
-            //
             String remoteInputFile = getInputFilename(scriptFile);
             LOG.debug("Executing remote script '" + remoteInputFile + "'...");
-            sb.append("tools:::.try_quietly(capture.output(source(\"");
-            sb.append(remoteInputFile);
-            sb.append("\")))");
+            String cmdFormat = RReport.DEFAULT_RSERVE_CMD;
 
-            String output = eval(rconn, sb.toString());
+            // override our rserve invocation command if the exeCommand property is supplied in the engine definition
+            if (_def.getExeCommand() != null)
+                cmdFormat = _def.getExeCommand();
+
+            String rserveCmd = String.format(cmdFormat, remoteInputFile);
+            LOG.debug("Evaluating command:  " + rserveCmd);
+            String output = eval(rconn, rserveCmd);
             LOG.debug("Executed remote script '" + scriptFile + "' successfully");
             return output;
         }

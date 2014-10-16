@@ -298,8 +298,10 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
                     else
                     {
                         setProp(Props.exePath.name(), def.getExePath(), key);
-                        setProp(Props.exeCommand.name(), def.getExeCommand(), key);
                     }
+                    // note that this really is the invocation command for both local and
+                    // remote engines
+                    setProp(Props.exeCommand.name(), def.getExeCommand(), key);
                     setProp(Props.outputFileName.name(), def.getOutputFileName(), key);
                     setProp(Props.disabled.name(), String.valueOf(!def.isEnabled()), key);
                     setProp(Props.remote.name(), String.valueOf(def.isRemote()), key);
