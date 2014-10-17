@@ -122,6 +122,14 @@ abstract public class PipelineJob extends Job implements Serializable
         {
             @Override
             public boolean isActive() { return true; }
+
+            @Override
+            public boolean matches(String statusText)
+            {
+                if (statusText.toLowerCase().endsWith("waiting"))
+                    return true;
+                return super.matches(statusText);
+            }
         },
         /** Job is doing its work */
         running

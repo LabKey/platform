@@ -117,7 +117,7 @@ public class DbScope
     private final String _driverVersion;
     private final DbSchemaCache _schemaCache;
     private final SchemaTableInfoCache _tableCache;
-    private final Map<Thread, TransactionImpl> _transaction = new WeakHashMap<>();
+    private final Map<Thread, List<TransactionImpl>> _transaction = new WeakHashMap<>();
 
     private SqlDialect _dialect;
 
@@ -285,9 +285,6 @@ public class DbScope
      */
     public Transaction beginTransaction(int isolationLevel, Lock... locks)
     {
-        if (isTransactionActive())
-            throw new IllegalStateException("Existing transaction");
-
         Connection conn = null;
         TransactionImpl result = null;
 
@@ -314,7 +311,13 @@ public class DbScope
                 result = new TransactionImpl(conn, locks);
                 synchronized (_transaction)
                 {
-                    _transaction.put(getEffectiveThread(), result);
+                    List<TransactionImpl> transactions = _transaction.get(getEffectiveThread());
+                    if (transactions == null)
+                    {
+                        transactions = new ArrayList<>();
+                        _transaction.put(getEffectiveThread(), transactions);
+                    }
+                    transactions.add(result);
                 }
             }
         }
@@ -355,7 +358,7 @@ public class DbScope
                 conn.close();
                 synchronized (_transaction)
                 {
-                    _transaction.remove(getEffectiveThread());
+                    popCurrentTransaction();
                 }
                 t.runCommitTasks(CommitTaskOption.POSTCOMMIT);
             }
@@ -397,7 +400,8 @@ public class DbScope
     {
         synchronized (_transaction)
         {
-            return _transaction.get(getEffectiveThread());
+            List<TransactionImpl> transactions = _transaction.get(getEffectiveThread());
+            return transactions == null ? null : transactions.get(transactions.size() - 1);
         }
     }
 
@@ -562,17 +566,22 @@ public class DbScope
                 else
                 {
                     LOG.info("There are " + _transaction.size() + " threads holding a database connections for the data source '" + toString() + "':");
-                    for (Map.Entry<Thread, TransactionImpl> entry : _transaction.entrySet())
+                    for (Map.Entry<Thread, List<TransactionImpl>> entry : _transaction.entrySet())
                     {
                         Thread thread = entry.getKey();
                         LOG.info("\t'" + thread.getName() + "', State = " + thread.getState());
                         if (thread.getState() == Thread.State.TERMINATED || thread.getState() == Thread.State.NEW)
                         {
-                            for (StackTraceElement stackTraceElement : entry.getValue()._creation.getStackTrace())
+                            for (TransactionImpl transaction : entry.getValue())
                             {
-                                LOG.info("\t\t" + stackTraceElement.toString());
+                                for (StackTraceElement stackTraceElement : transaction._creation.getStackTrace())
+                                {
+                                    LOG.info("\t\t" + stackTraceElement.toString());
+                                }
+                                LOG.info("");
                             }
                         }
+                        LOG.info("");
                     }
                 }
             }
@@ -1238,6 +1247,16 @@ public class DbScope
         public void commit();
     }
 
+    private void popCurrentTransaction()
+    {
+        List<TransactionImpl> transactions = _transaction.get(getEffectiveThread());
+        transactions.remove(transactions.size() - 1);
+        if (transactions.isEmpty())
+        {
+            _transaction.remove(getEffectiveThread());
+        }
+    }
+
     // Represents a single database transaction.  Holds onto the Connection, the temporary caches to use during that
     // transaction, and the tasks to run immediately after commit to update the shared caches with removals.
     protected class TransactionImpl implements Transaction
@@ -1330,7 +1349,7 @@ public class DbScope
 
                 synchronized (_transaction)
                 {
-                    _transaction.remove(getEffectiveThread());
+                    popCurrentTransaction();
                 }
             }
             else
