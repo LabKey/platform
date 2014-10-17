@@ -35,6 +35,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
@@ -865,6 +866,8 @@ public class SpecimenImporter
     private static final String EVENT_ID_COL = "record_id";
     private static final String VISIT_COL = "visit_value";
 
+    private static final String GENERAL_JOB_STATUS_MSG = "PROCESSING SPECIMENS";
+
     // SpecimenEvent columns that form a psuedo-unqiue constraint
     private static final SpecimenColumn GLOBAL_UNIQUE_ID, LAB_ID, SHIP_DATE, STORAGE_DATE, LAB_RECEIPT_DATE, DRAW_TIMESTAMP;
     private static final SpecimenColumn VISIT_VALUE;
@@ -992,6 +995,7 @@ public class SpecimenImporter
     private String _vialColsSql;
     private String _vialEventColsSql;
     private Logger _logger;
+    private PipelineJob _job;
 
     protected int _generateGlobalUniqueIds = 0;
 
@@ -1196,23 +1200,25 @@ public class SpecimenImporter
         return updated;
     }
 
-    public void process(VirtualFile specimensDir, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
+    public void process(VirtualFile specimensDir, boolean merge, Logger logger, @Nullable PipelineJob job) throws SQLException, IOException, ValidationException
     {
         Map<SpecimenTableType, SpecimenImportFile> sifMap = populateFileMap(specimensDir, new HashMap<SpecimenTableType, SpecimenImportFile>());
 
-        process(sifMap, merge, logger);
+        process(sifMap, merge, logger, job);
     }
 
-    protected void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger) throws SQLException, IOException, ValidationException
+    protected void process(Map<SpecimenTableType, SpecimenImportFile> sifMap, boolean merge, Logger logger, @Nullable PipelineJob job) throws SQLException, IOException, ValidationException
     {
         DbSchema schema = StudySchema.getInstance().getSchema();
         _logger = logger;
+        _job = job;
 
         DbScope scope = schema.getScope();
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             _iTimer = TIMER.getInvocationTimer();
 
+            setStatus(GENERAL_JOB_STATUS_MSG);
             _iTimer.setPhase(ImportPhases.PopulateLabs);
             if (null != sifMap.get(_labsTableType))
                 mergeTable(schema, sifMap.get(_labsTableType), true, true);
@@ -1239,6 +1245,7 @@ public class SpecimenImporter
 
             // Specimen temp table must be populated AFTER the types tables have been reloaded, since the SpecimenHash
             // calculated in the temp table relies on the new RowIds for the types:
+            setStatus(GENERAL_JOB_STATUS_MSG + " (temp table)");
             _iTimer.setPhase(ImportPhases.PopulateTempTable);
             SpecimenImportFile specimenFile = sifMap.get(_specimensTableType);
             SpecimenLoadInfo loadInfo = populateTempSpecimensTable(schema, specimenFile, merge);
@@ -1252,9 +1259,11 @@ public class SpecimenImporter
             // No need to setPhase() here... method sets timer phases immediately
             updateCalculatedSpecimenData(merge, _logger);
 
+            setStatus(GENERAL_JOB_STATUS_MSG + " (update study)");
             _iTimer.setPhase(ImportPhases.ResyncStudy);
             resyncStudy();
 
+            setStatus(null);
             _iTimer.setPhase(ImportPhases.SetLastSpecimenLoad);
             // Set LastSpecimenLoad to now... we'll check this before snapshot study specimen refresh
             StudyImpl study = StudyManager.getInstance().getStudy(_container).createMutable();
@@ -1271,6 +1280,7 @@ public class SpecimenImporter
             updateAllStatistics();
 
             // notify listeners that specimens have changed in this container
+            setStatus(GENERAL_JOB_STATUS_MSG);
             _iTimer.setPhase(ImportPhases.NotifyChanged);
             ((SpecimenServiceImpl) SpecimenService.get()).fireSpecimensChanged(_container, _user, _logger);
 
@@ -1298,6 +1308,7 @@ public class SpecimenImporter
 
     private void populateSpecimenTables(SpecimenLoadInfo info, boolean merge) throws SQLException, IOException, ValidationException
     {
+        setStatus(GENERAL_JOB_STATUS_MSG + " (populate tables)");
         _iTimer.setPhase(ImportPhases.DeleteOldData);
         if (!merge)
         {
@@ -1320,12 +1331,16 @@ public class SpecimenImporter
                 seenVisitValue = true;
         }
 
+        setStatus(null);
         _iTimer.setPhase(ImportPhases.PopulateMaterials);
         populateMaterials(info, merge);
+        setStatus(null);
         _iTimer.setPhase(ImportPhases.PopulateSpecimens);
         populateSpecimens(info, merge, seenVisitValue);
+        setStatus(null);
         _iTimer.setPhase(ImportPhases.PopulateVials);
         populateVials(info, merge, seenVisitValue);
+        setStatus(null);
         _iTimer.setPhase(ImportPhases.PopulateSpecimenEvents);
         populateSpecimenEvents(info, merge);
 
@@ -1612,6 +1627,7 @@ public class SpecimenImporter
     // UNDONE: add vials in-clause to only update data for rows that changed
     private void updateCalculatedSpecimenData(boolean merge, Logger logger) throws SQLException
     {
+        setStatus(GENERAL_JOB_STATUS_MSG + " (update)");
         _iTimer.setPhase(ImportPhases.PrepareQcComments);
         // delete unnecessary comments and create placeholders for newly discovered errors:
         prepareQCComments(logger);
@@ -1666,6 +1682,7 @@ public class SpecimenImporter
             if (logger != null)
                 logger.info("Updating vial rows " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
 
+            setStatus(GENERAL_JOB_STATUS_MSG + " (update vials)");
             _iTimer.setPhase(ImportPhases.GetVialBatch);
             {
                 vials.clear();
@@ -1841,6 +1858,7 @@ public class SpecimenImporter
 //            new SpecimenTablesProvider(getContainer(), getUser(), null).addTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
 
         // finally, after all other data has been updated, we can update our cached specimen counts and processing locations:
+        setStatus(GENERAL_JOB_STATUS_MSG + " (update counts)");
         _iTimer.setPhase(ImportPhases.UpdateSpecimenProcessingInfo);
         updateSpecimenProcessingInfo(logger);
 
@@ -1919,6 +1937,17 @@ public class SpecimenImporter
     {
         if (_logger != null)
             _logger.info(message);
+    }
+
+    private static String _currentStatus = GENERAL_JOB_STATUS_MSG;
+    private void setStatus(@Nullable String status)
+    {
+        if (null != _job)
+        {
+            if (null != status)
+                _currentStatus = status;
+            _job.setStatus(_currentStatus);
+        }
     }
 
     private List<SpecimenColumn> getSpecimenCols(List<SpecimenColumn> availableColumns)
@@ -2871,6 +2900,7 @@ public class SpecimenImporter
             return new Pair<>(Collections.<T>emptyList(), 0);
         }
 
+        setStatus(null);
         info(tableName + ": Starting replacement of all data...");
 
         assert !_specimensTableType.getTableName().equalsIgnoreCase(tableName);
@@ -2988,6 +3018,7 @@ public class SpecimenImporter
 
                 if (rows.size() == SQL_BATCH_SIZE)
                 {
+                    setStatus(null);
                     Table.batchExecute(schema, insertSql.toString(), rows);
                     rows = new ArrayList<>(SQL_BATCH_SIZE);
                     // output a message every 100 batches (every 10,000 events, by default)
@@ -2997,6 +3028,7 @@ public class SpecimenImporter
             }
 
             // No point in trying to insert zero rows.  Also, insertSql won't be set if no rows exist.
+            setStatus(null);
             if (!rows.isEmpty())
                 Table.batchExecute(schema, insertSql.toString(), rows);
 

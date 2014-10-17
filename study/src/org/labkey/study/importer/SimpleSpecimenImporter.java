@@ -259,7 +259,7 @@ public class SimpleSpecimenImporter extends SpecimenImporter
 
         try
         {
-            super.process(sifMap, merge, logger);
+            super.process(sifMap, merge, logger, null);
         }
         catch (SQLException | ValidationException ex)
         {

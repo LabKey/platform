@@ -144,71 +144,77 @@ public class PipelineStatusManager
 
     public static boolean setStatusFile(PipelineJob job, User user, String status, @Nullable String info, boolean allowInsert)
     {
-        PipelineStatusFileImpl sfExist = getJobStatusFile(job.getJobGUID());
-        if (sfExist == null)
+        // Do this in its own transaction so that it gets flushed through to the database immediately.
+        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().beginTransaction())
         {
-            // Then try based on file path
-            sfExist = getStatusFile(job.getLogFile());
-        }
-        PipelineStatusFileImpl sfSet = new PipelineStatusFileImpl(job, status, info);
-
-        if (null == sfExist)
-        {
-            if (allowInsert)
+            PipelineStatusFileImpl sfExist = getJobStatusFile(job.getJobGUID());
+            if (sfExist == null)
             {
-                sfSet.beforeInsert(user, job.getContainerId());
-                PipelineStatusFileImpl sfNew = Table.insert(user, _schema.getTableInfoStatusFiles(), sfSet);
+                // Then try based on file path
+                sfExist = getStatusFile(job.getLogFile());
+            }
+            PipelineStatusFileImpl sfSet = new PipelineStatusFileImpl(job, status, info);
 
-                // Make sure rowID is correct, since it might be used in email.
-                sfSet.setRowId(sfNew.getRowId());
+            if (null == sfExist)
+            {
+                if (allowInsert)
+                {
+                    sfSet.beforeInsert(user, job.getContainerId());
+                    PipelineStatusFileImpl sfNew = Table.insert(user, _schema.getTableInfoStatusFiles(), sfSet);
+
+                    // Make sure rowID is correct, since it might be used in email.
+                    sfSet.setRowId(sfNew.getRowId());
+                }
+                else
+                {
+                    job.getLogger().error("Could not find job in database for job GUID " + job.getJobGUID() + ", unable to set its status to '" + status + "'");
+                    return false;
+                }
             }
             else
             {
-                job.getLogger().error("Could not find job in database for job GUID " + job.getJobGUID() + ", unable to set its status to '" + status + "'");
-                return false;
+                boolean cancelled = false;
+                if (PipelineJob.TaskStatus.cancelling.matches(sfExist.getStatus()) && sfSet.isActive())
+                {
+                    // Mark is as officially dead
+                    sfSet.setStatus(PipelineJob.TaskStatus.cancelled.toString());
+                    cancelled = true;
+                }
+                sfSet.beforeUpdate(user, sfExist);
+                updateStatusFile(sfSet);
+                if (cancelled)
+                {
+                    transaction.commit();
+                    // Signal to the caller that the job shouldn't move on to its next state
+                    throw new CancelledException();
+                }
             }
-        }
-        else
-        {
-            boolean cancelled = false;
-            if (PipelineJob.TaskStatus.cancelling.matches(sfExist.getStatus()) && sfSet.isActive())
+
+            if (isNotifyOnError(job) && PipelineJob.TaskStatus.error.matches(sfSet.getStatus()) &&
+                    (sfExist == null || !PipelineJob.TaskStatus.error.matches(sfExist.getStatus())))
             {
-                // Mark is as officially dead
-                sfSet.setStatus(PipelineJob.TaskStatus.cancelled.toString());
-                cancelled = true;
-            }
-            sfSet.beforeUpdate(user, sfExist);
-            updateStatusFile(sfSet);
-            if (cancelled)
-            {
-                // Signal to the caller that the job shouldn't move on to its next state
-                throw new CancelledException();
-            }
-        }
-
-        if (isNotifyOnError(job) && PipelineJob.TaskStatus.error.matches(sfSet.getStatus()) &&
-                (sfExist == null || !PipelineJob.TaskStatus.error.matches(sfExist.getStatus())))
-        {
-            LOG.info("Error status has changed - considering an email notification");
-            PipelineManager.sendNotificationEmail(sfSet, job.getContainer());
-        }
-
-        if (PipelineJob.TaskStatus.error.matches(status))
-        {
-            // Count this error on the job.
-            job.setErrors(job.getErrors() + 1);
-        }
-        else if (PipelineJob.TaskStatus.complete.matches(status))
-        {
-            // Make sure the Enterprise Pipeline recognizes this as a completed
-            // job, even if did it not have a TaskPipeline.
-            job.setActiveTaskId(null, false);
-
-            // Notify if this is not a split job
-            if (job.getParentGUID() == null)
+                LOG.info("Error status has changed - considering an email notification");
                 PipelineManager.sendNotificationEmail(sfSet, job.getContainer());
+            }
+
+            if (PipelineJob.TaskStatus.error.matches(status))
+            {
+                // Count this error on the job.
+                job.setErrors(job.getErrors() + 1);
+            }
+            else if (PipelineJob.TaskStatus.complete.matches(status))
+            {
+                // Make sure the Enterprise Pipeline recognizes this as a completed
+                // job, even if did it not have a TaskPipeline.
+                job.setActiveTaskId(null, false);
+
+                // Notify if this is not a split job
+                if (job.getParentGUID() == null)
+                    PipelineManager.sendNotificationEmail(sfSet, job.getContainer());
+            }
+            transaction.commit();
+            return true;
         }
-        return true;
     }
 
     private static boolean isNotifyOnError(PipelineJob job)
@@ -458,7 +464,7 @@ public class PipelineStatusManager
 
                 if (job != null)
                 {
-                    job.info("Job " + job + " was marked as complete by " + user);
+                    job.info("Job " + job + " was marked as complete by " + user + ". It will run in its turn; it cannot be canceled, but can be deleted.");
                     if (!job.getContainer().hasPermission(user, UpdatePermission.class))
                     {
                         throw new UnauthorizedException();

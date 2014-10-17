@@ -18,6 +18,7 @@ package org.labkey.study.pipeline;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedActionSet;
@@ -63,6 +64,10 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
             StudyImportContext ctx = job.getJobSupport(StudyJobSupport.class).getImportContext();
 
             doImport(specimenArchive, job, ctx, isMerge());
+        }
+        catch (CancelledException | PipelineJobException e)
+        {
+            throw e;
         }
         catch (Exception e)
         {
@@ -128,7 +133,7 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     job.setStatus("PROCESSING SPECIMENS");
                 ctx.getLogger().info("Starting specimen import...");
                 SpecimenImporter importer = new SpecimenImporter(ctx.getContainer(), ctx.getUser());
-                importer.process(specimenDir, merge, ctx.getLogger());
+                importer.process(specimenDir, merge, ctx.getLogger(), job);
             }
 
             // perform any tasks after the transform and import has been completed
@@ -143,6 +148,10 @@ public abstract class AbstractSpecimenTask<FactoryType extends AbstractSpecimenT
                     break;
                 }
             }
+        }
+        catch (CancelledException e)
+        {
+            throw e;        // rethrow so pipeline marks it canceled
         }
         catch (Exception e)
         {

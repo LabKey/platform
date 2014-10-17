@@ -54,7 +54,8 @@
         sb.append("<li style='padding-bottom:0.5em;'>");
 
         Container c = file.lookupContainer();
-        ActionURL detailsURL = PageFlowUtil.urlProvider(PipelineStatusUrls.class).urlDetails(c, file.getRowId());
+        PipelineStatusUrls provider = PageFlowUtil.urlProvider(PipelineStatusUrls.class);
+        ActionURL detailsURL = null != provider ? provider.urlDetails(c, file.getRowId()) : null;
         sb.append("<span>job: <a href='").append(h(detailsURL)).append("'>").append(h(file.getDescription())).append("</a></span>");
 
         // Directory that will be deleted if they aren't any usages
@@ -137,7 +138,7 @@
 
     Set<ExpRun> allRuns = new LinkedHashSet<>();
 %>
-<p>Delete selected pipeline jobs?</p>
+<p>Delete selected pipeline jobs? Only inactive jobs (e.g. Complete, Canceled) may be deleted.</p>
 
 <ul>
 <% for (PipelineStatusFileImpl file : files) { %>
