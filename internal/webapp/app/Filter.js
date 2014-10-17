@@ -369,20 +369,35 @@ Ext.define('LABKEY.app.model.Filter', {
         },
 
         getGridLabel : function(data) {
+            var filterLabel = function(gf)
+            {
+                if (gf) {
+                    if (!Ext.isFunction(gf.getFilterType))
+                    {
+                        console.warn('invalid label being processed');
+                        return 'Unknown';
+                    }
+                    var value = gf.getValue();
+                    if (!value) {
+                        value = "";
+                    }
+                    return LABKEY.app.model.Filter.getShortFilter(gf.getFilterType().getDisplayText()) + ' ' + value;
+                }
+                return 'Unknown';
+            };
+
             if (data['gridFilter']) { // TODO: change to look for sqlFilters
-                var gf = data.gridFilter[0]; // TODO: Find a better way than hard coding this.
-                if (!Ext.isFunction(gf.getFilterType))
-                {
-                    console.warn('invalid label being processed');
-                    return 'Unknown';
-                }
-                var value = gf.getValue();
-                if (!value) {
-                    value = "";
-                }
-                return LABKEY.app.model.Filter.getShortFilter(gf.getFilterType().getDisplayText()) + ' ' + value;
+                var label = "";
+                var sep = "";
+                Ext.each(data.gridFilter, function(gf){
+                    label += sep + filterLabel(gf);
+                    sep = ", ";
+                });
+                return label;
             }
-            return 'Unknown';
+            else {
+                return filterLabel(data);
+            }
         },
 
         _buildGetDataFilter : function(filter, data) {
