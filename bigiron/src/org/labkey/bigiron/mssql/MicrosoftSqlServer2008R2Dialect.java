@@ -323,7 +323,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     {
         if (maxRows != Table.ALL_ROWS)
         {
-            String sql = frag.getSQL();
+            String sql = frag.getCompareSQL();
             if (!sql.substring(0, 6).equalsIgnoreCase("SELECT"))
                 throw new IllegalArgumentException("ERROR: Limit SQL doesn't start with SELECT: " + sql);
 
