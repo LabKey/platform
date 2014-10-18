@@ -128,7 +128,21 @@ Ext.define('LABKEY.app.controller.State', {
         this.manageState();
 
         this._ready = true;
-        this.application.fireEvent('stateready', this);
+        this.checkReady();
+    },
+
+    /**
+     * Can be overridden to allow for other services to block on state being ready.
+     * When actually ready, call this.fireReady().
+     */
+    checkReady : function() {
+        this.fireReady();
+    },
+
+    fireReady : function() {
+        if (this._ready === true) {
+            this.application.fireEvent('stateready', this);
+        }
     },
 
     onReady : function(callback, scope) {
@@ -539,62 +553,11 @@ Ext.define('LABKEY.app.controller.State', {
         }
     },
 
-    processCaching : function(mdx, filterSet, callback, scope) {
-        if (mdx.allowMemberCaching()) {
-
-            this.configureCacheListener(mdx);
-//            console.log('processing caches...');
-
-            // determine if any filters need to be cached
-            var toCache = {}, requireCache = 0;
-
-            Ext.each(filterSet, function(ff) {
-
-                if (ff.usesCaching(this.subjectName) && !mdx.serverHasNamedSet(ff.get('membersName'))) {
-//                    console.log('membersName:', ff.get('membersName'));
-                    toCache[ff.id] = ff;
-                    requireCache++;
-                }
-
-            }, this);
-
-            if (requireCache) {
-
-                var flights = requireCache;
-
-                var complete = function(filter, membersName) {
-                    flights--;
-//                    console.log('flights:', flights);
-                    filter.set('membersName', membersName);
-                    if (flights == 0)
-                    {
-                        callback.call(scope || this);
-                    }
-                };
-
-                Ext.iterate(toCache, function(id, ff) {
-                    var namedSet = ff.generateNamedSet();
-                    mdx.serverSaveNamedSet(namedSet.key, namedSet.members, function() {
-                        complete(ff, namedSet.key);
-                    }, this);
-                }, this);
-            }
-            else {
-                callback.call(scope || this);
-            }
-        }
-        else if (Ext.isFunction(callback)) {
-            callback.call(scope || this);
-        }
-    },
-
     requestFilterUpdate : function(skipState, opChange, silent, callback, scope) {
 
-        this.onMDXReady(function(mdx) {
+        this.onReady(function() { // wtb promises
+            this.onMDXReady(function(mdx) {
 
-            this.processCaching(mdx, this.filters, function() {
-
-                // we're done, all the filters should be cached appropriately on the server
                 var olapFilters = [];
                 Ext.each(this.filters, function(ff) {
                     olapFilters.push(ff.getOlapFilter(mdx, this.subjectName));
@@ -620,7 +583,6 @@ Ext.define('LABKEY.app.controller.State', {
                 }
 
             }, this);
-
         }, this);
     },
 
