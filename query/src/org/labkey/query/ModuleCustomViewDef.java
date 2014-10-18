@@ -95,6 +95,11 @@ public class ModuleCustomViewDef extends ResourceRef
         return _customView.isHidden();
     }
 
+    public boolean isShowInDataViews()
+    {
+        return _customView.isShowInDataViews();
+    }
+
     public List<Pair<String, String>> getFilters()
     {
         return _customView.getFilters();

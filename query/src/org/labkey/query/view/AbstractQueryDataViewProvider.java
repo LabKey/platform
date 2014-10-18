@@ -34,6 +34,7 @@ import org.labkey.api.study.StudyService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.writer.ContainerUser;
+import org.labkey.query.ModuleCustomView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -98,6 +99,13 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
 
         for (CustomView view : QueryService.get().getCustomViews(context.getUser(), context.getContainer(), context.getUser(), null, null, true))
         {
+            // issue : 21711 add the ability to hide module custom views from data views
+            if (view instanceof ModuleCustomView)
+            {
+                if (!((ModuleCustomView)view).isShowInDataViews())
+                    continue;
+            }
+
             if (view.isHidden())
                 continue;
 

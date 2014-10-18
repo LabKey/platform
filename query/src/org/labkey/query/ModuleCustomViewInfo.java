@@ -135,6 +135,11 @@ public class ModuleCustomViewInfo implements CustomViewInfo
         return _customViewDef.isHidden();
     }
 
+    public boolean isShowInDataViews()
+    {
+        return _customViewDef.isShowInDataViews();
+    }
+
     @Override
     public boolean isEditable()
     {

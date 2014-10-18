@@ -73,6 +73,7 @@ public class CustomViewXmlReader
     private List<Aggregate> _aggregates;
     private String _customIconUrl;
     private ContainerFilter.Type _containerFilter;
+    private boolean _showInDataViews;
 
     protected String _name;
     private String _label;
@@ -130,6 +131,11 @@ public class CustomViewXmlReader
     public String getLabel()
     {
         return _label;
+    }
+
+    public boolean isShowInDataViews()
+    {
+        return _showInDataViews;
     }
 
     // TODO: There should be a common util for filter/sort url handling.  Should use a proper URL class to do this, not create/encode the query string manually
@@ -244,6 +250,7 @@ public class CustomViewXmlReader
             reader._canInherit = viewElement.isSetCanInherit() && viewElement.getCanInherit();
             reader._customIconUrl = viewElement.isSetCustomIconUrl() ? viewElement.getCustomIconUrl() : "/reports/grid_shared.gif";
             reader._label = viewElement.getLabel();
+            reader._showInDataViews = viewElement.isSetShowInDataViews();
 
             //load the columns, filters, sorts, aggregates
             reader._colList = loadColumns(viewElement.getColumns());
