@@ -31,6 +31,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipelineProvider;
 import org.labkey.api.qc.DataExchangeHandler;
@@ -90,6 +91,8 @@ public interface AssayProvider extends Handler<ExpProtocol>
     Domain getRunDomain(ExpProtocol protocol);
 
     Domain getResultsDomain(ExpProtocol protocol);
+
+    void changeDomain(User user, ExpProtocol protocol, GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update);
 
     AssayRunCreator getRunCreator();
 

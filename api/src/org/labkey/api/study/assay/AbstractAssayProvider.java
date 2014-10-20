@@ -65,6 +65,8 @@ import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.exp.query.ExpRunTable;
 import org.labkey.api.gwt.client.DefaultValueType;
+import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.module.Module;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
@@ -376,6 +378,11 @@ public abstract class AbstractAssayProvider implements AssayProvider
     public Domain getResultsDomain(ExpProtocol protocol)
     {
         return getDomainByPrefix(protocol, ExpProtocol.ASSAY_DOMAIN_DATA);
+    }
+
+    public void changeDomain(User user, ExpProtocol protocol, GWTDomain<? extends GWTPropertyDescriptor> orig, GWTDomain<? extends GWTPropertyDescriptor> update)
+    {
+        // NOTE: this will only be needed in HaplotypeAssayProvider; thus this is no-op.
     }
 
     public Domain getBatchDomain(ExpProtocol protocol)
