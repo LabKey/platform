@@ -127,10 +127,17 @@ public class SpecimenImporter
         private final int _size;
         private final Class _javaClass;
         private final JdbcType _jdbcType;
+        private Object _defaultValue = null;
 
         public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType)
         {
             this(tsvColumnName, dbColumnName, databaseType, false);
+        }
+
+        public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType, Object defaultValue)
+        {
+            this(tsvColumnName, dbColumnName, databaseType, false);
+            _defaultValue = defaultValue;
         }
 
         public ImportableColumn(String tsvColumnName, String dbColumnName, String databaseType, boolean unique)
@@ -239,6 +246,11 @@ public class SpecimenImporter
         public boolean isMaskOnExport()
         {
             return _maskOnExport;
+        }
+
+        public @Nullable Object getDefaultValue()
+        {
+            return _defaultValue;
         }
     }
 
@@ -950,10 +962,10 @@ public class SpecimenImporter
             new ImportableColumn("labware_lab_code", "LabwareLabCode", "VARCHAR(20)", false, true),
             new ImportableColumn("lab_name", "Label", "VARCHAR(200)", false, true),
             new ImportableColumn("lab_upload_code", "LabUploadCode", "VARCHAR(10)"),
-            new ImportableColumn("is_sal", "Sal", BOOLEAN_TYPE),
-            new ImportableColumn("is_repository", "Repository", BOOLEAN_TYPE),
-            new ImportableColumn("is_clinic", "Clinic", BOOLEAN_TYPE),
-            new ImportableColumn("is_endpoint", "Endpoint", BOOLEAN_TYPE),
+            new ImportableColumn("is_sal", "Sal", BOOLEAN_TYPE, Boolean.FALSE),
+            new ImportableColumn("is_repository", "Repository", BOOLEAN_TYPE, Boolean.FALSE),
+            new ImportableColumn("is_clinic", "Clinic", BOOLEAN_TYPE, Boolean.FALSE),
+            new ImportableColumn("is_endpoint", "Endpoint", BOOLEAN_TYPE, Boolean.FALSE),
             new ImportableColumn("street_address", "StreetAddress", "VARCHAR(200)", false, true),
             new ImportableColumn("city", "City", "VARCHAR(200)", false, true),
             new ImportableColumn("governing_district", "GoverningDistrict", "VARCHAR(200)", false, true),
@@ -3495,7 +3507,14 @@ public class SpecimenImporter
         Object value = getValue(col, tsvRow);
 
         if (value == null)
-            return Parameter.nullParameter(col.getJdbcType());
+        {
+            // Currently used by labs.tsv clinic, sal, repository, and enpoint columns
+            value = col.getDefaultValue();
+
+            if (value == null)
+                return Parameter.nullParameter(col.getJdbcType());
+        }
+
         Parameter.TypedValue typed = new Parameter.TypedValue(value, col.getJdbcType());
 
         if (col.getMaxSize() >= 0)
