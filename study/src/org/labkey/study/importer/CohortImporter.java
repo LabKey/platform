@@ -64,15 +64,13 @@ public class CohortImporter implements InternalStudyImporter
             Map<String, Integer> p2c = null;
 
             //
-            // In ITN12.2 or > the export format changed to always persist a cohort.xml file
-            // regardless of cohort type to include 'enrolled' information for each cohort.
-            // The importer must support this new format as well as the older format
-            // for automatic cohort types.  If we are loading an older folder with automatic cohorts
-            // then each cohort is enrolled by default.
+            // In ITN12.2 or greater, the export format changed to always persist a cohort.xml file regardless of cohort type to include
+            // 'enrolled' information for each cohort. The importer must support this new format as well as the older format for automatic
+            // cohort types. If we are loading an older folder with automatic cohorts then every cohort is considered enrolled.
             //
             if (!StringUtils.isEmpty(cohortFileName))
             {
-                p2c = buildParticipantCohortMap(ctx, root, study, cohortFileName);
+                p2c = importCohortSettings(ctx, root, study, cohortFileName);
             }
 
             if (cohortType == CohortType.AUTOMATIC)
@@ -80,30 +78,15 @@ public class CohortImporter implements InternalStudyImporter
                 Integer datasetId = getValidCohortDatasetId(cohortsXml, study);
                 String datasetProperty = null != datasetId ? cohortsXml.getDatasetProperty() : null;
 
-                if (p2c == null)
-                {
-                    //
-                    // older folder format, no cohorts.xml file
-                    //
-                    ctx.getLogger().info("Loading automatic cohort settings");
-                    CohortManager.getInstance().setAutomaticCohortAssignment(study, ctx.getUser(), datasetId, datasetProperty,
-                            cohortMode == CohortMode.ADVANCED, true);
-                }
-                else
-                {
-                    //
-                    // newer format - still automatic but we want to ensure we pick up enrolled state for each
-                    // cohort
-                    //
-                    CohortManager.getInstance().setAutomaticCohortAssignment(study, ctx.getUser(), datasetId, datasetProperty,
-                            cohortMode == CohortMode.ADVANCED, p2c);
-                }
+                ctx.getLogger().info("Applying automatic cohort settings");
+
+                // Always ignore p2c in AUTOMATIC case... dataset should have the canonical mapping, so we just use that and refresh, #20731
+                CohortManager.getInstance().setAutomaticCohortAssignment(study, ctx.getUser(), datasetId, datasetProperty, cohortMode == CohortMode.ADVANCED, true);
             }
             else
             {
                 //
-                // For manual cohort assigments, the format stays the same except for the added
-                // enrolled state for each cohort.
+                // For MANUAL cohort assignment, use the participant-to-cohort mapping
                 //
                 assert (p2c != null);
                 CohortManager.getInstance().setManualCohortAssignment(study, ctx.getUser(), p2c);
@@ -127,13 +110,13 @@ public class CohortImporter implements InternalStudyImporter
         return null;
     }
 
-    private Map<String, Integer> buildParticipantCohortMap(StudyImportContext ctx, VirtualFile root, StudyImpl study, String cohortFileName) throws IOException, SQLException, ImportException, ServletException
+    private Map<String, Integer> importCohortSettings(StudyImportContext ctx, VirtualFile root, StudyImpl study, String cohortFileName) throws IOException, SQLException, ImportException, ServletException
     {
         //
         // ITN12.2 branch and newer releases will always export a separate cohorts.xml table to
         // round-trip the 'enrolled' bit.
         //
-        ctx.getLogger().info("Loading cohort assignments from " + root.getRelativePath(cohortFileName));
+        ctx.getLogger().info("Loading cohort settings from " + root.getRelativePath(cohortFileName));
         CohortsDocument cohortAssignmentXml;
 
         try
@@ -158,11 +141,12 @@ public class CohortImporter implements InternalStudyImporter
         for (CohortsDocument.Cohorts.Cohort cohortXml : cohortXmls)
         {
             String label = cohortXml.getLabel();
-            boolean enrolled = cohortXml.isSetEnrolled() ? cohortXml.getEnrolled() : true;
+            boolean enrolled = !cohortXml.isSetEnrolled() || cohortXml.getEnrolled();
             Integer subjectCount = cohortXml.isSetSubjectCount() ? cohortXml.getSubjectCount() : null;
             String description = cohortXml.isSetDescription() ? cohortXml.getDescription() : null;
             CohortImpl cohort = CohortManager.getInstance().ensureCohort(study, ctx.getUser(), label, enrolled, subjectCount, description);
 
+            // Note: Participant mapping is no longer exported in automatic cohort case, see #20731
             for (String ptid : cohortXml.getIdArray())
                 p2c.put(ptid, cohort.getRowId());
         }

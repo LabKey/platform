@@ -75,7 +75,7 @@ public class CohortManager
     }
 
     //
-    // used when importing a folder with automatic cohorts without an exported cohort.xml file
+    // used when importing a folder with automatic cohorts
     //
     public void setAutomaticCohortAssignment(StudyImpl study, User user, Integer participantCohortDatasetId, String participantCohortProperty, boolean advancedCohorts, boolean reassignParticipants) throws SQLException
     {
@@ -83,22 +83,6 @@ public class CohortManager
         setCohortProperties(study, user, false, advancedCohorts, participantCohortDatasetId, participantCohortProperty );
         if (reassignParticipants)
             updateParticipantCohorts(user, study);
-    }
-
-    //
-    // used when importing a folder with automatic cohorts with an exported cohort.xml file.
-    //
-    public void setAutomaticCohortAssignment(StudyImpl study, User user, Integer participantCohortDatasetId, String participantCohortProperty, boolean advancedCohorts, Map<String, Integer> p2c)
-    {
-        DbScope scope = StudySchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
-        {
-            study = study.createMutable();
-            setCohortProperties(study, user, false, advancedCohorts, participantCohortDatasetId, participantCohortProperty );
-            setCohortAssignment(study, user, p2c);
-
-            transaction.commit();
-        }
     }
 
     public void setManualCohortAssignment(StudyImpl study, User user, Map<String, Integer> p2c)
