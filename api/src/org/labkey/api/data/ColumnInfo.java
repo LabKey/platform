@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -136,6 +137,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     private String propertyURI = null;
     private String conceptURI = null;
     private List<FieldKey> sortFieldKeys = null;
+    private Map<FieldKey, ColumnInfo> cachedSortColumns = new HashMap<>();
     private List<ConditionalFormat> conditionalFormats = new ArrayList<>();
     private List<? extends IPropertyValidator> validators = Collections.emptyList();
 
@@ -186,7 +188,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 //        assert -1 == name.indexOf('/');
         jdbcType = t;
     }
-    
+
     public ColumnInfo(ResultSetMetaData rsmd, int col) throws SQLException
     {
         this(new FieldKey(null, rsmd.getColumnLabel(col)), null);
@@ -226,8 +228,8 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         _lockName = true;
         return true;
     }
-    
-    
+
+
     /** use setFieldKey() avoid ambiguity when columns have "/" */
     public void setName(String name)
     {
@@ -260,7 +262,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         this.fieldKey = key;
         this.name = null;
     }
-    
+
 
     public FieldKey getFieldKey()
     {
@@ -580,6 +582,25 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
                 translatedFieldKeys.add(FieldKey.fromParts(getFieldKey().getParent(), sortFieldKey));
             }
 
+            boolean foundAllInCache = true;
+            for (FieldKey translatedFieldKey : translatedFieldKeys)
+            {
+                ColumnInfo column = cachedSortColumns.get(translatedFieldKey);
+                if (column != null)
+                {
+                    sortCols.add(column);
+                }
+                else
+                {
+                    foundAllInCache = false;
+                    break;
+                }
+            }
+            if (foundAllInCache)
+            {
+                return sortCols;
+            }
+
             // The column may be on a separate table via a lookup, so use QueryService to resolve it
             Map<FieldKey, ColumnInfo> columns = QueryService.get().getColumns(getParentTable(), translatedFieldKeys);
             if (columns.size() != translatedFieldKeys.size() || columns.values().contains(null))
@@ -597,7 +618,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             {
                 for (FieldKey fk : translatedFieldKeys)
                 {
-                    sortCols.add(columns.get(fk));
+                    ColumnInfo column = columns.get(fk);
+                    cachedSortColumns.put(fk, column);
+                    sortCols.add(column);
                 }
             }
         }
@@ -668,7 +691,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
             return displayWidth = String.valueOf(Math.max(10, Math.min(getScale() * 6, 200)));
         else if (isDateTimeType())
             return displayWidth = "90";
-        else          
+        else
             return displayWidth = "60";
     }
 
@@ -719,7 +742,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     {
         return legalNameFromName(getName());
     }
-    
+
     public String getPropertyName()
     {
         return propNameFromName(getName());
@@ -1920,7 +1943,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         if (null != factory && DEFAULT_FACTORY != factory && factory instanceof RemappingDisplayColumnFactory)
             ((RemappingDisplayColumnFactory)factory).remapFieldKeys(parent, remap);
     }
-    
+
 
     protected void remapUrlFieldKeys(@Nullable FieldKey parent,  @Nullable Map<FieldKey, FieldKey> remap)
     {
@@ -1929,7 +1952,7 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         {
             FieldKeyStringExpression remapped = ((FieldKeyStringExpression)se).remapFieldKeys(parent, remap);
             setURL(remapped);
-        }        
+        }
     }
 
 

@@ -19,9 +19,12 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.AbstractTableInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableCustomizer;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.ldk.notification.NotificationSection;
+import org.labkey.api.ldk.table.ButtonConfigFactory;
 import org.labkey.api.security.User;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -65,4 +68,10 @@ abstract public class LDKService
     abstract public void logPerfMetric(Container c, User u, String type, String comment, Double value);
 
     abstract public void registerContainerScopedTable(String dbSchemaName, String tableName, String pseudoPk);
+
+    abstract public void registerQueryButton(ButtonConfigFactory btn, String schema, String query);
+
+    abstract public List<ButtonConfigFactory> getQueryButtons(TableInfo ti);
+
+    abstract public void customizeButtonBar(AbstractTableInfo ti, List<ButtonConfigFactory> buttons);
 }
