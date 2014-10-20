@@ -444,7 +444,8 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
     // CONSIDER: Move to ScriptTaskImpl -- it's the only usage of this method
     protected void writeTaskInfo(File file, RecordedAction action) throws IOException
     {
-        RowMapFactory<Object> factory = new RowMapFactory<>("Name", "Value");
+        List<String> columns = Arrays.asList("Name", "Value");
+        RowMapFactory<Object> factory = new RowMapFactory<>(columns);
         List<Map<String, Object>> rows = new ArrayList<>();
 
         // Job information
@@ -505,7 +506,7 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             }
         }
 
-        TSVMapWriter tsvWriter = new TSVMapWriter(rows);
+        TSVMapWriter tsvWriter = new TSVMapWriter(columns, rows);
         tsvWriter.setHeaderRowVisible(false);
         tsvWriter.write(file);
     }

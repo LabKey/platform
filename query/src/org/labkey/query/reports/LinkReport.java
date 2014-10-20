@@ -64,8 +64,9 @@ public class LinkReport extends BaseRedirectReport
         {
             Logger.getLogger(LinkReport.class).warn("Error rendering link report thumbnail: " + uhe.getMessage());
         }
-        catch (IOException e)
+        catch (Exception e)
         {
+            ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.ResolveURL, url.toString(), false);
             ExceptionUtil.logExceptionToMothership(null, e);
         }
         
