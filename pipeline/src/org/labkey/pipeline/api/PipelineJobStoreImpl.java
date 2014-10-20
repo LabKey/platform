@@ -130,7 +130,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         boolean active = scope.isTransactionActive();
-        try (DbScope.Transaction transaction = scope.ensureTransaction(SPLIT_LOCK))
+        try (DbScope.Transaction transaction = scope.ensureTransaction(true, SPLIT_LOCK))
         {
             PipelineStatusManager.enforceLockOrder(job.getJobGUID(), active);
 
@@ -174,7 +174,7 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         boolean active = scope.isTransactionActive();
-        try (DbScope.Transaction transaction = scope.ensureTransaction(SPLIT_LOCK))
+        try (DbScope.Transaction transaction = scope.ensureTransaction(true, SPLIT_LOCK))
         {
             TaskId tid = job.getActiveTaskId();
 

@@ -3222,7 +3222,7 @@ public class StudyManager
                 }
             }
 
-            try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().beginTransaction())
+            try (Transaction transaction = StudySchema.getInstance().getSchema().getScope().ensureTransaction())
             {
                 for (Map<String, Object> row : rows)
                 {

@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableSelector;
@@ -413,7 +414,13 @@ public class PipelineEmailPreferences
                 filter.addCondition(FieldKey.fromParts("modified"), min, CompareType.GTE);
                 filter.addCondition(FieldKey.fromParts("modified"), max, CompareType.LT);
 
-                PipelineStatusFileImpl[] files = new TableSelector(PipelineStatusManager.getTableInfo(), filter, null).getArray(PipelineStatusFileImpl.class);
+                PipelineStatusFileImpl[] files;
+                try (DbScope.Transaction transaction = PipelineStatusManager.getTableInfo().getSchema().getScope().ensureTransaction(true))
+                {
+                    files = new TableSelector(PipelineStatusManager.getTableInfo(), filter, null).getArray(PipelineStatusFileImpl.class);
+                    transaction.commit();
+                }
+
                 if (files.length > 0)
                 {
                     PipelineManager.sendNotificationEmail(files, _c, min, max, _isSuccessNotification);
