@@ -451,7 +451,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
                     StringBuilder errors = new StringBuilder();
                     for (GWTDomain<GWTPropertyDescriptor> domain : assay.getDomains())
                     {
-                        List<String> domainErrors = updateDomainDescriptor(domain, protocol.getName(), getContainer());
+                        List<String> domainErrors = updateDomainDescriptor(domain, protocol, provider);
                         for (String error : domainErrors)
                         {
                             errors.append(error).append("\n");
@@ -479,16 +479,18 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
         }
     }
 
-    private List<String> updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, String protocolName, Container protocolContainer)
+    private List<String> updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider)
     {
-        GWTDomain<? extends GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), protocolContainer);
+        // NOTE: should this be protocol.getContainer()?
+        GWTDomain<? extends GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), getContainer());
         for (GWTPropertyDescriptor prop : domain.getFields())
         {
             if (prop.getLookupQuery() != null)
             {
-                prop.setLookupQuery(prop.getLookupQuery().replace(AbstractAssayProvider.ASSAY_NAME_SUBSTITUTION, protocolName));
+                prop.setLookupQuery(prop.getLookupQuery().replace(AbstractAssayProvider.ASSAY_NAME_SUBSTITUTION, protocol.getName()));
             }
         }
+        provider.changeDomain(getUser(), protocol, previous, domain);
         return updateDomainDescriptor(previous, domain);
     }
 
