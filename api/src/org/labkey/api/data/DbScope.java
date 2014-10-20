@@ -240,7 +240,18 @@ public class DbScope
      */
     public Transaction ensureTransaction(Lock... locks)
     {
-        return ensureTransaction(Connection.TRANSACTION_READ_COMMITTED, locks);
+        return ensureTransaction(false, locks);
+    }
+
+    /**
+     * @param isPipelineStatus true if the transaction is to access pipeline.StatusFiles; false otherwise
+     * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
+     *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
+     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
+     */
+    public Transaction ensureTransaction(boolean isPipelineStatus, Lock... locks)
+    {
+        return ensureTransaction(isPipelineStatus, Connection.TRANSACTION_READ_COMMITTED, locks);
     }
 
 
@@ -251,20 +262,36 @@ public class DbScope
      */
     public Transaction ensureTransaction(int isolationLevel, Lock... locks)
     {
+        return ensureTransaction(false, isolationLevel, locks);
+    }
+
+    /**
+     * @param isPipelineStatus true if the transaction is to access pipeline.StatusFiles; false otherwise
+     * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
+     *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
+     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
+     * */
+    public Transaction ensureTransaction(boolean isPipelineStatus, int isolationLevel, Lock... locks)
+    {
+        // Note: it's theorectically possible to get 3 or more transactions on the transaction stack, if we call this
+        //       with isPipelineStatus (false, true, false) or (true, false, true). This should not be done because
+        //       it could cause a deadlock. We could change getCurrentTransactionImpl to take the flag and look past
+        //       the top of the stack, but that would require a *lot* of places knowing which they are looking for,
+        //       which is not feasible.
         if (isTransactionActive())
         {
             TransactionImpl transaction = getCurrentTransactionImpl();
             assert null != transaction;
-            transaction.increment(locks);
-            Connection conn = transaction.getConnection();
+            if (isPipelineStatus == transaction.isPipelineStatus())
+            {
+                transaction.increment(locks);
+                Connection conn = transaction.getConnection();
 //            if (conn.getTransactionIsolation() < isolationLevel)
 //                conn.setTransactionIsolation(isolationLevel);
-            return transaction;
+                return transaction;
+            }
         }
-        else
-        {
-            return beginTransaction(isolationLevel, locks);
-        }
+        return beginTransaction(isPipelineStatus, isolationLevel, locks);
     }
 
 
@@ -275,7 +302,12 @@ public class DbScope
      */
     public Transaction beginTransaction(Lock... locks)
     {
-        return beginTransaction(Connection.TRANSACTION_READ_COMMITTED, locks);
+        return beginTransaction(false, locks);
+    }
+
+    public Transaction beginTransaction(boolean isPipelineStatus, Lock... locks)
+    {
+        return beginTransaction(isPipelineStatus, Connection.TRANSACTION_READ_COMMITTED, locks);
     }
 
     /**
@@ -284,6 +316,11 @@ public class DbScope
      *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
      */
     public Transaction beginTransaction(int isolationLevel, Lock... locks)
+    {
+        return beginTransaction(false, isolationLevel, locks);
+    }
+
+    public Transaction beginTransaction(boolean isPipelineStatus, int isolationLevel, Lock... locks)
     {
         Connection conn = null;
         TransactionImpl result = null;
@@ -308,7 +345,8 @@ public class DbScope
             {
                 // Acquire the requested locks BEFORE entering the synchronized block for mapping the transaction
                 // to the current thread
-                result = new TransactionImpl(conn, locks);
+                result = new TransactionImpl(conn, isPipelineStatus, locks);
+                int stackDepth = 0;
                 synchronized (_transaction)
                 {
                     List<TransactionImpl> transactions = _transaction.get(getEffectiveThread());
@@ -318,7 +356,10 @@ public class DbScope
                         _transaction.put(getEffectiveThread(), transactions);
                     }
                     transactions.add(result);
+                    stackDepth = transactions.size();
                 }
+                if (stackDepth > 2)
+                    LOG.info("Transaction stack for thread '" + getEffectiveThread().getName() + "' is " + stackDepth);
             }
         }
 
@@ -1272,10 +1313,12 @@ public class DbScope
         private boolean _aborted = false;
         private int _closesToIgnore = 0;
         private Throwable _creation = new Throwable();
+        private final boolean _isPipelineStatus;
 
-        TransactionImpl(Connection conn, Lock... extraLocks)
+        TransactionImpl(Connection conn, boolean isPipelineStatus, Lock... extraLocks)
         {
             _conn = conn;
+            _isPipelineStatus = isPipelineStatus;
             increment(extraLocks);
         }
 
@@ -1431,6 +1474,11 @@ public class DbScope
                 extraLock.lock();
             }
             _locks.add(Arrays.asList(extraLocks));
+        }
+
+        public boolean isPipelineStatus()
+        {
+            return _isPipelineStatus;
         }
     }
 
