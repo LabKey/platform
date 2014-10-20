@@ -26,7 +26,9 @@ import java.util.Map;
 
 public interface ExpRun extends ExpObject
 {
+    /** @return the experiments (AKA run groups in the UI) of which this run is a member */
     public List<? extends ExpExperiment> getExperiments();
+
     @Nullable
     public ExpExperiment getBatch();
     public ExpProtocol getProtocol();
@@ -55,8 +57,10 @@ public interface ExpRun extends ExpObject
     void setEntityId(String entityId);
     String getEntityId();
 
+    /** @return map from material object to role name. Multiple inputs might use the same role name, hence the direction of the map */
     Map<ExpMaterial, String> getMaterialInputs();
 
+    /** @return map from data object to role name. Multiple inputs might use the same role name, hence the direction of the map */
     Map<ExpData, String> getDataInputs();
 
     List<ExpMaterial> getMaterialOutputs();
@@ -75,12 +79,19 @@ public interface ExpRun extends ExpObject
 
     void deleteProtocolApplications(User user);
 
+    /** Mark this run and its data as being replaced (superceeded) by another, more current run */
     void setReplacedByRun(ExpRun run);
+
+    /** @return the run that represents the updated version of this run's data, if any */
     ExpRun getReplacedByRun();
 
+    /**
+     * @return the runs that are being marked as being replaced by this run. In almost all cases this is zero or one
+     * run, but it could be multiple
+     */
     List<? extends ExpRun> getReplacesRuns();
 
-    /** archive Data Files primarily used when a file is deleted. */
+    /** Archive data files associated with the run, primarily used when a file is deleted. */
     public void archiveDataFiles(User user);
 
     void setCreated(Date created);
