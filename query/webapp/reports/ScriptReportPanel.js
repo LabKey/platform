@@ -556,7 +556,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                 {
                     // Translate "Data" tab dataregion params to use view tab dataregion name
                     var newName = this.reportConfig.dataRegionName + '.' + name.substr(prefix.length);
-                    url = url + '&' + newName + '=' + params[name];
+                    url = url + '&' + encodeURIComponent(newName) + '=' + encodeURIComponent(params[name]);
                 }
             }
         }
