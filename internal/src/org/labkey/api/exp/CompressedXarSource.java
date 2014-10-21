@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp;
 
+import org.labkey.api.data.Container;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.pipeline.PipelineJob;
 
@@ -36,6 +37,18 @@ public class CompressedXarSource extends AbstractFileXarSource
     public CompressedXarSource(File xarFile, PipelineJob job)
     {
         super(job);
+        _xarFile = xarFile;
+    }
+
+    /*
+     * @param xarFile
+     * @param job
+     * @param targetContainer -- This is the container where the experiment and runs will get imported.
+     *                           This may not be the same as the the Container returned by job.getContainer().
+     */
+    public CompressedXarSource(File xarFile, PipelineJob job, Container targetContainer)
+    {
+        super(job.getDescription(), targetContainer, job.getUser());
         _xarFile = xarFile;
     }
 

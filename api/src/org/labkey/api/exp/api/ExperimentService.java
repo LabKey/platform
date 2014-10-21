@@ -253,6 +253,10 @@ public class ExperimentService
 
         void deleteExperimentRunsByRowIds(Container container, final User user, int... selectedRunIds);
 
+        public void deleteExpExperimentByRowId(Container container, User user, int experimentId);
+
+        public void addExperimentListener(ExperimentListener listener);
+
         void clearCaches();
 
         List<ProtocolApplicationParameter> getProtocolApplicationParameters(int rowId);

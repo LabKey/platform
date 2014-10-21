@@ -20,7 +20,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.folder.xml.FolderDocument;
 import org.labkey.folder.xml.SubfolderType;
@@ -43,8 +42,8 @@ public class SubfolderWriter extends BaseFolderWriter
     @Override
     public void write(Container container, ImportContext<FolderDocument.Folder> ctx, VirtualFile vf) throws Exception
     {
-        // start with just those child containers that the user has Admin permissions
-        List<Container> allChildren = ContainerManager.getChildren(container, ctx.getUser(), AdminPermission.class, true);
+        // start with just those child containers that the user has permissions to export.
+        List<Container> allChildren = ContainerManager.getChildren(container, ctx.getUser(), FolderExportPermission.class, true);
         List<Container> childrenToExport = new ArrayList<>();
         getChildrenToExport(ctx, allChildren, childrenToExport);
 

@@ -62,6 +62,8 @@ import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 import org.labkey.api.util.TimeOnlyDate;
 import org.labkey.api.util.URLHelper;
+import org.labkey.api.view.ShortURLRecord;
+import org.labkey.api.view.ShortURLRecordConverter;
 import org.springframework.beans.PropertyEditorRegistrar;
 import org.springframework.beans.PropertyEditorRegistry;
 
@@ -157,6 +159,7 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new SchemaKey.Converter(), SchemaKey.class);
         _register(new FieldKey.Converter(), FieldKey.class);
         _register(new JSONTypeConverter(), JSONObject.class);
+        _register(new ShortURLRecordConverter(), ShortURLRecord.class);
         EnumConverter.registerEnum(DataSet.KeyManagementType.class);
         EnumConverter.registerEnum(TSVWriter.DELIM.class);
         EnumConverter.registerEnum(TSVWriter.QUOTE.class);

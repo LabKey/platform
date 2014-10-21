@@ -52,4 +52,7 @@ public interface ShortURLService
      */
     public void deleteShortURL(@NotNull ShortURLRecord record, @NotNull User user);
 
+    public String validateShortURL(String shortURL) throws ValidationException;
+
+    public ShortURLRecord getForEntityId(@NotNull String entityId);
 }

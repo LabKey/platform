@@ -15,10 +15,13 @@
  */
 package org.labkey.api.view;
 
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.SecurableResource;
@@ -36,7 +39,7 @@ import java.util.Set;
  * User: jeckels
  * Date: 1/23/14
  */
-public class ShortURLRecord implements SecurableResource
+public class ShortURLRecord implements SecurableResource, Parameter.JdbcParameterValue
 {
     public static final String URL_SUFFIX = ".url";
 
@@ -164,6 +167,33 @@ public class ShortURLRecord implements SecurableResource
 
     public String renderShortURL()
     {
-        return AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath() + "/" + getShortURL() + URL_SUFFIX;
+        return renderShortURL(getShortURL());
+    }
+
+    public static String renderShortURL(String shortUrl)
+    {
+        shortUrl = StringUtils.trimToNull(shortUrl);
+        if(shortUrl != null)
+        {
+            return AppProps.getInstance().getBaseServerUrl() + AppProps.getInstance().getContextPath() + "/" + shortUrl + URL_SUFFIX;
+        }
+        else
+           return "Error_rendering_short_url";
+    }
+
+
+
+    @Nullable
+    @Override
+    public Object getJdbcParameterValue()
+    {
+        return getEntityId();
+    }
+
+    @NotNull
+    @Override
+    public JdbcType getJdbcParameterType()
+    {
+        return JdbcType.VARCHAR;
     }
 }

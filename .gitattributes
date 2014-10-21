@@ -83,6 +83,7 @@ api/src/org/labkey/api/admin/AdminUrls.java -text
 api/src/org/labkey/api/admin/BaseFolderWriter.java -text
 api/src/org/labkey/api/admin/CoreUrls.java -text
 api/src/org/labkey/api/admin/FolderExportContext.java -text
+api/src/org/labkey/api/admin/FolderExportPermission.java -text
 api/src/org/labkey/api/admin/FolderImportContext.java -text
 api/src/org/labkey/api/admin/FolderImporter.java -text
 api/src/org/labkey/api/admin/FolderImporterFactory.java -text
@@ -91,6 +92,7 @@ api/src/org/labkey/api/admin/FolderSerializationRegistry.java -text
 api/src/org/labkey/api/admin/FolderWriter.java -text
 api/src/org/labkey/api/admin/FolderWriterFactory.java -text
 api/src/org/labkey/api/admin/FolderWriterImpl.java -text
+api/src/org/labkey/api/admin/FolderWriterNames.java -text
 api/src/org/labkey/api/admin/ImportContext.java -text
 api/src/org/labkey/api/admin/ImportException.java -text
 api/src/org/labkey/api/admin/ImportOptions.java -text
@@ -655,6 +657,7 @@ api/src/org/labkey/api/exp/api/ExpRun.java -text
 api/src/org/labkey/api/exp/api/ExpRunInput.java -text
 api/src/org/labkey/api/exp/api/ExpSampleSet.java -text
 api/src/org/labkey/api/exp/api/ExperimentJSONConverter.java -text
+api/src/org/labkey/api/exp/api/ExperimentListener.java -text
 api/src/org/labkey/api/exp/api/ExperimentService.java -text
 api/src/org/labkey/api/exp/api/ExperimentUrls.java -text
 api/src/org/labkey/api/exp/api/IAssayDomainType.java -text
@@ -1656,6 +1659,7 @@ api/src/org/labkey/api/view/ReaderView.java -text
 api/src/org/labkey/api/view/RequestBasicAuthException.java -text
 api/src/org/labkey/api/view/ServletView.java -text
 api/src/org/labkey/api/view/ShortURLRecord.java -text
+api/src/org/labkey/api/view/ShortURLRecordConverter.java -text
 api/src/org/labkey/api/view/ShortURLService.java -text
 api/src/org/labkey/api/view/SimpleFolderTab.java -text
 api/src/org/labkey/api/view/SimpleTextDisplayElement.java -text
