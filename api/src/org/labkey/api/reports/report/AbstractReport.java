@@ -157,6 +157,7 @@ public abstract class AbstractReport implements Report
         return null;
     }
 
+    @Nullable
     public ActionURL getEditReportURL(ViewContext context)
     {
         return null;
