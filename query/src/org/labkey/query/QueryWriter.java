@@ -21,6 +21,7 @@ import org.apache.xmlbeans.XmlOptions;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryDefinition;
@@ -51,7 +52,7 @@ public class QueryWriter extends BaseFolderWriter
 
     public String getSelectionText()
     {
-        return "Queries";
+        return FolderWriterNames.QUERIES;
     }
 
     @Override

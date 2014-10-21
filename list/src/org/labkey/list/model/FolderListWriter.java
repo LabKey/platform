@@ -19,6 +19,7 @@ package org.labkey.list.model;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListService;
@@ -36,7 +37,7 @@ public class FolderListWriter extends BaseFolderWriter
 
     public String getSelectionText()
     {
-        return "Lists";
+        return FolderWriterNames.LISTS;
     }
 
     @Override

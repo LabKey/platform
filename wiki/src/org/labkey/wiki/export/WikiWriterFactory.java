@@ -18,6 +18,7 @@ package org.labkey.wiki.export;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
@@ -45,7 +46,7 @@ public class WikiWriterFactory implements FolderWriterFactory
         @Override
         public String getSelectionText()
         {
-            return "Wikis and their attachments";
+            return FolderWriterNames.WIKIS_AND_THEIR_ATTACHMENTS;
         }
 
         @Override

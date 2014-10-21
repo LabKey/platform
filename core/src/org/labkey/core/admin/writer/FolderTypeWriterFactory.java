@@ -18,6 +18,7 @@ package org.labkey.core.admin.writer;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
@@ -42,7 +43,7 @@ public class FolderTypeWriterFactory implements FolderWriterFactory
         @Override
         public String getSelectionText()
         {
-            return "Folder type and active modules";
+            return FolderWriterNames.FOLDER_TYPE_AND_ACTIVE_MODULES;
         }
 
         @Override

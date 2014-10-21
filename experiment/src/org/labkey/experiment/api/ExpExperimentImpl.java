@@ -186,40 +186,7 @@ public class ExpExperimentImpl extends ExpIdentifiableEntityImpl<Experiment> imp
 
     public void delete(User user)
     {
-        if (!getContainer().hasPermission(user, DeletePermission.class))
-        {
-            throw new IllegalStateException("Not permitted");
-        }
-
-        try (DbScope.Transaction t = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
-        {
-            // If we're a batch, delete all the runs too
-            if (_object.getBatchProtocolId() != null)
-            {
-                for (ExpRunImpl expRun : getRuns())
-                {
-                    expRun.delete(user);
-                }
-            }
-
-            SqlExecutor executor = new SqlExecutor(ExperimentServiceImpl.get().getExpSchema());
-
-            SQLFragment sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList()
-                    + " WHERE ExperimentId IN ("
-                    + " SELECT E.RowId FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
-                    + " WHERE E.RowId = " + getRowId()
-                    + " AND E.Container = ? )", getContainer());
-            executor.execute(sql);
-
-            OntologyManager.deleteOntologyObjects(getContainer(), getLSID());
-
-            sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoExperiment()
-                    + " WHERE RowId = " + getRowId()
-                    + " AND Container = ?", getContainer());
-            executor.execute(sql);
-
-            t.commit();
-        }
+        ExperimentServiceImpl.get().deleteExpExperimentByRowId(getContainer(), user, getRowId());
     }
 
     public void setHidden(boolean hidden)

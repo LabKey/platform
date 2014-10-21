@@ -63,7 +63,7 @@ public class ExperimentPipelineJob extends PipelineJob
         header("XAR Import from " + _xarSource.toString());
     }
 
-    private XarSource createXarSource(File file)
+    protected XarSource createXarSource(File file)
     {
         String name = file.getName().toLowerCase();
         if (name.endsWith(".xar") || name.endsWith(".zip"))

@@ -58,6 +58,7 @@ import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExpSampleSet;
+import org.labkey.api.exp.api.ExperimentListener;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.api.ProtocolImplementation;
 import org.labkey.api.exp.list.ListDefinition;
@@ -154,6 +155,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
     private List<ExperimentMaterialListener> _materialListeners = new CopyOnWriteArrayList<>();
     protected Map<String, DataType> _dataTypes = new HashMap<>();
     protected Map<String, ProtocolImplementation> _protocolImplementations = new HashMap<>();
+
+    private static final List<ExperimentListener> _listeners = new CopyOnWriteArrayList<>();
 
     private static final ReentrantLock XAR_IMPORT_LOCK = new ReentrantLock();
 
@@ -1718,6 +1721,59 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
     }
 
+    public void deleteExpExperimentByRowId(Container c, User user, int rowId)
+    {
+        if (!c.hasPermission(user, DeletePermission.class))
+        {
+            throw new IllegalStateException("Not permitted");
+        }
+
+        ExpExperimentImpl experiment = getExpExperiment(rowId);
+        if(experiment == null)
+            return;
+
+        deleteExpExperiment(user, experiment);
+    }
+
+    private void deleteExpExperiment(User user, ExpExperimentImpl experiment)
+    {
+        try (DbScope.Transaction t = ExperimentServiceImpl.get().getExpSchema().getScope().ensureTransaction())
+        {
+            // If we're a batch, delete all the runs too
+            if (experiment.getDataObject().getBatchProtocolId() != null)
+            {
+                for (ExpRunImpl expRun : experiment.getRuns())
+                {
+                    expRun.delete(user);
+                }
+            }
+
+            SqlExecutor executor = new SqlExecutor(ExperimentServiceImpl.get().getExpSchema());
+
+            SQLFragment sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoRunList()
+                    + " WHERE ExperimentId IN ("
+                    + " SELECT E.RowId FROM " + ExperimentServiceImpl.get().getTinfoExperiment() + " E "
+                    + " WHERE E.RowId = " + experiment.getRowId()
+                    + " AND E.Container = ? )", experiment.getContainer());
+            executor.execute(sql);
+
+            OntologyManager.deleteOntologyObjects(experiment.getContainer(), experiment.getLSID());
+
+            // Inform the listeners.
+            for(ExperimentListener listener: _listeners)
+            {
+                listener.beforeExperimentDeleted(experiment, user);
+            }
+
+            sql = new SQLFragment("DELETE FROM " + ExperimentServiceImpl.get().getTinfoExperiment()
+                    + " WHERE RowId = " + experiment.getRowId()
+                    + " AND Container = ?", experiment.getContainer());
+            executor.execute(sql);
+
+            t.commit();
+        }
+    }
+
     public void deleteAllExpObjInContainer(Container c, User user) throws ExperimentException
     {
         if (null == c)
@@ -1768,7 +1824,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             // Delete all the experiments/run groups/batches
             for (ExpExperimentImpl exp : exps)
             {
-                exp.delete(user);
+                deleteExpExperiment(user, exp);
             }
 
             // now delete protocols (including their nested actions and parameters.
@@ -3214,5 +3270,10 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             }
         }
         return potentialParents;
+    }
+
+    public void addExperimentListener(ExperimentListener listener)
+    {
+        _listeners.add(listener);
     }
 }

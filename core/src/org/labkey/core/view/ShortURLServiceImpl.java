@@ -20,8 +20,11 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
+import org.labkey.api.data.TableSelector;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.MutableSecurityPolicy;
 import org.labkey.api.security.SecurityPolicy;
@@ -126,7 +129,7 @@ public class ShortURLServiceImpl implements ShortURLService
         }
     }
 
-    private String validateShortURL(String shortURL) throws ValidationException
+    public String validateShortURL(String shortURL) throws ValidationException
     {
         if (shortURL == null || shortURL.trim().isEmpty())
         {
@@ -138,5 +141,12 @@ public class ShortURLServiceImpl implements ShortURLService
             throw new ValidationException("URLs must not contain '\\', '/', or '.'");
         }
         return shortURL;
+    }
+
+    @Override
+    public ShortURLRecord getForEntityId(@NotNull String entityId)
+    {
+        return new TableSelector(CoreSchema.getInstance().getTableInfoShortURL(),
+                                 new SimpleFilter(FieldKey.fromParts("EntityId"), entityId), null).getObject(ShortURLRecord.class);
     }
 }

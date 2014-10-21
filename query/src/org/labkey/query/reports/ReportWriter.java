@@ -19,6 +19,7 @@ import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.reports.Report;
@@ -44,7 +45,7 @@ public class ReportWriter extends BaseFolderWriter
 
     public String getSelectionText()
     {
-        return "Reports";
+        return FolderWriterNames.REPORTS;
     }
 
     @Override

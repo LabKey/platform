@@ -1469,6 +1469,8 @@ experiment/src/org/labkey/experiment/uploadMaterials.jsp -text
 experiment/src/org/labkey/experiment/xar/AbstractXarImporter.java -text
 experiment/src/org/labkey/experiment/xar/AutoFileLSIDReplacer.java -text
 experiment/src/org/labkey/experiment/xar/FileResolver.java -text
+experiment/src/org/labkey/experiment/xar/FolderXarImporterFactory.java -text
+experiment/src/org/labkey/experiment/xar/FolderXarWriterFactory.java -text
 experiment/src/org/labkey/experiment/xar/XarExpander.java -text
 experiment/src/org/labkey/experiment/xar/XarExportSelection.java -text
 experiment/webapp/Experiment/ExperimentRunNotFound.gif -text

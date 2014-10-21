@@ -19,6 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -53,7 +54,7 @@ public class PageWriterFactory implements FolderWriterFactory
     {
         public String getSelectionText()
         {
-            return "Webpart properties and layout";
+            return FolderWriterNames.WEBPART_PROPERTIES_AND_LAYOUT;
         }
 
         public void write(Container c, ImportContext<FolderDocument.Folder> ctx, VirtualFile root) throws Exception

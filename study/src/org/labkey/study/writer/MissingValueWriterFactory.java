@@ -19,6 +19,7 @@ import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.MvUtil;
@@ -45,7 +46,7 @@ public class MissingValueWriterFactory implements FolderWriterFactory
         @Override
         public String getSelectionText()
         {
-            return "Missing value indicators";
+            return FolderWriterNames.MISSING_VALUE_INDICATORS;
         }
 
         @Override

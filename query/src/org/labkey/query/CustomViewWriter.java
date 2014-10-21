@@ -19,6 +19,7 @@ import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderExportContext;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.admin.ImportException;
 import org.labkey.api.data.Container;
@@ -46,7 +47,7 @@ public class CustomViewWriter extends BaseFolderWriter
 
     public String getSelectionText()
     {
-        return "Custom Views";
+        return FolderWriterNames.CUSTOM_VIEWS;
     }
 
     @Override

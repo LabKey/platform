@@ -16,6 +16,7 @@
 package org.labkey.experiment;
 
 import org.jetbrains.annotations.NotNull;
+import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -67,6 +68,8 @@ import org.labkey.experiment.controllers.property.PropertyController;
 import org.labkey.experiment.defaults.DefaultValueServiceImpl;
 import org.labkey.experiment.pipeline.ExperimentPipelineProvider;
 import org.labkey.experiment.types.TypesController;
+import org.labkey.experiment.xar.FolderXarImporterFactory;
+import org.labkey.experiment.xar.FolderXarWriterFactory;
 
 import java.beans.PropertyChangeEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -284,6 +287,12 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         PropertyService.get().registerValidatorKind(new RegExValidator());
         PropertyService.get().registerValidatorKind(new RangeValidator());
         PropertyService.get().registerValidatorKind(new LookupValidator());
+
+        FolderSerializationRegistry folderRegistry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+        if (null != folderRegistry)
+        {
+            folderRegistry.addFactories(new FolderXarWriterFactory(), new FolderXarImporterFactory());
+        }
     }
 
     @NotNull

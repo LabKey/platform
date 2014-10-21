@@ -19,6 +19,7 @@ import org.labkey.api.admin.AbstractFolderContext;
 import org.labkey.api.admin.BaseFolderWriter;
 import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.admin.FolderWriterFactory;
+import org.labkey.api.admin.FolderWriterNames;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.writer.VirtualFile;
@@ -41,7 +42,7 @@ import java.util.LinkedList;
 public class StudyWriterFactory implements FolderWriterFactory
 {
     private static final String DEFAULT_DIRECTORY = "study";
-    public static final String DATA_TYPE = "Study";
+    public static final String DATA_TYPE = FolderWriterNames.STUDY;
 
     @Override
     public FolderWriter create()
