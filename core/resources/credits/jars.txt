@@ -19,8 +19,8 @@ commons-math3-3.0.jar|Commons Math|3.0|{link:Apache|http://commons.apache.org/ma
 commons-net-3.3.jar|Commons Net|3.3|{link:Apache|http://jakarta.apache.org/commons/net/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|FTPClient used to retrieve resources from other servers (e.g., GO annotations)
 commons-pool-1.6.jar|Commons Pool|1.6|{link:Apache|http://commons.apache.org/pool/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Pipeline (Object pooling)
 commons-validator-1.4.0.jar|Commons Validator|1.4.0|{link:Apache|http://jakarta.apache.org/commons/validator/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Data validation and error messages
+core-renderer.jar|FlyingSaucer|R8|{link:FlyingSaucer|http://code.google.com/p/flying-saucer/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|kevink|XHTML/CSS rendering library
 ehcache-core-2.6.8.jar|Ehcache|2.6.8|{link:Terracotta|http://ehcache.org/documentation/overview.html}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Caching library
-flying-saucer-core-9.0.7.jar|FlyingSaucer|9.0.7|{link:FlyingSaucer|http://code.google.com/p/flying-saucer/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|kevink|XHTML/CSS rendering library
 gson-2.2.4.jar|Google Gson|2.2.4|{link:google-gson|http://code.google.com/p/google-gson}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Converts Java Objects to JSON and vice versa (used by tika-app.jar and jclouds)
 guava-15.0.jar|Guava: Google Core Libraries for Java|15.0|{link:guava-libraries|http://code.google.com/p/guava-libraries/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|Collections Library
 gwt-dnd-3.2.0.jar|Drag-and-Drop Library for Google Web-Toolkit|3.2.0|{link:gwt-dnd|http://code.google.com/p/gwt-dnd/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Library to make it easier to add drag-and-drop to GWT
