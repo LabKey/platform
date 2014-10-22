@@ -87,6 +87,7 @@
             expandUpload: <%=bean.isExpandFileUpload()%>,
             isPipelineRoot: <%=bean.isPipelineRoot()%>,
             adminUser: <%=c.hasPermission(getUser(), AdminPermission.class)%>,
+            statePrefix: <%=q(bean.getStatePrefix())%>,
             tbarItems: buttonActions
             <%
                 if (bean.isShowDetails())
