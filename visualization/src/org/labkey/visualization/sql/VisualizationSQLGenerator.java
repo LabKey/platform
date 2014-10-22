@@ -19,6 +19,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.HasViewContext;
@@ -62,6 +63,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     private Map<String, VisualizationSourceQuery> _sourceQueries = new LinkedHashMap<>();
     private Map<String, VisualizationIntervalColumn> _intervals = new HashMap<>();
     private List<VisualizationSourceColumn> _groupBys = new ArrayList<>();
+    private Set<VisualizationSourceColumn> _whereNotNulls = new LinkedHashSet<>();
 
     private ViewContext _viewContext;
     private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
@@ -223,6 +225,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                             {
                                 VisualizationSourceColumn dateCol = _columnFactory.create(getViewContext(), dateProperties);
                                 dateCol.setAllowNullResults(measureCol.isAllowNullResults());
+                                dateCol.setInNotNullSet(measureCol.isInNotNullSet());
                                 ensureSourceQuery(_viewContext.getContainer(), dateCol, query).addSelect(dateCol, false);
 
                                 VisualizationSourceColumn zeroDateCol = _columnFactory.create(getViewContext(), zeroDateProperties);
@@ -428,7 +431,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         // Add inner joins to the inner-join queries
         queries.addAll(innerJoinQueries);
 
-        String sql = getSQL(null, _columnFactory, queries, new ArrayList<>(_intervals.values()), "INNER JOIN", _groupBys.isEmpty(), _limit != null);
+        String sql = getSQL(null, _columnFactory, queries, new ArrayList<>(_intervals.values()), "INNER JOIN", _groupBys.isEmpty(), _limit != null, true);
 
         if (!_groupBys.isEmpty())
         {
@@ -452,7 +455,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         Map<String, Set<VisualizationSourceColumn>> columnAliases = getColumnMapping(_columnFactory, queries);
 
         StringBuilder aggregatedSQL = new StringBuilder("SELECT ");
-        String separator = "";
+        String separator;
         Set<VisualizationSourceQuery> groupByQueries = new LinkedHashSet<>();
         StringBuilder groupByAndSelectSQL = new StringBuilder();
 
@@ -541,6 +544,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return aggregatedSQL.toString();
     }
 
+    @Nullable
     private static IVisualizationSourceQuery findQuery(VisualizationSourceColumn column, Collection<IVisualizationSourceQuery> queries)
     {
         for (IVisualizationSourceQuery query : queries)
@@ -552,8 +556,15 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     }
 
     public String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory,
+                         Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals,
+                         String joinOperator, boolean includeOrderBys, boolean hasRowLimit) throws SQLGenerationException
+    {
+        return getSQL(parentQuery, factory, queries, intervals, joinOperator, includeOrderBys, hasRowLimit, false);
+    }
+
+    private String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory,
                                 Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals,
-                                String joinOperator, boolean includeOrderBys, boolean hasRowLimit) throws SQLGenerationException
+                                String joinOperator, boolean includeOrderBys, boolean hasRowLimit, boolean isOuterSelect) throws SQLGenerationException
     {
         // Reorder the queries in case one can join to the other, but not the reverse. For example,
         // we can join from a standard particiapnt visit/date dataset to a demographic dataset, but not the reverse.
@@ -604,6 +615,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         StringBuilder masterSelectList = new StringBuilder();
         String sep = "";
+
         for (Map.Entry<String,Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
         {
             Set<VisualizationSourceColumn> selectAliases = entry.getValue();
@@ -617,6 +629,10 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                 selectAlias = col.getSQLAlias() + (null==label ? " @preservetitle" : " @title='" + StringUtils.replace(label,"'","''") + "'");
                 if (col.isHidden())
                     selectAlias += " @hidden";
+
+                // stay outside the recursion, isOuterSelect only true at top level
+                if (isOuterSelect && col.isInNotNullSet())
+                    _whereNotNulls.add(col);
             }
             masterSelectList.append(sep).append(selectAlias);
             sep = ",\n\t";
@@ -636,8 +652,11 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys = new LinkedHashMap<>();
         StringBuilder sql = new StringBuilder();
+        IVisualizationSourceQuery lastQuery = null;
         for (IVisualizationSourceQuery query : queries)
         {
+            lastQuery = query;
+
             for (VisualizationSourceColumn orderBy : query.getSorts())
             {
                 Set<VisualizationSourceColumn> orderByAliases = allAliases.get(orderBy.getOriginalName());
@@ -673,13 +692,30 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             {
                 sql.append("ON ");
                 String andSep = "";
+
+                VisualizationSourceColumn leftColumn;
+                IVisualizationSourceQuery leftQuery;
+                VisualizationSourceColumn rightColumn;
+                IVisualizationSourceQuery rightQuery;
+
                 for (Pair<VisualizationSourceColumn, VisualizationSourceColumn> condition : query.getJoinConditions())
                 {
                     // either left or right should be our current query
-                    VisualizationSourceColumn leftColumn = condition.getKey();
-                    IVisualizationSourceQuery leftQuery = findQuery(condition.getKey(), queries);
-                    VisualizationSourceColumn rightColumn = condition.getValue();
-                    IVisualizationSourceQuery rightQuery = findQuery(condition.getValue(), queries);
+                    leftColumn = condition.getKey();
+                    leftQuery = findQuery(leftColumn, queries);
+                    rightColumn = condition.getValue();
+                    rightQuery = findQuery(rightColumn, queries);
+
+
+                    if (leftQuery == null)
+                    {
+                        throw new SQLGenerationException("Unable to determine query for left column: " + leftColumn.getAlias());
+                    }
+
+                    if (rightQuery == null)
+                    {
+                        throw new SQLGenerationException("Unable to determine query for right column: " + rightColumn.getAlias());
+                    }
 
                     // issue 20526: inner join gets confused about which alias to use for the join condition after coalesce
                     String rightAlias = parentQuery != null ? rightColumn.getSQLAlias() : rightColumn.getSQLOther();
@@ -690,6 +726,11 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     sql.append(rightQuery.getSQLAlias()).append(".").append(rightAlias).append("\n");
                 }
             }
+        }
+
+        if (isOuterSelect && lastQuery != null && !_whereNotNulls.isEmpty())
+        {
+            sql.append(getWhereNotNullClause(lastQuery, _whereNotNulls));
         }
 
         if (includeOrderBys && !orderBys.isEmpty())
@@ -715,6 +756,23 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         }
         if (findSchema(orderBys.keySet()).getDbSchema().getSqlDialect().isSqlServer() && !hasRowLimit)
             sql.append(" LIMIT 1000000");
+        return sql.toString();
+    }
+
+    private static String getWhereNotNullClause(IVisualizationSourceQuery query, Set<VisualizationSourceColumn> whereNotNulls)
+    {
+        if (whereNotNulls.isEmpty())
+        {
+            return "";
+        }
+        String sep = "";
+        StringBuilder sql = new StringBuilder(" WHERE ");
+        for (VisualizationSourceColumn notNull : whereNotNulls)
+        {
+            sql.append(sep).append(query.getSQLAlias()).append(".").append(notNull.getSQLAlias());
+            sql.append(" IS NOT NULL\n");
+            sep = " OR ";
+        }
         return sql.toString();
     }
 
