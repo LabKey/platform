@@ -13,6 +13,11 @@ Ext4.define('File.panel.Browser', {
     alias: ['widget.filebrowser'],
 
     /**
+     * @cfg {Boolean} adminUser
+     */
+    adminUser : false,
+
+    /**
      * @cfg {String} bodyCls
      */
     bodyCls : 'fbody',
@@ -41,7 +46,7 @@ Ext4.define('File.panel.Browser', {
 
         // Details panel renders a template without a record.
         if ((record && !record.get("collection")) || value) {
-            render = Ext4.util.Format.fileSize(value)
+            render = Ext4.util.Format.fileSize(value);
 
             // If larger than 1k, include the total bytes
             if (value > 1024) {
@@ -69,7 +74,7 @@ Ext4.define('File.panel.Browser', {
             if (value > 1024) {
                 var fmt = LABKEY.extDefaultNumberFormat || '0,000';
                 var bytes = Ext4.util.Format.number(value, fmt);
-                render = '<span title="' + bytes + ' bytes">' + render + '</span>'
+                render = '<span title="' + bytes + ' bytes">' + render + '</span>';
             }
         }
 
@@ -198,12 +203,16 @@ Ext4.define('File.panel.Browser', {
     showToolbar : true,
 
     /**
+     * @cfg {String} statePrefix
+     */
+    statePrefix : undefined,
+    STATE_LOCK: false,
+
+    /**
      * An additional set of toolbar configurable items that can be supplied at runtime.
      * @cfg {Array} tbarItems
      */
     tbarItems : [],
-
-    adminUser : false,
 
     statics : {
         /**
@@ -347,6 +356,13 @@ Ext4.define('File.panel.Browser', {
             shortMsgTpl: new Ext4.XTemplate('<span style="margin-left: 5px;" class="labkey-mv">{msg}</span>').compile(),
             shortMsgEnabledTpl : new Ext4.XTemplate('<span style="margin-left:5px;" class="labkey-mv">using {count} out of {total} file(s)</span>').compile()
         });
+
+        if (!this.hasStatePrefix()) {
+            this.statePrefix = undefined;
+        }
+        else {
+            Ext4.state.Manager.setProvider(new Ext4.state.CookieProvider());
+        }
 
         //
         // Tests require a flag element to notify state
@@ -978,7 +994,7 @@ Ext4.define('File.panel.Browser', {
             paging : this.bufferFiles
         });
 
-        this.fileStore = Ext4.create('Ext.data.Store', storeConfig);
+        this.fileStore = Ext4.create('File.store.GridStore', storeConfig);
 
         this.on('folderchange', this.updateGridProxy, this);
 
@@ -1158,7 +1174,19 @@ Ext4.define('File.panel.Browser', {
                 load: {
                     fn : function(s) {
                         this.loadRootNode();
-                        this.ensureVisible(this.fileSystem.getOffsetURL());
+                        if (this.hasStatePrefix()) {
+                            // Retrieve the last visited folder from the container cookie
+                            this.startFolder = Ext4.state.Manager.get(this.statePrefix + ".currentDirectory");
+                            if (this.startFolder)
+                            {
+                                this.getFileStore().LOCKED = true;
+                                this.STATE_LOCK = true;
+                                this.ensureVisible(this.startFolder);
+                            }
+                        }
+                        else {
+                            this.ensureVisible(this.fileSystem.getOffsetURL());
+                        }
                         this.onRefresh();
                     },
                     single: true
@@ -1246,7 +1274,9 @@ Ext4.define('File.panel.Browser', {
         if (!this.vStack) {
             this.vStack = [];
         }
-        var node = this.tree.getView().getTreeStore().getRootNode().findChild('id', nodeId, true);
+
+        var tree = this.tree;
+        var node = tree.getView().getTreeStore().getRootNode().findChild('id', nodeId, true);
         if (!node) {
             var p = this.fileSystem.getParentPath(nodeId);
             if (p == this.folderSeparator) {
@@ -1258,15 +1288,25 @@ Ext4.define('File.panel.Browser', {
             this.vStack.push(nodeId);
             this.ensureVisible(p);
         }
-        else {
-            if (!node.isLeaf()) {
+        else
+        {
+            if (!node.isLeaf())
+            {
                 var s = this.vStack.pop();
-                var fn = s ? function() { this.ensureVisible(s);  } : undefined;
-                if (!s) {
-                    this.changeFolder(node);
-                    this.tree.getSelectionModel().select(node, false, false);
+                if (!s)
+                {
+                    tree.getSelectionModel().select(node);
+                    this.getFileStore().LOCKED = false;
+                    this.STATE_LOCK = false;
+                    this.vStack = undefined;
                 }
-                node.expand(false, fn, this);
+                else
+                {
+                    tree.getView().getTreeStore().on('load', function (cmp, node, recs) {
+                        this.ensureVisible(s);
+                    }, this, {single: true});
+                    tree.getSelectionModel().select(node);
+                }
             }
         }
     },
@@ -1862,6 +1902,11 @@ Ext4.define('File.panel.Browser', {
             if (this.currentDirectory)
                 this.getDetailPanel().update(this.currentDirectory.data);
         }
+
+        // Save the current folder in a state (cookie) for use on start
+        if (this.hasStatePrefix() && this.STATE_LOCK !== true) {
+            Ext4.state.Manager.set(this.statePrefix + '.currentDirectory', model.data.id);
+        }
     },
 
     // calling select does not fire 'selectionchange'
@@ -1993,19 +2038,24 @@ Ext4.define('File.panel.Browser', {
 
     reload : function(options) {
         // Reload stores
-        this.getFileStore().load(options);
-        var nodes = this.tree.getSelectionModel().getSelection(),
-            treeStore = this.tree.getStore();
+        if (this.STATE_LOCK !== true)
+        {
+            this.getFileStore().load(options);
+            var nodes = this.tree.getSelectionModel().getSelection(),
+                    treeStore = this.tree.getStore();
 
-        treeStore.on('load', function(s) {
-            this.tree.getView().refresh();
-        }, this, {single: true});
+            treeStore.on('load', function (s)
+            {
+                this.tree.getView().refresh();
+            }, this, {single: true});
 
-        var node = (nodes && nodes.length ? nodes[0] : treeStore.getRootNode());
-        treeStore.load({node: node});
+            var node = (nodes && nodes.length ? nodes[0] : treeStore.getRootNode());
+            treeStore.load({node: node});
 
-        if (this.showDetails) {
-            this.getDetailPanel().update(node.data);
+            if (this.showDetails)
+            {
+                this.getDetailPanel().update(node.data);
+            }
         }
     },
 
@@ -2425,11 +2475,14 @@ Ext4.define('File.panel.Browser', {
     },
 
     onRefresh : function() {
-        if (!this.refreshTask) {
-            this.refreshTask = new Ext4.util.DelayedTask(this.reload, this);
+        if (this.STATE_LOCK !== true) {
+
+            if (!this.refreshTask) {
+                this.refreshTask = new Ext4.util.DelayedTask(this.reload, this);
+            }
+            this.refreshTask.delay(100);
+            this.selectedRecord = undefined;
         }
-        this.refreshTask.delay(100);
-        this.selectedRecord = undefined;
     },
 
     refreshTreePath : function(path) {
@@ -2712,5 +2765,35 @@ Ext4.define('File.panel.Browser', {
         });
 
         return this.contextMenu;
+    },
+
+    hasStatePrefix : function() {
+        return Ext4.isString(this.statePrefix);
+    }
+});
+
+Ext4.define('File.store.GridStore', {
+    extend: 'Ext.data.Store',
+
+    LOCKED: false,
+
+    QUEUED: false,
+
+    CURRENT: false,
+
+    load : function() {
+        if (this.LOCKED !== true) {
+            if (this.isLoading()) {
+                this.QUEUED = this.getProxy().url;
+                if (this.QUEUED != this.CURRENT)
+                {
+                    this.on('load', function() { this.QUEUED = false; this.load(); }, this, {single: true});
+                }
+            }
+            else {
+                this.CURRENT = this.getProxy().url;
+                this.callParent(arguments);
+            }
+        }
     }
 });
