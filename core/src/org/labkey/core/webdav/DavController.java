@@ -1592,7 +1592,7 @@ public class DavController extends SpringActionController
                         if (p.startsWith("."))
                             continue;
                         resource = resolvePath(root.getPath().append(p));
-                        if (resource != null)
+                        if (resource != null && resource.canList(getUser(), true))
                             resources.add(resource);
                     }
 
