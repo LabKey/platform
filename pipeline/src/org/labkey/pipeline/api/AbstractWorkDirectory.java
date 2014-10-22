@@ -15,24 +15,24 @@
  */
 package org.labkey.pipeline.api;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.RecordedAction;
-import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.WorkDirFactory;
+import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.cmd.TaskPath;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
-import org.labkey.api.util.URIUtil;
 import org.labkey.api.util.NetworkDrive;
-import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.labkey.api.util.URIUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -129,7 +129,7 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     {
         File[] remainingFiles = getDir().listFiles();
 
-        if (remainingFiles != null && remainingFiles.length > 0)
+        if (remainingFiles != null)
         {
             try (WorkDirectory.CopyingResource lock = ensureCopyingLock())
             {
