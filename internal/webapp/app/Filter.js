@@ -54,6 +54,9 @@ Ext.define('LABKEY.app.model.Filter', {
                 } else if (o.length == 3) {
                     arr = o;
                 }
+                else {
+                    console.warn('You provided an invalid value for plotMeasures.');
+                }
             }
 
             return arr;

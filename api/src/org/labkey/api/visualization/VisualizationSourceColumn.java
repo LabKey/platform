@@ -15,6 +15,7 @@
  */
 package org.labkey.api.visualization;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
@@ -41,6 +42,7 @@ public class VisualizationSourceColumn
     private String _queryName;
     private UserSchema _schema;
     private boolean _allowNullResults;
+    private boolean _inNotNullSet;
     private boolean _requireLeftJoin;
     private String _name;
     protected String _alias;
@@ -143,12 +145,15 @@ public class VisualizationSourceColumn
         _schema = schema;
         _allowNullResults = allowNullResults == null || allowNullResults;
         _requireLeftJoin = (requireLeftJoin == null ? false : requireLeftJoin);
+        _inNotNullSet = false;
     }
 
     protected VisualizationSourceColumn(ViewContext context, Map<String, Object> properties)
     {
         this(getUserSchema(context, (String) properties.get("schemaName")), (String) properties.get("queryName"),
              (String) properties.get("name"), (Boolean) properties.get("allowNullResults"), (Boolean) properties.get("requireLeftJoin"));
+        _inNotNullSet = BooleanUtils.toBooleanDefaultIfNull((Boolean) properties.get("inNotNullSet"), false);
+
         JSONArray values = (JSONArray) properties.get("values");
         _clientAlias = (String)properties.get("alias");
         if (values != null)
@@ -224,6 +229,16 @@ public class VisualizationSourceColumn
     public void setRequireLeftJoin(boolean requireLeftJoin)
     {
         _requireLeftJoin = requireLeftJoin;
+    }
+
+    public boolean isInNotNullSet()
+    {
+        return _inNotNullSet;
+    }
+
+    public void setInNotNullSet(boolean inNotNullSet)
+    {
+        _inNotNullSet = inNotNullSet;
     }
 
     public void ensureColumn() throws IllegalArgumentException
