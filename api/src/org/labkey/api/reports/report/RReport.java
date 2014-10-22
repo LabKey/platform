@@ -75,7 +75,7 @@ public class RReport extends ExternalScriptEngineReport
     // We use .try_quietly instead of try so the R stack is included in the error
     // See http://stackoverflow.com/questions/16879821/save-traceback-on-error-using-trycatch
     // Note that clients can override this command in their rserve script engine settings
-    public static final String DEFAULT_RSERVE_CMD = "tools:::.try_quietly(capture.output(source(\\\"%s\\\")))";
+    public static final String DEFAULT_RSERVE_CMD = "tools:::.try_quietly(capture.output(source(\"%s\")))";
     public static final String DEFAULT_R_MACHINE = "127.0.0.1";
     public static final int DEFAULT_R_PORT = 6311;
 
