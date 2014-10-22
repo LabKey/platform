@@ -1383,16 +1383,22 @@ public class DbScope
         {
             if (_closesToIgnore == 0)
             {
-                if (!decrement())
+                boolean locksEmpty = decrement();
+                if (!locksEmpty)
                 {
                     _aborted = true;
                 }
 
                 closeConnection();
 
-                synchronized (_transaction)
+                if (locksEmpty)
                 {
-                    popCurrentTransaction();
+                    // Don't pop until locks are empty, because other closes have yet to occur
+                    // and we want to use _abort to ensure no one tries to commit this transaction
+                    synchronized (_transaction)
+                    {
+                        popCurrentTransaction();
+                    }
                 }
             }
             else
@@ -1802,8 +1808,9 @@ public class DbScope
                 {
                     // Intentionally miss a call to commit!
                 }
-                // Should already be rolled back because the inner transaction never called commit() before it was closed
-                assertFalse(getLabkeyScope().isTransactionActive());
+                // Should be aborted because the inner transaction never called commit() before it was closed
+                assertTrue(getLabkeyScope().isTransactionActive());
+                assertTrue(getLabkeyScope().getCurrentTransactionImpl()._aborted);
                 // This call should cause an IllegalStateException
                 t.commit();
             }
