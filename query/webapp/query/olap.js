@@ -853,9 +853,19 @@
 
         query : function(config)
         {
-            var copy = Ext4.apply({},config,{countFilter:[], whereFilter: [], useNamedFilters:[]});
-            copy.countFilter = copy.countFilter ? copy.countFilter.slice() : [];
+            var copy = Ext4.apply({}, config);
             copy.whereFilter = copy.whereFilter ? copy.whereFilter.slice() : [];
+
+            if (copy.filter && copy.countFilter) {
+                console.error('OLAP: Both filter and countFilter are specified. These are the same, using countFilter is recommended.');
+            }
+
+            if (copy.filter) {
+                copy.countFilter = copy.filter.slice();
+            }
+            else {
+                copy.countFilter = copy.countFilter ? copy.countFilter.slice() : [];
+            }
 
             var namedFilters = copy.useNamedFilters || [];
             for (var f=0; f < namedFilters.length; f++)
@@ -880,7 +890,6 @@
                             counts.push(filters[d]);
                         }
                         else {
-                            console.warn('Filter did not supply a valid \'filterType\'. Defaulting to COUNT');
                             counts.push(filters[d]);
                         }
                     }
@@ -898,7 +907,6 @@
 //                }
             }
             copy.sql = config.sql;
-//        console.debug(JSON.stringify({showEmpty:copy.showEmpty, onRows:copy.onRows, onCols:copy.onCols, filter:copy.filter}));
             return this._executeQuery(copy);
         },
 
@@ -1009,7 +1017,7 @@
                      * The filter is used to specify a subset of members in the countDistinctLevel to be counted in the query result
                      * (optional)
                      */
-                    countFilter: config.countFilter || config.filter,
+                    countFilter: config.countFilter,
 
                     /**
                      * Name of the level that relates the onRows, onColumns, and whereFilter results (e.g. ParticipantVisit).
