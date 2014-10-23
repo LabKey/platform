@@ -534,7 +534,8 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
     private String appendSimpleFilter(StringBuilder where, SimpleFilter filter, String separator)
     {
         Map<FieldKey, ColumnInfo> filterColTypes = getFilterColumns(filter);
-        for (SimpleFilter.FilterClause clause : filter.getClauses())
+        List<SimpleFilter.FilterClause> clauses = new ArrayList<>(filter.getClauses());
+        for (SimpleFilter.FilterClause clause : clauses)
         {
             List<FieldKey> fieldKeys = clause.getFieldKeys();
             boolean allColsFound = true;
