@@ -61,7 +61,7 @@ public class OuterJoinSourceQuery implements IVisualizationSourceQuery
     @Override
     public String getSQL(VisualizationSourceColumn.Factory factory) throws SQLGenerationException
     {
-        return _generator.getSQL(this, factory, _queries, Collections.<VisualizationIntervalColumn>emptyList(), "FULL OUTER JOIN", false, _hasRowLimit);
+        return _generator.getSubselectSQL(this, factory, _queries, Collections.<VisualizationIntervalColumn>emptyList(), "FULL OUTER JOIN", false, _hasRowLimit);
     }
 
     @Override

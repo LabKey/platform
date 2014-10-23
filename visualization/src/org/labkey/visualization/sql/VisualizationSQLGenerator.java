@@ -431,7 +431,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         // Add inner joins to the inner-join queries
         queries.addAll(innerJoinQueries);
 
-        String sql = getSQL(null, _columnFactory, queries, new ArrayList<>(_intervals.values()), "INNER JOIN", _groupBys.isEmpty(), _limit != null, true);
+        String sql = getSubselectSQL(null, _columnFactory, queries, new ArrayList<>(_intervals.values()), "INNER JOIN", _groupBys.isEmpty(), _limit != null, true);
 
         if (!_groupBys.isEmpty())
         {
@@ -555,16 +555,16 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return null;
     }
 
-    public String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory,
-                         Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals,
-                         String joinOperator, boolean includeOrderBys, boolean hasRowLimit) throws SQLGenerationException
+    public String getSubselectSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory,
+                                  Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals,
+                                  String joinOperator, boolean includeOrderBys, boolean hasRowLimit) throws SQLGenerationException
     {
-        return getSQL(parentQuery, factory, queries, intervals, joinOperator, includeOrderBys, hasRowLimit, false);
+        return getSubselectSQL(parentQuery, factory, queries, intervals, joinOperator, includeOrderBys, hasRowLimit, false);
     }
 
-    private String getSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory,
-                                Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals,
-                                String joinOperator, boolean includeOrderBys, boolean hasRowLimit, boolean isOuterSelect) throws SQLGenerationException
+    private String getSubselectSQL(IVisualizationSourceQuery parentQuery, VisualizationSourceColumn.Factory factory,
+                                   Collection<IVisualizationSourceQuery> queries, List<VisualizationIntervalColumn> intervals,
+                                   String joinOperator, boolean includeOrderBys, boolean hasRowLimit, boolean isOuterSelect) throws SQLGenerationException
     {
         // Reorder the queries in case one can join to the other, but not the reverse. For example,
         // we can join from a standard particiapnt visit/date dataset to a demographic dataset, but not the reverse.
