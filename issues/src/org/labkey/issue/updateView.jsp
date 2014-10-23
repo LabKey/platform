@@ -233,7 +233,21 @@
                         </script>
 
                         <%=text(bean.writeCustomColumn(ColumnType.INT1, 2, true))%>
+
+                        <script type="text/javascript">
+                            var els = document.getElementsByName('int1');
+                            if (els.length > 0)
+                                Ext4.EventManager.on( els[0], 'keypress', filterNumber);
+                        </script>
+
                         <%=text(bean.writeCustomColumn(ColumnType.INT2, 2, true))%>
+
+                        <script type="text/javascript">
+                            var els = document.getElementsByName('int2');
+                            if (els.length > 0)
+                                Ext4.EventManager.on( els[0], 'keypress', filterNumber);
+                        </script>
+
                         <%=text(bean.writeCustomColumn(ColumnType.STRING1, 2, true))%>
                     </table>
                 </td>
