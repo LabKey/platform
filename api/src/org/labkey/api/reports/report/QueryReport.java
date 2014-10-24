@@ -159,7 +159,7 @@ public class QueryReport extends AbstractReport
             }
 
             QueryView view = schema.createView(context, settings, errors);
-            view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
+            view.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
 
             return view;
         }

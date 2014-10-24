@@ -46,7 +46,7 @@ public class AssayView extends VBox
         }
         else
         {
-            queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
+            queryView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
         }
 
         ModelAndView headerView = createHeaderView(queryView, minimizeLinks, provider, protocol);

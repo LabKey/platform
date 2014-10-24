@@ -44,7 +44,7 @@ public abstract class NestableQueryView extends QueryView
         _expanded = expanded;
         _allowNesting = allowNesting;
         _queryNestingOptions = queryNestingOptions;
-        _buttonBarPosition = DataRegion.ButtonBarPosition.BOTH;
+        _buttonBarPosition = DataRegion.ButtonBarPosition.TOP;
         setShowExportButtons(false);
     }
 

@@ -103,7 +103,7 @@ public class QueryView extends WebPartView<Object>
     private static final Logger _log = Logger.getLogger(QueryView.class);
     private static final Map<String, ExportScriptFactory> _exportScriptFactories = new ConcurrentHashMap<>();
 
-    protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.BOTH;
+    protected DataRegion.ButtonBarPosition _buttonBarPosition = DataRegion.ButtonBarPosition.TOP;
     private ButtonBarConfig _buttonBarConfig = null;
     private boolean _showDetailsColumn = true;
     private boolean _showUpdateColumn = true;
