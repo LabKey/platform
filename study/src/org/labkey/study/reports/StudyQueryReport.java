@@ -213,7 +213,7 @@ public class StudyQueryReport extends QueryReport
                 ReportQueryView view = ReportQueryViewFactory.get().generateQueryView(context, descriptor,
                         descriptor.getProperty(ReportDescriptor.Prop.queryName),
                         descriptor.getProperty(ReportDescriptor.Prop.viewName));
-                view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
+                view.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
                 view.setUseQueryViewActionExportURLs(true);
                 view.getSettings().setMaxRows(100);
 

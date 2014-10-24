@@ -83,7 +83,7 @@ public class ReportQueryViewFactory
 
 
             ReportQueryView view = new StudyReportQueryView(schema, settings);
-            view.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
+            view.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             final String filterParam = descriptor.getProperty("filterParam");
 
             if (!StringUtils.isEmpty(filterParam))

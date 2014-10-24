@@ -613,7 +613,7 @@ public class MothershipController extends SpringActionController
             QueryView summaryGridView = new QueryView(schema, settings, errors);
             summaryGridView.setShowBorders(true);
             summaryGridView.setShadeAlternatingRows(true);
-            summaryGridView.setButtonBarPosition(DataRegion.ButtonBarPosition.BOTH);
+            summaryGridView.setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
             return new VBox(updateView, summaryGridView, constructCreateIssueForm(stackTrace));
         }
 

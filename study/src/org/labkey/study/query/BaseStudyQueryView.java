@@ -86,7 +86,7 @@ public abstract class BaseStudyQueryView extends QueryView
 
     protected DataRegion.ButtonBarPosition getButtonBarPosition()
     {
-        return DataRegion.ButtonBarPosition.BOTH;
+        return DataRegion.ButtonBarPosition.TOP;
     }
 
     public void setButtons(List<DisplayElement> buttons)

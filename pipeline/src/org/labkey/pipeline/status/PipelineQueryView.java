@@ -65,7 +65,8 @@ public class PipelineQueryView extends QueryView
         setShowBorders(true);
         setShowDetailsColumn(false);
 
-        setButtonBarPosition(_buttonOption == PipelineService.PipelineButtonOption.Minimal ? DataRegion.ButtonBarPosition.TOP : DataRegion.ButtonBarPosition.BOTH);
+        //setButtonBarPosition(_buttonOption == PipelineService.PipelineButtonOption.Minimal ? DataRegion.ButtonBarPosition.TOP : DataRegion.ButtonBarPosition.BOTH);
+        setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
     }
 
     private QuerySettings createSettings(ViewContext context)
