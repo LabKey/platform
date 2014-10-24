@@ -1199,6 +1199,7 @@ Ext4.define('File.panel.Browser', {
             }
 
             var store = Ext4.create('Ext.data.TreeStore', this.getFolderTreeStoreCfg({listeners: listeners}));
+            store.sort('name', 'ASC');
         }
 
         return Ext4.apply({}, configs, {

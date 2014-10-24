@@ -40,6 +40,13 @@
 
     Ext4.onReady(function() {
 
+        var loginAction = new Ext4.Action({
+            text : 'Login',
+            handler : function () {
+                window.location = LABKEY.contextPath + '/login/home/login.view?returnUrl=' + encodeURIComponent(LABKEY.contextPath + document.URL.split(LABKEY.contextPath)[1]);
+            }
+        });
+
         var htmlViewAction = new Ext4.Action({
             text : 'HTML View',
             handler : function() {
@@ -64,7 +71,7 @@
                 gridConfig : {
                     selType : 'rowmodel'
                 },
-                tbarItems : ['->', htmlViewAction]
+                tbarItems : ['->', htmlViewAction, loginAction]
             }],
             listeners: {
                 resize: function(vp) {

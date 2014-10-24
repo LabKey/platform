@@ -38,7 +38,7 @@ Ext4.define('File.data.webdav.XMLResponse', {
         },{
             name : 'path'
         },{
-            name : 'name', mapping : 'propstat/prop/displayname'
+            name : 'name', mapping : 'propstat/prop/displayname', sortType: function (s) { return String(s).toLowerCase(); }
         },{
             name: 'file', mapping: 'href', type: 'boolean',
                 convert : function (v, rec)
