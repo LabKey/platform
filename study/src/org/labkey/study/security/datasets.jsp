@@ -99,7 +99,7 @@ if (guestsCanRead || usersCanRead)
 else
 {
 %>
-    These groups do not have read permissions.  (Note: a user may belong to more than one group, see documentation.)
+    These groups do not have read permissions. (Note: a user may belong to more than one group, see documentation.)
     <ul class="minus">
     <%
         if (noReadGroups.size() == 0)
@@ -117,22 +117,27 @@ else
     %>
     </ul>
     <%
-        if (restrictedGroups.size() == 0)
+        if (restrictedGroups.isEmpty())
         {
     %>
-        There are no other groups with access to some datasets. To grant access to individual datasets select the
-        'some' option for the specific group above.
+        No group has been given 'per dataset' access. To grant access to individual datasets, select the 'per dataset' option for one or more groups above.
     <%
         }
         else
         {
+            if (restrictedGroups.size() == 1)
+            {
     %>
-        These groups may be given access to individual datasets.
+        The group given 'per dataset' access above is listed below. The
     <%
-        }
-}
-%>
-
+            }
+            else
+            {
+    %>
+        Each group given 'per dataset' access above is listed in the columns below. Each
+    <%
+            }
+%>group's access to each dataset is controlled by the drop-down list in each cell.
 <labkey:form id="datasetSecurityForm" action="<%=h(buildURL(SecurityController.ApplyDatasetPermissionsAction.class))%>" method="POST">
 <%
     String redir = (String)getViewContext().get("redirect");
@@ -259,6 +264,11 @@ else
             <td><%= button("Clear All").href("#").onClick("return setAllSelections('None');") %></td>
         </tr></table>
 </labkey:form>
+
+    <%
+        }
+}
+%>
 
 <script type="text/javascript">
 function setAllSelections(value)
