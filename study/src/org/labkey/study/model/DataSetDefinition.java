@@ -1943,17 +1943,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                     }
 
                     int out;
-                    if (match == keyColumn && getKeyManagementType() == KeyManagementType.None)
-                    {
-                        // usually we let ETL handle convert, but we need to convert for consistent _key/lsid generation
-                        out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null != match.getMvColumnName());
-                    }
-                    else if (match == keyColumn && getKeyManagementType() == KeyManagementType.GUID)
-                    {
-                        // make sure guid is not null (12884)
-                        out = it.addCoaleseColumn(match.getName(), in, new SimpleTranslator.GuidColumn());
-                    }
-                    else if (DefaultStudyDesignWriter.isColumnNumericForeignKeyToDataspaceTable(match.getFk(), true))
+                    if (DefaultStudyDesignWriter.isColumnNumericForeignKeyToDataspaceTable(match.getFk(), true))
                     {
                         // Use rowId mapping tables or extra column if necessary to map FKs
                         FieldKey extraColumnFieldKey = DefaultStudyDesignWriter.getExtraForeignKeyColumnFieldKey(match, match.getFk());
@@ -1965,6 +1955,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
                         }
                         out = it.addSharedTableLookupColumn(in, extraColumnFieldKey, match.getFk(),
                                 dataspaceTableIdMap);
+                    }
+                    else if (match == keyColumn && getKeyManagementType() == KeyManagementType.None)
+                    {
+                        // usually we let ETL handle convert, but we need to convert for consistent _key/lsid generation
+                        out = it.addConvertColumn(match.getName(), in, match.getJdbcType(), null != match.getMvColumnName());
+                    }
+                    else if (match == keyColumn && getKeyManagementType() == KeyManagementType.GUID)
+                    {
+                        // make sure guid is not null (12884)
+                        out = it.addCoaleseColumn(match.getName(), in, new SimpleTranslator.GuidColumn());
                     }
                     else
                     {
