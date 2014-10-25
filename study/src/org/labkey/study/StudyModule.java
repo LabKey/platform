@@ -23,7 +23,6 @@ import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.data.EnumConverter;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.ExperimentRunType;
@@ -301,8 +300,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         PropertyService.get().registerDomainKind(new StudyTreatmentProductDomainKind());
         PropertyService.get().registerDomainKind(new StudyTreatmentDomainKind());
 
-        EnumConverter.registerEnum(SecurityType.class);
-        EnumConverter.registerEnum(TimepointType.class);
         QuerySnapshotService.registerProvider(StudySchema.getInstance().getSchemaName(), DatasetSnapshotProvider.getInstance());
 
         ServiceRegistry.get().registerService(StudySerializationRegistry.class, StudySerializationRegistryImpl.get());
