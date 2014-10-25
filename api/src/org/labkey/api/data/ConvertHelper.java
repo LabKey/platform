@@ -16,9 +16,12 @@
 
 package org.labkey.api.data;
 
+import org.apache.commons.beanutils.BeanUtilsBean;
 import org.apache.commons.beanutils.ConversionException;
 import org.apache.commons.beanutils.ConvertUtils;
+import org.apache.commons.beanutils.ConvertUtilsBean;
 import org.apache.commons.beanutils.Converter;
+import org.apache.commons.beanutils.PropertyUtilsBean;
 import org.apache.commons.beanutils.converters.BigDecimalConverter;
 import org.apache.commons.beanutils.converters.BigIntegerConverter;
 import org.apache.commons.beanutils.converters.BooleanArrayConverter;
@@ -52,7 +55,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.security.roles.RoleConverter;
-import org.labkey.api.study.DataSet;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.HString;
@@ -100,7 +102,22 @@ public class ConvertHelper implements PropertyEditorRegistrar
 
     private ConvertHelper()
     {
+        BeanUtilsBean.setInstance(new BeanUtilsBean(new EnumAwareConvertUtilsBean(), new PropertyUtilsBean()));
         register();
+    }
+
+    public static class EnumAwareConvertUtilsBean extends ConvertUtilsBean
+    {
+        private final EnumConverter _enumConverter = new EnumConverter();
+
+        @Override
+        public Converter lookup(Class clazz)
+        {
+            if (clazz != null && clazz.isEnum())
+                return _enumConverter;
+
+            return super.lookup(clazz);
+        }
     }
 
 
@@ -160,9 +177,6 @@ public class ConvertHelper implements PropertyEditorRegistrar
         _register(new FieldKey.Converter(), FieldKey.class);
         _register(new JSONTypeConverter(), JSONObject.class);
         _register(new ShortURLRecordConverter(), ShortURLRecord.class);
-        EnumConverter.registerEnum(DataSet.KeyManagementType.class);
-        EnumConverter.registerEnum(TSVWriter.DELIM.class);
-        EnumConverter.registerEnum(TSVWriter.QUOTE.class);
     }
 
 
@@ -749,4 +763,38 @@ public class ConvertHelper implements PropertyEditorRegistrar
             }
         }
     }
+
+    public static class EnumConverter implements Converter
+    {
+        @SuppressWarnings("unchecked")
+        public Object convert(Class type, Object value)
+        {
+            if (!type.isEnum())
+                throw new IllegalArgumentException();
+
+            if (value == null)
+                return null;
+
+            try
+            {
+                return Enum.valueOf(type, value.toString());
+            }
+            catch (IllegalArgumentException e)
+            {
+                try
+                {
+                    int ordinal = Integer.parseInt(value.toString());
+                    Object[] values = type.getEnumConstants();
+                    if (ordinal >= 0 && ordinal <= values.length)
+                    {
+                        return values[ordinal];
+                    }
+                }
+                // That's OK, not an ordinal value for the enum
+                catch (NumberFormatException ignored) {}
+                throw e;
+            }
+        }
+    }
+
 }
