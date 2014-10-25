@@ -62,10 +62,8 @@ public class SpecimenArchive
         }
 
         // standard non-transformed specimen archive
-        ZipFile zip = null;
-        try
+        try (ZipFile zip = new ZipFile(_definitionFile))
         {
-            zip = new ZipFile(_definitionFile);
             Enumeration<? extends ZipEntry> entries = zip.entries();
             while (entries.hasMoreElements())
             {
@@ -75,10 +73,7 @@ public class SpecimenArchive
                 entryList.add(new EntryDescription(entry.getName(), entry.getSize(), new Date(entry.getTime())));
             }
         }
-        finally
-        {
-            if (zip != null) try { zip.close(); } catch (IOException e) {}
-        }
+
         return entryList;
     }
 
