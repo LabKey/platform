@@ -167,10 +167,16 @@
             script          : <%=q(StringUtils.trimToEmpty(bean.getScript()))%>
         });
 
+        var _LOCK = false; // prevents recursive panel adjustments
         panel.on('afterlayout', function(p) {
-            var elWidth = Ext4.Element.getViewWidth();
-            if (p.getWidth() > elWidth)
-                p.setWidth(elWidth - 50);
+            if (!_LOCK) {
+                _LOCK = true;
+                var elWidth = Ext4.Element.getViewWidth();
+                if (p.getWidth() > elWidth) {
+                    p.setWidth(elWidth - 50);
+                }
+                _LOCK = false;
+            }
         });
 
         var _resize = function(w,h) {
