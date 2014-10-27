@@ -433,7 +433,7 @@ public class StudyServiceImpl implements StudyService.Service
         TableInfo datasetTable = StudySchema.getInstance().getTableInfoDataSet();
         SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("protocolid"), protocol.getRowId());
         Set<DataSetDefinition> result = new HashSet<>();
-        Map<String, Object>[] rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapArray();
+        Collection<Map<String, Object>> rows = new TableSelector(datasetTable, new CsvSet("container,datasetid"), filter, null).getMapCollection();
         for (Map<String, Object> row : rows)
         {
             String containerId = (String)row.get("container");

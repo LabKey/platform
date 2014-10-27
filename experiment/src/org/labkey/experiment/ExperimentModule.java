@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import com.drew.lang.annotations.Nullable;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.FolderSerializationRegistry;
 import org.labkey.api.audit.AuditLogService;
@@ -223,7 +224,8 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         PipelineService.get().registerPipelineProvider(new ExperimentPipelineProvider(this));
         ExperimentService.get().registerExperimentRunTypeSource(new ExperimentRunTypeSource()
         {
-            public Set<ExperimentRunType> getExperimentRunTypes(Container container)
+            @NotNull
+            public Set<ExperimentRunType> getExperimentRunTypes(@Nullable Container container)
             {
                 return Collections.singleton(ExperimentRunType.ALL_RUNS_TYPE);
             }

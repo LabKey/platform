@@ -16,6 +16,7 @@
 
 package org.labkey.study;
 
+import com.drew.lang.annotations.Nullable;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
@@ -392,12 +393,16 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         AssayService.get().registerAssayProvider(new TsvAssayProvider());
         ExperimentService.get().registerExperimentRunTypeSource(new ExperimentRunTypeSource()
         {
-            public Set<ExperimentRunType> getExperimentRunTypes(Container container)
+            @NotNull
+            public Set<ExperimentRunType> getExperimentRunTypes(@Nullable Container container)
             {
                 Set<ExperimentRunType> result = new HashSet<>();
-                for (final ExpProtocol protocol : AssayService.get().getAssayProtocols(container))
+                if (container != null)
                 {
-                    result.add(new AssayRunType(protocol, container));
+                    for (final ExpProtocol protocol : AssayService.get().getAssayProtocols(container))
+                    {
+                        result.add(new AssayRunType(protocol, container));
+                    }
                 }
                 return result;
             }

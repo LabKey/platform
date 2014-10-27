@@ -255,6 +255,23 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return result;
     }
 
+    @Nullable
+    @Override
+    public ExperimentRunType getExperimentRunType(@NotNull String description, @NotNull Container container)
+    {
+        for (ExperimentRunTypeSource runTypeSource : _runTypeSources)
+        {
+            for (ExperimentRunType experimentRunType : runTypeSource.getExperimentRunTypes(container))
+            {
+                if (description.equalsIgnoreCase(experimentRunType.getDescription()))
+                {
+                    return experimentRunType;
+                }
+            }
+        }
+        return null;
+    }
+
     public ExpRunImpl getExpRun(String lsid)
     {
         ExperimentRun run = getExperimentRun(lsid);
@@ -2877,7 +2894,8 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         _dataTypes.put(type.getNamespacePrefix(), type);
     }
 
-    public Set<ExperimentRunType> getExperimentRunTypes(Container container)
+    @NotNull
+    public Set<ExperimentRunType> getExperimentRunTypes(@Nullable Container container)
     {
         Set<ExperimentRunType> result = new TreeSet<>();
         for (ExperimentRunTypeSource runTypeSource : _runTypeSources)
