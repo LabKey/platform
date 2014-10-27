@@ -35,7 +35,6 @@ import org.labkey.api.module.ModuleResourceCaches;
 import org.labkey.api.module.PathBasedModuleResourceCache;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.ValidationException;
-import org.labkey.api.resource.MergedDirectoryResource;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.services.ServiceRegistry;
@@ -74,7 +73,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
@@ -476,8 +474,6 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
 
     protected ModuleSource load(String moduleScript, Object validator)
     {
-        RhinoService.LOG.info("moduleScript: " + moduleScript);
-
         // NOTE: Don't recheck for stale-ness: calling .isStale() resets the staleness of the ResourceRef.
         //if (validator instanceof ResourceRef && !((ResourceRef)validator).isStale())
         //    return NOT_MODIFIED;
@@ -489,41 +485,12 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
         Path path = Path.parse(moduleScript);
         Resource res = ModuleLoader.getInstance().getResource(path);
 
-        if (path.toString().contains("Ext4"))
-        {
-            Resource p = ModuleLoader.getInstance().getResource(path.getParent());
-            if (null != p)
-            {
-                for (File f : ((MergedDirectoryResource) p)._dirs)
-                {
-                    if (f.isDirectory())
-                    {
-                        RhinoService.LOG.info("Folder Path: " + f.getPath());
-                        String result = "Folder Contents: [";
-                        for (String file : f.list())
-                        {
-                            result += " " + file;
-                        }
-                        result += "]";
-                        RhinoService.LOG.info(result);
-                    }
-                }
-            }
-        }
-
         if (res == null || !res.isFile())
         {
-            RhinoService.LOG.info("Returning null for path: " + path.toString());
-            Resource parent = ModuleLoader.getInstance().getResource(path.getParent());
-            if (parent != null)
-            {
-                RhinoService.LOG.info("Parent Children");
-                RhinoService.LOG.info(parent.listNames());
-            }
             return null;
         }
 
-        RhinoService.LOG.info("Loading require()'ed resource '" + path.toString() + "'");
+        RhinoService.LOG.debug("Loading require()'ed resource '" + path.toString() + "'");
 
         ResourceRef ref = new ResourceRef(res);
         try
