@@ -342,9 +342,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                     {
                         pkVal = PropertyUtils.getProperty(oldValues, pkName);
                     }
-                    catch (Exception e)
-                    {
-                    }
+                    catch (Exception ignored) {}
             }
             pkVals[i] = pkVal;
         }
@@ -723,9 +721,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
                 _isDataLoaded = true;
             }
         }
-        catch (Exception x)
-        {
-        }
+        catch (Exception ignored) {}
     }
 
 
@@ -769,10 +765,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             {
                 setReturnUrl(new ReturnURLString((String)pvReturn.getValue()));
             }
-            catch (Exception x)
-            {
-                //
-            }
+            catch (Exception ignored) {}
         }
 
         for (PropertyValue pv : params.getPropertyValues())
@@ -784,17 +777,6 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         validateBind(errors);
         return errors;
-    }
-
-    public static class StringArrayHolder
-    {
-        private String[] _s;
-
-        public StringArrayHolder(String[] s)
-        {
-            _s = s;
-        }
-
     }
 }
 
