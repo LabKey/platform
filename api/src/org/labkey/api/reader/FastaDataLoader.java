@@ -27,9 +27,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: klum
@@ -84,8 +86,7 @@ public class FastaDataLoader extends DataLoader
     @Override
     public String[][] getFirstNLines(int n) throws IOException
     {
-        GenericFastaLoader.GenericIterator it = _loader.iterator();
-        try
+        try (GenericFastaLoader.GenericIterator it = _loader.iterator())
         {
             List<String[]> lineFields = new ArrayList<>(n);
             int count = 0;
@@ -95,10 +96,12 @@ public class FastaDataLoader extends DataLoader
                 Map<String, Object> row = it.next();
 
                 // add the internally generated column header
+                Set<String> strings = row.keySet();
                 if (count == 0)
-                    lineFields.add(row.keySet().toArray(new String[0]));
+                    lineFields.add(strings.toArray(new String[strings.size()]));
 
-                lineFields.add(row.values().toArray(new String[0]));
+                Collection<Object> values = row.values();
+                lineFields.add(values.toArray(new String[values.size()]));
 
                 count++;
             }
@@ -108,9 +111,9 @@ public class FastaDataLoader extends DataLoader
 
             return lineFields.toArray(new String[count][]);
         }
-        finally
+        catch (IllegalArgumentException e)
         {
-            it.close();
+            throw new IOException(e.getMessage() == null ? e.toString() : e.getMessage(), e);
         }
     }
 

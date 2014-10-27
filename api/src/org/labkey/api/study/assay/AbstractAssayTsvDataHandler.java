@@ -193,7 +193,7 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         }
         catch (IOException ioe)
         {
-            throw new ExperimentException(ioe);
+            throw new ExperimentException("There was a problem loading the data file. " + (ioe.getMessage() == null ? "" : ioe.getMessage()), ioe);
         }
         finally
         {
