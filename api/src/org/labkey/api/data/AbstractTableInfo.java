@@ -1314,11 +1314,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
                 return script.invokeFn(resultType, methodName, args);
             }
         }
-        catch (NoSuchMethodException e)
-        {
-            throw new UnexpectedException(e);
-        }
-        catch (ScriptException e)
+        catch (NoSuchMethodException | ScriptException e)
         {
             throw new UnexpectedException(e);
         }

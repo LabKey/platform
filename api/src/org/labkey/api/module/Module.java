@@ -107,11 +107,13 @@ public interface Module extends Comparable<Module>
      */
     double getVersion();
 
-    // Formatted version number for display purposes.
+    /** @return Formatted version number for display purposes. */
     String getFormattedVersion();
 
-    // Called on every module in REVERSE dependency order before versionUpdate() is called, as long as at least one module
-    // requires updating.  This is a fine place to drop views and other dependent objects.
+    /**
+     * Called on every module in REVERSE dependency order before versionUpdate() is called, as long as at least one module
+     * requires updating.  This is a fine place to drop views and other dependent objects.
+     */
     public void beforeUpdate(ModuleContext moduleContext);
 
     /**
@@ -122,10 +124,8 @@ public interface Module extends Comparable<Module>
      */
     public void versionUpdate(ModuleContext moduleContext) throws Exception;
 
-    // Called on each module in dependency order after versionUpdate(), as long as at least one module requires updating.
+    /** Called on each module in dependency order after versionUpdate(), as long as at least one module requires updating. */
     public void afterUpdate(ModuleContext moduleContext);
-
-    //TODO: Spring ApplicationContext might be good here
 
     /**
      * The application is starting. Version updating is complete. startup() has been called on all dependencies.

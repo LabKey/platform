@@ -212,7 +212,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         catch (Exception e)
         {
             ExceptionUtil.logExceptionToMothership(getViewContext().getRequest(), e);
-            Logger.getLogger(ApiAction.class).warn("ApiAction exception: ", e);
+            Logger.getLogger(ApiAction.class).error("ApiAction exception: ", e);
 
             createResponseWriter().write(e);
         }
