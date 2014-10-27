@@ -34,6 +34,9 @@ import org.labkey.api.study.assay.ReplacedRunFilter;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
 /**
  * User: brittp
  * Date: Jun 29, 2007
@@ -60,6 +63,11 @@ public class RunListQueryView extends ExperimentRunListView
         setShowAddToRunGroupButton(false);
 
         _replacedRunFilter = ReplacedRunFilter.getFromURL(this, REPLACED_FIELD_KEY);
+    }
+
+    protected void renderHeaderView(HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        // No-op to avoid double-rendering header links
     }
 
     public static AssayRunType getDefaultAssayRunFilter(AssayProtocolSchema schema)

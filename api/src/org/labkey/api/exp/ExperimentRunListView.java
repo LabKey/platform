@@ -92,8 +92,14 @@ public class ExperimentRunListView extends QueryView
     @Override
     protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
     {
-        _selectedType.renderHeader(request, response);
+        renderHeaderView(request, response);
         super.renderView(model, request, response);
+    }
+
+    /** Optionally render a header in addition to the main grid */
+    protected void renderHeaderView(HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        _selectedType.renderHeader(request, response);
     }
 
     public static ExperimentRunListView createView(ViewContext model, ExperimentRunType selectedType, boolean allowCustomizations)
