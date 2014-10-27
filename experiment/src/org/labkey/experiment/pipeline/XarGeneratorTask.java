@@ -193,11 +193,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
             FileUtils.moveFile(tempFile, f);
             fOut = null;
         }
-        catch (ExperimentException e)
-        {
-            throw new PipelineJobException("Failed to write XAR to disk", e);
-        }
-        catch (IOException e)
+        catch (ExperimentException | IOException e)
         {
             throw new PipelineJobException("Failed to write XAR to disk", e);
         }
@@ -205,7 +201,7 @@ public class XarGeneratorTask extends PipelineJob.Task<XarGeneratorTask.Factory>
         {
             if (fOut != null)
             {
-                try { fOut.close(); } catch (IOException e) {}
+                try { fOut.close(); } catch (IOException ignored) {}
             }
         }
     }
