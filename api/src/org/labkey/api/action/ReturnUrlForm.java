@@ -69,6 +69,28 @@ public class ReturnUrlForm
         if (!URLHelper.isHttpURL(returnUrl.getSource()))
             return;
 
+        // If there are multiple values of the returnUrl HTTP parameter for this request (say, both GET and
+        // POST variants), Spring will concatenate them before converting them to a ReturnURLString. Look
+        // for identical values in the string and just grab the first
+        String[] split = returnUrl.getSource().split(",");
+        if (split.length > 1)
+        {
+            boolean identical = true;
+            for (int i = 1; i < split.length; i++)
+            {
+                // See if all of the pieces are identical
+                if (!split[i].equals(split[i - 1]))
+                {
+                    identical = false;
+                    break;
+                }
+            }
+            if (identical)
+            {
+                // We appear to have dupes, so just use one of them
+                returnUrl = new ReturnURLString(split[0]);
+            }
+        }
         _returnUrl = returnUrl;
     }
 
