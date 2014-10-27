@@ -16,19 +16,25 @@
 
 package org.labkey.api.study.assay;
 
-import org.labkey.api.data.*;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
-import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.study.actions.AssayHeaderView;
+import org.labkey.api.study.actions.ShowSelectedDataAction;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.PageFlowUtil;
-import org.labkey.api.study.actions.ShowSelectedDataAction;
-import org.labkey.api.security.permissions.InsertPermission;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
 /**
@@ -82,6 +88,18 @@ public class AssayRunType extends ExperimentRunType
 
         List<ActionButton> buttons = AssayService.get().getImportButtons(_protocol, context.getUser(), context.getContainer(), false);
         bar.addAll(buttons);
+    }
+
+    @Override
+    public void renderHeader(HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        AssayProvider provider = AssayService.get().getProvider(_protocol);
+        if (provider != null)
+        {
+            AssayHeaderView header = new AssayHeaderView(_protocol, provider, false, true, ContainerFilter.CURRENT);
+            header.render(request, response);
+            response.getWriter().write("<p/>\n");
+        }
     }
 
     public Priority getPriority(ExpProtocol protocol)

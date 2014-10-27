@@ -21,6 +21,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 
 /**
+ * Allows for recognition of objects based on their type or other characteristics. Allows multiple
+ * implementations to recognize and claim reponsibility for a particular object, routing the handling
+ * to the one that claims to be the best fit.
+ *
  * User: jeckels
  * Date: Dec 7, 2005
  */
@@ -28,8 +32,12 @@ public interface Handler<HandledType>
 {
     public enum Priority
     {
-        LOW, MEDIUM, HIGH;
+        LOW, MEDIUM, HIGH, HIGHEST;
 
+        /**
+         * Iterates all of the handlers and finds the one that claims to be the best fit (highest priority)
+         * for the value. In the case of a tie, the first handler based on iteration order will be selected.
+         */
         @Nullable
         public static <H extends Handler<V>, V> H findBestHandler(Collection<H> handlers, V value)
         {
@@ -51,6 +59,7 @@ public interface Handler<HandledType>
         }
     }
 
-    /** @return null if this handler cannot handle the object */ 
+    /** @return null if this handler cannot handle the object */
+    @Nullable
     public Priority getPriority(HandledType object);
 }

@@ -26,6 +26,8 @@ import org.labkey.api.security.User;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.util.Set;
 
 /**
@@ -120,6 +122,11 @@ public abstract class ExperimentRunType implements Comparable<ExperimentRunType>
     }
 
     public void populateButtonBar(ViewContext context, ButtonBar bar, DataView view, ContainerFilter containerFilter)
+    {
+    }
+
+    /** Allows subclasses to render a header to the response before the QueryView with the run list gets rendered */
+    public void renderHeader(HttpServletRequest request, HttpServletResponse response) throws Exception
     {
     }
 }

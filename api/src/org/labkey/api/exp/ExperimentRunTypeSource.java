@@ -15,6 +15,8 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 
 import java.util.Set;
@@ -27,8 +29,11 @@ public interface ExperimentRunTypeSource
 {
     /**
      * Gets the run types that are relevant for the specified container
-     * @param container scope for the run types
+     * @param container scope for the run types. If null, implementations should return all staticly-defined run types,
+     *                  but should not include ones scoped to a particular container (like those backed by specific assay
+     *                  designs)
      * @return all the run types that may be present in the container
      */
-    public Set<ExperimentRunType> getExperimentRunTypes(Container container);
+    @NotNull
+    public Set<ExperimentRunType> getExperimentRunTypes(@Nullable Container container);
 }

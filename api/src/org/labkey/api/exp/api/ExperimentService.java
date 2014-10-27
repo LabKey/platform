@@ -350,5 +350,8 @@ public class ExperimentService
         List<? extends ExpExperiment> getMatchingBatches(String name, Container container, ExpProtocol protocol);
 
         List<? extends ExpProtocol> getExpProtocolsUsedByRuns(Container c, ContainerFilter containerFilter);
+
+        @Nullable
+        ExperimentRunType getExperimentRunType(@NotNull String description, @Nullable Container container);
     }
 }

@@ -16,6 +16,7 @@
 
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.Container;
@@ -46,6 +47,8 @@ import org.labkey.api.view.HttpView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Collections;
@@ -62,9 +65,10 @@ public class ExperimentRunListView extends QueryView
     private boolean _showMoveRunsButton = false;
     private boolean _showUploadAssayRunsButton = false;
 
+    @NotNull
     private final ExperimentRunType _selectedType;
 
-    public ExperimentRunListView(UserSchema schema, QuerySettings settings, ExperimentRunType selectedType)
+    public ExperimentRunListView(UserSchema schema, QuerySettings settings, @NotNull ExperimentRunType selectedType)
     {
         super(schema, settings);
         _buttonBarPosition = DataRegion.ButtonBarPosition.TOP;
@@ -82,6 +86,14 @@ public class ExperimentRunListView extends QueryView
         settings.setBaseSort(new Sort("-RowId"));
         settings.setAllowChooseView(allowCustomizations);
         return settings;
+    }
+
+
+    @Override
+    protected void renderView(Object model, HttpServletRequest request, HttpServletResponse response) throws Exception
+    {
+        _selectedType.renderHeader(request, response);
+        super.renderView(model, request, response);
     }
 
     public static ExperimentRunListView createView(ViewContext model, ExperimentRunType selectedType, boolean allowCustomizations)
