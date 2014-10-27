@@ -740,6 +740,7 @@ Ext4.define('File.panel.Upload', {
             layout: 'vbox',
             bodyPadding: 5,
             closable: false,
+            border: false,
             items: [this.statusText, progressBarContainer],
             buttons: [{
                 text: 'Cancel Upload',
@@ -754,7 +755,10 @@ Ext4.define('File.panel.Upload', {
     showUploadWindow : function()
     {
         if (this.uploadStatusWindow)
+        {
             this.uploadStatusWindow.show();
+            this.uploadStatusWindow.center();
+        }
         if (this.progressBar)
             this.progressBar.setVisible(true);
     },
@@ -762,7 +766,10 @@ Ext4.define('File.panel.Upload', {
     hideUploadWindow : function()
     {
         if (this.uploadStatusWindow)
+        {
             this.uploadStatusWindow.hide();
+            this.uploadStatusWindow.center();
+        }
         if (this.progressBar)
             this.progressBar.reset(true);
         if (this.statusText)
