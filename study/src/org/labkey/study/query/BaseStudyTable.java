@@ -775,14 +775,14 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
         {
             PropertyDescriptor property = domainProperty.getPropertyDescriptor();
             SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS);
-            sql.append(".").append(property.getName());
+            sql.append(".").append(property.getStorageColumnName());
             ColumnInfo column = new ExprColumn(this, property.getName(), sql, property.getJdbcType());
             PropertyColumn.copyAttributes(getUserSchema().getUser(), column, property, getContainer(), null);
             if (editable)
             {
                 // Make editable, but some should be read only
-                column.setUserEditable(editable);
-                if (readOnlyColumnNames.contains(column.getName().toLowerCase()))
+                column.setUserEditable(true);
+                if (null != readOnlyColumnNames && readOnlyColumnNames.contains(column.getName().toLowerCase()))
                     column.setReadOnly(true);
             }
             addColumn(column);

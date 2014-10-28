@@ -105,18 +105,18 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 // used for export joins vials and specimens into a single view which we're calling 's'.  isEvents catches
                 // those columns that are part of the events table, while !isEvents() catches the rest.  (equivalent to
                 // isVials() || isSpecimens().)
-                col = (tt.isEvents() ? "se." : "s.") + column.getDbColumnName();
+                col = (tt.isEvents() ? "se." : "s.") + ci.getSelectName();
 
                 // add expression to shift the date columns
                 if (ctx.isShiftDates() && column.isDateType() && !queryColumn.isExcludeFromShifting())
                 {
-                    col = "{fn timestampadd(SQL_TSI_DAY, -ParticipantLookup.DateOffset, " + col + ")} AS " + column.getDbColumnName();
+                    col = "{fn timestampadd(SQL_TSI_DAY, -ParticipantLookup.DateOffset, " + col + ")} AS " + ci.getSelectName();
                 }
 
                 // don't export values for columns set as Protected in the XML metadata override
                 if (shouldRemoveProtected(ctx.isRemoveProtected(), column, queryColumn))
                 {
-                    col = "NULL AS " + column.getDbColumnName();
+                    col = "NULL AS " + ci.getSelectName();
                 }
             }
             else
@@ -145,12 +145,15 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             {
                 assert column.getTargetTable().isEvents();
 
+                SpecimenImporter.TargetTable tt = column.getTargetTable();
+                TableInfo tinfo = tt.isEvents() ? tableInfoSpecimenEvent : tableInfoSpecimenDetail;
+                ColumnInfo ci = tinfo.getColumn(column.getDbColumnName());
                 sql.append("\n    ");
                 if (column.getJoinType() != null)
                     sql.append(column.getJoinType()).append(" ");
                 sql.append("JOIN study.").append(column.getFkTable()).append(" AS ").append(column.getFkTableAlias()).append(" ON ");
                 sql.append("(se.");
-                sql.append(column.getDbColumnName()).append(" = ").append(column.getFkTableAlias()).append(".RowId)");
+                sql.append(ci.getSelectName()).append(" = ").append(column.getFkTableAlias()).append(".RowId)");
             }
         }
 
