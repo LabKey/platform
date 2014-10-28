@@ -692,6 +692,7 @@ public enum CompareType
         return null;
     }
 
+    @Nullable
     public static CompareType getByURLKey(String urlKey)
     {
         for (CompareType type : values())

@@ -89,6 +89,24 @@ public class SimpleFilter implements Filter
         return filter;
     }
 
+    @Nullable
+    public static String getColumnFromParameter(@NotNull String queryParameter)
+    {
+        String column = null;
+
+        if (queryParameter != null)
+        {
+            String[] parts = queryParameter.split("\\.");
+            if (parts.length > 1)
+            {
+                String columnPart = String.copyValueOf(parts[1].toCharArray());
+                column = columnPart.split(SEPARATOR_CHAR)[0];
+            }
+        }
+
+        return column;
+    }
+
     public static abstract class FilterClause
     {
         protected boolean _needsTypeConversion = false;
@@ -1178,31 +1196,6 @@ public class SimpleFilter implements Filter
             }
         }
     }
-
-    /*
-    // UNDONE encode()
-    public String getParamString()
-    {
-        StringBuffer sb = new StringBuffer();
-        String and = "";
-        for (FilterClause fc : _clauses)
-        {
-            if (fc.isUrlClause() && fc instanceof CompareClause)
-            {
-                CompareClause cc = (CompareClause) fc;
-                sb.append(and);
-                sb.append(_regionName);
-                sb.append('.');
-                sb.append(cc._colName);
-                sb.append(cc._comparison);
-                sb.append('=');
-                sb.append(cc.getParamVals()[0].toString());
-                and = "&";
-            }
-        }
-        return sb.toString();
-    }
-    */
 
 
     public SQLFragment getSQLFragment(TableInfo tableInfo, @Nullable List<ColumnInfo> colInfos)
