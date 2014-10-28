@@ -107,12 +107,33 @@ Ext.onReady(function () {
         <%-- already be inside a form for the DataRegion itself. --%>
         var newForm = document.createElement('form');
         document.body.appendChild(newForm);
+
+        // Add the CSRF form input
+        var csrfElement = document.createElement('input');
+        csrfElement.setAttribute('name', 'X-LABKEY-CSRF');
+        csrfElement.setAttribute('type', 'hidden');
+        csrfElement.setAttribute('value', LABKEY.CSRF);
+        newForm.appendChild(csrfElement);
+
+        // We need to build up all of the form elements ourselves because Ext.Ajax will concatentate multiple parameter values
+        // into a single string when the 'isUpload: true' config option is used
+        for (var property in exportParams) {
+            if (exportParams.hasOwnProperty(property)) {
+                for (var i = 0; i < exportParams[property].length; i++ ) {
+                    console.log(property + '=' + exportParams[property][i]);
+                    var newElement = document.createElement('input');
+                    newElement.setAttribute('name', property);
+                    newElement.setAttribute('type', 'hidden');
+                    newElement.setAttribute('value', exportParams[property][i]);
+                    newForm.appendChild(newElement);
+                }
+            }
+        }
         Ext.Ajax.request({
             url: exportUrl,
             method: 'POST',
             form: newForm,
             isUpload: true,
-            params: exportParams,
             callback: function (options, success, response) {
                 dr.getMessageArea().removeAll();
                 if (!success) {
