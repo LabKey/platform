@@ -24,6 +24,7 @@ import org.json.JSONArray;
 import org.labkey.api.action.CustomApiForm;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -64,6 +65,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     private Map<String, VisualizationIntervalColumn> _intervals = new HashMap<>();
     private List<VisualizationSourceColumn> _groupBys = new ArrayList<>();
     private Set<VisualizationSourceColumn> _whereNotNulls = new LinkedHashSet<>();
+    private Map<FieldKey, Set<String>> _allFilters = new LinkedHashMap<>();
+    Map<FieldKey, ColumnInfo> filterColTypes = new LinkedHashMap<>();
 
     private ViewContext _viewContext;
     private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
@@ -186,7 +189,15 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                             SimpleFilter filter = SimpleFilter.createFilterFromParameter(q);
                             if (filter != null)
                             {
-                                query.addFilter(filter);
+                                FieldKey key = FieldKey.fromParts(measureCol.getAlias());
+
+                                if (!_allFilters.containsKey(key))
+                                {
+                                    _allFilters.put(key, new LinkedHashSet<String>());
+                                    filterColTypes.put(key, measureCol.getColumnInfo());
+                                }
+
+                                _allFilters.get(key).add(q);
                             }
                         }
                     }
@@ -729,9 +740,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             }
         }
 
-        if (isOuterSelect && lastQuery != null && !_whereNotNulls.isEmpty())
+        if (isOuterSelect && lastQuery != null && (!_whereNotNulls.isEmpty() || !_allFilters.isEmpty()))
         {
-            sql.append(getWhereNotNullClause(lastQuery, _whereNotNulls));
+            sql.append(getWhereClause(lastQuery, _whereNotNulls, _allFilters, filterColTypes));
         }
 
         if (includeOrderBys && !orderBys.isEmpty())
@@ -760,20 +771,57 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return sql.toString();
     }
 
-    private static String getWhereNotNullClause(IVisualizationSourceQuery query, Set<VisualizationSourceColumn> whereNotNulls)
+    private static String getWhereClause(IVisualizationSourceQuery query, Set<VisualizationSourceColumn> whereNotNulls, Map<FieldKey, Set<String>> allFilters, Map<FieldKey, ColumnInfo> filterColTypes)
     {
-        if (whereNotNulls.isEmpty())
+        if (whereNotNulls.isEmpty() && allFilters.isEmpty())
         {
             return "";
         }
+
         String sep = "";
+        String outerSep = "";
         StringBuilder sql = new StringBuilder(" WHERE ");
-        for (VisualizationSourceColumn notNull : whereNotNulls)
+
+        if (!whereNotNulls.isEmpty())
         {
-            sql.append(sep).append(query.getSQLAlias()).append(".").append(notNull.getSQLAlias());
-            sql.append(" IS NOT NULL\n");
-            sep = " OR ";
+            sql.append("(");
+            for (VisualizationSourceColumn notNull : whereNotNulls)
+            {
+                sql.append(sep).append(query.getSQLAlias()).append(".").append(notNull.getSQLAlias());
+                sql.append(" IS NOT NULL\n");
+                sep = " OR ";
+            }
+            sql.append(")");
+            outerSep = " AND ";
         }
+
+        if (!allFilters.isEmpty())
+        {
+            sep = "";
+            for (FieldKey key : allFilters.keySet())
+            {
+                for (String queryString : allFilters.get(key))
+                {
+                    String column = SimpleFilter.getColumnFromParameter(queryString);
+                    if (null != column)
+                    {
+                        String keyQueryString = queryString.replace(column, key.toString());
+                        SimpleFilter keyFilter = SimpleFilter.createFilterFromParameter(keyQueryString);
+
+                        if (null != keyFilter)
+                        {
+                            for (SimpleFilter.FilterClause clause : keyFilter.getClauses())
+                            {
+                                sql.append(outerSep).append(sep).append(" (").append(clause.getLabKeySQLWhereClause(filterColTypes)).append(") ");
+                                outerSep = "";
+                                sep = " AND\n";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         return sql.toString();
     }
 
