@@ -119,14 +119,23 @@ Ext.onReady(function () {
         // into a single string when the 'isUpload: true' config option is used
         for (var property in exportParams) {
             if (exportParams.hasOwnProperty(property)) {
-                for (var i = 0; i < exportParams[property].length; i++ ) {
-                    console.log(property + '=' + exportParams[property][i]);
-                    var newElement = document.createElement('input');
-                    newElement.setAttribute('name', property);
-                    newElement.setAttribute('type', 'hidden');
-                    newElement.setAttribute('value', exportParams[property][i]);
-                    newForm.appendChild(newElement);
+                if (Ext.isArray(exportParams[property])) {
+                    for (var i = 0; i < exportParams[property].length; i++) {
+                        addInput(newForm, property, exportParams[property][i]);
+                    }
                 }
+                else
+                {
+                    addInput(newForm, property, exportParams[property]);
+                }
+            }
+
+            function addInput(form, property, value){
+                var newElement = document.createElement('input');
+                newElement.setAttribute('name', property);
+                newElement.setAttribute('type', 'hidden');
+                newElement.setAttribute('value', value);
+                form.appendChild(newElement);
             }
         }
         Ext.Ajax.request({
