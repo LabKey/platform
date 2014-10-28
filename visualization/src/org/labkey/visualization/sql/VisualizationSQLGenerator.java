@@ -655,7 +655,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         IVisualizationSourceQuery lastQuery = null;
         for (IVisualizationSourceQuery query : queries)
         {
-            lastQuery = query;
+            if (!query.isVisitTagQuery())
+                lastQuery = query;
 
             for (VisualizationSourceColumn orderBy : query.getSorts())
             {
