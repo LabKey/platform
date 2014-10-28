@@ -113,34 +113,26 @@ public class ImageOutput extends AbstractParamReplacement
         {
             String imgUrl = null;
 
-            if (getFile() != null && getFile().exists())
+            if (exists())
             {
-                if (getFile().length() > 0)
-                {
-                    File imgFile;
-                    if (!_deleteFile)
-                        imgFile = getFile();
-                    else
-                        imgFile = moveToTemp(getFile(), "RReportImg");
-
-                    if (imgFile != null)
-                    {
-                        String key = "temp:" + GUID.makeGUID();
-                        getViewContext().getRequest().getSession(true).setAttribute(key, imgFile);
-                        ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer());
-                        url.addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", Boolean.toString(_deleteFile), "cacheFile", "true"));
-                        imgUrl = url.getLocalURIString();
-                    }
-                }
+                File imgFile;
+                if (!_deleteFile)
+                    imgFile = getFile();
                 else
+                    imgFile = moveToTemp(getFile(), "RReportImg");
+
+                if (imgFile != null)
                 {
-                    getFile().delete();
-                    LOG.debug("File for the output parameter '" + getName() + "' is empty.  No artifact generated.");
+                    String key = "temp:" + GUID.makeGUID();
+                    getViewContext().getRequest().getSession(true).setAttribute(key, imgFile);
+                    ActionURL url = PageFlowUtil.urlProvider(ReportUrls.class).urlStreamFile(getViewContext().getContainer());
+                    url.addParameters(PageFlowUtil.map("sessionKey", key, "deleteFile", Boolean.toString(_deleteFile), "cacheFile", "true"));
+                    imgUrl = url.getLocalURIString();
                 }
             }
             else
             {
-                LOG.debug("No file exists for parameter: " + getName());
+                LOG.debug("No file or zero length file exists for parameter: " + getName());
             }
 
             return imgUrl;

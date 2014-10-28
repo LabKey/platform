@@ -28,7 +28,10 @@ import org.labkey.api.view.HttpView;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 
 /**
@@ -150,6 +153,27 @@ public class ROutputView extends HttpView
 
         LOG.debug("Failed to move " + file.getAbsolutePath() + "' to '" + newFile.getAbsolutePath() + "'");
         return null;
+    }
+
+    //
+    // Use Files.size() to determine the length of a file. This method deals more robustly with
+    // all types of files (not just "regular files").
+    //
+    protected boolean exists()
+    {
+        if (_file != null)
+        {
+            try
+            {
+                return (Files.size(Paths.get(_file.getAbsolutePath())) > 0);
+            }
+            catch(IOException e)
+            {
+                LOG.debug("Failed to get size of '" + _file.getAbsolutePath() + "' with error: " + e.getMessage());
+            }
+        }
+
+        return false;
     }
 
     static final String PREFIX = "RReport";
