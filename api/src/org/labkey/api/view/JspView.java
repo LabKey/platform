@@ -131,7 +131,7 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
             exposeModelAsRequestAttributes(((BindException)_errors).getModel(), request, response);
         exposeModelAsRequestAttributes(_renderMap, request, response);
 
-        boolean devMode = AppProps.getInstance().isDevMode() || _viewContext.getUser().isDeveloper();
+        boolean devMode = AppProps.getInstance().isDevMode() || (_viewContext != null && _viewContext.getUser() != null && _viewContext.getUser().isDeveloper());
         boolean isDebugHtml = devMode && this.getFrame() != FrameType.NOT_HTML && StringUtils.startsWith(response.getContentType(), "text/html");
         if (isDebugHtml)
             response.getWriter().print("<!--" + _page.getClass() + "-->");
