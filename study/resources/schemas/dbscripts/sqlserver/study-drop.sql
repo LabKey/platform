@@ -21,6 +21,7 @@
 
 -- Obsolete views: we stopped re-creating these in 14.1 (r29981). Look at removing these statements in 16.2.
 EXEC core.fn_dropifexists 'SpecimenSummary', 'study', 'VIEW', NULL
+EXEC core.fn_dropifexists 'SpecimenDetail', 'study', 'VIEW', NULL
 EXEC core.fn_dropifexists 'VialCounts', 'study', 'VIEW', NULL
 
 -- Current views
