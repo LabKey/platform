@@ -1281,6 +1281,7 @@ Ext4.define('File.panel.Browser', {
         if (!node) {
             var p = this.fileSystem.getParentPath(nodeId);
             if (p == this.folderSeparator) {
+                this.unlockState();
                 return;
             }
             if (nodeId.length > 0 && nodeId.substring(nodeId.length-1) != this.folderSeparator) {
@@ -1297,19 +1298,30 @@ Ext4.define('File.panel.Browser', {
                 if (!s)
                 {
                     tree.getSelectionModel().select(node);
-                    this.getFileStore().LOCKED = false;
-                    this.STATE_LOCK = false;
-                    this.vStack = undefined;
+                    this.unlockState();
                 }
                 else
                 {
-                    tree.getView().getTreeStore().on('load', function (cmp, node, recs) {
-                        this.ensureVisible(s);
-                    }, this, {single: true});
-                    tree.getSelectionModel().select(node);
+                    if (tree.getSelectionModel().isSelected(node) && this.getFileStore().LOCKED && this.STATE_LOCK) {
+                        this.unlockState();
+                    }
+                    else {
+                        tree.getView().getTreeStore().on('load', function (cmp, node, recs) {
+                            this.ensureVisible(s);
+                        }, this, {single: true});
+
+                        tree.getSelectionModel().select(node);
+                    }
                 }
             }
         }
+    },
+
+    // clean up once initial folder selection has finished
+    unlockState : function() {
+        this.getFileStore().LOCKED = false;
+        this.STATE_LOCK = false;
+        this.vStack = undefined;
     },
 
     expandPath : function(p, model) {
