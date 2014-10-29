@@ -47,6 +47,10 @@ public interface ParamReplacement
     public Map<String, String> getProperties();
     public void setProperties(Map<String, String> properties);
 
+    /** optional annotation to see if a remote executable (Rserve) is creating the parameter */
+    public boolean isRemote();
+    public void setRemote(boolean isRemote);
+
     /**
      * Convert the substitution to it's eventual generated file.
      * @param directory - the parent directory to create the generated file (if any, can be null)

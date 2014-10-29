@@ -231,6 +231,7 @@ public class ParamReplacementSvc
                     //
                     String slash = remoteParentDirectoryPath.endsWith("/") ? "" : "/";
                     resultFileName = remoteParentDirectoryPath + slash + resultFile.getName();
+                    param.setRemote(true);
                 }
                 else
                 {

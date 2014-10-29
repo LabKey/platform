@@ -39,6 +39,7 @@ public abstract class AbstractParamReplacement implements ParamReplacement
     protected Report _report;
     protected boolean _headerVisible = true;
     protected Map<String, String> _properties = Collections.emptyMap();
+    protected boolean _isRemote = false;
 
     public AbstractParamReplacement(String id)
     {
@@ -103,6 +104,16 @@ public abstract class AbstractParamReplacement implements ParamReplacement
     public void setProperties(Map<String, String> properties)
     {
         _properties = properties;
+    }
+
+    public boolean isRemote()
+    {
+        return _isRemote;
+    }
+
+    public void setRemote(boolean isRemote)
+    {
+        _isRemote = isRemote;
     }
 
     @Override

@@ -44,6 +44,7 @@ public class ROutputView extends HttpView
     private String _name;
     private boolean _collapse;
     private boolean _showHeader = true;
+    private boolean _isRemote = false;
     private File _file;
     private Map<String, String> _properties;
     protected static Logger LOG = Logger.getLogger(ROutputView.class);
@@ -54,6 +55,7 @@ public class ROutputView extends HttpView
         _name = param.getName();
         _showHeader = param.getHeaderVisible();
         _properties = param.getProperties();
+        _isRemote = param.isRemote();
     }
 
     public String getLabel()
@@ -155,25 +157,28 @@ public class ROutputView extends HttpView
         return null;
     }
 
-    //
-    // Use Files.size() to determine the length of a file. This method deals more robustly with
-    // all types of files (not just "regular files").
-    //
     protected boolean exists()
     {
-        if (_file != null)
+        long size = 0;
+
+        if (_file != null && _file.exists())
         {
+            // Files.size() or File.length() may report 0 incorrectly in certain network
+            // configurations.  For example, in an Rserve scenario we were seeing
+            // 0 length sizes being reported for R artifacts even though the Rserve process
+            // on a remote machine had finished writing the file to an NFS share.  In this case
+            // don't check the length
+            if (_isRemote)
+                return true;
+
             try
             {
-                return (Files.size(Paths.get(_file.getAbsolutePath())) > 0);
+                size = Files.size(Paths.get(_file.getAbsolutePath()));
             }
-            catch(IOException e)
-            {
-                LOG.debug("Failed to get size of '" + _file.getAbsolutePath() + "' with error: " + e.getMessage());
-            }
+            catch(IOException ignore){}
         }
 
-        return false;
+        return (size > 0);
     }
 
     static final String PREFIX = "RReport";
