@@ -620,8 +620,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             lineInterval = _factory.getPipeOutputLineInterval();
         }
 
+        action.setStartTime(new Date());
         action.addParameter(RecordedAction.COMMAND_LINE_PARAM, commandLine);
         getJob().runSubProcess(pb, _wd.getDir(), fileOutput, lineInterval, false);
+        action.setEndTime(new Date());
         return true;
     }
 
