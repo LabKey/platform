@@ -117,6 +117,14 @@ Ext.onReady(function () {
 
         // We need to build up all of the form elements ourselves because Ext.Ajax will concatentate multiple parameter values
         // into a single string when the 'isUpload: true' config option is used
+        function addInput(form, property, value){
+            var newElement = document.createElement('input');
+            newElement.setAttribute('name', property);
+            newElement.setAttribute('type', 'hidden');
+            newElement.setAttribute('value', value);
+            form.appendChild(newElement);
+        }
+
         for (var property in exportParams) {
             if (exportParams.hasOwnProperty(property)) {
                 if (Ext.isArray(exportParams[property])) {
@@ -129,15 +137,8 @@ Ext.onReady(function () {
                     addInput(newForm, property, exportParams[property]);
                 }
             }
-
-            function addInput(form, property, value){
-                var newElement = document.createElement('input');
-                newElement.setAttribute('name', property);
-                newElement.setAttribute('type', 'hidden');
-                newElement.setAttribute('value', value);
-                form.appendChild(newElement);
-            }
         }
+
         Ext.Ajax.request({
             url: exportUrl,
             method: 'POST',
