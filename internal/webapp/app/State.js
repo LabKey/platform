@@ -708,7 +708,8 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     /**
-     * Returns the set of filters found in newFilters that were not present in oldFilters
+     * Returns the set of filters found in newFilters that were not present in oldFilters.
+     * Think of it as newFilters LEFT OUTER JOIN oldFilters
      * @param newFilters
      * @param oldFilters
      */
@@ -780,6 +781,7 @@ Ext.define('LABKEY.app.controller.State', {
         }, this);
     },
 
+    // NOTE: This is overridden in subclasses
     moveSelectionToFilter : function() {
         this.addFilters(this.pruneFilters(this.selections, this.filters), false, true);
     },
