@@ -74,15 +74,16 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     getCurrentState : function() {
-        if (this.state.getCount() > 0) {
-            return this.state.getAt(this.state.getCount()-1);
+        var c = this.state.getCount();
+        if (c > 0) {
+            return this.state.getAt(c-1);
         }
     },
 
     getPreviousState : function() {
-        var index = -1;
-        if (this.state.getCount() > 1) {
-            index = this.state.getCount()-2;
+        var index = -1, c = this.state.getCount();
+        if (c > 1) {
+            index = c-2;
         }
         return index;
     },
@@ -160,13 +161,10 @@ Ext.define('LABKEY.app.controller.State', {
     },
 
     manageState : function() {
-        var size = this.state.getCount();
-        if (size > 10) {
-            var recs = this.state.getRange(size-5, size-1);
-            this.state.removeAll();
+        var size = this.state.getCount(), limit = 5;
+        if (size > limit) {
+            this.state.removeAt(0, size-limit);
             this._sync();
-            this.state.getProxy().clear();
-            this._sync(recs);
         }
     },
 
@@ -186,7 +184,7 @@ Ext.define('LABKEY.app.controller.State', {
             }
             this.state.sync();
         }
-        catch (e)
+        catch (e) // QuotaExceededError
         {
             if (this.__LOCK__ !== true) {
                 this.__LOCK__ = true;
