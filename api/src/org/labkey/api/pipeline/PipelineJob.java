@@ -126,7 +126,7 @@ abstract public class PipelineJob extends Job implements Serializable
             @Override
             public boolean matches(String statusText)
             {
-                if (statusText.toLowerCase().endsWith("waiting"))
+                if (!TaskStatus.splitWaiting.matches(statusText) && statusText.toLowerCase().endsWith("waiting"))
                     return true;
                 return super.matches(statusText);
             }
