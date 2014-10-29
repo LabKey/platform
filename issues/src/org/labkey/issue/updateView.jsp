@@ -114,7 +114,7 @@
 
     function filterNumber(e, input)
     {
-        return filterRe(e, input, /[0-9]/);
+        return filterRe(e, input, /[-\d]/);
     }
 
     function filterCommaSepNumber(e, input)
