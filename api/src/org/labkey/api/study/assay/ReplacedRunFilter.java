@@ -39,6 +39,8 @@ import java.util.List;
 import java.util.Objects;
 
 /**
+ * Special filter to show assay data that has or hasn't been replaced with a more recent copy of the data.
+ *
  * User: jeckels
  * Date: 8/20/12
  */
