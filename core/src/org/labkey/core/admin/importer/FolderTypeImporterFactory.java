@@ -74,6 +74,11 @@ public class FolderTypeImporterFactory extends AbstractFolderImportFactory
                 }
             }
 
+            if (folderXml.isSetRestrictedColumnsEnabled())
+            {
+                WriteableFolderLookAndFeelProperties.saveRestrictedColumnsEnabled(c, folderXml.getRestrictedColumnsEnabled());
+            }
+
             if (folderXml.isSetDefaultNumberFormat())
             {
                 try
