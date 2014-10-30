@@ -96,6 +96,12 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class DbScope
 {
+    public static enum TransactionKind
+    {
+        NORMAL,             // most transactions
+        PIPELINESTATUS      // transaction is to access pipeline.StatusFiles
+    }
+
     private static final Logger LOG = Logger.getLogger(DbScope.class);
     private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Map<String, DbScope> _scopes = new LinkedHashMap<>();
@@ -240,18 +246,18 @@ public class DbScope
      */
     public Transaction ensureTransaction(Lock... locks)
     {
-        return ensureTransaction(false, locks);
+        return ensureTransaction(TransactionKind.NORMAL, locks);
     }
 
     /**
-     * @param isPipelineStatus true if the transaction is to access pipeline.StatusFiles; false otherwise
+     * @param transactionKind transaction kind
      * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
      *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
      *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
      */
-    public Transaction ensureTransaction(boolean isPipelineStatus, Lock... locks)
+    public Transaction ensureTransaction(TransactionKind transactionKind, Lock... locks)
     {
-        return ensureTransaction(isPipelineStatus, Connection.TRANSACTION_READ_COMMITTED, locks);
+        return ensureTransaction(transactionKind, Connection.TRANSACTION_READ_COMMITTED, locks);
     }
 
 
@@ -262,16 +268,16 @@ public class DbScope
      */
     public Transaction ensureTransaction(int isolationLevel, Lock... locks)
     {
-        return ensureTransaction(false, isolationLevel, locks);
+        return ensureTransaction(TransactionKind.NORMAL, isolationLevel, locks);
     }
 
     /**
-     * @param isPipelineStatus true if the transaction is to access pipeline.StatusFiles; false otherwise
+     * @param transactionKind transaction kind
      * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
      *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
      *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
      * */
-    public Transaction ensureTransaction(boolean isPipelineStatus, int isolationLevel, Lock... locks)
+    public Transaction ensureTransaction(TransactionKind transactionKind, int isolationLevel, Lock... locks)
     {
         // Note: it's theorectically possible to get 3 or more transactions on the transaction stack, if we call this
         //       with isPipelineStatus (false, true, false) or (true, false, true). This should not be done because
@@ -282,7 +288,7 @@ public class DbScope
         {
             TransactionImpl transaction = getCurrentTransactionImpl();
             assert null != transaction;
-            if (isPipelineStatus == transaction.isPipelineStatus())
+            if (transactionKind == transaction.getTransactionKind())
             {
                 transaction.increment(locks);
                 Connection conn = transaction.getConnection();
@@ -291,7 +297,7 @@ public class DbScope
                 return transaction;
             }
         }
-        return beginTransaction(isPipelineStatus, isolationLevel, locks);
+        return beginTransaction(transactionKind, isolationLevel, locks);
     }
 
 
@@ -302,12 +308,12 @@ public class DbScope
      */
     public Transaction beginTransaction(Lock... locks)
     {
-        return beginTransaction(false, locks);
+        return beginTransaction(TransactionKind.NORMAL, locks);
     }
 
-    public Transaction beginTransaction(boolean isPipelineStatus, Lock... locks)
+    public Transaction beginTransaction(TransactionKind transactionKind, Lock... locks)
     {
-        return beginTransaction(isPipelineStatus, Connection.TRANSACTION_READ_COMMITTED, locks);
+        return beginTransaction(transactionKind, Connection.TRANSACTION_READ_COMMITTED, locks);
     }
 
     /**
@@ -317,10 +323,10 @@ public class DbScope
      */
     public Transaction beginTransaction(int isolationLevel, Lock... locks)
     {
-        return beginTransaction(false, isolationLevel, locks);
+        return beginTransaction(TransactionKind.NORMAL, isolationLevel, locks);
     }
 
-    public Transaction beginTransaction(boolean isPipelineStatus, int isolationLevel, Lock... locks)
+    public Transaction beginTransaction(TransactionKind transactionKind, int isolationLevel, Lock... locks)
     {
         Connection conn = null;
         TransactionImpl result = null;
@@ -345,7 +351,7 @@ public class DbScope
             {
                 // Acquire the requested locks BEFORE entering the synchronized block for mapping the transaction
                 // to the current thread
-                result = new TransactionImpl(conn, isPipelineStatus, locks);
+                result = new TransactionImpl(conn, transactionKind, locks);
                 int stackDepth = 0;
                 synchronized (_transaction)
                 {
@@ -1313,12 +1319,12 @@ public class DbScope
         private boolean _aborted = false;
         private int _closesToIgnore = 0;
         private Throwable _creation = new Throwable();
-        private final boolean _isPipelineStatus;
+        private final TransactionKind _transactionKind;
 
-        TransactionImpl(Connection conn, boolean isPipelineStatus, Lock... extraLocks)
+        TransactionImpl(Connection conn, TransactionKind transactionKind, Lock... extraLocks)
         {
             _conn = conn;
-            _isPipelineStatus = isPipelineStatus;
+            _transactionKind = transactionKind;
             increment(extraLocks);
         }
 
@@ -1482,9 +1488,9 @@ public class DbScope
             _locks.add(Arrays.asList(extraLocks));
         }
 
-        public boolean isPipelineStatus()
+        public TransactionKind getTransactionKind()
         {
-            return _isPipelineStatus;
+            return _transactionKind;
         }
     }
 
@@ -1834,6 +1840,33 @@ public class DbScope
             {
                 assertFalse(getLabkeyScope().isTransactionActive());
             }
+        }
+
+        @Test
+        public void testMultipleTransactionKinds()
+        {
+            try (Transaction t = getLabkeyScope().ensureTransaction())
+            {
+                Connection connection = t.getConnection();
+                assertTrue(getLabkeyScope().isTransactionActive());
+                try (Transaction t2 = getLabkeyScope().ensureTransaction())
+                {
+                    assertSame(connection, t2.getConnection());
+                    try (Transaction t3 = getLabkeyScope().ensureTransaction(TransactionKind.PIPELINESTATUS))
+                    {
+                        assertTrue(getLabkeyScope().isTransactionActive());
+                        assertNotSame("Should have 2 connections", connection, t3.getConnection());
+                        t3.commit();
+                        assertTrue(getLabkeyScope().isTransactionActive());
+                    }
+                    assertSame(getLabkeyScope().getCurrentTransaction(), t2);
+                    t2.commit();
+                    assertTrue(getLabkeyScope().isTransactionActive());
+                }
+                t.commit();
+                assertFalse(getLabkeyScope().isTransactionActive());
+            }
+            assertFalse(getLabkeyScope().isTransactionActive());
         }
     }
 }

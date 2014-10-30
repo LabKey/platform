@@ -375,7 +375,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                 }
                 else
                 {
-                    overrideTransaction = new TransactionImpl(null, false);
+                    overrideTransaction = new TransactionImpl(null, TransactionKind.NORMAL);
                 }
             }
         }
