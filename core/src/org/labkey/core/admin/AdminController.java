@@ -15,6 +15,7 @@
  */
 package org.labkey.core.admin;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -2653,6 +2654,7 @@ public class AdminController extends SpringActionController
         return url;
     }
 
+    private static volatile String lastCacheMemUsed = null;
 
     @AdminConsoleAction
     public class MemTrackerAction extends SimpleViewAction<MemForm>
@@ -2661,32 +2663,59 @@ public class AdminController extends SpringActionController
         {
             Set<Object> objectsToIgnore = MemTracker.getInstance().beforeReport();
 
-            if (form.isClearCaches())
+            boolean gc = form.isGc();
+            boolean cc = form.isClearCaches();
+
+            if (gc || cc)
             {
-                LOG.info("Clearing Introspector caches");
-                Introspector.flushCaches();
-                LOG.info("Purging all caches");
-                CacheManager.clearAllKnownCaches();
-                SearchService ss = ServiceRegistry.get().getService(SearchService.class);
-                if (null != ss)
+                // If both are requested then try determine and record cache memory usage
+                if (gc && cc)
                 {
-                    LOG.info("Purging SearchService queues");
-                    ss.purgeQueues();
+                    // gc once to get an accurate free memory read
+                    long before = gc();
+                    clearCaches();
+                    // gc again now that we cleared caches
+                    long cacheMemoryUsed = gc() - before;
+
+                    // Difference could be < 0 if JVM or other threads have performed gc, in which case we can't guesstimate cache memory usage
+                    String cacheMemUsed = cacheMemoryUsed > 0 ? FileUtils.byteCountToDisplaySize(cacheMemoryUsed) : "Unknown";
+                    LOG.info("Estimate of cache memory used: " + cacheMemUsed);
+                    lastCacheMemUsed = cacheMemUsed;
                 }
-            }
+                else if (cc)
+                {
+                    clearCaches();
+                }
+                else
+                {
+                    gc();
+                }
 
-            if (form.isGc())
-            {
-                LOG.info("Garbage collecting");
-                System.gc();
-            }
-
-            if (form.isGc() || form.isClearCaches())
-            {
                 LOG.info("Cache clearing and garbage collecting complete");
             }
 
             return new JspView<>("/org/labkey/core/admin/memTracker.jsp", new MemBean(getViewContext().getRequest(), objectsToIgnore));
+        }
+
+        private long gc()
+        {
+            LOG.info("Garbage collecting");
+            System.gc();
+            return Runtime.getRuntime().freeMemory();
+        }
+
+        private void clearCaches()
+        {
+            LOG.info("Clearing Introspector caches");
+            Introspector.flushCaches();
+            LOG.info("Purging all caches");
+            CacheManager.clearAllKnownCaches();
+            SearchService ss = ServiceRegistry.get().getService(SearchService.class);
+            if (null != ss)
+            {
+                LOG.info("Purging SearchService queues");
+                ss.purgeQueues();
+            }
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -2838,6 +2867,11 @@ public class AdminController extends SpringActionController
                 systemProperties.add(new Pair<String,Object>(gcBean.getName() + " GC count", gcBean.getCollectionCount()));
                 systemProperties.add(new Pair<String,Object>(gcBean.getName() + " GC time", DateUtil.formatDuration(gcBean.getCollectionTime())));
             }
+
+            String cacheMem = lastCacheMemUsed;
+
+            if (null != cacheMem)
+                systemProperties.add(new Pair<String, Object>("Most Recent Estimated Cache Memory Usage", cacheMem));
 
             systemProperties.add(new Pair<String, Object>("In-use Connections", ConnectionWrapper.getActiveConnectionCount()));
 
