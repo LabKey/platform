@@ -752,7 +752,7 @@ public class DataColumn extends DisplayColumn
                 }
                 for (IPropertyValidator validator : _boundColumn.getValidators())
                     sb.append("Validator: ").append(validator).append("\n");
-                if (renderRequiredIndicators() && _boundColumn.isRequired())
+                if (renderRequiredIndicators() && _boundColumn.isRequired() && !_boundColumn.isBooleanType())
                 {
                     out.write(" *");
                     sb.append("This field is required.\n");
