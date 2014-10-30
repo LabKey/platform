@@ -485,9 +485,14 @@ public class QueryView extends WebPartView<Object>
         // Using POST is necessary since the QueryWebPart.js config expresses other options (column lists, grid rendering options, etc) that can't be expressed on URLs.
         //
         // Issue 17313: Exporting from a grid should respect "Apply View Filter" state
-        if (!ignoreUserFilter() && _customView != null && _customView.hasFilterOrSort())
+        if (_customView != null)
         {
-            _customView.applyFilterAndSortToURL(ret, DATAREGIONNAME_DEFAULT);
+            ret.addParameter(DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, _customView.getName());
+
+            if (!ignoreUserFilter() && _customView != null && _customView.hasFilterOrSort())
+            {
+                _customView.applyFilterAndSortToURL(ret, DATAREGIONNAME_DEFAULT);
+            }
         }
 
         // Applying the base sort/filter to the url is lossy in that anyone consuming the url can't
