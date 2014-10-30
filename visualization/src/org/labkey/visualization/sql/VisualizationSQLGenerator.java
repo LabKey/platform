@@ -663,12 +663,8 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
 
         Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys = new LinkedHashMap<>();
         StringBuilder sql = new StringBuilder();
-        IVisualizationSourceQuery lastQuery = null;
         for (IVisualizationSourceQuery query : queries)
         {
-            if (!query.isVisitTagQuery())
-                lastQuery = query;
-
             for (VisualizationSourceColumn orderBy : query.getSorts())
             {
                 Set<VisualizationSourceColumn> orderByAliases = allAliases.get(orderBy.getOriginalName());
@@ -740,9 +736,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             }
         }
 
-        if (isOuterSelect && lastQuery != null && (!_whereNotNulls.isEmpty() || !_allFilters.isEmpty()))
+        if (isOuterSelect && (!_whereNotNulls.isEmpty() || !_allFilters.isEmpty()))
         {
-            sql.append(getWhereClause(lastQuery, _whereNotNulls, _allFilters, filterColTypes));
+            sql.append(getWhereClause(_whereNotNulls, _allFilters, filterColTypes));
         }
 
         if (includeOrderBys && !orderBys.isEmpty())
@@ -771,7 +767,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return sql.toString();
     }
 
-    private static String getWhereClause(IVisualizationSourceQuery query, Set<VisualizationSourceColumn> whereNotNulls, Map<FieldKey, Set<String>> allFilters, Map<FieldKey, ColumnInfo> filterColTypes)
+    private static String getWhereClause(Set<VisualizationSourceColumn> whereNotNulls, Map<FieldKey, Set<String>> allFilters, Map<FieldKey, ColumnInfo> filterColTypes)
     {
         if (whereNotNulls.isEmpty() && allFilters.isEmpty())
         {
@@ -787,7 +783,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             sql.append("(");
             for (VisualizationSourceColumn notNull : whereNotNulls)
             {
-                sql.append(sep).append(query.getSQLAlias()).append(".").append(notNull.getSQLAlias());
+                sql.append(sep).append(notNull.getSQLAlias());
                 sql.append(" IS NOT NULL\n");
                 sep = " OR ";
             }
