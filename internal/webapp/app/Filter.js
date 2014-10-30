@@ -342,33 +342,38 @@ Ext.define('LABKEY.app.model.Filter', {
             if (data['gridFilter']) { // TODO: change to look for sqlFilters
                 for (var i = 0; i < data['gridFilter'].length; i++) {
                     var gf = data['gridFilter'][i];
-
-                    if (!Ext.isFunction(gf.getColumnName))
-                    {
-                        console.warn('invalid filter object being processed.');
-                        return 'Unknown';
-                    }
-                    var splitLabel = gf.getColumnName().split('/');
-                    var endLabel = "", first, real;
-                    if (splitLabel.length > 1) {
-                        // we're dealing with a presumed lookup filter
-                        first = splitLabel[0].split('_');
-                        real = first[first.length-1];
-
-                        endLabel = real + '/' + splitLabel[splitLabel.length-1];
-                    }
-                    else {
-                        // Just a normal column
-                        first = splitLabel[0].split('_');
-                        real = first[first.length-1];
-
-                        endLabel = real;
-                    }
-
-                    return endLabel;
+                    return LABKEY.app.model.Filter.getGridFilterLabel(gf);
                 }
             }
             return 'Unknown';
+        },
+
+        getGridFilterLabel : function(gf)
+        {
+            if (!Ext.isFunction(gf.getColumnName))
+            {
+                console.warn('invalid filter object being processed.');
+                return 'Unknown';
+            }
+
+            var splitLabel = gf.getColumnName().split('/');
+            var endLabel = "", first, real;
+            if (splitLabel.length > 1) {
+                // we're dealing with a presumed lookup filter
+                first = splitLabel[0].split('_');
+                real = first[first.length-1];
+
+                endLabel = real + '/' + splitLabel[splitLabel.length-1];
+            }
+            else {
+                // Just a normal column
+                first = splitLabel[0].split('_');
+                real = first[first.length-1];
+
+                endLabel = real;
+            }
+
+            return endLabel;
         },
 
         getGridLabel : function(data) {
