@@ -1275,7 +1275,7 @@ public class SpecimenImporter
             _iTimer.setPhase(ImportPhases.ResyncStudy);
             resyncStudy();
 
-            setStatus(null);
+            ensureNotCanceled();
             _iTimer.setPhase(ImportPhases.SetLastSpecimenLoad);
             // Set LastSpecimenLoad to now... we'll check this before snapshot study specimen refresh
             StudyImpl study = StudyManager.getInstance().getStudy(_container).createMutable();
@@ -1328,9 +1328,11 @@ public class SpecimenImporter
             info("Deleting old data from Specimen Event table...");
             Table.delete(getTableInfoSpecimenEvent());
             info("Complete.");
+            ensureNotCanceled();
             info("Deleting old data from Vial table...");
             Table.delete(getTableInfoVial());
             info("Complete.");
+            ensureNotCanceled();
             info("Deleting old data from Specimen table...");
             Table.delete(getTableInfoSpecimen());
             info("Complete.");
@@ -1343,16 +1345,16 @@ public class SpecimenImporter
                 seenVisitValue = true;
         }
 
-        setStatus(null);
+        ensureNotCanceled();
         _iTimer.setPhase(ImportPhases.PopulateMaterials);
         populateMaterials(info, merge);
-        setStatus(null);
+        ensureNotCanceled();
         _iTimer.setPhase(ImportPhases.PopulateSpecimens);
         populateSpecimens(info, merge, seenVisitValue);
-        setStatus(null);
+        ensureNotCanceled();
         _iTimer.setPhase(ImportPhases.PopulateVials);
         populateVials(info, merge, seenVisitValue);
-        setStatus(null);
+        ensureNotCanceled();
         _iTimer.setPhase(ImportPhases.PopulateSpecimenEvents);
         populateSpecimenEvents(info, merge);
 
@@ -1952,14 +1954,19 @@ public class SpecimenImporter
     }
 
     private static String _currentStatus = GENERAL_JOB_STATUS_MSG;
-    private void setStatus(@Nullable String status)
+    private void setStatus(@NotNull String status)
     {
         if (null != _job)
         {
-            if (null != status)
-                _currentStatus = status;
+            _currentStatus = status;
             _job.setStatus(_currentStatus);
         }
+    }
+
+    private void ensureNotCanceled()
+    {
+        if (null != _job)
+            _job.setStatus(_currentStatus);     // Will throw if job conceled
     }
 
     private List<SpecimenColumn> getSpecimenCols(List<SpecimenColumn> availableColumns)
@@ -2912,7 +2919,7 @@ public class SpecimenImporter
             return new Pair<>(Collections.<T>emptyList(), 0);
         }
 
-        setStatus(null);
+        ensureNotCanceled();
         info(tableName + ": Starting replacement of all data...");
 
         assert !_specimensTableType.getTableName().equalsIgnoreCase(tableName);
@@ -3030,7 +3037,7 @@ public class SpecimenImporter
 
                 if (rows.size() == SQL_BATCH_SIZE)
                 {
-                    setStatus(null);
+                    ensureNotCanceled();
                     Table.batchExecute(schema, insertSql.toString(), rows);
                     rows = new ArrayList<>(SQL_BATCH_SIZE);
                     // output a message every 100 batches (every 10,000 events, by default)
@@ -3040,7 +3047,7 @@ public class SpecimenImporter
             }
 
             // No point in trying to insert zero rows.  Also, insertSql won't be set if no rows exist.
-            setStatus(null);
+            ensureNotCanceled();
             if (!rows.isEmpty())
                 Table.batchExecute(schema, insertSql.toString(), rows);
 

@@ -97,7 +97,7 @@ public class PipelineStatusManager
         for (int id : rowId)
             ints.add(id);
 
-        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(true))
+        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(DbScope.TransactionKind.PIPELINESTATUS))
         {
             SimpleFilter filter = new SimpleFilter(new SimpleFilter.InClause(FieldKey.fromParts("RowId"), ints));
             List<PipelineStatusFileImpl> result = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
@@ -139,7 +139,7 @@ public class PipelineStatusManager
      */
     private static PipelineStatusFileImpl getStatusFile(Filter filter)
     {
-        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(true))
+        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(DbScope.TransactionKind.PIPELINESTATUS))
         {
             PipelineStatusFileImpl pipelineStatusFile = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getObject(PipelineStatusFileImpl.class);
             transaction.commit();
@@ -167,7 +167,7 @@ public class PipelineStatusManager
             if (allowInsert)
             {
                 sfSet.beforeInsert(user, job.getContainerId());
-                try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(true))
+                try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(DbScope.TransactionKind.PIPELINESTATUS))
                 {
                     // Use separate transaction/connection for TableInfoStatusFiles
                     PipelineStatusFileImpl sfNew = Table.insert(user, _schema.getTableInfoStatusFiles(), sfSet);
@@ -240,7 +240,7 @@ public class PipelineStatusManager
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         boolean active = scope.isTransactionActive();
-        try (DbScope.Transaction transaction = scope.ensureTransaction(true))
+        try (DbScope.Transaction transaction = scope.ensureTransaction(DbScope.TransactionKind.PIPELINESTATUS))
         {
             // Use separate transaction/connection for TableInfoStatusFiles
             enforceLockOrder(sf.getJob(), active);
@@ -273,7 +273,7 @@ public class PipelineStatusManager
     {
         DbScope scope = PipelineSchema.getInstance().getSchema().getScope();
         boolean active = scope.isTransactionActive();
-        try (DbScope.Transaction transaction = scope.ensureTransaction(true))
+        try (DbScope.Transaction transaction = scope.ensureTransaction(DbScope.TransactionKind.PIPELINESTATUS))
         {
             enforceLockOrder(jobId, active);
 
@@ -320,7 +320,7 @@ public class PipelineStatusManager
         if (sfExist == null)
             throw new NoSuchJobException("Status for the job " + jobId + " was not found.");
 
-        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(true))
+        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(DbScope.TransactionKind.PIPELINESTATUS))
         {
             // Use separate transaction/connection for TableInfoStatusFiles
             StringBuilder sql = new StringBuilder();
@@ -354,7 +354,7 @@ public class PipelineStatusManager
 
     private static String retrieveJob(PipelineStatusFileImpl sfExist)
     {
-        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(true))
+        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(DbScope.TransactionKind.PIPELINESTATUS))
         {
             // Use separate transaction/connection for TableInfoStatusFiles
             StringBuilder sql = new StringBuilder();
@@ -392,7 +392,7 @@ public class PipelineStatusManager
     */
     public static int getIncompleteStatusFileCount(String parentId, Container container)
     {
-        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(true))
+        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(DbScope.TransactionKind.PIPELINESTATUS))
         {
             int result = new SqlSelector(_schema.getSchema(), "SELECT COUNT(*) FROM " + _schema.getTableInfoStatusFiles() + " WHERE Container = ? AND JobParent = ? AND Status <> ?",
                     container, parentId, PipelineJob.TaskStatus.complete.toString()).getObject(Integer.class);
@@ -466,7 +466,7 @@ public class PipelineStatusManager
 
     private static List<PipelineStatusFileImpl> getStatusFiles(SimpleFilter filter)
     {
-        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(true))
+        try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(DbScope.TransactionKind.PIPELINESTATUS))
         {
             List<PipelineStatusFileImpl> result = new TableSelector(_schema.getTableInfoStatusFiles(), filter, null).getArrayList(PipelineStatusFileImpl.class);
             transaction.commit();
@@ -640,7 +640,7 @@ public class PipelineStatusManager
             }
 
             int rowCount = 0;
-            try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(true))
+            try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(DbScope.TransactionKind.PIPELINESTATUS))
             {
                 // Use separate transaction/connection for TableInfoStatusFiles
                 rowCount = new SqlExecutor(_schema.getSchema()).execute(sql);
@@ -761,7 +761,7 @@ public class PipelineStatusManager
 
         if (null != jobId)
         {
-            try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction(true))
+            try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction(DbScope.TransactionKind.PIPELINESTATUS))
             {
                 String lockCmd = "SELECT Job, JobParent, Container FROM " + _schema.getTableInfoStatusFiles() + " WITH (TABLOCKX) WHERE Job = ?;";
                 new SqlExecutor(_schema.getSchema()).execute(lockCmd, jobId);
