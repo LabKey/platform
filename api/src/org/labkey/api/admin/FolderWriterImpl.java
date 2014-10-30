@@ -113,6 +113,9 @@ public class FolderWriterImpl extends BaseFolderWriter
         if (null != defaultNumberFormat)
             folderXml.setDefaultNumberFormat(defaultNumberFormat);
 
+        if (props.areRestrictedColumnsEnabled())
+            folderXml.setRestrictedColumnsEnabled(true);
+
         // Save the folder.xml file.  This gets called last, after all other writers have populated the other sections.
         vf.saveXmlBean("folder.xml", ctx.getDocument());
 
