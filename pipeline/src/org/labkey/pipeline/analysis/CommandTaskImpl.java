@@ -15,18 +15,29 @@
  */
 package org.labkey.pipeline.analysis;
 
-import org.junit.Assert;
 import org.apache.commons.lang3.StringUtils;
 import org.jmock.Mockery;
 import org.jmock.lib.legacy.ClassImposteriser;
+import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.RowMapFactory;
 import org.labkey.api.data.TSVMapWriter;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.module.Module;
-import org.labkey.api.pipeline.*;
+import org.labkey.api.pipeline.AbstractTaskFactory;
+import org.labkey.api.pipeline.PipeRoot;
+import org.labkey.api.pipeline.PipelineJob;
+import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.RecordedAction;
+import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.pipeline.TaskId;
+import org.labkey.api.pipeline.WorkDirectory;
+import org.labkey.api.pipeline.WorkDirectoryTask;
 import org.labkey.api.pipeline.cmd.CommandTask;
-import org.labkey.api.pipeline.cmd.*;
+import org.labkey.api.pipeline.cmd.CommandTaskFactorySettings;
+import org.labkey.api.pipeline.cmd.ListToCommandArgs;
+import org.labkey.api.pipeline.cmd.TaskPath;
+import org.labkey.api.pipeline.cmd.TaskToCommandArgs;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.reader.TabLoader;
 import org.labkey.api.resource.FileResource;
@@ -39,7 +50,15 @@ import org.labkey.api.util.Path;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -688,9 +707,9 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             loader.setInferTypes(false);
             for (Map<String, Object> row : loader.load())
             {
-                String name = (String) row.get("Name");
-                String value = (String) row.get("Value");
-                String type = (String) row.get("Type");
+                String name = Objects.toString(row.get("Name"), null);
+                String value = Objects.toString(row.get("Value"), null);
+                String type = Objects.toString(row.get("Type"), null);
                 if (name == null || value == null)
                     continue;
 
