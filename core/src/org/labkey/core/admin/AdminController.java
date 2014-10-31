@@ -138,6 +138,7 @@ import org.labkey.api.view.template.PageConfig.Template;
 import org.labkey.api.wiki.WikiRendererType;
 import org.labkey.api.wiki.WikiService;
 import org.labkey.api.writer.MemoryVirtualFile;
+import org.labkey.core.admin.miniprofiler.MiniProfilerController;
 import org.labkey.core.admin.sql.SqlScriptController;
 import org.labkey.core.portal.ProjectController;
 import org.labkey.core.security.SecurityController;
@@ -225,6 +226,7 @@ public class AdminController extends SpringActionController
         AdminConsole.addLink(SettingsLinkType.Configuration, "experimental features", new ActionURL(ExperimentalFeaturesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "folder types", new ActionURL(FolderTypesAction.class, root));
         AdminConsole.addLink(SettingsLinkType.Configuration, "short urls", new ActionURL(ShortURLAdminAction.class, root));
+        AdminConsole.addLink(SettingsLinkType.Configuration, "profiler", new ActionURL(MiniProfilerController.ManageAction.class, root));
 
         // Diagnostics
         AdminConsole.addLink(SettingsLinkType.Diagnostics, "running threads", new ActionURL(ShowThreadsAction.class, root));

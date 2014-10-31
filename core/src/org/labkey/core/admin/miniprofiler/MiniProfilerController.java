@@ -16,20 +16,30 @@
 package org.labkey.core.admin.miniprofiler;
 
 import org.apache.log4j.Logger;
+import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.Marshal;
 import org.labkey.api.action.Marshaller;
 import org.labkey.api.action.MutatingApiAction;
+import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
+import org.labkey.api.admin.AdminUrls;
+import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.RequestInfo;
+import org.labkey.api.security.AdminConsoleAction;
+import org.labkey.api.security.CSRF;
 import org.labkey.api.security.RequiresNoPermission;
+import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.util.MemTracker;
+import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.UnauthorizedException;
 import org.springframework.validation.BindException;
+import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.LinkedHashSet;
@@ -50,6 +60,73 @@ public class MiniProfilerController extends SpringActionController
     public MiniProfilerController()
     {
         setActionResolver(_actionResolver);
+    }
+
+
+    public static class MiniProfilerSettingsForm extends BeanViewForm<MiniProfiler.Settings>
+    {
+        public MiniProfilerSettingsForm()
+        {
+            super(MiniProfiler.Settings.class);
+        }
+    }
+
+    @RequiresSiteAdmin
+    @AdminConsoleAction @CSRF
+    public class ManageAction extends FormViewAction<MiniProfilerSettingsForm>
+    {
+        @Override
+        public void validateCommand(MiniProfilerSettingsForm form, Errors errors)
+        {
+            MiniProfiler.Settings settings = form.getBean();
+            if (settings.getTrivialMillis() <= 0)
+                errors.rejectValue("trivialMillis", ERROR_MSG, "Trivial milliseconds must be greater than 0.");
+        }
+
+        @Override
+        public ModelAndView getView(MiniProfilerSettingsForm form, boolean reshow, BindException errors) throws Exception
+        {
+            MiniProfiler.Settings settings = reshow ? form.getBean() : MiniProfiler.getSettings();
+
+            getPageConfig().setHelpTopic(MiniProfiler.getHelpTopic());
+
+            return new JspView<>("/org/labkey/core/admin/miniprofiler/manage.jsp", settings, errors);
+        }
+
+        @Override
+        public boolean handlePost(MiniProfilerSettingsForm form, BindException errors) throws Exception
+        {
+            MiniProfiler.Settings settings = form.getBean();
+            MiniProfiler.saveSettings(settings);
+
+            return true;
+        }
+
+        @Override
+        public URLHelper getSuccessURL(MiniProfilerSettingsForm form)
+        {
+            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("MiniProfiler Settings");
+            return root;
+        }
+
+    }
+
+    @RequiresSiteAdmin
+    @CSRF
+    public class ResetAction extends SimpleRedirectAction
+    {
+        @Override
+        public URLHelper getRedirectURL(Object o) throws Exception
+        {
+            MiniProfiler.resetSettings();
+            return PageFlowUtil.urlProvider(AdminUrls.class).getAdminConsoleURL();
+        }
     }
 
     public static class ReportForm
@@ -98,6 +175,8 @@ public class MiniProfilerController extends SpringActionController
         {
             if (!MiniProfiler.isEnabled(getViewContext()))
                 throw new UnauthorizedException();
+
+            getPageConfig().setHelpTopic(MiniProfiler.getHelpTopic());
 
             // TODO: filter requests by user/session if not site admin
             List<RequestInfo> requests = MemTracker.getInstance().getNewRequests(0);
