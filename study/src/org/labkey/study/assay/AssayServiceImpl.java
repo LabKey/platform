@@ -481,8 +481,7 @@ public class AssayServiceImpl extends DomainEditorServiceBase implements AssaySe
 
     private List<String> updateDomainDescriptor(GWTDomain<GWTPropertyDescriptor> domain, ExpProtocol protocol, AssayProvider provider)
     {
-        // NOTE: should this be protocol.getContainer()?
-        GWTDomain<? extends GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), getContainer());
+        GWTDomain<? extends GWTPropertyDescriptor> previous = getDomainDescriptor(domain.getDomainURI(), protocol.getContainer());
         for (GWTPropertyDescriptor prop : domain.getFields())
         {
             if (prop.getLookupQuery() != null)
