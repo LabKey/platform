@@ -141,6 +141,13 @@ public class XarExporter
         }
         logProgress("Adding experiment run " + run.getLSID());
         _experimentRunLSIDs.add(run.getLSID());
+
+        ExpExperiment batch = run.getBatch();
+        if (batch != null)
+        {
+            addExperiment((ExpExperimentImpl)batch);
+        }
+
         ExperimentArchiveType.ExperimentRuns runs = _archive.getExperimentRuns();
         if (runs == null)
         {
@@ -771,7 +778,7 @@ public class XarExporter
         addProtocol(protocol, true);
     }
 
-    public void addExperiment(ExpExperimentImpl exp) throws ExperimentException, SQLException
+    public void addExperiment(ExpExperimentImpl exp) throws ExperimentException
     {
         Experiment experiment = exp.getDataObject();
         if (_experimentLSIDToRunLSIDs.containsKey(experiment.getLSID()))
