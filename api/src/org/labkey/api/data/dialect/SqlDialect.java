@@ -189,8 +189,6 @@ public abstract class SqlDialect
         return sb.toString();
     }
 
-    public abstract String getBooleanLiteral(boolean b);
-
     static
     {
         SystemMaintenance.addTask(new DatabaseMaintenanceTask());
@@ -900,15 +898,17 @@ public abstract class SqlDialect
         return "CAST(0 AS " + getBooleanDataType() + ")";
     }
 
+    public abstract String getBooleanLiteral(boolean b);
 
-    // We need to determine the database name from a data source, so we've implemented a helper that parses
-    // the JDBC connection string for each driver we support.  This is necessary because, unfortunately, there
-    // appears to be no standard, reliable way to ask a JDBC driver for individual components of the URL or
-    // to programmatically assemble a new connection URL.  Driver.getPropertyInfo(), for example, doesn't
-    // return the database name on PostgreSQL if it's specified as part of the URL.
+    public abstract String getBinaryDataType();
+
+    // We need to determine the database name from a data source, so we've implemented a helper that parses the JDBC connection
+    // string for each driver we support. This is necessary because, unfortunately, there appears to be no standard, reliable
+    // way to ask a JDBC driver for individual components of the URL or to programmatically assemble a new connection URL.
+    // Driver.getPropertyInfo(), for example, doesn't return the database name on PostgreSQL if it's specified as part of the URL.
     //
-    // Currently, JdbcHelper only finds the database name.  It could be extended if we require querying
-    // other components or if replacement/reassembly becomes necessary.
+    // Currently, JdbcHelper only finds the database name. It could be extended if we require querying other components or if
+    // replacement/reassembly becomes necessary.
     public String getDatabaseName(String dsName, DataSource ds) throws ServletException
     {
         try

@@ -388,6 +388,12 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
+    public String getBinaryDataType()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
     public SQLFragment sqlLocate(SQLFragment littleString, SQLFragment bigString)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
