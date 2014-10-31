@@ -16,16 +16,33 @@
 package org.labkey.core.query;
 
 import org.jetbrains.annotations.NotNull;
-import org.labkey.api.data.*;
+import org.labkey.api.data.ColumnInfo;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.JdbcType;
+import org.labkey.api.data.NullColumnInfo;
+import org.labkey.api.data.SQLFragment;
+import org.labkey.api.data.SimpleFilter;
+import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
-import org.labkey.api.query.*;
+import org.labkey.api.query.CacheClearingQueryUpdateService;
+import org.labkey.api.query.DefaultQueryUpdateService;
+import org.labkey.api.query.DetailsURL;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.SimpleQueryUpdateService;
+import org.labkey.api.query.SimpleTableDomainKind;
+import org.labkey.api.query.SimpleUserSchema;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -33,7 +50,13 @@ import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
 import org.labkey.core.user.UserController;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
 * User: klum
@@ -222,7 +245,15 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                     return UsersDomainKind.getDomainContainer();
                 }
             };
-            return new SimpleQueryUpdateService(this, table, helper);
+            QueryUpdateService updateService = new SimpleQueryUpdateService(this, table, helper);
+            return new CacheClearingQueryUpdateService(updateService)
+            {
+                @Override
+                protected void clearCache()
+                {
+                    UserManager.clearUserList();
+                }
+            };
         }
         return null;
     }
