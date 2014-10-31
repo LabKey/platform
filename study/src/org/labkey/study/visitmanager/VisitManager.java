@@ -101,7 +101,13 @@ public abstract class VisitManager
      */
     public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets)
     {
-        updateParticipantVisits(user, changedDatasets, null, null, true);
+        updateParticipantVisits(user, changedDatasets, null, null, true, null);
+    }
+
+    private void info(@Nullable Logger logger, String message)
+    {
+        if (null != logger)
+            logger.info(message);
     }
 
     /**
@@ -109,13 +115,15 @@ public abstract class VisitManager
      * @param user the current user
      * @param changedDatasets the datasets that may have one or more rows modified
      * @param potentiallyAddedParticipants optionally, the specific participants that may have been added to the study.
-     * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
+ * If null, all of the changedDatasets and specimens will be checked to see if they contain new participants
      * @param potentiallyDeletedParticipants optionally, the specific participants that may have been removed from the
-     * study. If null, all participants will be checked to see if they are still in the study.
+* study. If null, all participants will be checked to see if they are still in the study.
      * @param participantVisitResyncRequired If true, will force an update of the ParticipantVisit mapping for this study
+     * @param logger Log4j logger to use for detailed performance information
      */
-    public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired)
+    public void updateParticipantVisits(User user, Collection<DataSetDefinition> changedDatasets, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired, @Nullable Logger logger)
     {
+        info(logger, "Updating participants");
         updateParticipants(changedDatasets, potentiallyAddedParticipants, potentiallyDeletedParticipants);
         if (participantVisitResyncRequired)
         {
@@ -126,15 +134,19 @@ public abstract class VisitManager
                 Iterator<DataSetDefinition> it = changedDatasets.iterator();
                 it.hasNext();
                 DataSetDefinition ds = it.next();
+                info(logger, "Updating participant visit table for single dataset " + ds.getName());
                 updateParticipantVisitTableAfterInsert(user, ds, potentiallyAddedParticipants);
             }
             else
             {
+                info(logger, "Updating participant visit table");
                 updateParticipantVisitTable(user);
             }
         }
+        info(logger, "Updating visit table");
         updateVisitTable(user);
 
+        info(logger, "Updating cohorts");
         Integer cohortDatasetId = _study.getParticipantCohortDatasetId();
         // Only bother updating cohort assignment if we're doing automatic cohort assignment and there's an edit
         // to the dataset that specifies the cohort
@@ -152,6 +164,7 @@ public abstract class VisitManager
             }
         }
 
+        info(logger, "Clearing participant visit caches");
         StudyManager.getInstance().clearParticipantVisitCaches(getStudy());
     }
 

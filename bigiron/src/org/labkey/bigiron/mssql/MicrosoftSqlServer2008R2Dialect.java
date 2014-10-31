@@ -742,6 +742,12 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         return b ? "1" : "0";
     }
 
+    @Override
+    public String getBinaryDataType()
+    {
+        return "IMAGE";
+    }
+
     /**
      * Wrap one or more INSERT statements to allow explicit specification
      * of values for autoincrementing columns (e.g. IDENTITY in SQL Server

@@ -847,14 +847,13 @@ public class SpecimenImporter
         return _eventVialRollups;
     }
 
-    private static final CaseInsensitiveHashSet _eventFieldNamesDisallowedForRollups;
-    private static final CaseInsensitiveHashSet _vialFieldNamesDisallowedForRollups;
-    static
-    {
-        _eventFieldNamesDisallowedForRollups = new CaseInsensitiveHashSet("RowId", "VialId", "LabId", "PTID",
-                "PrimaryTypeId", "AdditiveTypeId", "DerivativeTypeId", "DerivativeTypeId2", "OriginatingLocationId");
-        _vialFieldNamesDisallowedForRollups = new CaseInsensitiveHashSet("RowId", "SpecimenId");
-    }
+    private static final CaseInsensitiveHashSet _eventFieldNamesDisallowedForRollups = new CaseInsensitiveHashSet(
+        "RowId", "VialId", "LabId", "PTID", "PrimaryTypeId", "AdditiveTypeId", "DerivativeTypeId", "DerivativeTypeId2", "OriginatingLocationId"
+    );
+
+    private static final CaseInsensitiveHashSet _vialFieldNamesDisallowedForRollups = new CaseInsensitiveHashSet(
+        "RowId", "SpecimenId"
+    );
 
     public static CaseInsensitiveHashSet getEventFieldNamesDisallowedForRollups()
     {
@@ -872,7 +871,7 @@ public class SpecimenImporter
     private static final String DURATION_TYPE = "SpecimenImporter/TimeOnlyDate";
     private static final String NUMERIC_TYPE = "NUMERIC(15,4)";
     private static final String BOOLEAN_TYPE = StudySchema.getInstance().getSqlDialect().getBooleanDataType();
-    private static final String BINARY_TYPE = StudySchema.getInstance().getSqlDialect().isSqlServer() ? "IMAGE" : "BYTEA";  // TODO: Move into dialect!
+    private static final String BINARY_TYPE = StudySchema.getInstance().getSqlDialect().getBinaryDataType();
     private static final String LAB_ID_TSV_COL = "lab_id";
     private static final String SPEC_NUMBER_TSV_COL = "specimen_number";
     private static final String EVENT_ID_COL = "record_id";
@@ -1189,7 +1188,7 @@ public class SpecimenImporter
 
         StudyImpl study = StudyManager.getInstance().getStudy(_container);
         info("Updating study-wide subject/visit information...");
-        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, Collections.<DataSetDefinition>emptyList());
+        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(_user, Collections.<DataSetDefinition>emptyList(), null, null, true, _logger);
         info("Subject/visit update complete.");
     }
 
@@ -1269,7 +1268,7 @@ public class SpecimenImporter
                 info("Specimens: 0 rows found in input");
 
             // No need to setPhase() here... method sets timer phases immediately
-            updateCalculatedSpecimenData(merge, _logger);
+            updateCalculatedSpecimenData(merge);
 
             setStatus(GENERAL_JOB_STATUS_MSG + " (update study)");
             _iTimer.setPhase(ImportPhases.ResyncStudy);
@@ -1368,6 +1367,7 @@ public class SpecimenImporter
     }
 
     private static final int CURRENT_SITE_UPDATE_SIZE = 1000;
+    private static final int CURRENT_SITE_UPDATE_LOGGING_SIZE = 10000;   // Can choose to log at a less frequent rate than the update batch size
 
     private Set<String> getConflictingEventColumns(List<SpecimenEvent> events)
     {
@@ -1473,7 +1473,7 @@ public class SpecimenImporter
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
-    private void updateCommentSpecimenHashes(Logger logger)
+    private void updateCommentSpecimenHashes()
     {
         SQLFragment sql = new SQLFragment();
         TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
@@ -1487,12 +1487,12 @@ public class SpecimenImporter
                 .append(commentTable.getColumn("GlobalUniqueId").getValueSql(commentTableSelectName))
                 .append(")\nWHERE ").append(commentTable.getColumn("Container").getValueSql(commentTableSelectName)).append(" = ?");
         sql.add(_container.getId());
-        logger.info("Updating hash codes for existing comments...");
+        info("Updating hash codes for existing comments...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
-        logger.info("Complete.");
+        info("Complete.");
     }
 
-    private void prepareQCComments(Logger logger)
+    private void prepareQCComments()
     {
         StringBuilder columnList = new StringBuilder();
         columnList.append("VialId");
@@ -1525,9 +1525,9 @@ public class SpecimenImporter
         deleteClearedVials.append("AND QualityControlFlagForced = ? ");
         deleteClearedVials.add(Boolean.FALSE);
         deleteClearedVials.append("AND GlobalUniqueId NOT IN (").append(conflictedGUIDs).append(");");
-        logger.info("Clearing QC flags for vials that no longer have history conflicts...");
+        info("Clearing QC flags for vials that no longer have history conflicts...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(deleteClearedVials);
-        logger.info("Complete.");
+        info("Complete.");
 
 
         // Insert placeholder comments for newly discovered QC problems; SpecimenHash will be updated within updateCalculatedSpecimenData, so this
@@ -1546,12 +1546,12 @@ public class SpecimenImporter
         insertPlaceholderQCComments.append("WHERE GlobalUniqueId NOT IN ");
         insertPlaceholderQCComments.append("(SELECT GlobalUniqueId FROM study.SpecimenComment WHERE Container = ?);");
         insertPlaceholderQCComments.add(_container.getId());
-        logger.info("Setting QC flags for vials that have new history conflicts...");
+        info("Setting QC flags for vials that have new history conflicts...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(insertPlaceholderQCComments);
-        logger.info("Complete.");
+        info("Complete.");
     }
 
-    private void markOrphanedRequestVials(Logger logger) throws SQLException
+    private void markOrphanedRequestVials() throws SQLException
     {
         // Mark those global unique IDs that are in requests but are no longer found in the vial table:
         TableInfo vialTable = getTableInfoVial();
@@ -1566,11 +1566,11 @@ public class SpecimenImporter
                 .append("\t\tstudy.SampleRequestSpecimen.Container = ?);");
         orphanMarkerSql.add(Boolean.TRUE);
         orphanMarkerSql.add(_container.getId());
-        logger.info("Marking requested vials that have been orphaned...");
+        info("Marking requested vials that have been orphaned...");
 
         SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema());
         executor.execute(orphanMarkerSql);
-        logger.info("Complete.");
+        info("Complete.");
 
         // un-mark those global unique IDs that were previously marked as orphaned but are now found in the vial table:
         SQLFragment deorphanMarkerSql = new SQLFragment();
@@ -1585,12 +1585,12 @@ public class SpecimenImporter
         deorphanMarkerSql.add(Boolean.FALSE);
         deorphanMarkerSql.add(Boolean.TRUE);
         deorphanMarkerSql.add(_container.getId());
-        logger.info("Marking requested vials that have been de-orphaned...");
+        info("Marking requested vials that have been de-orphaned...");
         executor.execute(deorphanMarkerSql);
-        logger.info("Complete.");
+        info("Complete.");
     }
 
-    private void setLockedInRequestStatus(Logger logger) throws SQLException
+    private void setLockedInRequestStatus() throws SQLException
     {
         TableInfo vialTable = getTableInfoVial();
         String vialTableSelectName = vialTable.getSelectName();
@@ -1603,12 +1603,12 @@ public class SpecimenImporter
         lockedInRequestSql.add(Boolean.TRUE);
         lockedInRequestSql.add(_container.getId());
 
-        logger.info("Setting Specimen Locked in Request status...");
+        info("Setting Specimen Locked in Request status...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(lockedInRequestSql);
-        logger.info("Complete.");
+        info("Complete.");
     }
 
-    private void updateSpecimenProcessingInfo(Logger logger) throws SQLException
+    private void updateSpecimenProcessingInfo() throws SQLException
     {
         TableInfo specimenTable = getTableInfoSpecimen();
         String specimenTableSelectName = specimenTable.getSelectName();
@@ -1621,9 +1621,9 @@ public class SpecimenImporter
                 "\tGROUP BY SpecimenId\n" +
                 "\tHAVING COUNT(ProcessingLocation) = 1\n" +
                 ")");
-        logger.info("Updating processing locations on the specimen table...");
+        info("Updating processing locations on the specimen table...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
-        logger.info("Complete.");
+        info("Complete.");
 
         sql = new SQLFragment("UPDATE ").append(specimenTableSelectName).append(" SET FirstProcessedByInitials = (\n" +
                 "\tSELECT MAX(FirstProcessedByInitials) AS FirstProcessedByInitials FROM \n" +
@@ -1632,27 +1632,26 @@ public class SpecimenImporter
                 "\tGROUP BY SpecimenId\n" +
                 "\tHAVING COUNT(FirstProcessedByInitials) = 1\n" +
                 ")");
-        logger.info("Updating first processed by initials on the specimen table...");
+        info("Updating first processed by initials on the specimen table...");
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
-        logger.info("Complete.");
-
+        info("Complete.");
     }
 
     // UNDONE: add vials in-clause to only update data for rows that changed
-    private void updateCalculatedSpecimenData(boolean merge, Logger logger) throws SQLException
+    private void updateCalculatedSpecimenData(boolean merge) throws SQLException
     {
         setStatus(GENERAL_JOB_STATUS_MSG + " (update)");
         _iTimer.setPhase(ImportPhases.PrepareQcComments);
         // delete unnecessary comments and create placeholders for newly discovered errors:
-        prepareQCComments(logger);
+        prepareQCComments();
 
         _iTimer.setPhase(ImportPhases.UpdateCommentSpecimenHashes);
-        updateCommentSpecimenHashes(logger);
+        updateCommentSpecimenHashes();
 
         _iTimer.setPhase(ImportPhases.MarkOrphanedRequestVials);
-        markOrphanedRequestVials(logger);
+        markOrphanedRequestVials();
         _iTimer.setPhase(ImportPhases.SetLockedInRequest);
-        setLockedInRequestStatus(logger);
+        setLockedInRequestStatus();
 
         _iTimer.setPhase(ImportPhases.VialUpdatePreLoopPrep);
         // clear caches before determining current sites:
@@ -1693,8 +1692,8 @@ public class SpecimenImporter
 
         do
         {
-            if (logger != null)
-                logger.info("Updating vial rows " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_SIZE) + ".");
+            if (offset % CURRENT_SITE_UPDATE_LOGGING_SIZE == 0)
+                info("Updating vial rows " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_LOGGING_SIZE) + ".");
 
             setStatus(GENERAL_JOB_STATUS_MSG + " (update vials)");
             _iTimer.setPhase(ImportPhases.GetVialBatch);
@@ -1874,12 +1873,12 @@ public class SpecimenImporter
         // finally, after all other data has been updated, we can update our cached specimen counts and processing locations:
         setStatus(GENERAL_JOB_STATUS_MSG + " (update counts)");
         _iTimer.setPhase(ImportPhases.UpdateSpecimenProcessingInfo);
-        updateSpecimenProcessingInfo(logger);
+        updateSpecimenProcessingInfo();
 
         _iTimer.setPhase(ImportPhases.UpdateRequestability);
         try
         {
-            RequestabilityManager.getInstance().updateRequestability(_container, _user, false, logger);
+            RequestabilityManager.getInstance().updateRequestability(_container, _user, false, _logger);
         }
         catch (RequestabilityManager.InvalidRuleException e)
         {
@@ -1887,13 +1886,11 @@ public class SpecimenImporter
         }
 
         _iTimer.setPhase(ImportPhases.UpdateVialCounts);
-        if (logger != null)
-            logger.info("Updating cached vial counts...");
+        info("Updating cached vial counts...");
 
         SpecimenManager.getInstance().updateVialCounts(_container, _user);
 
-        if (logger != null)
-            logger.info("Vial count update complete.");
+        info("Vial count update complete.");
     }
     
     private Map<SpecimenTableType, SpecimenImportFile> populateFileMap(VirtualFile dir, Map<SpecimenTableType, SpecimenImportFile> fileNameMap) throws IOException
@@ -1946,15 +1943,21 @@ public class SpecimenImporter
         throw new IllegalStateException("No SpecimenImportStrategyFactory claimed this import!");
     }
 
-
     private void info(String message)
     {
         if (_logger != null)
             _logger.info(message);
     }
 
+    private void debug(CharSequence message)
+    {
+        //noinspection PointlessBooleanExpression
+        if (DEBUG && _logger != null)
+            _logger.debug(message);
+    }
+
     private static String _currentStatus = GENERAL_JOB_STATUS_MSG;
-    private void setStatus(@NotNull String status)
+    private void setStatus(@Nullable String status)
     {
         if (null != _job)
         {
@@ -3508,8 +3511,7 @@ public class SpecimenImporter
     }
 
 
-    private Parameter.TypedValue getValueParameter(ImportableColumn col, Map tsvRow)
-            throws SQLException
+    private Parameter.TypedValue getValueParameter(ImportableColumn col, Map tsvRow) throws SQLException
     {
         Object value = getValue(col, tsvRow);
 
@@ -3835,16 +3837,13 @@ public class SpecimenImporter
 
     private int executeSQL(DbSchema schema, CharSequence sql, Object... params)
     {
-        if (DEBUG && _logger != null)
-            _logger.debug(sql);
-        return new SqlExecutor(schema).execute(sql, params);
+        return executeSQL(schema, new SQLFragment(sql, params));
     }
 
 
     private int executeSQL(DbSchema schema, SQLFragment sql)
     {
-        if (DEBUG && _logger != null)
-            _logger.debug(sql.toString());
+        debug(sql);
         return new SqlExecutor(schema).execute(sql);
     }
 

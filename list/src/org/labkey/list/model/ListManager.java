@@ -1079,10 +1079,10 @@ public class ListManager implements SearchService.DocumentProvider
             ListDefinitionImpl hardListDef = new ListDefinitionImpl(container, listDef.getName(), listDef.getKeyType());
 
             Domain d = migrateDomainURI(listDef, hardListDef);
-            // migrateDomainURI updated the domain in the database, so clean all the caches
+            // migrateDomainURI() updated the domain in the database, so clear all the caches
             OntologyManager.clearCaches();
 
-            // Using the newly created domain get a fresh instance of the domain which will contain the migrated properties
+            // Using the newly created domain, get a fresh instance of the domain which will contain the migrated properties
             Domain newDomain = PropertyService.get().getDomain(d.getTypeId());
 
             DomainProperty PKProp = newDomain.getPropertyByName(listDef.getKeyName());

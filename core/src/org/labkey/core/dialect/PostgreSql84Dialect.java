@@ -573,6 +573,12 @@ public class PostgreSql84Dialect extends SqlDialect
     }
 
     @Override
+    public String getBinaryDataType()
+    {
+        return "BYTEA";
+    }
+
+    @Override
     public String getTempTableKeyword()
     {
         return "TEMPORARY";

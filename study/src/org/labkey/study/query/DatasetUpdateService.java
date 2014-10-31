@@ -322,7 +322,7 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     private void resyncStudy(User user, Container container, @Nullable Set<String> potentiallyAddedParticipants, @Nullable Set<String> potentiallyDeletedParticipants, boolean participantVisitResyncRequired)
     {
         StudyImpl study = StudyManager.getInstance().getStudy(container);
-        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset), potentiallyAddedParticipants, potentiallyDeletedParticipants, participantVisitResyncRequired);
+        StudyManager.getInstance().getVisitManager(study).updateParticipantVisits(user, Collections.singletonList(_dataset), potentiallyAddedParticipants, potentiallyDeletedParticipants, participantVisitResyncRequired, null);
     }
 
     @Override
