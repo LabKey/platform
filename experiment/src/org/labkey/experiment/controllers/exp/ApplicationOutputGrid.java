@@ -42,7 +42,7 @@ public class ApplicationOutputGrid extends GridView
         getDataRegion().setColumns(cols);
         getDataRegion().getDisplayColumn(0).setVisible(false);
         ActionURL resolve = new ActionURL(ExperimentController.ResolveLSIDAction.class, c);
-        getDataRegion().getDisplayColumn(1).setURL(resolve.toString() + "?lsid=${LSID}");
+        getDataRegion().getDisplayColumn(1).setURL(resolve.toString() + "?lsid=${LSID}&type=" + ti.getName());
         getDataRegion().setButtonBar(ButtonBar.BUTTON_BAR_EMPTY);
         SimpleFilter filter = new SimpleFilter();
         filter.addCondition(FieldKey.fromParts("SourceApplicationId"), rowIdPA);

@@ -69,6 +69,7 @@ import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.LsidManager;
+import org.labkey.api.exp.LsidType;
 import org.labkey.api.exp.ObjectProperty;
 import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.exp.ProtocolApplicationParameter;
@@ -3667,6 +3668,17 @@ public class ExperimentController extends SpringActionController
                 }
             }
 
+            if (form.getType() != null)
+            {
+                switch (form.getType().toLowerCase())
+                {
+                    case "data":
+                        throw new RedirectException(LsidType.Data.getDisplayURL(new Lsid(form.getLsid())));
+                    case "material":
+                        throw new RedirectException(LsidType.Material.getDisplayURL(new Lsid(form.getLsid())));
+                }
+            }
+
             String html = message + "<form action=\"" + getViewContext().cloneActionURL().setAction(ResolveLSIDAction.class) + "\">" +
                     " Lsid <input type=text name=lsid size=\"80\" value=\"" +
                     (form.getLsid() == null ? "" : PageFlowUtil.filter(form.getLsid())) + "\">" +
@@ -3683,7 +3695,19 @@ public class ExperimentController extends SpringActionController
 
     public static class LsidForm
     {
-        private String _lsid = null;
+        private String _lsid;
+
+        public String getType()
+        {
+            return _type;
+        }
+
+        public void setType(String type)
+        {
+            _type = type;
+        }
+
+        private String _type;
 
         public void setLsid(String lsid)
         {

@@ -134,7 +134,7 @@ public class DotGraph
     public void addStartingMaterial (ExpMaterial m, Integer groupId, Integer actionseq, Integer runId)
     {
         DotNode node = new MNode(m);
-        node.setLink("resolveLSID", "lsid=" + PageFlowUtil.encode(m.getLSID()));
+        node.setLink("resolveLSID", "type=material&lsid=" + PageFlowUtil.encode(m.getLSID()));
 
         if (null != focusId && objectType.equals(TYPECODE_MATERIAL) && focusId.intValue() == m.getRowId())
             node.setFocus(true);
@@ -150,7 +150,7 @@ public class DotGraph
     public void addStartingData (ExpData d, Integer groupId, Integer actionseq, Integer runId)
     {
         DotNode node = new DNode(d);
-        node.setLink("resolveLSID", "lsid=" + d.getLSID());
+        node.setLink("resolveLSID", "type=Data&lsid=" + d.getLSID());
 
         if (null != focusId && objectType.equals(TYPECODE_DATA) && focusId.intValue() == d.getRowId())
             node.setFocus(true);
@@ -514,7 +514,7 @@ public class DotGraph
         {
             super(TYPECODE_MATERIAL, m.getRowId(), m.getName());
             setShape("box", MATERIAL_COLOR);
-            setLink("resolveLSID", "lsid=" + m.getLSID());
+            setLink("resolveLSID", "type=material&lsid=" + m.getLSID());
             ExpProtocolApplication sourceApplication = m.getSourceApplication();
             srcPAId = sourceApplication == null ? null : sourceApplication.getRowId();
             LSID = m.getLSID();
@@ -530,7 +530,7 @@ public class DotGraph
         {
             super(TYPECODE_DATA, d.getRowId(), d.getName());
             setShape("ellipse", DATA_COLOR);
-            setLink("resolveLSID", "lsid=" + d.getLSID());
+            setLink("resolveLSID", "type=data&lsid=" + d.getLSID());
             ExpProtocolApplication sourceApplication = d.getSourceApplication();
             srcPAId = sourceApplication == null ? null : sourceApplication.getRowId();
             LSID = d.getLSID();
