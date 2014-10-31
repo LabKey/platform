@@ -37,97 +37,148 @@
         </div> <%
     }
 %>
-<%=textLink("Clear Caches, GC and Refresh", AdminController.getMemTrackerURL(true, true))%>
-<%=textLink("GC and Refresh", AdminController.getMemTrackerURL(false, true))%>
-<%=textLink("Refresh", AdminController.getMemTrackerURL(false, false))%>
-<br><hr size="1">
-<%
-    int i = 0;
-
-    for (String graphName : bean.graphNames)
-    {
-        // Hacky - assuming that the first one should be a different size
-        if (i == 0)
-        {
-            %><img vspace="2" hspace="2" width="800" height="100" src="memoryChart.view?type=<%= PageFlowUtil.encode(graphName) %>"> <%
-        }
-        else
-        {
-            %><img hspace="2" vspace="2" width="398" height="70" src="memoryChart.view?type=<%= PageFlowUtil.encode(graphName) %>"> <%
-        }
-        if (i % 2 == 0)
-        {
-            %><br/> <%
-        }
-        i++;
-    }
-%>
-<hr size="1">
-<table name="systemProperties">
-<%
-    for (Pair<String, Object> property : bean.systemProperties)
-    {
-%>
-    <tr>
-        <td><b><%= h(property.getKey()) %></b></td>
-        <td><%= h(property.getValue().toString()) %></td>
+<p>
+    <%=textLink("Clear Caches, GC and Refresh", AdminController.getMemTrackerURL(true, true))%>
+    <%=textLink("GC and Refresh", AdminController.getMemTrackerURL(false, true))%>
+    <%=textLink("Refresh", AdminController.getMemTrackerURL(false, false))%>
+</p>
+<table class="labkey-wp">
+    <tr class="labkey-wp-header">
+        <th class="labkey-wp-title-left">Memory Graphs</th>
     </tr>
-<%
-    }
-%>
-</table><p>
+    <tr>
+        <td class="labkey-wp-body">
+            <%
+                int i = 0;
+
+                for (String graphName : bean.graphNames)
+                {
+                    // Hacky - assuming that the first one should be a different size
+                    if (i == 0)
+                    {
+                        %><img vspace="2" hspace="2" width="800" height="100" style="border: 1px solid" src="memoryChart.view?type=<%= PageFlowUtil.encode(graphName) %>"/> <%
+                    }
+                    else
+                    {
+                        %><img hspace="2" vspace="2" width="398" height="70" style="border: 1px solid" src="memoryChart.view?type=<%= PageFlowUtil.encode(graphName) %>"/> <%
+                    }
+                    if (i % 2 == 0)
+                    {
+                        %><br/> <%
+                    }
+                    i++;
+                }
+            %>
+        </td>
+    </tr>
+</table>
+<p/>
+<table class="labkey-wp">
+    <tr class="labkey-wp-header">
+        <th class="labkey-wp-title-left">Memory Stats</th>
+    </tr>
+    <tr>
+        <td class="labkey-wp-body">
+            <table class="labkey-data-region labkey-show-borders">
+                <tr>
+                    <th>Pool Name</th>
+                    <th>Init</th>
+                    <th>Used</th>
+                    <th>Committed</th>
+                    <th>Max</th>
+                </tr>
+            <%
+                for (Pair<String, AdminController.MemoryUsageSummary> property : bean.memoryUsages)
+                {
+            %>
+                <tr class="labkey-row">
+                    <td><%= h(property.getKey()) %></td>
+                    <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getInit()) %></td>
+                    <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getUsed()) %></td>
+                    <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getCommitted()) %></td>
+                    <td align="right"><%= h(property.getValue() == null ? "" : property.getValue().getMax()) %></td>
+                </tr>
+            <%
+                }
+            %>
+            </table>
+            <p/>
+            <table name="systemProperties">
+            <%
+                for (Pair<String, Object> property : bean.systemProperties)
+                {
+            %>
+                <tr>
+                    <td class="labkey-form-label"><%= h(property.getKey()) %></td>
+                    <td><%= h(property.getValue().toString()) %></td>
+                </tr>
+            <%
+                }
+            %>
+            </table>
+            </td>
+        </tr>
+    </table>
 <%
     if (bean.assertsEnabled)
     {
 %>
-<hr size="1">
-<h3>In-Use Objects</h3>
-<p><table name="leaks" class="spaced normal">
+<p/>
+<table class="labkey-wp">
+    <tr class="labkey-wp-header">
+        <th class="labkey-wp-title-left">In-Use Objects</th>
+    </tr>
     <tr>
-        <th>&nbsp;</th>
-        <th align="left">Object Class</th>
-        <th align="left">Object toString()</th>
-        <th align="left">Allocation Stack</th>
-    </tr>
-<%
-        int counter = 1;
-        for (MemTracker.HeldReference reference : bean.references)
-        {
-            String htmlStack = reference.getHtmlStack();
-            String[] split = htmlStack.split("<br>");
-            String secondLine = split.length >= 2 ? split[2] : "";
-%>
-    <tr class="<%=getShadeRowClass(counter % 2 == 1)%>">
-        <td valign=top><img id="toggleImg<%=counter%>" src="<%=getWebappURL("_images/plus.gif")%>" alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
-        <td valign=top><%=h(reference.getClassName())%></td>
-        <td valign=top>
-<%
-            if (reference.hasShortSummary())
-            {
-%>
-            <div id='summaryTogglePanel<%= counter %>' style='cursor:pointer'>
-                <%= h(reference.getObjectSummary()) %>
-            </div>
-            <div id="descriptionPanel<%= counter %>" style="display:none;">
-                <%= h(reference.getObjectDescription()) %>
-            </div>
-<%
-            }
-            else
-            {
-                %><%= h(reference.getObjectDescription()) %><%
-            }
-%>
+        <td class="labkey-wp-body">
+            <table class="labkey-data-region labkey-show-borders">
+                <tr>
+                    <th>&nbsp;</th>
+                    <th align="left">Object Class</th>
+                    <th align="left">Object toString()</th>
+                    <th align="left">Allocation Stack</th>
+                </tr>
+            <%
+                    int counter = 1;
+                    for (MemTracker.HeldReference reference : bean.references)
+                    {
+                        String htmlStack = reference.getHtmlStack();
+                        String[] split = htmlStack.split("<br>");
+                        String secondLine = split.length >= 2 ? split[2] : "";
+            %>
+                <tr class="<%=getShadeRowClass(counter % 2 == 1)%>">
+                    <td valign=top><img id="toggleImg<%=counter%>" src="<%=getWebappURL("_images/plus.gif")%>" alt="expand/collapse" onclick='toggle(<%=counter%>)'></td>
+                    <td valign=top><%=h(reference.getClassName())%></td>
+                    <td valign=top>
+            <%
+                        if (reference.hasShortSummary())
+                        {
+            %>
+                        <div id='summaryTogglePanel<%= counter %>' style='cursor:pointer'>
+                            <%= h(reference.getObjectSummary()) %>
+                        </div>
+                        <div id="descriptionPanel<%= counter %>" style="display:none;">
+                            <%= h(reference.getObjectDescription()) %>
+                        </div>
+            <%
+                        }
+                        else
+                        {
+                            %><%= h(reference.getObjectDescription()) %><%
+                        }
+            %>
+                    </td>
+                    <td>
+                        <div id='stackTogglePanel<%= counter %>' style='cursor:pointer'><%= text(secondLine) %></div>
+                        <div id="stackContentPanel<%= counter %>" style="display:none;"><%= text(htmlStack) %></div>
+                    </td>
+                </tr>
+            <%
+                        counter++;
+                    }
+            %>
+            </table>
         </td>
-        <td>
-            <div id='stackTogglePanel<%= counter %>' style='cursor:pointer'><%= secondLine %></div>
-            <div id="stackContentPanel<%= counter %>" style="display:none;"><%= htmlStack %></div>
-        </td>
     </tr>
-<%
-            counter++;
-        }
-%>
 </table>
 <%
     }

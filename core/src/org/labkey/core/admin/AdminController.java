@@ -2675,7 +2675,7 @@ public class AdminController extends SpringActionController
                     long before = gc();
                     clearCaches();
                     // gc again now that we cleared caches
-                    long cacheMemoryUsed = gc() - before;
+                    long cacheMemoryUsed = before - gc();
 
                     // Difference could be < 0 if JVM or other threads have performed gc, in which case we can't guesstimate cache memory usage
                     String cacheMemUsed = cacheMemoryUsed > 0 ? FileUtils.byteCountToDisplaySize(cacheMemoryUsed) : "Unknown";
@@ -2697,11 +2697,13 @@ public class AdminController extends SpringActionController
             return new JspView<>("/org/labkey/core/admin/memTracker.jsp", new MemBean(getViewContext().getRequest(), objectsToIgnore));
         }
 
+        /** @return estimated current memory usage, post-garbage collection */
         private long gc()
         {
             LOG.info("Garbage collecting");
             System.gc();
-            return Runtime.getRuntime().freeMemory();
+            // This is more reliable than relying on just free memory size, as the VM can grow/shrink the heap at will
+            return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
         }
 
         private void clearCaches()
@@ -2756,6 +2758,7 @@ public class AdminController extends SpringActionController
 
     public static class MemBean
     {
+        public final List<Pair<String, MemoryUsageSummary>> memoryUsages = new ArrayList<>();
         public final List<Pair<String, Object>> systemProperties = new ArrayList<>();
         public final List<MemTracker.HeldReference> references;
         public final List<String> graphNames = new ArrayList<>();
@@ -2818,14 +2821,14 @@ public class AdminController extends SpringActionController
             MemoryMXBean membean = ManagementFactory.getMemoryMXBean();
             if (membean != null)
             {
-                systemProperties.add(new Pair<String,Object>("Total Heap Memory", getUsageString(membean.getHeapMemoryUsage())));
-                systemProperties.add(new Pair<String,Object>("Total Non-heap Memory", getUsageString(membean.getNonHeapMemoryUsage())));
+                memoryUsages.add(new Pair<>("Total Heap Memory", getUsage(membean.getHeapMemoryUsage())));
+                memoryUsages.add(new Pair<>("Total Non-heap Memory", getUsage(membean.getNonHeapMemoryUsage())));
             }
 
             List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
             for (MemoryPoolMXBean pool : pools)
             {
-                systemProperties.add(new Pair<String,Object>(pool.getName() + " " + pool.getType(), getUsageString(pool)));
+                memoryUsages.add(new Pair<>(pool.getName() + " " + pool.getType(), getUsage(pool)));
                 graphNames.add(pool.getName());
             }
 
@@ -2873,7 +2876,7 @@ public class AdminController extends SpringActionController
             if (null != cacheMem)
                 systemProperties.add(new Pair<String, Object>("Most Recent Estimated Cache Memory Usage", cacheMem));
 
-            systemProperties.add(new Pair<String, Object>("In-use Connections", ConnectionWrapper.getActiveConnectionCount()));
+            systemProperties.add(new Pair<String, Object>("In-Use DB Connections", ConnectionWrapper.getActiveConnectionCount()));
 
             //noinspection ConstantConditions
             assert assertsEnabled = true;
@@ -2881,38 +2884,68 @@ public class AdminController extends SpringActionController
     }
 
 
-    private static String getUsageString(MemoryPoolMXBean pool)
+    private static MemoryUsageSummary getUsage(MemoryPoolMXBean pool)
     {
         try
         {
-            return getUsageString(pool.getUsage());
+            return getUsage(pool.getUsage());
         }
         catch (IllegalArgumentException x)
         {
             // sometimes we get usage>committed exception with older versions of JRockit
-            return "exception getting usage";
+            return null;
         }
     }
 
+    public static class MemoryUsageSummary
+    {
+        private final String _init;
+        private final String _used;
+        private final String _committed;
+        private final String _max;
 
-    private static String getUsageString(MemoryUsage usage)
+        public MemoryUsageSummary(MemoryUsage usage)
+        {
+            _init = FileUtils.byteCountToDisplaySize(usage.getInit());
+            _used = FileUtils.byteCountToDisplaySize(usage.getUsed());
+            _committed = FileUtils.byteCountToDisplaySize(usage.getCommitted());
+            _max = FileUtils.byteCountToDisplaySize(usage.getMax());
+        }
+
+        public String getInit()
+        {
+            return _init;
+        }
+
+        public String getUsed()
+        {
+            return _used;
+        }
+
+        public String getCommitted()
+        {
+            return _committed;
+        }
+
+        public String getMax()
+        {
+            return _max;
+        }
+    }
+
+    private static MemoryUsageSummary getUsage(MemoryUsage usage)
     {
         if (null == usage)
-            return "null";
+            return null;
 
         try
         {
-            StringBuilder sb = new StringBuilder();
-            sb.append("init = ").append(_formatInteger.format(usage.getInit()));
-            sb.append("; used = ").append(_formatInteger.format(usage.getUsed()));
-            sb.append("; committed = ").append(_formatInteger.format(usage.getCommitted()));
-            sb.append("; max = ").append(_formatInteger.format(usage.getMax()));
-            return sb.toString();
+            return new MemoryUsageSummary(usage);
         }
         catch (IllegalArgumentException x)
         {
             // sometime we get usage>committed exception with older verions of JRockit
-            return "exception getting usage";
+            return null;
         }
     }
 
