@@ -547,6 +547,7 @@ public class QuerySettings
         return _maxRows;
     }
 
+    /** @param maxRows the maximum number of rows to return, or Table.ALL_ROWS (unlimited) or Table.NO_ROWS (metadata only) */
     public void setMaxRows(int maxRows)
     {
         assert Table.validMaxRows(maxRows) : maxRows + " is an illegal value for maxRows; should be positive, Table.ALL_ROWS or Table.NO_ROWS";

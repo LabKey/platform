@@ -78,9 +78,9 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
-import java.nio.file.NoSuchFileException;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.nio.file.attribute.FileTime;
 import java.sql.SQLException;
@@ -1030,7 +1030,7 @@ public class FileSystemResource extends AbstractWebdavResource
                 {
                     _attributes = Files.readAttributes(_file.toPath(), BasicFileAttributes.class);
                 }
-                catch (FileNotFoundException|NoSuchFileException|InvalidPathException x)
+                catch (FileNotFoundException|InvalidPathException|FileSystemException x)
                 {
                     _attributes = doesNotExist;
                 }

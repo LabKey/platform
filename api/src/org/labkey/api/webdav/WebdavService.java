@@ -25,7 +25,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
 
 import java.net.URISyntaxException;
-import java.util.HashSet;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -184,6 +184,6 @@ public class WebdavService
 
     public Set<String> getPreGzippedExtensions()
     {
-        return _preGzippedExtensions;
+        return Collections.unmodifiableSet(_preGzippedExtensions);
     }
 }
