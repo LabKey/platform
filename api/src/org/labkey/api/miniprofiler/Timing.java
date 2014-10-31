@@ -155,7 +155,7 @@ public class Timing implements AutoCloseable
     @JsonIgnore
     public boolean isTrivial()
     {
-        return getDurationExclusive() <= MiniProfiler.TRIVIAL_MILLIS;
+        return getDurationExclusive() <= MiniProfiler.getSettings().getTrivialMillis();
     }
 
     @JsonIgnore

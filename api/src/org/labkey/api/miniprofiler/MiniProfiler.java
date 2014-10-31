@@ -16,16 +16,18 @@
 package org.labkey.api.miniprofiler;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.PropertyManager;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.ViewServlet;
 
 import javax.servlet.ServletContext;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -33,12 +35,16 @@ import java.util.Set;
  */
 public class MiniProfiler
 {
-    // TODO: mini profiler settings should be moved to AppProps site-level and/or user-level settings.
-    static final int TRIVIAL_MILLIS = 3;
-    static final boolean CUSTOM_TIMING_CAPTURE_STACKTRACE = true;
-    static final boolean SHOW_CONTROLS = true;
+    private static final String CATEGORY = "miniprofiler";
+
+    private static final BeanObjectFactory<Settings> SETTINGS_FACTORY = new BeanObjectFactory<>(Settings.class);
 
     private MiniProfiler() { }
+
+    public static HelpTopic getHelpTopic()
+    {
+        return new HelpTopic("profiler");
+    }
 
     public static boolean isEnabled(ViewContext context)
     {
@@ -46,35 +52,53 @@ public class MiniProfiler
         if (AppProps.getInstance().isTeamCityEnviornment())
             return false;
 
-        // TODO: site-level and/or user-level settings to enable/disable
-//        if (!AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_MINI_PROFILER))
-//            return false;
-
         // CONSIDER: Add CanSeeProfilingPermission ?
         User user = context.getUser();
         return ModuleLoader.getInstance().isStartupComplete() &&
                 (AppProps.getInstance().isDevMode() || (user != null && user.isDeveloper()));
     }
 
+    public static Settings getSettings()
+    {
+        // TODO: Cache the site-level settings object
+        Map<String, String> properties = PropertyManager.getProperties(CATEGORY);
+        return SETTINGS_FACTORY.fromMap(properties);
+    }
+
+    public static void saveSettings(Settings settings)
+    {
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(CATEGORY, true);
+        SETTINGS_FACTORY.toStringMap(settings, map);
+        PropertyManager.saveProperties(map);
+    }
+
+    public static void resetSettings()
+    {
+        PropertyManager.getNormalStore().deletePropertySet(CATEGORY);
+    }
+
     public static String renderInitScript(long currentId, Set<Long> ids, String version)
     {
+        Settings settings = getSettings();
+
         StringBuilder sb = new StringBuilder();
         sb.append("<script type='text/javascript'>\n");
         sb.append("LABKEY.internal.MiniProfiler.init({\n");
         sb.append("  currentId:").append(currentId).append(",\n");
         sb.append("  ids:").append(ids).append(",\n");
         sb.append("  version:").append(version).append(",\n");
-        sb.append("  renderPosition:").append("'bottomright'").append(",\n");
-        sb.append("  showTrivial:").append(false).append(",\n");
-        sb.append("  trivialMilliseconds:").append(TRIVIAL_MILLIS).append(",\n");
-        sb.append("  showChildrenTime:").append(false).append(",\n");
+        sb.append("  renderPosition:'").append(settings.getRenderPosition().getStyle()).append("',\n");
+        sb.append("  showTrivial:").append(settings.isShowTrivial()).append(",\n");
+        sb.append("  trivialMilliseconds:").append(settings.getTrivialMillis()).append(",\n");
+        sb.append("  showChildrenTime:").append(settings.isShowChildrenTime()).append(",\n");
         sb.append("  maxTracesToShow:").append(20).append(",\n");
-        sb.append("  showControls:").append(SHOW_CONTROLS).append(",\n");
+        sb.append("  showControls:").append(settings.isShowControls()).append(",\n");
         sb.append("  authorized:true,\n");
         sb.append("  toggleShortcut:'alt-p',\n");
-        sb.append("  startHidden:false\n");
+        sb.append("  startHidden:").append(settings.isStartHidden()).append("\n");
         sb.append("});\n");
         sb.append("</script>\n");
+
         return sb.toString();
     }
 
@@ -130,5 +154,109 @@ public class MiniProfiler
             return;
 
         requestInfo.addCustomTiming(category, elapsed, msg, detailsUrl, stackTrace);
+    }
+
+    public static enum RenderPosition
+    {
+        // TODO: top left and right not yet implemented
+        //LEFT("left"),
+        //RIGHT("right"),
+        BottomLeft("bottomleft"),
+        BottomRight("bottomright");
+
+        // Part of the css style used to render the value, e.g.: profiler-bottomright
+        private final String _style;
+
+        RenderPosition(String style)
+        {
+            _style = style;
+        }
+
+        public String getStyle()
+        {
+            return _style;
+        }
+    }
+
+    public static class Settings
+    {
+        private boolean _showChildrenTime = false;
+        private boolean _showTrivial = false;
+        private int _trivialMillis = 3;
+
+        private boolean _startHidden = false;
+        private boolean _showControls = true;
+        private RenderPosition _renderPosition = RenderPosition.BottomRight;
+        private boolean _captureCustomTimingStacktrace = true;
+
+        public boolean isShowTrivial()
+        {
+            return _showTrivial;
+        }
+
+        public void setShowTrivial(boolean showTrivial)
+        {
+            _showTrivial = showTrivial;
+        }
+
+        public int getTrivialMillis()
+        {
+            return _trivialMillis;
+        }
+
+        public void setTrivialMillis(int trivialMillis)
+        {
+            _trivialMillis = trivialMillis;
+        }
+
+        public boolean isShowChildrenTime()
+        {
+            return _showChildrenTime;
+        }
+
+        public void setShowChildrenTime(boolean showChildrenTime)
+        {
+            _showChildrenTime = showChildrenTime;
+        }
+
+        public boolean isStartHidden()
+        {
+            return _startHidden;
+        }
+
+        public void setStartHidden(boolean startHidden)
+        {
+            _startHidden = startHidden;
+        }
+
+        public boolean isShowControls()
+        {
+            return _showControls;
+        }
+
+        public void setShowControls(boolean showControls)
+        {
+            _showControls = showControls;
+        }
+
+        public RenderPosition getRenderPosition()
+        {
+            return _renderPosition;
+        }
+
+        public void setRenderPosition(RenderPosition renderPosition)
+        {
+            _renderPosition = renderPosition;
+        }
+
+        public boolean isCaptureCustomTimingStacktrace()
+        {
+            return _captureCustomTimingStacktrace;
+        }
+
+        public void setCaptureCustomTimingStacktrace(boolean captureCustomTimingStacktrace)
+        {
+            _captureCustomTimingStacktrace = captureCustomTimingStacktrace;
+        }
     }
 }

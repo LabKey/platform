@@ -516,8 +516,16 @@ LABKEY.internal.MiniProfiler = new function () {
             return LABKEY.ActionURL.buildURL("admin", "trackedAllocationsViewer.view", "/");
         },
 
+        settingsUrl : function () {
+            return LABKEY.ActionURL.buildURL("mini-profiler", "manage.view", "/");
+        },
+
         formatDuration : function (millis) {
             return (millis || 0).toFixed(1);
+        },
+
+        formatDateTime : function (datetime) {
+            return datetime.toLocaleString();     // Reasonable format for now. TODO: Use LABKEY.extDefaultDateTimeFormat to format based on server preference
         },
 
         formatAllocations : function (objects, shortNames) {
@@ -878,7 +886,7 @@ LABKEY.internal.MiniProfiler = new function () {
             document.body.appendChild(_container);
 
             // Sets which corner to render in - default is upper left
-            _container.classList.add("profiler-" + (_options.renderPosition ? _options.renderPosition : "bttomright"));
+            _container.classList.add("profiler-" + (_options.renderPosition ? _options.renderPosition : "bottomright"));
 
             // initialize the controls
             initControls(_container);

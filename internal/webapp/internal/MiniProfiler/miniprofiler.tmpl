@@ -21,7 +21,7 @@
         <span class="profiler-name">
           {{! it.name.replace(" ", "&nbsp;") }} <span class="profiler-overall-duration">({{= this.formatDuration(it.duration)}} ms)</span>
         </span>
-        <span class="profiler-server-time">{{= it.date ? it.date.toUTCString() : '&nbsp;' }}</span>
+        <span class="profiler-server-time">{{= it.date ? this.formatDateTime(it.date) : '&nbsp;' }}</span>
       </div>
 
       <div class="profiler-output">
@@ -93,6 +93,7 @@
           {{ } }}
           </tpl>
           <span class="profiler-toggleable-links">
+            <a href="{{= this.settingsUrl() }}">settings</a>
             <a class="profiler-toggle-hidden-columns" data-toggleclass="profiler-show-more" data-hidetext="fewer columns">
               more columns
             </a>

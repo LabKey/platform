@@ -18,6 +18,7 @@ package org.labkey.api.data;
 
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.ConversionException;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -159,6 +160,17 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
     @Override
     public @NotNull Map<String, Object> toMap(K bean, @Nullable Map<String, Object> m)
     {
+        return _toMap(bean, m, false);
+    }
+
+    public @NotNull Map<String, String> toStringMap(K bean, @Nullable Map<String, String> m)
+    {
+        //noinspection unchecked
+        return (Map)_toMap(bean, (Map)m, true);
+    }
+
+    protected @NotNull Map<String, Object> _toMap(K bean, @Nullable Map<String, Object> m, boolean stringify)
+    {
         try
         {
             if (null == m)
@@ -169,6 +181,8 @@ public class BeanObjectFactory<K> implements ObjectFactory<K> // implements Resu
                 try
                 {
                     Object value = PropertyUtils.getSimpleProperty(bean, name);
+                    if (stringify)
+                        value = ConvertUtils.convert(value);
                     m.put(name, value);
                 }
                 catch (NoSuchMethodException e)
