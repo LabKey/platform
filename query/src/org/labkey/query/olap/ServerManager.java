@@ -316,7 +316,12 @@ public class ServerManager
     {
         RolapCubeDef rolap = d.getRolapCubeDefinitionByName(cubeName);
 
-        String cubeCacheKey = c.getId() + /* "/" + rolap.getSchema().getName() + "/" + */ rolap.getName();
+        if (null == rolap)
+        {
+            throw new IllegalArgumentException("Unable to find cube definiton for cubeName: " + cubeName);
+        }
+
+        String cubeCacheKey = c.getId() + rolap.getName();
         final SQLException ex[] = new SQLException[1];
         Cube cachedCube = CUBES.get(cubeCacheKey,rolap,new CacheLoader<String,Cube>()
         {

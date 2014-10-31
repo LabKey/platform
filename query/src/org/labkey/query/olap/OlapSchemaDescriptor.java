@@ -171,6 +171,7 @@ public abstract class OlapSchemaDescriptor
     }
 
 
+    @Nullable
     public RolapCubeDef getRolapCubeDefinitionByName(String name) throws IOException
     {
         List<RolapCubeDef> defs = getRolapCubeDefinitions();
