@@ -793,7 +793,7 @@ public class SecurityManager
                     }
                 }
 
-                UserManager.clearUserList(userId);
+                UserManager.clearUserList();
 
                 newUser = UserManager.getUser(userId);
                 UserManager.fireAddUser(newUser);

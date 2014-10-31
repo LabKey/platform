@@ -227,10 +227,6 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
             {
                 x.addToErrors(errors);
             }
-            finally
-            {
-                UserManager.clearUserList(form.getUser().getUserId());
-            }
         }
         catch (Exception x)
         {

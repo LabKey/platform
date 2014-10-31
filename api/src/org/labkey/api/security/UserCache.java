@@ -126,12 +126,12 @@ class UserCache
     }
 
 
-    // All collections are invalidated for any user change. This seems like the right balance between perf, complexity,
-    // and synchronization... but we'll keep requiring the user ID for now just in case.
-    @SuppressWarnings({"UnusedParameters"})
-    static void remove(int userId)
+    /**
+     * All collections are invalidated for any user change. This seems like the right balance between perf, complexity,
+     * and synchronization
+     */
+    static void clear()
     {
-        assert userId != 0;
         CACHE.remove(KEY);
     }
 

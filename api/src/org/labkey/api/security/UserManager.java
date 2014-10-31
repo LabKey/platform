@@ -333,11 +333,10 @@ public class UserManager
         return UserCache.getUserIds();
     }
 
-    public static void clearUserList(int userId)
+    public static void clearUserList()
     {
-        UserCache.remove(userId);
+        UserCache.clear();
     }
-
 
     public static boolean userExists(ValidEmail email)
     {
@@ -349,7 +348,7 @@ public class UserManager
     public static String sanitizeEmailAddress(String email)
     {
         if (email == null)
-            return email;
+            return null;
         int index = email.indexOf('@');
         if (index != -1)
         {
@@ -374,7 +373,7 @@ public class UserManager
                 c = context.getContainer();
             }
         }
-        catch (RuntimeException e){}
+        catch (RuntimeException ignored){}
 
         AuditLogService.get().addEvent(user, c, USER_AUDIT_EVENT, principal.getUserId(), message);
     }
@@ -457,7 +456,7 @@ public class UserManager
         typedValues.put("description", toUpdate.getDescription());
 
         Table.update(currentUser, CORE.getTableInfoUsers(), typedValues, toUpdate.getUserId());
-        clearUserList(toUpdate.getUserId());
+        clearUserList();
 
         addToUserHistory(toUpdate, "Contact information for " + toUpdate.getEmail() + " was updated");
     }
@@ -483,7 +482,7 @@ public class UserManager
             }
         }
 
-        clearUserList(userId);
+        clearUserList();
 
         return null;
     }
@@ -528,7 +527,7 @@ public class UserManager
         }
         finally
         {
-            clearUserList(user.getUserId());
+            clearUserList();
         }
     }
 
@@ -580,7 +579,7 @@ public class UserManager
         }
         finally
         {
-            clearUserList(userId);
+            clearUserList();
         }
     }
 
@@ -746,7 +745,7 @@ public class UserManager
             if (null == (name = StringUtils.trimToNull(name)))
                 continue;
             User u = null;
-            try { u = getUser(new ValidEmail(name)); } catch (ValidEmail.InvalidEmailException x) {}
+            try { u = getUser(new ValidEmail(name)); } catch (ValidEmail.InvalidEmailException ignored) {}
             if (null == u)
                 u = getUserByDisplayName(name);
             parsed.add(null == u ? name : String.valueOf(u.getUserId()));
