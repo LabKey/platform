@@ -606,7 +606,13 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         updateSql.append("UPDATE ").append(tableInfoSpecimenSelectName).append(UPDATE_SPECIMEN_SETS);
         for (List<SpecimenImporter.RollupInstance<VialSpecimenRollup>> rollupList : matchedRollups.values())
             for (Pair<String, VialSpecimenRollup> rollupItem : rollupList)
-                updateSql.append(",\n    ").append(rollupItem.first).append(" = VialCounts.").append(rollupItem.first);
+            {
+                ColumnInfo column = tableInfoSpecimen.getColumn(rollupItem.first);
+                if (null == column)
+                    throw new IllegalStateException("Expected Specimen table column to exist.");
+                String colSelectName = column.getSelectName();
+                updateSql.append(",\n    ").append(colSelectName).append(" = VialCounts.").append(colSelectName);
+            }
 
         updateSql.append(UPDATE_SPECIMEN_SELECTS);
         updateSql.add(Boolean.TRUE); // AvailableVolume
@@ -618,11 +624,18 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
         for (Map.Entry<String, List<SpecimenImporter.RollupInstance<VialSpecimenRollup>>> entry : matchedRollups.entrySet())
         {
-            String fromName = entry.getKey();
+            ColumnInfo vialColumn = tableInfoVial.getColumn(entry.getKey());
+            if (null == vialColumn)
+                throw new IllegalStateException("Expected Vial table column to exist.");
+            String fromName = vialColumn.getSelectName();
             for (SpecimenImporter.RollupInstance<VialSpecimenRollup> rollupItem : entry.getValue())
             {
-                String toName = rollupItem.first;
                 VialSpecimenRollup rollup = rollupItem.second;
+                ColumnInfo column = tableInfoSpecimen.getColumn(rollupItem.first);
+                if (null == column)
+                    throw new IllegalStateException("Expected Specimen table column to exist.");
+                String toName = column.getSelectName();
+
                 updateSql.append(",\n\t\t").append(rollup.getRollupSql(fromName, toName));
             }
         }

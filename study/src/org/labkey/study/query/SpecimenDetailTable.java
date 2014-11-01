@@ -18,6 +18,7 @@
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.query.*;
@@ -388,13 +389,14 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
         TableInfo vialTI = StudySchema.getInstance().getTableInfoVial(container);
         TableInfo specimenTI = StudySchema.getInstance().getTableInfoSpecimen(container);
 
+        SqlDialect dialect = schema.getSqlDialect();
         SQLFragment sqlf = new SQLFragment();
         sqlf.append("(SELECT vial.rowid, vial.globaluniqueid, vial.volume, vial.specimenhash, \n" +
                 " vial.requestable, vial.currentlocation, vial.atrepository, vial.lockedinrequest, vial.available, vial.processinglocation, \n" +
                 " vial.specimenid, vial.primaryvolume, vial.primaryvolumeunits, vial.firstprocessedbyinitials, vial.availabilityreason,\n" +
                 "  vial.totalcellcount, vial.tubetype, vial.latestcomments, vial.latestqualitycomments, \n");
         for (DomainProperty property : optionalVialProperties)
-            sqlf.append("    vial.").append(property.getName()).append(",\n");
+            sqlf.append("    vial.").append(property.getPropertyDescriptor().getLegalSelectName(dialect)).append(",\n");
 
         sqlf.append("    specimen.ptid, specimen.participantsequencenum, specimen.totalvolume, specimen.availablevolume, \n" +
                 "    specimen.visitdescription, specimen.visitvalue, specimen.volumeunits, specimen.primarytypeid, specimen.additivetypeid, \n" +
@@ -402,7 +404,7 @@ public class SpecimenDetailTable extends AbstractSpecimenTable
                 "    specimen.salreceiptdate, specimen.classid, specimen.protocolnumber, specimen.originatinglocationid, specimen.vialcount, \n" +
                 "    specimen.lockedinrequestcount, specimen.atrepositorycount, specimen.availablecount, specimen.expectedavailablecount,\n");
         for (DomainProperty property : optionalSpecimenProperties)
-            sqlf.append("    specimen.").append(property.getName()).append(",\n");
+            sqlf.append("    specimen.").append(property.getPropertyDescriptor().getLegalSelectName(dialect)).append(",\n");
 
         sqlf.append(getContainerSql(schema)).append("\n   FROM ").add(container);
         sqlf.append(vialTI.getFromSQL("vial"));

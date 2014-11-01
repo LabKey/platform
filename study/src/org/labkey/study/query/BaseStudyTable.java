@@ -31,6 +31,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.DomainProperty;
@@ -771,12 +772,14 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
 
     protected void addOptionalColumns(List<DomainProperty> optionalProperties, boolean editable, @Nullable List<String> readOnlyColumnNames)
     {
+        SqlDialect dialect = getSqlDialect();
         for (DomainProperty domainProperty : optionalProperties)
         {
             PropertyDescriptor property = domainProperty.getPropertyDescriptor();
             SQLFragment sql = new SQLFragment(ExprColumn.STR_TABLE_ALIAS);
-            sql.append(".").append(property.getStorageColumnName());
-            ColumnInfo column = new ExprColumn(this, property.getName(), sql, property.getJdbcType());
+            String legalName = property.getLegalSelectName(dialect);
+            sql.append(".").append(legalName);
+            ColumnInfo column = new ExprColumn(this, legalName, sql, property.getJdbcType());
             PropertyColumn.copyAttributes(getUserSchema().getUser(), column, property, getContainer(), null);
             if (editable)
             {

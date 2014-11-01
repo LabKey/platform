@@ -26,6 +26,8 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.api.writer.Writer;
 import org.labkey.study.StudySchema;
@@ -79,6 +81,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
                 null == queryTableSpecimenDetail || null == queryTableSpecimenEvent)
             throw new IllegalStateException("TableInfos not found.");
 
+        SqlDialect dialect = schema.getSqlDialect();
         for (SpecimenColumn column : columns)
         {
             SpecimenImporter.TargetTable tt = column.getTargetTable();
@@ -92,7 +95,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             String col = "";
 
             // column info that includes the XML metadata override properties
-            ColumnInfo queryColumn = getSpecimenQueryColumn(queryTable, column);
+            ColumnInfo queryColumn = getSpecimenQueryColumn(queryTable, column, dialect);
 
             // export alternate ID in place of Ptid if set in StudyExportContext
             if (ctx.isAlternateIds() && column.getDbColumnName().equals("Ptid"))
@@ -228,16 +231,21 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
         }
     }
 
-    private ColumnInfo getSpecimenQueryColumn(TableInfo queryTable, SpecimenColumn column)
+    private ColumnInfo getSpecimenQueryColumn(TableInfo queryTable, SpecimenColumn column, SqlDialect dialect)
     {
         // if the query table contains the column using the DBColumnName, use that, otherwise try removing the 'id' from the end of the column name
         if (queryTable != null && column != null)
         {
-            if (queryTable.getColumn(column.getDbColumnName()) != null)
+            if (null != queryTable.getColumn(column.getDbColumnName()))
                 return queryTable.getColumn(column.getDbColumnName());
-            else if (column.getDbColumnName().toLowerCase().endsWith("id"))
+
+            String legalName = PropertyDescriptor.getLegalSelectNameFromStorageName(dialect, column.getDbColumnName());
+            if (null != queryTable.getColumn(legalName))
+                return queryTable.getColumn(legalName);
+
+            if (column.getDbColumnName().toLowerCase().endsWith("id"))
             {
-                String tempColName = column.getDbColumnName().substring(0, column.getDbColumnName().length()-2);
+                String tempColName = column.getDbColumnName().substring(0, column.getDbColumnName().length() - 2);
                 return queryTable.getColumn(tempColName);
             }
         }
