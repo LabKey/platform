@@ -155,6 +155,7 @@ Ext4.define('LABKEY.dataregion.filter.Faceted', {
         store = Ext4.create('Ext.data.ArrayStore', storeConfig);
 
         var baseConfig = {
+            method: 'POST',
             schemaName: model.get('schemaName'),
             queryName: model.get('queryName'),
             dataRegionName: model.get('dataRegionName'),
