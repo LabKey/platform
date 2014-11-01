@@ -134,6 +134,13 @@ LABKEY.Query = new function()
         };
     }
 
+    function getMethod(value)
+    {
+        if (value && (value.toUpperCase() === 'GET' || value.toUpperCase() === 'POST'))
+            return value.toUpperCase();
+        return 'GET';
+    }
+
     // public methods:
     /** @scope LABKEY.Query */
     return {
@@ -414,8 +421,6 @@ LABKEY.Query = new function()
 		*/
         selectRows : function(config)
         {
-            var method = 'GET';
-
             //check for old-style separate arguments
             if (arguments.length > 1)
             {
@@ -500,12 +505,9 @@ LABKEY.Query = new function()
             if (config.includeStyle)
                 dataObject.includeStyle = config.includeStyle;
 
-            if (config.method && (config.method.toUpperCase() === 'GET' || config.method.toUpperCase() === 'POST'))
-                method = config.method.toUpperCase();
-
             var requestConfig = {
                 url : LABKEY.ActionURL.buildURL('query', 'getQuery', config.containerPath),
-                method : method,
+                method : getMethod(config.method),
                 success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), config.stripHiddenColumns, config.scope, config.requiredVersion),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params : dataObject
@@ -585,7 +587,7 @@ LABKEY.Query = new function()
 
             return LABKEY.Ajax.request({
                 url : LABKEY.ActionURL.buildURL('query', 'selectDistinct', config.containerPath),
-                method : 'GET',
+                method : getMethod(config.method),
                 success: getSuccessCallbackWrapper(LABKEY.Utils.getOnSuccess(config), false, config.scope),
                 failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
                 params : dataObject
@@ -764,7 +766,7 @@ LABKEY.Query = new function()
                 headers : {
                     'Content-Type' : 'application/json'
                 }
-            }
+            };
 
             if (LABKEY.Utils.isDefined(config.timeout))
                 requestConfig.timeout = config.timeout;
