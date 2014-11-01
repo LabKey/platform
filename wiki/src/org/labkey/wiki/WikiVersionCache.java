@@ -38,7 +38,7 @@ import org.labkey.wiki.model.WikiVersion;
 // other cached objects.  This would require adding wiki rowid to the cache key.
 public class WikiVersionCache
 {
-    private static final StringKeyCache<WikiVersion> CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Wiki Versions");
+    private static final StringKeyCache<WikiVersion> CACHE = CacheManager.getStringKeyCache(50000, CacheManager.DAY, "Wiki Versions");
 
     static WikiVersion getVersion(Container c, final int version)
     {

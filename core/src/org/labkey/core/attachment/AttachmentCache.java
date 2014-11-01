@@ -41,7 +41,7 @@ import java.util.Map;
  */
 public class AttachmentCache
 {
-    private static final StringKeyCache<Map<String, Attachment>> _cache = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Attachments");
+    private static final StringKeyCache<Map<String, Attachment>> _cache = CacheManager.getStringKeyCache(20000, CacheManager.DAY, "Attachments");
 
     private static final CacheLoader<String, Map<String, Attachment>> LOADER = new CacheLoader<String, Map<String, Attachment>>() {
         @Override

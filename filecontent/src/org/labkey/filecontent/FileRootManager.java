@@ -38,7 +38,7 @@ public class FileRootManager
 {
     public static final String FILECONTENT_SCHEMA_NAME = "filecontent";
     private static final FileRootManager _instance = new FileRootManager();
-    private static final BlockingStringKeyCache<FileRoot> CACHE = CacheManager.getBlockingStringKeyCache(1000, CacheManager.DAY, "FileRoots", new CacheLoader<String, FileRoot>(){
+    private static final BlockingStringKeyCache<FileRoot> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "FileRoots", new CacheLoader<String, FileRoot>(){
         @Override
         public FileRoot load(String key, @Nullable Object c)
         {

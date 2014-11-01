@@ -31,7 +31,7 @@ public class WikiCache
 {
     private static final String WIKI_COLLECTIONS_KEY = "~~wiki_collections~~";
     private static final boolean useCache = "true".equals(System.getProperty("wiki.cache", "true"));
-    private static final BlockingStringKeyCache<Object> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Wikis and Wiki Collections", null);
+    private static final BlockingStringKeyCache<Object> BLOCKING_CACHE = CacheManager.getBlockingStringKeyCache(50000, CacheManager.DAY, "Wikis and Wiki Collections", null);
 
     // Passing in Container as "argument" eliminates need to create loader instances when caching collections (but doesn't help with individual wikis)
     public abstract static class WikiCacheLoader<V> implements CacheLoader<String, V>

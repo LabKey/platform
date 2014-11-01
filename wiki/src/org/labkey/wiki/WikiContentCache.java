@@ -29,7 +29,7 @@ import org.labkey.wiki.model.WikiVersion;
  */
 public class WikiContentCache
 {
-    private static final StringKeyCache<String> CONTENT_CACHE = CacheManager.getStringKeyCache(10000, CacheManager.DAY, "Wiki Content");
+    private static final StringKeyCache<String> CONTENT_CACHE = CacheManager.getStringKeyCache(50000, CacheManager.DAY, "Wiki Content");
 
     public static String getHtml(Container c, Wiki wiki, WikiVersion version, boolean cache)
     {
