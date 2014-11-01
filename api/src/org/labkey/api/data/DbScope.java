@@ -96,12 +96,6 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class DbScope
 {
-    public static enum TransactionKind
-    {
-        NORMAL,             // most transactions
-        PIPELINESTATUS      // transaction is to access pipeline.StatusFiles
-    }
-
     private static final Logger LOG = Logger.getLogger(DbScope.class);
     private static final ConnectionMap _initializedConnections = newConnectionMap();
     private static final Map<String, DbScope> _scopes = new LinkedHashMap<>();
@@ -126,6 +120,19 @@ public class DbScope
     private final Map<Thread, List<TransactionImpl>> _transaction = new WeakHashMap<>();
 
     private SqlDialect _dialect;
+
+    public interface TransactionKind
+    {
+        String getKind();
+    }
+
+    public class NormalTransactionKind implements TransactionKind
+    {
+        public String getKind()
+        {
+            return "NORMAL";
+        }
+    }
 
     // Used only for testing
     protected DbScope()
@@ -246,7 +253,7 @@ public class DbScope
      */
     public Transaction ensureTransaction(Lock... locks)
     {
-        return ensureTransaction(TransactionKind.NORMAL, locks);
+        return ensureTransaction(new NormalTransactionKind(), locks);
     }
 
     /**
@@ -268,7 +275,7 @@ public class DbScope
      */
     public Transaction ensureTransaction(int isolationLevel, Lock... locks)
     {
-        return ensureTransaction(TransactionKind.NORMAL, isolationLevel, locks);
+        return ensureTransaction(new NormalTransactionKind(), isolationLevel, locks);
     }
 
     /**
@@ -288,7 +295,7 @@ public class DbScope
         {
             TransactionImpl transaction = getCurrentTransactionImpl();
             assert null != transaction;
-            if (transactionKind == transaction.getTransactionKind())
+            if (transactionKind.getKind() == transaction.getTransactionKind().getKind())
             {
                 transaction.increment(locks);
                 Connection conn = transaction.getConnection();
@@ -308,7 +315,7 @@ public class DbScope
      */
     public Transaction beginTransaction(Lock... locks)
     {
-        return beginTransaction(TransactionKind.NORMAL, locks);
+        return beginTransaction(new NormalTransactionKind(), locks);
     }
 
     public Transaction beginTransaction(TransactionKind transactionKind, Lock... locks)
@@ -323,7 +330,7 @@ public class DbScope
      */
     public Transaction beginTransaction(int isolationLevel, Lock... locks)
     {
-        return beginTransaction(TransactionKind.NORMAL, isolationLevel, locks);
+        return beginTransaction(new NormalTransactionKind(), isolationLevel, locks);
     }
 
     public Transaction beginTransaction(TransactionKind transactionKind, int isolationLevel, Lock... locks)
@@ -1852,7 +1859,14 @@ public class DbScope
                 try (Transaction t2 = getLabkeyScope().ensureTransaction())
                 {
                     assertSame(connection, t2.getConnection());
-                    try (Transaction t3 = getLabkeyScope().ensureTransaction(TransactionKind.PIPELINESTATUS))
+                    try (Transaction t3 = getLabkeyScope().ensureTransaction(new TransactionKind()
+                    {
+                        @Override
+                        public String getKind()
+                        {
+                            return "PIPELINESTATUS";  // We can't really see PipelineStatus here, but just need something non-normal to test
+                        }
+                    }))
                     {
                         assertTrue(getLabkeyScope().isTransactionActive());
                         assertNotSame("Should have 2 connections", connection, t3.getConnection());
