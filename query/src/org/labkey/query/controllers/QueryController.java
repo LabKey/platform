@@ -3029,7 +3029,7 @@ public class QueryController extends SpringActionController
                     filter.addAllClauses(new SimpleFilter(url, dataRegionName));
                 }
 
-                filter.addUrlFilters(getViewContext().getActionURL(), dataRegionName);
+                filter.addUrlFilters(settings.getSortFilterURL(), dataRegionName);
             }
 
             // Strip out filters on columns that don't exist - issue 21669
