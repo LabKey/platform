@@ -18,6 +18,7 @@ package org.labkey.api.exp;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.*;
+import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.gwt.client.DefaultValueType;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.security.User;
@@ -174,6 +175,22 @@ public class PropertyDescriptor extends ColumnRenderProperties implements Parame
     public void setStorageColumnName(String storageColumnName)
     {
         this.storageColumnName = storageColumnName;
+    }
+
+    public String getLegalSelectName(SqlDialect dialect)
+    {
+        return getLegalSelectNameFromStorageName(dialect, getStorageColumnName());
+    }
+
+    public static String getLegalSelectNameFromStorageName(SqlDialect dialect, String storageName)
+    {
+        String legalName = dialect.makeLegalIdentifier(storageName);
+        if (storageName.equals(legalName))
+            return storageName;
+        if (dialect.isPostgreSQL())
+            legalName = dialect.makeLegalIdentifier(storageName.toLowerCase());      // Our PG code deep down makes these lowercase, so we need to, too
+        return legalName;
+
     }
 
     public String getOntologyURI()
