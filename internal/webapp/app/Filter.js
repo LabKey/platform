@@ -14,10 +14,12 @@ Ext.define('LABKEY.app.model.Filter', {
         {name : 'membersName'},
         {name : 'perspective'},
         {name : 'operator'},
-        {name : 'isGrid', type: 'boolean', defaultValue: false}, // TODO: rename to isSql
+        {name : 'isGrid', type: 'boolean', defaultValue: false},
         {name : 'isPlot', type: 'boolean', defaultValue: false},
         {name : 'ranges', defaultValue: []},
-        {name : 'gridFilter', convert: function(raw){ // TODO: rename to sqlFilters
+
+        // array of LABKEY.Filter instances
+        {name : 'gridFilter', defaultValue: [], convert: function(raw) {
             var filters = [];
             if (Ext.isArray(raw)) {
                 Ext.each(raw, function(r) {
@@ -41,17 +43,21 @@ Ext.define('LABKEY.app.model.Filter', {
                 filters.push(raw);
             }
             return filters;
-        }, defaultValue: []}, // array of LABKEY.filter instances.
-        {name : 'plotMeasures', defaultValue: [null, null, null], convert: function(o){
+        }},
+
+        // array of measures
+        {name : 'plotMeasures', defaultValue: [null, null, null], convert: function(o) {
             var arr = [null, null, null];
 
             if (Ext.isArray(o)) {
                 if (o.length == 1) {
                     arr[1] = o[0]; // If there's only 1 element then it's the y measure.
-                } else if (o.length == 2) {
+                }
+                else if (o.length == 2) {
                     arr[0] = o[0];
                     arr[1] = o[1];
-                } else if (o.length == 3) {
+                }
+                else if (o.length == 3) {
                     arr = o;
                 }
                 else {
@@ -60,7 +66,7 @@ Ext.define('LABKEY.app.model.Filter', {
             }
 
             return arr;
-        }}, // array of measures
+        }},
         {name : 'plotScales', defaultValue: []}, // array of scales
 
         {name : 'isWhereFilter', type: 'boolean', defaultValue: false},
@@ -339,38 +345,35 @@ Ext.define('LABKEY.app.model.Filter', {
         },
 
         getGridHierarchy : function(data) {
-            if (data['gridFilter']) { // TODO: change to look for sqlFilters
-                for (var i = 0; i < data['gridFilter'].length; i++) {
-                    var gf = data['gridFilter'][i];
-                    return LABKEY.app.model.Filter.getGridFilterLabel(gf);
-                }
+            var gf = data['gridFilter'];
+            if (!Ext.isEmpty(gf)) {
+                return LABKEY.app.model.Filter.getGridFilterLabel(gf[0]);
             }
-            return 'Unknown';
+            return LABKEY.app.model.Filter.emptyLabelText;
         },
 
         getGridFilterLabel : function(gf)
         {
-            if (!Ext.isFunction(gf.getColumnName))
+            var endLabel = "";
+
+            if (Ext.isFunction(gf.getColumnName))
             {
-                console.warn('invalid filter object being processed.');
-                return 'Unknown';
-            }
+                var splitLabel = gf.getColumnName().split('/');
+                var first = splitLabel[0].split('_');
+                var real = first[first.length-1];
 
-            var splitLabel = gf.getColumnName().split('/');
-            var endLabel = "", first, real;
-            if (splitLabel.length > 1) {
-                // we're dealing with a presumed lookup filter
-                first = splitLabel[0].split('_');
-                real = first[first.length-1];
-
-                endLabel = real + '/' + splitLabel[splitLabel.length-1];
+                if (splitLabel.length > 1) {
+                    // we're dealing with a presumed lookup filter
+                    endLabel = real + '/' + splitLabel[splitLabel.length-1];
+                }
+                else {
+                    // Just a normal column
+                    endLabel = real;
+                }
             }
             else {
-                // Just a normal column
-                first = splitLabel[0].split('_');
-                real = first[first.length-1];
-
-                endLabel = real;
+                console.warn('invalid filter object being processed.');
+                endLabel = LABKEY.app.model.Filter.emptyLabelText;
             }
 
             return endLabel;
@@ -383,7 +386,7 @@ Ext.define('LABKEY.app.model.Filter', {
                     if (!Ext.isFunction(gf.getFilterType))
                     {
                         console.warn('invalid label being processed');
-                        return 'Unknown';
+                        return LABKEY.app.model.Filter.emptyLabelText;
                     }
                     var value = gf.getValue();
                     if (!value) {
@@ -391,7 +394,7 @@ Ext.define('LABKEY.app.model.Filter', {
                     }
                     return LABKEY.app.model.Filter.getShortFilter(gf.getFilterType().getDisplayText()) + ' ' + value;
                 }
-                return 'Unknown';
+                return LABKEY.app.model.Filter.emptyLabelText;
             };
 
             if (data['gridFilter']) { // TODO: change to look for sqlFilters
@@ -408,12 +411,16 @@ Ext.define('LABKEY.app.model.Filter', {
             }
         },
 
+        // Data Filter Provider
+        dfProvider : undefined,
+
+        registerDataFilterProvider : function(providerFn, scope) {
+            LABKEY.app.model.Filter.dfProvider = {fn: providerFn, scope: scope};
+        },
+
         _buildGetDataFilter : function(filter, data) {
-            // TODO: Determine a better override scheme so that app level services can be called to construct getData configs
-            if (Ext.isDefined(window.Connector)) {
-                filter = Connector.getService('Query').getDataFilter(filter, data);
-            }
-            return filter;
+            var M = LABKEY.app.model.Filter;
+            return  M.dfProvider.fn.call(M.dfProvider.scope, filter, data);
         },
 
         getOlapFilter : function(mdx, data, subjectName) {
@@ -421,17 +428,25 @@ Ext.define('LABKEY.app.model.Filter', {
                 console.error('must provide mdx to getOlapFilter');
             }
 
+            var M = LABKEY.app.model.Filter;
+
             var filter = {
                 filterType: data.isWhereFilter === true ? 'WHERE' : 'COUNT'
             };
 
             if (data.filterSource === 'GETDATA') {
-                // TODO: Figure out how this works with perspectives, maybe it doesn't care at all?
-                filter = LABKEY.app.model.Filter._buildGetDataFilter(filter, data);
+
+                if (Ext.isDefined(M.dfProvider)) {
+                    // TODO: Figure out how this works with perspectives, maybe it doesn't care at all?
+                    filter = M._buildGetDataFilter(filter, data);
+                }
+                else {
+                    console.error('Failed to register a data filter provider. See', M + '.registerDataFilterProvider()');
+                }
             }
             else {
 
-                filter.operator = LABKEY.app.model.Filter.lookupOperator(data);
+                filter.operator = M.lookupOperator(data);
                 filter.arguments = [];
 
                 if (data.perspective) {
@@ -460,7 +475,7 @@ Ext.define('LABKEY.app.model.Filter', {
                     }
                 }
                 else {
-                    if (LABKEY.app.model.Filter.usesMemberName(data, subjectName)) {
+                    if (M.usesMemberName(data, subjectName)) {
 
                         var m = data.members;
                         if (data.membersName && data.membersName.length > 0) {
@@ -535,23 +550,9 @@ Ext.define('LABKEY.app.model.Filter', {
                 if (data.operator) {
                     return data.operator;
                 }
-
-                var ops = LABKEY.app.model.Filter.Operators;
-
-                // TODO: Remove this switch once fb_infopane is merged as this is Dataspace specific
-                switch (data.hierarchy) {
-                    case '[Study]':
-                        return ops.UNION;
-                    case '[Subject.Race]':
-                        return ops.UNION;
-                    case '[Subject.Country]':
-                        return ops.UNION;
-                    case '[Subject.Sex]':
-                        return ops.UNION;
-                    default:
-                        return ops.INTERSECT;
-                }
             }
+
+            return LABKEY.app.model.Filter.Operators.INTERSECT;
         },
 
         emptyLabelText: 'Unknown',
@@ -753,24 +754,6 @@ Ext.define('LABKEY.app.model.Filter', {
         delete jsonable.membersName;
 
         return jsonable;
-    },
-
-    generateNamedSet : function() {
-
-        var namedSet = {
-            key: LABKEY.Utils.generateUUID(),
-            members: []
-        };
-
-        if (this.data.members.length > 0 && this.data.members[0].uniqueName.indexOf('[Subject].') == 0) {
-            var members = [];
-            Ext.each(this.data.members, function(m) {
-                members.push(m.uniqueName);
-            });
-            namedSet.members = members;
-        }
-
-        return namedSet;
     }
 });
 
