@@ -108,7 +108,7 @@ LABKEY.Report = new function(){
          *  <li>reportSessionId: A unique identifier that represents the new underlying report session, a String</li>
          * </ul>
          * @param {Function} [config.failure] A function to call if an error occurs. This function
-         * will receive one parameter of type object with the following properites:
+         * will receive one parameter of type object with the following properties:
          * <ul>
          *  <li>exception: The exception message.</li>
          * </ul>
