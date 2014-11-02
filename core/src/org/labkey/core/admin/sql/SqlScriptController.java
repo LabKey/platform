@@ -44,6 +44,7 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.settings.AppProps;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.HtmlView;
@@ -325,7 +326,7 @@ public class SqlScriptController extends SpringActionController
                         String filename = consolidator.getFilename();
 
                         // Skip if the single script in this range is the consolidation script
-                        if (!scripts.get(0).getDescription().equals(filename))
+                        if (!scripts.get(0).getDescription().equalsIgnoreCase(filename))
                             consolidators.add(consolidator);
                     }
                 }
@@ -649,6 +650,7 @@ public class SqlScriptController extends SpringActionController
             html.append("</pre>\n");
 
             html.append("<form method=\"post\">");
+            html.append("<input type=\"hidden\" name=\"" + CSRFUtil.csrfName + "\" value=\"").append(CSRFUtil.getExpectedToken(getViewContext())).append("\">");
             html.append(PageFlowUtil.button("Save to " + consolidator.getFilename()).submit(true));
             html.append(PageFlowUtil.button("Back").href(getSuccessURL(form)));
             html.append("</form>");
