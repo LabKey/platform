@@ -27,7 +27,6 @@ public class FreezerProConfig implements SpecimenTransform.ExternalImportConfig
     private String _password;
     private int _reloadInterval;
     private boolean _enableReload;
-    private boolean _importUserFields;
     private String _reloadDate;
     private String _metadata;
     private int _reloadUser;
@@ -103,16 +102,6 @@ public class FreezerProConfig implements SpecimenTransform.ExternalImportConfig
     public void setReloadDate(String reloadDate)
     {
         _reloadDate = reloadDate;
-    }
-
-    public boolean isImportUserFields()
-    {
-        return _importUserFields;
-    }
-
-    public void setImportUserFields(boolean importUserFields)
-    {
-        _importUserFields = importUserFields;
     }
 
     public String getMetadata()

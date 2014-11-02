@@ -29,18 +29,20 @@ import java.util.Map;
  */
 public class ExportLocationResponse extends FreezerProCommandResonse
 {
+    public static final String DATA_NODE_NAME = "Locations";
+
     public ExportLocationResponse(FreezerProExport export, String text, int statusCode, PipelineJob job)
     {
-        super(export, text, statusCode, null, job);
+        super(export, text, statusCode, DATA_NODE_NAME, job);
     }
-
-    /**
+/*
+    *//**
      * Position the parser to the start of the data array object
      * @param parser
      * @param dataNodeName
      * @return
      * @throws java.io.IOException
-     */
+     *//*
     protected boolean ensureDataNode(JsonParser parser, String dataNodeName) throws IOException
     {
         parser.nextToken();
@@ -49,11 +51,11 @@ public class ExportLocationResponse extends FreezerProCommandResonse
         return true;
     }
 
-    /**
+    *//**
      * Parse the array of objects into a list of row maps
      * @param parser
      * @param data
-     */
+     *//*
     protected void parseDataArray(JsonParser parser, List<Map<String, Object>> data) throws IOException
     {
         Map node = _parser.readValueAs(Map.class);
@@ -66,5 +68,5 @@ public class ExportLocationResponse extends FreezerProCommandResonse
             }
             data.add(row);
         }
-    }
+    }*/
 }

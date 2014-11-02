@@ -38,16 +38,18 @@ public class ExportLocationCommand
     private String _url;
     private String _username;
     private String _password;
-    private String _locationId;
     private FreezerProExport _export;
+    private int _start;
+    private int _limit;
 
-    public ExportLocationCommand(FreezerProExport export, String url, String username, String password, String locationId)
+    public ExportLocationCommand(FreezerProExport export, String url, String username, String password, int start, int limit)
     {
         _export = export;
         _url = url;
         _username = username;
         _password = password;
-        _locationId = locationId;
+        _start = start;
+        _limit = limit;
     }
 
     public FreezerProCommandResonse execute(HttpClient client, PipelineJob job)
@@ -57,10 +59,11 @@ public class ExportLocationCommand
         try {
             List<NameValuePair> params = new ArrayList<NameValuePair>();
 
-            params.add(new BasicNameValuePair("method", "location_info"));
+            params.add(new BasicNameValuePair("method", "vials_sample"));
             params.add(new BasicNameValuePair("username", _username));
             params.add(new BasicNameValuePair("password", _password));
-            params.add(new BasicNameValuePair("id", _locationId));
+            params.add(new BasicNameValuePair("start", String.valueOf(_start)));
+            params.add(new BasicNameValuePair("limit", String.valueOf(_limit)));
 
             post.setEntity(new UrlEncodedFormEntity(params));
 

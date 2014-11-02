@@ -250,7 +250,8 @@ public class CustomViewXmlReader
             reader._canInherit = viewElement.isSetCanInherit() && viewElement.getCanInherit();
             reader._customIconUrl = viewElement.isSetCustomIconUrl() ? viewElement.getCustomIconUrl() : "/reports/grid_shared.gif";
             reader._label = viewElement.getLabel();
-            reader._showInDataViews = viewElement.isSetShowInDataViews();
+            if (viewElement.isSetShowInDataViews())
+                reader._showInDataViews = viewElement.getShowInDataViews();
 
             //load the columns, filters, sorts, aggregates
             reader._colList = loadColumns(viewElement.getColumns());

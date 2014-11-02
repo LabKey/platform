@@ -15,6 +15,7 @@
  */
 package org.labkey.freezerpro.export;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
@@ -40,6 +41,8 @@ import org.labkey.study.xml.freezerProExport.FreezerProConfigDocument;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -55,17 +58,23 @@ public class FreezerProExport
     private File _archive;
 
     private String _searchFilterString;
+    private boolean _getUserFields;
     private static Map<String, String> COLUMN_MAP;
     private List<Pair<String, Object>> _columnFilters = new ArrayList<>();
     private Map<String, String> _columnMap = new CaseInsensitiveHashMap<>();
     private Set<String> _columnSet = new HashSet<>();
+    private static int RECORD_CHUNK_SIZE = 1000;
 
-    static {
+    public static final String BARCODE_FIELD_NAME = "barcode";
+    public static final String SAMPLE_ID_FIELD_NAME = "uid";
+
+    static
+    {
         COLUMN_MAP = new CaseInsensitiveHashMap<>();
 
         COLUMN_MAP.put("type", "sample type");
-        COLUMN_MAP.put("barcode_tag", "barcode");
-        COLUMN_MAP.put("sample_id", "uid");
+        COLUMN_MAP.put("barcode_tag", BARCODE_FIELD_NAME);
+        COLUMN_MAP.put("sample_id", SAMPLE_ID_FIELD_NAME);
         COLUMN_MAP.put("scount", "vials");
         COLUMN_MAP.put("created at", "created");
         COLUMN_MAP.put("box_name", "box");
@@ -100,6 +109,8 @@ public class FreezerProExport
 
                 if (config != null)
                 {
+                    // import user defined fields
+                    _getUserFields = config.getGetUserFields();
                     if (config.isSetFilterString())
                         _searchFilterString = config.getFilterString();
 
@@ -141,36 +152,77 @@ public class FreezerProExport
     {
         _job.info("Starting FreezerPro export");
         HttpClient client = HttpClients.createDefault();
-        List<Map<String, Object>> data = getSampleData(client);
 
-        if (!data.isEmpty())
+        List<Map<String, Object>> data = new ArrayList<>();
+
+        // FreezerPro search_samples is slow and should be avoided as a way to export samples. The preferred way is to
+        // iterate over all freezers and request samples per each freezer
+        if (_searchFilterString != null)
         {
-            _job.info("requesting any user defined fields and location information");
-            for(Map<String, Object> row : data)
+            data = getSampleData(client);
+        }
+        else
+        {
+            for (Freezer freezer : getFreezers(client))
             {
-                if (row.containsKey("uid"))
-                {
-                    String id = String.valueOf(row.get("uid"));
+                if (_job.checkInterrupted())
+                    return null;
 
-                    // get any user defined fields
-                    if (getConfig().isImportUserFields())
-                        getSampleUserData(client, id, row);
+                getSamplesForFreezer(client, freezer, data);
+            }
+        }
 
-                    // retrieve the sample location info
-                    if (row.containsKey("loc_id"))
-                    {
-                        String locationId = String.valueOf(row.get("loc_id"));
-                        getSampleLocationData(client, locationId, row);
-                    }
-                }
+        // get location information
+        Map<String, Map<String, Object>> locationMap = new HashMap<>();
+        getSampleLocationData(client, locationMap);
+
+        // merge the location information into the sample data
+        for (Map<String, Object> dataRow : data)
+        {
+            String sampleId = String.valueOf(dataRow.get(SAMPLE_ID_FIELD_NAME));
+
+            if (locationMap.containsKey(sampleId))
+            {
+                dataRow.putAll(locationMap.get(sampleId));
             }
         }
 
         // if there are any column filters in the configuration, perform the filtering
         data = filterColumns(data);
 
+        if (_getUserFields && !data.isEmpty())
+        {
+            _job.info("requesting any user defined fields and location information");
+            for (Map<String, Object> row : data)
+            {
+                if (_job.checkInterrupted())
+                    return null;
+
+                if (row.containsKey(SAMPLE_ID_FIELD_NAME))
+                {
+                    String id = String.valueOf(row.get(SAMPLE_ID_FIELD_NAME));
+
+                    // get any user defined fields
+                    getSampleUserData(client, id, row);
+
+                    // retrieve the sample location info
+/*
+                    if (row.containsKey("loc_id"))
+                    {
+                        String locationId = String.valueOf(row.get("loc_id"));
+                        getSampleLocationData(client, locationId, row);
+                    }
+*/
+                }
+            }
+        }
+
+        // filter again to catch any column that may be user defined
+        data = filterColumns(data);
+
         // write out the archive
-        try {
+        try
+        {
             _job.info("data processing complete, a total of " + data.size() + " records were exported.");
             _job.info("creating the exported data .csv file");
             TSVMapWriter tsvWriter = new TSVMapWriter(_columnSet, data);
@@ -197,7 +249,8 @@ public class FreezerProExport
         HttpClient client = HttpClients.createDefault();
         HttpPost post = new HttpPost(getConfig().getBaseServerUrl());
 
-        try {
+        try
+        {
             List<NameValuePair> params = new ArrayList<NameValuePair>();
 
             params.add(new BasicNameValuePair("method", "search_samples"));
@@ -230,22 +283,33 @@ public class FreezerProExport
     {
         List<Map<String, Object>> data = new ArrayList<>();
         _job.info("requesting sample data from server url: " + _config.getBaseServerUrl());
-        ExportSamplesCommand exportSamplesCmd = new ExportSamplesCommand(this, _config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), _searchFilterString);
-        FreezerProCommandResonse response = exportSamplesCmd.execute(client, _job);
 
         try
         {
-            if (response != null)
+            int start = 0;
+            int limit = RECORD_CHUNK_SIZE;
+            boolean done = false;
+
+            while (!done)
             {
-                if (response.getStatusCode() == HttpStatus.SC_OK)
+                ExportSamplesCommand exportSamplesCmd = new ExportSamplesCommand(this, _config.getBaseServerUrl(), _config.getUsername(),
+                        _config.getPassword(), _searchFilterString, start, limit);
+                FreezerProCommandResonse response = exportSamplesCmd.execute(client, _job);
+                if (response != null)
                 {
-                    _job.info("sample request successfull, parsing returned data.");
-                    data = response.loadData();
-                }
-                else
-                {
-                    _job.error("request for sample data failed, status code: " + response.getStatusCode());
-                    throw new RuntimeException("request for sample data failed, status code: " + response.getStatusCode());
+                    if (response.getStatusCode() == HttpStatus.SC_OK)
+                    {
+                        _job.info("sample request successfull, parsing returned data.");
+                        data.addAll(response.loadData());
+
+                        start += limit;
+                        done = (response.getTotalRecords() == 0) || (start >= response.getTotalRecords());
+                    }
+                    else
+                    {
+                        _job.error("request for sample data failed, status code: " + response.getStatusCode());
+                        throw new RuntimeException("request for sample data failed, status code: " + response.getStatusCode());
+                    }
                 }
             }
         }
@@ -290,10 +354,55 @@ public class FreezerProExport
         }
     }
 
-    private void getSampleLocationData(HttpClient client, String locationId, Map<String, Object> row)
+    private void getSampleLocationData(HttpClient client, Map<String, Map<String, Object>> locationMap)
     {
-        ExportLocationCommand exportLocationCommand = new ExportLocationCommand(this, _config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), locationId);
-        FreezerProCommandResonse response = exportLocationCommand.execute(client, _job);
+        try
+        {
+            int start = 0;
+            int limit = RECORD_CHUNK_SIZE;
+            boolean done = false;
+
+            while (!done)
+            {
+                ExportLocationCommand exportLocationCommand = new ExportLocationCommand(this, _config.getBaseServerUrl(),
+                        _config.getUsername(), _config.getPassword(), start, limit);
+                FreezerProCommandResonse response = exportLocationCommand.execute(client, _job);
+
+                if (response != null)
+                {
+                    if (response.getStatusCode() == HttpStatus.SC_OK)
+                    {
+                        for (Map<String, Object> row : response.loadData())
+                        {
+                            String sampleId = String.valueOf(row.get(SAMPLE_ID_FIELD_NAME));
+
+                            if (!locationMap.containsKey(sampleId))
+                            {
+                                locationMap.put(sampleId, row);
+                            }
+                        }
+                        start += limit;
+                        done = (response.getTotalRecords() == 0) || (start >= response.getTotalRecords());
+                    }
+                    else
+                    {
+                        _job.error("request for sample location data failed, status code: " + response.getStatusCode());
+                        throw new RuntimeException("request for sample location data failed, status code: " + response.getStatusCode());
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private List<Freezer> getFreezers(HttpClient client)
+    {
+        GetFreezersCommand sampleTypesCommand = new GetFreezersCommand(this, _config.getBaseServerUrl(), _config.getUsername(), _config.getPassword());
+        FreezerProCommandResonse response = sampleTypesCommand.execute(client, _job);
+        List<Freezer> freezers = new ArrayList<>();
 
         try
         {
@@ -301,26 +410,65 @@ public class FreezerProExport
             {
                 if (response.getStatusCode() == HttpStatus.SC_OK)
                 {
-                    List<Map<String, Object>> data = response.loadData();
-                    if (data.size() == 1)
+                    for (Map<String, Object> row : response.loadData())
                     {
-                        for (Map.Entry<String, Object> entry : data.get(0).entrySet())
-                        {
-                            if (exportField(entry.getKey()))
-                                row.put(translateFieldName(entry.getKey()), entry.getValue());
-                        }
+                        freezers.add(new Freezer(
+                                        String.valueOf(row.get("id")),
+                                        String.valueOf(row.get("name")),
+                                        String.valueOf(row.get("description")),
+                                        NumberUtils.toInt(String.valueOf(row.get("subdivisions"))),
+                                        NumberUtils.toInt(String.valueOf(row.get("boxes"))),
+                                        String.valueOf(row.get(BARCODE_FIELD_NAME)),
+                                        String.valueOf(row.get("rfid_tag")))
+                        );
+
                     }
+                    return freezers;
                 }
                 else
                 {
-                    _job.error("request for sample location data failed, status code: " + response.getStatusCode());
-                    throw new RuntimeException("request for sample location data failed, status code: " + response.getStatusCode());
+                    _job.error("request for freezer data failed, status code: " + response.getStatusCode());
+                    throw new RuntimeException("request for freezer data failed, status code: " + response.getStatusCode());
                 }
             }
+            return Collections.EMPTY_LIST;
         }
         catch (Exception e)
         {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void getSamplesForFreezer(HttpClient client, Freezer freezer, List<Map<String, Object>> rows)
+    {
+        if (freezer.getId() != null)
+        {
+            GetFreezerSamplesCommand sampleTypesCommand = new GetFreezerSamplesCommand(this, _config.getBaseServerUrl(), _config.getUsername(), _config.getPassword(), freezer.getId());
+            FreezerProCommandResonse response = sampleTypesCommand.execute(client, _job);
+
+            try
+            {
+                if (response != null)
+                {
+                    if (response.getStatusCode() == HttpStatus.SC_OK)
+                    {
+                        List<Map<String, Object>> data = response.loadData();
+                        for (Map<String, Object> row : data)
+                        {
+                            rows.add(row);
+                        }
+                    }
+                    else
+                    {
+                        _job.error("request for sample types data failed, status code: " + response.getStatusCode());
+                        throw new RuntimeException("request for sample types data failed, status code: " + response.getStatusCode());
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -355,7 +503,7 @@ public class FreezerProExport
                     if (record.containsKey(filter.getKey()) && !record.get(filter.getKey()).equals(filter.getValue()))
                     {
                         addRecord = false;
-                        continue;
+                        break;
                     }
                 }
                 if (addRecord)
@@ -365,5 +513,62 @@ public class FreezerProExport
         }
         else
             return data;
+    }
+
+    public static class Freezer
+    {
+        private String _id;
+        private String _name;
+        private String _description;
+        private int _subdivisions;
+        private int _boxes;
+        private String _barcodeTag;
+        private String _rfidTag;
+
+        public Freezer(String id, String name, String description, int subdivisions, int boxes, String barcodeTag, String rfidTag)
+        {
+            _id = id;
+            _name = name;
+            _description = description;
+            _subdivisions = subdivisions;
+            _boxes = boxes;
+            _barcodeTag = barcodeTag;
+            _rfidTag = rfidTag;
+        }
+
+        public String getId()
+        {
+            return _id;
+        }
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public String getDescription()
+        {
+            return _description;
+        }
+
+        public int getSubdivisions()
+        {
+            return _subdivisions;
+        }
+
+        public int getBoxes()
+        {
+            return _boxes;
+        }
+
+        public String getBarcodeTag()
+        {
+            return _barcodeTag;
+        }
+
+        public String getRfidTag()
+        {
+            return _rfidTag;
+        }
     }
 }

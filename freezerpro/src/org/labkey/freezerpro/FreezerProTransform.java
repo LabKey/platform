@@ -102,7 +102,6 @@ public class FreezerProTransform implements SpecimenTransform
             config.setUsername(username);
             config.setPassword(password);
             config.setMetadata(props.get(FreezerProConfig.Options.metadata.name()));
-            config.setImportUserFields(true);
 
             return config;
         }

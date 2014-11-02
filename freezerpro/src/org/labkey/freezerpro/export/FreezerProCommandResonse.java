@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.labkey.api.arrays.IntegerArray;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.util.JsonUtil;
 
@@ -41,6 +42,9 @@ public abstract class FreezerProCommandResonse
     protected JsonParser _parser;
     protected PipelineJob _job;
     protected FreezerProExport _export;
+
+    public static final String TOTAL_FIELD_NAME = "Total";
+    protected int _totalRecords;
 
     public FreezerProCommandResonse(FreezerProExport export, String text, int statusCode, String dataNodeName, PipelineJob job)
     {
@@ -89,7 +93,7 @@ public abstract class FreezerProCommandResonse
     protected boolean ensureDataNode(JsonParser parser, String dataNodeName) throws IOException
     {
         JsonToken token = parser.nextToken();
-        JsonUtil.expectObjectStart(parser);
+        //JsonUtil.expectObjectStart(parser);
         while (token != JsonToken.END_OBJECT)
         {
             token = parser.nextToken();
@@ -100,6 +104,14 @@ public abstract class FreezerProCommandResonse
                 {
                     parser.nextToken();
                     return true;
+                }
+                else if (TOTAL_FIELD_NAME.equalsIgnoreCase(fieldName))
+                {
+                    JsonToken totalToken = parser.nextToken();
+                    if (totalToken == JsonToken.VALUE_NUMBER_INT)
+                    {
+                        _totalRecords = parser.readValueAs(Integer.class);
+                    }
                 }
             }
         }
@@ -145,5 +157,10 @@ public abstract class FreezerProCommandResonse
     public int getStatusCode()
     {
         return _statusCode;
+    }
+
+    public int getTotalRecords()
+    {
+        return _totalRecords;
     }
 }

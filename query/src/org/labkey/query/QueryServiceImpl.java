@@ -469,6 +469,7 @@ public class QueryServiceImpl extends QueryService
                 protected Set<CustomView> visitTablesAndReduce(UserSchema schema, Iterable<String> names, Path path, Void param, Set<CustomView> customViews)
                 {
                     Set<CustomView> views = new HashSet<>();
+                    views = reduce(views, customViews);
                     for (String name : names)
                     {
                         QueryDefinition qd = schema.getQueryDefForTable(name);
