@@ -130,7 +130,7 @@
     </tr>
     <tr>
         <td class="labkey-wp-body">
-            <table class="labkey-data-region labkey-show-borders">
+            <table class="labkey-data-region labkey-show-borders" name="leaks">
                 <tr>
                     <th>&nbsp;</th>
                     <th align="left">Object Class</th>
