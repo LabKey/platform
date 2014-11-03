@@ -165,8 +165,8 @@ abstract public class AbstractTaskFactorySettings implements TaskFactorySettings
         if (declaringModule == null)
             throw new IllegalArgumentException("Declaring module must not be null");
 
-        if (_declaringModule != null)
-            throw new IllegalStateException("Declaring module already set");
+        if (_declaringModule != null && _declaringModule != declaringModule)
+            throw new IllegalStateException("Declaring module already set to " + _declaringModule + ", it cannot be reset to " + declaringModule);
 
         _declaringModule = declaringModule;
     }
