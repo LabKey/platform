@@ -1517,7 +1517,7 @@ public class SpecimenImporter
         }
 
         // find the global unique ID for those vials with conflicts:
-        TableInfo specimenEventTable = StudySchema.getInstance().getTableInfoSpecimenEvent(getContainer());
+        TableInfo specimenEventTable = getTableInfoSpecimenEvent();
         SQLFragment conflictedGUIDs = new SQLFragment("SELECT GlobalUniqueId FROM ");
         conflictedGUIDs.append(getTableInfoVial(), "vial");
         conflictedGUIDs.append(" WHERE RowId IN (\n");
