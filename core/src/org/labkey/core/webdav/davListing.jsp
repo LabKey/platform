@@ -22,10 +22,6 @@
 <%@ page import="org.labkey.api.webdav.WebdavResource" %>
 <%@ page import="org.labkey.core.webdav.DavController" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
-<%@ page import="org.labkey.api.security.LoginUrls" %>
-<%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.api.util.URLHelper" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
   public LinkedHashSet<ClientDependency> getClientDependencies()
@@ -39,12 +35,6 @@
     DavController.ListPage listpage = (DavController.ListPage) HttpView.currentModel();
     WebdavResource resource = listpage.resource;
     AppProps.Interface app = AppProps.getInstance();
-//    ActionURL url = new ActionURL(DavController.class, getContainer());
-//    URLHelper url = new URLHelper()
-//    String returnUrl = getContextPath().toString();
-//    String testUrl = getActionURL().toString();
-//    String test2Url = getWebappURL("").toString();
-
 %>
 <script type="text/javascript">
 
@@ -103,7 +93,5 @@
                 }
             }
         });
-
-        <%--window.alert(<%=getUser().isGuest()%>);--%>
     });
 </script>
