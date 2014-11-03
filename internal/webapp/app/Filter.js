@@ -137,7 +137,7 @@ Ext.define('LABKEY.app.model.Filter', {
                     label : group.label,
                     participantIds : [],
                     description : group.description,
-                    shared : false,
+                    ownerId : LABKEY.user.id,
                     type : 'list',
                     visibility : group.visibility,
                     filters : m.toJSON(group.filters, group.isLive)
@@ -207,7 +207,7 @@ Ext.define('LABKEY.app.model.Filter', {
                     participantIds : [],
                     description : group.description,
                     visibility : group.visibility,
-                    shared : false,
+                    ownerId : LABKEY.user.id,
                     type : 'list',
                     filters : m.toJSON(group.filters, group.isLive)
                 },
