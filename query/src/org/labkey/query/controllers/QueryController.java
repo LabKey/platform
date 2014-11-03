@@ -3586,6 +3586,17 @@ public class QueryController extends SpringActionController
         @Override
         public ApiResponse execute(ApiSaveRowsForm apiSaveRowsForm, BindException errors) throws Exception
         {
+            // Issue 21850: Verify that the user has at least some sort of basic access to the container. We'll check for more
+            // specific permissions later once we've figured out exactly what they're trying to do. This helps us
+            // give a better HTTP response code when they're trying to access a resource that's not available to guests
+            if (!getContainer().hasPermission(getUser(), ReadPermission.class) &&
+                    !getContainer().hasPermission(getUser(), DeletePermission.class) &&
+                    !getContainer().hasPermission(getUser(), InsertPermission.class) &&
+                    !getContainer().hasPermission(getUser(), UpdatePermission.class))
+            {
+                throw new UnauthorizedException();
+            }
+
             JSONObject json = apiSaveRowsForm.getJsonObject();
             if (json == null)
                 throw new IllegalArgumentException("Empty request");
