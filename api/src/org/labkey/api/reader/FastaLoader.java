@@ -35,6 +35,7 @@ public abstract class FastaLoader<T> implements Iterable<T>
 {
     private final File _fastaFile;
     private final FastaIteratorElementFactory<T> _factory;
+    private CharacterFilter _characterFilter = new UppercaseCharacterFilter();
 
     protected FastaLoader(File fastaFile, FastaIteratorElementFactory<T> factory)
     {
@@ -44,6 +45,11 @@ public abstract class FastaLoader<T> implements Iterable<T>
 
     // Force subclasses to implement to provide callers a more appropriate name.
     public abstract FastaIterator iterator();
+
+    public void setCharacterFilter(CharacterFilter characterFilter)
+    {
+        _characterFilter = characterFilter;
+    }
 
     public interface FastaIteratorElementFactory<U>
     {
@@ -166,13 +172,13 @@ public abstract class FastaLoader<T> implements Iterable<T>
                     }
                     else
                     {
-                        byte[] bytes = line.getBytes();
+                        char[] chars = line.toCharArray();
 
-                        for (byte aByte : bytes)
+                        for (char c : chars)
                         {
-                            if ((aByte >= 'A') && (aByte <= 'Z'))
+                            if (_characterFilter.accept(c))
                             {
-                                bodyStream.write(aByte);
+                                bodyStream.write(c);
                             }
                         }
                     }
@@ -242,6 +248,19 @@ public abstract class FastaLoader<T> implements Iterable<T>
         public long getLastHeaderLineNum()
         {
             return _lastHeaderLineNum;
+        }
+    }
+
+    public interface CharacterFilter
+    {
+        public boolean accept(char c);
+    }
+
+    public class UppercaseCharacterFilter implements CharacterFilter
+    {
+        public boolean accept(char c)
+        {
+            return (c >= 'A') && (c <= 'Z');
         }
     }
 }

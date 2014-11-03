@@ -448,22 +448,29 @@ public class RefNtSequenceModel
             seq = Arrays.copyOfRange(seq, start, end);
         }
 
-        int len = seq.length;
-        int count = 0;
-        for (int i = 0; i < len; i++)
+        if (seq != null)
         {
-            if (count == lineLength)
+            int len = seq.length;
+            int count = 0;
+            for (int i = 0; i < len; i++)
             {
-                writer.write('\n');
-                count = 0;
+                if (count == lineLength)
+                {
+                    writer.write('\n');
+                    count = 0;
+                }
+
+                writer.write(seq[i]);
+                count++;
             }
 
-            writer.write(seq[i]);
-            count++;
+            //always terminate w/ a newline
+            writer.write('\n');
         }
-
-        //always terminate w/ a newline
-        writer.write('\n');
+        else
+        {
+            _log.error("no sequence found for refId: " + getRowid());
+        }
     }
 
     public void clearCachedSequence()

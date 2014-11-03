@@ -83,6 +83,11 @@ public class FastaDataLoader extends DataLoader
         _loader = new GenericFastaLoader(inputFile);
     }
 
+    public void setCharacterFilter(FastaLoader.CharacterFilter characterFilter)
+    {
+        _loader.setCharacterFilter(characterFilter);
+    }
+
     @Override
     public String[][] getFirstNLines(int n) throws IOException
     {
