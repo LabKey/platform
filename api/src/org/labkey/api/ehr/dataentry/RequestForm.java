@@ -69,6 +69,7 @@ public class RequestForm extends AbstractDataEntryForm
     {
         List<String> ret = new ArrayList<>();
         ret.add("COPY_REQUEST");
+        ret.add("VALIDATEALL");
 
         return ret;
     }
