@@ -300,6 +300,7 @@ core/resources/schemas/dbscripts/postgresql/core-13.10-13.20.sql -text
 core/resources/schemas/dbscripts/postgresql/core-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-13.30-14.10.sql -text
 core/resources/schemas/dbscripts/postgresql/core-14.20-14.21.sql -text
+core/resources/schemas/dbscripts/postgresql/core-14.20-14.30.sql -text
 core/resources/schemas/dbscripts/postgresql/core-14.21-14.22.sql -text
 core/resources/schemas/dbscripts/postgresql/core-14.22-14.23.sql -text
 core/resources/schemas/dbscripts/postgresql/core-14.23-14.24.sql -text
@@ -473,6 +474,7 @@ core/resources/schemas/dbscripts/sqlserver/core-13.10-13.20.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.20-13.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-13.30-14.10.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-14.20-14.21.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-14.20-14.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-14.21-14.22.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-14.22-14.23.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
@@ -1010,6 +1012,7 @@ experiment/resources/schemas/dbscripts/postgresql/exp-13.10-13.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-13.30-14.10.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-14.10-14.20.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-14.20-14.21.sql -text
+experiment/resources/schemas/dbscripts/postgresql/exp-14.20-14.30.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-14.21-14.22.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-create.sql -text
 experiment/resources/schemas/dbscripts/postgresql/exp-drop.sql -text
@@ -1158,6 +1161,7 @@ experiment/resources/schemas/dbscripts/sqlserver/exp-13.10-13.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-13.30-14.10.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-14.10-14.20.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-14.20-14.21.sql -text
+experiment/resources/schemas/dbscripts/sqlserver/exp-14.20-14.30.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-14.21-14.22.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-create.sql -text
 experiment/resources/schemas/dbscripts/sqlserver/exp-drop.sql -text
@@ -2408,6 +2412,7 @@ query/resources/schemas/dbscripts/postgresql/query-12.20-12.30.sql -text
 query/resources/schemas/dbscripts/postgresql/query-12.301-13.10.sql -text
 query/resources/schemas/dbscripts/postgresql/query-13.10-13.20.sql -text
 query/resources/schemas/dbscripts/postgresql/query-14.20-14.21.sql -text
+query/resources/schemas/dbscripts/postgresql/query-14.20-14.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-10.20.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-11.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/obsolete/query-0.00-2.00.sql -text
@@ -2458,6 +2463,7 @@ query/resources/schemas/dbscripts/sqlserver/query-12.20-12.30.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-12.301-13.10.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-13.10-13.20.sql -text
 query/resources/schemas/dbscripts/sqlserver/query-14.20-14.21.sql -text
+query/resources/schemas/dbscripts/sqlserver/query-14.20-14.30.sql -text
 query/resources/schemas/query.xml -text
 query/resources/views/SearchPanel.html -text
 query/resources/views/SearchPanel.view.xml -text
@@ -3168,6 +3174,7 @@ study/resources/schemas/dbscripts/postgresql/study-14.15-14.16.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.16-14.17.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.17-14.18.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.20-14.21.sql -text
+study/resources/schemas/dbscripts/postgresql/study-14.20-14.30.sql -text
 study/resources/schemas/dbscripts/postgresql/study-14.21-14.22.sql -text
 study/resources/schemas/dbscripts/postgresql/study-create.sql -text
 study/resources/schemas/dbscripts/postgresql/study-drop.sql -text
@@ -3405,6 +3412,7 @@ study/resources/schemas/dbscripts/sqlserver/study-14.14-14.15.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.16-14.17.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.17-14.18.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.20-14.21.sql -text
+study/resources/schemas/dbscripts/sqlserver/study-14.20-14.30.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-14.21-14.22.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-create.sql -text
 study/resources/schemas/dbscripts/sqlserver/study-drop.sql -text
