@@ -27,14 +27,13 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.URIUtil;
-import org.labkey.api.view.ActionURL;
 
 import java.io.File;
 import java.io.IOException;
@@ -60,11 +59,17 @@ public class FileLinkDisplayColumn extends AbstractFileDisplayColumn
         _container = container;
         _pkFieldKey = pkFieldKey;
 
-        ActionURL actionURL = PageFlowUtil.urlProvider(CoreUrls.class).getDownloadFileLinkBaseURL(container, pd);
-        actionURL.addParameter(QueryParam.schemaName, schemaKey.toString());
-        actionURL.addParameter(QueryParam.queryName, queryName);
-        DetailsURL url = new DetailsURL(actionURL, "pk", pkFieldKey);
-        setURLExpression(url);
+        StringBuilder sb = new StringBuilder("/core/downloadFileLink.view?propertyId=");
+        sb.append(pd.getPropertyId());
+        sb.append("&schemaName=");
+        sb.append(PageFlowUtil.encodeURIComponent(schemaKey.toString()));
+        sb.append("&queryName=");
+        sb.append(PageFlowUtil.encodeURIComponent(queryName));
+        sb.append("&pk=${");
+        sb.append(pkFieldKey.toString());
+        sb.append("}");
+        ContainerContext context = new ContainerContext.FieldKeyContext(new FieldKey(pkFieldKey.getParent(), "Folder"));
+        setURLExpression(DetailsURL.fromString(sb.toString(), context));
     }
 
     /** Use LSID FieldKey value as ObjectURI to resolve File in CoreController.DownloadFileLinkAction. */

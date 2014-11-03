@@ -352,7 +352,7 @@ public class StatementUtils
         }
         else
         {
-            col = table.getColumn(objectURIColumnName);
+            col = objectURIColumnName == null ? null : table.getColumn(objectURIColumnName);
             if (null != col)
                 keys.put(col.getFieldKey(), col);
             else
