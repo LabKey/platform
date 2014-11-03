@@ -17,6 +17,7 @@
 package org.labkey.study.plate;
 
 import org.labkey.api.assay.dilution.DilutionCurve;
+import org.labkey.api.assay.dilution.EmptyCurveImpl;
 import org.labkey.api.assay.dilution.ParameterCurveImpl;
 import org.labkey.api.assay.dilution.PolynomialCurveImpl;
 import org.labkey.api.data.statistics.FitFailedException;
@@ -49,6 +50,8 @@ public class CurveFitFactory
                 return new ParameterCurveImpl.FiveParameterCurve(wellGroups, assumeDecreasing, percentCalculator);
             case POLYNOMIAL:
                 return new PolynomialCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
+            case NONE:
+                return new EmptyCurveImpl(wellGroups, assumeDecreasing, percentCalculator);
         }
         throw new IllegalArgumentException("Unable to find a DilutionCurve implementation for type: " + type.getLabel());
     }

@@ -51,6 +51,8 @@ public class StatsServiceImpl implements StatsService
                 return new ParameterCurveFit(data, type);
             case POLYNOMIAL:
                 return new PolynomialCurveFit(data);
+            case NONE:
+                return new NoCurveFit(data);
         }
         throw new IllegalArgumentException("Unable to find a CurveFit implementation for type: " + type.name());
     }

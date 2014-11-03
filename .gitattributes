@@ -832,6 +832,7 @@ core/src/org/labkey/core/security/groupDiagram.jsp -text
 core/src/org/labkey/core/security/permissions.jsp -text
 core/src/org/labkey/core/security/renameGroup.jsp -text
 core/src/org/labkey/core/statistics/DefaultCurveFit.java -text
+core/src/org/labkey/core/statistics/NoCurveFit.java -text
 core/src/org/labkey/core/statistics/ParameterCurveFit.java -text
 core/src/org/labkey/core/statistics/PolynomialCurveFit.java -text
 core/src/org/labkey/core/statistics/StatsServiceImpl.java -text
