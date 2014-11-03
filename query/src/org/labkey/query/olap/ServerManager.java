@@ -456,10 +456,11 @@ public class ServerManager
             long e = System.currentTimeMillis();
             LOG.debug(DateUtil.formatDuration(e-s) + " CUBE DEFINITION");
 
+            JSONArray jsonOnRows = new JSONArray();
             JSONObject jsonQuery = new JSONObject();
             jsonQuery.put("filter", new JSONArray());
             jsonQuery.put("showEmpty", false);
-            jsonQuery.put("onRows", new JSONObject());
+            jsonQuery.put("onRows", jsonOnRows);
 
             for (Dimension d : cube.getDimensions())
             {
@@ -471,8 +472,12 @@ public class ServerManager
                     {
                         Level l = h.getLevels().get(h.getLevels().size()-1);
 
-                        ((JSONObject)jsonQuery.get("onRows")).put("level", l.getUniqueName());
-                        ((JSONObject)jsonQuery.get("onRows")).put("members", "members");
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("hierarchy", h.getUniqueName());
+                        map.put("members", "members");
+                        jsonOnRows.put(0, map);
+//                        ((JSONObject)jsonQuery.get("onRows")).put("level", l.getUniqueName());
+//                        ((JSONObject)jsonQuery.get("onRows")).put("members", "members");
 
                         // TODO: what is the countDistinctLevel???
                         boolean isCountDistinctLevel = l.getUniqueName().equals("[Patient].[Patient]");
@@ -489,7 +494,7 @@ public class ServerManager
 
 
                         // 20975: Ensure we touch specimen queries
-                        if (l.getUniqueName().equals("[Specimen].[Specimen]"))
+                        if (l.getUniqueName().equals("[Specimen].[Specimen]") || h.getUniqueName().contains("[Specimen."))
                         {
                             jsonQuery.put("countDistinctLevel", "[Specimen].[Specimen]");
 
