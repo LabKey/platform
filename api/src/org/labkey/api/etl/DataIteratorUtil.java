@@ -169,6 +169,12 @@ public class DataIteratorUtil
                 for (String alias : col.getImportAliasSet())
                     if (!targetAliasesMap.containsKey(alias))
                         targetAliasesMap.put(alias, new Pair<>(col, MatchType.alias));
+                // Be sure we have an alias the column name we generate for TSV exports. See issue 21774
+                String translatedFieldKey = FieldKey.fromString(col.getName()).toDisplayString();
+                if (!targetAliasesMap.containsKey(translatedFieldKey))
+                {
+                    targetAliasesMap.put(translatedFieldKey, new Pair<>(col, MatchType.alias));
+                }
             }
         }
         return targetAliasesMap;
