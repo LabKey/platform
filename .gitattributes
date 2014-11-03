@@ -112,6 +112,7 @@ api/src/org/labkey/api/announcements/permissions/UpdateMessagePermission.java -t
 api/src/org/labkey/api/app/SinglePageAppUrls.java -text
 api/src/org/labkey/api/arrays/DoubleArray.java -text
 api/src/org/labkey/api/assay/dilution/DilutionCurve.java -text
+api/src/org/labkey/api/assay/dilution/EmptyCurveImpl.java -text
 api/src/org/labkey/api/assay/dilution/ParameterCurveImpl.java -text
 api/src/org/labkey/api/assay/dilution/PolynomialCurveImpl.java -text
 api/src/org/labkey/api/assay/dilution/WellGroupCurveImpl.java -text

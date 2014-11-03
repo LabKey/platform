@@ -24,7 +24,8 @@ public interface StatsService
     {
         FOUR_PARAMETER("Four Parameter", "4pl"),
         FIVE_PARAMETER("Five Parameter", "5pl"),
-        POLYNOMIAL("Polynomial", "poly");
+        POLYNOMIAL("Polynomial", "poly"),
+        NONE("None", "none");
 
         private String _label;
         private String _colSuffix;

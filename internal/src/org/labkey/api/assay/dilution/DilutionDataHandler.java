@@ -116,35 +116,38 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
                     results.add(props);
 
                     // generate curve ICs and AUCs for each curve fit type
-                    for (StatsService.CurveFitType type : StatsService.CurveFitType.values())
+                    if (assayResults.getSavedCurveFitType() != StatsService.CurveFitType.NONE)
                     {
-                        for (Integer cutoff : assayResults.getCutoffs())
+                        for (StatsService.CurveFitType type : StatsService.CurveFitType.values())
                         {
-                            double value = dilution.getCutoffDilution(cutoff / 100.0, type);
-                            saveICValue(getPropertyName(CURVE_IC_PREFIX, cutoff, type), value,
-                                    dilution, props, type);
-
-                            if (type == assayResults.getRenderedCurveFitType())
+                            for (Integer cutoff : assayResults.getCutoffs())
                             {
-                                saveICValue(CURVE_IC_PREFIX + cutoff, value,
+                                double value = dilution.getCutoffDilution(cutoff / 100.0, type);
+                                saveICValue(getPropertyName(CURVE_IC_PREFIX, cutoff, type), value,
                                         dilution, props, type);
-                            }
-                        }
-                        // compute both normal and positive AUC values
-                        double auc = dilution.getAUC(type, StatsService.AUCType.NORMAL);
-                        if (!Double.isNaN(auc))
-                        {
-                            props.put(getPropertyName(AUC_PREFIX, type), auc);
-                            if (type == assayResults.getRenderedCurveFitType())
-                                props.put(AUC_PREFIX, auc);
-                        }
 
-                        double pAuc = dilution.getAUC(type, StatsService.AUCType.POSITIVE);
-                        if (!Double.isNaN(pAuc))
-                        {
-                            props.put(getPropertyName(pAUC_PREFIX, type), pAuc);
-                            if (type == assayResults.getRenderedCurveFitType())
-                                props.put(pAUC_PREFIX, pAuc);
+                                if (type == assayResults.getRenderedCurveFitType())
+                                {
+                                    saveICValue(CURVE_IC_PREFIX + cutoff, value,
+                                            dilution, props, type);
+                                }
+                            }
+                            // compute both normal and positive AUC values
+                            double auc = dilution.getAUC(type, StatsService.AUCType.NORMAL);
+                            if (!Double.isNaN(auc))
+                            {
+                                props.put(getPropertyName(AUC_PREFIX, type), auc);
+                                if (type == assayResults.getRenderedCurveFitType())
+                                    props.put(AUC_PREFIX, auc);
+                            }
+
+                            double pAuc = dilution.getAUC(type, StatsService.AUCType.POSITIVE);
+                            if (!Double.isNaN(pAuc))
+                            {
+                                props.put(getPropertyName(pAUC_PREFIX, type), pAuc);
+                                if (type == assayResults.getRenderedCurveFitType())
+                                    props.put(pAUC_PREFIX, pAuc);
+                            }
                         }
                     }
 
