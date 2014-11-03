@@ -232,6 +232,7 @@ public class VisualizationSourceQuery implements IVisualizationSourceQuery
             _pivotValue = pivotValue.toString();
             // Remember the alias that the client using to refer to this column
             _clientAlias = clientAlias;
+            setInNotNullSet(agg.isInNotNullSet());
         }
 
         @Override

@@ -65,8 +65,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
     private Map<String, VisualizationIntervalColumn> _intervals = new HashMap<>();
     private List<VisualizationSourceColumn> _groupBys = new ArrayList<>();
     private Set<VisualizationSourceColumn> _whereNotNulls = new LinkedHashSet<>();
+    private Set<VisualizationSourceColumn> _pivots = new LinkedHashSet<>();
     private Map<FieldKey, Set<String>> _allFilters = new LinkedHashMap<>();
-    Map<FieldKey, ColumnInfo> filterColTypes = new LinkedHashMap<>();
+    private Map<FieldKey, ColumnInfo> _filterColTypes = new LinkedHashMap<>();
 
     private ViewContext _viewContext;
     private VisualizationSourceColumn.Factory _columnFactory = new VisualizationSourceColumn.Factory();
@@ -166,6 +167,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     query.addAggregate((VisualizationAggregateColumn) measureCol);
                     VisualizationSourceColumn pivot = _columnFactory.create(getViewContext(), dimensionProperties);
                     query.setPivot(pivot);
+                    _pivots.add(pivot);
                 }
                 else
                 {
@@ -191,13 +193,20 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                             {
                                 FieldKey key = FieldKey.fromParts(measureCol.getAlias());
 
-                                if (!_allFilters.containsKey(key))
+                                // issue 21601: can't apply pivot query filters to outer query, they should be applied within the pivot query
+                                if (query.getPivot() != null)
                                 {
-                                    _allFilters.put(key, new LinkedHashSet<String>());
-                                    filterColTypes.put(key, measureCol.getColumnInfo());
+                                    query.addFilter(SimpleFilter.createFilterFromParameter(q));
                                 }
-
-                                _allFilters.get(key).add(q);
+                                else
+                                {
+                                    if (!_allFilters.containsKey(key))
+                                    {
+                                        _allFilters.put(key, new LinkedHashSet<String>());
+                                        _filterColTypes.put(key, measureCol.getColumnInfo());
+                                    }
+                                    _allFilters.get(key).add(q);
+                                }
                             }
                         }
                     }
@@ -630,6 +639,30 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         for (Map.Entry<String,Set<VisualizationSourceColumn>> entry : allAliases.entrySet())
         {
             Set<VisualizationSourceColumn> selectAliases = entry.getValue();
+
+            // issue 21601: if the pivot column is also requested as a measure, we don't want to select it in the masterSelectList
+            // but we do want to have each PivotSourceColumn added to the whereNotNulls set
+            if (!_pivots.isEmpty())
+            {
+                boolean isPivotCol = false;
+                for (VisualizationSourceColumn col : selectAliases)
+                {
+                    if (_pivots.contains(col))
+                    {
+                        isPivotCol = true;
+                        break;
+                    }
+
+                    if (col instanceof VisualizationSourceQuery.PivotSourceColumn && col.isInNotNullSet())
+                    {
+                        _whereNotNulls.add(col);
+                    }
+                }
+
+                if (isPivotCol)
+                    continue;
+            }
+
             String selectAlias;
             if (parentQuery != null)
                 selectAlias = parentQuery.getSelectListName(selectAliases);
@@ -736,9 +769,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
             }
         }
 
-        if (isOuterSelect && (!_whereNotNulls.isEmpty() || !_allFilters.isEmpty()))
+        if (isOuterSelect)
         {
-            sql.append(getWhereClause(_whereNotNulls, _allFilters, filterColTypes));
+            sql.append(getWhereClause());
         }
 
         if (includeOrderBys && !orderBys.isEmpty())
@@ -749,7 +782,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return sql.toString();
     }
 
-    private static String getOrderByClause(Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys, boolean hasRowLimit)
+    private String getOrderByClause(Map<VisualizationSourceColumn, IVisualizationSourceQuery> orderBys, boolean hasRowLimit)
     {
         if (orderBys.isEmpty())
         {
@@ -767,9 +800,9 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         return sql.toString();
     }
 
-    private static String getWhereClause(Set<VisualizationSourceColumn> whereNotNulls, Map<FieldKey, Set<String>> allFilters, Map<FieldKey, ColumnInfo> filterColTypes)
+    private String getWhereClause()
     {
-        if (whereNotNulls.isEmpty() && allFilters.isEmpty())
+        if (_whereNotNulls.isEmpty() && _allFilters.isEmpty())
         {
             return "";
         }
@@ -778,25 +811,25 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
         String outerSep = "";
         StringBuilder sql = new StringBuilder(" WHERE ");
 
-        if (!whereNotNulls.isEmpty())
+        if (!_whereNotNulls.isEmpty())
         {
             sql.append("(");
-            for (VisualizationSourceColumn notNull : whereNotNulls)
+            for (VisualizationSourceColumn notNull : _whereNotNulls)
             {
                 sql.append(sep).append(notNull.getSQLAlias());
-                sql.append(" IS NOT NULL\n");
-                sep = " OR ";
+                sql.append(" IS NOT NULL ");
+                sep = "\nOR ";
             }
             sql.append(")");
             outerSep = " AND ";
         }
 
-        if (!allFilters.isEmpty())
+        if (!_allFilters.isEmpty())
         {
             sep = "";
-            for (FieldKey key : allFilters.keySet())
+            for (FieldKey key : _allFilters.keySet())
             {
-                for (String queryString : allFilters.get(key))
+                for (String queryString : _allFilters.get(key))
                 {
                     String column = SimpleFilter.getColumnFromParameter(queryString);
                     if (null != column)
@@ -808,7 +841,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         {
                             for (SimpleFilter.FilterClause clause : keyFilter.getClauses())
                             {
-                                sql.append(outerSep).append(sep).append(" (").append(clause.getLabKeySQLWhereClause(filterColTypes)).append(") ");
+                                sql.append(outerSep).append(sep).append(" (").append(clause.getLabKeySQLWhereClause(_filterColTypes)).append(") ");
                                 outerSep = "";
                                 sep = " AND\n";
                             }
