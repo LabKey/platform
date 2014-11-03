@@ -139,7 +139,7 @@ public abstract class FreezerProCommandResonse
             {
                 String fieldName = String.valueOf(key);
                 if (FreezerProExport.exportField(fieldName))
-                    row.put(_export.translateFieldName(fieldName), node.get(key));
+                    row.put(translateFieldName(fieldName), node.get(key));
             }
             data.add(row);
             token = _parser.nextToken();
@@ -147,6 +147,11 @@ public abstract class FreezerProCommandResonse
             if (token == JsonToken.END_ARRAY)
                 break;
         }
+    }
+
+    protected String translateFieldName(String fieldName)
+    {
+        return _export.translateFieldName(fieldName);
     }
 
     public String getText()
