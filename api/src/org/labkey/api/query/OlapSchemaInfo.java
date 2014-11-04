@@ -16,6 +16,8 @@
 
 package org.labkey.api.query;
 
+import org.labkey.api.data.Container;
+
 /**
  * User: dax
  * Date: 2/24/2014
@@ -23,4 +25,5 @@ package org.labkey.api.query;
 public interface OlapSchemaInfo
 {
     String getQueryTag();
+    boolean shouldWarmCube(Container container);
 }
