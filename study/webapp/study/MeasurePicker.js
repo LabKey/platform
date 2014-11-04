@@ -1396,6 +1396,14 @@ Ext4.define('LABKEY.ext4.MeasuresDataView.SplitPanels', {
     },
 
     setSelectedRecord : function(measure) {
+        var sourceStore = this.getSourcesView().getStore();
+        var index = sourceStore.findBy(function(rec){
+            return rec.get('schemaName') == measure.get('schemaName') && rec.get('queryName') == measure.get('queryName');
+        });
+        if (index > -1) {
+            this.getSourcesView().getSelectionModel().select(sourceStore.getAt(index));
+        }
+
         this.getMeasuresGrid().getSelectionModel().select(measure);
     },
 
