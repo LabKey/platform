@@ -427,6 +427,13 @@ public class ServerManager
             if (null == sd)
                 return "Error: No cached descriptor found for " + configId + " in container " + c.getName();
 
+            if (!sd.shouldWarmCube(c))
+            {
+                result = "Skipping warm of " + cubeName + " in container " + c.getName();
+                LOG.info(result);
+                return result;
+            }
+
             User warmCubeUser;
             OlapConnection conn = null;
 

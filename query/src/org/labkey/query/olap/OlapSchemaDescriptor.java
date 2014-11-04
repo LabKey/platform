@@ -55,6 +55,7 @@ public abstract class OlapSchemaDescriptor
     final String _name;
     final String _queryTag;
     final ImplStrategy _strategy;
+    final OlapSchemaInfo _olapSchemaInfo;
 
     protected OlapSchemaDescriptor(@NotNull String id, @NotNull Module module)
     {
@@ -62,10 +63,9 @@ public abstract class OlapSchemaDescriptor
         _name = id.substring(id.indexOf("/")+1);
         _module = module;
 
-        // See if the module has any extra schema information about Olap queries.  Right now, we
-        // only look for module-specific query tags used for auditing.
-        OlapSchemaInfo olapSchemaInfo = module.getOlapSchemaInfo();
-        _queryTag = (olapSchemaInfo == null) ? "" : olapSchemaInfo.getQueryTag();
+        // See if the module has any extra schema information about Olap queries
+        _olapSchemaInfo = module.getOlapSchemaInfo();
+        _queryTag = (_olapSchemaInfo == null) ? "" : _olapSchemaInfo.getQueryTag();
 
         if (_name.equalsIgnoreCase("Argos"))
             _strategy = ImplStrategy.mondrian;
@@ -138,6 +138,17 @@ public abstract class OlapSchemaDescriptor
         if (null == catalog)
             return new ModuleOlapSchemaDescriptor.EmptyNamedList();
         return catalog.getSchemas();
+    }
+
+    public boolean shouldWarmCube(Container c)
+    {
+        // Give the module a chance to respectfully decline the cube warming operation
+        // without throwing an error.  This may happen in Argos, for example, if we are trying to
+        // warm the cube in a Portal Selection container
+        if (_olapSchemaInfo != null)
+            return _olapSchemaInfo.shouldWarmCube(c);
+
+        return true;
     }
 
     class EmptyNamedList<T extends Named> extends NamedListImpl<T>
