@@ -22,6 +22,7 @@ import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.openxml4j.exceptions.InvalidOperationException;
 import org.apache.poi.openxml4j.opc.OPCPackage;
 import org.apache.poi.openxml4j.opc.PackageAccess;
+import org.apache.poi.ss.formula.eval.NotImplementedException;
 import org.apache.poi.ss.usermodel.BuiltinFormats;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.DataFormatter;
@@ -234,7 +235,14 @@ public class ExcelLoader extends DataLoader
             }
         }
 
-        return getFirstNLinesXLS(n);
+        try
+        {
+            return getFirstNLinesXLS(n);
+        }
+        catch (NotImplementedException e)
+        {
+            throw new IOException("Unable to open Excel file: " + (e.getMessage() == null ? "No specific error information available" : e.getMessage()), e);
+        }
     }
 
 
