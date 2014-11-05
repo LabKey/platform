@@ -24,6 +24,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.view.template.PageConfig;
 import org.springframework.web.servlet.ModelAndView;
@@ -181,9 +182,15 @@ public abstract class ExportScriptModel
 
     public static ModelAndView getExportScriptView(QueryView queryView, String scriptType, PageConfig pageConfig, HttpServletResponse response)
     {
+        if (scriptType == null)
+            throw new IllegalArgumentException("You must pass a value for the 'scriptType' parameter!");
+
         pageConfig.setTemplate(PageConfig.Template.None);
         response.setContentType("text/plain");
         ExportScriptFactory factory = QueryView.getExportScriptFactory(scriptType);
+        if (factory == null)
+            throw new NotFoundException("Export script type not found: " + scriptType);
+
         WebPartView scriptView = new JspView<>("/org/labkey/api/query/createExportScript.jsp", factory.getModel(queryView));
         scriptView.setFrame(WebPartView.FrameType.NOT_HTML);
 
