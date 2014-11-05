@@ -104,7 +104,13 @@ public class TidyUtil
         StringWriter err = new StringWriter();
 
         tidy.setErrout(new PrintWriter(err));
-        tidy.parse(is, os);
+        try {
+            tidy.parse(is, os);
+        }
+        catch (NullPointerException e)
+        {
+            errors.add("Tidy failed to parse html. Check that all html tags are valid and not malformed.");
+        }
         tidy.getErrout().close();
 
         collectErrors(err, errors);
