@@ -1073,6 +1073,9 @@ public class ParticipantGroupController extends BaseStudyController
         {
             ApiSimpleResponse resp = new ApiSimpleResponse();
             ParticipantGroup group = ParticipantGroupManager.getInstance().getParticipantGroupFromGroupRowId(getContainer(), getUser(), form.getRowId());
+            if (group == null)
+                throw new NotFoundException("The specified group does not exist, it may have already been deleted: " + form.getRowId());
+
             ParticipantGroupManager.getInstance().deleteParticipantGroup(getContainer(), getUser(), group);
             return resp;
         }
