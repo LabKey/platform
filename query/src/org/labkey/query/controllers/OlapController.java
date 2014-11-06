@@ -1120,41 +1120,6 @@ public class OlapController extends SpringActionController
         return list;
     }
 
-
-    /*
-     * TESTS
-     */
-
-    @RequiresSiteAdmin
-    @Action(ActionType.SelectData)
-    public class TestCDS extends SimpleViewAction
-    {
-        @Override
-        public ModelAndView getView(Object o, BindException errors) throws Exception
-        {
-            String m = null;
-            try
-            {
-                new QubeQuery.TestCase().parseTest(getContainer(), getUser());
-                m = "FINISHED";
-            }
-            catch (Exception x)
-            {
-                m = StringUtils.defaultString(x.getMessage(),x.toString());
-                _log.error("test failed", x);
-            }
-
-            return new HtmlView(PageFlowUtil.filter(m));
-        }
-
-        @Override
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root;
-        }
-    }
-
-
     // TODO: Move all this app stuff somewhere else out of olap land
     //
     // AppContext actions

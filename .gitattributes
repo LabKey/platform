@@ -2741,7 +2741,6 @@ query/webapp/query/delete.gif -text
 query/webapp/query/movedown.gif -text
 query/webapp/query/moveup.gif -text
 query/webapp/query/olap.js -text
-query/webapp/query/olap_junit.js -text
 query/webapp/query/query.png -text
 query/webapp/query/queryDesigner.js -text
 query/webapp/query/sql.gif -text

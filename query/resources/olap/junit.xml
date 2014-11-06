@@ -1,4 +1,4 @@
-<Schema name="query" description="HIV Collaborative Dataspace">
+<Schema name="query" description="JUnit Cube Schema">
 
 
     <Cube name="JunitCube" visible="true" defaultMeasure="RowCount" cache="true" enabled="true">
