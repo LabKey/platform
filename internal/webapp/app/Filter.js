@@ -271,10 +271,10 @@ Ext.define('LABKEY.app.model.Filter', {
          * @param  onUpdateFailure - called if the function fails
          * @param  grpData
          */
-        doParticipantUpdate : function(mdx, onUpdateSuccess, onUpdateFaiure, grpData, subjectName) {
+        doParticipantUpdate : function(mdx, successFn, failureFn, grpData, subjectName) {
             var m = LABKEY.app.model.Filter;
             mdx.queryParticipantList({
-                filter : m.getOlapFilters(m.fromJSON(grpData.filters), subjectName),
+                filter : m.getOlapFilters(mdx, m.fromJSON(grpData.filters), subjectName),
                 group : grpData,
                 success : function (cs, mdx, config) {
                     var group = config.group;
@@ -283,8 +283,13 @@ Ext.define('LABKEY.app.model.Filter', {
                         rowId : group.rowId,
                         participantIds : ids,
                         success : function(group, response) {
-                            if (onUpdateSuccess)
-                                onUpdateSuccess.call(this, group);
+                            if (Ext.isFunction(successFn))
+                                successFn.call(this, group);
+                        },
+                        failure : function() {
+                            if (Ext.isFunction(failureFn)) {
+                                failureFn.apply(this, arguments);
+                            }
                         }
                     });
                 }
