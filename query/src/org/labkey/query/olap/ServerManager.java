@@ -223,7 +223,11 @@ public class ServerManager
         List<OlapSchemaDescriptor> ret = new ArrayList<>();
 
         // look for descriptor in active modules
-        ret.addAll(MODULE_DESCRIPTOR_CACHE.getResources(c));
+        for (OlapSchemaDescriptor osd : MODULE_DESCRIPTOR_CACHE.getResources(c))
+        {
+            if (osd.isExposed(c))
+                ret.add(osd);
+        }
 
         // TODO: add list of all olap descriptors in the container to the cache
         //List<OlapSchemaDescriptor> descriptors = DB_SCHEMA_DESCRIPTOR_CACHE.get(c.getId());

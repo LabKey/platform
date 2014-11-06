@@ -81,9 +81,13 @@ public class OlapSchemaCacheHandler implements ModuleResourceCacheHandler<String
             Resource config  = module.getModuleResolver().lookup(configPath);
 
             if (config != null && config.isFile())
+            {
+                if (configName.contains("junit"))
+                    return new JunitOlapSchemaDescriptor(configId, module, config);
                 return new ModuleOlapSchemaDescriptor(configId, module, config);
-            else
-                return null;
+            }
+
+            return null;
         }
     };
 

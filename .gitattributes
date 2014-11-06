@@ -2549,6 +2549,7 @@ query/src/org/labkey/query/jdbc/QueryStatement.java -text
 query/src/org/labkey/query/metadata/MetadataServiceImpl.java -text
 query/src/org/labkey/query/olap/BitSetQueryImpl.java -text
 query/src/org/labkey/query/olap/CustomOlapSchemaDescriptor.java -text
+query/src/org/labkey/query/olap/JunitOlapSchemaDescriptor.java -text
 query/src/org/labkey/query/olap/MdxQueryImpl.java -text
 query/src/org/labkey/query/olap/MemberSet.java -text
 query/src/org/labkey/query/olap/ModuleOlapSchemaDescriptor.java -text

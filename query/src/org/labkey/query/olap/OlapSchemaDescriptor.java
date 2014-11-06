@@ -120,6 +120,14 @@ public abstract class OlapSchemaDescriptor
         return null;
     }
 
+    /**
+     * Schema descriptors can choose to expose themselves in a specific container
+     */
+    public boolean isExposed(Container container)
+    {
+        return true;
+    }
+
     public String toString()
     {
         return _id;
