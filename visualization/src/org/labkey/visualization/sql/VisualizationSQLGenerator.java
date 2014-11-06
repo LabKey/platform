@@ -179,39 +179,6 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         query.setSkipVisitJoin((Boolean) measureProperties.get("isDemographic"));
                 }
 
-                Object filterArray = measureInfo.get("filterArray");
-                if (null != filterArray)
-                {
-                    JSONArray filters = ((JSONArray) filterArray);
-                    for (int i = 0; i < filters.length(); i++)
-                    {
-                        String q = (String) filters.get(i);
-                        if (null != q)
-                        {
-                            SimpleFilter filter = SimpleFilter.createFilterFromParameter(q);
-                            if (filter != null)
-                            {
-                                FieldKey key = FieldKey.fromParts(measureCol.getAlias());
-
-                                // issue 21601: can't apply pivot query filters to outer query, they should be applied within the pivot query
-                                if (query.getPivot() != null)
-                                {
-                                    query.addFilter(SimpleFilter.createFilterFromParameter(q));
-                                }
-                                else
-                                {
-                                    if (!_allFilters.containsKey(key))
-                                    {
-                                        _allFilters.put(key, new LinkedHashSet<String>());
-                                        _filterColTypes.put(key, measureCol.getColumnInfo());
-                                    }
-                                    _allFilters.get(key).add(q);
-                                }
-                            }
-                        }
-                    }
-                }
-
                 Object timeAxis = measureInfo.get("time");
                 VisualizationProvider.ChartType type;
                 if (timeAxis instanceof String)
@@ -227,6 +194,7 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     throw new IllegalArgumentException("Only time charts are currently supported: expected 'time' property on each measure.");
 
                 VisualizationProvider provider = ensureVisualizationProvider(query.getSchemaName(), type);
+                VisualizationIntervalColumn newInterval = null;
                 switch (type)
                 {
                     case TIME_DATEBASED:
@@ -236,7 +204,6 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         {
                             String interval = (String) dateOptions.get("interval");
                             interval = normalizeInterval(interval);
-                            VisualizationIntervalColumn newInterval;
 
                             Map<String, Object> dateProperties = (Map<String, Object>) dateOptions.get("dateCol");
                             Map<String, Object> zeroDateProperties = (Map<String, Object>) dateOptions.get("zeroDateCol");
@@ -303,6 +270,39 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                     case TIME_VISITBASED:
                         // No special handling needed for visit-based charts
                         break;
+                }
+
+                Object filterArray = measureInfo.get("filterArray");
+                if (null != filterArray)
+                {
+                    JSONArray filters = ((JSONArray) filterArray);
+                    for (int i = 0; i < filters.length(); i++)
+                    {
+                        String q = (String) filters.get(i);
+                        if (null != q)
+                        {
+                            SimpleFilter filter = SimpleFilter.createFilterFromParameter(q);
+                            if (filter != null)
+                            {
+                                FieldKey key = FieldKey.fromParts(newInterval != null ? newInterval.getFullAlias() : measureCol.getAlias());
+
+                                // issue 21601: can't apply pivot query filters to outer query, they should be applied within the pivot query
+                                if (query.getPivot() != null)
+                                {
+                                    query.addFilter(SimpleFilter.createFilterFromParameter(q));
+                                }
+                                else
+                                {
+                                    if (!_allFilters.containsKey(key))
+                                    {
+                                        _allFilters.put(key, new LinkedHashSet<String>());
+                                        _filterColTypes.put(key, measureCol.getColumnInfo());
+                                    }
+                                    _allFilters.get(key).add(q);
+                                }
+                            }
+                        }
+                    }
                 }
 
                 provider.addExtraSelectColumns(_columnFactory, query);
@@ -841,7 +841,15 @@ public class VisualizationSQLGenerator implements CustomApiForm, HasViewContext
                         {
                             for (SimpleFilter.FilterClause clause : keyFilter.getClauses())
                             {
-                                sql.append(outerSep).append(sep).append(" (").append(clause.getLabKeySQLWhereClause(_filterColTypes)).append(") ");
+                                String clauseStr = clause.getLabKeySQLWhereClause(_filterColTypes);
+                                if (_intervals.containsKey(key.toString()))
+                                {
+                                    // issue 21852: replace the interval key with the calculation
+                                    VisualizationIntervalColumn intervalCol = _intervals.get(key.toString());
+                                    clauseStr = clauseStr.replace("\"" + key.toString() + "\"", "(" + intervalCol.getSQL() + ")");
+                                }
+
+                                sql.append(outerSep).append(sep).append(" (").append(clauseStr).append(") ");
                                 outerSep = "";
                                 sep = " AND\n";
                             }
