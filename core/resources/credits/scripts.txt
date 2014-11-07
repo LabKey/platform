@@ -3,6 +3,7 @@ Library|Version|Source|License|LabKey Dev|Purpose
 CodeMirror|4.20|{link:codemirror.net|http://www.codemirror.net}|{link:MIT|http://www.codemirror.net/LICENSE}|klum|browser based code editor
 Crystal Project icons||{link:everaldo.com|http://www.everaldo.com/crystal/}|{link:LGPL|http://www.everaldo.com/crystal/?action=license}|matthewb|document, action, and other icons
 d3|3.3.9|{link:d3js.org|http://d3js.org/}|{link:Michael Bostock|https://github.com/mbostock/d3/blob/master/LICENSE}|alanv|A JavaScript visualization library for HTML and SVG.
+d3pie|0.1.3|{link:d3pie|https://github.com/benkeen/d3pie}|{link:MIT|https://github.com/benkeen/d3pie/blob/master/LICENSE}|cnathe|Data visualization script built on d3.js for pie charts
 doT.js|1.0.1|{link:github.com/olado/doT|https://github.com/olado/doT}|{link:MIT|https://github.com/olado/doT/blob/master/LICENSE-DOT.txt}|kevink|A small, fast JavaScript templating library used by the MiniProfiler.
 Ext JS|3.4|{link:Ext JS|http://www.sencha.com/products/extjs/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS Exception|http://www.sencha.com/legal/open-source-faq/open-source-license-exception-for-applications/}|nicka|Ajax Support, Various UI widgets
 Ext JS|4.2.1|{link:Ext JS|http://www.sencha.com/products/extjs/}|{link:GPL v3|http://www.gnu.org/licenses/gpl.html} with {link:Ext FLOSS Exception|http://www.sencha.com/legal/open-source-faq/open-source-license-exception-for-applications/}|nicka|Ajax Support, Various UI widgets
