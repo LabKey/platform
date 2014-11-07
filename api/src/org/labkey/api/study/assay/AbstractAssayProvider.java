@@ -321,7 +321,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
     public String getProtocolPattern()
     {
-        return "%:" + _protocolLSIDPrefix + ".%";
+        return "%:" + Lsid.encodePart(_protocolLSIDPrefix).replace("%", "\\%") + ".%";
     }
 
     @NotNull

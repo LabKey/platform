@@ -130,6 +130,12 @@ abstract public class QueryService
     abstract public List<CustomView> getSharedCustomViews(@NotNull User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited);
     abstract public CustomView getSharedCustomView(@NotNull User user, Container container, String schema, String query, String name);
 
+    /**
+     * Returns custom views stored in the database (not module custom views) that meet the criteria. This is not appropriate
+     * for UI operations (see getCustomViews() for that), but it's important for query change listeners. See #21641 and #21862.
+     */
+    abstract public List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly);
+
     abstract public int importCustomViews(User user, Container container, VirtualFile viewDir) throws XmlValidationException, IOException;
 
     /**

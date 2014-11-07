@@ -399,16 +399,6 @@ public abstract class DataLoader implements Iterable<Map<String, Object>>, Loade
                 ExceptionUtil.decorateException(e, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
                 throw e;
             }
-
-            // Propagate propertyURI into the ColumnDescription if we can find it, see issue 21680
-            if (colDesc.propertyURI == null)
-            {
-                ColumnInfo columnInfo = _columnInfoMap.get(colDesc.getColumnName());
-                if (columnInfo != null)
-                {
-                    colDesc.propertyURI = columnInfo.getPropertyURI();
-                }
-            }
         }
 
         _columns = colDescs;
