@@ -515,6 +515,44 @@ public class QueryServiceImpl extends QueryService
         return new ArrayList<>(views);
     }
 
+    public List<CustomView> getDatabaseCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean sharedOnly)
+    {
+        if (schemaName == null || queryName == null)
+        {
+            List<CustomView> result = new ArrayList<>();
+            Map<String, UserSchema> schemas = new HashMap<>();
+            Map<Pair<String, String>, QueryDefinition> queryDefs = new HashMap<>();
+
+            for (CstmView cstmView : QueryManager.get().getAllCstmViews(container, schemaName, queryName, owner, includeInherited, sharedOnly))
+            {
+                Pair<String, String> key = new Pair<>(cstmView.getSchema(), cstmView.getQueryName());
+                QueryDefinition queryDef = queryDefs.get(key);
+                if (queryDef == null)
+                {
+                    UserSchema schema = schemas.get(schemaName);
+                    if (schema == null)
+                    {
+                        schema = getUserSchema(user, container, cstmView.getSchema());
+                        schemas.put(cstmView.getSchema(), schema);
+                    }
+                    if (schema != null)
+                    {
+                        queryDef = schema.getQueryDefForTable(cstmView.getQueryName());
+                        queryDefs.put(key, queryDef);
+                    }
+                }
+
+                if (queryDef != null)
+                {
+                    result.add(new CustomViewImpl(queryDef, cstmView));
+                }
+            }
+            return result;
+        }
+
+        return new ArrayList<>(getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values());
+    }
+
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)
     {
         Collection<Module> modules = container.getActiveModules();

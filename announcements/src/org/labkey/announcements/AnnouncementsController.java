@@ -54,7 +54,6 @@ import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.BeanViewForm;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.ColumnInfo;
-import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DataRegion;
@@ -2290,9 +2289,6 @@ public class AnnouncementsController extends SpringActionController
         {
             if (settings.hasExpires())
                 filter.addWhereClause("Expires IS NULL OR Expires > ?", new Object[]{new Date(System.currentTimeMillis() - DateUtils.MILLIS_PER_DAY)});
-
-            if (settings.hasStatus())
-                filter.addCondition(FieldKey.fromParts("Status"), DiscussionService.CLOSED, CompareType.NEQ_OR_NULL);
         }
 
         return filter;
@@ -2311,13 +2307,6 @@ public class AnnouncementsController extends SpringActionController
             if (settings.hasExpires())
             {
                 sb.append("recent");
-                separator = ", ";
-            }
-
-            if (settings.hasStatus())
-            {
-                sb.append(separator);
-                sb.append("open");
                 separator = ", ";
             }
         }

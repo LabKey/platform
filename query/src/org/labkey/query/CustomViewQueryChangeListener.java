@@ -164,9 +164,12 @@ public class CustomViewQueryChangeListener implements QueryChangeListener
             queryNameChangeMap.put((String)qpc.getOldValue(), (String)qpc.getNewValue());
         }
 
-        for (CustomView customView : QueryService.get().getCustomViews(user, container, null, schemaKey.toString(), null, false))
+        List<CustomView> databaseCustomViews = QueryService.get().getDatabaseCustomViews(user, container, null, schemaKey.toString(), null, false, false);
+
+        for (CustomView customView : databaseCustomViews)
         {
-            try {
+            try
+            {
                 boolean hasUpdates = false;
 
                 // update queryName (stored in query.CustomView)

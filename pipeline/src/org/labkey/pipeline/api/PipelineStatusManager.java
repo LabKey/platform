@@ -498,7 +498,8 @@ public class PipelineStatusManager
 
     public static void completeStatus(User user, int... rowIds) throws PipelineProvider.HandlerException
     {
-        try (DbScope.Transaction transaction = PipelineSchema.getInstance().getSchema().getScope().ensureTransaction() )
+        // Make entire transaction use the PipelineStatus connection, since Exp.Data/Exp.ExperimentRun are tied to Pipeline.StatusFiles
+        try (DbScope.Transaction transaction = PipelineSchema.getInstance().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
         {
             for (int rowId : rowIds)
             {
@@ -536,7 +537,8 @@ public class PipelineStatusManager
 
     public static void deleteStatus(ViewBackgroundInfo info, boolean deleteExpRuns, int... rowIds) throws PipelineProvider.HandlerException
     {
-        try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction())
+        // Make entire transaction use the PipelineStatus connection, since Exp.Data/Exp.ExperimentRun are tied to Pipeline.StatusFiles
+        try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
         {
             Set<Integer> ids = new HashSet<>(rowIds.length);
             for (int rowId : rowIds)
@@ -647,13 +649,7 @@ public class PipelineStatusManager
                 new SqlExecutor(ExperimentService.get().getSchema()).execute(expSql);
             }
 
-            int rowCount = 0;
-            try (DbScope.Transaction transaction = getTableInfo().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
-            {
-                // Use separate transaction/connection for TableInfoStatusFiles
-                rowCount = new SqlExecutor(_schema.getSchema()).execute(sql);
-                transaction.commit();
-            }
+            int rowCount = new SqlExecutor(_schema.getSchema()).execute(sql);
 
             // If we deleted anything, try recursing since we may have deleted all the child jobs which would
             // allow a parent job to be deleted
