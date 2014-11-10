@@ -91,15 +91,15 @@ LABKEY.vis.Geom.XY.prototype.getY = function(row){
  *      This geom supports the use of size, color, shape, hoverText, and pointClickFn aesthetics from the
  *      {@link LABKEY.vis.Layer} and/or {@link LABKEY.vis.Plot} objects.
  * @param {Object} config An object with the following properties:
- * @param {String} [config.color] Optional. String used to determine the color of all points. Defaults to black (#000000).
- * @param {Number} [config.size] Optional. Number used to determine the size of all points.  Defaults to 5.
- * @param {Number} [config.opacity] Optional. Number between 0 and 1, used to determine the opacity of all points. Useful if
+ * @param {String} [config.color] (Optional) String used to determine the color of all points. Defaults to black (#000000).
+ * @param {Number} [config.size] (Optional) Number used to determine the size of all points.  Defaults to 5.
+ * @param {Number} [config.opacity] (Optional) Number between 0 and 1, used to determine the opacity of all points. Useful if
  *      there are overlapping points in the data. Defaults to 1.
- * @param {Boolean} [config.plotNullPoints] Optional. Used to toggle whether or not a row of data with the value of null will be
+ * @param {Boolean} [config.plotNullPoints] (Optional) Used to toggle whether or not a row of data with the value of null will be
  *      plotted. If true null or undefined values will be plotted just outside the axis with data. For example if a
  *      row of data looks like {x: 50, y: null} the point would appear at 50 on the x-axis, and just below the x axis.
  *      If both x and y values are null the point will be drawn to the bottom left of the origin. Defaults to false.
- * @param {String} [config.position] Optional. String with possible value "jitter". If config.position is "jitter" and the
+ * @param {String} [config.position] (Optional) String with possible value "jitter". If config.position is "jitter" and the
  *      x or y scale is discrete it will be moved just before or after the position on the grid by a random amount.
  *      Useful if there is overlapping data. Defaults to undefined.
  */
@@ -177,9 +177,9 @@ LABKEY.vis.Geom.Bin.prototype.render = function(renderer, grid, scales, data, la
  * function: function(row){return row.name}. Each unique name would get a separate line. The geom also supports color
  * and size aesthetics from the {LABKEY.vis.Plot} and/or {LABKEY.vis.Layer} objects.
  * @param {Object} config An object with the following properties:
- * @param {String} [config.color] Optional. String used to determine the color of all paths. Defaults to black (#000000).
- * @param {Number} [config.size] Optional. Number used to determine the size of all paths.  Defaults to 3.
- * @param {Number} [config.opacity]. Optional. Number between 0 and 1, used to determine the opacity of all paths. Useful
+ * @param {String} [config.color] (Optional) String used to determine the color of all paths. Defaults to black (#000000).
+ * @param {Number} [config.size] (Optional) Number used to determine the size of all paths.  Defaults to 3.
+ * @param {Number} [config.opacity] (Optional) Number between 0 and 1, used to determine the opacity of all paths. Useful
  *      if there are many overlapping paths. Defaults to 1.
  */
 LABKEY.vis.Geom.Path = function(config){
@@ -215,8 +215,8 @@ LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, l
  * in the config.aes object of the {LABKEY.vis.Plot} or {LABKEY.vis.Layer} object. This Geom also supports the color
  * aesthetic from the {LABKEY.vis.Plot} and/or {LABKEY.vis.Layer} objects.
  * @param config An object with the following properties:
- * @param {String} [config.color] Optional. String used to determine the color of all paths. Defaults to black (#000000).
- * @param {Number} [config.size] Optional. Number used to determine the size of all paths.  Defaults to 2.
+ * @param {String} [config.color] (Optional) String used to determine the color of all paths. Defaults to black (#000000).
+ * @param {Number} [config.size] (Optional) Number used to determine the size of all paths.  Defaults to 2.
  */
 LABKEY.vis.Geom.ErrorBar = function(config){
     this.type = "ErrorBar";
@@ -266,22 +266,22 @@ LABKEY.vis.Geom.ErrorBar.prototype.render = function(renderer, grid, scales, dat
  * </ul>
  *
  * @param {Object} config An object with the following properties:
- * @param {String} [config.color] Optional. A string value used for the line colors in the box plot. Defaults to black
+ * @param {String} [config.color] (Optional) A string value used for the line colors in the box plot. Defaults to black
  *      (#000000)
- * @param {String} [config.fill] Optional. A string value used for the fill color in the box plot. Defaults to white
+ * @param {String} [config.fill] (Optional) A string value used for the fill color in the box plot. Defaults to white
  *      (#ffffff)
- * @param {Number} [config.lineWidth] Optional. A used to set the width of the lines used in the box plot. Defaults to 1.
- * @param {Number} [config.opacity] Optional. A number between 0 and 1 used to set the opacity of the box plot. Defaults
+ * @param {Number} [config.lineWidth] (Optional) A used to set the width of the lines used in the box plot. Defaults to 1.
+ * @param {Number} [config.opacity] (Optional) A number between 0 and 1 used to set the opacity of the box plot. Defaults
  *      to 1.
- * @param {String} [config.position] Optional. A string used to determine how to position the outliers. Currently the
+ * @param {String} [config.position] (Optional) A string used to determine how to position the outliers. Currently the
  *      only possible value is "jitter", which will move the points to the left or right of the center of the box plot by
  *      a random amount. Defaults to undefined.
- * @param {Boolean} [config.showOutliers] Optional. Used to toggle whether or not outliers are rendered. Defaults to true.
- * @param {String} [config.outlierFill] Optional. A string value used to set the fill color of the outliers. Defaults
+ * @param {Boolean} [config.showOutliers] (Optional) Used to toggle whether or not outliers are rendered. Defaults to true.
+ * @param {String} [config.outlierFill] (Optional) A string value used to set the fill color of the outliers. Defaults
  *      to black (#000000).
- * @param {Number} [config.outlierOpacity] Optional. A number between 0 and 1 used to set the opacity of the outliers.
+ * @param {Number} [config.outlierOpacity] (Optional) A number between 0 and 1 used to set the opacity of the outliers.
  *      Defaults to 1.
- * @param {Number} [config.outlierSize] Optional. A used to set the size of outliers. Defaults to 3.
+ * @param {Number} [config.outlierSize] (Optional) A used to set the size of outliers. Defaults to 3.
  */
 LABKEY.vis.Geom.Boxplot = function(config){
     this.type = "Boxplot";
@@ -364,12 +364,17 @@ LABKEY.vis.Geom.DataspaceBoxPlot.prototype.render = function(renderer, grid, sca
 };
 
 /**
- * @class Bar plot geom
+ * @class Bar plot geom, used to generate bar plots for a given set of data.
  * @param config An object with the following properties:
- * @param {String} [config.color] Optional. A string value used for the line colors in the bar plot. Defaults to black (#000000)
- * @param {String} [config.fill] Optional. A string value used for the fill color in the bar plot. Defaults to white (#ffffff)
- * @param {Number} [config.lineWidth] Optional. A used to set the width of the lines used in the bar plot. Defaults to 1.
- * @param {Number} [config.opacity] Optional. A number between 0 and 1 used to set the opacity of the bar plot. Defaults to 1.
+ * @param {String} [config.color] (Optional) A string value used for the line colors in the bar plot. Defaults to black (#000000)
+ * @param {String} [config.fill] (Optional) A string value used for the fill color in the bar plot. Defaults to white (#ffffff)
+ * @param {Number} [config.lineWidth] (Optional) A used to set the width of the lines used in the bar plot. Defaults to 1.
+ * @param {Number} [config.opacity] (Optional) A number between 0 and 1 used to set the opacity of the bar plot. Defaults to 1.
+ * @param {Boolean} [config.showCumulativeTotals] (Optional) True to show cumulative totals next to the individual bars.
+ * @param {String} [config.colorTotal] (Optional) A string value used for the line colors in the cumulative bar plot. Defaults to black (#000000)
+ * @param {String} [config.fillTotal] (Optional) A string value used for the fill color in the cumulative bar plot. Defaults to black (#000000)
+ * @param {Number} [config.lineWidthTotal] (Optional) A used to set the width of the lines used in the cumulative bar plot. Defaults to 1.
+ * @param {Number} [config.opacityTotal] (Optional) A number between 0 and 1 used to set the opacity of the cumulative bar plot. Defaults to 1.
  */
 LABKEY.vis.Geom.BarPlot = function(config){
     this.type = "Barplot";

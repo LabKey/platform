@@ -718,7 +718,7 @@ var barChart = new LABKEY.vis.Plot({
     },
     layers : [
         new LABKEY.vis.Layer({
-            geom: new LABKEY.vis.Geom.BarPlot()
+            geom: new LABKEY.vis.Geom.BarPlot({})
         }),
         new LABKEY.vis.Layer({
             geom: new LABKEY.vis.Geom.Path({size: 3, color: 'steelblue'}),
@@ -755,6 +755,127 @@ var barChart2 = new LABKEY.vis.BarPlot({
     },
     xAes: function(row){return row['age']},
     data: barPlotData
+});
+
+
+var pieChart = new LABKEY.vis.PieChart({
+    renderTo: "pie",
+    data: pieChartData,
+    width: 300,
+    height: 250
+});
+
+var pieChart2 = new LABKEY.vis.PieChart({
+    renderTo: "pie2",
+    data: pieChartData,
+    width: 300,
+    height: 250,
+    // d3pie lib config properties
+    header: {
+        title: {
+            text: 'Pie Chart Example'
+        },
+        subtitle: {
+            text: 'using the d3pie lib',
+            color: 'gray'
+        },
+        titleSubtitlePadding: 1
+    },
+    labels: {
+        outer: {
+            format: 'label-value2',
+            pieDistance: 15
+        },
+        inner: {
+            hideWhenLessThanPercentage: 10
+        },
+        lines: {
+            style: 'straight',
+            color: 'black'
+        }
+    },
+    effects: {
+        load: {
+            speed: 2000
+        },
+        pullOutSegmentOnClick: {
+            effect: 'linear',
+            speed: '1000'
+        },
+        highlightLuminosity: -0.75
+    },
+    misc: {
+        colors: {
+            segments: LABKEY.vis.Scale.DarkColorDiscrete(),
+            segmentStroke: '#a1a1a1'
+        },
+        gradient: {
+            enabled: true,
+            percentage: 60
+        }
+    },
+    callbacks: {
+        onload: function() {
+            pieChart2.openSegment(3);
+        }
+    }
+});
+
+var pieChart3 = new LABKEY.vis.PieChart({
+    renderTo: "pie3",
+    width: 300,
+    height: 250,
+    // d3pie lib config properties
+    header: {
+        title: {
+            text: 'Center Title'
+        },
+        location: 'pie-center'
+    },
+    footer: {
+        text: 'Pie chart footer example',
+        color: 'steelblue',
+        fontSize: 10,
+        location: 'bottom-left'
+    },
+    size: {
+        pieInnerRadius: '85%'
+    },
+    data: {
+        content: pieChartData,
+        sortOrder: 'value-desc'
+    },
+    labels: {
+        outer: {
+            pieDistance: 4
+        },
+        inner: {
+            format: 'none'
+        },
+        lines: {
+            enabled: false
+        }
+    },
+    effects: {
+        load: {
+            effect: 'none'
+        },
+        pullOutSegmentOnClick: {
+            effect: 'none'
+        },
+        highlightLuminosity: 0.99
+    },
+    misc: {
+        colors: {
+            segments: LABKEY.vis.Scale.ColorDiscrete(),
+            segmentStroke: 'black'
+        }
+    },
+    callbacks: {
+        onClickSegment: function(info) {
+            alert('Pie info: label = ' + info.data.label + ", value = " + info.data.value + ", index = " + info.index);
+        }
+    }
 });
 
 var renderStats = function(){

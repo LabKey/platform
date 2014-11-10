@@ -8,6 +8,7 @@
     <script type="text/javascript" src="../lib/raphael-min-2.1.0.js"></script>
     <script type="text/javascript" src="../lib/hexbin.min.js"></script>
     <script type="text/javascript" src="../lib/sqbin.min.js"></script>
+    <script type="text/javascript" src="../lib/d3pie.min.js"></script>
     <style type="text/css">
         .example {
             width: 900px;
@@ -20,6 +21,12 @@
             padding: 0 10px 0 10px;
             width: 880px;
             vertical-align:text-top;
+        }
+
+        svg .p1_segmentMainLabel-outer, svg .p2_segmentMainLabel-outer,
+        svg .p1_segmentPercentage-inner, svg .p2_segmentPercentage-inner,
+        svg .p1_arc, svg .p2_arc {
+            cursor: pointer;
         }
     </style>
 </head>
@@ -67,7 +74,12 @@
 <div class="example" id="bar2">
 </div>
 
-<div class="example" id="bin">
+<div class="example">
+    <table><tr>
+        <td><div id="pie"></div></td>
+        <td><div id="pie2"></div></td>
+        <td><div id="pie3"></div></td>
+    </tr></table>
 </div>
 
 <div class="example" id="stats">

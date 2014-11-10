@@ -28,12 +28,12 @@
  *      legend, and labels.
  * @param {Number} config.height The plot height in pixels. This is the height of the entire plot, including margins and
  *      labels.
- * @param {Array} [config.data] Optional. The array of data used while rendering the plot. This array will be used in
+ * @param {Array} [config.data] (Optional) The array of data used while rendering the plot. This array will be used in
  *      layers that do not have any data specified. <em>Note:</em> While config.data is optional, if it is not present
  *      in the Plot object it must be defined within each {@link LABKEY.vis.Layer}. Data must be array based, with each
  *      row of data being an item in the array. The format of each row does not matter, you define how the data is
  *      accessed within the <strong>config.aes</strong> object.
- * @param {Object} [config.aes] Optional. An object containing all of the requested aesthetic mappings. Like
+ * @param {Object} [config.aes] (Optional) An object containing all of the requested aesthetic mappings. Like
  *      <em>config.data</em>, config.aes is optional at the plot level because it can be defined at the layer level as
  *      well, however, if config.aes is not present at the plot level it must be defined within each
  *      {@link LABKEY.vis.Layer}}. The aesthetic mappings required depend entirely on the {@link LABKEY.vis.Geom}s being
@@ -41,7 +41,7 @@
  *      <em><strong>config.aes.y</strong> (or alternatively yLeft or yRight)</em>. To find out the available aesthetic
  *      mappings for your plot, please see the documentation for each Geom you are using.
  * @param {Array} config.layers An array of {@link LABKEY.vis.Layer} objects.
- * @param {Object} [config.scales] Optional. An object that describes the scales needed for each axis or dimension. If
+ * @param {Object} [config.scales] (Optional) An object that describes the scales needed for each axis or dimension. If
  *      not defined by the user we do our best to create a default scale determined by the data given, however in some
  *      cases we will not be able to construct a scale, and we will display or throw an error. The possible scales are
  *      <strong>x</strong>, <strong>y (or yLeft)</strong>, <strong>yRight</strong>, <strong>color</strong>,
@@ -57,7 +57,7 @@
  *          <li><strong>range:</strong> An array of values that all input values (the domain) will be mapped to. Not
  *          used for any axis scales. For continuous color scales it is an array[min, max] hex values.</li>
  *      </ul>
- * @param {Object} [config.labels] Optional. An object with the following properties: main, x, y (or yLeft), yRight.
+ * @param {Object} [config.labels] (Optional) An object with the following properties: main, x, y (or yLeft), yRight.
  *      Each property can have a {String} value, {Boolean} lookClickable, and {Object} listeners. The value is the text
  *      that will appear on the label. lookClickable toggles if the label will appear clickable. The listeners property
  *      allows the user to specify listeners on the labels such as click, hover, etc, as well as the functions to
@@ -77,7 +77,7 @@
  *              touchcancel, touchend, touchmove, and touchstart.
  *          </li>
  *      </ul>
- * @param {Object} [config.margins] Optional. Margin sizes in pixels. It can be useful to set the margins if the tick
+ * @param {Object} [config.margins] (Optional) Margin sizes in pixels. It can be useful to set the margins if the tick
  *      marks on an axis are overlapping with your axis labels. Defaults to top: 75px, right: 75px, bottom: 50px, and
  *      left: 75px. The right side my have a margin of 150px if a legend is needed.
  *      The object may contain any of the following properties:
@@ -87,17 +87,17 @@
  *          <li><strong>left:</strong> Size of left margin in pixels.</li>
  *          <li><strong>right:</strong> Size of right margin in pixels.</li>
  *      </ul>
- * @param {String} [config.legendPos] Optional. Used to specify where the legend will render. Currently only supports
+ * @param {String} [config.legendPos] (Optional) Used to specify where the legend will render. Currently only supports
  *      "none" to disable the rendering of the legend. There are future plans to support "left" and "right" as well.
  *      Defaults to "right".
- * @param {String} [config.bgColor] Optional. The string representation of the background color. Defaults to white.
- * @param {String} [config.gridColor] Optional. The string representation of the grid color. Defaults to white.
- * @param {String} [config.gridLineColor] Optional. The string representation of the line colors used as part of the grid.
+ * @param {String} [config.bgColor] (Optional) The string representation of the background color. Defaults to white.
+ * @param {String} [config.gridColor] (Optional) The string representation of the grid color. Defaults to white.
+ * @param {String} [config.gridLineColor] (Optional) The string representation of the line colors used as part of the grid.
  *      Defaults to grey (#dddddd).
- * @param {Boolean} [config.clipRect] Optional. Used to toggle the use of a clipRect, which prevents values that appear
+ * @param {Boolean} [config.clipRect] (Optional) Used to toggle the use of a clipRect, which prevents values that appear
  *      outside of the specified grid area from being visible. Use of clipRect can negatively affect performance, do not
  *      use if there is a large amount of elements on the grid. Defaults to false.
- * @param {Boolean} [config.throwErrors] Optional. Used to toggle between the plot throwing errors or displaying errors.
+ * @param {Boolean} [config.throwErrors] (Optional) Used to toggle between the plot throwing errors or displaying errors.
  *      If true the plot will throw an error instead of displaying an error when necessary and possible. Defaults to
  *      false.
  *
@@ -1001,10 +1001,68 @@ boxPlot.render();
 /**
  * @name LABKEY.vis.BarPlot
  * @class BarPlot wrapper to allow a user to easily create a simple bar plot without having to preprocess the data.
+ * @param {Object} config An object that contains the following properties (in addition to those properties defined
+ *      in {@link LABKEY.vis.Plot}).
+ * @param {String} [config.renderTo] The id of the div/span to insert the svg element into.
+ * @param {Array} [config.data] The array of individual data points to be grouped for the bar plot. The LABKEY.vis.BarPlot
+ *      wrapper will aggregate the data in this array based on the xAes function provided to get the individual totals
+ *      for each bar in the plot.
+ * @param {Function} [config.xAes] The function to determine which groups will be created for the x-axis of the plot.
+ * @param {Object} [config.options] (Optional) Display options as defined in {@link LABKEY.vis.Geom.BarPlot}.
+ *
+ @example
+ &lt;div id='bar'&gt;&lt;/div&gt;
+ &lt;script type="text/javascript"&gt;
+ // Fake data which will be aggregated by the LABKEY.vis.BarPlot wrapper.
+ var barPlotData = [
+    {gender: 'Male', age: '21'}, {gender: 'Male', age: '43'},
+    {gender: 'Male', age: '24'}, {gender: 'Male', age: '54'},
+    {gender: 'Female', age: '24'}, {gender: 'Female', age: '33'},
+    {gender: 'Female', age: '43'}, {gender: 'Female', age: '43'},
+ ];
+
+ // Create a new bar plot object.
+ var barChart = new LABKEY.vis.BarPlot({
+    renderTo: 'bar',
+    rendererType: 'd3',
+    width: 900,
+    height: 300,
+    labels: {
+        main: {value: 'Example Bar Plot With Cumulative Totals'},
+        yLeft: {value: 'Count'},
+        x: {value: 'Value'}
+    },
+    options: {
+        color: 'black',
+        fill: '#c0c0c0',
+        lineWidth: 1.5,
+        colorTotal: 'black',
+        fillTotal: 'steelblue',
+        opacityTotal: .8,
+        showCumulativeTotals: true
+    },
+    xAes: function(row){return row['age']},
+    data: barPlotData
+ });
+
+ barChart.render();
+ &lt;/script&gt;
  */
 (function(){
 
     LABKEY.vis.BarPlot = function(config){
+
+        if(config.renderTo == null){
+            throw new Error("Unable to create bar plot, renderTo not specified");
+        }
+
+        if(config.data == null){
+            throw new Error("Unable to create bar plot, data array not specified");
+        }
+
+        if(config.xAes == null){
+            throw new Error("Unable to create bar plot, xAes function not specified");
+        }
 
         var countData = LABKEY.vis.groupCountData(config.data, config.xAes);
         var showCumulativeTotals = config.options && config.options.showCumulativeTotals;
@@ -1028,5 +1086,134 @@ boxPlot.render();
         }
 
         return new LABKEY.vis.Plot(config);
+    };
+})();
+
+/**
+ * @name LABKEY.vis.PieChart
+ * @class PieChart which allows a user to programmatically create an interactive pie chart visualization (note: D3 rendering only).
+ * @description The pie chart visualization is built off of the <a href="http://d3pie.org">d3pie JS library</a>. The config
+ *      properties listed below are the only required properties to create a base pie chart. For additional display options
+ *      and interaction options, you can provide any of the properties defined in the <a href="http://d3pie.org/#docs">d3pie docs</a>
+ *      to the config object.
+ * @param {Object} config An object that contains the following properties
+ * @param {String} [config.renderTo] The id of the div/span to insert the svg element into.
+ * @param {Array} [config.data] The array of chart segment data. Each object is of the form: { label: "label", value: 123 }.
+ * @param {Number} [config.width] The chart canvas width in pixels.
+ * @param {Number} [config.height] The chart canvas height in pixels.
+ *
+ @example
+ Example of a simple pie chart (only required config properties).
+
+ &lt;div id='pie'&gt;&lt;/div&gt;
+ &lt;script type="text/javascript"&gt;
+
+ &lt;/script&gt;
+ var pieChartData = [
+     {label: "test1", value: 1},
+     {label: "test2", value: 2},
+     {label: "test3", value: 3},
+     {label: "test4", value: 4}
+ ];
+
+ var pieChart = new LABKEY.vis.PieChart({
+    renderTo: "pie",
+    data: pieChartData,
+    width: 300,
+    height: 250
+ });
+
+ Example of a customized pie chart using some d3pie lib properties.
+
+ &lt;div id='pie2'&gt;&lt;/div&gt;
+ &lt;script type="text/javascript"&gt;
+ var pieChartData = [
+     {label: "test1", value: 1},
+     {label: "test2", value: 2},
+     {label: "test3", value: 3},
+     {label: "test4", value: 4}
+ ];
+
+ var pieChart2 = new LABKEY.vis.PieChart({
+    renderTo: "pie2",
+    data: pieChartData,
+    width: 300,
+    height: 250,
+    // d3pie lib config properties
+    header: {
+        title: {
+            text: 'Pie Chart Example'
+        }
+    },
+    labels: {
+        outer: {
+            format: 'label-value2',
+            pieDistance: 15
+        },
+        inner: {
+            hideWhenLessThanPercentage: 10
+        },
+        lines: {
+            style: 'straight',
+            color: 'black'
+        }
+    },
+    effects: {
+        load: {
+            speed: 2000
+        },
+        pullOutSegmentOnClick: {
+            effect: 'linear',
+            speed: '1000'
+        },
+        highlightLuminosity: -0.75
+    },
+    misc: {
+        colors: {
+            segments: LABKEY.vis.Scale.DarkColorDiscrete(),
+            segmentStroke: '#a1a1a1'
+        },
+        gradient: {
+            enabled: true,
+            percentage: 60
+        }
+    },
+    callbacks: {
+        onload: function() {
+            pieChart2.openSegment(3);
+        }
+    }
+ });
+ &lt;/script&gt;
+ */
+(function(){
+
+    LABKEY.vis.PieChart = function(config){
+
+        if(config.renderTo == null){
+            throw new Error("Unable to create pie chart, renderTo not specified");
+        }
+
+        if(config.data == null){
+            throw new Error("Unable to create pie chart, data not specified");
+        }
+        else if (Array.isArray(config.data)) {
+            config.data = {content : config.data};
+        }
+
+        if(config.width == null && (config.size == null || config.size.canvasWidth == null)){
+            throw new Error("Unable to create pie chart, width not specified");
+        }
+        else if(config.height == null && (config.size == null || config.size.canvasHeight == null)){
+            throw new Error("Unable to create pie chart, height not specified");
+        }
+
+        if (config.size == null) {
+            config.size = {}
+        }
+        config.size.canvasWidth = config.width || config.size.canvasWidth;
+        config.size.canvasHeight = config.height || config.size.canvasHeight;
+
+        return new d3pie(config.renderTo, config);
     };
 })();
