@@ -161,7 +161,7 @@ public class ViewServlet extends HttpServlet
                 url = requestActionURL(request);
                 if (null == url)
                 {
-                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    response.sendError(HttpServletResponse.SC_BAD_REQUEST);
                     return;
                 }
                 request.setAttribute(REQUEST_ACTION, url.getAction());
