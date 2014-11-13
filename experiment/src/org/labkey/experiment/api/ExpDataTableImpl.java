@@ -474,7 +474,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
 
         protected ActionURL getURL(ExpData data)
         {
-            return ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(getContainer(), data, false);
+            return ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, false);
         }
     }
 
@@ -487,7 +487,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
 
         protected ActionURL getURL(ExpData data)
         {
-            return ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(getContainer(), data, true);
+            return ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true);
         }
     }
 
@@ -500,7 +500,7 @@ public class ExpDataTableImpl extends ExpTableImpl<ExpDataTable.Column> implemen
 
         protected ActionURL getURL(ExpData data)
         {
-            return data.findDataHandler().getContentURL(getContainer(), data);
+            return data.findDataHandler().getContentURL(data);
         }
     }
 }

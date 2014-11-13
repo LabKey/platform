@@ -53,7 +53,7 @@
                     <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
-                    ActionURL url = handler == null ? null : handler.getContentURL(c, data);
+                    ActionURL url = handler == null ? null : handler.getContentURL(data);
                     if (url != null) { %><%=textLink("view", url)%><% } %><br/>
                 <% } %>
             </td>
@@ -65,7 +65,7 @@
                     <a href="<%=new ActionURL(ExperimentController.ShowDataAction.class, c).addParameter("rowId", data.getRowId())%>"><%= h(data.getName()) %></a>
                 <%
                     ExperimentDataHandler handler = data.findDataHandler();
-                    ActionURL url = handler == null ? null : handler.getContentURL(c, data);
+                    ActionURL url = handler == null ? null : handler.getContentURL(data);
                     if (url != null) { %><%=textLink("view", url)%><% } %><br/>
                 <% } %>
             </td>

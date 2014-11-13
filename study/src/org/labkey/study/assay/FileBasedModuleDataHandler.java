@@ -18,7 +18,6 @@ package org.labkey.study.assay;
 import org.labkey.api.exp.api.*;
 import org.labkey.api.exp.XarContext;
 import org.labkey.api.exp.ExperimentException;
-import org.labkey.api.exp.Handler;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -50,14 +49,14 @@ public class FileBasedModuleDataHandler extends AbstractExperimentDataHandler
         // We don't import these data files directly so no need to delete them
     }
 
-    public ActionURL getContentURL(Container container, ExpData data)
+    public ActionURL getContentURL(ExpData data)
     {
         ExpRun run = data.getRun();
         if (run != null)
         {
             ExpProtocol protocol = run.getProtocol();
             ExpProtocol p = ExperimentService.get().getExpProtocol(protocol.getRowId());
-            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, p, run.getRowId());
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(data.getContainer(), p, run.getRowId());
         }
         return null;
     }

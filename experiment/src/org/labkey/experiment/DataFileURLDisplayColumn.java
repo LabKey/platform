@@ -49,10 +49,10 @@ public class DataFileURLDisplayColumn extends SimpleDisplayColumn
             return;
         }
 
-        ActionURL contentURL = _data.findDataHandler().getContentURL(ctx.getContainer(), _data);
+        ActionURL contentURL = _data.findDataHandler().getContentURL(_data);
         if (contentURL == null && _data.isFileOnDisk())
         {
-            contentURL = ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(ctx.getContainer(), _data, false);
+            contentURL = ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(_data, false);
         }
 
         if (contentURL != null)

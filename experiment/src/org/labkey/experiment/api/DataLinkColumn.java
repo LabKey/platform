@@ -78,7 +78,7 @@ abstract class DataLinkColumn extends DataColumn
     {
         if (data.isInlineImage() && data.isFileOnDisk())
         {
-            ActionURL thumbnailURL = ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data.getContainer(), data, true);
+            ActionURL thumbnailURL = ExperimentController.ExperimentUrlsImpl.get().getShowFileURL(data, true);
             thumbnailURL.addParameter("maxDimension", 300);
             StringBuilder html = new StringBuilder();
             if (url != null)

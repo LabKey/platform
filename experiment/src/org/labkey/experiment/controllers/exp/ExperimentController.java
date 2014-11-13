@@ -1392,7 +1392,7 @@ public class ExperimentController extends SpringActionController
             bb.setStyle(ButtonBar.Style.separateButtons);
 
             ExperimentDataHandler handler = _data.findDataHandler();
-            ActionURL viewDataURL = handler == null ? null : handler.getContentURL(getContainer(), _data);
+            ActionURL viewDataURL = handler == null ? null : handler.getContentURL(_data);
             if (viewDataURL != null)
             {
                 bb.add(new ActionButton("View data", viewDataURL));
@@ -1400,8 +1400,8 @@ public class ExperimentController extends SpringActionController
 
             if (_data.isFileOnDisk())
             {
-                bb.add(new ActionButton("View file", ExperimentUrlsImpl.get().getShowFileURL(c, _data, true)));
-                bb.add(new ActionButton("Download file", ExperimentUrlsImpl.get().getShowFileURL(c, _data, false)));
+                bb.add(new ActionButton("View file", ExperimentUrlsImpl.get().getShowFileURL(_data, true)));
+                bb.add(new ActionButton("Download file", ExperimentUrlsImpl.get().getShowFileURL(_data, false)));
 
                 if (getContainer().hasPermission(getUser(), InsertPermission.class))
                 {
@@ -4774,9 +4774,9 @@ public class ExperimentController extends SpringActionController
 
         }
 
-        public ActionURL getShowFileURL(Container c, ExpData data, boolean inline)
+        public ActionURL getShowFileURL(ExpData data, boolean inline)
         {
-            ActionURL result = getShowFileURL(c).addParameter("rowId", data.getRowId());
+            ActionURL result = getShowFileURL(data.getContainer()).addParameter("rowId", data.getRowId());
             if (inline)
             {
                 result.addParameter("inline", inline);
