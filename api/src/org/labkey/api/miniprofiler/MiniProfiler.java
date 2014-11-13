@@ -54,8 +54,7 @@ public class MiniProfiler
 
         // CONSIDER: Add CanSeeProfilingPermission ?
         User user = context.getUser();
-        return ModuleLoader.getInstance().isStartupComplete() &&
-                (AppProps.getInstance().isDevMode() || (user != null && user.isDeveloper()));
+        return ModuleLoader.getInstance().isStartupComplete() && user != null && user.isDeveloper() && getSettings().isEnabled();
     }
 
     public static Settings getSettings()
@@ -188,6 +187,7 @@ public class MiniProfiler
         private boolean _showControls = true;
         private RenderPosition _renderPosition = RenderPosition.BottomRight;
         private boolean _captureCustomTimingStacktrace = true;
+        private boolean _enabled = AppProps.getInstance().isDevMode();
 
         public boolean isShowTrivial()
         {
@@ -257,6 +257,16 @@ public class MiniProfiler
         public void setCaptureCustomTimingStacktrace(boolean captureCustomTimingStacktrace)
         {
             _captureCustomTimingStacktrace = captureCustomTimingStacktrace;
+        }
+
+        public boolean isEnabled()
+        {
+            return _enabled;
+        }
+
+        public void setEnabled(boolean enabled)
+        {
+            _enabled = enabled;
         }
     }
 }

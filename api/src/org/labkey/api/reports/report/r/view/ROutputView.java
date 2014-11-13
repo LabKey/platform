@@ -48,6 +48,7 @@ public class ROutputView extends HttpView
     private File _file;
     private Map<String, String> _properties;
     protected static Logger LOG = Logger.getLogger(ROutputView.class);
+    private static boolean ALLOW_REMOTE_FILESIZE_BYPASS = false;
 
     public ROutputView(ParamReplacement param)
     {
@@ -168,7 +169,10 @@ public class ROutputView extends HttpView
             // 0 length sizes being reported for R artifacts even though the Rserve process
             // on a remote machine had finished writing the file to an NFS share.  In this case
             // don't check the length
-            if (_isRemote)
+            //
+            // Disable the bypass checking but leave the code intact per issue 21896, to give us the option
+            // to expose this in the future if necessary
+            if (ALLOW_REMOTE_FILESIZE_BYPASS && _isRemote)
                 return true;
 
             try

@@ -289,9 +289,9 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
             titleIndex = 2;
         }
 
-        String sortStr = (titleColumn.getSortDirection() != null ? titleColumn.getSortDirection().getDir() : "") + titleColumn.getName();
-
-        new TableSelector(this, cols, null, new Sort(sortStr)).forEach(new Selector.ForEachBlock<ResultSet>()
+        Sort sort = new Sort();
+        sort.insertSortColumn(titleColumn.getFieldKey(), titleColumn.getSortDirection());
+        new TableSelector(this, cols, null, sort).forEach(new Selector.ForEachBlock<ResultSet>()
         {
             @Override
             public void exec(ResultSet rs) throws SQLException

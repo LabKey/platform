@@ -480,9 +480,9 @@ public class Path implements Serializable, Comparable, Iterable<String>
 
     public Iterator<String> iterator()
     {
-        return new ArrayIterator<>(_path);
+        return new ArrayIterator<>(_path, 0, _length);
     }
-    
+
 
     private void readObject(java.io.ObjectInputStream in)
         throws IOException, ClassNotFoundException
@@ -548,6 +548,24 @@ public class Path implements Serializable, Comparable, Iterable<String>
             assertEquals(r, new Path("..","x"));
             r = base.relativize(new Path("y"));
             assertEquals(r, new Path("..","..","..","y"));
+        }
+
+        @Test
+        public void test21949() throws Exception
+        {
+            Path messy = Path.parse("/a/./b/..//c/d/e/../../././f");
+            Path normalized = messy.normalize();
+            Path clean = Path.parse("/a/c/f");
+            assertEquals(messy.normalize(), clean);
+
+            Iterator<String> n = ((Iterable<String>)normalized).iterator();
+            assertTrue(n.hasNext());
+            assertEquals("a",n.next());
+            assertTrue(n.hasNext());
+            assertEquals("c",n.next());
+            assertTrue(n.hasNext());
+            assertEquals("f",n.next());
+            assertFalse(n.hasNext());
         }
     }
 }
