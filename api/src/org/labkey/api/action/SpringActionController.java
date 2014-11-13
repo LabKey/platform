@@ -342,6 +342,22 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return null;
             }
 
+            // Formerly, this was a check done during permissions, but we've decided to upgrade the priority
+            // of checking for container on view-based URLs.
+            Container c = context.getContainer();
+            if (null == c)
+            {
+                String containerPath = context.getActionURL().getExtraPath();
+                if (containerPath != null && containerPath.contains("/"))
+                {
+                    throw new NotFoundException("No such folder or workbook: " + containerPath);
+                }
+                else
+                {
+                    throw new NotFoundException("No such project: " + containerPath);
+                }
+            }
+
             PageConfig pageConfig = defaultPageConfig();
 
             if (action instanceof HasViewContext)

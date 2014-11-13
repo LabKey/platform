@@ -634,20 +634,8 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         boolean isPOST = "POST".equals(method);
 
         Container c = context.getContainer();
-        if (null == c)
-        {
-            String containerPath = context.getActionURL().getExtraPath();
-            if (containerPath != null && containerPath.contains("/"))
-            {
-                throw new NotFoundException("No such folder or workbook: " + containerPath);
-            }
-            else
-            {
-                throw new NotFoundException("No such project: " + containerPath);
-            }
-        }
-
         User user = context.getUser();
+
         if (c.isForbiddenProject(user))
             throw new ForbiddenProjectException();
 
