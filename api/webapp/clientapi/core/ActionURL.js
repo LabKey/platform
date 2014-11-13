@@ -100,7 +100,10 @@ LABKEY.ActionURL = new function()
         else
         {
             var slash = path.indexOf('/',1);
-            controller = path.substring(1,slash);
+            if (slash < 0) // 21945: e.g. '/admin'
+                controller = path.substring(1);
+            else
+                controller = path.substring(1, slash);
             path = path.substring(slash);
         }
         var dot = action.indexOf('.');
