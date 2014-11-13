@@ -790,7 +790,7 @@ quickScan:
             }
             catch (IOException e)
             {
-                throw new ConfigurationException("The temporary directory on this server is inaccessible", e);
+                throw new ConfigurationException("The temporary directory (likely " + System.getProperty("java.io.tmpdir") + ") on this server is inaccessible. There may be a file permission issue, or the directory may not exist.", e);
             }
         }
 
