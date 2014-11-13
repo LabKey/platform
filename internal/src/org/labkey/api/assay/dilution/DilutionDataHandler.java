@@ -569,14 +569,14 @@ public abstract class DilutionDataHandler extends AbstractExperimentDataHandler
         throw new UnsupportedOperationException("Not Yet Implemented");
     }
 
-    public ActionURL getContentURL(Container container, ExpData data)
+    public ActionURL getContentURL(ExpData data)
     {
         ExpRun run = data.getRun();
         if (run != null)
         {
             ExpProtocol protocol = run.getProtocol();
             ExpProtocol p = ExperimentService.get().getExpProtocol(protocol.getRowId());
-            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, p, run.getRowId());
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(data.getContainer(), p, run.getRowId());
         }
         return null;
     }

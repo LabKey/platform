@@ -679,7 +679,7 @@ public class FileSystemResource extends AbstractWebdavResource
             if (data == null || !data.getContainer().hasPermission(user, ReadPermission.class))
                 continue;
 
-            ActionURL dataURL = data.findDataHandler().getContentURL(data.getContainer(), data);
+            ActionURL dataURL = data.findDataHandler().getContentURL(data);
             List<? extends ExpRun> runs = ExperimentService.get().getRunsUsingDatas(Collections.singletonList(data));
 
             for (ExpRun run : runs)

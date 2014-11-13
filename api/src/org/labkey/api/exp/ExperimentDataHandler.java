@@ -51,7 +51,7 @@ public interface ExperimentDataHandler extends Handler<ExpData>
      */
     public void exportFile(ExpData data, File dataFile, OutputStream out) throws ExperimentException;
 
-    public ActionURL getContentURL(Container container, ExpData data);
+    public ActionURL getContentURL(ExpData data);
 
     public void beforeDeleteData(List<ExpData> datas) throws ExperimentException;
 

@@ -718,13 +718,13 @@ public abstract class AbstractAssayTsvDataHandler extends AbstractExperimentData
         throw new UnsupportedOperationException("Not Yet Implemented");
     }
 
-    public ActionURL getContentURL(Container container, ExpData data)
+    public ActionURL getContentURL(ExpData data)
     {
         ExpRun run = data.getRun();
         if (run != null)
         {
             ExpProtocol protocol = run.getProtocol();
-            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(container, protocol, run.getRowId());
+            return PageFlowUtil.urlProvider(AssayUrls.class).getAssayResultsURL(data.getContainer(), protocol, run.getRowId());
         }
         return null;
     }

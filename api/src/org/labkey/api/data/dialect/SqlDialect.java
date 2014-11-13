@@ -175,6 +175,7 @@ public abstract class SqlDialect
             Thread thread = entry.getKey();
             if (!dbThreads.contains(thread))
             {
+                sb.append("\n");
                 sb.append(thread.getName());
                 sb.append("\n");
 
