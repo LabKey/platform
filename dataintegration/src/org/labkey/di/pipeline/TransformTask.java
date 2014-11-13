@@ -26,6 +26,9 @@ import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
 import org.labkey.di.data.TransformProperty;
@@ -99,12 +102,24 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     {
         RecordedAction action = new RecordedAction(_factory.getId().getName());
         action.setStartTime(new Date());
-        doWork(action);
-        action.setEndTime(new Date());
-        addProperties(action);
-        action.setRecordCount(_txJob.getRecordCountForAction(action));
-        _records.add(action);
-        return _records;
+
+        // Hack up a ViewContext so that we can run trigger scripts
+        try (ViewContext.StackResetter ignored = ViewContext.pushMockViewContext(getJob().getUser(), getJob().getContainer(), new ActionURL("dataintegration", "fake.view", getJob().getContainer())))
+        {
+            QueryService.get().setEnvironment(QueryService.Environment.USER, getJob().getUser());
+            QueryService.get().setEnvironment(QueryService.Environment.CONTAINER, getJob().getContainer());
+
+            doWork(action);
+            action.setEndTime(new Date());
+            addProperties(action);
+            action.setRecordCount(_txJob.getRecordCountForAction(action));
+            _records.add(action);
+            return _records;
+        }
+        finally
+        {
+            QueryService.get().clearEnvironment();
+        }
     }
 
     private void addProperties(RecordedAction action)
