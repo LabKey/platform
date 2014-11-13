@@ -3656,27 +3656,28 @@ public class ExperimentController extends SpringActionController
         public ModelAndView getView(LsidForm form, BindException errors) throws Exception
         {
             String message = "";
-
             if (!PageFlowUtil.empty(form.getLsid()))
             {
-                String url = LsidManager.get().getDisplayURL(Lsid.canonical(form.getLsid()));
-                if (null == url)
-                    message = "Could not map lsid to URL";
-                else
+                String lsid = Lsid.canonical(form.getLsid());
+                String url = LsidManager.get().getDisplayURL(lsid);
+                if (url == null && form.getType() != null)
+                {
+                    switch (form.getType().toLowerCase())
+                    {
+                        case "data":
+                            url = LsidType.Data.getDisplayURL(new Lsid(lsid));
+                            break;
+                        case "material":
+                            url = LsidType.Material.getDisplayURL(new Lsid(lsid));
+                            break;
+                    }
+                }
+                if (null != url)
                 {
                     throw new RedirectException(url);
                 }
-            }
 
-            if (form.getType() != null)
-            {
-                switch (form.getType().toLowerCase())
-                {
-                    case "data":
-                        throw new RedirectException(LsidType.Data.getDisplayURL(new Lsid(form.getLsid())));
-                    case "material":
-                        throw new RedirectException(LsidType.Material.getDisplayURL(new Lsid(form.getLsid())));
-                }
+                message = "Could not map lsid to URL";
             }
 
             String html = message + "<form action=\"" + getViewContext().cloneActionURL().setAction(ResolveLSIDAction.class) + "\">" +
@@ -3684,8 +3685,7 @@ public class ExperimentController extends SpringActionController
                     (form.getLsid() == null ? "" : PageFlowUtil.filter(form.getLsid())) + "\">" +
                     PageFlowUtil.button("Go").submit(true) + "</form>";
 
-            return new HtmlView("Enter LSID", html);
-        }
+            return new HtmlView("Enter LSID", html);        }
 
         public NavTree appendNavTrail(NavTree root)
         {

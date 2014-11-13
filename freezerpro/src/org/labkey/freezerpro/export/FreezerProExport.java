@@ -375,9 +375,11 @@ public class FreezerProExport
                         for (Map<String, Object> row : response.loadData())
                         {
                             String sampleId = String.valueOf(row.get(SAMPLE_ID_FIELD_NAME));
+                            String location = String.valueOf(row.get("location"));
 
                             if (!locationMap.containsKey(sampleId))
                             {
+                                parseLocation(location, row);
                                 locationMap.put(sampleId, row);
                             }
                         }
@@ -395,6 +397,27 @@ public class FreezerProExport
         catch (Exception e)
         {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void parseLocation(String location, Map<String, Object> row)
+    {
+        // split on right arrow display string
+        String[] parts = location.split("&rarr;");
+
+        if (parts != null && parts.length >= 2)
+        {
+            if (!row.containsKey("freezer"))
+                row.put(translateFieldName("freezer"), parts[0]);
+
+            if (parts.length > 2 && !row.containsKey("level1"))
+                row.put(translateFieldName("level1"), parts[1]);
+
+            if (parts.length > 3 && !row.containsKey("level2"))
+                row.put(translateFieldName("level2"), parts[2]);
+
+            if (!row.containsKey("box"))
+                row.put(translateFieldName("box"), parts[parts.length-1]);
         }
     }
 

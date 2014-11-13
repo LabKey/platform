@@ -74,6 +74,7 @@ public class CustomViewXmlReader
     private String _customIconUrl;
     private ContainerFilter.Type _containerFilter;
     private boolean _showInDataViews;
+    private String _category;
 
     protected String _name;
     private String _label;
@@ -136,6 +137,11 @@ public class CustomViewXmlReader
     public boolean isShowInDataViews()
     {
         return _showInDataViews;
+    }
+
+    public String getCategory()
+    {
+        return _category;
     }
 
     // TODO: There should be a common util for filter/sort url handling.  Should use a proper URL class to do this, not create/encode the query string manually
@@ -252,6 +258,8 @@ public class CustomViewXmlReader
             reader._label = viewElement.getLabel();
             if (viewElement.isSetShowInDataViews())
                 reader._showInDataViews = viewElement.getShowInDataViews();
+            if (viewElement.isSetCategory())
+                reader._category = viewElement.getCategory();
 
             //load the columns, filters, sorts, aggregates
             reader._colList = loadColumns(viewElement.getColumns());

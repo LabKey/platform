@@ -259,7 +259,7 @@ public class QueryServiceImpl extends QueryService
         // look in all the active modules in this container to see if they contain any query definitions
         if (null != schemaName)
         {
-            Path path = new Path(MODULE_QUERIES_DIRECTORY, schemaName);
+            Path path = createSchemaPath(SchemaKey.fromString(schemaName));
             for (QueryDefinition queryDef : getFileBasedQueryDefs(user, container, schemaName, path))
             {
                 Map.Entry<String, String> key = new Pair<>(schemaName, queryDef.getName());
@@ -1627,16 +1627,25 @@ public class QueryServiceImpl extends QueryService
         return null;
     }
 
+    private Path createSchemaPath(SchemaKey schemaKey)
+    {
+        if (schemaKey == null)
+        {
+            return new Path(QueryService.MODULE_QUERIES_DIRECTORY);
+        }
+        List<String> subDirs = new ArrayList<>(schemaKey.getParts().size() + 1);
+        subDirs.add(QueryService.MODULE_QUERIES_DIRECTORY);
+        subDirs.addAll(schemaKey.getParts());
+        return new Path(subDirs);
+    }
+
     private QueryDef findMetadataOverrideInModules(UserSchema schema, String tableName, boolean allModules, @Nullable Path dir)
     {
         String schemaName = schema.getSchemaPath().toString();
 
         if (dir == null)
         {
-            List<String> subDirs = new ArrayList<>(schema.getSchemaPath().getParts().size() + 1);
-            subDirs.add(QueryService.MODULE_QUERIES_DIRECTORY);
-            subDirs.addAll(schema.getSchemaPath().getParts());
-            dir = new Path(subDirs.toArray(new String[subDirs.size()]));
+            dir = createSchemaPath(schema.getSchemaPath());
         }
 
         // Look for file-based definitions in modules

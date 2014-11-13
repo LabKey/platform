@@ -140,6 +140,11 @@ public class ModuleCustomViewInfo implements CustomViewInfo
         return _customViewDef.isShowInDataViews();
     }
 
+    public String getCategory()
+    {
+        return _customViewDef.getCategory();
+    }
+
     @Override
     public boolean isEditable()
     {

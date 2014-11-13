@@ -53,7 +53,16 @@ public class WebdavServlet extends HttpServlet
 
         String fullPath = (null==request.getServletPath()?"":request.getServletPath()) + (null==request.getPathInfo()?"":request.getPathInfo());
 
-        URLHelper helper = new URLHelper(request);
+        URLHelper helper;
+        try
+        {
+            helper = new URLHelper(request);
+        }
+        catch (IllegalArgumentException x)
+        {
+            response.sendError(HttpServletResponse.SC_BAD_REQUEST, x.getMessage());
+            return;
+        }
 
         // Store the original URL in case we need to redirect for authentication
         if (null == request.getAttribute(ViewServlet.ORIGINAL_URL_STRING))

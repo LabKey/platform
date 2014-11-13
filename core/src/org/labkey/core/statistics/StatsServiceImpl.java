@@ -132,13 +132,16 @@ public class StatsServiceImpl implements StatsService
             {
                 for (CurveFitType fitType : CurveFitType.values())
                 {
-                    CurveFit fit = service.getCurveFit(fitType, validation.getData());
-                    CurveResults results = validation.getResults(fitType);
+                    if (fitType != CurveFitType.NONE)
+                    {
+                        CurveFit fit = service.getCurveFit(fitType, validation.getData());
+                        CurveResults results = validation.getResults(fitType);
 
-                    // validate calculated and expected fit error and auc
-                    assertEquals(fit.getFitError(), results.getFitError(), 0.05);
-                    assertEquals(fit.calculateAUC(AUCType.NORMAL), results.getAuc(), 0.005);
-                    assertEquals(fit.calculateAUC(AUCType.POSITIVE), results.getPositiveAuc(), 0.005);
+                        // validate calculated and expected fit error and auc
+                        assertEquals(fit.getFitError(), results.getFitError(), 0.05);
+                        assertEquals(fit.calculateAUC(AUCType.NORMAL), results.getAuc(), 0.005);
+                        assertEquals(fit.calculateAUC(AUCType.POSITIVE), results.getPositiveAuc(), 0.005);
+                    }
                 }
             }
         }

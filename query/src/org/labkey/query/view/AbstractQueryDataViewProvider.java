@@ -27,6 +27,7 @@ import org.labkey.api.query.QueryParam;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryView;
 import org.labkey.api.reports.model.ViewCategory;
+import org.labkey.api.reports.model.ViewCategoryManager;
 import org.labkey.api.reports.report.view.ReportUtil;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.ResourceURL;
@@ -59,11 +60,25 @@ public abstract class AbstractQueryDataViewProvider implements DataViewProvider
         for (CustomView view : getCustomViews(context))
         {
             Container viewContainer = view.getContainer();
-            DefaultViewInfo info = new DefaultViewInfo(getType(), view.getEntityId(), view.getName(), null != viewContainer ? viewContainer : ctxContainer);
+            DefaultViewInfo info = new DefaultViewInfo(getType(), view.getEntityId(), view.getLabel(), null != viewContainer ? viewContainer : ctxContainer);
 
             info.setType("Query");
 
-            ViewCategory vc = ReportUtil.getDefaultCategory(ctxContainer, view.getSchemaName(), view.getQueryName());
+            // issue : 21895: Use category provided in custom view XML in data views
+            ViewCategory vc = null;
+            if (view instanceof ModuleCustomView)
+            {
+                String category = ((ModuleCustomView)view).getCategory();
+                if (category != null)
+                {
+                    String[] parts = ViewCategoryManager.getInstance().decode(category);
+                    vc = ViewCategoryManager.getInstance().getCategory(context.getContainer(), parts);
+                }
+            }
+            // no explicit category could be found, use the default category
+            if (vc == null)
+                vc = ReportUtil.getDefaultCategory(ctxContainer, view.getSchemaName(), view.getQueryName());
+
             info.setCategory(vc);
 
             info.setCreatedBy(view.getCreatedBy());

@@ -48,6 +48,12 @@ profiler is enabled when the server is running in dev mode or if the current use
 <labkey:form action="<%=h(buildURL(MiniProfilerController.ManageAction.class))%>" method="POST">
     <table class="labkey-manage-display">
         <tr>
+            <td class="labkey-form-label">Enabled<%=helpPopup("Enabled", "Enable the MiniProfiler widget, causing it to appear for all Site Administrators and Site Developers")%></td>
+            <td>
+                <labkey:checkbox name="enabled" id="enabled" value="true" checked="<%=settings.isEnabled()%>"/>
+            </td>
+        </tr>
+        <tr>
             <td class="labkey-form-label">Render position<%=helpPopup("Render Position", "Specifies the corner in which to render the MiniProfiler widget")%></td>
             <td>
                 <select name="renderPosition" id="renderPosition">

@@ -100,6 +100,11 @@ public class ModuleCustomViewDef extends ResourceRef
         return _customView.isShowInDataViews();
     }
 
+    public String getCategory()
+    {
+        return _customView.getCategory();
+    }
+
     public List<Pair<String, String>> getFilters()
     {
         return _customView.getFilters();

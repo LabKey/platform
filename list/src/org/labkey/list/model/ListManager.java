@@ -58,6 +58,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.JunitUtil;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.StringExpressionFactory.AbstractStringExpression.NullValueBehavior;
@@ -656,7 +657,9 @@ public class ListManager implements SearchService.DocumentProvider
                 LOG.warn(getTemplateErrorMessage(list, "\"each item as a separate document\" title template", error));
         }
 
-        template = createValidStringExpression("List " + list.getName() + " - ${" + listTable.getTitleColumn() + "}", error);
+        // If you're devious enough to put ${ in your list name then we'll just strip it out, #21794
+        String name = list.getName().replaceAll("\\$\\{", "_{");
+        template = createValidStringExpression("List " + name + " - ${" + PageFlowUtil.encode(listTable.getTitleColumn()) + "}", error);
 
         if (null == template)
             throw new IllegalStateException(getTemplateErrorMessage(list, "auto-generated title template", error));
@@ -689,7 +692,7 @@ public class ListManager implements SearchService.DocumentProvider
             {
                 sb.append(sep);
                 sb.append("${");
-                sb.append(column.getFieldKey());
+                sb.append(column.getFieldKey().encode());  // Must encode, #21794
                 sb.append("}");
                 sep = " ";
             }
