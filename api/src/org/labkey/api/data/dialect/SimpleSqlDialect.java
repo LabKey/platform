@@ -487,13 +487,13 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName,  int paramCount, boolean hasReturn)
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
         throw new UnsupportedOperationException();
     }

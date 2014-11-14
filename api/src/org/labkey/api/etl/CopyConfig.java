@@ -38,12 +38,20 @@ public class CopyConfig
     protected String _sourceQuery;
     protected String _sourceTimestampColumnName = null;
     protected SourceOptions _sourceOptions = null;
+    protected boolean _useSource = true;
+    protected boolean _useFilterStrategy = true;
 
     protected SchemaKey _targetSchema;
     protected String _targetQuery;
     protected TargetOptions _targetOptions = TargetOptions.append;
-    protected boolean _useSource = true;
-    protected boolean _useFilterStrategy = true;
+    protected boolean _useTarget = true;
+    protected TargetTypes _targetType = TargetTypes.query;
+    protected String _targetPath;
+    protected String _targetFilePrefix;
+    protected String _targetFileExtension;
+
+    protected SchemaKey _procedureSchema;
+    protected String _procedure;
 
     public CopyConfig()
     {
@@ -72,6 +80,11 @@ public class CopyConfig
         deleteRowsAfterSelect
     }
 
+    public enum TargetTypes
+    {
+        query,
+        file
+    }
 
     public SchemaKey getSourceSchema()
     {
@@ -171,5 +184,75 @@ public class CopyConfig
     public void setUseFilterStrategy(boolean useFilterStrategy)
     {
         _useFilterStrategy = useFilterStrategy;
+    }
+
+    public boolean isUseTarget()
+    {
+        return  _useTarget;
+    }
+
+    public void setUseTarget(boolean useTarget)
+    {
+        _useTarget = useTarget;
+    }
+
+    public SchemaKey getProcedureSchema()
+    {
+        return _procedureSchema;
+    }
+
+    public void setProcedureSchema(SchemaKey procedureSchema)
+    {
+        _procedureSchema = procedureSchema;
+    }
+
+    public String getProcedure()
+    {
+        return _procedure;
+    }
+
+    public void setProcedure(String procedure)
+    {
+        _procedure = procedure;
+    }
+
+    public TargetTypes getTargetType()
+    {
+        return _targetType;
+    }
+
+    public void setTargetType(TargetTypes targetType)
+    {
+        _targetType = targetType;
+    }
+
+    public String getTargetPath()
+    {
+        return _targetPath;
+    }
+
+    public void setTargetPath(String targetPath)
+    {
+        _targetPath = targetPath;
+    }
+
+    public String getTargetFilePrefix()
+    {
+        return _targetFilePrefix;
+    }
+
+    public void setTargetFilePrefix(String targetFilePrefix)
+    {
+        _targetFilePrefix = targetFilePrefix;
+    }
+
+    public String getTargetFileExtension()
+    {
+        return _targetFileExtension;
+    }
+
+    public void setTargetFileExtension(String targetFileExtension)
+    {
+        _targetFileExtension = targetFileExtension;
     }
 }
