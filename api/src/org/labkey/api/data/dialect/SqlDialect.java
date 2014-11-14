@@ -65,6 +65,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -836,6 +837,11 @@ public abstract class SqlDialect
     public String getJDBCArrayType(Object object)
     {
         return StringUtils.lowerCase(getSqlTypeNameFromObject(object));
+    }
+
+    public Collection<String> getScriptErrors(String sql)
+    {
+        return Collections.emptyList();
     }
 
     protected class SQLSyntaxException extends SQLException
