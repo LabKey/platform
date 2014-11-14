@@ -2406,10 +2406,9 @@ public class AdminController extends SpringActionController
             html.append(PageFlowUtil.textLink("Clear Caches and Refresh", AdminController.getCachesURL(true, false)));
             html.append(PageFlowUtil.textLink("Refresh", AdminController.getCachesURL(false, false)));
             html.append("<hr size=1>\n");
-            html.append("<table>\n");
+
             appendStats(html, "Caches", cacheStats);
             appendStats(html, "Transaction Caches", transactionStats);
-            html.append("</table>\n");
 
             return new HtmlView(html.toString());
         }
@@ -2418,10 +2417,11 @@ public class AdminController extends SpringActionController
         {
             Collections.sort(stats);
 
-            html.append("<tr><td colspan=4>&nbsp;</td></tr>");
-            html.append("<tr><td><b>").append(title).append(" (").append(stats.size()).append(")</b></td></tr>\n");
-            html.append("<tr><td colspan=4>&nbsp;</td></tr>");
+            html.append("<p><b>");
+            html.append(PageFlowUtil.filter(title));
+            html.append(" (").append(stats.size()).append(")</b></p>\n");
 
+            html.append("<table class=\"labkey-data-region labkey-show-borders\">\n");
             html.append("<tr><th>Debug Name</th>");
             html.append("<th>Limit</th><th>Max&nbsp;Size</th><th>Current&nbsp;Size</th><th>Gets</th><th>Misses</th><th>Puts</th><th>Expirations</th><th>Removes</th><th>Clears</th><th>Miss Percentage</th></tr>");
 
@@ -2460,13 +2460,13 @@ public class AdminController extends SpringActionController
             }
 
             double ratio = 0 != gets ? misses / (double)gets : 0;
-            html.append("<tr><td colspan=4>&nbsp;</td></tr>");
-            html.append("<tr><td>Total</td>");
+            html.append("<tr><td><b>Total</b></td>");
 
             appendLongs(html, null, null, size, gets, misses, puts, expirations, removes, clears);
             appendDoubles(html, ratio);
 
             html.append("</tr>\n");
+            html.append("</table>\n");
         }
 
         private void appendDescription(StringBuilder html, String description, StackTraceElement[] creationStackTrace)
@@ -4160,7 +4160,16 @@ public class AdminController extends SpringActionController
             if (Container.isLegalName(folderName, error))
             {
                 if (c.getParent().hasChild(folderName))
-                    error.append("The " + (c.isProject() ? "project " : "folder ") + c.getParent().getPath() + " already has a folder with this name.");
+                {
+                    if (c.getParent().isRoot())
+                    {
+                        error.append("The server already has a project with this name.");
+                    }
+                    else
+                    {
+                        error.append("The " + (c.getParent().isProject() ? "project " : "folder ") + c.getParent().getPath() + " already has a folder with this name.");
+                    }
+                }
                 else
                 {
                     ContainerManager.rename(c, getUser(), folderName);
@@ -4387,7 +4396,16 @@ public class AdminController extends SpringActionController
             if (Container.isLegalName(folderName, error))
             {
                 if (parent.hasChild(folderName))
-                    error.append("The " + (parent.isProject() ? "project " : "folder ") + parent.getPath() + " already has a folder with this name.");
+                {
+                    if (parent.isRoot())
+                    {
+                        error.append("The server already has a project with this name.");
+                    }
+                    else
+                    {
+                        error.append("The " + (parent.isProject() ? "project " : "folder ") + parent.getPath() + " already has a folder with this name.");
+                    }
+                }
                 else
                 {
                     Container c;
