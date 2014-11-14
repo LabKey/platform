@@ -763,11 +763,11 @@ public class ExpRunTableImpl extends ExpTableImpl<ExpRunTable.Column> implements
                         @Override
                         public SQLFragment getValueSql(String tableAlias)
                         {
-                            SqlDialect d = getSqlDialect();
-                            SQLFragment sql = new SQLFragment("(CASE WHEN EXISTS (SELECT ExperimentId FROM ");
+                            SQLFragment sql = new SQLFragment("EXISTS (SELECT ExperimentId FROM ");
                             sql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
-                            sql.append(" WHERE ExperimentRunId = " + parent.getValueSql(tableAlias).getSQL() + " AND ExperimentId = " + exp.getRowId() + ") THEN " + d.getBooleanTRUE() + " ELSE " + d.getBooleanFALSE() + " END)");
-                            return sql;
+                            sql.append(" WHERE ExperimentRunId = ").append(parent.getValueSql(tableAlias).getSQL()).append(" AND ExperimentId = ").append(exp.getRowId()).append(")");
+
+                            return getSqlDialect().wrapExistsExpression(sql);
                         }
                     };
                     FieldKey parentFieldKey = FieldKey.fromString(parent.getName());

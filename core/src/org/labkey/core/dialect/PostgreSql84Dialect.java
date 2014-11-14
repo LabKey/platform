@@ -455,6 +455,13 @@ public class PostgreSql84Dialect extends SqlDialect
     }
 
     @Override
+    // PostgreSQL can evaluate EXISTS as a function, e.g., SELECT EXISTS (SELECT 1 WHERE RowId IN (1,3,4)) FROM core.Containers
+    public SQLFragment wrapExistsExpression(SQLFragment existsSQL)
+    {
+        return existsSQL;
+    }
+
+    @Override
     public boolean supportsGroupConcat()
     {
         return true;
@@ -1583,6 +1590,12 @@ public class PostgreSql84Dialect extends SqlDialect
         {
             connection.setTransactionIsolation(Connection.TRANSACTION_READ_UNCOMMITTED);
             connection.setAutoCommit(false);
+        }
+        else
+        {
+           // TODO: Temporary check to track down #21294
+            if (Table.isSelect(sql.getSQL()) && !scope.isTransactionActive() && !connection.getAutoCommit())
+                throw new IllegalStateException("Why am I in a transaction?");
         }
     }
 

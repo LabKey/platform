@@ -747,16 +747,15 @@ public class ListManager implements SearchService.DocumentProvider
 
         if (null != table && null != getListTableName(table))
         {
-            // Using EXISTS query should be reasonably efficient.  This form (using case) seems to work on PostgreSQL and SQL Server
-            SQLFragment sql = new SQLFragment("SELECT CASE WHEN EXISTS (SELECT 1 FROM ");
+            // Using EXISTS query should be reasonably efficient.
+            SQLFragment sql = new SQLFragment("SELECT 1 FROM ");
             sql.append(getListTableName(table));
             sql.append(" WHERE Modified > (SELECT LastIndexed FROM ").append(getListMetadataTable().getSelectName());
-            sql.append(" WHERE ListId = ? AND Container = ?");
+            sql.append(" WHERE ListId = ? AND Container = ?)");
             sql.add(list.getListId());
             sql.add(list.getContainer().getEntityId());
-            sql.append(")) THEN 1 ELSE 0 END");
 
-            return new SqlSelector(getListMetadataSchema(), sql).getObject(Boolean.class);
+            return new SqlSelector(getListMetadataSchema(), sql).exists();
         }
 
         return false;

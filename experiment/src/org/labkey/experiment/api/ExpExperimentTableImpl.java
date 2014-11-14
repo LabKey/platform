@@ -116,7 +116,7 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
 
     public void addExperimentMembershipColumn(ExpRun run)
     {
-        SQLFragment sql;
+        final SQLFragment sql;
         if (run != null)
         {
 //            sql = new SQLFragment("(SELECT CAST((CASE WHEN (SELECT MAX(ExperimentId) FROM ");
@@ -125,10 +125,11 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
 //            sql.append(" IS NOT NULL THEN 1 ELSE NULL END) AS ");
 //            sql.append(getSqlDialect().getBooleanDatatype());
 //            sql.append("))");
-            SqlDialect d = getSqlDialect();
-            sql = new SQLFragment("(CASE WHEN EXISTS (SELECT ExperimentId FROM ");
-            sql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
-            sql.append(" WHERE ExperimentRunId = " + run.getRowId() + " AND ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId) THEN " + d.getBooleanTRUE() + " ELSE " + d.getBooleanFALSE() + " END)");
+            SQLFragment existsSql = new SQLFragment("EXISTS (SELECT ExperimentId FROM ");
+            existsSql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
+            existsSql.append(" WHERE ExperimentRunId = ").append(run.getRowId()).append(" AND ExperimentId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");
+
+            sql = getSqlDialect().wrapExistsExpression(existsSql);
         }
         else
         {

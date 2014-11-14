@@ -204,7 +204,7 @@ public class LocationTable extends BaseStudyTable
         final StudySchema schema = StudySchema.getInstance();
 
         // These are all site-wide tables, so just check for current RowId in use anywhere (regardless of current container filter)
-        SQLFragment ret = new SQLFragment(EXISTS).append(schema.getTableInfoSampleRequest(), "sr").append(" WHERE ").append(tableAlias).append(".RowId = sr.DestinationSiteId) OR\n")
+        SQLFragment existsSQL = new SQLFragment(EXISTS).append(schema.getTableInfoSampleRequest(), "sr").append(" WHERE ").append(tableAlias).append(".RowId = sr.DestinationSiteId) OR\n")
                 .append(EXISTS).append(schema.getTableInfoSampleRequestRequirement(), "srr").append(" WHERE ").append(tableAlias).append(".RowId = srr.SiteId) OR\n")
                 .append(EXISTS).append(schema.getTableInfoParticipant(), "p").append(" WHERE ").append(tableAlias).append(".RowId = p.EnrollmentSiteId OR ").append(tableAlias).append(".RowId = p.CurrentSiteId) OR\n")
                 .append(EXISTS).append(schema.getTableInfoAssaySpecimen(), "a").append(" WHERE ").append(tableAlias).append(".RowId = a.LocationId)");
@@ -214,19 +214,19 @@ public class LocationTable extends BaseStudyTable
         {
             TableInfo eventTableInfo = schema.getTableInfoSpecimenEventIfExists(c);
             if (null != eventTableInfo)
-                ret.append(" OR\n" + EXISTS).append(eventTableInfo, "se").append(" WHERE ").append(tableAlias).append(".RowId = se.LabId OR location.RowId = se.OriginatingLocationId)");
+                existsSQL.append(" OR\n" + EXISTS).append(eventTableInfo, "se").append(" WHERE ").append(tableAlias).append(".RowId = se.LabId OR location.RowId = se.OriginatingLocationId)");
 
             TableInfo vialTableInfo = schema.getTableInfoVialIfExists(c);
             if (null != vialTableInfo)
-                ret.append(" OR\n" + EXISTS).append(vialTableInfo, "v").append(" WHERE ").append(tableAlias).append(".RowId = v.CurrentLocation OR ").append(tableAlias).append(".RowId = v.ProcessingLocation)");
+                existsSQL.append(" OR\n" + EXISTS).append(vialTableInfo, "v").append(" WHERE ").append(tableAlias).append(".RowId = v.CurrentLocation OR ").append(tableAlias).append(".RowId = v.ProcessingLocation)");
 
             TableInfo specimentTableInfo = schema.getTableInfoSpecimenIfExists(c);
             if (null != specimentTableInfo)
-                ret.append(" OR\n" + EXISTS).append(specimentTableInfo, "s").append(" WHERE ").append(tableAlias).append(".RowId = s.OriginatingLocationId OR ").append(tableAlias).append(".RowId = s.ProcessingLocation)");
+                existsSQL.append(" OR\n" + EXISTS).append(specimentTableInfo, "s").append(" WHERE ").append(tableAlias).append(".RowId = s.OriginatingLocationId OR ").append(tableAlias).append(".RowId = s.ProcessingLocation)");
         }
 
-        // PostgreSQL allows EXISTS as a simple expression, but SQL Server does not. Probably should make this a dialect capability.
-        return schema.getSqlDialect().isSqlServer() ? new SQLFragment("CAST(CASE WHEN\n").append(ret).append("\nTHEN 1 ELSE 0 END AS BIT)") : ret;
+        // Wrap the EXISTS expression as needed for this dialect
+        return schema.getSqlDialect().wrapExistsExpression(existsSQL);
     }
 
     public static Collection<Container> getStudyContainers(Container root, ContainerFilter cFilter)

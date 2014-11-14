@@ -475,6 +475,13 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     @Override
+    // SQL Server doesn't evaluate EXISTS as a function... it can only be used in a WHERE or CASE
+    public SQLFragment wrapExistsExpression(SQLFragment existsSQL)
+    {
+        return new SQLFragment("CAST(CASE WHEN\n").append(existsSQL).append("\nTHEN 1 ELSE 0 END AS BIT)");
+    }
+
+    @Override
     public boolean supportsGroupConcat()
     {
         return _groupConcatInstalled;

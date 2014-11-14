@@ -30,7 +30,7 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.PropertyStorageSpec;
-import org.labkey.api.data.Selector;
+import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
@@ -375,12 +375,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
                 }
                 finally
                 {
-                    if (attachmentFiles != null)
+                    for (AttachmentFile attachmentFile : attachmentFiles)
                     {
-                        for (AttachmentFile attachmentFile : attachmentFiles)
-                        {
-                            try { attachmentFile.closeInputStream(); } catch (IOException ignored) {}
-                        }
+                        try { attachmentFile.closeInputStream(); } catch (IOException ignored) {}
                     }
                 }
 
@@ -458,63 +455,25 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
 
-    //
-    // Stream all the entity ids for a given list. The related list items are deleted after every 1,000 entity ids
-    // are fetched. On close(), process any remaining ids.
-    //
-    private class ListEntityIdBlock implements Selector.ForEachBlock<String>, AutoCloseable
+    // Deletes attachments & discussions, and removes list documents from full-text search index.
+    public void deleteRelatedListData(final User user, final Container container)
     {
-        private static final int BLOCK_SIZE = 1000;
-
-        private final List<String> _entityIds = new ArrayList<>(BLOCK_SIZE);
-        private final ListQueryUpdateService _qus;
-        private final User _user;
-        private final Container _container;
-
-        private ListEntityIdBlock(User user, Container container, ListQueryUpdateService queryUpdateService)
+        // Delete attachments and discussions associated with a list in batches of 1,000
+        new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId")).forEachBatch(new ForEachBatchBlock<String>()
         {
-            _qus = queryUpdateService;
-            _user = user;
-            _container = container;
-        }
-
-        @Override
-        public void exec(String entityId) throws SQLException
-        {
-            if (null != entityId)
-                _entityIds.add(entityId);
-
-            // if we have collected 1,000 entityIds then
-            // delete the related list data for this block
-            if (_entityIds.size() == BLOCK_SIZE)
+            @Override
+            public boolean accept(String entityId)
             {
-                _qus.deleteRelatedListData(_user, _container, _entityIds);
-                _entityIds.clear();
+                return null != entityId;
             }
-        }
 
-        // Be sure to delete any remaining entityIds that were fetched. This is the normal case since unless we have
-        // exactly (numEntityIds % 1000) == 0 we'll always have remaining entityIds that need to be processed.
-        @Override
-        public void close()
-        {
-            if (_entityIds.size() > 0)
+            @Override
+            public void exec(List<String> entityIds) throws SQLException
             {
-                _qus.deleteRelatedListData(_user, _container, _entityIds);
+                // delete the related list data for this block
+                deleteRelatedListData(user, container, entityIds);
             }
-        }
-    }
-
-    // Deletes attachments and discussions associated with a list.
-    // Removes list from indices.
-    public void deleteRelatedListData(User user, Container container)
-    {
-        // TODO: Could use forEachBatch() instead
-        try(ListEntityIdBlock block = new ListEntityIdBlock(user, container, this))
-        {
-            TableSelector ts = new TableSelector(getDbTable(), new CaseInsensitiveHashSet("entityId"));
-            ts.forEach(block, String.class);
-        }
+        }, String.class, 1000);
 
         // Unindex all item docs and the entire list doc
         ListManager.get().deleteIndexedList(_list);

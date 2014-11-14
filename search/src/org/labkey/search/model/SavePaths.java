@@ -17,7 +17,6 @@ package org.labkey.search.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
@@ -129,11 +128,10 @@ public class SavePaths implements DavCrawler.SavePaths
     {
         // Mostly I don't care about Parent
         // However, we need this for the primary key
-        int parent = _getParentId(path);
+        int valueParent = _getParentId(path);
 
         String valuePath = toPathString(path);
         String valueName = path.equals(Path.rootPath) ? "/" : path.getName();   // "" is treated like NULL
-        int valueParent = parent;
         Date valueNextCrawl = new Date();
         Date valueLastCrawled = nullDate;
 

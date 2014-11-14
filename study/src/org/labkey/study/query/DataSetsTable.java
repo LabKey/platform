@@ -23,7 +23,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.FilteredTable;
@@ -65,14 +64,13 @@ public class DataSetsTable extends FilteredTable<StudyQuerySchema>
             public SQLFragment getValueSql(String tableAlias)
             {
                 TableInfo tinfo = QuerySnapshotService.get(StudySchema.getInstance().getSchemaName()).getTableInfoQuerySnapshotDef();
-                SqlDialect d = getSqlDialect();
 
-                SQLFragment sql = new SQLFragment("(CASE WHEN EXISTS (SELECT RowId FROM ");
-                sql.append(tinfo, "qs");
-                sql.append(" WHERE 'qs.schema' = '").append(StudySchema.getInstance().getSchemaName()).append("' AND ").append(tableAlias).append(".Name = qs.Name AND ");
-                sql.append(tableAlias).append(".Container = qs.Container) THEN " + d.getBooleanTRUE() + " ELSE " + d.getBooleanFALSE() + " END)");
+                SQLFragment existsSql = new SQLFragment("EXISTS (SELECT RowId FROM ");
+                existsSql.append(tinfo, "qs");
+                existsSql.append(" WHERE 'qs.schema' = '").append(StudySchema.getInstance().getSchemaName()).append("' AND ").append(tableAlias).append(".Name = qs.Name AND ");
+                existsSql.append(tableAlias).append(".Container = qs.Container)");
                 
-                return sql;
+                return getSqlDialect().wrapExistsExpression(existsSql);
             }
         };
         result.setDescription("Whether the source is from a Query Snapshot");
