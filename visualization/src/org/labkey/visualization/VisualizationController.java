@@ -1940,14 +1940,14 @@ public class VisualizationController extends SpringActionController
                     values.put(rs.getString("label"), rs.getInt("value"));
                 }
 
-                Integer value;
+                String key;
                 for (int i=0; i < sources.length(); i++)
                 {
-                    if (values.containsKey(sources.getString(i)))
-                        value = values.get(sources.getString(i));
+                    key = sources.getString(i);
+                    if (values.containsKey(key))
+                        writer.writeProperty(key, values.get(key));
                     else
-                        value = 0;
-                    writer.writeProperty(sources.getString(i), value);
+                        writer.writeProperty(key, 0);
                 }
             }
             catch (SQLException x)
