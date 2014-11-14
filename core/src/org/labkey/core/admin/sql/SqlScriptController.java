@@ -17,6 +17,7 @@
 package org.labkey.core.admin.sql;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -466,6 +467,7 @@ public class SqlScriptController extends SpringActionController
         private final double _actualTo;
 
         protected boolean _includeOriginatingScriptComments = true;
+        private Collection<String> _errors = null;
 
         private ScriptConsolidator(FileSqlScriptProvider provider, DbSchema schema, double targetFrom, double targetTo) throws SqlScriptException
         {
@@ -541,7 +543,17 @@ public class SqlScriptController extends SpringActionController
                 }
             }
 
-            return sb.toString();
+            String consolidated = sb.toString();
+            _errors = _schema.getSqlDialect().getScriptErrors(consolidated);
+            return consolidated;
+        }
+
+        public @NotNull Collection<String> getErrors()
+        {
+            if (null == _errors)
+                throw new IllegalStateException("Must call getConsolidatedScript() first");
+
+            return _errors;
         }
 
         public void saveScript() throws IOException
@@ -645,8 +657,26 @@ public class SqlScriptController extends SpringActionController
             _schemaName = form.getSchema();
             ScriptConsolidator consolidator = getConsolidator(form);
 
-            StringBuilder html = new StringBuilder("<pre>\n");
-            html.append(PageFlowUtil.filter(consolidator.getConsolidatedScript()));
+            String consolidated = consolidator.getConsolidatedScript();
+            Collection<String> errorMessages = consolidator.getErrors();
+
+            StringBuilder html = new StringBuilder();
+
+            if (!errorMessages.isEmpty())
+            {
+                html.append("<div class=\"labkey-error\">");
+
+                for (String message : errorMessages)
+                {
+                    html.append(PageFlowUtil.filter(message));
+                    html.append("<br>\n");
+                }
+
+                html.append("</div>\n");
+            }
+
+            html.append("<pre>\n");
+            html.append(PageFlowUtil.filter(consolidated));
             html.append("</pre>\n");
 
             html.append("<form method=\"post\">");
@@ -765,7 +795,7 @@ public class SqlScriptController extends SpringActionController
 
             StringBuilder html = new StringBuilder();
             html.append("  <table>\n");
-            html.append("    <tr><td>These SQL scripts will never execute, because another script has the same" +
+            html.append("    <tr><td>The SQL scripts listed below will never execute, because another script has the same" +
                     " \"from\" version and a later \"to\" version.  These scripts can be \"obsoleted\" safely.</td></tr>\n");
             html.append("    <tr><td>&nbsp;</td></tr>\n");
             html.append("  </table>\n");
@@ -785,7 +815,7 @@ public class SqlScriptController extends SpringActionController
             html.append("  </table>\n");
 
             html.append("  <br><br><table>\n");
-            html.append("    <tr><td>The standard LabKey script runner will never execute these files; either their names don't match the required format or" +
+            html.append("    <tr><td>The standard LabKey script runner will never execute the files below; either their names don't match the required format or" +
                     " the specified schema isn't claimed by their module.</td></tr>\n");
             html.append("    <tr><td>&nbsp;</td></tr>\n");
             html.append("  </table>\n");

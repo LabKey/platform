@@ -58,11 +58,13 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 import java.util.regex.Pattern;
 
 
@@ -1348,4 +1350,57 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         return name;
     }
 
+    @Override
+    public Collection<String> getScriptErrors(String sql)
+    {
+        // At the moment, we're only checking for stored procedure definitions that aren't followed immediately by a GO
+        // statement or end of the script. Theese will cause major problem if they are missed during script consolidation
+
+        // Dumb little parser that, within stored procedure definitions, matches up each BEGIN with COMMIT/END.
+        int idx = 0;
+
+        while (-1 != (idx = StringUtils.indexOfIgnoreCase(sql, "CREATE PROCEDURE", idx)))
+        {
+            idx = StringUtils.indexOfIgnoreCase(sql, "BEGIN", idx);
+
+            if (-1 == idx)
+                return Collections.singleton("Found a procedure with no BEGIN statement!");
+
+            Stack<Integer> stack = new Stack<>();
+            stack.push(idx);
+
+            while (!stack.isEmpty())
+            {
+                int beginIdx = StringUtils.indexOfIgnoreCase(sql, "BEGIN", idx + 1);
+                int endIdx = StringUtils.indexOfIgnoreCase(sql, "END", idx + 1);
+                int commitIdx = StringUtils.indexOfIgnoreCase(sql, "COMMIT", idx + 1);
+
+                // Better have an END to match the first BEGIN
+                if (-1 == endIdx)
+                    return Collections.singleton("No matching END statement!");
+
+                // Treat COMMIT like END
+                if (-1 != commitIdx && commitIdx < endIdx)
+                    endIdx = commitIdx;
+
+                if (-1 == beginIdx || endIdx < beginIdx)
+                {
+                    stack.pop();
+                    idx = endIdx;
+                }
+                else
+                {
+                    stack.push(beginIdx);
+                    idx = beginIdx;
+                }
+            }
+
+            String remainder = sql.substring(idx + 3).replace(";", "").trim();
+
+            if (!StringUtils.startsWithIgnoreCase(remainder, "GO"))
+                return Collections.singleton("Stored procedure definition doesn't seem to terminate with a GO statement!");
+        }
+
+        return Collections.emptyList();
+    }
 }
