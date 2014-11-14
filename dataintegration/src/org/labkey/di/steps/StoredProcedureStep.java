@@ -24,9 +24,13 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.SqlDialect.ParamTraits;
 import org.labkey.api.data.dialect.SqlDialect.ParameterInfo;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.util.DateUtil;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
@@ -39,6 +43,7 @@ import org.labkey.di.pipeline.TransformTaskFactory;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Timestamp;
@@ -59,10 +64,16 @@ public class StoredProcedureStep extends TransformTask
     private String procName;
     private DbScope scope;
     private SqlDialect dialect;
-    private boolean hasReturn = false;
+    private RETURN_TYPE procReturns = RETURN_TYPE.NONE;
     private CaseInsensitiveHashMap<Object> savedParamVals = new CaseInsensitiveHashMap<>();
     private Map<String, ParameterInfo> parameters;
 
+    private static enum RETURN_TYPE
+    {
+        NONE,
+        INTEGER,
+        RESULTSET
+    }
 
     private static enum SPECIAL_PARMS
     {
@@ -79,7 +90,8 @@ public class StoredProcedureStep extends TransformTask
         returnMsg,
         debug,
         procVersion,
-        return_status; // Underscore for easiest compatibility with SQL Server
+        return_status, // Underscore for easiest compatibility with SQL Server
+        resultSet; // A returned resultset (postgres) vs. inline (SQL Server)
 
         public static CaseInsensitiveHashSet getSpecialParameterNames()
         {
@@ -137,15 +149,14 @@ public class StoredProcedureStep extends TransformTask
         if (!getParametersFromDbMetadata()) return false;
         seedParameterValues();
         logFilterValues();
-        if (!callProcedure()) return false;
+        return callProcedure();
 
-        return true;
     }
 
     private boolean validateAndSetDbScope()
     {
-        procSchema = _meta.getTargetSchema().toString();
-        procName = _meta.getTargetQuery();
+        procSchema = _meta.getProcedureSchema().toString();
+        procName = _meta.getProcedure();
 
         DbSchema schema = DbSchema.get(procSchema);
         scope = schema.getScope();
@@ -158,36 +169,25 @@ public class StoredProcedureStep extends TransformTask
     {
         int returnValue = 1;
         long duration = 0;
+        boolean badReturn = false;
+
         try (Connection conn = scope.getConnection();
-             CallableStatement stmt = conn.prepareCall(dialect.buildProcedureCall(procSchema, procName, parameters.size(), hasReturn)); )
+             CallableStatement stmt = conn.prepareCall(dialect.buildProcedureCall(procSchema, procName, parameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET))) )
         {
-            dialect.registerParameters(scope, stmt, parameters);
+            dialect.registerParameters(scope, stmt, parameters, procReturns.equals(RETURN_TYPE.RESULTSET));
 
             getJob().info("Executing stored procedure " + procSchema + "." + procName);
             long start = System.currentTimeMillis();
             if (_meta.isUseTransaction())
                 scope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
+
+            if (procReturns.equals(RETURN_TYPE.RESULTSET))
+                conn.setAutoCommit(false);
             boolean resultsAvailable = stmt.execute();
-            if (_meta.isUseTransaction())
-                scope.getCurrentTransaction().commit();
+
             long finish = System.currentTimeMillis();
 
-            if (dialect.isProcedureSupportsInlineResults())
-            {
-                while (resultsAvailable || stmt.getUpdateCount() > -1)
-                {
-                    /*
-                    if (_context.isVerbose()) //TODO: verbose flag doesn't seem to be set properly, always false. Investigate, and/or maybe use the debug flag
-                    {
-                        ResultSet rs = stmt.getResultSet(); // TODO: for now, dropping them on the floor. Eventually would like option to log these.
-                        // log it
-                    }
-                    else */
-                        stmt.getResultSet(); // just to advance
-
-                    resultsAvailable = stmt.getMoreResults();
-                }
-            }
+            processInlineResults(stmt, resultsAvailable);
 
             SQLWarning warn = stmt.getWarnings();
             while (warn != null)
@@ -197,6 +197,11 @@ public class StoredProcedureStep extends TransformTask
             }
 
             returnValue = readOutputParams(stmt);
+            if (_meta.isUseTransaction())
+                scope.getCurrentTransaction().commit();
+            if ((procReturns.equals(RETURN_TYPE.INTEGER)) && returnValue > 0)
+                badReturn = true;
+
             duration = finish - start;
         }
         catch (SQLException e)
@@ -207,7 +212,7 @@ public class StoredProcedureStep extends TransformTask
         {
             scope.closeConnection();
         }
-        if (hasReturn && returnValue > 0)
+        if (badReturn)
         {
             getJob().error("Error: Sproc exited with return code " + returnValue);
             return false;
@@ -215,6 +220,37 @@ public class StoredProcedureStep extends TransformTask
         getJob().info("Stored procedure " + procSchema + "." + procName + " completed in " + DateUtil.formatDuration(duration));
         return true;
 
+    }
+
+    /**
+     *  For SQL Server. Have to step through all inline resultsets before allowed to access output parameters.
+     * Also, the first may be the real resultset we want to write to a target. Postgres result sets are handled later with output parameters
+     */
+    private void processInlineResults(CallableStatement stmt, boolean resultsAvailable) throws SQLException
+    {
+        ResultSet inlineResult;
+        boolean firstResult = true;
+        if (dialect.isProcedureSupportsInlineResults())
+        {
+            while (resultsAvailable || stmt.getUpdateCount() > -1) // row counts of queries internal to the proc are also in the set of resultsets. Nice, huh?
+            {
+                inlineResult = stmt.getResultSet();
+                if (inlineResult != null) // its a real resultset, not just a placeholder for a row count
+                {
+                    // Only keep the first of the inline result sets.
+                    // TODO: might be nice to allow multiple result sets/targets, and also respect debug/verbose flag to log result sets
+                    //
+                    if (firstResult && _meta.isUseTarget())
+                    {
+                        firstResult = false;
+                        writeToTarget(inlineResult);
+                    }
+                    else
+                        getJob().warn("Warning: more than one inline result set output by stored procedure. Only the first is processed.");
+                }
+                resultsAvailable = stmt.getMoreResults();
+            }
+        }
     }
 
     private boolean getParametersFromDbMetadata() throws SQLException
@@ -227,7 +263,9 @@ public class StoredProcedureStep extends TransformTask
         }
 
         if (parameters.containsKey(SPECIAL_PARMS.return_status.name()))
-            hasReturn = true;
+            procReturns = RETURN_TYPE.INTEGER;
+        else if (parameters.containsKey(SPECIAL_PARMS.resultSet.name()))
+            procReturns = RETURN_TYPE.RESULTSET;
 
         return true;
     }
@@ -364,7 +402,14 @@ public class StoredProcedureStep extends TransformTask
 
     private int readOutputParams(CallableStatement stmt) throws SQLException
     {
-        int returnVal = dialect.readOutputParameters(scope, stmt, parameters);
+        int returnVal;
+        if (procReturns.equals(RETURN_TYPE.RESULTSET) && _meta.isUseTarget()) // Postgres resultset output
+        {
+            returnVal = 0;
+            writeToTarget((ResultSet) stmt.getObject(1));
+        }
+        else returnVal = dialect.readOutputParameters(scope, stmt, parameters);
+
         for (Map.Entry<String, ParameterInfo> parameter : parameters.entrySet())
         {
             String paramName = parameter.getKey();
@@ -398,5 +443,17 @@ public class StoredProcedureStep extends TransformTask
         }
 
         return returnVal;
+    }
+
+    /**
+     * Treat the resultset output by the proc the same as a source query output, write it to the specified target
+     */
+    private void writeToTarget(ResultSet rs)
+    {
+        DataIteratorContext context = new DataIteratorContext();
+        context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+        context.setFailFast(true);
+
+        _recordsInserted = appendToTarget(_meta, _context.getContainer(), _context.getUser(), context, new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context)) , getJob().getLogger());
     }
 }

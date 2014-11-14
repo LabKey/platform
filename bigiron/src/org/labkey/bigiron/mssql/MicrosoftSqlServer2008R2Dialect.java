@@ -1283,10 +1283,10 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         return parameters;
     }
 
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn)
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
     {
         StringBuilder sb = new StringBuilder();
-        if (hasReturn)
+        if (hasReturn || assignResult)
         {
             sb.append("? = ");
             paramCount--;
@@ -1305,7 +1305,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     @Override
-    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
         for (Map.Entry<String, ParameterInfo> parameter : parameters.entrySet())
         {

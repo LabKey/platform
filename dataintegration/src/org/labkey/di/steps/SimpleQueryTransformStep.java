@@ -18,7 +18,6 @@ package org.labkey.di.steps;
 import org.apache.log4j.Logger;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.AsyncDataIterator;
@@ -29,13 +28,11 @@ import org.labkey.api.etl.QueryDataIteratorBuilder;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
-import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QueryParseException;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
@@ -241,55 +238,4 @@ public class SimpleQueryTransformStep extends TransformTask
         }
     }
 
-    static int appendToTarget(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
-    {
-        QuerySchema querySchema =  DefaultSchema.get(u, c, meta.getTargetSchema());
-        if (null == querySchema || null == querySchema.getDbSchema())
-        {
-            context.getErrors().addRowError(new ValidationException("Could not find schema: " + meta.getTargetSchema()));
-            return -1;
-        }
-        TableInfo targetTableInfo = querySchema.getTable(meta.getTargetQuery());
-        if (null == targetTableInfo)
-        {
-            context.getErrors().addRowError(new ValidationException("Could not find table: " +  meta.getTargetSchema() + "." + meta.getTargetQuery()));
-            return -1;
-        }
-        try
-        {
-            QueryUpdateService qus = targetTableInfo.getUpdateService();
-            if (null == qus)
-            {
-                context.getErrors().addRowError(new ValidationException("Can't import into table: " + meta.getTargetSchema() + "." + meta.getTargetQuery()));
-                return -1;
-            }
-
-            log.info("Target option: " + meta.getTargetOptions());
-            if (CopyConfig.TargetOptions.merge == meta.getTargetOptions())
-            {
-                return qus.mergeRows(u, c, source, context.getErrors(), null);
-            }
-            else
-            if (CopyConfig.TargetOptions.truncate == meta.getTargetOptions())
-            {
-                int rows = qus.truncateRows(u, c, null /*extra script context */);
-                log.info("Deleted " + getNumRowsString(rows) + " from " + meta.getTargetSchema() + "."  + meta.getTargetQuery());
-                return qus.importRows(u, c, source, context.getErrors(), null);
-            }
-            else
-            {
-                Map<Enum,Object> options = new HashMap<>();
-                options.put(QueryUpdateService.ConfigParameters.Logger,log);
-                return qus.importRows(u, c, source, context.getErrors(), options, null);
-            }
-        }
-        catch (BatchValidationException|QueryUpdateServiceException ex)
-        {
-            throw new RuntimeException(ex);
-        }
-        catch (SQLException sqlx)
-        {
-            throw new RuntimeSQLException(sqlx);
-        }
-    }
 }

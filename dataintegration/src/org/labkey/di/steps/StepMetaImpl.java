@@ -21,6 +21,7 @@ import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.etl.xml.SchemaQueryType;
+import org.labkey.etl.xml.TargetQueryType;
 import org.labkey.etl.xml.TransformType;
 
 /**
@@ -93,16 +94,37 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                 throw new XmlException(TransformManager.INVALID_SOURCE_OPTION);
             }
         }
+        else
+            _useSource = false;
     }
 
     protected void parseDestination(TransformType transformXML) throws XmlException
     {
-        SchemaQueryType destination = transformXML.getDestination();
+        TargetQueryType destination = transformXML.getDestination();
 
         if (null != destination)
         {
-            setTargetSchema(SchemaKey.fromString(destination.getSchemaName()));
-            setTargetQuery(destination.getQueryName());
+            if (destination.getType() == null || CopyConfig.TargetTypes.query.name().equals(destination.getType().toString()))
+            {
+                setTargetType(CopyConfig.TargetTypes.query);
+                setTargetSchema(SchemaKey.fromString(destination.getSchemaName()));
+                setTargetQuery(destination.getQueryName());
+            }
+            else
+            {
+                try
+                {
+                    setTargetType(CopyConfig.TargetTypes.valueOf(destination.getType().toString()));
+                }
+                catch (XmlValueOutOfRangeException e)
+                {
+                    throw new XmlException("Bad target type"); // TODO: error messsages in constants
+                }
+
+                setTargetPath(destination.getPath());
+                setTargetFilePrefix(destination.getPrefix());
+                setTargetFileExtension(destination.getExtension());
+            }
             try
             {
                 if (null != destination.getTargetOption())
@@ -113,5 +135,7 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                 throw new XmlException(TransformManager.INVALID_TARGET_OPTION);
             }
         }
+        else
+            _useTarget = false;
     }
 }

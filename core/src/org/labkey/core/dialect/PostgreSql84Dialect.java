@@ -1355,10 +1355,15 @@ public class PostgreSql84Dialect extends SqlDialect
     {
         CaseInsensitiveMapWrapper<ParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ParameterInfo>());
 
-
+        // Get the parameters for the function and also a placeholder for the return if this function returns a resultset
         SQLFragment sqlf = new SQLFragment(
-                "SELECT parameter_name, data_type, parameter_mode FROM information_schema.parameters" +
-                        " WHERE specific_schema ILIKE ? AND specific_name ILIKE ? || '%' ORDER BY ordinal_position");
+                "SELECT p.parameter_name, p.data_type, p.parameter_mode, p.ordinal_position FROM information_schema.parameters p" +
+                        " JOIN information_schema.routines r ON p.specific_schema = r.specific_schema AND p.specific_name = r.specific_name " +
+                        " WHERE p.specific_schema ILIKE ? AND r.routine_name ILIKE ? " +
+                " UNION SELECT 'resultSet', data_type, 'OUT', 0 FROM information_schema.routines" +
+                        " WHERE specific_schema ILIKE ? AND routine_name ILIKE ? AND data_type = 'refcursor' ORDER BY ordinal_position");
+        sqlf.add(procSchema);
+        sqlf.add(procName);
         sqlf.add(procSchema);
         sqlf.add(procName);
 
@@ -1382,6 +1387,9 @@ public class PostgreSql84Dialect extends SqlDialect
                         break;
                     case "numeric":
                         type = Types.NUMERIC;
+                        break;
+                    case "refcursor": // the return resultset
+                        type = Types.OTHER;
                         break;
                     case "USER-DEFINED":   // for containerId. Not trying to further distinguish the underlying type for other user defined types
                     case "character varying":
@@ -1415,12 +1423,15 @@ public class PostgreSql84Dialect extends SqlDialect
     }
 
     @Override
-    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn)
+    public String buildProcedureCall(String procSchema, String procName, int paramCount, boolean hasReturn, boolean assignResult)
     {
-        if (hasReturn)
+        if (hasReturn || assignResult)
             paramCount--; // this param isn't included in the argument list of the CALL statement
         StringBuilder sb = new StringBuilder();
-        sb.append("{CALL " + procSchema + "." + procName +"(");
+        sb.append("{");
+        if (assignResult)
+            sb.append("? = ");
+        sb.append("CALL " + procSchema + "." + procName +"(");
         for (int i = 0; i < paramCount; i++)
         {
             sb.append("?,");
@@ -1431,9 +1442,14 @@ public class PostgreSql84Dialect extends SqlDialect
     }
 
     @Override
-    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
         int position = 0;
+        if (registerOutputAssignment)
+        {
+            position++;
+            stmt.registerOutParameter(position, Types.OTHER);
+        }
         for (ParameterInfo paramInfo : parameters.values())
         {
             if (paramInfo.getParamTraits().get(ParamTraits.direction) != DatabaseMetaData.procedureColumnOut)
@@ -1457,7 +1473,7 @@ public class PostgreSql84Dialect extends SqlDialect
             int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
             if (direction == DatabaseMetaData.procedureColumnInOut)
                 paramInfo.setParamValue(rs.getObject(paramName));
-            else if (direction == DatabaseMetaData.procedureColumnOut)
+            else if (direction == DatabaseMetaData.procedureColumnOut && paramInfo.getParamTraits().get(ParamTraits.datatype) == Types.INTEGER)
                 returnVal = rs.getInt(paramName);
         }
         return returnVal;

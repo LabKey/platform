@@ -15,20 +15,35 @@
  */
 package org.labkey.di.pipeline;
 
+import org.apache.log4j.Logger;
+import org.labkey.api.data.Container;
+import org.labkey.api.data.DataIteratorResultsImpl;
 import org.labkey.api.data.ParameterDescription;
+import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.TSVColumnWriter;
+import org.labkey.api.data.TSVGridWriter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
+import org.labkey.api.etl.CopyConfig;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.property.SystemProperty;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.RecordedActionSet;
+import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.QueryUpdateServiceException;
+import org.labkey.api.query.ValidationException;
+import org.labkey.api.security.User;
+import org.labkey.api.util.FileUtil;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
 import org.labkey.di.data.TransformProperty;
@@ -36,9 +51,14 @@ import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.steps.StepMeta;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: daxh
@@ -84,6 +104,92 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     public static String getNumRowsString(int rows)
     {
         return rows + " row" + (rows != 1 ? "s" : "");
+    }
+
+    protected static int appendToTarget(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
+    {
+        if (CopyConfig.TargetTypes.query.equals(meta.getTargetType()))
+            return appendToTargetQuery(meta, c, u, context, source, log);
+        else
+            return appendToTargetFile(meta, c, u, context, source, log);
+    }
+
+    private static int appendToTargetQuery(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
+    {
+        QuerySchema querySchema =  DefaultSchema.get(u, c, meta.getTargetSchema());
+        if (null == querySchema || null == querySchema.getDbSchema())
+        {
+            context.getErrors().addRowError(new ValidationException("Could not find schema: " + meta.getTargetSchema()));
+            return -1;
+        }
+        TableInfo targetTableInfo = querySchema.getTable(meta.getTargetQuery());
+        if (null == targetTableInfo)
+        {
+            context.getErrors().addRowError(new ValidationException("Could not find table: " +  meta.getTargetSchema() + "." + meta.getTargetQuery()));
+            return -1;
+        }
+        try
+        {
+            QueryUpdateService qus = targetTableInfo.getUpdateService();
+            if (null == qus)
+            {
+                context.getErrors().addRowError(new ValidationException("Can't import into table: " + meta.getTargetSchema() + "." + meta.getTargetQuery()));
+                return -1;
+            }
+
+            log.info("Target option: " + meta.getTargetOptions());
+            if (CopyConfig.TargetOptions.merge == meta.getTargetOptions())
+            {
+                return qus.mergeRows(u, c, source, context.getErrors(), null);
+            }
+            else
+            if (CopyConfig.TargetOptions.truncate == meta.getTargetOptions())
+            {
+                int rows = qus.truncateRows(u, c, null /*extra script context */);
+                log.info("Deleted " + getNumRowsString(rows) + " from " + meta.getTargetSchema() + "."  + meta.getTargetQuery());
+                return qus.importRows(u, c, source, context.getErrors(), null);
+            }
+            else
+            {
+                Map<Enum,Object> options = new HashMap<>();
+                options.put(QueryUpdateService.ConfigParameters.Logger,log);
+                return qus.importRows(u, c, source, context.getErrors(), options, null);
+            }
+        }
+        catch (BatchValidationException |QueryUpdateServiceException ex)
+        {
+            throw new RuntimeException(ex);
+        }
+        catch (SQLException sqlx)
+        {
+            throw new RuntimeSQLException(sqlx);
+        }
+    }
+
+    private static int appendToTargetFile(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
+    {
+
+        // Eventually 3 options: truncate, append, or create new unique name if filespec already exists.
+        // Append is a little trickier: need some overload methods on TextWriter to create a FileWriter with append == true
+        // Also, who's to say the current output columns match the existing file?
+        try
+        {
+            File outputDir = new File(meta.getTargetPath()); // to do, need this relative to pipelineRoot
+            File file = new File(meta.getTargetPath(), FileUtil.makeFileNameWithTimestamp(meta.getTargetFilePrefix(), meta.getTargetFileExtension()));
+            TSVGridWriter tsv = new TSVGridWriter(new DataIteratorResultsImpl(source.getDataIterator(context)));
+
+            tsv.setColumnHeaderType(TSVColumnWriter.ColumnHeaderType.queryColumnName);
+            tsv.write(file);
+            return tsv.getDataRowCount();
+        }
+        catch (SQLException e)
+        {
+            throw new RuntimeSQLException(e);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     protected TransformPipelineJob getTransformJob()

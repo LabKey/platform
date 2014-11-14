@@ -43,10 +43,14 @@ public class StoredProcedureStepMeta extends StepMetaImpl
     public String toString()
     {
         StringBuilder sb = new StringBuilder();
-        sb.append("Stored procedure " + getTargetSchema().toString() + "." + getTargetQuery());
+        sb.append("Stored procedure ").append(getProcedureSchema().toString()).append(".").append(getProcedure());
         if (null != getSourceSchema())
         {
-            sb.append(" filter val from " + getSourceSchema().toString() + "." + getSourceQuery());
+            sb.append(" filter val from ").append(getSourceSchema().toString()).append(".").append(getSourceQuery());
+        }
+        if (null != getTargetSchema())
+        {
+            sb.append(" destination ").append(getTargetSchema().toString()).append(".").append(getTargetSchema());
         }
         return sb.toString();
     }
@@ -54,18 +58,16 @@ public class StoredProcedureStepMeta extends StepMetaImpl
     @Override
     protected void parseWorkOptions(TransformType transformXML) throws XmlException
     {
-        parseSource(transformXML);
-        if (getSourceSchema() == null)
-            setUseSource(false);
         parseProcedure(transformXML.getProcedure());
+        super.parseWorkOptions(transformXML);
     }
 
     private void parseProcedure(SchemaProcedureType procedure) throws XmlException
     {
         if (null != procedure)
         {
-            setTargetSchema(SchemaKey.fromString(procedure.getSchemaName()));
-            setTargetQuery(procedure.getProcedureName());
+            setProcedureSchema(SchemaKey.fromString(procedure.getSchemaName()));
+            setProcedure(procedure.getProcedureName());
             useTransaction = procedure.isSetUseTransaction();
 
             for (ProcedureParameterType xmlParam: procedure.getParameterArray())

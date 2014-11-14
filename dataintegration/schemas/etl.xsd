@@ -21,14 +21,22 @@
         </all>
     </complexType>
 
-
     <complexType name="SchemaQueryType">
         <attribute name="schemaName" type="string" use="required"/>
         <attribute name="queryName" type="string" use="required"/>
         <attribute name="timestampColumnName" type="string" use="optional"/>
         <attribute name="sourceOption" type="etl:SourceOptionType" use="optional"/>
-        <attribute name="targetOption" type="etl:TargetOptionType" use="optional"/>
         <attribute name="remoteSource" type="string" use="optional"/>
+    </complexType>
+
+    <complexType name="TargetQueryType">
+        <attribute name="schemaName" type="string" use="optional"/>
+        <attribute name="queryName" type="string" use="optional"/>
+        <attribute name="path" type="string" use="optional"/>
+        <attribute name="prefix" type="string" use="optional"/>
+        <attribute name="extension" type="string" use="optional"/>
+        <attribute name="targetOption" type="etl:TargetOptionType" use="optional"/>
+        <attribute name="type" type="etl:TargetTypeType" use="optional" default="query"/>
     </complexType>
 
     <simpleType name ="SourceOptionType">
@@ -43,6 +51,13 @@
             <enumeration value="merge"/>
             <enumeration value="append"/>
             <enumeration value="truncate"/>
+        </restriction>
+    </simpleType>
+
+    <simpleType name="TargetTypeType">
+        <restriction base="string">
+            <enumeration value="query"/>
+            <enumeration value="file"/>
         </restriction>
     </simpleType>
 
@@ -72,7 +87,7 @@
         <!-- <element name="properties" type="etl:PropertiesType" minOccurs="0" maxOccurs="1"/> -->
         <element name="description" type="string" minOccurs="0" />
         <element name="source" type="etl:SchemaQueryType" minOccurs="0"/>
-        <element name="destination" type="etl:SchemaQueryType" minOccurs="0"/>
+        <element name="destination" type="etl:TargetQueryType" minOccurs="0"/>
         <element name="procedure" type="etl:SchemaProcedureType" minOccurs="0"/>
         <element name="taskref" type="etl:TaskRefType" maxOccurs="1" minOccurs="0"/>
       </all>

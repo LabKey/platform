@@ -16,10 +16,6 @@
 package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
-import org.labkey.api.etl.CopyConfig;
-import org.labkey.api.query.SchemaKey;
-import org.labkey.di.pipeline.TransformManager;
 import org.labkey.etl.xml.SchemaQueryType;
 import org.labkey.etl.xml.TransformType;
 
@@ -31,34 +27,7 @@ import org.labkey.etl.xml.TransformType;
  */
 public class RemoteQueryTransformStepMeta extends SimpleQueryTransformStepMeta
 {
-    Class targetStepClass = RemoteQueryTransformStep.class;
     String remoteSource;
-
-    public Class getTargetStepClass()
-    {
-        return targetStepClass;
-    }
-
-    public void setTargetStepClass(Class targetStepClass)
-    {
-        this.targetStepClass = targetStepClass;
-    }
-
-    @Override
-    protected void parseWorkOptions(TransformType transformXML) throws XmlException
-    {
-        if (null != transformXML.getSource())
-        {
-            parseSource(transformXML);
-        }
-        else throw new XmlException(TransformManager.INVALID_SOURCE);
-
-        if (null != transformXML.getDestination())
-        {
-            super.parseDestination(transformXML);
-        }
-        else throw new XmlException(TransformManager.INVALID_DESTINATION);
-    }
 
     protected void parseSource(TransformType transformXML) throws XmlException
     {
@@ -66,20 +35,8 @@ public class RemoteQueryTransformStepMeta extends SimpleQueryTransformStepMeta
 
         if (null != source)
         {
-            setSourceSchema(SchemaKey.fromString(source.getSchemaName()));
-            setSourceQuery(source.getQueryName());
-            setRemoteSource(source.getRemoteSource()); // for this line, parseSource and parseWorkOptions were overridden
-            if (null != source.getTimestampColumnName())
-                setSourceTimestampColumnName(source.getTimestampColumnName());
-            try
-            {
-                if (null != source.getSourceOption())
-                   setSourceOptions(CopyConfig.SourceOptions.valueOf(source.getSourceOption().toString()));
-            }
-            catch (XmlValueOutOfRangeException e)
-            {
-                throw new XmlException(TransformManager.INVALID_SOURCE_OPTION);
-            }
+            super.parseSource(transformXML);
+            setRemoteSource(source.getRemoteSource());
         }
     }
 
