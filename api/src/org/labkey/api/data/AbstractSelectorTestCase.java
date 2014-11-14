@@ -78,6 +78,12 @@ public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extend
         selector.forEachBatch(new ForEachBatchBlock<K>()
         {
             @Override
+            public boolean accept(K element)
+            {
+                return true;
+            }
+
+            @Override
             public void exec(List<K> batch) throws SQLException
             {
                 assertFalse(batch.isEmpty());
@@ -90,6 +96,12 @@ public abstract class AbstractSelectorTestCase<SELECTOR extends Selector> extend
         rowCount.setValue(0);
         selector.forEachMapBatch(new ForEachBatchBlock<Map<String, Object>>()
         {
+            @Override
+            public boolean accept(Map<String, Object> element)
+            {
+                return true;
+            }
+
             @Override
             public void exec(List<Map<String, Object>> batch) throws SQLException
             {

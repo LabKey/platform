@@ -19,6 +19,7 @@ import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Level;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.Selector.ForEachBatchBlock;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.security.User;
 import org.labkey.api.util.ExceptionUtil;
@@ -153,8 +154,14 @@ public class TableSelectorTestCase extends AbstractSelectorTestCase<TableSelecto
         assertEquals(count, forEachMapCount.intValue());
 
         final MutableInt forEachBatchCount = new MutableInt(0);
-        selector.forEachBatch(new Selector.ForEachBatchBlock<User>()
+        selector.forEachBatch(new ForEachBatchBlock<User>()
         {
+            @Override
+            public boolean accept(User element)
+            {
+                return true;
+            }
+
             @Override
             public void exec(List<User> batch) throws SQLException
             {

@@ -136,6 +136,12 @@ public abstract class SimpleSqlDialect extends SqlDialect
     // then either provide a standard implementation above or remove the stub implementation from this class.
 
     @Override
+    public SQLFragment wrapExistsExpression(SQLFragment existsSQL)
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @Override
     public String getBooleanLiteral(boolean b)
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");

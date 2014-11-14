@@ -561,6 +561,17 @@ public abstract class SqlDialect
         return "^";
     }
 
+    /**
+     * Converts an EXISTS SQL fragment into an expression that returns true or false. Example fragments that could be passed:
+     *
+     *     EXISTS (SELECT 1 FROM core.Users)
+     *     EXISTS (SELECT * FROM comm.Messages WHERE CreatedBy = ?) OR EXISTS (SELECT * FROM comm.Pages WHERE CreatedBy = ?)")
+     *
+     * The method wraps the fragment with syntax required by this database to produce a SQL statement that can be used with SELECT.
+     * For example, PostgreSQL can SELECT EXISTS directly, but SQL Server can't... it requires wrapping with a CASE statement.
+     */
+    public abstract SQLFragment wrapExistsExpression(SQLFragment existsSQL);
+
     public abstract boolean supportsGroupConcat();
 
     // GroupConcat is usable as an aggregate function within a GROUP BY
