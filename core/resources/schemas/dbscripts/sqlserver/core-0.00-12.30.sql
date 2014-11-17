@@ -14,11 +14,7 @@
  * limitations under the License.
  */
 
-/* core-0.00-11.20.sql */
-
 CREATE SCHEMA core;
-GO
-CREATE SCHEMA portal;
 GO
 
 EXEC sp_addtype 'ENTITYID', 'UNIQUEIDENTIFIER';
@@ -120,8 +116,6 @@ CREATE TABLE core.Containers
 
 CREATE INDEX IX_Containers_Parent_Entity ON core.Containers(Parent, EntityId);
 
-GO
-
 -- table for all modules
 CREATE TABLE core.Modules
 (
@@ -129,22 +123,11 @@ CREATE TABLE core.Modules
     ClassName NVARCHAR(255),
     InstalledVersion FLOAT,
     Enabled BIT DEFAULT 1,
+    AutoUninstall BIT NOT NULL DEFAULT 0,   -- TRUE means LabKey should uninstall this module (drop schemas, delete SqlScripts rows, delete Modules rows), if it no longer exists
+    Schemas NVARCHAR(100) NULL,             -- Schemas managed by this module; LabKey will drop these schemas when a module marked AutoUninstall = TRUE is missing
 
     CONSTRAINT PK_Modules PRIMARY KEY (Name)
 );
-
--- TRUE means LabKey should uninstall this module (drop schemas, delete SqlScripts rows, delete Modules rows), if it no longer exists
-ALTER TABLE core.Modules
-    ADD AutoUninstall BIT NOT NULL DEFAULT 0;
-
--- Schemas managed by this module; LabKey will drop these schemas when a module marked AutoUninstall = TRUE is missing
-ALTER TABLE core.Modules
-    ADD Schemas NVARCHAR(100) NULL;
-
-GO
-
-UPDATE core.Modules SET AutoUninstall = 1, Schemas = 'workbook' WHERE ClassName = 'org.labkey.workbook.WorkbookModule';
-UPDATE core.Modules SET AutoUninstall = 1, Schemas = 'cabig' WHERE ClassName = 'org.labkey.cabig.caBIGModule';
 
 -- keep track of sql scripts that have been run in each module
 CREATE TABLE core.SqlScripts
@@ -191,21 +174,6 @@ CREATE TABLE core.Documents
 CREATE INDEX IX_Documents_Container ON core.Documents(Container);
 CREATE INDEX IX_Documents_Parent ON core.Documents(Parent);
 
--- Create a log of events (created, verified, password reset, etc.) associated with users
-CREATE TABLE core.UserHistory
-(
-    UserId USERID,
-    Date DATETIME,
-    Message VARCHAR(500),
-
-    CONSTRAINT PK_UserHistory PRIMARY KEY (UserId, Date),
-    CONSTRAINT FK_UserHistory_UserId FOREIGN KEY (UserId) REFERENCES core.Principals(UserId)
-);
-
-/* core-11.20-11.30.sql */
-
-DROP TABLE core.UserHistory;
-
 CREATE TABLE core.Report
 (
     RowId INT IDENTITY(1,1) NOT NULL,
@@ -219,12 +187,11 @@ CREATE TABLE core.Report
     DescriptorXML TEXT,
     ReportOwner INT,
     Flags INT NOT NULL DEFAULT 0,
+    CategoryId INT,
+    DisplayOrder INT NOT NULL DEFAULT 0,
 
     CONSTRAINT PK_Report PRIMARY KEY (RowId)
 );
-
-ALTER TABLE core.Report ADD CategoryId INT;
-ALTER TABLE core.Report ADD DisplayOrder INT NOT NULL DEFAULT 0;
 
 CREATE TABLE core.ContainerAliases
 (
@@ -257,20 +224,6 @@ CREATE TABLE core.Policies
     CONSTRAINT PK_Policies PRIMARY KEY(ResourceId)
 );
 
-/* core-12.20-12.30.sql */
-
-INSERT INTO core.policies (resourceid, resourceClass, container)
-SELECT
-   (SELECT entityId FROM core.containers where name IS NULL and parent IS NULL) as resourceid,
-   'org.labkey.api.data.Container' as resourceclass,
-   (SELECT entityId FROM core.containers where name IS NULL and parent IS NULL) as container
-WHERE
-   NOT EXISTS (SELECT * from core.policies where resourceid = (SELECT entityId FROM core.containers where name IS NULL and parent IS NULL))
-AND
-   EXISTS(SELECT entityId FROM core.containers where name IS NULL and parent IS NULL)
-;
-
-
 CREATE TABLE core.RoleAssignments
 (
     ResourceId ENTITYID NOT NULL,
@@ -282,17 +235,6 @@ CREATE TABLE core.RoleAssignments
     CONSTRAINT FK_RA_UP FOREIGN KEY(UserId) REFERENCES core.Principals(UserId)
 );
 
-INSERT INTO core.roleassignments (resourceid, userid, role)
-SELECT
-   (SELECT entityId FROM core.containers where name IS NULL and parent IS NULL) as resourceid,
-   -2 as userid,
-   'org.labkey.api.security.roles.SeeEmailAddressesRole' as role
-WHERE
-   NOT EXISTS (SELECT * FROM core.roleassignments WHERE role = 'org.labkey.api.security.roles.SeeEmailAddressesRole')
-AND
-   EXISTS (SELECT entityId FROM core.containers where name IS NULL and parent IS NULL)
-;
-
 CREATE TABLE core.MvIndicators
 (
     Container ENTITYID NOT NULL,
@@ -303,62 +245,45 @@ CREATE TABLE core.MvIndicators
 );
 
 -- CONSIDER: eventually switch to entityid PK/FK
-CREATE TABLE portal.Pages
+CREATE TABLE core.PortalPages
 (
-  entityid ENTITYID NULL,
-  container ENTITYID NOT NULL,
-  pageid varchar(50) NOT NULL,
-  "index" integer NOT NULL DEFAULT 0,
-  caption varchar(64),
-  hidden bit NOT NULL DEFAULT 0,
-  type varchar(20), -- 'portal', 'folder', 'action'
-  -- associate page with a registered folder type
-  -- folderType varchar(64),
-  action varchar(200),    -- type='action' see DetailsURL
-  targetFolder ENTITYID,  -- type=='folder'
-  permanent bit NOT NULL DEFAULT 0, -- may not be renamed,hidden,deleted (w/o changing folder type)
-  properties text,
+    EntityId ENTITYID NOT NULL,
+    Container ENTITYID NOT NULL,
+    PageId VARCHAR(50) NOT NULL,
+    "index" INTEGER NOT NULL DEFAULT 0,
+    Caption VARCHAR(64),
+    Hidden BIT NOT NULL DEFAULT 0,
+    Type VARCHAR(20), -- 'portal', 'folder', 'action'
+    -- associate page with a registered folder type
+    -- folderType VARCHAR(64),
+    Action VARCHAR(200),    -- type='action' see DetailsURL
+    TargetFolder ENTITYID,  -- type=='folder'
+    Permanent BIT NOT NULL DEFAULT 0, -- may not be renamed,hidden,deleted (w/o changing folder type)
+    Properties TEXT,
 
-  CONSTRAINT PK_PortalPages PRIMARY KEY CLUSTERED (container, pageid),
-  CONSTRAINT FK_PortalPages_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
+    CONSTRAINT PK_PortalPages PRIMARY KEY CLUSTERED (Container, PageId),
+    CONSTRAINT FK_PortalPages_Containers FOREIGN KEY (Container) REFERENCES core.Containers (EntityId)
 );
+CREATE INDEX IX_PortalPages_EntityId ON core.PortalPages(EntityId);
 
-
-CREATE TABLE portal.PortalWebParts
+CREATE TABLE core.PortalWebParts
 (
     RowId INT IDENTITY(1, 1) NOT NULL,
     Container ENTITYID NOT NULL,
-    PageId ENTITYID NOT NULL,
+    PageId VARCHAR(50) NOT NULL,
     [Index] INT NOT NULL,
     Name VARCHAR(64),
     Location VARCHAR(16),    -- 'body', 'left', 'right'
     Properties TEXT,    -- url encoded properties
     Permanent BIT NOT NULL DEFAULT 0,
 
-    CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId)
+    CONSTRAINT PK_PortalWebParts PRIMARY KEY (RowId),
+    CONSTRAINT FK_PortalWebParts_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId),
+    CONSTRAINT FK_PortalWebPartPages FOREIGN KEY (Container, PageId) REFERENCES core.PortalPages (Container, PageId)
 );
 
 -- Add an index and FK on the Container column
-CREATE INDEX IX_PortalWebParts ON portal.PortalWebParts(Container);
-
-DELETE FROM portal.PortalWebParts WHERE Container NOT IN (SELECT EntityId FROM core.Containers);
-
-ALTER TABLE portal.PortalWebParts
-    ADD CONSTRAINT FK_PortalWebParts_Container FOREIGN KEY (Container) REFERENCES core.Containers (EntityId);
-
-ALTER TABLE portal.PortalWebParts ALTER COLUMN PageId VARCHAR(50);
-
-UPDATE portal.PortalWebParts SET PageId = 'portal.default' WHERE PageId = CAST(Container AS VARCHAR(50));
-UPDATE portal.PortalWebParts SET PageId = 'study.PARTICIPANTS' WHERE PageId = 'study.SHORTCUTS';
-UPDATE portal.PortalWebParts SET Name = 'study.PARTICIPANTS' WHERE Name = 'study.SHORTCUTS' AND PageId = 'folderTab';
-
-DELETE FROM portal.portalwebparts
-WHERE location = 'tab';
-
-
--- FK
-ALTER TABLE Portal.PortalWebParts
-    ADD CONSTRAINT FK_PortalWebPartPages FOREIGN KEY (container,pageid) REFERENCES portal.pages (container,pageid);
+CREATE INDEX IX_PortalWebParts ON core.PortalWebParts(Container);
 
 -- represents a grouping category for views (reports etc.)
 CREATE TABLE core.ViewCategory
@@ -377,47 +302,8 @@ CREATE TABLE core.ViewCategory
     CONSTRAINT uq_container_label UNIQUE (Container, Label)
 );
 
--- find all explicit tabs configured by folder types
-INSERT INTO portal.pages (container,pageid,"index",type)
-SELECT
-  container,
-  name as pageid,
-  "index",
-  CASE WHEN pageid='Manage' THEN 'action' ELSE 'portal' END as type
-FROM portal.portalwebparts
-WHERE location = 'tab';
-
--- default portal pages
-INSERT INTO portal.pages (container,pageid,"index",type)
-SELECT DISTINCT
-  container,
-  pageid,
-  0 as "index",
-  'portal' as type
-FROM portal.portalwebparts PWP
-WHERE location != 'tab' AND
-  NOT EXISTS (SELECT * from portal.pages PP where PP.container=PWP.container AND PP.pageid = PWP.pageid);
-
-
--- containers with missing pages
-INSERT INTO portal.pages (container, pageid, "index")
-SELECT C.entityid, 'portal.default', 0
-FROM core.containers C
-WHERE C.entityid not in (select container from portal.pages);
-
-
--- More specific name
-EXEC sp_rename 'portal.Pages','PortalPages';
-
-ALTER SCHEMA core TRANSFER portal.PortalPages;
-
-ALTER TABLE core.PortalPages ALTER COLUMN EntityId ENTITYID NOT NULL;
-
-CREATE INDEX IX_PortalPages_EntityId ON core.PortalPages(EntityId);
-
 -- Procedure to safely drop tables, views, indexes, constraints, schemas, and unnamed default constraints
--- Rewritten in 12.10 so SCHEMA and DEFAULT options use the SQL Server 2005 system tables, #13762. Moved
--- rewritten version here since subsequent ALTER statements need it.
+-- Rewritten in 12.10 so SCHEMA and DEFAULT options use the SQL Server 2005 system tables, #13762.
 
 GO
 
@@ -603,9 +489,6 @@ END
 
 GO
 
-/* core-11.30-12.10.sql */
-GO
-
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
 -- script runner to invoke the specified method at this point in the script running process.  See usages of the
 -- UpgradeCode interface for more details.
@@ -620,8 +503,3 @@ GO
 
 -- extensible users table
 EXEC core.executeJavaUpgradeCode 'ensureCoreUserPropertyDescriptors';
-
--- Move "portal" tables to "core" schema
-ALTER SCHEMA core TRANSFER portal.PortalWebParts;
-DROP SCHEMA portal;
-
