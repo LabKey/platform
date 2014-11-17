@@ -107,8 +107,8 @@ CREATE TABLE core.Containers
     Searchable BOOLEAN NOT NULL DEFAULT TRUE,
 
     Description VARCHAR(4000),
-    Workbook BOOLEAN NOT NULL DEFAULT false,
     Title VARCHAR(1000),
+    Type VARCHAR(16) NOT NULL DEFAULT 'normal',
 
     CONSTRAINT UQ_Containers_RowId UNIQUE (RowId),
     CONSTRAINT UQ_Containers_EntityId UNIQUE (EntityId),
@@ -304,10 +304,6 @@ CREATE TABLE core.ViewCategory
     CONSTRAINT PK_ViewCategory PRIMARY KEY (RowId),
     CONSTRAINT UQ_Container_Label UNIQUE (Container, Label)
 );
-
-ALTER TABLE core.Containers ADD COLUMN Type VARCHAR(16) NOT NULL DEFAULT 'normal';
-ALTER TABLE core.Containers DROP COLUMN workbook;
-
 
 -- This empty stored procedure doesn't directly change the database, but calling it from a sql script signals the
 -- script runner to invoke the specified method at this point in the script running process.  See usages of the
