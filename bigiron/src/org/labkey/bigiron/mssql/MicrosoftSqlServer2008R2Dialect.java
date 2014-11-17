@@ -1447,7 +1447,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                 }
             }
 
-            if (tokens.length > (idx + 1) && !tokens[idx + 1].equalsIgnoreCase("GO"))
+            if (tokens.length <= (idx + 1) || !tokens[idx + 1].equalsIgnoreCase("GO"))
                 return Collections.singleton("Stored procedure definition " + procedureName + " doesn't seem to terminate with a GO statement!");
         }
 
