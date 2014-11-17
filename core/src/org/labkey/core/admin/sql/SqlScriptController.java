@@ -18,6 +18,7 @@ package org.labkey.core.admin.sql;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -177,19 +178,23 @@ public class SqlScriptController extends SpringActionController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            Container c = getContainer();
-            StringBuilder html = new StringBuilder();
+            StringBuilder html = new StringBuilder("<table>");
+
             if (AppProps.getInstance().isDevMode())
             {
+                html.append("<tr><td colspan=4>");
                 html.append(PageFlowUtil.textLink("consolidate scripts", new ActionURL(ConsolidateScriptsAction.class, ContainerManager.getRoot())));
                 html.append(PageFlowUtil.textLink("orphaned scripts", new ActionURL(OrphanedScriptsAction.class, ContainerManager.getRoot())));
-                html.append("<p/>");
+                html.append(PageFlowUtil.textLink("scripts with errors", new ActionURL(ScriptsWithErrorsAction.class, ContainerManager.getRoot())));
+                html.append("</td></tr>");
+                html.append("<tr><td>&nbsp;</td></tr>");
             }
-            html.append("<table><tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
+
+            html.append("<tr><td colspan=2>Scripts that have run on this server</td><td colspan=2>Scripts that have not run on this server</td></tr>");
             html.append("<tr><td>All</td><td>Incremental</td><td>All</td><td>Incremental</td></tr>");
             html.append("<tr valign=top>");
 
-            List<SqlScript> allRun = new ArrayList<>();
+            ArrayList<SqlScript> allRun = new ArrayList<>();
 
             for (Module module : ModuleLoader.getInstance().getModules())
             {
@@ -199,17 +204,17 @@ public class SqlScriptController extends SpringActionController
                     allRun.addAll(SqlScriptManager.get(provider, schema).getPreviouslyRunScripts());
             }
 
-            List<SqlScript> incrementalRun = new ArrayList<>();
+            ArrayList<SqlScript> incrementalRun = new ArrayList<>();
 
             for (SqlScript script : allRun)
                 if (script.isIncremental())
                     incrementalRun.add(script);
 
-            appendScripts(c, html, allRun);
-            appendScripts(c, html, incrementalRun);
+            appendScripts(html, allRun);
+            appendScripts(html, incrementalRun);
 
-            List<SqlScript> allNotRun = new ArrayList<>();
-            List<SqlScript> incrementalNotRun = new ArrayList<>();
+            ArrayList<SqlScript> allNotRun = new ArrayList<>();
+            ArrayList<SqlScript> incrementalNotRun = new ArrayList<>();
             List<Module> modules = ModuleLoader.getInstance().getModules();
 
             for (Module module : modules)
@@ -230,13 +235,13 @@ public class SqlScriptController extends SpringActionController
                 if (script.isIncremental())
                     incrementalNotRun.add(script);
 
-            appendScripts(c, html, allNotRun);
-            appendScripts(c, html, incrementalNotRun);
+            appendScripts(html, allNotRun);
+            appendScripts(html, incrementalNotRun);
 
             html.append("</tr></table>");
 
             // In dev mode, check for some special scripts that need to remain, even though they appear to be incremental
-            // and don't run during bootstrap.
+            // and might not run during bootstrap.
             if (AppProps.getInstance().isDevMode())
             {
                 for (String name : new String[]{"query-12.301-13.10.sql"})
@@ -258,32 +263,92 @@ public class SqlScriptController extends SpringActionController
         {
             return new ActionURL(SqlScriptController.ScriptsAction.class, ContainerManager.getRoot());
         }
+    }
 
-        private void appendScripts(Container c, StringBuilder html, List<SqlScript> scripts)
+
+    // We sort the list of scripts, so insist on an ArrayList
+    private void appendScripts(StringBuilder html, ArrayList<SqlScript> scripts)
+    {
+        Container c = getContainer();
+        html.append("<td>\n");
+
+        if (scripts.isEmpty())
         {
-            html.append("<td>\n");
+            html.append("None");
+        }
+        else
+        {
+            Collections.sort(scripts);
 
-            if (scripts.size() > 0)
+            for (SqlScript script : scripts)
             {
-                Collections.sort(scripts);
+                ActionURL url = new ActionURL(ScriptAction.class, c);
+                url.addParameter("moduleName", script.getProvider().getProviderName());
+                url.addParameter("filename", script.getDescription());
 
-                for (SqlScript script : scripts)
+                html.append("<a href=\"");
+                html.append(PageFlowUtil.filter(url));
+                html.append("\">");
+                html.append(PageFlowUtil.filter(script.getDescription()));
+
+                html.append("</a><br>\n");
+            }
+        }
+
+        html.append("</td>\n");
+    }
+
+
+    @RequiresSiteAdmin
+    public class ScriptsWithErrorsAction extends SimpleViewAction
+    {
+        @Override
+        public ModelAndView getView(Object o, BindException errors) throws Exception
+        {
+            ArrayList<SqlScript> scriptsWithErrors = new ArrayList<>();
+            Map<SqlScript, String> errorMessages = new HashMap<>();
+
+            for (Module module : ModuleLoader.getInstance().getModules())
+            {
+                FileSqlScriptProvider provider = new FileSqlScriptProvider(module);
+
+                for (DbSchema schema : provider.getSchemas())
                 {
-                    ActionURL url = new ActionURL(ScriptAction.class, c);
-                    url.addParameter("moduleName", script.getProvider().getProviderName());
-                    url.addParameter("filename", script.getDescription());
+                    for (SqlScript script : provider.getScripts(schema))
+                    {
+                        Collection<String> warnings = script.getSchema().getSqlDialect().getScriptWarnings(script.getContents());
 
-                    html.append("<a href=\"");
-                    html.append(PageFlowUtil.filter(url));
-                    html.append("\">");
-                    html.append(script.getDescription());
-                    html.append("</a><br>\n");
+                        if (!warnings.isEmpty())
+                        {
+                            scriptsWithErrors.add(script);
+                            errorMessages.put(script, warnings.iterator().next());
+                        }
+                    }
                 }
             }
-            else
-                html.append("None");
 
-            html.append("</td>\n");
+            StringBuilder html = new StringBuilder("<table><tr>");
+            appendScripts(html, scriptsWithErrors);
+
+            html.append("<td>\n");
+
+            for (SqlScript script : scriptsWithErrors)
+            {
+                html.append(errorMessages.get(script)).append("<br>\n");
+            }
+
+            html.append("<td>\n");
+            html.append("</tr></table>");
+
+            return new HtmlView(html.toString());
+        }
+
+        @Override
+        public NavTree appendNavTrail(NavTree root)
+        {
+            new ScriptsAction().appendNavTrail(root);
+            root.addChild("Scripts With Errors");
+            return root;
         }
     }
 
@@ -343,22 +408,22 @@ public class SqlScriptController extends SpringActionController
     {
         public ModelAndView getView(ConsolidateForm form, BindException errors) throws Exception
         {
-            double fromVersion = form.getFromVersion();
-            double toVersion = form.getToVersion();
-            boolean includeSingleScripts = form.getIncludeSingleScripts();
+            double _fromVersion = form.getFromVersion();
+            double _toVersion = form.getToVersion();
+            boolean _includeSingleScripts = form.getIncludeSingleScripts();
 
             StringBuilder formHtml = new StringBuilder();
 
             formHtml.append("<form method=\"get\">\n");
             formHtml.append("  <table>\n");
             formHtml.append("    <tr><td>From:</td><td><input name=\"fromVersion\" size=\"10\" value=\"");
-            formHtml.append(ModuleContext.formatVersion(fromVersion));
+            formHtml.append(ModuleContext.formatVersion(_fromVersion));
             formHtml.append("\"/></td></tr>\n");
             formHtml.append("    <tr><td>To:</td><td><input name=\"toVersion\" size=\"10\" value=\"");
-            formHtml.append(ModuleContext.formatVersion(toVersion));
+            formHtml.append(ModuleContext.formatVersion(_toVersion));
             formHtml.append("\"/></td></tr>\n");
             formHtml.append("    <tr><td colspan=2><input type=\"checkbox\" name=\"includeSingleScripts\"");
-            formHtml.append(includeSingleScripts ? " checked" : "");
+            formHtml.append(_includeSingleScripts ? " checked" : "");
             formHtml.append("/>Include single scripts</td></tr>\n");
             formHtml.append("    <tr><td colspan=2>");
             formHtml.append(PageFlowUtil.button("Update").submit(true));
@@ -366,7 +431,7 @@ public class SqlScriptController extends SpringActionController
             formHtml.append("  </table>\n");
             formHtml.append("</form><br>\n");
 
-            List<ScriptConsolidator> consolidators = getConsolidators(fromVersion, toVersion, includeSingleScripts);
+            List<ScriptConsolidator> consolidators = getConsolidators(_fromVersion, _toVersion, _includeSingleScripts);
             StringBuilder html = new StringBuilder();
 
             for (ScriptConsolidator consolidator : consolidators)
@@ -381,7 +446,7 @@ public class SqlScriptController extends SpringActionController
 
                 html.append("<br>\n");
 
-                ActionURL consolidateURL = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), fromVersion, toVersion, includeSingleScripts);
+                ActionURL consolidateURL = getConsolidateSchemaURL(consolidator.getModuleName(), consolidator.getSchemaName(), _fromVersion, _toVersion, _includeSingleScripts);
                 html.append("<a class='labkey-button' href=\"").append(consolidateURL.getEncodedLocalURIString()).append("\"><span>").append(1 == consolidator.getScripts().size() ? "copy" : "consolidate").append(" to ").append(filename).append("</span></a><br><br>\n"); //RE_CHECK
             }
 
@@ -398,8 +463,18 @@ public class SqlScriptController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
+            return appendNavTrail(root, null);
+        }
+
+        public NavTree appendNavTrail(NavTree root, @Nullable ActionURL consolidatedScriptsURL)
+        {
             new ScriptsAction().appendNavTrail(root);
-            root.addChild("Consolidate Scripts");
+
+            if (null == consolidatedScriptsURL)
+                root.addChild("Consolidate Scripts");
+            else
+                root.addChild("Consolidate Scripts", consolidatedScriptsURL);
+
             return root;
         }
     }
@@ -544,7 +619,7 @@ public class SqlScriptController extends SpringActionController
             }
 
             String consolidated = sb.toString();
-            _errors = _schema.getSqlDialect().getScriptErrors(consolidated);
+            _errors = _schema.getSqlDialect().getScriptWarnings(consolidated);
             return consolidated;
         }
 
@@ -647,6 +722,9 @@ public class SqlScriptController extends SpringActionController
     public class ConsolidateSchemaAction extends FormViewAction<ConsolidateForm>
     {
         private String _schemaName;
+        private double _fromVersion;
+        private double _toVersion;
+        private boolean _includeSingleScripts;
 
         public void validateCommand(ConsolidateForm target, Errors errors)
         {
@@ -654,26 +732,16 @@ public class SqlScriptController extends SpringActionController
 
         public ModelAndView getView(ConsolidateForm form, boolean reshow, BindException errors) throws Exception
         {
+            _fromVersion = form.getFromVersion();
+            _toVersion = form.getToVersion();
+            _includeSingleScripts = form.getIncludeSingleScripts();
             _schemaName = form.getSchema();
-            ScriptConsolidator consolidator = getConsolidator(form);
 
+            ScriptConsolidator consolidator = getConsolidator(form);
             String consolidated = consolidator.getConsolidatedScript();
-            Collection<String> errorMessages = consolidator.getErrors();
 
             StringBuilder html = new StringBuilder();
-
-            if (!errorMessages.isEmpty())
-            {
-                html.append("<div class=\"labkey-error\">");
-
-                for (String message : errorMessages)
-                {
-                    html.append(PageFlowUtil.filter(message));
-                    html.append("<br>\n");
-                }
-
-                html.append("</div>\n");
-            }
+            html.append(getErrorHtml(consolidator.getErrors()));
 
             html.append("<pre>\n");
             html.append(PageFlowUtil.filter(consolidated));
@@ -703,7 +771,9 @@ public class SqlScriptController extends SpringActionController
 
         public NavTree appendNavTrail(NavTree root)
         {
-            return root.addChild("Consolidate Scripts for Schema " + _schemaName);
+            new ConsolidateScriptsAction().appendNavTrail(root, getConsolidateScriptsURL(_fromVersion, _toVersion, _includeSingleScripts));
+            root.addChild("Consolidate Scripts for Schema " + _schemaName);
+            return root;
         }
 
         private ScriptConsolidator getConsolidator(ConsolidateForm form) throws SqlScriptException
@@ -717,6 +787,27 @@ public class SqlScriptController extends SpringActionController
         {
             return new ScriptConsolidator(provider, schema, fromVersion, toVersion);
         }
+    }
+
+
+    private static @NotNull String getErrorHtml(@NotNull Collection<String> errors)
+    {
+        if (errors.isEmpty())
+            return "";
+
+        StringBuilder html = new StringBuilder();
+
+            html.append("<div class=\"labkey-error\">");
+
+            for (String message : errors)
+            {
+                html.append(PageFlowUtil.filter(message));
+                html.append("<br>\n");
+            }
+
+            html.append("</div>\n");
+
+        return html.toString();
     }
 
 
@@ -936,8 +1027,12 @@ public class SqlScriptController extends SpringActionController
 
         protected void renderScript(SqlScript script, PrintWriter out)
         {
+            String contents = script.getContents();
+            Collection<String> warnings = script.getSchema().getSqlDialect().getScriptWarnings(contents);
+            out.println(getErrorHtml(warnings));
+
             out.println("<pre>");
-            out.println(PageFlowUtil.filter(script.getContents()));
+            out.println(PageFlowUtil.filter(contents));
             out.println("</pre>");
         }
 

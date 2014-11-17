@@ -19,6 +19,7 @@ package org.labkey.bigiron.mssql;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CsvSet;
 import org.labkey.api.collections.Sets;
@@ -57,8 +58,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1350,57 +1353,133 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         return name;
     }
 
+    private enum TokenType
+    {
+        BEGIN, END;
+    }
+
+    private enum Token
+    {
+        BEGIN(TokenType.BEGIN), CASE(TokenType.BEGIN), END(TokenType.END), COMMIT(TokenType.END);
+
+        private final TokenType _type;
+
+        private EnumSet<Token> _terminatingTokens = null;
+
+        private Token(TokenType type)
+        {
+            _type = type;
+        }
+
+        private TokenType getType()
+        {
+            return _type;
+        }
+
+        public void setTerminatingTokens(EnumSet<Token> terminatingTokens)
+        {
+            _terminatingTokens = terminatingTokens;
+        }
+
+        public EnumSet<Token> getTerminatingTokens()
+        {
+            if (null == _terminatingTokens)
+                throw new IllegalStateException("Parser should not have pushed a token having no terminating tokens");
+
+            return _terminatingTokens;
+        }
+
+        static
+        {
+            // EnumSet won't allow these to be called in Token constructor
+            BEGIN.setTerminatingTokens(EnumSet.copyOf(Arrays.asList(END, COMMIT)));
+            CASE.setTerminatingTokens(EnumSet.copyOf(Arrays.asList(END)));
+        }
+    }
+
+    private final static CaseInsensitiveHashSet BEGIN = new CaseInsensitiveHashSet("BEGIN");
+    private final static CaseInsensitiveHashSet BEGIN_END = new CaseInsensitiveHashSet("BEGIN", "CASE", "END", "COMMIT");
+
     @Override
-    public Collection<String> getScriptErrors(String sql)
+    public Collection<String> getScriptWarnings(String sql)
     {
         // At the moment, we're only checking for stored procedure definitions that aren't followed immediately by a GO
         // statement or end of the script. Theese will cause major problem if they are missed during script consolidation
 
         // Dumb little parser that, within stored procedure definitions, matches up each BEGIN with COMMIT/END.
+        String[] tokens = sql.replace(";", "").split("\\s+");
         int idx = 0;
 
-        while (-1 != (idx = StringUtils.indexOfIgnoreCase(sql, "CREATE PROCEDURE", idx)))
+        while (-1 != (idx = skipToCreateProcedure(tokens, idx)))
         {
-            idx = StringUtils.indexOfIgnoreCase(sql, "BEGIN", idx);
+            idx += 2;
+            String procedureName = tokens[idx];
+
+            idx = skipToToken(tokens, idx, BEGIN);
 
             if (-1 == idx)
-                return Collections.singleton("Found a procedure with no BEGIN statement!");
+                return Collections.singleton("Stored procedure definition " + procedureName + " has no BEGIN statement!");
 
-            Stack<Integer> stack = new Stack<>();
-            stack.push(idx);
+            Stack<Token> stack = new Stack<>();
+            stack.push(Token.BEGIN);
 
             while (!stack.isEmpty())
             {
-                int beginIdx = StringUtils.indexOfIgnoreCase(sql, "BEGIN", idx + 1);
-                int endIdx = StringUtils.indexOfIgnoreCase(sql, "END", idx + 1);
-                int commitIdx = StringUtils.indexOfIgnoreCase(sql, "COMMIT", idx + 1);
+                idx = skipToToken(tokens, idx + 1, BEGIN_END);
 
-                // Better have an END to match the first BEGIN
-                if (-1 == endIdx)
-                    return Collections.singleton("No matching END statement!");
+                if (-1 == idx)
+                    return Collections.singleton("Stored procedure definition " + procedureName + " seems to be missing an END statement!");
 
-                // Treat COMMIT like END
-                if (-1 != commitIdx && commitIdx < endIdx)
-                    endIdx = commitIdx;
+                Token token = Token.valueOf(tokens[idx].toUpperCase());
 
-                if (-1 == beginIdx || endIdx < beginIdx)
+                if (token.getType() == TokenType.BEGIN)
                 {
-                    stack.pop();
-                    idx = endIdx;
+                    // BEGIN or CASE
+                    stack.push(token);
                 }
                 else
                 {
-                    stack.push(beginIdx);
-                    idx = beginIdx;
+                    // END or COMMIT
+                    Token beginToken = stack.pop();
+
+                    if (!beginToken.getTerminatingTokens().contains(token))
+                        return Collections.singleton("Stored procedure definition " + procedureName + " has mismatched tokens: " + beginToken + " & " + token + "!");
                 }
             }
 
-            String remainder = sql.substring(idx + 3).replace(";", "").trim();
-
-            if (!StringUtils.startsWithIgnoreCase(remainder, "GO"))
-                return Collections.singleton("Stored procedure definition doesn't seem to terminate with a GO statement!");
+            if (tokens.length > (idx + 1) && !tokens[idx + 1].equalsIgnoreCase("GO"))
+                return Collections.singleton("Stored procedure definition " + procedureName + " doesn't seem to terminate with a GO statement!");
         }
 
         return Collections.emptyList();
+    }
+
+    private final static CaseInsensitiveHashSet CREATE = new CaseInsensitiveHashSet("CREATE");
+
+    private int skipToCreateProcedure(String[] tokens, int idx)
+    {
+        while (true)
+        {
+            int i = skipToToken(tokens, idx, CREATE);
+
+            if (-1 == i)
+                return -1;
+
+            String token = tokens[i + 1];
+
+            if (token.equalsIgnoreCase("PROCEDURE") || token.equalsIgnoreCase("FUNCTION"))
+                return i;
+
+            idx++;
+        }
+    }
+
+    private int skipToToken(String[] tokens, int start, CaseInsensitiveHashSet desired)
+    {
+        for (int i = start; i < tokens.length; i++)
+            if (desired.contains(tokens[i]))
+                return i;
+
+        return -1;
     }
 }
