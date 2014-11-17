@@ -22,7 +22,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbSequenceManager;
 import org.labkey.api.data.DeferredUpgrade;
 import org.labkey.api.data.Filter;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.Sort;
@@ -40,11 +39,8 @@ import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.reports.model.ViewCategoryManager;
-import org.labkey.api.settings.AbstractSettingsGroup;
 import org.labkey.api.util.GUID;
-import org.labkey.api.util.SystemMaintenance;
 import org.labkey.api.util.UnexpectedException;
-import org.labkey.api.view.Portal;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.query.UsersDomainKind;
 
@@ -55,7 +51,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -94,54 +89,6 @@ public class CoreUpgradeCode implements UpgradeCode
 
         UsersDomainKind.ensureDomainProperties(domain, context.getUpgradeUser(), context.isNewInstall());
     }
-
-    // invoked by core-12.22-12.23.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    @DeferredUpgrade  // This needs to happen later, after all of the MaintenanceTasks have been registered
-    public void migrateSystemMaintenanceSettings(ModuleContext context)
-    {
-        if (context.isNewInstall())
-            return;
-
-        Map<String, String> props = PropertyManager.getProperties(AbstractSettingsGroup.SITE_CONFIG_USER, ContainerManager.getRoot(), "SiteConfig");
-
-        String interval = props.get("systemMaintenanceInterval");
-        Set<String> enabled = new HashSet<>();
-
-        for (SystemMaintenance.MaintenanceTask task : SystemMaintenance.getTasks())
-            if (!task.canDisable() || !"never".equals(interval))
-                enabled.add(task.getName());
-
-        String time = props.get("systemMaintenanceTime");
-
-        if (null == time)
-            time = "2:00";
-
-        SystemMaintenance.setProperties(enabled, time);
-    }
-
-
-    /* called at 12.2->12.3 */
-    @SuppressWarnings({"UnusedDeclaration"})
-    public void setPortalPageEntityId(ModuleContext moduleContext)
-    {
-        if (moduleContext.isNewInstall())
-            return;
-
-        DbSchema schema = CoreSchema.getInstance().getSchema();
-        Collection<Portal.PortalPage> pages = new SqlSelector(schema, "SELECT * FROM core.PortalPages").getCollection(Portal.PortalPage.class);
-        String updateSql = "UPDATE core.PortalPages SET EntityId=? WHERE Container=? AND PageId=?";
-
-        SqlExecutor executor = new SqlExecutor(schema);
-
-        for (Portal.PortalPage p : pages)
-        {
-            if (null != p.getEntityId())
-                continue;
-            executor.execute(updateSql, GUID.makeGUID(), p.getContainer().toString(), p.getPageId());
-        }
-    }
-
 
     // invoked by core-13.13-13.14.sql
     @SuppressWarnings({"UnusedDeclaration"})

@@ -60,8 +60,6 @@ import org.labkey.study.query.StudyQuerySchema;
 import org.labkey.study.reports.CommandLineSplitter;
 import org.labkey.study.reports.DefaultCommandLineSplitter;
 import org.labkey.study.reports.ExternalReport;
-import org.labkey.study.reports.ParticipantReport;
-import org.labkey.study.reports.ParticipantReportDescriptor;
 import org.labkey.study.reports.WindowsCommandLineSplitter;
 
 import java.sql.SQLException;
@@ -80,54 +78,6 @@ import java.util.Set;
 public class StudyUpgradeCode implements UpgradeCode
 {
     private static final Logger _log = Logger.getLogger(StudyUpgradeCode.class);
-
-    // invoked by study-12.24-12.25.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    @DeferredUpgrade
-    public void upgradeParticipantReport(final ModuleContext context)
-    {
-        if (!context.isNewInstall())
-        {
-            DbScope scope = StudySchema.getInstance().getSchema().getScope();
-            try (DbScope.Transaction transaction = scope.ensureTransaction())
-            {
-                for (Report report : ReportService.get().getReports(new SimpleFilter()))
-                {
-                    // for existing participant reports, upgrade the descriptor type to enable
-                    // alternate participant ID handling during export.
-                    if (ParticipantReport.TYPE.equals(report.getType()))
-                    {
-                        ReportDescriptor descriptor = report.getDescriptor();
-
-                        if (!ParticipantReportDescriptor.TYPE.equals(descriptor.getDescriptorType()))
-                        {
-                            descriptor.setDescriptorType(ParticipantReportDescriptor.TYPE);
-                            final Container descriptorContainer = ContainerManager.getForId(descriptor.getContainerId());
-
-                            ContainerUser rptContext = new ContainerUser()
-                            {
-                                public User getUser()
-                                {
-                                    return context.getUpgradeUser();
-                                }
-
-                                public Container getContainer()
-                                {
-                                    return descriptorContainer;
-                                }
-                            };
-                            ReportService.get().saveReport(rptContext, descriptor.getReportKey(), report);
-                        }
-                    }
-                }
-                transaction.commit();
-            }
-            catch (Exception e)
-            {
-                _log.error("An error occurred upgrading participant reports: ", e);
-            }
-        }
-    }
 
     // invoked for module version < 13.11 in StudyModule.afterUpdate
     @DeferredUpgrade
