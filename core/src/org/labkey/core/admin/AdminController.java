@@ -4159,7 +4159,8 @@ public class AdminController extends SpringActionController
 
             if (Container.isLegalName(folderName, error))
             {
-                if (c.getParent().hasChild(folderName))
+                // 19061: Unable to do case-only container rename
+                if (c.getParent().hasChild(folderName) && !c.equals(c.getParent().getChild(folderName)))
                 {
                     if (c.getParent().isRoot())
                     {
