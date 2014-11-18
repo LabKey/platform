@@ -16,13 +16,18 @@
 package org.labkey.api.visualization;
 
 import org.json.JSONObject;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.api.security.User;
+import org.labkey.api.util.Pair;
+import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
 
-/**
- * Created by matthew on 9/18/14.
- */
+import java.util.List;
+import java.util.Map;
+
 public interface VisualizationService
 {
     public static class SQLResponse
@@ -32,4 +37,10 @@ public interface VisualizationService
     }
 
     SQLResponse getDataGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException;
+
+    Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(Container c, User u, MeasureSetRequest measureRequest);
+
+    Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(Container c, User u, MeasureSetRequest measureRequest);
+
+    List<Map<String, Object>> toJSON(Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimMeasureCols);
 }

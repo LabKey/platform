@@ -287,4 +287,138 @@ public abstract class VisualizationProvider<SchemaType extends UserSchema>
         datasets,
         all
     }
+
+    public static class MeasureSetRequest
+    {
+        private String[] _filters = new String[0];
+        private String _schemaName;
+        private String _queryName;
+        private String _name;
+        private boolean _dateMeasures;
+        private boolean _zeroDateMeasures;
+        private boolean _allColumns;
+        private boolean _showHidden;
+
+        public String getName()
+        {
+            return _name;
+        }
+
+        public void setName(String name)
+        {
+            _name = name;
+        }
+
+        public String getSchemaName()
+        {
+            return _schemaName;
+        }
+
+        public void setSchemaName(String schemaName)
+        {
+            _schemaName = schemaName;
+        }
+
+        public String getQueryName()
+        {
+            return _queryName;
+        }
+
+        public void setQueryName(String queryName)
+        {
+            _queryName = queryName;
+        }
+
+        public String[] getFilters()
+        {
+            return _filters;
+        }
+
+        public void setFilters(String[] filters)
+        {
+            _filters = filters;
+        }
+
+        public boolean isDateMeasures()
+        {
+            return _dateMeasures;
+        }
+
+        public void setDateMeasures(boolean dateMeasures)
+        {
+            _dateMeasures = dateMeasures;
+        }
+
+        public boolean isZeroDateMeasures()
+        {
+            return _zeroDateMeasures;
+        }
+
+        public void setZeroDateMeasures(boolean zeroDateMeasures)
+        {
+            _zeroDateMeasures = zeroDateMeasures;
+        }
+
+        public boolean isAllColumns()
+        {
+            return _allColumns;
+        }
+
+        public void setAllColumns(boolean allColumns)
+        {
+            _allColumns = allColumns;
+        }
+
+        public boolean isShowHidden()
+        {
+            return _showHidden;
+        }
+
+        public void setShowHidden(boolean showHidden)
+        {
+            _showHidden = showHidden;
+        }
+    }
+
+    public static class MeasureFilter
+    {
+        private String _schema;
+        private String _query;
+        private VisualizationProvider.QueryType _queryType = VisualizationProvider.QueryType.all;
+
+        public MeasureFilter(String filter)
+        {
+            parse(filter);
+        }
+
+        protected void parse(String filter)
+        {
+            String[] parts = filter.split("\\|");
+
+            assert(parts.length >= 2) : "Invalid filter value";
+
+            _schema = parts[0];
+
+            if (!parts[1].equals("~"))
+                _query = parts[1];
+
+            if (parts.length >= 3)
+                _queryType = VisualizationProvider.QueryType.valueOf(parts[2]);
+        }
+
+        public String getSchema()
+        {
+            return _schema;
+        }
+
+        public String getQuery()
+        {
+            return _query;
+        }
+
+        public VisualizationProvider.QueryType getQueryType()
+        {
+            return _queryType;
+        }
+    }
 }
