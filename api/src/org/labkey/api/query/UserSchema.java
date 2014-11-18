@@ -514,15 +514,25 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
      */
     public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd)
     {
+        return getModuleCustomViews(container, qd, true);
+    }
+
+    public List<CustomView> getModuleCustomViews(Container container, QueryDefinition qd, boolean alwaysUseTitlesForLoadingCustomViews)
+    {
         // Look under <ROOT>/queries/<SCHEMA_NAME>/<QUERY_NAME> for custom views (.qview.xml) files
         // Also look under <ROOT>/queries/<SCHEMA_NAME>/<QUERY_LABEL>, if different
+
+        List<String> parts = new ArrayList<>();
         List<String> partsLabel = null;
-        if (!qd.getName().equals(qd.getTitle()))
+
+        String qdName = qd.getName();
+        String qdTitle = !alwaysUseTitlesForLoadingCustomViews ? qdName : qd.getTitle();
+
+        if (!qd.getName().equals(qdTitle))
         {
             partsLabel = new ArrayList<>();
         }
 
-        List<String> parts = new ArrayList<>();
         parts.add(QueryService.MODULE_QUERIES_DIRECTORY);
         if (null != partsLabel)
             partsLabel.add(QueryService.MODULE_QUERIES_DIRECTORY);
@@ -534,16 +544,17 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
                 partsLabel.add(legalName);
         }
 
-        parts.add(FileUtil.makeLegalName(qd.getName()));
+        parts.add(FileUtil.makeLegalName(qdName));
         if (null != partsLabel)
-            partsLabel.add(FileUtil.makeLegalName(qd.getTitle()));
+            partsLabel.add(FileUtil.makeLegalName(qdTitle));
 
-        List<CustomView> views = QueryService.get().getFileBasedCustomViews(container, qd, new Path(parts), qd.getName());
+        List<CustomView> views = QueryService.get().getFileBasedCustomViews(container, qd, new Path(parts), qdName);
         if (null != partsLabel)
-            views.addAll(QueryService.get().getFileBasedCustomViews(container, qd, new Path(partsLabel), qd.getTitle()));
+            views.addAll(QueryService.get().getFileBasedCustomViews(container, qd, new Path(partsLabel), qdTitle));
 
         return views;
     }
+
 
     /**
      * Finds a TableInfo with the given domain URI.

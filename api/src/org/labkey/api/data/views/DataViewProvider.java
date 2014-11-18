@@ -47,6 +47,7 @@ public interface DataViewProvider
      * Returns the list of viewInfos for this provider
      */
     List<DataViewInfo> getViews(ViewContext context) throws Exception;
+    List<DataViewInfo> getViews(ViewContext context, boolean alwaysUseTitlesForLoadingCustomViews) throws Exception;
 
     /**
      * Returns the interface used to edit/update properties of data view objects that this provider returns.
