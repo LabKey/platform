@@ -36,8 +36,14 @@ public class JavaScriptDisplayColumn extends DataColumn
 {
     private final LinkedHashSet<ClientDependency> _dependencies = new LinkedHashSet<>();
     private final StringExpressionFactory.FieldKeyStringExpression _eventExpression;
+    private String _linkClassName;
 
     public JavaScriptDisplayColumn(ColumnInfo col, @Nullable Collection<String> dependencies, String javaScriptEvents)
+    {
+        this(col, dependencies, javaScriptEvents, null);
+    }
+
+    public JavaScriptDisplayColumn(ColumnInfo col, @Nullable Collection<String> dependencies, String javaScriptEvents, @Nullable String linkClassName)
     {
         super(col);
 
@@ -48,6 +54,7 @@ public class JavaScriptDisplayColumn extends DataColumn
         }
 
         _eventExpression = StringExpressionFactory.FieldKeyStringExpression.create(javaScriptEvents, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.OutputNull);
+        _linkClassName = linkClassName;
     }
 
     @Override
@@ -58,6 +65,10 @@ public class JavaScriptDisplayColumn extends DataColumn
         if (null != o)
         {
             out.write("<a href=\"#\" tabindex=\"-1\" ");
+            if (_linkClassName != null)
+            {
+                out.write("class=\"" + _linkClassName + "\" ");
+            }
             out.write(_eventExpression.eval(ctx));
             out.write(">");
             out.write(getFormattedValue(ctx));
