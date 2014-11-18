@@ -90,7 +90,7 @@ public class TestTask extends TransformTask
             // output is dest table
             // todo: this is a fake URI, figure out the real story for the Data Input/Ouput for a transform step
             action.addInput(new URI(_meta.getSourceSchema() + "." + _meta.getSourceQuery()), TransformTask.INPUT_ROLE);
-            action.addOutput(new URI(_meta.getTargetSchema() + "." + _meta.getTargetQuery()), TransformTask.OUTPUT_ROLE, false);
+            action.addOutput(new URI(_meta.getFullTargetString()), TransformTask.OUTPUT_ROLE, false);
         }
         catch (URISyntaxException ignore){}
         catch (InterruptedException ignore) {}

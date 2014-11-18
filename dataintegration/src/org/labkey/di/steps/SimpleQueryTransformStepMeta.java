@@ -32,7 +32,7 @@ public class SimpleQueryTransformStepMeta extends StepMetaImpl
     public String toString()
     {
         return getSourceSchema().toString() + "." + getSourceQuery() + " --> " +
-                getTargetSchema().toString() + "." + getTargetQuery(); // TODO: Fixup for target file type
+                getFullTargetString();
     }
 
     @Override
@@ -40,22 +40,14 @@ public class SimpleQueryTransformStepMeta extends StepMetaImpl
     {
         if (null != transformXML.getSource())
         {
-            super.parseSource(transformXML);
+            parseSource(transformXML);
         }
         else throw new XmlException(TransformManager.INVALID_SOURCE);
 
         if (null != transformXML.getDestination())
         {
-            super.parseDestination(transformXML);
-            validateDestination();
+            parseDestination(transformXML);
         }
         else throw new XmlException(TransformManager.INVALID_DESTINATION);
-    }
-
-    protected void validateDestination() throws XmlException
-    {
-        if ( (getTargetType().equals(TargetTypes.query) && (getTargetSchema() == null || getTargetQuery() == null))
-                || (getTargetType().equals(TargetTypes.file) && (getTargetPath() == null || getTargetFilePrefix() == null))) // OK to allow empty extension?
-            throw new XmlException(TransformManager.INVALID_DESTINATION);
     }
 }

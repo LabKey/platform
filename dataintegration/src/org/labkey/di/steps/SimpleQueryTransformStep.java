@@ -96,30 +96,11 @@ public class SimpleQueryTransformStep extends TransformTask
             // output is dest table
             // todo: this is a fake URI, figure out the real story for the Data Input/Ouput for a transform step
             action.addInput(new URI(_meta.getSourceSchema() + "." + _meta.getSourceQuery()), TransformTask.INPUT_ROLE);
-            action.addOutput(new URI(_meta.getTargetSchema() + "." + _meta.getTargetQuery()), TransformTask.OUTPUT_ROLE, false);
+            action.addOutput(new URI(_meta.getFullTargetString()), TransformTask.OUTPUT_ROLE, false);
         }
         catch (URISyntaxException ignore)
         {
         }
-    }
-
-    public boolean validate(CopyConfig meta, Container c, User u, Logger log)
-    {
-        QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
-        if (null == sourceSchema || null == sourceSchema.getDbSchema())
-        {
-            log.error("ERROR: Source schema not found: " + meta.getSourceSchema());
-            return false;
-        }
-
-        QuerySchema targetSchema = DefaultSchema.get(u, c, meta.getTargetSchema());
-        if (null == targetSchema || null == targetSchema.getDbSchema())
-        {
-            log.error("ERROR: Target schema not found: " + meta.getTargetSchema());
-            return false;
-        }
-
-        return true;
     }
 
     // allows RemoteQueryTransformStep to override this method and selectively alter executeCopy
@@ -138,9 +119,14 @@ public class SimpleQueryTransformStep extends TransformTask
             return false;
 
         QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
-        QuerySchema targetSchema = DefaultSchema.get(u, c, meta.getTargetSchema());
-
-        DbScope targetScope = targetSchema.getDbSchema().getScope();
+        QuerySchema targetSchema;
+        DbScope targetScope = null;
+        // Only resolve targetSchema/scope if target is in db vs file
+        if (meta.getTargetType().equals(CopyConfig.TargetTypes.query))
+        {
+            targetSchema = DefaultSchema.get(u, c, meta.getTargetSchema());
+            targetScope = targetSchema.getDbSchema().getScope();
+        }
         DbScope sourceScope = getSourceScope(sourceSchema, targetScope);
 
         DataIteratorContext context = new DataIteratorContext();
@@ -151,12 +137,12 @@ public class SimpleQueryTransformStep extends TransformTask
             long start = System.currentTimeMillis();
 
             try (
-                    DbScope.Transaction txTarget = targetScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
+                    DbScope.Transaction txTarget = (meta.getTargetType().equals(CopyConfig.TargetTypes.query)) ? targetScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE) : null;
                     DbScope.Transaction txSource = (null==sourceScope)?null:sourceScope.ensureTransaction(Connection.TRANSACTION_REPEATABLE_READ)
             )
             {
                 log.info("Copying data from " + meta.getSourceSchema() + "." + meta.getSourceQuery() + " to " +
-                        meta.getTargetSchema() + "." + meta.getTargetQuery());
+                        meta.getFullTargetString());
 
                 DataIteratorBuilder source = selectFromSource(meta, c, u, context, log);
                 if (null == source)
@@ -166,7 +152,8 @@ public class SimpleQueryTransformStep extends TransformTask
 
                 _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log);
 
-                txTarget.commit();
+                if (null != txTarget)
+                    txTarget.commit();
                 if (null != txSource)
                     txSource.commit();
             }
@@ -181,7 +168,8 @@ public class SimpleQueryTransformStep extends TransformTask
         }
         finally
         {
-            targetScope.closeConnection();
+            if (null != targetScope)
+                targetScope.closeConnection();
             if (null != sourceScope)
                 sourceScope.closeConnection();
         }

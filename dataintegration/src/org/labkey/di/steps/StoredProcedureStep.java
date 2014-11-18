@@ -145,6 +145,7 @@ public class StoredProcedureStep extends TransformTask
 
     private boolean executeProcedure() throws SQLException
     {
+        if (!validate(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger())) return false;
         if (!validateAndSetDbScope()) return false;
         if (!getParametersFromDbMetadata()) return false;
         seedParameterValues();
@@ -155,6 +156,7 @@ public class StoredProcedureStep extends TransformTask
 
     private boolean validateAndSetDbScope()
     {
+        // TODO: This is misnamed; we're not really doing validation, nor do we ever return false
         procSchema = _meta.getProcedureSchema().toString();
         procName = _meta.getProcedure();
 

@@ -64,4 +64,6 @@ public interface StepMeta
     void parseConfig(TransformType transformXML) throws XmlException;
 
     boolean isUseSource();
+
+    boolean isUseTarget();
 }

@@ -37,13 +37,13 @@ import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewContext;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.ViewContext;
 import org.labkey.di.VariableMap;
 import org.labkey.di.VariableMapImpl;
 import org.labkey.di.data.TransformProperty;
@@ -81,6 +81,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
     public static final String INPUT_ROLE = "Row Source";
     public static final String OUTPUT_ROLE = "Row Destination";
+    protected boolean _validateSource = true;
     FilterStrategy _filterStrategy = null;
 
     public TransformTask(TransformTaskFactory factory, PipelineJob job, StepMeta meta)
@@ -106,15 +107,15 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         return rows + " row" + (rows != 1 ? "s" : "");
     }
 
-    protected static int appendToTarget(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
+    protected int appendToTarget(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
     {
         if (CopyConfig.TargetTypes.query.equals(meta.getTargetType()))
             return appendToTargetQuery(meta, c, u, context, source, log);
         else
-            return appendToTargetFile(meta, c, u, context, source, log);
+            return appendToTargetFile(meta, context, source, log);
     }
 
-    private static int appendToTargetQuery(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
+    private int appendToTargetQuery(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
     {
         QuerySchema querySchema =  DefaultSchema.get(u, c, meta.getTargetSchema());
         if (null == querySchema || null == querySchema.getDbSchema())
@@ -125,7 +126,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         TableInfo targetTableInfo = querySchema.getTable(meta.getTargetQuery());
         if (null == targetTableInfo)
         {
-            context.getErrors().addRowError(new ValidationException("Could not find table: " +  meta.getTargetSchema() + "." + meta.getTargetQuery()));
+            context.getErrors().addRowError(new ValidationException("Could not find table: " +  meta.getFullTargetString()));
             return -1;
         }
         try
@@ -133,7 +134,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             QueryUpdateService qus = targetTableInfo.getUpdateService();
             if (null == qus)
             {
-                context.getErrors().addRowError(new ValidationException("Can't import into table: " + meta.getTargetSchema() + "." + meta.getTargetQuery()));
+                context.getErrors().addRowError(new ValidationException("Can't import into table: " + meta.getFullTargetString()));
                 return -1;
             }
 
@@ -146,7 +147,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             if (CopyConfig.TargetOptions.truncate == meta.getTargetOptions())
             {
                 int rows = qus.truncateRows(u, c, null /*extra script context */);
-                log.info("Deleted " + getNumRowsString(rows) + " from " + meta.getTargetSchema() + "."  + meta.getTargetQuery());
+                log.info("Deleted " + getNumRowsString(rows) + " from " + meta.getFullTargetString());
                 return qus.importRows(u, c, source, context.getErrors(), null);
             }
             else
@@ -166,21 +167,39 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         }
     }
 
-    private static int appendToTargetFile(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
+    private int appendToTargetFile(CopyConfig meta, DataIteratorContext context, DataIteratorBuilder source, Logger log)
     {
 
         // Eventually 3 options: truncate, append, or create new unique name if filespec already exists.
-        // Append is a little trickier: need some overload methods on TextWriter to create a FileWriter with append == true
-        // Also, who's to say the current output columns match the existing file?
+        // Append is a little trickier: need some overload methods on TextWriter to create a FileWriter with append == true,
+        // and suppress writing column headers.
+        // Also, who's to say the output columns match the existing file?
         try
         {
-            File outputDir = new File(meta.getTargetPath()); // to do, need this relative to pipelineRoot
-            File file = new File(meta.getTargetPath(), FileUtil.makeFileNameWithTimestamp(meta.getTargetFilePrefix(), meta.getTargetFileExtension()));
+            File outputDir = _txJob.getPipeRoot().resolvePath(meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.path));
+            if (!outputDir.exists() && !outputDir.mkdirs())
+            {
+                context.getErrors().addRowError(new ValidationException("Can't create output directory: " + outputDir));
+                return -1;
+            }
+            File outputFile = new File(outputDir, makeFileName(meta));
             TSVGridWriter tsv = new TSVGridWriter(new DataIteratorResultsImpl(source.getDataIterator(context)));
-
             tsv.setColumnHeaderType(TSVColumnWriter.ColumnHeaderType.queryColumnName);
-            tsv.write(file);
-            return tsv.getDataRowCount();
+
+            String specialChar = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.columnDelimiter);
+            if (specialChar != null)
+                tsv.setDelimiterCharacter(specialChar.charAt(0));
+            specialChar = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.rowDelimiter);
+            if (specialChar != null)
+                tsv.setRowSeparator(specialChar);
+            specialChar = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.quote);
+            if (specialChar != null)
+                tsv.setQuoteCharacter(specialChar.charAt(0));
+
+            tsv.write(outputFile);
+            int rowCount = tsv.getDataRowCount();
+            log.info("Wrote " + rowCount + " rows to file " + outputFile.toString());
+            return rowCount;
         }
         catch (SQLException e)
         {
@@ -190,6 +209,15 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         {
             throw new RuntimeException(e);
         }
+    }
+
+    private String makeFileName(CopyConfig meta)
+    {
+        String name = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.name);
+        name = name.replace("#", Integer.toString(_txJob.getTransformRunId()));
+        name = name.replace("?", FileUtil.getTimestamp());
+
+        return FileUtil.makeLegalName(name);
     }
 
     protected TransformPipelineJob getTransformJob()
@@ -302,5 +330,42 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         catch (URISyntaxException ignore)
         {
         }
+    }
+
+    public boolean validate(CopyConfig meta, Container c, User u, Logger log)
+    {
+        if (_validateSource && meta.isUseSource()) // RemoteQuery has a source, but we don't validate it. Stored proc may not have a source.
+        {
+            QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
+            if (null == sourceSchema || null == sourceSchema.getDbSchema())
+            {
+                log.error("ERROR: Source schema not found: " + meta.getSourceSchema());
+                return false;
+            }
+        }
+
+        if (meta.isUseTarget()) // Stored proc may not have a target
+        {
+            if (meta.getTargetType().equals(CopyConfig.TargetTypes.query))
+            {
+                QuerySchema targetSchema = DefaultSchema.get(u, c, meta.getTargetSchema());
+                if (null == targetSchema || null == targetSchema.getDbSchema())
+                {
+                    log.error("ERROR: Target schema not found: " + meta.getTargetSchema());
+                    return false;
+                }
+            }
+            else // Target is file
+            {
+                File outputDir = _txJob.getPipeRoot().resolvePath(meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.path));
+                if (!outputDir.exists() && !outputDir.mkdirs())
+                {
+                    log.error("ERROR: Target directory not accessible : " + outputDir.toString());
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 }

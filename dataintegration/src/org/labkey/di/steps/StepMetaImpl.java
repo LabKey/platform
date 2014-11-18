@@ -15,6 +15,7 @@
  */
 package org.labkey.di.steps;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
 import org.labkey.api.etl.CopyConfig;
@@ -23,6 +24,9 @@ import org.labkey.di.pipeline.TransformManager;
 import org.labkey.etl.xml.SchemaQueryType;
 import org.labkey.etl.xml.TargetQueryType;
 import org.labkey.etl.xml.TransformType;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * User: tgaluhn
@@ -114,16 +118,24 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
             {
                 try
                 {
-                    setTargetType(CopyConfig.TargetTypes.valueOf(destination.getType().toString()));
+                    setTargetType(TargetTypes.valueOf(destination.getType().toString()));
                 }
                 catch (XmlValueOutOfRangeException e)
                 {
                     throw new XmlException("Bad target type"); // TODO: error messsages in constants
                 }
 
-                setTargetPath(destination.getPath());
-                setTargetFilePrefix(destination.getPrefix());
-                setTargetFileExtension(destination.getExtension());
+                Map<TargetFileProperties, String> fileProps = new LinkedHashMap<>();
+                fileProps.put(TargetFileProperties.path, destination.getFilePath());
+                fileProps.put(TargetFileProperties.name, destination.getFileName());
+                if (destination.getColumnDelimiter() != null)
+                    fileProps.put(TargetFileProperties.columnDelimiter, StringEscapeUtils.unescapeJava(destination.getColumnDelimiter()));
+                if (destination.getRowDelimiter() != null)
+                    fileProps.put(TargetFileProperties.rowDelimiter, StringEscapeUtils.unescapeJava(destination.getRowDelimiter()));
+                if (destination.getQuote() != null)
+                    fileProps.put(TargetFileProperties.quote, StringEscapeUtils.unescapeJava(destination.getQuote()));
+
+                setTargetFileProperties(fileProps);
             }
             try
             {
@@ -134,8 +146,17 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
             {
                 throw new XmlException(TransformManager.INVALID_TARGET_OPTION);
             }
+
+            validateDestination();
         }
         else
             _useTarget = false;
+    }
+
+    private void validateDestination() throws XmlException
+    {
+        if ( (getTargetType().equals(TargetTypes.query) && (getTargetSchema() == null || getTargetQuery() == null))
+                || (getTargetType().equals(TargetTypes.file) && (getTargetFileProperties().get(TargetFileProperties.path) == null || getTargetFileProperties().get(TargetFileProperties.name) == null))) // OK to allow empty extension?
+            throw new XmlException(TransformManager.INVALID_DESTINATION);
     }
 }

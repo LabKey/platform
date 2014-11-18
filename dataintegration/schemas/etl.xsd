@@ -32,9 +32,11 @@
     <complexType name="TargetQueryType">
         <attribute name="schemaName" type="string" use="optional"/>
         <attribute name="queryName" type="string" use="optional"/>
-        <attribute name="path" type="string" use="optional"/>
-        <attribute name="prefix" type="string" use="optional"/>
-        <attribute name="extension" type="string" use="optional"/>
+        <attribute name="filePath" type="string" use="optional"/>
+        <attribute name="fileName" type="string" use="optional"/>
+        <attribute name="columnDelimiter" type="string" use="optional"/>
+        <attribute name="quote" type="string" use="optional"/>
+        <attribute name="rowDelimiter" type="string" use="optional"/>
         <attribute name="targetOption" type="etl:TargetOptionType" use="optional"/>
         <attribute name="type" type="etl:TargetTypeType" use="optional" default="query"/>
     </complexType>

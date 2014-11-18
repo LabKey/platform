@@ -48,9 +48,9 @@ public class StoredProcedureStepMeta extends StepMetaImpl
         {
             sb.append(" filter val from ").append(getSourceSchema().toString()).append(".").append(getSourceQuery());
         }
-        if (null != getTargetSchema())
+        if (isUseTarget())
         {
-            sb.append(" destination ").append(getTargetSchema().toString()).append(".").append(getTargetSchema());
+            sb.append(" destination ").append(getFullTargetString());
         }
         return sb.toString();
     }

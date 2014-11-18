@@ -28,7 +28,6 @@ import org.labkey.api.etl.DataIterator;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
 import org.labkey.api.security.User;
 import org.labkey.api.settings.AppProps;
@@ -54,26 +53,12 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
     public RemoteQueryTransformStep(TransformTaskFactory f, PipelineJob job, SimpleQueryTransformStepMeta meta, TransformJobContext context)
     {
         super(f, job, meta, context);
+        _validateSource = false;
     }
 
     @Override
     public boolean hasWork()
     {
-        return true;
-    }
-
-    @Override
-    public boolean validate(CopyConfig meta, Container c, User u, Logger log)
-    {
-        // sourceSchema is remote and is not used
-
-        QuerySchema targetSchema = DefaultSchema.get(u, c, meta.getTargetSchema());
-        if (null == targetSchema || null == targetSchema.getDbSchema())
-        {
-            log.error("ERROR: Target schema not found: " + meta.getTargetSchema());
-            return false;
-        }
-
         return true;
     }
 

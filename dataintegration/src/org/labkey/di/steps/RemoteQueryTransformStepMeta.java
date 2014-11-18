@@ -16,6 +16,7 @@
 package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
+import org.labkey.di.pipeline.TransformManager;
 import org.labkey.etl.xml.SchemaQueryType;
 import org.labkey.etl.xml.TransformType;
 
@@ -36,8 +37,11 @@ public class RemoteQueryTransformStepMeta extends SimpleQueryTransformStepMeta
         if (null != source)
         {
             super.parseSource(transformXML);
-            setRemoteSource(source.getRemoteSource());
+            if (null != source.getRemoteSource())
+                setRemoteSource(source.getRemoteSource());
+            else throw new XmlException("No remote source specified.");
         }
+        else throw new XmlException(TransformManager.INVALID_SOURCE);
     }
 
     public String getRemoteSource()
