@@ -2062,7 +2062,7 @@ public class BitSetQueryImpl
             // CONSIDER: The result will often be the same across users, however, so we could
             // CONSIDER: try to share cached results.
 
-            String cacheKey = user.getEntityId() + ":" + sql;
+            String cacheKey = user.getEntityId() + ":" + level.getUniqueName() + ":" + sql;
             MemberSet set = _resultsCache.get(cacheKey);
             if (null != set)
                 return set;
