@@ -18,6 +18,8 @@ package org.labkey.api.etl;
 
 import org.labkey.api.query.SchemaKey;
 
+import java.util.Map;
+
 /**
  * User: matthewb
  * Date: 2013-04-16
@@ -46,12 +48,11 @@ public class CopyConfig
     protected TargetOptions _targetOptions = TargetOptions.append;
     protected boolean _useTarget = true;
     protected TargetTypes _targetType = TargetTypes.query;
-    protected String _targetPath;
-    protected String _targetFilePrefix;
-    protected String _targetFileExtension;
+    protected Map<TargetFileProperties, String> _targetFileProperties;
 
     protected SchemaKey _procedureSchema;
     protected String _procedure;
+    private String _targetString;
 
     public CopyConfig()
     {
@@ -66,6 +67,22 @@ public class CopyConfig
         this._targetQuery = target;
     }
 
+    /**
+     * Assemble the parts of the target (schema + query, or file path + name) into an output string.
+     *
+     */
+    public String getFullTargetString()
+    {
+        if (_targetString == null)
+        {
+            if (TargetTypes.file.equals(getTargetType()))
+            {
+                _targetString = getTargetFileProperties().get(TargetFileProperties.path) + "/" + getTargetFileProperties().get(TargetFileProperties.name);
+            }
+            else _targetString = getTargetSchema().toString() + "." + getTargetQuery();
+        }
+        return _targetString;
+    }
 
     public enum TargetOptions
     {
@@ -84,6 +101,15 @@ public class CopyConfig
     {
         query,
         file
+    }
+
+    public enum TargetFileProperties
+    {
+        path,
+        name,
+        columnDelimiter,
+        quote,
+        rowDelimiter
     }
 
     public SchemaKey getSourceSchema()
@@ -226,33 +252,14 @@ public class CopyConfig
         _targetType = targetType;
     }
 
-    public String getTargetPath()
+    public Map<TargetFileProperties, String> getTargetFileProperties()
     {
-        return _targetPath;
+        return _targetFileProperties;
     }
 
-    public void setTargetPath(String targetPath)
+    public void setTargetFileProperties(Map<TargetFileProperties, String> targetFileProperties)
     {
-        _targetPath = targetPath;
+        _targetFileProperties = targetFileProperties;
     }
 
-    public String getTargetFilePrefix()
-    {
-        return _targetFilePrefix;
-    }
-
-    public void setTargetFilePrefix(String targetFilePrefix)
-    {
-        _targetFilePrefix = targetFilePrefix;
-    }
-
-    public String getTargetFileExtension()
-    {
-        return _targetFileExtension;
-    }
-
-    public void setTargetFileExtension(String targetFileExtension)
-    {
-        _targetFileExtension = targetFileExtension;
-    }
 }
