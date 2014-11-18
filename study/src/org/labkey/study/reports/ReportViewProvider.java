@@ -96,6 +96,12 @@ public class ReportViewProvider implements DataViewProvider
     }
 
     @Override
+    public List<DataViewInfo> getViews(ViewContext context, boolean alwaysUseTitlesForLoadingCustomViews) throws Exception
+    {
+        return getViews(context);
+    }
+
+    @Override
     public List<DataViewInfo> getViews(ViewContext context) throws Exception
     {
         Container container = context.getContainer();

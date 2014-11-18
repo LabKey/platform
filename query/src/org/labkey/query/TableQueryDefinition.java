@@ -157,10 +157,21 @@ public class TableQueryDefinition extends QueryDefinitionImpl
     @Override
     public String getDescription()
     {
-        TableInfo t = getTable(new ArrayList<QueryException>(), true);
-        return t == null ? null : t.getDescription();
+        if (null == _queryDef.getDescription())
+        {
+            TableInfo t = getTable(new ArrayList<QueryException>(), true);
+            if (null != t)
+                _queryDef.setDescription(t.getDescription());
+        }
+        return _queryDef.getDescription();
     }
 
+
+    @Override
+    public void setDescription(String description)
+    {
+        _queryDef.setDescription(description);
+    }
 
     @Override
     public TableInfo createTable(@NotNull UserSchema schema, List<QueryException> errors, boolean includeMetadata, @Nullable Query query)

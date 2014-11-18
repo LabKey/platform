@@ -4586,16 +4586,21 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(IdForm form, BindException errors) throws Exception
         {
-            DataSetDefinition ds = StudyManager.getInstance().getDatasetDefinition(getStudyRedirectIfNull(), form.getId());
+            Study study = getStudyRedirectIfNull(getContainer());
+
+            DataSetDefinition ds = StudyManager.getInstance().getDatasetDefinition(study, form.getId());
             if (null == ds)
                 redirectTypeNotFound(form.getId());
 
             DbScope scope = StudySchema.getInstance().getSchema().getScope();
             try (DbScope.Transaction transaction = scope.ensureTransaction())
             {
-                StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, true);
+                // performStudyResync==false so we can do this out of the transaction
+                StudyManager.getInstance().deleteDataset(getStudyRedirectIfNull(), getUser(), ds, false);
                 transaction.commit();
             }
+            StudyManager.getInstance().getVisitManager((StudyImpl)study).updateParticipantVisits(getUser(), Collections.<DataSetDefinition>emptySet());
+
             throw new RedirectException(new ActionURL(ManageTypesAction.class, getContainer()));
         }
 

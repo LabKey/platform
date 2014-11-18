@@ -394,7 +394,8 @@ public class QueryServiceImpl extends QueryService
         return ret.get(name);
     }
 
-    private Map<String, CustomView> getCustomViewMap(@NotNull User user, @NotNull Container container, @Nullable User owner, String schema, String query, boolean includeInherited, boolean sharedOnly)
+    private Map<String, CustomView> getCustomViewMap(@NotNull User user, @NotNull Container container, @Nullable User owner, String schema, String query,
+            boolean includeInherited, boolean sharedOnly, boolean alwaysUseTitlesForLoadingCustomViews)
     {
         // Check for a custom query that matches
         Map<Map.Entry<String, String>, QueryDefinition> queryDefs = getAllQueryDefs(owner, container, schema, false, true);
@@ -411,17 +412,18 @@ public class QueryServiceImpl extends QueryService
 
         if (qd != null)
         {
-            return getCustomViewMap(user, container, owner, qd, includeInherited, sharedOnly);
+            return getCustomViewMap(user, container, owner, qd, includeInherited, sharedOnly, alwaysUseTitlesForLoadingCustomViews);
         }
         return Collections.emptyMap();
     }
 
-    protected Map<String, CustomView> getCustomViewMap(@NotNull User user, Container container, @Nullable User owner, QueryDefinition qd, boolean inheritable, boolean sharedOnly)
+    protected Map<String, CustomView> getCustomViewMap(@NotNull User user, Container container, @Nullable User owner, QueryDefinition qd,
+           boolean inheritable, boolean sharedOnly, boolean alwaysUseTitlesForLoadingCustomViews)
     {
         Map<String, CustomView> views = new HashMap<>();
 
         // module query views have lower precedence, so add them first
-        for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd))
+        for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd, alwaysUseTitlesForLoadingCustomViews))
         {
             views.put(view.getName(), view);
         }
@@ -435,27 +437,39 @@ public class QueryServiceImpl extends QueryService
 
     public CustomView getCustomView(@NotNull User user, Container container, @Nullable User owner, String schema, String query, String name)
     {
-        Map<String, CustomView> views = getCustomViewMap(user, container, owner, schema, query, false, false);
+        Map<String, CustomView> views = getCustomViewMap(user, container, owner, schema, query, false, false, true);
         return views.get(name);
     }
 
     public List<CustomView> getCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited)
     {
-        return _getCustomViews(user, container, owner, schemaName, queryName, includeInherited, false);
+        return _getCustomViews(user, container, owner, schemaName, queryName, includeInherited, false, true);
     }
+
+    public List<CustomView> getCustomViews(@NotNull User user, Container container, @Nullable User owner, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited, boolean alwaysUseTitlesForLoadingCustomViews)
+    {
+        return _getCustomViews(user, container, owner, schemaName, queryName, includeInherited, false, alwaysUseTitlesForLoadingCustomViews);
+    }
+
 
     public CustomView getSharedCustomView(@NotNull User user, Container container, String schema, String query, String name)
     {
-        Map<String, CustomView> views = getCustomViewMap(user, container, null, schema, query, false, true);
+        Map<String, CustomView> views = getCustomViewMap(user, container, null, schema, query, false, true, true);
         return views.get(name);
     }
 
     public List<CustomView> getSharedCustomViews(@NotNull User user, Container container, @Nullable String schemaName, @Nullable String queryName, boolean includeInherited)
     {
-        return _getCustomViews(user, container, null, schemaName, queryName, includeInherited, true);
+        return _getCustomViews(user, container, null, schemaName, queryName, includeInherited, true, true);
     }
 
-    private List<CustomView> _getCustomViews(final @NotNull User user, final Container container, final @Nullable User owner, final @Nullable String schemaName, final @Nullable String queryName, final boolean includeInherited, final boolean sharedOnly)
+    private List<CustomView> _getCustomViews(final @NotNull User user, final Container container, final @Nullable User owner, final @Nullable String schemaName, final @Nullable String queryName,
+            final boolean includeInherited,
+            final boolean sharedOnly,
+            // TODO: this last paramater is a performance hack and need to be addressed,
+            // TODO: calling getTitle() can be ridiculously expensive, if alwaysUseTitlesForLoadingCustomViews==false,
+            // TODO: then code may avoid expensive calls at the expense of some consistency
+            final boolean alwaysUseTitlesForLoadingCustomViews)
     {
         final Collection<CustomView> views;
 
@@ -470,14 +484,18 @@ public class QueryServiceImpl extends QueryService
                 {
                     Set<CustomView> views = new HashSet<>();
                     views = reduce(views, customViews);
+                    //TODO should getQueryDefForTable() optimize the case where it is a query?
+                    Map<String,QueryDefinition> queries = schema.getQueryDefs();
                     for (String name : names)
                     {
-                        QueryDefinition qd = schema.getQueryDefForTable(name);
+                        QueryDefinition qd = queries.get(name);
+                        if (null == qd)
+                            qd = schema.getQueryDefForTable(name);
                         if (qd != null)
                         {
                             try
                             {
-                                Map<String, CustomView> viewMap = getCustomViewMap(user, container, owner, qd, includeInherited, sharedOnly);
+                                Map<String, CustomView> viewMap = getCustomViewMap(user, container, owner, qd, includeInherited, sharedOnly, alwaysUseTitlesForLoadingCustomViews);
 
                                 if (!viewMap.isEmpty())
                                     views.addAll(viewMap.values());
@@ -509,7 +527,7 @@ public class QueryServiceImpl extends QueryService
         }
         else
         {
-            views = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values();
+            views = getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly, true).values();
         }
 
         return new ArrayList<>(views);
@@ -550,7 +568,7 @@ public class QueryServiceImpl extends QueryService
             return result;
         }
 
-        return new ArrayList<>(getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly).values());
+        return new ArrayList<>(getCustomViewMap(user, container, owner, schemaName, queryName, includeInherited, sharedOnly, true).values());
     }
 
     public List<CustomView> getFileBasedCustomViews(Container container, QueryDefinition qd, Path path, String query, Module... extraModules)
