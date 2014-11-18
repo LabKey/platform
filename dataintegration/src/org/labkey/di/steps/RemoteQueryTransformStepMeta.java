@@ -37,9 +37,7 @@ public class RemoteQueryTransformStepMeta extends SimpleQueryTransformStepMeta
         if (null != source)
         {
             super.parseSource(transformXML);
-            if (null != source.getRemoteSource())
-                setRemoteSource(source.getRemoteSource());
-            else throw new XmlException("No remote source specified.");
+            setRemoteSource(source.getRemoteSource());
         }
         else throw new XmlException(TransformManager.INVALID_SOURCE);
     }
