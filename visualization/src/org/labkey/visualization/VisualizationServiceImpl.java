@@ -15,17 +15,37 @@
  */
 package org.labkey.visualization;
 
+import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONObject;
+import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.JsonWriter;
+import org.labkey.api.data.TableInfo;
+import org.labkey.api.query.DefaultSchema;
+import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryDefinition;
+import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
+import org.labkey.api.study.DataSetTable;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.visualization.SQLGenerationException;
+import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.visualization.VisualizationProvider.MeasureFilter;
+import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
 import org.labkey.api.visualization.VisualizationService;
+import org.labkey.api.visualization.VisualizationSourceColumn;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
 
-/**
- * Created by matthew on 9/18/14.
- */
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class VisualizationServiceImpl implements VisualizationService
 {
     public SQLResponse getDataGenerateSQL(Container c, User user, JSONObject json) throws SQLGenerationException
@@ -43,5 +63,242 @@ public class VisualizationServiceImpl implements VisualizationService
         ret.schemaKey = generator.getPrimarySchema().getSchemaPath();
         ret.sql = generator.getSQL();
         return ret;
+    }
+
+
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getDimensions(Container c, User u, MeasureSetRequest measureRequest)
+    {
+        VisualizationProvider provider = getProvider(c, u, measureRequest);
+        return provider.getDimensions(measureRequest.getQueryName());
+    }
+
+
+    public Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> getMeasures(Container c, User u, MeasureSetRequest measureRequest)
+    {
+        Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<>();
+
+        if (measureRequest.getFilters() != null && measureRequest.getFilters().length > 0)
+        {
+            for (String filter : measureRequest.getFilters())
+            {
+                MeasureFilter mf = new MeasureFilter(filter);
+                VisualizationProvider provider = getProvider(c, u, mf);
+
+                if (measureRequest.isZeroDateMeasures())
+                {
+                    measures.putAll(provider.getZeroDateMeasures(mf.getQueryType()));
+                }
+                else if (measureRequest.isDateMeasures())
+                {
+                    if (mf.getQuery() != null)
+                        measures.putAll(provider.getDateMeasures(mf.getQuery()));
+                    else
+                        measures.putAll(provider.getDateMeasures(mf.getQueryType()));
+                }
+                else if (measureRequest.isAllColumns())
+                {
+                    if (mf.getQuery() != null)
+                        measures.putAll(provider.getAllColumns(mf.getQuery(), measureRequest.isShowHidden()));
+                    else
+                        measures.putAll(provider.getAllColumns(mf.getQueryType(), measureRequest.isShowHidden()));
+                }
+                else
+                {
+                    if (mf.getQuery() != null)
+                        measures.putAll(provider.getMeasures(mf.getQuery()));
+                    else
+                        measures.putAll(provider.getMeasures(mf.getQueryType()));
+                }
+            }
+        }
+        else
+        {
+            // get all tables in this container
+            for (VisualizationProvider provider : createVisualizationProviders(c, u, measureRequest.isShowHidden()).values())
+            {
+                if (measureRequest.isZeroDateMeasures())
+                    measures.putAll(provider.getZeroDateMeasures(VisualizationProvider.QueryType.all));
+                else if (measureRequest.isDateMeasures())
+                    measures.putAll(provider.getDateMeasures(VisualizationProvider.QueryType.all));
+                else
+                    measures.putAll(provider.getMeasures(VisualizationProvider.QueryType.all));
+            }
+        }
+
+        return measures;
+    }
+
+
+    public List<Map<String, Object>> toJSON(Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimMeasureCols)
+    {
+        return getColumnResponse(dimMeasureCols);
+    }
+
+
+    private Map<String, ? extends VisualizationProvider> createVisualizationProviders(Container c, User u, boolean showHidden)
+    {
+        Map<String, VisualizationProvider> result = new HashMap<>();
+        DefaultSchema defaultSchema = DefaultSchema.get(u, c);
+        for (QuerySchema querySchema : defaultSchema.getSchemas(showHidden))
+        {
+            VisualizationProvider provider = querySchema.createVisualizationProvider();
+            if (provider != null)
+            {
+                result.put(querySchema.getName(), provider);
+            }
+        }
+        return result;
+    }
+
+
+    @NotNull
+    private VisualizationProvider getProvider(Container c, User u, MeasureFilter mf)
+    {
+        return getProvider(c, u, mf.getSchema());
+    }
+
+
+    @NotNull
+    private VisualizationProvider getProvider(Container c, User u, MeasureSetRequest measureRequest)
+    {
+        return getProvider(c, u, measureRequest.getSchemaName());
+    }
+
+
+    @NotNull
+    private VisualizationProvider getProvider(Container c, User u, String schema)
+    {
+        UserSchema userSchema = QueryService.get().getUserSchema(u, c, schema);
+        if (userSchema == null)
+        {
+            throw new IllegalArgumentException("No measure schema found for " + schema);
+        }
+
+        VisualizationProvider provider = userSchema.createVisualizationProvider();
+        if (provider == null)
+        {
+            throw new IllegalArgumentException("No measure provider found for schema " + userSchema.getSchemaPath());
+        }
+
+        return provider;
+    }
+
+
+    private static boolean isDemographicQueryDefinition(QueryDefinition q)
+    {
+        if (!StringUtils.equalsIgnoreCase("study", q.getSchemaName()) || !q.isTableQueryDefinition())
+            return false;
+
+        try
+        {
+            TableInfo t = q.getTable(null, false);
+            if (!(t instanceof DataSetTable))
+                return false;
+            return ((DataSetTable)t).getDataset().isDemographicData();
+        }
+        catch (QueryException qe)
+        {
+            return false;
+        }
+    }
+
+
+    private List<Map<String, Object>> getColumnResponse(Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> cols)
+    {
+        List<Map<String, Object>> measuresJSON = new ArrayList<>();
+        Map<QueryDefinition, TableInfo> _tableInfoMap = new HashMap<>();
+        int count = 1;
+
+        for (Map.Entry<Pair<FieldKey, ColumnInfo>, QueryDefinition> entry : cols.entrySet())
+        {
+            QueryDefinition query = entry.getValue();
+
+            List<QueryException> errors = new ArrayList<>();
+            TableInfo tableInfo = query.getTable(errors, false);
+            if (errors.isEmpty() && !_tableInfoMap.containsKey(query))
+                _tableInfoMap.put(query, tableInfo);
+
+            // add measure properties
+            FieldKey fieldKey = entry.getKey().first;
+            ColumnInfo column = entry.getKey().second;
+            Map<String, Object> props = getColumnProps(fieldKey, column, query, _tableInfoMap);
+            props.put("schemaName", query.getSchema().getName());
+            props.put("queryName", getQueryName(query, false, _tableInfoMap));
+            props.put("queryLabel", getQueryName(query, true, _tableInfoMap));
+            props.put("queryDescription", getQueryDefinition(query, _tableInfoMap));
+            props.put("isUserDefined", !query.isTableQueryDefinition());
+            props.put("isDemographic", isDemographicQueryDefinition(query));
+            props.put("id", count++);
+
+            measuresJSON.add(props);
+        }
+        return measuresJSON;
+    }
+
+
+    protected Map<String, Object> getColumnProps(FieldKey fieldKey, ColumnInfo col, QueryDefinition query, Map<QueryDefinition, TableInfo> _tableInfoMap)
+    {
+        Map<String, Object> props = new HashMap<>();
+
+        props.put("name", fieldKey.toString());
+        props.put("label", col.getLabel());
+        props.put("longlabel", col.getLabel() + " (" + getQueryName(query, true, _tableInfoMap) + ")");
+        props.put("type", col.getJdbcType().name());
+        props.put("description", StringUtils.trimToEmpty(col.getDescription()));
+        props.put("alias", VisualizationSourceColumn.getAlias(query.getSchemaName(), getQueryName(query, false, _tableInfoMap), col.getName()));
+
+        props.put("isKeyVariable", col.isKeyVariable());
+        props.put("defaultScale", col.getDefaultScale().name());
+
+        Map<String, Object> lookupJSON = JsonWriter.getLookupInfo(col, false);
+        if (lookupJSON != null)
+        {
+            props.put("lookup", lookupJSON);
+        }
+
+        props.put("shownInDetailsView", col.isShownInDetailsView());
+        props.put("shownInInsertView", col.isShownInInsertView());
+        props.put("shownInUpdateView", col.isShownInUpdateView());
+
+        return props;
+    }
+
+
+    private String getQueryName(QueryDefinition query, boolean asLabel, Map<QueryDefinition, TableInfo> _tableInfoMap)
+    {
+        String queryName = query.getName();
+
+        if (_tableInfoMap.containsKey(query))
+        {
+            TableInfo table = _tableInfoMap.get(query);
+            if (table instanceof DataSetTable)
+            {
+                if (asLabel)
+                    queryName = ((DataSetTable) table).getDataset().getLabel();
+                else
+                    queryName = ((DataSetTable) table).getDataset().getName();
+            }
+            else if (asLabel)
+            {
+                queryName = table.getTitle();
+            }
+        }
+
+        return queryName;
+    }
+
+
+    private String getQueryDefinition(QueryDefinition query, Map<QueryDefinition, TableInfo> _tableInfoMap)
+    {
+        String description = query.getDescription();
+
+        if (_tableInfoMap.containsKey(query))
+        {
+            TableInfo table = _tableInfoMap.get(query);
+            if (table instanceof DataSetTable)
+                description = ((DataSetTable) table).getDataset().getDescription();
+        }
+
+        return description;
     }
 }

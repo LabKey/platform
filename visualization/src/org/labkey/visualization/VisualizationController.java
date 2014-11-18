@@ -45,7 +45,6 @@ import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegion;
 import org.labkey.api.data.DisplayColumn;
-import org.labkey.api.data.JsonWriter;
 import org.labkey.api.data.QueryLogging;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -58,12 +57,9 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.views.DataViewProvider.EditInfo.ThumbnailType;
 import org.labkey.api.query.CustomView;
-import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryDefinition;
-import org.labkey.api.query.QueryException;
 import org.labkey.api.query.QueryParam;
-import org.labkey.api.query.QuerySchema;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -83,7 +79,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
-import org.labkey.api.study.DataSetTable;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
@@ -107,8 +102,9 @@ import org.labkey.api.visualization.GenericChartReportDescriptor;
 import org.labkey.api.visualization.SQLGenerationException;
 import org.labkey.api.visualization.SvgThumbnailGenerator;
 import org.labkey.api.visualization.VisualizationProvider;
+import org.labkey.api.visualization.VisualizationProvider.MeasureSetRequest;
 import org.labkey.api.visualization.VisualizationReportDescriptor;
-import org.labkey.api.visualization.VisualizationSourceColumn;
+import org.labkey.api.visualization.VisualizationService;
 import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.visualization.sql.VisualizationSQLGenerator;
 import org.springframework.validation.BindException;
@@ -254,22 +250,8 @@ public class VisualizationController extends SpringActionController
         setActionResolver(_actionResolver);
     }
 
-    public static class DimensionsForm extends MeasuresForm
-    {
-        private boolean _includeDemographics;
 
-        public boolean isIncludeDemographics()
-        {
-            return _includeDemographics;
-        }
-
-        public void setIncludeDemographics(boolean includeDemographics)
-        {
-            _includeDemographics = includeDemographics;
-        }
-    }
-
-    public static class DimensionValuesForm extends MeasuresForm
+    public static class DimensionValuesForm extends MeasureSetRequest
     {
         private String _filterUrl;
 
@@ -284,368 +266,44 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-    public static class MeasuresForm
-    {
-        private String[] _filters = new String[0];
-        private String _schemaName;
-        private String _queryName;
-        private String _name;
-        private boolean _dateMeasures;
-        private boolean _allColumns;
-        private boolean _showHidden;
-
-        public String getName()
-        {
-            return _name;
-        }
-
-        public void setName(String name)
-        {
-            _name = name;
-        }
-
-        public String getSchemaName()
-        {
-            return _schemaName;
-        }
-
-        public void setSchemaName(String schemaName)
-        {
-            _schemaName = schemaName;
-        }
-
-        public String getQueryName()
-        {
-            return _queryName;
-        }
-
-        public void setQueryName(String queryName)
-        {
-            _queryName = queryName;
-        }
-
-        public String[] getFilters()
-        {
-            return _filters;
-        }
-
-        public void setFilters(String[] filters)
-        {
-            _filters = filters;
-        }
-
-        public boolean isDateMeasures()
-        {
-            return _dateMeasures;
-        }
-
-        public void setDateMeasures(boolean dateMeasures)
-        {
-            _dateMeasures = dateMeasures;
-        }
-
-        public boolean isAllColumns()
-        {
-            return _allColumns;
-        }
-
-        public void setAllColumns(boolean allColumns)
-        {
-            _allColumns = allColumns;
-        }
-
-        public boolean isShowHidden()
-        {
-            return _showHidden;
-        }
-
-        public void setShowHidden(boolean showHidden)
-        {
-            _showHidden = showHidden;
-        }
-    }
-
-    public Map<String, ? extends VisualizationProvider> createVisualizationProviders(boolean showHidden)
-    {
-        Map<String, VisualizationProvider> result = new HashMap<>();
-        DefaultSchema defaultSchema = DefaultSchema.get(getUser(), getContainer());
-        for (QuerySchema querySchema : defaultSchema.getSchemas(showHidden))
-        {
-            VisualizationProvider provider = querySchema.createVisualizationProvider();
-            if (provider != null)
-            {
-                result.put(querySchema.getName(), provider);
-            }
-        }
-        return result;
-    }
-
-    public static class MeasureFilter
-    {
-        private String _schema;
-        private String _query;
-        private VisualizationProvider.QueryType _queryType = VisualizationProvider.QueryType.all;
-
-        public MeasureFilter(String filter)
-        {
-            parse(filter);
-        }
-
-        protected void parse(String filter)
-        {
-            String[] parts = filter.split("\\|");
-
-            assert(parts.length >= 2) : "Invalid filter value";
-
-            _schema = parts[0];
-
-            if (!parts[1].equals("~"))
-                _query = parts[1];
-
-            if (parts.length >= 3)
-                _queryType = VisualizationProvider.QueryType.valueOf(parts[2]);
-        }
-
-        public String getSchema()
-        {
-            return _schema;
-        }
-
-        public String getQuery()
-        {
-            return _query;
-        }
-
-        public VisualizationProvider.QueryType getQueryType()
-        {
-            return _queryType;
-        }
-    }
-
-
-    private static boolean isDemographicQueryDefinition(QueryDefinition q)
-    {
-        if (!StringUtils.equalsIgnoreCase("study", q.getSchemaName()) || !q.isTableQueryDefinition())
-            return false;
-
-        try
-        {
-            TableInfo t = q.getTable(null, false);
-            if (!(t instanceof DataSetTable))
-                return false;
-            return ((DataSetTable)t).getDataset().isDemographicData();
-        }
-        catch (QueryException qe)
-        {
-            return false;
-        }
-    }
-
 
     @Action(ActionType.SelectMetaData)
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetMeasuresAction<Form extends MeasuresForm> extends ApiAction<Form>
+    public class GetMeasuresAction<Form extends MeasureSetRequest> extends ApiAction<Form>
     {
-        private Map<QueryDefinition, TableInfo> _tableInfoMap = new HashMap<>();
-
-        public ApiResponse execute(Form form, BindException errors) throws Exception
+        public ApiResponse execute(Form measureRequest, BindException errors) throws Exception
         {
-            Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<>();
-            if (form.getFilters() != null && form.getFilters().length > 0)
-            {
-                for (String filter : form.getFilters())
-                {
-                    MeasureFilter mf = new MeasureFilter(filter);
-                    UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), mf.getSchema());
-                    if (schema == null)
-                    {
-                        errors.reject(ERROR_MSG, "No measure schema found for " + mf.getSchema());
-                        return null;
-                    }
-                    VisualizationProvider provider = schema.createVisualizationProvider();
-                    if (provider == null)
-                    {
-                        errors.reject(ERROR_MSG, "No measure provider found for schema " + schema.getSchemaPath());
-                        return null;
-                    }
-
-                    if (form.isDateMeasures())
-                    {
-                        if (mf.getQuery() != null)
-                            measures.putAll(provider.getDateMeasures(mf.getQuery()));
-                        else
-                            measures.putAll(provider.getDateMeasures(mf.getQueryType()));
-
-                    }
-                    else if (form.isAllColumns())
-                    {
-                        if (mf.getQuery() != null)
-                            measures.putAll(provider.getAllColumns(mf.getQuery(), form.isShowHidden()));
-                        else
-                            measures.putAll(provider.getAllColumns(mf.getQueryType(), form.isShowHidden()));
-                    }
-                    else
-                    {
-                        if (mf.getQuery() != null)
-                            measures.putAll(provider.getMeasures(mf.getQuery()));
-                        else
-                            measures.putAll(provider.getMeasures(mf.getQueryType()));
-                    }
-                }
-            }
-            else
-            {
-                // get all tables in this container
-                for (VisualizationProvider provider : createVisualizationProviders(form.isShowHidden()).values())
-                {
-                    if (form.isDateMeasures())
-                        measures.putAll(provider.getDateMeasures(VisualizationProvider.QueryType.all));
-                    else
-                        measures.putAll(provider.getMeasures(VisualizationProvider.QueryType.all));
-                }
-            }
+            VisualizationService vs = ServiceRegistry.get(VisualizationService.class);
+            Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = vs.getMeasures(getContainer(), getUser(), measureRequest);
 
             ApiSimpleResponse resp = new ApiSimpleResponse();
-            List<Map<String, Object>> measuresJSON = getColumnResponse(measures);
             resp.put("success", true);
-            resp.put("measures", measuresJSON);
-
+            resp.put("measures", vs.toJSON(measures));
             return resp;
         }
-
-        protected List<Map<String, Object>> getColumnResponse(Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> cols)
-        {
-            List<Map<String, Object>> measuresJSON = new ArrayList<>();
-            int count = 1;
-            for (Map.Entry<Pair<FieldKey, ColumnInfo>, QueryDefinition> entry : cols.entrySet())
-            {
-                QueryDefinition query = entry.getValue();
-
-                List<QueryException> errors = new ArrayList<>();
-                TableInfo tableInfo = query.getTable(errors, false);
-                if (errors.isEmpty() && !_tableInfoMap.containsKey(query))
-                    _tableInfoMap.put(query, tableInfo);
-
-                // add measure properties
-                FieldKey fieldKey = entry.getKey().first;
-                ColumnInfo column = entry.getKey().second;
-                Map<String, Object> props = getColumnProps(fieldKey, column, query);
-                props.put("schemaName", query.getSchema().getName());
-                props.put("queryName", getQueryName(query));
-                props.put("queryLabel", getQueryLabel(query));
-                props.put("queryDescription", getQueryDefinition(query));
-                props.put("isUserDefined", !query.isTableQueryDefinition());
-                props.put("isDemographic", isDemographicQueryDefinition(query));
-                props.put("id", count++);
-
-                measuresJSON.add(props);
-            }
-            return measuresJSON;
-        }
-
-        protected Map<String, Object> getColumnProps(FieldKey fieldKey, ColumnInfo col, QueryDefinition query)
-        {
-            Map<String, Object> props = new HashMap<>();
-
-            props.put("name", fieldKey.toString());
-            props.put("label", col.getLabel());
-            props.put("longlabel", col.getLabel() + " (" + getQueryLabel(query) + ")");
-            props.put("type", col.getJdbcType().name());
-            props.put("description", StringUtils.trimToEmpty(col.getDescription()));
-            props.put("alias", VisualizationSourceColumn.getAlias(query.getSchemaName(), getQueryName(query), col.getName()));
-
-            props.put("isKeyVariable", col.isKeyVariable());
-            props.put("defaultScale", col.getDefaultScale().name());
-
-            Map<String, Object> lookupJSON = JsonWriter.getLookupInfo(col, false);
-            if (lookupJSON != null)
-            {
-                props.put("lookup", lookupJSON);
-            }
-
-            props.put("shownInDetailsView", col.isShownInDetailsView());
-            props.put("shownInInsertView", col.isShownInInsertView());
-            props.put("shownInUpdateView", col.isShownInUpdateView());
-
-            return props;
-        }
-
-        private String getQueryName(QueryDefinition query)
-        {
-            return getQueryName(query, false);
-        }
-
-        private String getQueryLabel(QueryDefinition query)
-        {
-            return getQueryName(query, true);
-        }
-
-        private String getQueryName(QueryDefinition query, boolean asLabel)
-        {
-            String queryName = query.getName();
-
-            if (_tableInfoMap.containsKey(query))
-            {
-                TableInfo table = _tableInfoMap.get(query);
-                if (table instanceof DataSetTable)
-                {
-                    if (asLabel)
-                        queryName = ((DataSetTable) table).getDataset().getLabel();
-                    else
-                        queryName = ((DataSetTable) table).getDataset().getName();
-                }
-                else if (asLabel)
-                {
-                    queryName = table.getTitle();
-                }
-            }
-
-            return queryName;
-        }
-
-        private String getQueryDefinition(QueryDefinition query)
-        {
-            String description = query.getDescription();
-
-            if (_tableInfoMap.containsKey(query))
-            {
-                TableInfo table = _tableInfoMap.get(query);
-                if (table instanceof DataSetTable)
-                    description = ((DataSetTable) table).getDataset().getDescription();
-            }
-
-            return description;
-        }
     }
 
     @Action(ActionType.SelectMetaData)
     @RequiresPermissionClass(ReadPermission.class)
-    public class GetDimensionsAction extends GetMeasuresAction<DimensionsForm>
+    public class GetDimensionsAction extends GetMeasuresAction<MeasureSetRequest>
     {
-        public ApiResponse execute(DimensionsForm form, BindException errors) throws Exception
+        @Override
+        public void validateForm(MeasureSetRequest measureRequest, Errors errors)
         {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-            if (form.getSchemaName() != null && form.getQueryName() != null)
+            if (measureRequest.getSchemaName() == null || measureRequest.getQueryName() == null)
             {
-                UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), form.getSchemaName());
-                if (schema == null)
-                {
-                    errors.reject(ERROR_MSG, "No measure schema found for " + form.getSchemaName());
-                    return null;
-                }
-                VisualizationProvider provider = schema.createVisualizationProvider();
-                if (provider == null)
-                {
-                    errors.reject(ERROR_MSG, "No measure provider found for schema " + schema.getSchemaPath());
-                    return null;
-                }
-                Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimensions = provider.getDimensions(form.getQueryName());
-                List<Map<String, Object>> dimensionJSON = getColumnResponse(dimensions);
-                resp.put("success", true);
-                resp.put("dimensions", dimensionJSON);
-            }
-            else
                 throw new IllegalArgumentException("schemaName and queryName are required parameters");
+            }
+        }
+
+        public ApiResponse execute(MeasureSetRequest measureRequest, BindException errors) throws Exception
+        {
+            VisualizationService vs = ServiceRegistry.get(VisualizationService.class);
+            Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> dimensions = vs.getDimensions(getContainer(), getUser(), measureRequest);
+
+            ApiSimpleResponse resp = new ApiSimpleResponse();
+            resp.put("success", true);
+            resp.put("dimensions", vs.toJSON(dimensions));
 
             return resp;
         }
@@ -714,6 +372,17 @@ public class VisualizationController extends SpringActionController
         }
     }
 
+    @Action(ActionType.SelectMetaData)
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetZeroDateAction extends GetMeasuresAction<MeasureSetRequest>
+    {
+        @Override
+        public void validateForm(MeasureSetRequest measureSetRequest, Errors errors)
+        {
+            measureSetRequest.setZeroDateMeasures(true);
+        }
+    }
+
     @RequiresPermissionClass(ReadPermission.class)
     public class GetVisualizationTypes extends ApiAction
     {
@@ -734,14 +403,6 @@ public class VisualizationController extends SpringActionController
             resp.put("success", true);
 
             List<Map<String, Object>> types = new ArrayList<>();
-/*  NOT SUPPORTED FOR 10.3
-            // motion chart
-            Map<String, Object> motion = getBaseTypeProperties();
-            motion.put("type", "motion");
-            motion.put("label", "Motion Chart");
-            motion.put("icon", getViewContext().getContextPath() + "/reports/output_motionchart.jpg");
-            types.add(motion);
-*/
             Study study = StudyService.get().getStudy(getContainer());
             if (study == null)
             {
@@ -762,21 +423,6 @@ public class VisualizationController extends SpringActionController
             line.put("enabled", true);
             types.add(line);
 
-/*  NOT SUPPORTED FOR 10.3
-            // scatter chart
-            Map<String, Object> scatter = getBaseTypeProperties();
-            scatter.put("type", "scatter");
-            scatter.put("label", "Scatter Plot");
-            scatter.put("icon", getViewContext().getContextPath() + "/reports/output_scatterplot.jpg");
-
-            List<Map<String, String>> scatterAxis = new ArrayList<Map<String, String>>();
-            scatterAxis.add(PageFlowUtil.map("name", "x-axis", "label", "Select data type for x-axis", "multiSelect", "false"));
-            scatterAxis.add(PageFlowUtil.map("name", "y-axis", "label", "Select data type for y-axis", "multiSelect", "false"));
-            scatter.put("axis", scatterAxis);
-
-            scatter.put("enabled", true);
-            types.add(scatter);
-*/
             // data grid
             Map<String, Object> data = getBaseTypeProperties(study);
             data.put("type", "dataGridTime");
@@ -806,21 +452,6 @@ public class VisualizationController extends SpringActionController
             dataScatter.put("enabled", true);
 
             types.add(dataScatter);
-/*  NOT SUPPORTED FOR 10.3
-            // excel data export
-            Map<String, Object> excel = getBaseTypeProperties();
-            excel.put("type", "excelExport");
-            excel.put("label", "Excel Data Export");
-            excel.put("icon", getViewContext().getContextPath() + "/reports/output_excel.jpg");
-            types.add(excel);
-
-            // TSV data export
-            Map<String, Object> tsv = getBaseTypeProperties();
-            tsv.put("type", "tsvExport");
-            tsv.put("label", "Tab-delimited Data Export");
-            tsv.put("icon", getViewContext().getContextPath() + "/reports/output_text.jpg");
-            types.add(tsv);
-*/
             resp.put("types", types);
 
             return resp;
@@ -908,49 +539,6 @@ public class VisualizationController extends SpringActionController
         }
     }
 
-
-    @RequiresPermissionClass(ReadPermission.class)
-    public class GetZeroDateAction extends GetMeasuresAction<MeasuresForm>
-    {
-        public ApiResponse execute(MeasuresForm form, BindException errors) throws Exception
-        {
-            ApiSimpleResponse resp = new ApiSimpleResponse();
-
-            Map<Pair<FieldKey, ColumnInfo>, QueryDefinition> measures = new HashMap<>();
-            if (form.getFilters() != null && form.getFilters().length > 0)
-            {
-                for (String filter : form.getFilters())
-                {
-                    MeasureFilter mf = new MeasureFilter(filter);
-                    UserSchema schema = QueryService.get().getUserSchema(getUser(), getContainer(), mf.getSchema());
-                    if (schema == null)
-                    {
-                        errors.reject(ERROR_MSG, "No measure schema found for " + form.getSchemaName());
-                        return null;
-                    }
-                    VisualizationProvider provider = schema.createVisualizationProvider();
-                    if (provider == null)
-                    {
-                        errors.reject(ERROR_MSG, "No measure provider found for schema " + schema.getSchemaPath());
-                        return null;
-                    }
-                    measures.putAll(provider.getZeroDateMeasures(mf.getQueryType()));
-                }
-            }
-            else
-            {
-                // get all tables in this container
-                for (VisualizationProvider provider : createVisualizationProviders(form.isShowHidden()).values())
-                    measures.putAll(provider.getZeroDateMeasures(VisualizationProvider.QueryType.all));
-            }
-
-            List<Map<String, Object>> measuresJSON = getColumnResponse(measures);
-            resp.put("success", true);
-            resp.put("measures", measuresJSON);
-
-            return resp;
-        }
-    }
 
     /**
      * Expects an HTTP post with no parameters, the post body carrying an SVG XML document.
