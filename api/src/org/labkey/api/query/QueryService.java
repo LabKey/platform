@@ -147,6 +147,8 @@ abstract public class QueryService
      */
     abstract public Map<String, Object> getCustomViewProperties(@Nullable CustomView view, @Nullable User user);
 
+    abstract public String getCustomViewNameFromEntityId(String entityId) throws SQLException;
+
     /**
      * Loops through the field keys and turns them into ColumnInfos based on the base table
      */
