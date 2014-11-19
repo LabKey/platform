@@ -600,6 +600,13 @@ public class QueryServiceImpl extends QueryService
         return customViews;
     }
 
+    @Override
+    public String getCustomViewNameFromEntityId(String entityId) throws SQLException
+    {
+        CstmView view = QueryManager.get().getCustomView(entityId);
+        return view != null ? view.getName() : null;
+    }
+
     /** Sort the modules in reverse dependency order, to help us get the most specific version of a particular resource */
     private Collection<Module> reorderModules(Collection<Module> selectedModules)
     {

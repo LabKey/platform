@@ -122,17 +122,22 @@
 
     Collection<FolderWriter> writers = registry.getRegisteredFolderWriters();
 
-    ArrayList<String> studyText = new ArrayList<>();
-    ArrayList<String> folderText =  new ArrayList<>();
+    ArrayList<String> studyWriters = new ArrayList<>();
+    ArrayList<String> folderWriters =  new ArrayList<>();
 
     for (FolderWriter writer : writers)
     {
-        folderText.add(writer.getSelectionText());
-        if (writer.getChildren(true) != null)
+        folderWriters.add(writer.getSelectionText());
+
+        if ("Study".equals(writer.getSelectionText()))
         {
-            for (Writer child : writer.getChildren(true))
+            Collection<Writer> children = writer.getChildren(true);
+            if (children != null && children.size() > 0)
             {
-                studyText.add(child.getSelectionText());
+                for (Writer child : children)
+                {
+                    studyWriters.add(child.getSelectionText());
+                }
             }
         }
     }
@@ -417,13 +422,13 @@
 <%= button("Export Study").href(urlProvider(AdminUrls.class).getExportFolderURL(c).addParameter("exportType", "study")) %>
 <%= button("Reload Study").href(urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload")) %>
 <%= button("Delete Study").href(StudyController.DeleteStudyAction.class, c) %>
-<%= button("Create Ancillary Study").href("javascript:void(0)").onClick("showNewStudyWizard()") %>
+<%= button("Create Ancillary Study").href("javascript:void(0)").onClick("showAncillaryStudyWizard()") %>
 <%= button("Publish Study").href("javascript:void(0)").onClick("showPublishStudyWizard()") %>
 <%
     }
 %>
 <script type="text/javascript">
-    function showNewStudyWizard()
+    function showAncillaryStudyWizard()
     {
         var init = function(){
             var wizard = new LABKEY.study.CreateStudyWizard({
@@ -453,7 +458,7 @@
         var init = function(){
             var folderList = [];
             <%
-                for(String name : folderText)
+                for(String name : folderWriters)
                 {
             %>
                     folderList.push(['<%=h(name)%>']);
@@ -464,7 +469,7 @@
 
             var studyList = [];
             <%
-                for(String name : studyText)
+                for(String name : studyWriters)
                 {
             %>
                     if ('<%=h(name)%>' != "")

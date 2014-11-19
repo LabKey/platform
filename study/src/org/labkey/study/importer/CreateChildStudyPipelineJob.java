@@ -237,7 +237,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 folderExportContext.addContext(StudyExportContext.class, studyExportContext);
 
                 // Save these snapshot settings to support specimen refresh and provide history
-                StudySnapshot snapshot = new StudySnapshot(studyExportContext, _dstContainer, _form.isSpecimenRefresh());
+                StudySnapshot snapshot = new StudySnapshot(studyExportContext, _dstContainer, _form.isSpecimenRefresh(), _form);
                 Table.insert(getUser(), StudySchema.getInstance().getTableInfoStudySnapshot(), snapshot);
 
                 // export objects from the parent study, then import them into the new study

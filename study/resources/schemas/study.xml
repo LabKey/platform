@@ -2013,8 +2013,12 @@
       <ns:column columnName="Created"/>
       <ns:column columnName="ModifiedBy"/>
       <ns:column columnName="Modified"/>
-      <ns:column columnName="Refresh"/>
-      <ns:column columnName="Settings"/>
+      <ns:column columnName="Refresh">
+          <ns:description>Refresh specimens from the source study on a nightly basis</ns:description>
+      </ns:column>
+      <ns:column columnName="Settings">
+          <ns:description>Settings used to create this snapshot study</ns:description>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="AssaySpecimen" tableDbType="TABLE">

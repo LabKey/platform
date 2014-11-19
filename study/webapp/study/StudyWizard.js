@@ -862,10 +862,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         {
             this.snapshotOptions = new Ext.form.FormPanel({
                 items: [
-                    {xtype: 'hidden', name: 'updateDelay', value: 30},
-                    {xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, width: 300, height: 75, items: [
-                        {name: 'autoRefresh', boxLabel: this.mode == 'publish'? 'None' : 'Automatic', inputValue: true, checked: true},
-                        {name: 'autoRefresh', boxLabel: 'Manual', inputValue: false}]
+                    {xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, width: 300, height: 75,
+                        items: [
+                            {name: 'refreshType', boxLabel: 'None', inputValue: 'None', checked: this.mode == 'publish', hidden: this.mode != 'publish'},
+                            {name: 'refreshType', boxLabel: 'Automatic', inputValue: 'Automatic', checked: this.mode != 'publish', hidden: this.mode == 'publish'},
+                            {name: 'refreshType', boxLabel: 'Manual', inputValue: 'Manual'}
+                        ]
                     }
                 ],
                 padding: '10px 0px',
@@ -1026,7 +1028,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             moveEditorOnEnter: false,
             listeners: {
                 selectionChange: function(selModel){
-                    this.selectedFolderObjects = selModel.getSelections();
+                    this.selectedStudyObjects = selModel.getSelections();
                 },
                 scope: this
             }
@@ -1385,7 +1387,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             moveEditorOnEnter: false,
             listeners: {
                 selectionChange: function(selModel){
-                    this.selectedStudyObjects = selModel.getSelections();
+                    this.selectedFolderObjects = selModel.getSelections();
                 },
                 scope: this
             }
@@ -1729,17 +1731,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             var form = this.snapshotOptions.getForm();
             var refreshOptions = form.getValues();
 
-            if(refreshOptions.autoRefresh === 'true' && this.mode != 'publish'){
-                if (refreshOptions.autoRefresh === 'true')
-                    params.updateDelay = refreshOptions.updateDelay;
-                params.update = true;
-            }
-            else if(refreshOptions.autoRefresh === 'true' && this.mode == 'publish')
-            {
+            if (refreshOptions.refreshType == 'None') {
                 params.update = false;
             }
-            else
-            {
+            else if (refreshOptions.refreshType == 'Automatic') {
+                params.updateDelay = 30;
+                params.update = true;
+            }
+            else if (refreshOptions.refreshType == 'Manual') {
                 params.update = true;
             }
         }

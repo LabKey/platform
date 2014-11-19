@@ -130,10 +130,20 @@ public class StudyExportContext extends AbstractContext
         return _datasets;
     }
 
+    public Set<Integer> getDatasetIds()
+    {
+        return _datasetIds;
+    }
+
     public void setDatasets(Set<DataSetDefinition> datasets)
     {
         _datasets.clear();
-        _datasets.addAll(datasets);
+        _datasetIds.clear();
+        for (DataSetDefinition dataset : datasets)
+        {
+            _datasets.add(dataset);
+            _datasetIds.add(dataset.getDatasetId());
+        }
     }
 
     public ParticipantMapper getParticipantMapper()

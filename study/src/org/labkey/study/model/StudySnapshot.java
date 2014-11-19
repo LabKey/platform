@@ -17,12 +17,22 @@ package org.labkey.study.model;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.ArrayUtils;
 import org.labkey.api.data.Container;
+import org.labkey.api.exp.list.ListDefinition;
+import org.labkey.api.exp.list.ListService;
+import org.labkey.api.query.QueryService;
+import org.labkey.api.reports.Report;
+import org.labkey.api.reports.ReportService;
 import org.labkey.api.util.GUID;
 import org.labkey.study.writer.StudyExportContext;
 
 import java.io.IOException;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -52,12 +62,12 @@ public class StudySnapshot
     {
     }
 
-    public StudySnapshot(StudyExportContext ctx, Container destination, boolean specimenRefresh)
+    public StudySnapshot(StudyExportContext ctx, Container destination, boolean specimenRefresh, ChildStudyDefinition def)
     {
         _source = ctx.getContainer().getEntityId();
         _destination = destination.getEntityId();
         _refresh = specimenRefresh;
-        _settings = new SnapshotSettings(ctx, specimenRefresh);
+        _settings = new SnapshotSettings(ctx, specimenRefresh, def);
     }
 
     public int getRowId()
@@ -175,18 +185,41 @@ public class StudySnapshot
         return _settings;
     }
 
-    // Hold the actual snapshot settings that we care about... this is serialized to (and deserialized from) the
-    // database via Jackson. To serialize/deserialize another property, create a new member (and optional getter)
+    // Hold the actual snapshot settings... this is serialized to (and deserialized from) the
+    // database via Jackson. To serialize/deserialize another property, create a new member, a getter method,
     // and initialize it appropriately in the constructor below.
+    // TODO: For properties that are lists or sets, null and missing indicates ALL and empty indicates none
     public static class SnapshotSettings
     {
+        /* General Setup */
+        private String description;
+        /* Participants */
+        private List<Integer> participantGroups = new ArrayList<>();
+        private List<String> participants = new ArrayList<>();
+        /* Datasets */
+        private Set<Integer> datasets = new HashSet<>();
+        private boolean datasetRefresh;
+        private Integer datasetRefreshDelay;
+        /* Timepoints */
+        private Set<Integer> visits = new HashSet<>();
+        /* Specimens */
+        private boolean includeSpecimens;
         private boolean specimenRefresh;
-        private boolean useAlternateParticipantIds;
+        /* Study Objects */
+        private List<String> studyObjects = new ArrayList<>();
+        /* Lists */
+        private List<String> lists = new ArrayList<>();
+        /* Views */
+        private List<String> views = new ArrayList<>();
+        /* Reports */
+        private List<String> reports = new ArrayList<>();
+        /* Folder Objects */
+        private List<String> folderObjects = new ArrayList<>();
+        /* Publish Options */
         private boolean removeProtectedColumns;
         private boolean shiftDates;
+        private boolean useAlternateParticipantIds;
         private boolean maskClinic;
-        private Set<Integer> visits;
-        private List<String> participants;
 
         // Called via Jackson reflection
         @SuppressWarnings("UnusedDeclaration")
@@ -194,16 +227,74 @@ public class StudySnapshot
         {
         }
 
-        private SnapshotSettings(StudyExportContext ctx, boolean refresh)
+        private SnapshotSettings(StudyExportContext ctx, boolean refresh, ChildStudyDefinition def)
         {
-            specimenRefresh = refresh;
-            useAlternateParticipantIds = ctx.isAlternateIds();
-            removeProtectedColumns = ctx.isRemoveProtected();
-            shiftDates = ctx.isShiftDates();
-            maskClinic = ctx.isMaskClinic();
+            if (def.getDescription() != null)
+                description = def.getDescription();
+
+            participants = ctx.getParticipants();
+            if (def.getGroups() != null)
+                participantGroups = Arrays.asList(ArrayUtils.toObject(def.getGroups()));
+
+            datasets = ctx.getDatasetIds();
+            datasetRefresh = def.isUpdate();
+            datasetRefreshDelay = def.getUpdateDelay() > 0 ? def.getUpdateDelay() : null;
 
             visits = ctx.getVisitIds();
-            participants = ctx.getParticipants();
+
+            includeSpecimens = def.isIncludeSpecimens();
+            specimenRefresh = refresh;
+
+            if (def.getStudyProps() != null)
+                studyObjects = Arrays.asList(def.getStudyProps());
+
+            if (def.getLists() != null)
+            {
+                // write out list names instead of ids
+                for (Integer listId : def.getLists())
+                {
+                    ListDefinition listDef = ListService.get().getList(ctx.getContainer(), listId);
+                    if (listDef != null)
+                        lists.add(listDef.getName());
+                }
+            }
+
+            if (def.getViews() != null)
+            {
+                // write out view names instead of entityIds
+                for (String entityid : def.getViews())
+                {
+                    try
+                    {
+                        String viewName = QueryService.get().getCustomViewNameFromEntityId(entityid);
+                        if (viewName != null)
+                            views.add(viewName);
+                    }
+                    catch (SQLException e)
+                    {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+
+            if (def.getReports() != null)
+            {
+                // write out report names instead of entityIds
+                for (String entityid : def.getReports())
+                {
+                    Report report = ReportService.get().getReportByEntityId(ctx.getContainer(), entityid);
+                    if (report != null)
+                        reports.add(report.getDescriptor().getReportName());
+                }
+            }
+
+            if (def.getFolderProps() != null)
+                folderObjects = Arrays.asList(def.getFolderProps());
+
+            removeProtectedColumns = ctx.isRemoveProtected();
+            shiftDates = ctx.isShiftDates();
+            useAlternateParticipantIds = ctx.isAlternateIds();
+            maskClinic = ctx.isMaskClinic();
         }
 
         public boolean isSpecimenRefresh()
@@ -239,6 +330,61 @@ public class StudySnapshot
         public List<String> getParticipants()
         {
             return participants;
+        }
+
+        public Set<Integer> getDatasets()
+        {
+            return datasets;
+        }
+
+        public String getDescription()
+        {
+            return description;
+        }
+
+        public List<Integer> getParticipantGroups()
+        {
+            return participantGroups;
+        }
+
+        public boolean isDatasetRefresh()
+        {
+            return datasetRefresh;
+        }
+
+        public Integer getDatasetRefreshDelay()
+        {
+            return datasetRefreshDelay;
+        }
+
+        public boolean isIncludeSpecimens()
+        {
+            return includeSpecimens;
+        }
+
+        public List<String> getStudyObjects()
+        {
+            return studyObjects;
+        }
+
+        public List<String> getFolderObjects()
+        {
+            return folderObjects;
+        }
+
+        public List<String> getLists()
+        {
+            return lists;
+        }
+
+        public List<String> getViews()
+        {
+            return views;
+        }
+
+        public List<String> getReports()
+        {
+            return reports;
         }
     }
 }

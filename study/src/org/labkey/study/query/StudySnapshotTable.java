@@ -49,7 +49,7 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
     {
         super(StudySchema.getInstance().getTableInfoStudySnapshot(), schema, ContainerFilter.Type.CurrentWithUser.create(schema.getUser()));
 
-        setDescription("Contains a row for each Ancillary or Published Study that was created from the study in this folder." +
+        setDescription("Contains a row for each Ancillary, Published, or Specimen study that was created from the study in this folder." +
                 " Only users with administrator permissions will see any data.");
 
         ColumnInfo rowIdColumn = addWrapColumn(_rootTable.getColumn("RowId"));
