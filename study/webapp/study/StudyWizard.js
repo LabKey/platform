@@ -9,6 +9,21 @@ Ext.namespace("LABKEY.study");
 Ext.QuickTips.init();
 Ext.GuidedTips.init();
 
+LABKEY.study.openCreateStudyWizard = function(snapshotId) {
+    console.log(snapshotId);
+
+    var studyContext = LABKEY.getModuleContext("study");
+
+    var wizard = new LABKEY.study.CreateStudyWizard({
+        mode: 'publish',
+        studyName : "New Study", // TODO
+        studyType: studyContext.timepointType,
+        subject: studyContext.subject
+    });
+
+    wizard.show();
+};
+
 LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
     constructor : function(config)

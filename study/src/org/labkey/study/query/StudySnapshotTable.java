@@ -16,6 +16,7 @@
 package org.labkey.study.query;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerDisplayColumn;
@@ -25,6 +26,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DataColumn;
 import org.labkey.api.data.DisplayColumn;
 import org.labkey.api.data.DisplayColumnFactory;
+import org.labkey.api.data.JavaScriptDisplayColumn;
 import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.query.AliasedColumn;
@@ -39,6 +41,8 @@ import org.labkey.study.StudySchema;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.Collection;
+import java.util.HashSet;
 
 /**
  * Created by klum on 8/8/2014.
@@ -116,6 +120,51 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
                 };
             }
         });
+
+        AliasedColumn republishCol = new AliasedColumn("Republish", wrapColumn(_rootTable.getColumn("RowId")));
+        republishCol.setDisplayColumnFactory(new DisplayColumnFactory()
+        {
+            @Override
+            public DisplayColumn createRenderer(ColumnInfo colInfo)
+            {
+                Collection<String> dependencies = new HashSet<>();
+                dependencies.add("clientapi/ext3");
+                dependencies.add("reports/rowExpander.js");
+                dependencies.add("FileUploadField.js");
+                dependencies.add("study/StudyWizard.js");
+
+                String javaScriptEvent = "onclick=\"LABKEY.study.openCreateStudyWizard(${RowId:jsString});\"";
+
+                return new JavaScriptDisplayColumn(colInfo, dependencies, javaScriptEvent, "labkey-text-link")
+                {
+                    @NotNull
+                    @Override
+                    public String getFormattedValue(RenderContext ctx)
+                    {
+                        return "Republish";
+                    }
+
+                    @Override
+                    public void renderTitle(RenderContext ctx, Writer out) throws IOException
+                    {
+                        // no title
+                    }
+
+                    @Override
+                    public boolean isSortable()
+                    {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isFilterable()
+                    {
+                        return false;
+                    }
+                };
+            }
+        });
+        addColumn(republishCol);
     }
 
     @Override
