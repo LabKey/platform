@@ -325,7 +325,7 @@ public class ServerManager
             throw new IllegalArgumentException("Unable to find cube definiton for cubeName: " + cubeName);
         }
 
-        String cubeCacheKey = c.getId() + rolap.getName();
+        String cubeCacheKey = c.getId() + "/" + rolap.getName();
         final SQLException ex[] = new SQLException[1];
         Cube cachedCube = CUBES.get(cubeCacheKey,rolap,new CacheLoader<String,Cube>()
         {
@@ -624,11 +624,15 @@ public class ServerManager
             for (ServerReferenceCount ref : SERVERS.values())
                 ref.decrement();
             SERVERS.clear();
-            CUBES.clear();
             if (d != null && d.getContainer() != null)
             {
+                invalidateCaches(d.getContainer());
                 String olapDefCacheKey = d.getContainer().getId() + "/" + d.getName();
                 DB_DESCRIPTOR_CACHE.remove(olapDefCacheKey);
+            }
+            else
+            {
+                CUBES.clear();
             }
             BitSetQueryImpl.invalidateCache(d);
         }
@@ -642,10 +646,16 @@ public class ServerManager
             ServerReferenceCount ref = SERVERS.remove(getServerCacheKey(c));
             if (null != ref)
                 ref.decrement();
-            CUBES.clear();
+            invalidateCaches(c);
             DB_DESCRIPTOR_CACHE.removeUsingPrefix(c.getId());
             BitSetQueryImpl.invalidateCache(c);
         }
+    }
+
+
+    static void invalidateCaches(Container c)
+    {
+        CUBES.removeUsingPrefix(c.getId());
     }
 
 
