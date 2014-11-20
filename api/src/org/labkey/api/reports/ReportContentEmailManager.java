@@ -22,12 +22,43 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class ReportContentEmailManager
 {
+    // We always store one of these as the first "category" in the delimted category string
+    public enum NotifyOption
+    {
+        NONE
+        {
+            public Integer getInteger() {return -1;}
+            public String getString() {return "none";}
+        },
+        ALL
+        {
+            public Integer getInteger() {return -2;}
+            public String getString() {return "all";}
+        },
+        SELECT
+        {
+            public Integer getInteger() {return -3;}
+            public String getString() {return "select";}
+        };
+
+        public abstract Integer getInteger();
+        public abstract String getString();
+        public static NotifyOption getNotifyOption(String str)
+        {
+            if (ALL.getString().equals(str))
+                return ALL;
+            if (SELECT.getString().equals(str))
+                return SELECT;
+            return NONE;        // default to NONE even if str is bad
+        }
+    }
+
     public static class ReportContentEmailPref extends EmailPref
     {
         public static final String NONE = "";
@@ -83,27 +114,57 @@ public class ReportContentEmailManager
         }
     }
 
+    public static NotifyOption removeNotifyOption(SortedSet<Integer> subscriptionSet)
+    {
+        NotifyOption notifyOption;
+        if (subscriptionSet.contains(NotifyOption.ALL.getInteger()))
+        {
+            notifyOption = NotifyOption.ALL;
+            subscriptionSet.remove(NotifyOption.ALL.getInteger());
+        }
+        else if (subscriptionSet.contains(NotifyOption.SELECT.getInteger()))
+        {
+            notifyOption = NotifyOption.SELECT;
+            subscriptionSet.remove(NotifyOption.SELECT.getInteger());
+        }
+        else if (subscriptionSet.contains(NotifyOption.NONE.getInteger()))
+        {
+            notifyOption = NotifyOption.NONE;
+            subscriptionSet.remove(NotifyOption.NONE.getInteger());
+        }
+        else if (subscriptionSet.isEmpty())
+        {
+            notifyOption = NotifyOption.NONE;
+        }
+        else
+        {
+            notifyOption = NotifyOption.SELECT;       // old sets may not have any option
+        }
+        return notifyOption;
+    }
+
     // Get set of report/dataset categories in the container that user has subscribed to
-    public static Set<Integer> getSubscriptionSet(Container container, User user)
+    public static SortedSet<Integer> getSubscriptionSet(Container container, User user)
     {
         // string is semicolon-delimited list or rowIds for which this user is subscribed
         String prefString = EmailService.get().getEmailPref(user, container, new ReportContentEmailPref());
         return makeIntegerSetFromDelimitedString(prefString, ";");
     }
 
-    public static void setSubscriptionSet(Container container, User user, Set<Integer> subscriptionSet)
+    public static void setSubscriptionSet(Container container, User user, SortedSet<Integer> subscriptionSet)
     {
         String prefString = makeDelimitedStringFromIntegerSet(subscriptionSet, ";");
         EmailService.get().setEmailPref(user, container, new ReportContentEmailPref(), prefString);
-        updateSubscriptionUserList(container, user, !subscriptionSet.isEmpty());
+        boolean addUser = subscriptionSet.size() > 1 || (1 == subscriptionSet.size() && !subscriptionSet.contains(NotifyOption.NONE.getInteger()));
+        updateSubscriptionUserList(container, user, addUser);
     }
 
-    public static Map<Integer, Set<Integer>> getUserCategoryMap(Container container)
+    public static Map<Integer, SortedSet<Integer>> getUserCategoryMap(Container container)
     {
         String userListString = EmailService.get().getDefaultEmailPref(container, new ReportContentUserList());
-        Set<Integer> userList = makeIntegerSetFromDelimitedString(userListString, ";");
+        SortedSet<Integer> userList = makeIntegerSetFromDelimitedString(userListString, ";");
 
-        Map<Integer, Set<Integer>> userCategoryMap = new HashMap<>();
+        Map<Integer, SortedSet<Integer>> userCategoryMap = new HashMap<>();
         for (Integer userId : userList)
         {
             if (null != userId)
@@ -111,7 +172,7 @@ public class ReportContentEmailManager
                 User user = UserManager.getUser(userId);
                 if (null != user)
                 {
-                    Set<Integer> categories = getSubscriptionSet(container, user);
+                    SortedSet<Integer> categories = getSubscriptionSet(container, user);
                     if (!categories.isEmpty())
                         userCategoryMap.put(userId, categories);
                 }
@@ -124,7 +185,7 @@ public class ReportContentEmailManager
     {
         ReportContentUserList reportContentUserList = new ReportContentUserList();
         String userListString = EmailService.get().getDefaultEmailPref(container, reportContentUserList);
-        Set<Integer> userList = makeIntegerSetFromDelimitedString(userListString, ";");
+        SortedSet<Integer> userList = makeIntegerSetFromDelimitedString(userListString, ";");
 
         if (addUser)
             userList.add(user.getUserId());
@@ -135,9 +196,9 @@ public class ReportContentEmailManager
         EmailService.get().setDefaultEmailPref(container, reportContentUserList, newUserListString);
     }
 
-    private static Set<Integer> makeIntegerSetFromDelimitedString(String delimitedString, String delim)
+    private static SortedSet<Integer> makeIntegerSetFromDelimitedString(String delimitedString, String delim)
     {
-        Set<Integer> subscriptionSet = new HashSet<>();
+        SortedSet<Integer> subscriptionSet = new TreeSet<>();
         String[] items = delimitedString.split(delim);
         for (String item : items)
         {
@@ -151,7 +212,7 @@ public class ReportContentEmailManager
         return subscriptionSet;
     }
 
-    private static String makeDelimitedStringFromIntegerSet(Set<Integer> inputSet, String delim)
+    private static String makeDelimitedStringFromIntegerSet(SortedSet<Integer> inputSet, String delim)
     {
         String resultString = "";
         String localDelim = "";
