@@ -78,17 +78,7 @@
     String importVialIdsButton = manager.hasEditRequestPermissions(user, bean.getSpecimenRequest()) ?
         button("Upload Specimen Ids").href(buildURL(SpecimenController.ImportVialIdsAction.class, "id=" + bean.getSpecimenRequest().getRowId())).toString() : "";
 
-    Map<String, Container> folders = new HashMap<>();
-    for (Container child : ContainerManager.getChildren(c))
-        folders.put(child.getName(), child);
-
-    String ancillaryStudyName = "New Study";
-    int i = 1;
-    while (folders.containsKey(ancillaryStudyName))
-    {
-        ancillaryStudyName = "New Study " + i++;
-    }
-
+    String availableStudyName = ContainerManager.getAvailableChildContainerName(c, "New Study");
 %>
 <script type="text/javascript">
     var NONSITE_ACTORS = [<%
@@ -191,11 +181,11 @@
 
     function showNewStudyWizard()
     {
-        var init = function(){
+        Ext.onReady(function(){
             var wizard = new LABKEY.study.CreateStudyWizard({
                 allowRefresh : false,
                 requestId : <%=bean.getSpecimenRequest().getRowId()%>,
-                studyName : <%=q(ancillaryStudyName)%>,
+                studyName : <%=q(availableStudyName)%>,
                 namePanel : true,
                 datasetsPanel : true
             });
@@ -204,8 +194,7 @@
 
             // run the wizard
             wizard.show();
-        };
-        Ext.onReady(init);
+        });
     }
 
 </script>

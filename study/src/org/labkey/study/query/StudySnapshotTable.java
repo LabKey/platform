@@ -133,7 +133,8 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
                 dependencies.add("FileUploadField.js");
                 dependencies.add("study/StudyWizard.js");
 
-                String javaScriptEvent = "onclick=\"LABKEY.study.openCreateStudyWizard(${RowId:jsString});\"";
+                String availableStudyName = ContainerManager.getAvailableChildContainerName(getContainer(), "New Study");
+                String javaScriptEvent = "onclick=\"LABKEY.study.openCreateStudyWizard(${RowId:jsString}, '" + availableStudyName + "');\"";
 
                 return new JavaScriptDisplayColumn(colInfo, dependencies, javaScriptEvent, "labkey-text-link")
                 {

@@ -9,16 +9,14 @@ Ext.namespace("LABKEY.study");
 Ext.QuickTips.init();
 Ext.GuidedTips.init();
 
-LABKEY.study.openCreateStudyWizard = function(snapshotId) {
-    console.log(snapshotId);
+LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName) {
+    console.log(snapshotId, availableContainerName);
 
     var studyContext = LABKEY.getModuleContext("study");
 
     var wizard = new LABKEY.study.CreateStudyWizard({
         mode: 'publish',
-        studyName : "New Study", // TODO
-        studyType: studyContext.timepointType,
-        subject: studyContext.subject
+        studyName : availableContainerName
     });
 
     wizard.show();
@@ -29,14 +27,14 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     constructor : function(config)
     {
         Ext.applyIf(config, {
-            allowRefresh : true
+            allowRefresh : true,
+            studyWriters : [],
+            folderWriters : [],
+            studyType : LABKEY.getModuleContext("study").timepointType,
+            subject : LABKEY.getModuleContext("study").subject
         });
         Ext.apply(this, config);
         this.pageOptions = this.initPages();
-        if (this.studyWriters && this.folderWriters)
-        {
-            this.cutWriters();
-        }
         this.requestId = config.requestId;
         Ext.util.Observable.prototype.constructor.call(this, config);
         this.sideBarTemplate = new Ext.XTemplate(
@@ -110,37 +108,44 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         return pages;
     },
 
-    cutWriters : function() {
-        var modifiedWriters = [];
-        for (var i = 0; i < this.studyWriters.length; i++)
-        {
-            if (this.studyWriters[i] != 'Assay Datasets' &&
-                    this.studyWriters[i] != 'Categories' &&
-                    this.studyWriters[i] != 'CRF Datasets' &&
-                    this.studyWriters[i] != 'Participant Groups' &&
-                    this.studyWriters[i] != 'QC State Settings' &&
-                    this.studyWriters[i] != 'Specimens' &&
-                    this.studyWriters[i] != 'Visit Map')
-            {
-                modifiedWriters.push(this.studyWriters[i]);
-            }
-        }
-        this.studyWriters = modifiedWriters;
+    loadWriters : function(store, isStudy) {
 
-        modifiedWriters = [];
-        for (var i = 0; i < this.folderWriters.length; i++)
+        if (this.studyWriters.length == 0 || this.folderWriters.length == 0)
         {
-            if (this.folderWriters[i] != 'Custom Views' &&
-                    this.folderWriters[i] != 'Lists' &&
-                    this.folderWriters[i] != 'Notification Settings' &&
-                    this.folderWriters[i] != 'Queries' &&
-                    this.folderWriters[i] != 'Reports' &&
-                    this.folderWriters[i] != 'Study')
-            {
-                modifiedWriters.push(this.folderWriters[i]);
-            }
+            LABKEY.Ajax.request({
+                url : LABKEY.ActionURL.buildURL("core", "getRegisteredFolderWriters"),
+                method : 'POST',
+                scope : this,
+                success : function(response) {
+                    var allWriters = Ext.decode(response.responseText).writers;
+
+                    var folderWritersToExclude = ['Custom Views', 'Lists', 'Notification Settings', 'Queries', 'Reports', 'Study'];
+                    var studyWritersToExclude = ['Assay Datasets', 'Categories', 'CRF Datasets', 'Participant Groups', 'QC State Settings', 'Specimens', 'Visit Map'];
+                    this.studyWriters = [];
+                    this.folderWriters = [];
+
+                    Ext.each(allWriters, function(writer){
+                        if (folderWritersToExclude.indexOf(writer.name) == -1) {
+                            this.folderWriters.push([writer.name]);
+                        }
+
+                        if (writer.name == 'Study' && Ext.isDefined(writer.children)) {
+                            Ext.each(writer.children, function(child){
+                                if (studyWritersToExclude.indexOf(child) == -1) {
+                                    this.studyWriters.push([child]);
+                                }
+                            }, this);
+                        }
+                    }, this);
+
+                    store.loadData(isStudy ? this.studyWriters : this.folderWriters);
+                }
+            });
         }
-        this.folderWriters = modifiedWriters;
+        else
+        {
+            store.loadData(isStudy ? this.studyWriters : this.folderWriters);
+        }
     },
 
     show : function() {
@@ -1051,8 +1056,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var studyStore = new Ext.data.ArrayStore({
             fields : [{name : 'name', type : 'string'}],
-            data : this.studyWriters
+            sortInfo : {field: 'name', direction: 'ASC'},
+            data : []
         });
+
+        this.loadWriters(studyStore, true);
 
         var selectionGrid = new Ext.grid.EditorGridPanel({
             cls : 'studyObjects',
@@ -1410,8 +1418,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         var folderStore = new Ext.data.ArrayStore({
             fields : [{name : 'name', type : 'string'}],
-            data : this.folderWriters
+            sortInfo : {field: 'name', direction: 'ASC'},
+            data : []
         });
+
+        this.loadWriters(folderStore, false);
 
         var selectionGrid = new Ext.grid.EditorGridPanel({
             cls: 'folderObjects',

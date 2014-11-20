@@ -33,6 +33,8 @@ import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.CoreUrls;
+import org.labkey.api.admin.FolderSerializationRegistry;
+import org.labkey.api.admin.FolderWriter;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentCache;
 import org.labkey.api.attachments.AttachmentParent;
@@ -105,6 +107,7 @@ import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.webdav.WebdavResolver;
 import org.labkey.api.webdav.WebdavResource;
+import org.labkey.api.writer.Writer;
 import org.labkey.api.writer.ZipUtil;
 import org.labkey.core.query.CoreQuerySchema;
 import org.labkey.core.security.SecurityController;
@@ -127,6 +130,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -1736,6 +1740,54 @@ public class CoreController extends SpringActionController
         public void setNewFolderType(String newFolderType)
         {
             _newFolderType = newFolderType;
+        }
+    }
+
+    @RequiresPermissionClass(ReadPermission.class)
+    public class GetRegisteredFolderWritersAction extends ApiAction<Object>
+    {
+        @Override
+        public ApiResponse execute(Object form, BindException errors) throws Exception
+        {
+            FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
+            if (null == registry)
+            {
+                throw new RuntimeException();
+            }
+
+            Collection<FolderWriter> registeredWriters = registry.getRegisteredFolderWriters();
+            List<Map<String, Object>> writerChildrenMap = new ArrayList<>();
+
+            for (FolderWriter writer : registeredWriters)
+            {
+                Map<String, Object> writerMap = new HashMap<>();
+                String selectionText = writer.getSelectionText();
+                if (selectionText != null)
+                {
+                    writerMap.put("name", selectionText);
+
+                    Collection<Writer> childWriters = writer.getChildren(true);
+                    if (childWriters != null && childWriters.size() > 0)
+                    {
+                        List<String> children = new ArrayList<>();
+                        for (Writer child : childWriters)
+                        {
+                            selectionText = child.getSelectionText();
+                            if (selectionText != null)
+                                children.add(selectionText);
+                        }
+
+                        if (children.size() > 0)
+                            writerMap.put("children", children);
+                    }
+
+                    writerChildrenMap.add(writerMap);
+                }
+            }
+
+            ApiSimpleResponse response = new ApiSimpleResponse();
+            response.put("writers", writerChildrenMap);
+            return response;
         }
     }
 }

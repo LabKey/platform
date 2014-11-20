@@ -101,46 +101,9 @@
     else
         intervalLabel = "This study is scheduled to check for reload " + (StudyReload.ReloadInterval.Never != currentInterval ? currentInterval.getDescription() : "every " + study.getReloadInterval() + " seconds");
 
-    Map<String, Container> folders = new HashMap<>();
-    for (Container child : ContainerManager.getChildren(c))
-        folders.put(child.getName(), child);
-
-    String ancillaryStudyName = "New Study";
-    int i = 1;
-    while (folders.containsKey(ancillaryStudyName))
-    {
-        ancillaryStudyName = "New Study " + i++;
-    }
+    String availableStudyName = ContainerManager.getAvailableChildContainerName(c, "New Study");
 
     int numDatasets = study.getDatasetsByType(org.labkey.api.study.DataSet.TYPE_STANDARD, org.labkey.api.study.DataSet.TYPE_PLACEHOLDER).size();
-
-    FolderSerializationRegistry registry = ServiceRegistry.get().getService(FolderSerializationRegistry.class);
-    if (null == registry)
-    {
-        throw new RuntimeException();
-    }
-
-    Collection<FolderWriter> writers = registry.getRegisteredFolderWriters();
-
-    ArrayList<String> studyWriters = new ArrayList<>();
-    ArrayList<String> folderWriters =  new ArrayList<>();
-
-    for (FolderWriter writer : writers)
-    {
-        folderWriters.add(writer.getSelectionText());
-
-        if ("Study".equals(writer.getSelectionText()))
-        {
-            Collection<Writer> children = writer.getChildren(true);
-            if (children != null && children.size() > 0)
-            {
-                for (Writer child : children)
-                {
-                    studyWriters.add(child.getSelectionText());
-                }
-            }
-        }
-    }
 
     if (study.isAncillaryStudy() || study.isSnapshotStudy())
     {
@@ -422,82 +385,25 @@
 <%= button("Export Study").href(urlProvider(AdminUrls.class).getExportFolderURL(c).addParameter("exportType", "study")) %>
 <%= button("Reload Study").href(urlProvider(AdminUrls.class).getImportFolderURL(c).addParameter("origin", "Reload")) %>
 <%= button("Delete Study").href(StudyController.DeleteStudyAction.class, c) %>
-<%= button("Create Ancillary Study").href("javascript:void(0)").onClick("showAncillaryStudyWizard()") %>
-<%= button("Publish Study").href("javascript:void(0)").onClick("showPublishStudyWizard()") %>
+<%= button("Create Ancillary Study").href("javascript:void(0)").onClick("showCreateStudyWizard('ancillary')") %>
+<%= button("Publish Study").href("javascript:void(0)").onClick("showCreateStudyWizard('publish')") %>
 <%
     }
 %>
 <script type="text/javascript">
-    function showAncillaryStudyWizard()
+    function showCreateStudyWizard(mode)
     {
-        var init = function(){
+        Ext.onReady(function(){
+
             var wizard = new LABKEY.study.CreateStudyWizard({
-                mode: 'ancillary',
-                studyName : <%=q(ancillaryStudyName)%>,
-                studyType: "<%=h(study.getTimepointType())%>",
-                subject: {
-                    nounSingular: <%=q(study.getSubjectNounSingular())%>,
-                    nounPlural: <%=q(study.getSubjectNounPlural())%>,
-                    nounColumnName: <%=q(study.getSubjectColumnName())%>
-                }
+                mode: mode,
+                studyName : <%=q(availableStudyName)%>
             });
 
             wizard.on('success', function(info){}, this);
 
             // run the wizard
             wizard.show();
-        };
-        Ext.onReady(init);
-    }
-</script>
-
-<script>
-    function showPublishStudyWizard()
-    {
-
-        var init = function(){
-            var folderList = [];
-            <%
-                for(String name : folderWriters)
-                {
-            %>
-                    folderList.push(['<%=h(name)%>']);
-            <%
-                }
-            %>
-            folderList.sort();
-
-            var studyList = [];
-            <%
-                for(String name : studyWriters)
-                {
-            %>
-                    if ('<%=h(name)%>' != "")
-                        studyList.push(['<%=h(name)%>']);
-            <%
-                }
-            %>
-            studyList.sort();
-
-            var wizard = new LABKEY.study.CreateStudyWizard({
-                mode: 'publish',
-                studyName : <%=q(ancillaryStudyName)%>,
-                studyType: "<%=h(study.getTimepointType())%>",
-                subject: {
-                    nounSingular: <%=q(study.getSubjectNounSingular())%>,
-                    nounPlural: <%=q(study.getSubjectNounPlural())%>,
-                    nounColumnName: <%=q(study.getSubjectColumnName())%>
-                },
-                folderWriters : folderList,
-                studyWriters : studyList
-            });
-
-            wizard.on('success', function(info){}, this);
-
-            // run the wizard
-            wizard.show();
-        };
-
-        Ext.onReady(init);
+        });
     }
 </script>
