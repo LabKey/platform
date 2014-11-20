@@ -48,9 +48,10 @@
         <% if (null != returnURLString) {%>
             returnUrl = '<%=returnURLString%>';
         <%}%>
+        var notifyOption = <%=q(me.getModelBean().getNotifyOption())%>
 
         var manager = Ext4.create('LABKEY.ext4.ManageReportNotifications');
-        var panel = manager.getManageReportPanel({renderTo : 'manageNotificationsDiv'}, categories, returnUrl);
+        var panel = manager.getManageReportPanel({renderTo : 'manageNotificationsDiv'}, categories, returnUrl, notifyOption);
     });
 
 </script>
@@ -88,8 +89,8 @@
 </script>
 
 <div>
-    Select the categories about which you want to be notified.
-    You will receive a daily digest of any changes to reports and datasets in the categories you select.
+    Choose an option below to configure email notification of changes to reports and datasets in this study.
+    You will receive a daily digest email listing changes to reports and datasets according to your selection.
     <br><br>
 </div>
 <div id="manageNotificationsDiv">

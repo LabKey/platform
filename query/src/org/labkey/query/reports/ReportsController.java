@@ -178,7 +178,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -186,6 +185,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -3739,14 +3739,33 @@ public class ReportsController extends SpringActionController
 
     public static class NotificationsForm extends ViewForm
     {
+        private SortedSet<Integer> _subscriptionSet;
+        private String _notifyOption;
+
         public NotificationsForm()
         {
         }
 
         public List<ViewCategoryManager.ViewCategoryTreeNode> getCategorySubcriptionTree()
         {
-            Set<Integer> subscriptionSet = ReportContentEmailManager.getSubscriptionSet(getContainer(), getUser());
-            return ViewCategoryManager.getInstance().getCategorySubcriptionTree(getContainer(), subscriptionSet);
+            ensureInited();
+            return ViewCategoryManager.getInstance().getCategorySubcriptionTree(getContainer(), _subscriptionSet);
+        }
+
+        public String getNotifyOption()
+        {
+            ensureInited();
+            return _notifyOption;
+        }
+
+        private void ensureInited()
+        {
+            if (null == _subscriptionSet || null == _notifyOption)
+            {
+                SortedSet<Integer> subscriptionSet = ReportContentEmailManager.getSubscriptionSet(getContainer(), getUser());
+                _notifyOption = ReportContentEmailManager.removeNotifyOption(subscriptionSet).getString();
+                _subscriptionSet = subscriptionSet;
+            }
         }
     }
 
@@ -3765,7 +3784,7 @@ public class ReportsController extends SpringActionController
 
     public static class SaveCategoryNotificationsForm implements CustomApiForm
     {
-        private Set<Integer> _subscriptionSet = new HashSet<>();
+        private SortedSet<Integer> _subscriptionSet = new TreeSet<>();
 
         @Override
         public void bindProperties(Map<String, Object> props)
@@ -3782,9 +3801,16 @@ public class ReportsController extends SpringActionController
                         _subscriptionSet.add(rowId);
                 }
             }
+            Object notifyOptionObj = props.get("notifyOption");
+            Integer notifyOptionInt;
+            if (notifyOptionObj instanceof String)
+                notifyOptionInt = ReportContentEmailManager.NotifyOption.getNotifyOption((String)notifyOptionObj).getInteger();
+            else
+                notifyOptionInt = ReportContentEmailManager.NotifyOption.NONE.getInteger();     // just in case
+            _subscriptionSet.add(notifyOptionInt);
         }
 
-        public Set<Integer> getSubscriptionSet()
+        public SortedSet<Integer> getSubscriptionSet()
         {
             return _subscriptionSet;
         }

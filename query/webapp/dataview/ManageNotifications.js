@@ -5,7 +5,7 @@
  */
 Ext4.define('LABKEY.ext4.ManageReportNotifications', {
 
-    getManageReportPanel: function(config, categories, returnUrl) {
+    getManageReportPanel: function(config, categories, returnUrl, notifyOption) {
 
         if (!Ext4.ModelManager.isRegistered('CategoryNotifications')) {
             Ext4.define('CategoryNotifications', {
@@ -25,9 +25,12 @@ Ext4.define('LABKEY.ext4.ManageReportNotifications', {
         if (null == returnUrl)
             returnUrl = LABKEY.ActionURL.buildURL('project', 'begin', null, {'pageId' : 'study.DATA_ANALYSIS'});
 
-        var newConfig = {
+        var gridConfig = {
+            title    : 'Select Categories',
+            margin   : '10',
+            disabled : 'select' != notifyOption,
             store    : categoryStore,
-            maxWidth: 600,
+            maxWidth : 700,
             pageId: -1,
             index: -1,
             border   : false, frame: false,
@@ -51,6 +54,52 @@ Ext4.define('LABKEY.ext4.ManageReportNotifications', {
             }],
             cls       : 'iScroll', // webkit custom scroll bars
             selType   : 'rowmodel',
+            scope     : this
+        };
+
+        var gridPanel = Ext4.create('Ext.grid.Panel', gridConfig);
+
+        var panelConfig = {
+            maxWidth : 720,
+            title : 'Choose Notification Option',
+            items : [
+                {
+                    xtype  : 'radiogroup',
+                    id     : 'notifyOption',
+                    columns: 1,
+                    margin : '4, 4, 4, 6',
+                    items  : [
+                        {
+                            boxLabel  : 'None',
+                            name      : 'rb',
+                            inputValue: 'none',
+                            checked   : 'none' == notifyOption
+                        },
+                        {
+                            boxLabel  : 'All. Your daily digest will list changes and additions to all reports and datasets.',
+                            name      : 'rb',
+                            inputValue: 'all',
+                            checked   : 'all' == notifyOption
+                        },
+                        {
+                            boxLabel  : 'By category. Your daily digest will list changes and additions to reports and datasets in the selected categories.',
+                            name      : 'rb',
+                            inputValue: 'select',
+                            checked   : 'select' == notifyOption
+                        }
+                    ],
+                    listeners : {
+                        change : function(button, newValue) {
+                            if ('select' != newValue.rb)
+                                gridPanel.disable();
+                            else
+                                gridPanel.enable();
+                        },
+                        scope : this
+                    }
+                },
+                gridPanel
+            ],
             dockedItems: [{
                 xtype: 'toolbar',
                 dock: 'bottom',
@@ -60,10 +109,14 @@ Ext4.define('LABKEY.ext4.ManageReportNotifications', {
                     handler: function ()
                     {
                         var categories = this.getStoreCategories(categoryStore);
+                        var notifyOption = panel.getComponent('notifyOption').getValue().rb;
                         Ext4.Ajax.request({
                             url     : LABKEY.ActionURL.buildURL('reports', 'saveCategoryNotifications.api'),
                             method  : 'POST',
-                            jsonData  : {'categories' : categories},
+                            jsonData: {
+                                'categories'   : categories,
+                                'notifyOption' : notifyOption
+                            },
                             headers : {'Content-Type' : 'application/json'},
                             success : function(response) {
                                 window.location = returnUrl;
@@ -95,11 +148,10 @@ Ext4.define('LABKEY.ext4.ManageReportNotifications', {
                 scope: this
             }],
             scope: this
-
         };
 
-        Ext4.applyIf(newConfig, config);
-        var panel = Ext4.create('Ext.grid.Panel', newConfig);
+        Ext4.applyIf(panelConfig, config);
+        var panel = Ext4.create('Ext.panel.Panel', panelConfig);
         return panel;
     },
 

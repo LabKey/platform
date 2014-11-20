@@ -22,6 +22,7 @@ import org.labkey.api.notification.EmailMessage;
 import org.labkey.api.notification.EmailService;
 import org.labkey.api.query.NotificationInfoProvider;
 import org.labkey.api.reports.ReportContentEmailManager;
+import org.labkey.api.reports.ReportContentEmailManager.NotifyOption;
 import org.labkey.api.reports.model.NotificationInfo;
 import org.labkey.api.reports.model.ViewCategory;
 import org.labkey.api.reports.model.ViewCategoryManager;
@@ -44,6 +45,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDatasetChangeDigestProvider
 {
@@ -105,40 +108,51 @@ public class ReportAndDatasetChangeDigestProviderImpl extends ReportAndDatasetCh
 
         try
         {
-            Map<Integer, Set<Integer>> categoriesByUser = ReportContentEmailManager.getUserCategoryMap(container);
+            Map<Integer, SortedSet<Integer>> categoriesByUser = ReportContentEmailManager.getUserCategoryMap(container);
             if (!categoriesByUser.isEmpty())
             {
                 EmailService.I emailService = EmailService.get();
                 List<EmailMessage> messages = new ArrayList<>();
 
-                for (Map.Entry<Integer, Set<Integer>> userEntry : categoriesByUser.entrySet())
+                for (Map.Entry<Integer, SortedSet<Integer>> userEntry : categoriesByUser.entrySet())
                 {
                     User user = UserManager.getUser(userEntry.getKey());
                     if (null != user)
                     {
                         Map<Integer, List<NotificationInfo>> reportsForUserInitial = new HashMap<>();
-                        for (Integer category : userEntry.getValue())
+                        SortedSet<Integer> categories = userEntry.getValue();
+                        NotifyOption notifyOption = ReportContentEmailManager.removeNotifyOption(categories);
+                        if (!NotifyOption.NONE.equals(notifyOption))
                         {
-                            if (null != category)
+                            if (NotifyOption.ALL.equals(notifyOption))
                             {
-                                List<NotificationInfo> reportsForCategory = reportInfosByCategory.get(category);
-                                if (null != reportsForCategory)
-                                    reportsForUserInitial.put(category, reportsForCategory);
+                                categories = new TreeSet<>();
+                                for (ViewCategory viewCategory : ViewCategoryManager.getInstance().getAllCategories(container))
+                                    categories.add(viewCategory.getRowId());
                             }
-                        }
+                            for (Integer category : categories)
+                            {
+                                if (null != category)
+                                {
+                                    List<NotificationInfo> reportsForCategory = reportInfosByCategory.get(category);
+                                    if (null != reportsForCategory)
+                                        reportsForUserInitial.put(category, reportsForCategory);
+                                }
+                            }
 
-                        if (!reportsForUserInitial.isEmpty())
-                        {
-                            // Make email
-                            Map<Integer, ViewCategory> viewCategoryMap = getViewCategoryMap(container, user);
-                            Map<ViewCategory, List<NotificationInfo>> reportsForUser = new LinkedHashMap<>();
-                            List<ViewCategory> viewCategories = getSortedViewCategories(viewCategoryMap);
-                            for (ViewCategory viewCategory : viewCategories)
-                                if (reportsForUserInitial.containsKey(viewCategory.getRowId()))
-                                    reportsForUser.put(viewCategory, sortNotificationInfoList(reportsForUserInitial.get(viewCategory.getRowId())));
+                            if (!reportsForUserInitial.isEmpty())
+                            {
+                                // Make email
+                                Map<Integer, ViewCategory> viewCategoryMap = getViewCategoryMap(container, user);
+                                Map<ViewCategory, List<NotificationInfo>> reportsForUser = new LinkedHashMap<>();
+                                List<ViewCategory> viewCategories = getSortedViewCategories(viewCategoryMap);
+                                for (ViewCategory viewCategory : viewCategories)
+                                    if (reportsForUserInitial.containsKey(viewCategory.getRowId()))
+                                        reportsForUser.put(viewCategory, sortNotificationInfoList(reportsForUserInitial.get(viewCategory.getRowId())));
 
-                            ReportAndDatasetDigestForm form = new ReportAndDatasetDigestForm(user, container, reportsForUser);
-                            messages.add(createDigestMessage(emailService, form));
+                                ReportAndDatasetDigestForm form = new ReportAndDatasetDigestForm(user, container, reportsForUser);
+                                messages.add(createDigestMessage(emailService, form));
+                            }
                         }
                     }
                 }
