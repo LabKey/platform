@@ -736,6 +736,22 @@ public class ContainerManager
         return result;
     }
 
+    // Returns the next available child container name based on the baseName
+    public static String getAvailableChildContainerName(Container c, String baseName)
+    {
+        Map<String, Container> folders = new HashMap<>();
+        for (Container child : getChildren(c))
+            folders.put(child.getName(), child);
+
+        String availableContainerName = baseName;
+        int i = 1;
+        while (folders.containsKey(availableContainerName))
+        {
+            availableContainerName = baseName + " " + i++;
+        }
+
+        return availableContainerName;
+    }
 
     // Returns true only if user has the specified permission in the entire container tree starting at root
     public static boolean hasTreePermission(Container root, User u,  Class<? extends Permission> perm)
