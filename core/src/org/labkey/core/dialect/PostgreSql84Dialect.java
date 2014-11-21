@@ -35,13 +35,11 @@ import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlScriptExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.JdbcHelper;
@@ -49,7 +47,6 @@ import org.labkey.api.data.dialect.PkMetaDataReader;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StandardJdbcHelper;
 import org.labkey.api.data.dialect.StatementWrapper;
-import org.labkey.api.module.ModuleContext;
 import org.labkey.api.query.AliasManager;
 import org.labkey.api.util.ConfigurationException;
 import org.labkey.api.util.ExceptionUtil;
@@ -868,14 +865,20 @@ public class PostgreSql84Dialect extends SqlDialect
             return super.getSelectNameFromMetaDataName(metaDataName);
     }
 
-    private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.executeJavaUpgradeCode\\s*\\(\\s*'(.+)'\\s*\\)\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*SELECT\\s+core\\.((executeJavaUpgradeCode\\s*\\(\\s*'(.+)'\\s*\\))|(bulkImport\\s*\\(\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'\\s*\\)))\\s*;\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
-    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
+    // No need to split up PostgreSQL scripts; execute all statements in a single block (unless we have a special stored proc call).
+    protected Pattern getSQLScriptSplitPattern()
     {
-        SqlScriptExecutor executor = new SqlScriptExecutor(sql, null, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext, conn);
+        return null;
+    }
 
-        executor.execute();
+    @NotNull
+    @Override
+    protected Pattern getSQLScriptProcPattern()
+    {
+        return PROC_PATTERN;
     }
 
     @Override

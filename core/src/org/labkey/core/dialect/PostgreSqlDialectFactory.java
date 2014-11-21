@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.SqlScriptExecutor;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
@@ -34,6 +35,7 @@ import org.labkey.api.util.VersionNumber;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 /*
 * User: adam
@@ -115,7 +117,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
 
     public Collection<? extends Class> getJUnitTests()
     {
-        return Arrays.<Class>asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
+        return Arrays.<Class>asList(DialectRetrievalTestCase.class, InlineProcedureTestCase.class, JdbcHelperTestCase.class);
     }
 
     @Override
@@ -150,7 +152,7 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
         }
     }
 
-    public static class JavaUpgradeCodeTestCase extends Assert
+    public static class InlineProcedureTestCase extends Assert
     {
         @Test
         public void testJavaUpgradeCode()
@@ -181,6 +183,40 @@ public class PostgreSqlDialectFactory extends SqlDialectFactory
             TestUpgradeCode bad = new TestUpgradeCode();
             dialect.runSql(null, badSql, bad, null, null);
             assertEquals(0, bad.getCounter());
+        }
+
+        @Test
+        public void testBulkImport()
+        {
+            String goodSql =
+                "SELECT core.bulkImport('test', 'TestTable', 'test.xls');\n" +                                         // Normal
+                "    SELECT     core.bulkImport    (    'test'  ,   'TestTable'   ,     'test.xls'   )    ;     \n" +  // Lots of whitespace
+                "SELECT core.bulkImport('test','TestTable','test.xls');\n" +                                           // Minimal whitespace
+                "select CORE.BULKIMPORT('test', 'TestTable', 'test.xls');\n" +                                         // Case insensitive
+                "SELECT core.bulkImport('test', 'TestTable', 'test.xls');";                                            // No line ending
+
+
+            String badSql =
+                "/* SELECT core.bulkImport('test', 'TestTable', 'test.xls');\n" +       // Inside block comment
+                "   more comment\n" +
+                "*/" +
+                "    -- SELECT core.bulkImport('test', 'TestTable', 'test.xls');\n" +   // Inside single-line comment
+                "SELECTcore.bulkImport('test', 'TestTable', 'test.xls');\n" +           // Bad syntax
+                "SELECT core. bulkImport('test', 'TestTable', 'test.xls');\n" +         // Bad syntax
+                "SELECT core.bulkImport('test', 'TestTable');\n" +                      // Bad syntax: only one paramter
+                "SEECT core.bulkImport('test', 'TestTable', 'test.xls');\n" +           // Misspell SELECT
+                "SELECT core.bulkkImport('test', 'TestTable', 'test.xls');\n" +         // Misspell function name
+                "SELECT core.bulkImport('test', 'TestTable', 'test.xls')\n";            // No semicolon
+
+            AtomicLong counter = SqlScriptExecutor.BULK_IMPORT_EXECUTION_COUNT;
+            long startingCount = counter.longValue();
+            SqlDialect dialect = new PostgreSql84Dialect();
+            dialect.runSql(null, goodSql, null, null, null);
+            assertEquals(5, counter.longValue() - startingCount);
+
+            startingCount = counter.longValue();
+            dialect.runSql(null, badSql, null, null, null);
+            assertEquals(0, counter.longValue() - startingCount);
         }
     }
 

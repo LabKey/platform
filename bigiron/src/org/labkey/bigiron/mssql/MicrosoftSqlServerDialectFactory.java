@@ -21,6 +21,7 @@ import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.collections.CsvSet;
+import org.labkey.api.data.SqlScriptExecutor;
 import org.labkey.api.data.dialect.AbstractDialectRetrievalTestCase;
 import org.labkey.api.data.dialect.DatabaseNotSupportedException;
 import org.labkey.api.data.dialect.JdbcHelperTest;
@@ -33,6 +34,7 @@ import org.labkey.api.util.VersionNumber;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 /*
 * User: adam
@@ -102,7 +104,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
     @Override
     public Collection<? extends Class> getJUnitTests()
     {
-        return Arrays.asList(DialectRetrievalTestCase.class, JavaUpgradeCodeTestCase.class, JdbcHelperTestCase.class);
+        return Arrays.asList(DialectRetrievalTestCase.class, InlineProcedureTestCase.class, JdbcHelperTestCase.class);
     }
 
     @Override
@@ -135,7 +137,7 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
         }
     }
 
-    public static class JavaUpgradeCodeTestCase extends Assert
+    public static class InlineProcedureTestCase extends Assert
     {
         @Test
         public void testJavaUpgradeCode()
@@ -160,9 +162,10 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
                     "EXECcore.executeJavaUpgradeCode 'upgradeCode'\n" +               // Bad syntax: EXECcore
                     "EXEC core. executeJavaUpgradeCode 'upgradeCode'\n" +             // Bad syntax: core. execute...
                     "EXECUT core.executeJavaUpgradeCode 'upgradeCode'\n" +            // Misspell EXECUTE
+                    "EXECUTEUTE core.executeJavaUpgradeCode 'upgradeCode'\n" +        // Misspell EXECUTE -- previous regex allowed this
                     "EXEC core.executeJaavUpgradeCode 'upgradeCode'\n" +              // Misspell executeJavaUpgradeCode
                     "EXEC core.executeJavaUpgradeCode 'upgradeCode';;\n" +            // Bad syntax: two semicolons
-                    "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: Parentheses
+                    "EXEC core.executeJavaUpgradeCode('upgradeCode')\n";              // Bad syntax: parentheses
 
             SqlDialect dialect = new MicrosoftSqlServer2008R2Dialect();
             TestUpgradeCode good = new TestUpgradeCode();
@@ -172,6 +175,49 @@ public class MicrosoftSqlServerDialectFactory extends SqlDialectFactory
             TestUpgradeCode bad = new TestUpgradeCode();
             dialect.runSql(null, badSql, bad, null, null);
             assertEquals(0, bad.getCounter());
+        }
+
+        @Test
+        public void testBulkImport()
+        {
+            String goodSql =
+                "EXEC core.bulkImport 'test', 'TestTable', 'test.xls'\n" +                                    // Normal
+                "EXECUTE core.bulkImport 'test', 'TestTable', 'test.xls'\n" +                                 // EXECUTE
+                "execute core.bulkImport'test', 'TestTable', 'test.xls'\n" +                                  // execute
+                "EXEC core.bulkImport'test','TestTable','test.xls';\n" +                                      // Minimal whitespace
+                "    EXEC     core.bulkImport    'test'   ,   'TestTable'     ,     'test.xls'        \n" +   // Lots of whitespace
+                "exec CORE.BULKIMPORT 'test', 'TestTable', 'test.xls'\n" +                                    // Case insensitive
+                "execute core.bulkImport'test.TestTable', 'test.xls';\n" +                                    // execute (with ;)
+                "    EXEC     core.bulkImport    'test'  ,   'TestTable'  ,  'test.xls'    ;     \n" +        // Lots of whitespace with ; in the middle
+                "exec CORE.BULKIMPORT 'test', 'TestTable', 'test.xls';     \n" +                              // Case insensitive (with ;)
+                "EXEC core.bulkImport 'test'   ,  'TestTable',    'test.xls'    ;\n" +                        // Lots of whitespace with ; at end
+                "EXEC core.bulkImport 'test', 'TestTable', 'test.xls'";                                       // No line ending
+
+            String badSql =
+                "/* EXEC core.bulkImport 'test', 'TestTable, 'test.xls'\n" +        // Inside block comment
+                "   more comment\n" +
+                "*/" +
+                "    -- EXEC core.bulkImport 'test', 'TestTable, 'test.xls'\n" +    // Inside single-line comment
+                "EXECcore.bulkImport 'test', 'TestTable, 'test.xls'\n" +            // Bad syntax: EXECcore
+                "EXEC core. bulkImport 'test', 'TestTable, 'test.xls'\n" +          // Bad syntax: core. bulkImport...
+                "EXEC core.bulkImport 'test'\n" +                                   // Bad syntax: only one parameter
+                "EXEC core.bulkImport 'test', 'TestTable'\n" +                      // Bad syntax: only two parameters
+                "EXECUT core.bulkImport 'test', 'TestTable, 'test.xls'\n" +         // Misspell EXECUTE
+                "EXECUTEUTE core.bulkImport 'test', 'TestTable, 'test.xls'\n" +     // Misspell EXECUTE -- previous regex allowed this
+                "EXEC core.bulkIImport 'test', 'TestTable, 'test.xls'\n" +          // Misspell bulkImport
+                "EXEC core.bulkImport'test', 'TestTable, 'test.xls'\n" +            // Bad syntax: no space
+                "EXEC core.bulkImport 'test', 'TestTable, 'test.xls';;\n" +         // Bad syntax: two semicolons
+                "EXEC core.bulkImport('test', 'TestTable, 'test.xls')\n";           // Bad syntax: parentheses
+
+            AtomicLong counter = SqlScriptExecutor.BULK_IMPORT_EXECUTION_COUNT;
+            long startingCount = counter.longValue();
+            SqlDialect dialect = new MicrosoftSqlServer2008R2Dialect();
+            dialect.runSql(null, goodSql, null, null, null);
+            assertEquals(10, counter.longValue() - startingCount);
+
+            startingCount = counter.longValue();
+            dialect.runSql(null, badSql, null, null, null);
+            assertEquals(0, counter.longValue() - startingCount);
         }
     }
 

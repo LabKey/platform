@@ -31,13 +31,11 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
-import org.labkey.api.data.SqlScriptExecutor;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.Table;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
-import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.ColumnMetaDataReader;
 import org.labkey.api.data.dialect.JdbcHelper;
 import org.labkey.api.data.dialect.PkMetaDataReader;
@@ -778,13 +776,20 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     private static final Pattern GO_PATTERN = Pattern.compile("^\\s*GO\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
-    private static final Pattern JAVA_CODE_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)*\\s+core\\.executeJavaUpgradeCode\\s*'(.+)'\\s*;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
+    private static final Pattern PROC_PATTERN = Pattern.compile("^\\s*EXEC(?:UTE)?\\s+core\\.((executeJavaUpgradeCode\\s*'(.+)')|(bulkImport\\s*'(.+)'\\s*,\\s*'(.+)'\\s*,\\s*'(.+)'))\\s*;?\\s*$", Pattern.CASE_INSENSITIVE | Pattern.MULTILINE);
 
     @Override
-    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
+    // Split Microsoft SQL scripts on GO statements
+    protected Pattern getSQLScriptSplitPattern()
     {
-        SqlScriptExecutor parser = new SqlScriptExecutor(sql, GO_PATTERN, JAVA_CODE_PATTERN, schema, upgradeCode, moduleContext, conn);
-        parser.execute();
+        return GO_PATTERN;
+    }
+
+    @NotNull
+    @Override
+    protected Pattern getSQLScriptProcPattern()
+    {
+        return PROC_PATTERN;
     }
 
     @Override
