@@ -70,7 +70,7 @@ Ext4.define('LABKEY.ext4.ManageReportNotifications', {
                     margin : '4, 4, 4, 6',
                     items  : [
                         {
-                            boxLabel  : 'None',
+                            boxLabel  : 'None.',
                             name      : 'rb',
                             inputValue: 'none',
                             checked   : 'none' == notifyOption
