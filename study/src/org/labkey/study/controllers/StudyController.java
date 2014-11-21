@@ -126,6 +126,7 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -7615,7 +7616,7 @@ public class StudyController extends BaseStudyController
         {
             setHelpTopic("studyPubRefresh");
             _appendManageStudy(root);
-            root.addChild((_study.isAncillaryStudy() ? "Ancillary" : "Published") + " Study Settings");
+            root.addChild((_study.getStudySnapshotType() != null ? _study.getStudySnapshotType().getTitle() : "") + " Study Settings");
             return root;
         }
 

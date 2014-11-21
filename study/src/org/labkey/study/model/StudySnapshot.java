@@ -24,6 +24,9 @@ import org.labkey.api.exp.list.ListService;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
+import org.labkey.api.study.Study;
+import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.util.GUID;
 import org.labkey.study.writer.StudyExportContext;
 
@@ -188,10 +191,11 @@ public class StudySnapshot
     // Hold the actual snapshot settings... this is serialized to (and deserialized from) the
     // database via Jackson. To serialize/deserialize another property, create a new member, a getter method,
     // and initialize it appropriately in the constructor below.
-    // TODO: For properties that are lists or sets, null and missing indicates ALL and empty indicates none
+    // For properties that are lists or sets, null and missing indicates ALL and empty [] indicates none
     public static class SnapshotSettings
     {
         /* General Setup */
+        private StudySnapshotType type;
         private String description;
         /* Participants */
         private List<Integer> participantGroups = new ArrayList<>();
@@ -229,37 +233,108 @@ public class StudySnapshot
 
         private SnapshotSettings(StudyExportContext ctx, boolean refresh, ChildStudyDefinition def)
         {
+            Study study = StudyService.get().getStudy(ctx.getContainer());
+
+            loadGeneralSetup(def);
+            loadParticipants(ctx, def);
+            loadDatasets(study, ctx, def);
+            loadTimepoints(study, ctx);
+            loadSpecimens(def, refresh);
+            loadStudyObjects(def);
+            loadLists(ctx, def);
+            loadViews(def);
+            loadReports(ctx, def);
+            loadFolderObjects(def);
+            loadPublishOptions(ctx);
+        }
+
+        private void loadGeneralSetup(ChildStudyDefinition def)
+        {
+            type = def.getMode();
             if (def.getDescription() != null)
                 description = def.getDescription();
+        }
 
+        private void loadParticipants(StudyExportContext ctx, ChildStudyDefinition def)
+        {
             participants = ctx.getParticipants();
-            if (def.getGroups() != null)
-                participantGroups = Arrays.asList(ArrayUtils.toObject(def.getGroups()));
-
-            datasets = ctx.getDatasetIds();
-            datasetRefresh = def.isUpdate();
-            datasetRefreshDelay = def.getUpdateDelay() > 0 ? def.getUpdateDelay() : null;
-
-            visits = ctx.getVisitIds();
-
-            includeSpecimens = def.isIncludeSpecimens();
-            specimenRefresh = refresh;
-
-            if (def.getStudyProps() != null)
-                studyObjects = Arrays.asList(def.getStudyProps());
-
-            if (def.getLists() != null)
+            if (def.getGroups() != null && def.getGroups().length > 0)
             {
-                // write out list names instead of ids
-                for (Integer listId : def.getLists())
-                {
-                    ListDefinition listDef = ListService.get().getList(ctx.getContainer(), listId);
-                    if (listDef != null)
-                        lists.add(listDef.getName());
-                }
+                participantGroups = Arrays.asList(ArrayUtils.toObject(def.getGroups()));
+            }
+            else if (participants.isEmpty())
+            {
+                // "use all participants from source study" was selected
+                participants = null;
+            }
+        }
+
+        private void loadDatasets(Study study, StudyExportContext ctx, ChildStudyDefinition def)
+        {
+            if (ctx.getDatasetIds() != null && !ctx.getDatasetIds().isEmpty())
+            {
+                if (study != null && ctx.getDatasetIds().size() == study.getDatasets().size())
+                    datasets = null; // indicates all selected
+                else
+                    datasets = ctx.getDatasetIds();
             }
 
-            if (def.getViews() != null)
+            datasetRefresh = def.isUpdate();
+            datasetRefreshDelay = def.getUpdateDelay() > 0 ? def.getUpdateDelay() : null;
+        }
+
+        private void loadTimepoints(Study study, StudyExportContext ctx)
+        {
+            // at least one visits is required, so it is either all or a subset
+            if (ctx.getVisitIds() != null && !ctx.getVisitIds().isEmpty())
+                visits = ctx.getVisitIds();
+            else
+                visits = null; // indicates all selected
+        }
+
+        private void loadSpecimens(ChildStudyDefinition def, boolean refresh)
+        {
+            includeSpecimens = def.isIncludeSpecimens();
+            specimenRefresh = refresh;
+        }
+
+        private void loadStudyObjects(ChildStudyDefinition def)
+        {
+            if (def.isStudyPropsAll())
+                studyObjects = null; // indicates all selected
+            else if (def.getStudyProps() != null && def.getStudyProps().length > 0)
+                studyObjects = Arrays.asList(def.getStudyProps());
+
+        }
+
+        private void loadLists(StudyExportContext ctx, ChildStudyDefinition def)
+        {
+            if (def.getLists() != null && def.getLists().length > 0)
+            {
+                if (def.getLists().length == ListService.get().getLists(ctx.getContainer()).size())
+                {
+                    lists = null; // indicates all selected
+                }
+                else
+                {
+                    // write out list names instead of ids
+                    for (Integer listId : def.getLists())
+                    {
+                        ListDefinition listDef = ListService.get().getList(ctx.getContainer(), listId);
+                        if (listDef != null)
+                            lists.add(listDef.getName());
+                    }
+                }
+            }
+        }
+
+        private void loadViews(ChildStudyDefinition def)
+        {
+            if (def.isViewsAll())
+            {
+                views = null; // indicates all selected
+            }
+            else if (def.getViews() != null && def.getViews().length > 0)
             {
                 // write out view names instead of entityIds
                 for (String entityid : def.getViews())
@@ -276,8 +351,15 @@ public class StudySnapshot
                     }
                 }
             }
+        }
 
-            if (def.getReports() != null)
+        private void loadReports(StudyExportContext ctx, ChildStudyDefinition def)
+        {
+            if (def.isReportsAll())
+            {
+                reports = null; // indicates all selected
+            }
+            else if (def.getReports() != null && def.getReports().length > 0)
             {
                 // write out report names instead of entityIds
                 for (String entityid : def.getReports())
@@ -287,10 +369,18 @@ public class StudySnapshot
                         reports.add(report.getDescriptor().getReportName());
                 }
             }
+        }
 
-            if (def.getFolderProps() != null)
+        private void loadFolderObjects(ChildStudyDefinition def)
+        {
+            if (def.isFolderPropsAll())
+                folderObjects = null; // indicates all selected
+            else if (def.getFolderProps() != null && def.getFolderProps().length > 0)
                 folderObjects = Arrays.asList(def.getFolderProps());
+        }
 
+        private void loadPublishOptions(StudyExportContext ctx)
+        {
             removeProtectedColumns = ctx.isRemoveProtected();
             shiftDates = ctx.isShiftDates();
             useAlternateParticipantIds = ctx.isAlternateIds();
@@ -385,6 +475,11 @@ public class StudySnapshot
         public List<String> getReports()
         {
             return reports;
+        }
+
+        public StudySnapshotType getType()
+        {
+            return type;
         }
     }
 }

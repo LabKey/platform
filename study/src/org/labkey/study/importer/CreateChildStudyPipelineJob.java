@@ -35,6 +35,7 @@ import org.labkey.api.query.snapshot.QuerySnapshotDefinition;
 import org.labkey.api.query.snapshot.QuerySnapshotService;
 import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
+import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.view.ViewContext;
@@ -106,10 +107,10 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
     @Override
     public String getDescription()
     {
-        if (_form.isPublish())
-            return "Publish Study";
+        if (_form.getMode() != null)
+            return _form.getMode().getJobDescription();
         else
-            return "Create Ancillary Study";
+            return "Create Study";
     }
 
     @Override
@@ -240,6 +241,11 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
                 StudySnapshot snapshot = new StudySnapshot(studyExportContext, _dstContainer, _form.isSpecimenRefresh(), _form);
                 Table.insert(getUser(), StudySchema.getInstance().getTableInfoStudySnapshot(), snapshot);
 
+                // Save the snapshot RowId to the destination study
+                StudyImpl mutableStudy = StudyManager.getInstance().getStudy(_dstContainer).createMutable();
+                mutableStudy.setStudySnapshot(snapshot.getRowId());
+                StudyManager.getInstance().updateStudy(user, mutableStudy);
+
                 // export objects from the parent study, then import them into the new study
                 getLogger().info("Exporting data from parent study.");
                 exportFromParentStudy(folderExportContext, vf);
@@ -266,11 +272,6 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
 
                 // import folder items (reports, lists, etc)
                 importFolderItems(destStudy, vf);
-
-                // Get a fresh copy of the study... import methods may have changed it
-                StudyImpl mutableStudy = StudyManager.getInstance().getStudy(_dstContainer).createMutable();
-                mutableStudy.setStudySnapshot(snapshot.getRowId());
-                StudyManager.getInstance().updateStudy(user, mutableStudy);
             }
 
             if (_errors.hasErrors())
@@ -329,7 +330,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         dataTypes.add(ViewCategoryWriter.DATA_TYPE);
         dataTypes.add(ParticipantGroupWriter.DATA_TYPE);
 
-        if ("ancillary".equalsIgnoreCase(form.getMode()))
+        if (StudySnapshotType.ancillary.equals(form.getMode()))
         {
             dataTypes.add(CohortWriter.DATA_TYPE);
             dataTypes.add(AssayScheduleWriter.SELECTION_TEXT);
@@ -565,7 +566,7 @@ public class CreateChildStudyPipelineJob extends AbstractStudyPipelineJob
         if (!groupsToCopy.isEmpty())
         {
             // query snapshots need to have participants created ahead of the snapshot
-            if (!form.isPublish())
+            if (form.isUpdate())
                 ensureGroupParticipants();
 
             VirtualFile studyDir = vf.getDir("study");

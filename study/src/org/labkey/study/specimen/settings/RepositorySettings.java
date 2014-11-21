@@ -113,7 +113,7 @@ public class RepositorySettings
     public boolean isEnableRequests()
     {
         Study study = StudyService.get().getStudy(_container);
-        if (study != null && (study.isAncillaryStudy() || study.isSnapshotStudy()))
+        if (study != null && (study.hasSourceStudy() || study.isSnapshotStudy()))
             return false;
         return _enableRequests;
     }

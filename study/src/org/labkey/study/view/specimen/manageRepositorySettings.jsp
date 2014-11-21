@@ -28,7 +28,7 @@
 <labkey:errors/>
 
 <%
-   if (study != null && !study.isAncillaryStudy() && !study.isSnapshotStudy())
+   if (study != null && !study.hasSourceStudy() && !study.isSnapshotStudy())
    {
 %>
 <labkey:form action="<%=h(buildURL(SpecimenController.ManageRepositorySettingsAction.class))%>" method="POST">

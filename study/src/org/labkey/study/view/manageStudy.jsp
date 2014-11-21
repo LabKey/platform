@@ -105,13 +105,15 @@
 
     int numDatasets = study.getDatasetsByType(org.labkey.api.study.DataSet.TYPE_STANDARD, org.labkey.api.study.DataSet.TYPE_PLACEHOLDER).size();
 
-    if (study.isAncillaryStudy() || study.isSnapshotStudy())
+    if (study.hasSourceStudy() || study.isSnapshotStudy())
     {
+        String snapshotTitle = study.getStudySnapshotType().getTitle().toLowerCase();
+        snapshotTitle = ("ancillary".equals(snapshotTitle) ? "an " : "a ") + snapshotTitle;
 %>
 <table>
     <tr>
         <td>
-            <p>This is <%=text(study.isAncillaryStudy() ? "an ancillary" : "a published")%> study.</p>
+            <p>This is <%=text(snapshotTitle)%> study.</p>
         </td>
     </tr>
 </table>
@@ -265,7 +267,7 @@
                 new ActionURL(StudyController.DemoModeAction.class, c)) %></td>
     </tr>
 <%
-        if (!study.isAncillaryStudy() && !study.isSnapshotStudy())
+        if (!study.hasSourceStudy() && !study.isSnapshotStudy())
         {
 %>
 
@@ -313,7 +315,7 @@
         }
         else
         {
-            String childStudyType = study.isAncillaryStudy() ? "ancillary" : "published";
+            String childStudyType = study.getStudySnapshotType().getTitle().toLowerCase();
 %>
     <tr>
         <td colspan="3">

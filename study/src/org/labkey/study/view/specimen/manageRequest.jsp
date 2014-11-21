@@ -183,11 +183,10 @@
     {
         Ext.onReady(function(){
             var wizard = new LABKEY.study.CreateStudyWizard({
+                mode : 'specimen',
                 allowRefresh : false,
                 requestId : <%=bean.getSpecimenRequest().getRowId()%>,
-                studyName : <%=q(availableStudyName)%>,
-                namePanel : true,
-                datasetsPanel : true
+                studyName : <%=q(availableStudyName)%>
             });
 
             wizard.on('success', function(info){}, this);

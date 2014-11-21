@@ -401,7 +401,7 @@ public class StudyQuerySchema extends UserSchema
         // want to set a container filter to look at specimens across the entire site
         if (SIMPLE_SPECIMEN_TABLE_NAME.equalsIgnoreCase(name))
         {
-            if (_study.isAncillaryStudy())
+            if (_study != null && _study.isAncillaryStudy())
             {
                 List<Container> containers = new ArrayList<>();
                 containers.add(_study.getContainer());

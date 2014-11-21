@@ -82,7 +82,10 @@ if (snapshot.isRefresh()) { %> This study is currently configured to refresh its
             <td>&nbsp;</td>
         </tr>
         <tr>
-            <td><%= button("Update").submit(true) %>&nbsp;<%= button("Done").href(ManageStudyAction.class, getContainer()) %></td>
+            <td>
+                <% if (!study.isAncillaryStudy()) { %><%= button("Update").submit(true) %>&nbsp; <% } %>
+                <%= button("Done").href(ManageStudyAction.class, getContainer()) %>
+            </td>
         </tr>
     </table>
 </labkey:form>

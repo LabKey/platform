@@ -127,6 +127,9 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         if (_sourceStudy == null)
             errors.reject(SpringActionController.ERROR_MSG, "Unable to locate the parent study from location : " + form.getSrcPath());
 
+        if (form.getMode() == null)
+            errors.reject(SpringActionController.ERROR_MSG, "Unable to locate a study snapshot type from specified mode");
+
         // work around for IE bug (13242), in ext 3.4 posting using a basic form will not call the failure handler if the status code is 400
         if (errors.hasErrors())
         {
@@ -144,8 +147,6 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
 
         if (null != form.getRequestId() || null != form.getSpecimenIds())
         {
-            // TODO: Hack! We want specimen studies to be published for now... wizard should post this
-            form.setPublish(true);
             form.setIncludeSpecimens(true);
             SpecimenManager sm = SpecimenManager.getInstance();
 
@@ -211,7 +212,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         study.setSpecies(_sourceStudy.getSpecies());
         study.setAssayPlan(_sourceStudy.getAssayPlan());
         Container sourceContainer = ContainerManager.getForPath(form.getSrcPath());
-        if (!form.isPublish() || form.isUpdate())
+        if (form.isUpdate())
         {
             study.setSourceStudyContainerId(sourceContainer.getId());
         }

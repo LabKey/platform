@@ -51,6 +51,7 @@ import org.labkey.api.settings.AppProps;
 import org.labkey.api.study.Location;
 import org.labkey.api.study.ParticipantCategory;
 import org.labkey.api.study.Study;
+import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.api.util.DateUtil;
@@ -135,6 +136,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private String _alternateIdPrefix;
     private int _alternateIdDigits;
     private Integer _studySnapshot = null;  // RowId of the study snapshot configuration that created this study (or null)
+    private StudySnapshotType _studySnapshotType = null;
     private Date _lastSpecimenLoad = null;
     private boolean _allowReqLocRepository = true;
     private boolean _allowReqLocClinic = true;
@@ -784,6 +786,17 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public boolean isAncillaryStudy()
     {
+        // TODO: prior to 15.1 we couldn't actually correctly distinquish between publish and ancillary studies
+        //       because of this, the specimen tables which are showing data with container filter StudyAndSourceStudy
+        //       cause issues in Publish studies that have a source study (i.e. data refresh = Manual).
+        //       Once that issue is fixed (see VisitManager.getSpecimenTable and StudyQuerySchema.getAncillaryStudyFilterFragments)
+        //       the hasSourceStudy() part of this check can be removed
+        return hasSourceStudy() || StudySnapshotType.ancillary.equals(getStudySnapshotType());
+    }
+
+    @Override
+    public boolean hasSourceStudy()
+    {
         return getSourceStudy() != null;
     }
 
@@ -803,6 +816,28 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         if (sourceContainer == null)
             return null;
         return StudyManager.getInstance().getStudy(sourceContainer);
+    }
+
+    public StudySnapshotType getStudySnapshotType()
+    {
+        if (_studySnapshotType == null && getStudySnapshot() != null)
+        {
+            StudySnapshot snapshot = StudyManager.getInstance().getRefreshStudySnapshot(getStudySnapshot());
+            if (snapshot != null)
+            {
+                _studySnapshotType = snapshot.getSnapshotSettings().getType();
+            }
+
+            // prior to 15.1, we didn't store the snapshot type in the SnapshotSettings, so use the "guess type" method
+            // NOTE: this is not reliable because we can't determine if it is a Specimen Study and a Publish Study
+            //       can also have a source study if it was configured with data refresh = Manual
+            if (_studySnapshotType == null)
+            {
+                _studySnapshotType = getSourceStudy() != null ? StudySnapshotType.ancillary : StudySnapshotType.publish;
+            }
+        }
+
+        return _studySnapshotType;
     }
 
     public boolean isEmptyStudy()

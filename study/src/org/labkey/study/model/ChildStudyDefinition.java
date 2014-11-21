@@ -15,6 +15,8 @@
  */
 package org.labkey.study.model;
 
+import org.labkey.api.study.StudySnapshotType;
+
 import java.util.List;
 
 /**
@@ -24,7 +26,7 @@ import java.util.List;
  */
 public class ChildStudyDefinition
 {
-    private String _mode;
+    private StudySnapshotType _mode;
     private String _name;
     private String _description;
     private String _srcPath;
@@ -47,11 +49,16 @@ public class ChildStudyDefinition
 
     private int[] _groups = new int[0];
     private boolean _copyParticipantGroups;
-    private boolean _publish;
 
     private Integer _requestId;  // RowId of a specimen request
     private String[] _specimenIds = null;  // List of globally unique specimen IDs
     private List<Vial> _vials = null;
+
+    // used to persist the snapshot settings (i.e. all vs selected subset)
+    private boolean _studyPropsAll;
+    private boolean _folderPropsAll;
+    private boolean _viewsAll;
+    private boolean _reportsAll;
 
     public String getName()
     {
@@ -227,16 +234,6 @@ public class ChildStudyDefinition
         _views = views;
     }
 
-    public boolean isPublish()
-    {
-        return _publish;
-    }
-
-    public void setPublish(boolean publish)
-    {
-        _publish = publish;
-    }
-
     public boolean isIncludeSpecimens()
     {
         return _includeSpecimens;
@@ -290,13 +287,53 @@ public class ChildStudyDefinition
         _vials = vials;
     }
 
-    public String getMode()
+    public StudySnapshotType getMode()
     {
         return _mode;
     }
 
-    public void setMode(String mode)
+    public void setMode(StudySnapshotType mode)
     {
         _mode = mode;
+    }
+
+    public boolean isStudyPropsAll()
+    {
+        return _studyPropsAll;
+    }
+
+    public void setStudyPropsAll(boolean studyPropsAll)
+    {
+        _studyPropsAll = studyPropsAll;
+    }
+
+    public boolean isFolderPropsAll()
+    {
+        return _folderPropsAll;
+    }
+
+    public void setFolderPropsAll(boolean folderPropsAll)
+    {
+        _folderPropsAll = folderPropsAll;
+    }
+
+    public boolean isViewsAll()
+    {
+        return _viewsAll;
+    }
+
+    public void setViewsAll(boolean viewsAll)
+    {
+        _viewsAll = viewsAll;
+    }
+
+    public boolean isReportsAll()
+    {
+        return _reportsAll;
+    }
+
+    public void setReportsAll(boolean reportsAll)
+    {
+        _reportsAll = reportsAll;
     }
 }

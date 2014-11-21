@@ -13,8 +13,7 @@ Ext.QuickTips.init();
 Ext.GuidedTips.init();
 
 LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName) {
-    console.log(snapshotId, availableContainerName);
-
+    // get the rest of the study snapshot details/settings from the server
     LABKEY.Query.selectRows({
         schemaName: 'study',
         queryName: 'studySnapshot',
@@ -22,11 +21,12 @@ LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName
         filterArray: [ LABKEY.Filter.create('RowId', snapshotId) ],
         success: function(data) {
             var row = data.rows[0];
-            console.log(Ext.decode(row.Settings));
+            var settings = Ext.decode(row.Settings);
+
             new LABKEY.study.CreateStudyWizard({
-                mode: 'publish',
+                mode: (settings && settings.type ? settings.type : 'publish'),
                 studyName: availableContainerName,
-                settings: Ext.decode(row.Settings),
+                settings: settings,
                 parent: row['Source/Name'],
                 createdBy: row['CreatedBy/DisplayName'],
                 created: row.Created
@@ -85,7 +85,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var pages = [];
         pages[0] = {
             panelType : 'name',
-            active :  (this.namePanel == false) ? false : this.mode == 'publish' || this.mode == 'ancillary' || this.namePanel
+            active :  (this.namePanel == false) ? false : this.mode == 'publish' || this.mode == 'ancillary' || this.mode == 'specimen' || this.namePanel
         };
         pages[1] = {
             panelType : 'participants',
@@ -93,7 +93,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         };
         pages[2] = {
             panelType : 'datasets',
-            active : (this.datasetsPanel == false) ? false : this.mode == 'publish' || this.mode == 'ancillary' || this.datasetsPanel
+            active : (this.datasetsPanel == false) ? false : this.mode == 'publish' || this.mode == 'ancillary' || this.mode == 'specimen' || this.datasetsPanel
         };
         pages[3] = {
             panelType : 'visits',
@@ -281,8 +281,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         if(this.title) {
             title = this.title;
         }
-        else if (this.mode == "ancillary") title ='Create Ancillary Study';
-        else title = 'Publish Study';
+        else if (this.mode == "ancillary") {
+            title ='Create Ancillary Study';
+        }
+        else if (this.mode == "specimen") {
+            title ='Publish Specimen Study';
+        }
+        else {
+            title = 'Publish Study';
+        }
 
         this.win = new Ext.Window({
             title: title,
@@ -920,7 +927,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         }, this);
 
-        if(this.mode != 'publish'){
+        if(this.mode == 'ancillary'){
           var syncTip = '' +
                 '<div>' +
                     '<div class=\'g-tip-header\'>' +
@@ -961,8 +968,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     {
                         xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, width: 300, height: 75, defaults: {style:"margin: 0 0 2px 2px"},
                         items: [
-                            {name: 'refreshType', boxLabel: 'None', inputValue: 'None', checked: this.mode == 'publish', hidden: this.mode != 'publish'},
-                            {name: 'refreshType', boxLabel: 'Automatic', inputValue: 'Automatic', checked: this.mode != 'publish', hidden: this.mode == 'publish'},
+                            {name: 'refreshType', boxLabel: 'None', inputValue: 'None', checked: this.mode != 'ancillary', hidden: this.mode == 'ancillary'},
+                            {name: 'refreshType', boxLabel: 'Automatic', inputValue: 'Automatic', checked: this.mode == 'ancillary', hidden: this.mode != 'ancillary'},
                             {name: 'refreshType', boxLabel: 'Manual', inputValue: 'Manual'}
                         ],
                         listeners: {
@@ -1015,6 +1022,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             listeners: {
                 selectionChange: function(selModel){
                     this.selectedViews = selModel.getSelections();
+                    this.selectedViewsAll = selModel.getCount() == viewsStore.getCount();
                 },
                 scope: this
             }
@@ -1143,6 +1151,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             listeners: {
                 selectionChange: function(selModel){
                     this.selectedStudyObjects = selModel.getSelections();
+                    this.selectedStudyObjectsAll = selModel.getCount() == studyStore.getCount();
                 },
                 scope: this
             }
@@ -1213,47 +1222,50 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             listeners: {
                 selectionChange: function(selModel){
                     this.selectedReports = selModel.getSelections();
+                    this.selectedReportsAll = selModel.getCount() == reportsStore.getCount();
                 },
                 scope: this
             }
+        });
+
+        var reportsStore = new Ext.data.Store({
+            proxy: new Ext.data.HttpProxy({
+                url: LABKEY.ActionURL.buildURL('reports', 'browseData.api')
+            }),
+            reader: new Ext.data.JsonReader({
+                root: 'data',
+                fields: [
+                    {name : 'id'},
+                    {name : 'name'},
+                    {name : 'category', mapping : 'category.label', convert : function(v) { if (v == 'Uncategorized') return ''; return v; }},
+                    {name : 'createdBy'},
+                    {name : 'createdByUserId',      type : 'int'},
+                    {name : 'type'},
+                    {name : 'icon'},
+                    {name : 'description'},
+                    {name : 'schemaName'},
+                    {name : 'queryName'},
+                    {name : 'shared'}
+                ]
+            }),
+            listeners: {
+                load: function(store){
+                    store.filterBy(function(record){
+                        return record.get('type') != 'Dataset' &&
+                                record.get('type') != 'Query' &&
+                                record.get('shared') == true;
+                    });
+                }
+            },
+            autoLoad: true,
+            sortInfo: {field: 'name', direction: 'ASC'}
         });
 
         var grid = new Ext.grid.EditorGridPanel({
             viewConfig : {
                 forceFit : true
             },
-            store: new Ext.data.Store({
-                proxy: new Ext.data.HttpProxy({
-                    url: LABKEY.ActionURL.buildURL('reports', 'browseData.api')
-                }),
-                reader: new Ext.data.JsonReader({
-                    root: 'data',
-                    fields: [
-                        {name : 'id'},
-                        {name : 'name'},
-                        {name : 'category', mapping : 'category.label', convert : function(v) { if (v == 'Uncategorized') return ''; return v; }},
-                        {name : 'createdBy'},
-                        {name : 'createdByUserId',      type : 'int'},
-                        {name : 'type'},
-                        {name : 'icon'},
-                        {name : 'description'},
-                        {name : 'schemaName'},
-                        {name : 'queryName'},
-                        {name : 'shared'}
-                    ]
-                }),
-                listeners: {
-                    load: function(store){
-                        store.filterBy(function(record){
-                            return record.get('type') != 'Dataset' &&
-                                    record.get('type') != 'Query' &&
-                                    record.get('shared') == true;
-                        });
-                    }
-                },
-                autoLoad: true,
-                sortInfo: {field: 'name', direction: 'ASC'}
-            }),
+            store: reportsStore,
             selModel: selectionModel,
             columns: [
                 selectionModel,
@@ -1541,6 +1553,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             listeners: {
                 selectionChange: function(selModel){
                     this.selectedFolderObjects = selModel.getSelections();
+                    this.selectedFolderObjectsAll = selModel.getCount() == folderStore.getCount();
                 },
                 scope: this
             }
@@ -1767,11 +1780,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         this.pageOptions[7].value = this.selectedViews;
         this.pageOptions[8].value = this.selectedReports;
 
-        if(this.pageOptions[10].active){
-            id = Ext.id();
-            hiddenFields.push(id);
-            this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'publish', value: true});
-        }
         if(this.requestId){
             id = Ext.id();
             hiddenFields.push(id);
@@ -1787,6 +1795,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 studyProps.push(this.selectedStudyObjects[i].json[0]);
             }
             this.nameFormPanel.add({xtype : 'hidden', id : id, name : 'studyProps', value : studyProps});
+
+            if (this.selectedStudyObjectsAll) {
+                params.studyPropsAll = true;
+            }
         }
         if (this.pageOptions[8].active && this.selectedFolderObjects)
         {
@@ -1798,6 +1810,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
             }
             this.nameFormPanel.add({xtype : 'hidden', id : id, name : 'folderProps', value : folderProps});
+
+            if (this.selectedFolderObjectsAll) {
+                params.folderPropsAll = true;
+            }
         }
 
         //TODO:  Get rid of mode here, or at least make it work in the context.
@@ -1826,6 +1842,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     hiddenFields.push(id);
                     this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'views', value: view.data.id});
                 }
+
+                if (this.selectedViewsAll) {
+                    params.viewsAll = true;
+                }
             }
             if(this.pageOptions[8].active){
                 for(i = 0; i < this.selectedReports.length; i++){
@@ -1833,6 +1853,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     id = Ext.id();
                     hiddenFields.push(id);
                     this.nameFormPanel.add({xtype: 'hidden', id: id, name: 'reports', value: report.data.id});
+                }
+
+                if (this.selectedReportsAll) {
+                    params.reportsAll = true;
                 }
             }
 
