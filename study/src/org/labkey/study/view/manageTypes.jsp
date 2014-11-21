@@ -103,7 +103,7 @@
         <td><%= textLink("Delete Multiple Datasets", DatasetController.BulkDatasetDeleteAction.class)%></td>
     </tr>
     <tr>
-        <td>Security can be configured on a per-dataset level.</td>
+        <td>Security can be configured on a per-dataset basis.</td>
         <td><%= textLink("Manage Dataset Security", SecurityController.BeginAction.class)%></td>
     </tr>
 
