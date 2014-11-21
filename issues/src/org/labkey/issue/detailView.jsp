@@ -276,10 +276,10 @@
 
 <labkey:form method="POST" id="CreateIssue" action="<%=insertURL%>">
     <input type="hidden" name="callbackURL" value="<%=h(bean.getCallbackURL())%>"/>
-    <input type="hidden" name="body" value="<%=h(commentTextStr)%>"/>
-    <input type="hidden" name="title" value="<%=h(issue.getTitle())%>"/>
+    <input type="hidden" name="body" value="<%=commentTextStr%>"/>
+    <input type="hidden" name="title" value="<%=issue.getTitle()%>"/>
     <input type="hidden" name="skipPost" value="true"/>
     <input type="hidden" name="assignedTo" value="<%=issue.getAssignedTo()%>"/>
-    <input type="hidden" name="priority" tabindex="2" value="<%=issue.getPriority()%>"/>
+    <input type="hidden" name="priority" value="<%=issue.getPriority()%>"/>
     <input type="hidden" name="related" value="<%=issue.getIssueId()%>"/>
 </labkey:form>
