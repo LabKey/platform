@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,19 +40,33 @@ import java.util.regex.Pattern;
 public class SqlScriptExecutor
 {
     private static final Logger _log = Logger.getLogger(SqlScriptExecutor.class);
+
     private final String _sql;
     private final Pattern _splitPattern;
-    private final Pattern _executeJavaCodePattern;
+    private final Pattern _procPattern;
     private final DbSchema _schema;
-    private final UpgradeCode _upgradeCode;
+    private final @Nullable UpgradeCode _upgradeCode;
     private final ModuleContext _moduleContext;
-    @Nullable private final Connection _conn;
+    private final @Nullable Connection _conn;
 
-    public SqlScriptExecutor(String sql, @Nullable Pattern splitPattern, @NotNull Pattern executeJavaCodePattern, @Nullable DbSchema schema, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
+
+    /**
+     * Splits a SQL string into blocks and executes each block, one at a time. Blocks are determined in a dialect-specific
+     * way, using splitPattern and procPattern.
+     *
+     * @param sql The SQL string to split and execute
+     * @param splitPattern Dialect-specific regex pattern for splitting normal SQL statements into blocks. Null means no need to split.
+     * @param procPattern Dialect-specific regex pattern for finding executeJavaCode and bulkImport procedure calls in the SQL. See SqlDialect.getSqlScriptProcPattern() for details.
+     * @param schema Current schema. Null is allowed for testing purposes.
+     * @param upgradeCode Implementation of UpgradeCode that provides methods for executeJavaCode to run
+     * @param moduleContext Current ModuleContext
+     * @param conn Connection to use, if non-null
+     */
+    public SqlScriptExecutor(String sql, @Nullable Pattern splitPattern, @NotNull Pattern procPattern, @Nullable DbSchema schema, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
     {
         _sql = sql;
         _splitPattern = splitPattern;
-        _executeJavaCodePattern = executeJavaCodePattern;
+        _procPattern = procPattern;
         _schema = schema;
         _upgradeCode = upgradeCode;
         _moduleContext = moduleContext;
@@ -84,7 +99,7 @@ public class SqlScriptExecutor
         for (String sqlBlock : sqlBlocks)
         {
             String trimmed = sqlBlock.trim();
-            Matcher m = _executeJavaCodePattern.matcher(trimmed);
+            Matcher m = _procPattern.matcher(trimmed);
             int start = 0;
 
             while (m.find(start))
@@ -92,7 +107,8 @@ public class SqlScriptExecutor
                 if (m.start() > start)
                     blocks.add(new Block(trimmed.substring(start, m.start())));          // TODO: -1 ?
 
-                blocks.add(new JavaCodeBlock(trimmed.substring(m.start(), m.end()), m.group(1)));
+                Block block = null != m.group(2) ? new JavaCodeBlock(m.group(0), m.group(3)) : new BulkImportBlock(m.group(0), m.group(5), m.group(6), m.group(7));
+                blocks.add(block);
 
                 start = m.end();             // TODO: plus 1?
             }
@@ -153,7 +169,7 @@ public class SqlScriptExecutor
 
     public class Block
     {
-        private String _sql;
+        private final String _sql;
 
         private Block(String sql)
         {
@@ -172,7 +188,7 @@ public class SqlScriptExecutor
 
     private class JavaCodeBlock extends Block
     {
-        private String _methodName;
+        private final String _methodName;
 
         private JavaCodeBlock(String sql, String methodName)
         {
@@ -196,11 +212,18 @@ public class SqlScriptExecutor
                 // Make sure cached database meta data reflects all previously executed SQL
                 CacheManager.clearAllKnownCaches();
                 Method method = _upgradeCode.getClass().getMethod(_methodName, ModuleContext.class);
+                String displayName = method.getDeclaringClass().getSimpleName() + "." + method.getName() + "(ModuleContext moduleContext)";
 
                 if (method.isAnnotationPresent(DeferredUpgrade.class))
+                {
+                    _log.info("Adding deferred upgrade task to execute " + displayName);
                     _moduleContext.addDeferredUpgradeTask(method);
+                }
                 else
+                {
+                    _log.info("Executing " + displayName);
                     method.invoke(_upgradeCode, _moduleContext);
+                }
 
                 // Just to be safe
                 CacheManager.clearAllKnownCaches();
@@ -213,6 +236,43 @@ public class SqlScriptExecutor
             {
                 throw new RuntimeException("Can't invoke method " + _methodName + "(ModuleContext moduleContext) on class " + _upgradeCode.getClass().getName(), e);
             }
+        }
+    }
+
+
+    public static final AtomicLong BULK_IMPORT_EXECUTION_COUNT = new AtomicLong();
+
+    private class BulkImportBlock extends Block
+    {
+        private final String _schemaName;
+        private final String _tableName;
+        private final String _filename;
+
+        private BulkImportBlock(String sql, String schemaName, String tableName, String filename)
+        {
+            super(sql);
+            _schemaName = schemaName;  // Note: Use schemaName, not _schema... these might not match
+            _tableName = tableName;
+            _filename = filename;
+        }
+
+        @Override
+        public void execute()
+        {
+            super.execute();
+
+            // TODO:
+            // Determine module (based on _schemaName)
+            // Get resource... Resource r = module.getModuleResource("/schemas/" + filename); r.getInputStream()...
+            // Stream resource into table
+            // SQL Server: SET IDENTIFY ON/OFF?
+
+            // TODO: Delete everything below.
+            // For temporary junit test -- just count number of successful "executions" and verify the test parameters
+            BULK_IMPORT_EXECUTION_COUNT.incrementAndGet();
+            assert "test".equals(_schemaName);
+            assert "TestTable".equals(_tableName);
+            assert "test.xls".equals(_filename);
         }
     }
 }

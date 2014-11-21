@@ -24,8 +24,6 @@ import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
-import org.labkey.api.data.UpgradeCode;
-import org.labkey.api.module.ModuleContext;
 
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -36,6 +34,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * User: adam
@@ -432,8 +431,16 @@ public abstract class SimpleSqlDialect extends SqlDialect
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }
 
+    @Nullable
     @Override
-    public void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, Connection conn)
+    protected Pattern getSQLScriptSplitPattern()
+    {
+        throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
+    }
+
+    @NotNull
+    @Override
+    protected Pattern getSQLScriptProcPattern()
     {
         throw new UnsupportedOperationException(getClass().getSimpleName() + " does not implement");
     }

@@ -37,6 +37,7 @@ import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
+import org.labkey.api.data.SqlScriptExecutor;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TempTableTracker;
@@ -72,6 +73,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 /**
  * User: arauch
@@ -586,10 +588,28 @@ public abstract class SqlDialect
     public abstract boolean supportsSelectConcat();
 
     // SelectConcat returns SQL that will generate a comma separated list of the results from the passed in select SQL.
-    // This is not generally usable within a GROUP BY.  Include distinct, order by, etc. in the selectSql if desired
+    // This is not generally usable within a GROUP BY. Include distinct, order by, etc. in the selectSql if desired
     public abstract SQLFragment getSelectConcat(SQLFragment selectSql, String delimeter);
 
-    public abstract void runSql(DbSchema schema, String sql, UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn);
+    public final void runSql(DbSchema schema, String sql, @Nullable UpgradeCode upgradeCode, ModuleContext moduleContext, @Nullable Connection conn)
+    {
+        SqlScriptExecutor parser = new SqlScriptExecutor(sql, getSQLScriptSplitPattern(), getSQLScriptProcPattern(), schema, upgradeCode, moduleContext, conn);
+        parser.execute();
+    }
+
+    protected abstract @Nullable Pattern getSQLScriptSplitPattern();
+
+    /**
+     * @return A dialect-specific regex pattern for finding executeJavaCode and bulkImport stored procedure calls in a SQL script.
+     *         The regex must match either procedure name plus the associated parameters and define these specific capturing groups:
+     *              Group 2: executeJavaCode procedure name and parameter
+     *              Group 3: executeJavaCode parameter value
+     *              Group 4: bulkImport procedure name and parameters
+     *              Group 5: bulkImport parameter #1 (schema name)
+     *              Group 6: bulkImport parameter #2 (table name)
+     *              Group 7: bulkImport parameter #3 (source filename)
+     */
+    protected abstract @NotNull Pattern getSQLScriptProcPattern();
 
     public abstract String getMasterDataBaseName();
 
