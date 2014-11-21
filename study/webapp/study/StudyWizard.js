@@ -4,6 +4,9 @@
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
 
+// TODO: I am pretty sure this is stashing the input and output into different variables.
+// We should look to reuse those objects as we are not using the initial values for anything are we?
+
 Ext.namespace("LABKEY.study");
 
 Ext.QuickTips.init();
@@ -12,14 +15,26 @@ Ext.GuidedTips.init();
 LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName) {
     console.log(snapshotId, availableContainerName);
 
-    var studyContext = LABKEY.getModuleContext("study");
-
-    var wizard = new LABKEY.study.CreateStudyWizard({
-        mode: 'publish',
-        studyName : availableContainerName
+    LABKEY.Query.selectRows({
+        schemaName: 'study',
+        queryName: 'studySnapshot',
+        columns: ['Source/Name', 'CreatedBy/DisplayName', 'Created', 'Settings'],
+        filterArray: [ LABKEY.Filter.create('RowId', snapshotId) ],
+        success: function(data) {
+            var row = data.rows[0];
+            console.log(Ext.decode(row.Settings));
+            new LABKEY.study.CreateStudyWizard({
+                mode: 'publish',
+                studyName: availableContainerName,
+                settings: Ext.decode(row.Settings),
+                parent: row['Source/Name'],
+                createdBy: row['CreatedBy/DisplayName'],
+                created: row.Created
+            }).show();
+        }
+        // TODO: failure case
     });
 
-    wizard.show();
 };
 
 LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
@@ -59,6 +74,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
     },
 
+    // helper method to create set-like object for incoming arrays
+    setify : function(arr) {
+        var setObj = {};
+        for (var i = 0; i < arr.length; i++) setObj[arr[i]] = true;
+        return setObj;
+    },
+
     initPages : function(){
         var pages = [];
         pages[0] = {
@@ -75,7 +97,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         };
         pages[3] = {
             panelType : 'visits',
-            active : (this.visitsPanel == false) ? false : this.mode == 'publish' || this.vistsPanel
+            active : (this.visitsPanel == false) ? false : this.mode == 'publish' || this.visitsPanel
         };
         pages[4] = {
             panelType : 'specimens',
@@ -534,12 +556,31 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 enableKeyEvents: true,
                 listeners: {change: nameChange, keyup:nameChange, scope:this}
             },{
+                xtype: 'displayfield',
+                fieldLabel: 'Source Study',
+                style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
+                value: this.parent
+            },{
+                xtype: 'displayfield',
+                fieldLabel: 'Created By',
+                style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
+                value: this.createdBy
+            },{
+                xtype: 'displayfield',
+                fieldLabel: 'Created',
+                style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
+                value: this.created
+            },{
                 xtype: 'textarea',
                 fieldLabel: 'Description',
                 name: 'studyDescription',
                 height: '100',
                 emptyText: 'Type Description here',
-                listeners: {change:function(cmp, newValue, oldValue) {this.info.description = newValue;}, scope:this}
+                listeners: {
+                    change:function(cmp, newValue, oldValue) {this.info.description = newValue;},
+                    afterrender: function(cmp) { if(this.settings) cmp.setValue(this.settings.description)},
+                    scope:this
+                }
             },
             protocolDocField,
             locationField,
@@ -599,6 +640,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.noGroupRadio = new Ext.form.Radio({
             height: 20,
+            style:"margin-left: 2px",
             boxLabel:'Use all ' + this.subject.nounPlural.toLowerCase() + ' from the source study',
             name: 'renderType',
             inputValue: 'all'
@@ -606,6 +648,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
         this.existingGroupRadio = new Ext.form.Radio({
             height: 20,
+            style:"margin-left: 2px",
             boxLabel:'Select from existing ' + this.subject.nounSingular.toLowerCase() + ' groups',
             name: 'renderType',
             inputValue: 'existing',
@@ -632,7 +675,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     items: [
                         this.existingGroupRadio,
                         this.noGroupRadio
-                    ]
+                    ],
+                    listeners: {
+                        scope: this,
+                        afterrender: function(cmp) {
+                            if (this.settings && this.settings.participants == null) cmp.setValue('all');
+                        }
+                    }
                 }
         );
 
@@ -716,6 +765,19 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 {header:'&nbsp;&nbsp;All ' + this.subject.nounSingular + ' Groups', dataIndex:'label', renderer: this.participantGroupRenderer, scope: this}
             ]
         });
+
+        grid.on('viewready', function(grid){
+            if (this.settings)
+            {
+                if (this.settings.participantGroups.length == null)
+                    grid.getSelectionModel().selectAll();
+                else
+                {
+                    var participantGroups = this.setify(this.settings.participantGroups);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { console.log(rec, rec.get('id') in participantGroups); return (rec.get('id') in participantGroups); }).getRange(), true);
+                }
+            }
+        }, this);
 
         this.participantGroupTemplate = new Ext.DomHelper.createTemplate(
                 '<span style="margin-left:10px;" class="labkey-link">{0}</span>&nbsp;<span class="labkey-disabled">' +
@@ -841,8 +903,22 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
         grid.on('columnmodelcustomize', this.customizeColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.info.datasets = cmp.getSelections();}, this);
+        grid.on('viewready', function(grid){
+            if (this.settings && this.settings.datasets)
+            {
+                var datasets = this.setify(this.settings.datasets);
+                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('DataSetId') in datasets); }).getRange(), true);
+            }
+        }, this);
         hiddenGrid.on('columnmodelcustomize', this.customizeColumnModel, this);
         hiddenGrid.selModel.on('selectionchange', function(cmp){this.info.hiddenDatasets = cmp.getSelections();}, this);
+        hiddenGrid.on('viewready', function(grid){
+            if (this.settings && this.settings.datasets)
+            {
+                var datasets = this.setify(this.settings.datasets);
+                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('DataSetId') in datasets); }).getRange(), true);
+            }
+        }, this);
 
         if(this.mode != 'publish'){
           var syncTip = '' +
@@ -882,12 +958,23 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         {
             this.snapshotOptions = new Ext.form.FormPanel({
                 items: [
-                    {xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, width: 300, height: 75,
+                    {
+                        xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, width: 300, height: 75, defaults: {style:"margin: 0 0 2px 2px"},
                         items: [
                             {name: 'refreshType', boxLabel: 'None', inputValue: 'None', checked: this.mode == 'publish', hidden: this.mode != 'publish'},
                             {name: 'refreshType', boxLabel: 'Automatic', inputValue: 'Automatic', checked: this.mode != 'publish', hidden: this.mode == 'publish'},
                             {name: 'refreshType', boxLabel: 'Manual', inputValue: 'Manual'}
-                        ]
+                        ],
+                        listeners: {
+                            scope: this,
+                            afterrender: function(cmp) {
+                                if (this.settings) {
+                                    if (!this.settings.datasetRefresh) cmp.setValue('None');
+                                    else if (this.settings.datasetRefreshDelay == null) cmp.setValue('Manual');
+                                    else cmp.setValue('Automatic');
+                                }
+                            }
+                        }
                     }
                 ],
                 padding: '10px 0px',
@@ -990,6 +1077,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
+        grid.on('viewready', function(grid){
+            if (this.settings && this.settings.views)
+            {
+                var views = this.setify(this.settings.views);
+                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in views); }).getRange(), true);
+            }
+        }, this);
 
         var panel = new Ext.Panel({
             border: false,
@@ -1084,6 +1178,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
+        selectionGrid.on('viewready', function(grid){
+            if (this.settings && this.settings.studyObjects)
+            {
+                var studyObjects = this.setify(this.settings.studyObjects);
+                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in studyObjects); }).getRange(), true);
+            }
+        }, this);
 
         this.studyPropsPanel = new Ext.FormPanel({
             name : 'Study Objects',
@@ -1183,6 +1284,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
+        grid.on('viewready', function(grid){
+            if (this.settings && this.settings.reports)
+            {
+                var reports = this.setify(this.settings.reports);
+                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.data['name'] in reports); }).getRange(), true);
+            }
+        }, this);
 
         this.pageOptions[8].value = this.selectedReports;
         return new Ext.Panel({
@@ -1218,6 +1326,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     if (!checked)
                         this.specimenRefreshRadioGroup.reset();
                 },
+                afterrender: function(cb) {
+                    if (this.settings) cb.setValue(this.settings.includeSpecimens);
+                },
                 scope: this
             }
         });
@@ -1227,9 +1338,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             fieldLabel: 'Refresh rate:',
             columns: 1,
             items: [
-                {boxLabel: 'One-time snapshot', name: 'specimenRefresh', inputValue: false, checked: true},
-                {boxLabel: 'Nightly refresh', name: 'specimenRefresh', inputValue: true}
-            ]
+                {boxLabel: 'One-time snapshot', name: 'specimenRefresh', inputValue: 'false', checked: true, style:"margin-left: 2px"},
+                {boxLabel: 'Nightly refresh', name: 'specimenRefresh', inputValue: 'true', style:"margin-left: 2px"}
+            ],
+            listeners: {
+                scope: this,
+                afterrender: function(cmp) {
+                    if (this.settings) cmp.setValue(this.settings.specimenRefresh.toString());
+                }
+            }
         });
 
         var optionsPanel = new Ext.form.FormPanel({
@@ -1294,6 +1411,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
         grid.on('columnmodelcustomize', this.customizeVisitColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.selectedVisits = cmp.getSelections();}, this);
+        grid.on('viewready', function(grid){
+            if (this.settings && this.settings.visits)
+            {
+                var visits = this.setify(this.settings.visits);
+                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('RowId') in visits); }).getRange(), true);
+            }
+        }, this);
 
         var panel = new Ext.Panel({
             border: false,
@@ -1384,6 +1508,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
+        grid.on('viewready', function(grid){
+            if (this.settings && this.settings.lists)
+            {
+                var lists = this.setify(this.settings.lists);
+                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in lists); }).getRange(), true);
+            }
+        }, this);
 
         var panel = new Ext.Panel({
             border: false,
@@ -1400,7 +1531,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     },
 
     getFolderPropsPanel : function(){
-        var checkboxes = [];
         var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Folder Objects'})+
                 Ext.DomHelper.markup({tag:'div', html: '&nbsp'})+
                 Ext.DomHelper.markup({tag:'div', html: 'Choose additional folder objects to publish:'})+
@@ -1446,6 +1576,13 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
+        selectionGrid.on('viewready', function(grid){
+            if (this.settings && this.settings.folderObjects)
+            {
+                var folderObjects = this.setify(this.settings.folderObjects);
+                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in folderObjects); }).getRange(), true);
+            }
+        }, this);
 
         this.folderPropsPanel = new Ext.FormPanel({
             name : 'Folder Objects',
@@ -1458,130 +1595,87 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     },
 
     getPublishOptionsPanel: function(){
-        var items = [];
+        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Publish Options'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'}) +
+                Ext.DomHelper.markup({tag:'div', html:'Choose publish options:'}) +
+                Ext.DomHelper.markup({tag:'div', html:'&nbsp;'});
 
-        var txt = Ext.DomHelper.markup({tag:'div', cls:'labkey-nav-page-header', html: 'Publish Options'});
-
-        items.push({xtype:'displayfield', html: txt});
-
-        //Alternate Participant IDs
-
-        this.alternateIdsCheckBoxLabel = new Ext.form.Label({
-            fieldLabel: "Use Alternate " + this.subject.nounSingular + " IDs?",
-            gtip: '<div>' +
-                    '<div class=\'g-tip-header\'><span>Use Alternate ' + this.subject.nounSingular + ' IDs</span></div>' +
-                    '<div class=\'g-tip-subheader\'>' +
-                        'Selecting this option will replace each ' + this.subject.nounSingular.toLowerCase() + ' id by an alternate randomly generated id.' +
-                    '</div>' +
-                '</div>'
-        });
-        this.alternateIdsCheckBox = new Ext.form.Checkbox({
-            name: 'alternateids',
-            hideLabel: true,
-            checked: true,
-            value: true
+        var selectionModel = new Ext.grid.CheckboxSelectionModel({
+            moveEditorOnEnter: false,
+            listeners: {
+                selectionChange: function(selModel) {
+                    this.selectedPublishOptions = selModel.getSelections();
+                },
+                scope: this
+            }
         });
 
-        this.shiftDatesCheckBoxLabel = new Ext.form.Label({
-            fieldLabel: 'Shift ' + this.subject.nounSingular + ' Dates?',
-            gtip: '<div>' +
-                    '<div class=\'g-tip-header\'><span>Shift ' + this.subject.nounSingular + ' Dates</span></div>' +
-                    '<div class=\'g-tip-subheader\'>' +
-                        'Selecting this option will shift selected date values associated with a ' + this.subject.nounSingular.toLowerCase() + ' by a random, ' + this.subject.nounSingular.toLowerCase() + ' specific, offset (from 1 to 365 days).' +
-                    '</div>' +
-                '</div>'
-        });
-        this.shiftDatesCheckBox = new Ext.form.Checkbox({
-            xtype: 'checkbox',
-            name: 'shiftDates',
-            hideLabel: true,
-            checked: true,
-            value: true
-        });
-
-        this.protectedColumnsCheckBoxLabel = new Ext.form.Label({
-            fieldLabel: 'Remove All Columns Tagged as Protected?',
-            gtip: '<div>' +
-                    '<div class=\'g-tip-header\'><span>Remove Protected Columns</span></div>' +
-                    '<div class=\'g-tip-subheader\'>' +
-                        'Selecting this option will exclude all dataset, list, and specimen columns that have been tagged as protected columns.' +
-                    '</div>' +
-                '</div>'
-        });
-        this.protectedColumnsCheckBox = new Ext.form.Checkbox({
-            xtype: 'checkbox',
-            name: 'removeProtected',
-            hideLabel: true,
-            checked: true,
-            value: true
+        var publishOptionsStore = new Ext.data.ArrayStore({
+            fields : [
+                {name : 'name', type : 'string'},
+                {name : 'description', type : 'string'},
+                {name : 'option', type : 'string'}
+            ],
+            data : [
+                ['Use Alternate ' + this.subject.nounSingular + ' IDs',
+                 'This will replace each ' + this.subject.nounSingular.toLowerCase() + ' id by an alternate randomly generated id.',
+                 'useAlternateParticipantIds'],
+                ['Shift ' + this.subject.nounSingular + ' Dates',
+                 'This will shift selected date values associated with a ' + this.subject.nounSingular.toLowerCase() + ' by a random, ' + this.subject.nounSingular.toLowerCase() + ' specific, offset (from 1 to 365 days).',
+                 'shiftDates'],
+                ['Remove Protected Columns',
+                 'Selecting this option will exclude all dataset, list, and specimen columns that have been tagged as protected columns.',
+                 'removeProtectedColumns'],
+                ['Mask Clinic Names',
+                 'Selecting this option will change the labels for clinics in the published list of locations to a generic label (i.e. Clinic).',
+                 'maskClinic']
+            ]
         });
 
-        this.maskClinicCheckBoxLabel = new Ext.form.Label({
-            fieldLabel: "Mask Clinic Names?",
-            gtip: '<div>' +
-                    '<div class=\'g-tip-header\'><span>Mask Clinic Names</span></div>' +
-                    '<div class=\'g-tip-subheader\'>' +
-                        'Selecting this option will change the labels for clinics in the published list of locations to a generic label (i.e. Clinic).' +
-                    '</div>' +
-                '</div>'
-        });
-        this.maskClinicCheckBox = new Ext.form.Checkbox({
-            name: 'maskClinic',
-            hideLabel: true,
-            checked: true,
-            value: true
+        var selectionGrid = new Ext.grid.EditorGridPanel({
+            // might need a cls...
+            store: publishOptionsStore,
+            selModel: selectionModel,
+            columns: [
+                selectionModel,
+                {header: 'Publish Option', width: 200, sortable: true, dataIndex: 'name', name: 'name'},
+                {header: 'Description', flex: 1, sortable: true, dataIndex: 'description', name: 'description'}
+            ],
+            loadMask: {msg:"Loading, please wait..."},
+            editable: false,
+            stripeRows: true,
+            pageSize: 300000,
+            flex: 1,
+            bbar: [{hidden:true}],
+            tbar: [{hidden:true}]
         });
 
-        var optionsPanel = new Ext.FormPanel({
-            padding: '10px 0px',
-            border: false,
-            height: 300,
-            width : 400,
-            items: [
+        selectionGrid.on('render', function(cmp){
+            //This is to hide the background color of the bbar/tbar.
+            cmp.getTopToolbar().getEl().dom.style.background = 'transparent';
+            cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
+        });
+        selectionGrid.on('viewready', function(grid){
+            if (this.settings)
             {
-                layout:'column',
-                border: false,
-                items:[{
-                    columnWidth: .5,
-                    border: false,
-                    layout: 'form',
-                    labelWidth: 275,
-                    defaults: { labelSeparator: '' },
-                    items: [
-                        this.protectedColumnsCheckBoxLabel,
-                        this.shiftDatesCheckBoxLabel,
-                        this.alternateIdsCheckBoxLabel,
-                        this.maskClinicCheckBoxLabel
-                    ]
-                },{
-                    columnWidth: .5,
-                    border: false,
-                    layout: 'form',
-                    defaults: { height: 22 },
-                    items: [
-                        this.protectedColumnsCheckBox,
-                        this.shiftDatesCheckBox,
-                        this.alternateIdsCheckBox,
-                        this.maskClinicCheckBox
-                    ]
-                }]
-            }]
-        });
+                var publishOptions = {};
+                publishOptions['maskClinic'] = this.settings.maskClinic;
+                publishOptions['removeProtectedColumns'] = this.settings.removeProtectedColumns;
+                publishOptions['shiftDates'] = this.settings.shiftDates;
+                publishOptions['useAlternateParticipantIds'] = this.settings.useAlternateParticipantIds;
+                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('option') in publishOptions); }).getRange(), true);
+            }
+        }, this);
 
-        items.push(optionsPanel);
-
-        var panel = new Ext.Panel({
+        this.publishOptionsPanel = new Ext.Panel({
             border: false,
             name: "Publish Options",
             layout: 'vbox',
-            layoutConfig: {
-                align: 'stretch',
-                pack: 'start'
-            },
-            items: items
+            html: txt,
+            items: selectionGrid
         });
 
-        return panel;
+        return this.publishOptionsPanel;
     },
 
     customizeColumnModel : function(colModel, index, c){
@@ -1622,12 +1716,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         params.dstPath = this.info.dstPath;
 
         if(this.mode == 'publish'){
-            params.maskClinic = this.maskClinicCheckBox.getValue();
-            params.useAlternateParticipantIds = this.alternateIdsCheckBox.getValue();
-            params.shiftDates = this.shiftDatesCheckBox.getValue();
-            params.removeProtectedColumns = this.protectedColumnsCheckBox.getValue();
+            if (this.selectedPublishOptions)
+                for (var i = 0; i < this.selectedPublishOptions.length; i++)
+                    params[this.selectedPublishOptions[i].json[2]] = true;
             params.includeSpecimens = this.includeSpecimensCheckBox.getValue();
-            params.specimenRefresh = this.specimenRefreshRadioGroup.getValue().inputValue;
+            params.specimenRefresh = eval(this.specimenRefreshRadioGroup.getValue().inputValue);
         }
 
         var hiddenFields = [];
@@ -1667,7 +1760,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         }
 
-        params.copyParticipantGroups = true;//this.copyParticipantGroups.checked;
+        params.copyParticipantGroups = true;
 
         this.pageOptions[3].value = this.selectedVisits;
         this.pageOptions[6].value = this.selectedLists;
