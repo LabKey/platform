@@ -1633,7 +1633,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var selectionGrid = new Ext.grid.EditorGridPanel({
-            // might need a cls...
+            cls: 'studyWizardPublishOptionsList',
             store: publishOptionsStore,
             selModel: selectionModel,
             columns: [
