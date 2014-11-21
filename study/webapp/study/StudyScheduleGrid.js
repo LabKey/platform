@@ -292,7 +292,7 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
                 afterrender : function(panel)
                 {
                     var count = panel.getView().getSelectionModel().getStore().getCount();
-                    this.setHeight(62+(24+26*count));
+                    this.setHeight(62+(24+28*count));
                 },
                 itemclick : function(view, record, item, index, e, opts) {
                     var cls = e.target.className;
