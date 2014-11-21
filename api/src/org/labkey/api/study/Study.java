@@ -103,9 +103,13 @@ public interface Study extends StudyEntity
 
     boolean isAncillaryStudy();
 
+    boolean hasSourceStudy();
+
     boolean isSnapshotStudy();
 
     Study getSourceStudy();
+
+    StudySnapshotType getStudySnapshotType();
 
     boolean isEmptyStudy();
 
