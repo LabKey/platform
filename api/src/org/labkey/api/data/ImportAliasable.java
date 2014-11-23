@@ -41,6 +41,10 @@ public interface ImportAliasable
 
     public static class Helper
     {
+        /**
+         * Creates a mapping of many different possible names (actual name, label/caption, property URI, etc).
+         * for a column to the column itself. Useful to provide flexibility in how the data is labeled during imports.
+         */
         public static <T extends ImportAliasable> Map<String, T> createImportMap(List<T> properties, boolean includeMVIndicators)
         {
             Map<String, T> m = new CaseInsensitiveHashMap<>(properties.size() * 3);
