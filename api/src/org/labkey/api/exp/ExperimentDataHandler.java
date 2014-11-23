@@ -53,8 +53,17 @@ public interface ExperimentDataHandler extends Handler<ExpData>
 
     public ActionURL getContentURL(ExpData data);
 
+    /**
+     * Invoked prior to the deletion of the data, potentially because its run is being deleted. Any related rows in
+     * the database should detach themselves to avoid FK violations, but may want to avoid being deleted themselves.
+     * In the case of moving runs to another container, the data rows could later be re-attached to the relevant data/run
+     * without needing to fully reimport. In cases of actual deletion, deleteData() will later be called.
+     */
     public void beforeDeleteData(List<ExpData> datas) throws ExperimentException;
 
+    /**
+     * Completely delete all database rows attached to this data object.
+     */
     public void deleteData(ExpData data, Container container, User user);
 
     public boolean hasContentToExport(ExpData data, File file);
