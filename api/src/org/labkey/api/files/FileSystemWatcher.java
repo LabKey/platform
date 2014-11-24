@@ -17,7 +17,7 @@ package org.labkey.api.files;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.WatchEvent;
+import java.nio.file.WatchEvent.Kind;
 
 /**
  * User: adam
@@ -26,6 +26,6 @@ import java.nio.file.WatchEvent;
  */
 public interface FileSystemWatcher
 {
-    public void addListener(Path directory, FileSystemDirectoryListener listener, WatchEvent.Kind<Path>... events) throws IOException;
-    public void removeListener(Path directory);
+    public void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>[] events) throws IOException;
+    public void removeListener(Path directory, FileSystemDirectoryListener listener);
 }

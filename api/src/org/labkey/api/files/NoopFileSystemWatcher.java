@@ -17,7 +17,7 @@ package org.labkey.api.files;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.nio.file.WatchEvent;
+import java.nio.file.WatchEvent.Kind;
 
 /**
  * User: adam
@@ -26,12 +26,13 @@ import java.nio.file.WatchEvent;
  */
 public class NoopFileSystemWatcher implements FileSystemWatcher
 {
-    @SafeVarargs
-    public final void addListener(Path directory, FileSystemDirectoryListener listener, WatchEvent.Kind<Path>... events) throws IOException
+    @Override
+    public final void addListener(Path directory, FileSystemDirectoryListener listener, Kind<Path>[] events) throws IOException
     {
     }
 
-    public void removeListener(Path directory)
+    @Override
+    public void removeListener(Path directory, FileSystemDirectoryListener listener)
     {
     }
 }

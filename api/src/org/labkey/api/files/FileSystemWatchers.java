@@ -15,7 +15,6 @@
  */
 package org.labkey.api.files;
 
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.ExceptionUtil;
 
 import java.io.IOException;
@@ -27,22 +26,27 @@ import java.io.IOException;
  */
 public class FileSystemWatchers
 {
-    public static FileSystemWatcher get(String name)
+    private static final FileSystemWatcher WATCHER;
+
+    static
     {
-        // TODO: For now, return a real FileSystemWatcher in dev mode only. In the future, we might selectively enable
-        // file system watchers in production mode, e.g., by allowing admins to mark a module to auto-reload
-        if (AppProps.getInstance().isDevMode())
+        FileSystemWatcher watcher;
+
+        try
         {
-            try
-            {
-                return new FileSystemWatcherImpl(name);
-            }
-            catch (IOException e)
-            {
-                ExceptionUtil.logExceptionToMothership(null, e);
-            }
+            watcher = new FileSystemWatcherImpl();
+        }
+        catch (IOException e)
+        {
+            watcher = new NoopFileSystemWatcher();
+            ExceptionUtil.logExceptionToMothership(null, e);
         }
 
-        return new NoopFileSystemWatcher();
+        WATCHER = watcher;
+    }
+
+    public static FileSystemWatcher get(String name)
+    {
+        return WATCHER;
     }
 }
