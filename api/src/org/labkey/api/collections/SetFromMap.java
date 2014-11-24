@@ -31,7 +31,7 @@ import java.util.Set;
 */
 
 /**
- * Taken from JDK 1.6 Collections.setFromMap() implementation.  Exposing this private class
+ * Taken from JDK 1.6 Collections.setFromMap() implementation. Exposing this private class
  * lets us create full, extensible Set implementations for common use cases, instead of
  * always using the static Collections method.
  */

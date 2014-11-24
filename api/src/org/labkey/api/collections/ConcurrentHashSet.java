@@ -25,9 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
 */
 
 //
-// A thread-safe hash set that uses lock striping much like ConcurrentHashMap... in fact, EXACTLY like ConcurrentHashMap
-// because it IS a ConcurrentHashMap.  This is a drop-in replacement for Collections.synchronizedSet(new HashSet()) that
-// provides much better performance and scalability, albeit with a couple caveats:
+// A thread-safe hash set that uses lock striping just like ConcurrentHashMap... because it IS a ConcurrentHashMap. This
+// is a drop-in replacement for Collections.synchronizedSet(new HashSet()) that provides much better performance and
+// scalability, albeit with a couple caveats:
 //
 // - ConcurrentHashSet does not support null elements; use a marker object instead.
 // - Synchronizing is not needed for iterating a ConcurrentHashSet; in fact, if replacing a synchronized set, all
