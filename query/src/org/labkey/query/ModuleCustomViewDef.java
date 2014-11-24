@@ -20,7 +20,6 @@ import org.labkey.api.data.Aggregate;
 import org.labkey.api.query.CustomView;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.resource.Resource;
-import org.labkey.api.resource.ResourceRef;
 import org.labkey.api.util.Pair;
 
 import java.util.Date;
@@ -40,7 +39,7 @@ import java.util.Map;
  * to the source QueryDef, which holds a reference to the QueryView,
  * etc., etc.
  */
-public class ModuleCustomViewDef extends ResourceRef
+public class ModuleCustomViewDef
 {
     private final String _schema;
     private final String _query;
@@ -49,7 +48,6 @@ public class ModuleCustomViewDef extends ResourceRef
 
     public ModuleCustomViewDef(Resource r, String schema, String query)
     {
-        super(r);
         _schema = schema;
         _query = query;
         _lastModified = r.getLastModified();

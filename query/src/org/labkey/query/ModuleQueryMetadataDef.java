@@ -69,12 +69,12 @@ public class ModuleQueryMetadataDef extends ResourceRef
 
                 // Figure out the root element name, stripping off any namespace prefix
                 String rootElementName = docElem.getNodeName();
-                if (rootElementName.indexOf(":") != -1)
+                if (rootElementName.contains(":"))
                 {
                     rootElementName = rootElementName.substring(rootElementName.indexOf(":") + 1);
                 }
 
-                // We really expect it to a query.xsd document, but check if it's a tableInfo.xsd document instead.
+                // We really expect it to be a query.xsd document, but check if it's a tableInfo.xsd document instead.
                 if (rootElementName.equalsIgnoreCase("tables"))
                 {
                     // Just apply the tableInfo metadata directly
@@ -109,19 +109,7 @@ public class ModuleQueryMetadataDef extends ResourceRef
                 _queryMetaData = "";
             }
         }
-        catch (IOException e)
-        {
-            _log.warn("Unable to load meta-data from module query file " + resource.getPath(), e);
-        }
-        catch (TransformerException e)
-        {
-            _log.warn("Unable to load meta-data from module query file " + resource.getPath(), e);
-        }
-        catch (ParserConfigurationException e)
-        {
-            _log.warn("Unable to load meta-data from module query file " + resource.getPath(), e);
-        }
-        catch (SAXException e)
+        catch (IOException | TransformerException | ParserConfigurationException | SAXException e)
         {
             _log.warn("Unable to load meta-data from module query file " + resource.getPath(), e);
         }
