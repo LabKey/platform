@@ -791,9 +791,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         grid.on('viewready', function(grid){
-            if (this.settings)
+            if (this.settings && this.settings.participants != null)
             {
-                if (!this.settings.participantGroups || this.settings.participantGroups.length == 0)
+                if (Ext.isDefined(this.settings.participantGroups) && this.settings.pariticpantGroups == null)
                     grid.getSelectionModel().selectAll();
                 else
                 {
