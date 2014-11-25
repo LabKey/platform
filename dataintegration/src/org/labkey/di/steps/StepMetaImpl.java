@@ -127,7 +127,8 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
 
                 Map<TargetFileProperties, String> fileProps = new LinkedHashMap<>();
                 fileProps.put(TargetFileProperties.path, destination.getFilePath());
-                fileProps.put(TargetFileProperties.name, destination.getFileName());
+                fileProps.put(TargetFileProperties.baseName, destination.getFileBaseName());
+                fileProps.put(TargetFileProperties.extension, destination.getFileExtension());
                 if (destination.getColumnDelimiter() != null)
                     fileProps.put(TargetFileProperties.columnDelimiter, StringEscapeUtils.unescapeJava(destination.getColumnDelimiter()));
                 if (destination.getRowDelimiter() != null)
@@ -156,7 +157,7 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
     private void validateDestination() throws XmlException
     {
         if ( (getTargetType().equals(TargetTypes.query) && (getTargetSchema() == null || getTargetQuery() == null))
-                || (getTargetType().equals(TargetTypes.file) && (getTargetFileProperties().get(TargetFileProperties.path) == null || getTargetFileProperties().get(TargetFileProperties.name) == null))) // OK to allow empty extension?
+                || (getTargetType().equals(TargetTypes.file) && (getTargetFileProperties().get(TargetFileProperties.path) == null || getTargetFileProperties().get(TargetFileProperties.baseName) == null))) // OK to allow empty extension?
             throw new XmlException(TransformManager.INVALID_DESTINATION);
     }
 }

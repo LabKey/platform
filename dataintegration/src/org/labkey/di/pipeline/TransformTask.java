@@ -83,6 +83,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     public static final String OUTPUT_ROLE = "Row Destination";
     protected boolean _validateSource = true;
     FilterStrategy _filterStrategy = null;
+    private String _targetStringForURI;
 
     public TransformTask(TransformTaskFactory factory, PipelineJob job, StepMeta meta)
     {
@@ -137,6 +138,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 context.getErrors().addRowError(new ValidationException("Can't import into table: " + meta.getFullTargetString()));
                 return -1;
             }
+            setTargetStringForURI(meta.getFullTargetString());
 
             log.info("Target option: " + meta.getTargetOptions());
             if (CopyConfig.TargetOptions.merge == meta.getTargetOptions())
@@ -170,8 +172,8 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     private int appendToTargetFile(CopyConfig meta, DataIteratorContext context, DataIteratorBuilder source, Logger log)
     {
 
-        // Eventually 3 options: truncate, append, or create new unique name if filespec already exists.
-        // Append is a little trickier: need some overload methods on TextWriter to create a FileWriter with append == true,
+        // For now only doing truncate. Eventually 3 options: truncate, append, or create new unique name if filename already exists.
+        // Append is a little tricky: need some overload methods on TextWriter to create a FileWriter with append == true,
         // and suppress writing column headers.
         // Also, who's to say the output columns match the existing file?
         try
@@ -182,7 +184,9 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 context.getErrors().addRowError(new ValidationException("Can't create output directory: " + outputDir));
                 return -1;
             }
-            File outputFile = new File(outputDir, makeFileName(meta));
+            String baseName = makeFileBaseName(meta);
+            String extension = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.extension);
+            File outputFile = new File(outputDir, baseName + "." + extension);
             TSVGridWriter tsv = new TSVGridWriter(new DataIteratorResultsImpl(source.getDataIterator(context)));
             tsv.setColumnHeaderType(TSVColumnWriter.ColumnHeaderType.queryColumnName);
 
@@ -199,6 +203,13 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             tsv.write(outputFile);
             int rowCount = tsv.getDataRowCount();
             log.info("Wrote " + rowCount + " rows to file " + outputFile.toString());
+
+            // Set some properties in the job for FileAnalysis pipeline steps
+            // TODO: refactor these out as a separate method so other tasks that write files can do this too (none yet, but seems a file copy task is likely to be needed soon)
+            _txJob.setAnalysisDirectory(outputDir);
+            _txJob.setBaseName(baseName);
+            setTargetStringForURI(outputFile.getAbsolutePath());
+
             return rowCount;
         }
         catch (SQLException e)
@@ -211,9 +222,9 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         }
     }
 
-    private String makeFileName(CopyConfig meta)
+    private String makeFileBaseName(CopyConfig meta)
     {
-        String name = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.name);
+        String name = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.baseName);
         name = name.replace("#", Integer.toString(_txJob.getTransformRunId()));
         name = name.replace("?", FileUtil.getTimestamp());
 
@@ -325,7 +336,20 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             {
                 action.addInput(new URI(_meta.getSourceSchema() + "." + _meta.getSourceQuery()), TransformTask.INPUT_ROLE);
             }
-            action.addOutput(new URI(_meta.getTargetSchema() + "." + _meta.getTargetQuery()), TransformTask.OUTPUT_ROLE, false);
+            if (_meta.isUseTarget())
+            {
+                action.addOutput(new URI(getTargetStringForURI()), TransformTask.OUTPUT_ROLE, false);
+                // TODO: This isn't being set correctly for target files; however, attempts to fix this so far (like passing in a file instead of URI to
+                // addOutput only make it worse; the file doesn't resolve correctly in the run for straight ETL's, and if there's a pipeline task,
+                // it gets removed from the list of inputs so not found by ExperimentDataHandlers.
+
+//                Object target = getTargetStringForURI();
+//                if (target instanceof String)
+//                    action.addOutput(new URI((String)target), TransformTask.OUTPUT_ROLE, false);
+//                else if (target instanceof File)
+//                    action.addOutput((File)target, TransformTask.OUTPUT_ROLE, false);
+//                // if neither of those we don't know how to resolve it anyway
+            }
         }
         catch (URISyntaxException ignore)
         {
@@ -367,5 +391,15 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         }
 
         return true;
+    }
+
+    public String getTargetStringForURI()
+    {
+        return _targetStringForURI;
+    }
+
+    public void setTargetStringForURI(String targetStringForURI)
+    {
+        _targetStringForURI = targetStringForURI;
     }
 }

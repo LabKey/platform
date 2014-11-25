@@ -37,15 +37,12 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.security.User;
 import org.labkey.api.util.DateUtil;
 import org.labkey.di.TransformDataIteratorBuilder;
-import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -83,27 +80,6 @@ public class SimpleQueryTransformStep extends TransformTask
         }
     }
 
-    protected void recordWork(RecordedAction action)
-    {
-        if (-1 != _recordsInserted)
-            action.addProperty(TransformProperty.RecordsInserted.getPropertyDescriptor(), _recordsInserted);
-        if (-1 != _recordsDeleted)
-            action.addProperty(TransformProperty.RecordsDeleted.getPropertyDescriptor(), _recordsDeleted);
-
-        try
-        {
-            // input is source table
-            // output is dest table
-            // todo: this is a fake URI, figure out the real story for the Data Input/Ouput for a transform step
-            action.addInput(new URI(_meta.getSourceSchema() + "." + _meta.getSourceQuery()), TransformTask.INPUT_ROLE);
-            action.addOutput(new URI(_meta.getFullTargetString()), TransformTask.OUTPUT_ROLE, false);
-        }
-        catch (URISyntaxException ignore)
-        {
-        }
-    }
-
-    // allows RemoteQueryTransformStep to override this method and selectively alter executeCopy
     protected DbScope getSourceScope(QuerySchema sourceSchema, DbScope targetScope)
     {
         DbScope sourceScope = sourceSchema.getDbSchema().getScope();

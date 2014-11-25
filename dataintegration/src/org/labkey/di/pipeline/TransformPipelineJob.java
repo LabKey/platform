@@ -16,16 +16,20 @@
 package org.labkey.di.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.property.SystemProperty;
+import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PropertiesJobSupport;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.pipeline.TaskPipeline;
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
+import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
@@ -37,6 +41,7 @@ import java.io.File;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,7 +49,7 @@ import java.util.Set;
  * User: jeckels
  * Date: 2/20/13
  */
-public class TransformPipelineJob extends PipelineJob implements TransformJobSupport, PropertiesJobSupport
+public class TransformPipelineJob extends PipelineJob implements TransformJobSupport, PropertiesJobSupport, FileAnalysisJobSupport
 {
     private final TransformDescriptor _etlDescriptor;
     private int _runId;
@@ -295,5 +300,101 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     public void setRunId(int runId)
     {
         _runId = runId;
+    }
+
+    /*
+     *   FileAnalysisJobSupport methods
+     */
+
+    private File _analysisDirectory;
+    private String _baseName;
+
+    @Override
+    public String getProtocolName()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getJoinedBaseName()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<String> getSplitBaseNames()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setBaseName(String baseName)
+    {
+        _baseName = baseName;
+    }
+
+    @Override
+    public String getBaseName()
+    {
+        return _baseName;
+    }
+
+    @Override
+    public File getDataDirectory()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    public void setAnalysisDirectory(File analysisDirectory)
+    {
+        _analysisDirectory = analysisDirectory;
+    }
+
+    @Override
+    public File getAnalysisDirectory()
+    {
+        return _analysisDirectory;
+    }
+
+    @Override
+    public File findInputFile(String name)
+    {
+            return new File(getAnalysisDirectory(), name);
+    }
+
+    @Override
+    public File findOutputFile(String name)
+    {
+        return new File(getAnalysisDirectory(), name);
+    }
+
+    @Override
+    public ParamParser createParamParser()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public File getParametersFile()
+    {
+        return null;
+    }
+
+    @Nullable
+    @Override
+    public File getJobInfoFile()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public List<File> getInputFiles()
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public FileType.gzSupportLevel getGZPreference()
+    {
+        throw new UnsupportedOperationException();
     }
 }

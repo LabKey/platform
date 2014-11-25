@@ -76,12 +76,13 @@ import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
 import org.labkey.di.filters.RunFilterStrategy;
 import org.labkey.di.filters.SelectAllFilterStrategy;
-import org.labkey.di.steps.TaskRefTransformStepProvider;
+import org.labkey.di.steps.ExternalPipelineTaskProvider;
 import org.labkey.di.steps.RemoteQueryTransformStepProvider;
 import org.labkey.di.steps.SimpleQueryTransformStepProvider;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.di.steps.StepProvider;
 import org.labkey.di.steps.StoredProcedureStepProvider;
+import org.labkey.di.steps.TaskRefTransformStepProvider;
 import org.labkey.di.steps.TestTaskProvider;
 import org.labkey.etl.xml.EtlDocument;
 import org.labkey.etl.xml.EtlType;
@@ -237,7 +238,7 @@ public class TransformManager implements DataIntegrationService
             // XmlSchema validate the document after we've attempted to parse it since we can provide better error messages.
             XmlBeansUtil.validateXmlDocument(document, "ETL '" + resource.getPath() + "'");
 
-            TransformDescriptor ret = new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables);
+            TransformDescriptor ret = new TransformDescriptor(configId, etlXML.getName(), etlXML.getDescription(), module.getName(), interval, cron, defaultFactory, stepMetaDatas, declaredVariables, etlXML.getLoadReferencedFiles());
             return ret;
         }
     }
@@ -736,6 +737,7 @@ public class TransformManager implements DataIntegrationService
         _providers.putAll(new RemoteQueryTransformStepProvider().getNameProviderMap());
         _providers.putAll(new StoredProcedureStepProvider().getNameProviderMap());
         _providers.putAll(new TaskRefTransformStepProvider().getNameProviderMap());
+        _providers.putAll(new ExternalPipelineTaskProvider().getNameProviderMap());
         _providers.putAll(new TestTaskProvider().getNameProviderMap());
 
     }

@@ -16,7 +16,6 @@
 package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
-import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.etl.xml.TransformType;
 
@@ -46,20 +45,6 @@ public interface StepMeta
     SchemaKey getTargetSchema();
 
     String getTargetQuery();
-
-    void setSourceSchema(SchemaKey schemaKey);
-
-    void setSourceQuery(String queryName);
-
-    void setSourceTimestampColumnName(String timestampColumnName);
-
-    void setSourceOptions(CopyConfig.SourceOptions sourceOptions);
-
-    void setTargetSchema(SchemaKey schemaKey);
-
-    void setTargetQuery(String queryName);
-
-    void setTargetOptions(CopyConfig.TargetOptions targetOptions);
 
     void parseConfig(TransformType transformXML) throws XmlException;
 

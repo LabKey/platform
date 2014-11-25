@@ -560,8 +560,10 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 }
             }
 
-            // Always copy in the parameters file. It's small and in some cases is useful to the process we're launching
-            _wd.inputFile(getJobSupport().getParametersFile(), true);
+            // Always copy in the parameters file if it is not null. It's small and in some cases is useful to the process we're launching
+            // It is known to be null if the task is running from inside an ETL
+            if (getJobSupport().getParametersFile() != null)
+                _wd.inputFile(getJobSupport().getParametersFile(), true);
 
             if (!runCommand(action))
                 return new RecordedActionSet();

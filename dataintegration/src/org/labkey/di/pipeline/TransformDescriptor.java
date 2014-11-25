@@ -39,6 +39,7 @@ import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.pipeline.ExpGeneratorId;
+import org.labkey.api.exp.pipeline.XarGeneratorId;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.pipeline.PipelineJob;
@@ -67,6 +68,7 @@ import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformDataType;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
+import org.labkey.di.steps.ExternalPipelineTaskMeta;
 import org.labkey.di.steps.StepMeta;
 import org.labkey.di.steps.TaskRefTransformStepMeta;
 import org.labkey.di.steps.TestTask;
@@ -104,6 +106,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
     private final String _name;
     private final String _description;
     private final String _moduleName;
+    private final boolean _loadReferencedFiles;
 
     // declared variables
     private Map<ParameterDescription,Object> _declaredVariables = new LinkedHashMap<>();
@@ -118,9 +121,16 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
 
     public TransformDescriptor(String id, String name, String description, String moduleName, Long interval,
-               CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
-               Map<ParameterDescription,Object> declaredVariables
-    ) throws XmlException, IOException
+                               CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
+                               Map<ParameterDescription, Object> declaredVariables) throws XmlException, IOException
+    {
+        this(id, name, description, moduleName, interval, cron, defaultFactory, stepMetaDatas, declaredVariables, false);
+    }
+
+    public TransformDescriptor(String id, String name, String description, String moduleName, Long interval,
+                               CronExpression cron, FilterStrategy.Factory defaultFactory, ArrayList<StepMeta> stepMetaDatas,
+                               Map<ParameterDescription, Object> declaredVariables,
+                               boolean loadReferencedFiles) throws XmlException, IOException
     {
         _id = id;
         _name = name;
@@ -132,6 +142,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
         _stepMetaDatas = stepMetaDatas;
         if (null != declaredVariables)
             _declaredVariables.putAll(declaredVariables);
+        _loadReferencedFiles = loadReferencedFiles;
     }
 
 
@@ -425,33 +436,46 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
 
         // Register all the tasks that are associated with this transform and
         // associate the correct stepMetaData with the task via the index
+        boolean hasExternalPipelineTask = false;
         for (StepMeta meta : _stepMetaDatas)
         {
-            String taskName = getFullTaskName(meta);
-            Class taskClass = meta.getProvider().getStepClass();
-            TaskId taskId = new TaskId(getModuleName(), TaskId.Type.task, taskName, 0);
-            // check to see if this class is part of our known transform tasks
-            if (TransformTask.class.isAssignableFrom(taskClass))
+            if ((meta instanceof ExternalPipelineTaskMeta))
             {
-                TransformTaskFactory factory = new TransformTaskFactory(taskId);
-                factory.setDeclaringModule(declaringModule);
-                PipelineJobService.get().addLocalTaskFactory(pipelineId, factory);
+                progressionSpec.add(((ExternalPipelineTaskMeta) meta).getExternalTaskId());
+                hasExternalPipelineTask = true;
             }
             else
             {
-                //
-                // be sure to update if any new task factories are added
-                //
-                assert false;
-                continue;
-            }
+                String taskName = getFullTaskName(meta);
+                Class taskClass = meta.getProvider().getStepClass();
+                TaskId taskId = new TaskId(getModuleName(), TaskId.Type.task, taskName, 0);
+                // check to see if this class is part of our known transform tasks
+                if (TransformTask.class.isAssignableFrom(taskClass))
+                {
+                    TransformTaskFactory factory = new TransformTaskFactory(taskId);
+                    factory.setDeclaringModule(declaringModule);
+                    PipelineJobService.get().addLocalTaskFactory(pipelineId, factory);
+                }
+                else
+                {
+                    //
+                    // be sure to update if any new task factories are added
+                    //
+                    assert false;
+                    continue;
+                }
 
-            progressionSpec.add(taskId);
+                progressionSpec.add(taskId);
+            }
         }
 
         // Register the task to generate an experiment run to track this transform as the last step.
-        // The ExpGenerator factory should have already been registered by the Experiment module
-        progressionSpec.add(new TaskId(ExpGeneratorId.class));
+        // The Xar and ExpGenerator factories should have already been registered by the Experiment module
+        // TODO: Would be nice to reunify Xar and ExpGenerators. Can't without proper handling of a XarSource with null root in XarGeneratorId
+        // Need XarGeneratorId for proper loading of input/output files and handoff to ExperimentDataHandlers
+        if (hasExternalPipelineTask && _loadReferencedFiles)
+            progressionSpec.add(new TaskId(XarGeneratorId.class));
+        else progressionSpec.add(new TaskId(ExpGeneratorId.class));
 
         // add the pipeline
         settings.setTaskProgressionSpec(progressionSpec.toArray());

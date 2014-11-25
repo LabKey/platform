@@ -40,6 +40,8 @@ import org.labkey.di.pipeline.TransformJobContext;
 import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -141,6 +143,20 @@ public class StoredProcedureStep extends TransformTask
         {
             throw new PipelineJobException(x);
         }
+    }
+
+    @Override
+    public void recordWork(RecordedAction action)
+    {
+        super.recordWork(action);
+        try
+        {
+            action.addInput(new URI(_meta.getProcedureSchema() + "." + _meta.getProcedure()), TransformTask.INPUT_ROLE);
+        }
+        catch (URISyntaxException ignore)
+        {
+        }
+
     }
 
     private boolean executeProcedure() throws SQLException

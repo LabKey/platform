@@ -19,6 +19,7 @@
             <element name="incrementalFilter" type="etl:FilterType" minOccurs="0" maxOccurs="1"/>
             <element name="parameters" type="etl:ParametersType" minOccurs="0" maxOccurs="1"/>
         </all>
+        <attribute name="loadReferencedFiles" type="boolean" default="false"/>
     </complexType>
 
     <complexType name="SchemaQueryType">
@@ -33,7 +34,8 @@
         <attribute name="schemaName" type="string" use="optional"/>
         <attribute name="queryName" type="string" use="optional"/>
         <attribute name="filePath" type="string" use="optional"/>
-        <attribute name="fileName" type="string" use="optional"/>
+        <attribute name="fileBaseName" type="string" use="optional"/>
+        <attribute name="fileExtension" type="string" use="optional"/>
         <attribute name="columnDelimiter" type="string" use="optional"/>
         <attribute name="quote" type="string" use="optional"/>
         <attribute name="rowDelimiter" type="string" use="optional"/>
@@ -97,6 +99,7 @@
         <attribute name="type" type="string" default="SimpleQueryTransformStep"/>
         <attribute name="file" type="string"/>
         <attribute name="streaming" type="boolean" default="true"/>
+        <attribute name="externalTaskId" type="string"/>
     </complexType>
 
 <!-- <complexType name="PropertiesType">
@@ -187,4 +190,5 @@
         <attribute name="name" type="string" use="required"/>
         <attribute name="value" type="string" use="required"/>
     </complexType>
+
 </schema>

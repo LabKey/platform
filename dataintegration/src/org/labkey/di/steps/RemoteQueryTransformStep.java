@@ -62,11 +62,10 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
         return true;
     }
 
-    // allows RemoteQueryTransformStep to override this method and selectively alter executeCopy
     @Override
     protected DbScope getSourceScope(QuerySchema sourceSchema, DbScope targetScope)
     {
-        // return null, there is no source scope for a remote query
+        // there is no source scope for a remote query
         return null;
     }
 
@@ -121,8 +120,7 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
         Connection cn = new Connection(url, user, password);
         final SelectRowsCommand cmd = new SelectRowsCommand(schemaName, queryName);
 
-        DataIteratorBuilder source = SelectRowsStreamHack.go(cn, container, cmd);
-        return source;
+        return SelectRowsStreamHack.go(cn, container, cmd);
     }
 
     public static class TestCase extends Assert
