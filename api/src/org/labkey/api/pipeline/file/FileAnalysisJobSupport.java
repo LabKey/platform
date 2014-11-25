@@ -89,6 +89,7 @@ public interface FileAnalysisJobSupport
     /**
      * @return the parameters input file used to drive the pipeline.
      */
+    @Nullable
     File getParametersFile();
 
     /**

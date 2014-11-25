@@ -77,7 +77,7 @@ public class CopyConfig
         {
             if (TargetTypes.file.equals(getTargetType()))
             {
-                _targetString = getTargetFileProperties().get(TargetFileProperties.path) + "/" + getTargetFileProperties().get(TargetFileProperties.name);
+                _targetString = getTargetFileProperties().get(TargetFileProperties.baseName) + "." + getTargetFileProperties().get(TargetFileProperties.extension);;
             }
             else _targetString = getTargetSchema().toString() + "." + getTargetQuery();
         }
@@ -106,7 +106,8 @@ public class CopyConfig
     public enum TargetFileProperties
     {
         path,
-        name,
+        baseName,
+        extension,
         columnDelimiter,
         quote,
         rowDelimiter
