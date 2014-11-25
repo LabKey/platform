@@ -16,16 +16,20 @@
 
 package org.labkey.issue.query;
 
-import org.labkey.api.data.*;
-import org.labkey.api.query.*;
-import org.labkey.api.security.permissions.*;
-import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.data.ActionButton;
+import org.labkey.api.data.ButtonBar;
+import org.labkey.api.data.DataRegion;
+import org.labkey.api.data.RenderContext;
+import org.labkey.api.query.QueryAction;
+import org.labkey.api.query.QuerySettings;
+import org.labkey.api.query.QueryView;
+import org.labkey.api.query.UserSchema;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
-import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.util.Pair;
-import org.labkey.api.util.URLHelper;
 import org.labkey.issue.IssuesController;
 import org.springframework.validation.BindException;
 
@@ -33,7 +37,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
 
 public class IssuesQueryView extends QueryView
 {
@@ -104,8 +107,11 @@ public class IssuesQueryView extends QueryView
             adminButton.setDisplayPermission(AdminPermission.class);
             bar.add(adminButton);
 
-            ActionButton prefsButton = new ActionButton(IssuesController.EmailPrefsAction.class, "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
-            bar.add(prefsButton);
+            if (!getUser().isGuest())
+            {
+                ActionButton prefsButton = new ActionButton(IssuesController.EmailPrefsAction.class, "Email Preferences", DataRegion.MODE_GRID, ActionButton.Action.LINK);
+                bar.add(prefsButton);
+            }
         }
     }
 
