@@ -17,17 +17,18 @@ LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName
     LABKEY.Query.selectRows({
         schemaName: 'study',
         queryName: 'studySnapshot',
-        columns: ['Source/Name', 'CreatedBy/DisplayName', 'Created', 'Settings'],
+        columns: ['Destination/Name', 'CreatedBy/DisplayName', 'Created', 'Settings'],
         filterArray: [ LABKEY.Filter.create('RowId', snapshotId) ],
         success: function(data) {
             var row = data.rows[0];
             var settings = Ext.decode(row.Settings);
+            console.log(row['Destination/Name']);
 
             new LABKEY.study.CreateStudyWizard({
                 mode: (settings && settings.type ? settings.type : 'publish'),
                 studyName: availableContainerName,
                 settings: settings,
-                parent: row['Source/Name'],
+                parent: row['Destination/Name'],
                 createdBy: row['CreatedBy/DisplayName'],
                 created: row.Created
             }).show();
@@ -562,7 +563,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 value: this.info.name,
                 enableKeyEvents: true,
                 listeners: {change: nameChange, keyup:nameChange, scope:this}
-            },{
+            }];
+
+        if (this.settings) // show extra details if this is a republish
+        {
+            formItems.push({
                 xtype: 'displayfield',
                 fieldLabel: 'Source Study',
                 style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
@@ -572,12 +577,24 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 fieldLabel: 'Created By',
                 style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
                 value: this.createdBy
-            },{
+            },
+            {
                 xtype: 'displayfield',
                 fieldLabel: 'Created',
                 style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
-                value: this.created
-            },{
+                value: new Date(this.created).format(LABKEY.extDefaultDateFormat)
+            });
+
+            formItems.unshift({
+                xtype: 'box',
+                width: 550,
+                html: '**This study is being republished and has preset values based on the previous publish studies values.',
+                style: 'font: normal 12px tahoma, arial, helvetica, sans-serif; margin-bottom: 15px;'
+            });
+        }
+
+        formItems.push([
+            {
                 xtype: 'textarea',
                 fieldLabel: 'Description',
                 name: 'studyDescription',
@@ -592,7 +609,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             protocolDocField,
             locationField,
             folderTree
-        ];
+        ]);
 
         this.nameFormPanel = new Ext.form.FormPanel({
             border: false,
@@ -776,12 +793,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         grid.on('viewready', function(grid){
             if (this.settings)
             {
-                if (this.settings.participantGroups.length == null)
+                if (!this.settings.participantGroups || this.settings.participantGroups.length == 0)
                     grid.getSelectionModel().selectAll();
                 else
                 {
                     var participantGroups = this.setify(this.settings.participantGroups);
-                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { console.log(rec, rec.get('id') in participantGroups); return (rec.get('id') in participantGroups); }).getRange(), true);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('id') in participantGroups); }).getRange(), true);
                 }
             }
         }, this);
@@ -910,22 +927,24 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
         grid.on('columnmodelcustomize', this.customizeColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.info.datasets = cmp.getSelections();}, this);
-        grid.on('viewready', function(grid){
-            if (this.settings && this.settings.datasets)
-            {
-                var datasets = this.setify(this.settings.datasets);
-                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('DataSetId') in datasets); }).getRange(), true);
-            }
-        }, this);
         hiddenGrid.on('columnmodelcustomize', this.customizeColumnModel, this);
         hiddenGrid.selModel.on('selectionchange', function(cmp){this.info.hiddenDatasets = cmp.getSelections();}, this);
-        hiddenGrid.on('viewready', function(grid){
-            if (this.settings && this.settings.datasets)
+
+        var viewReadyFunc = function(grid){
+            if (this.settings)
             {
-                var datasets = this.setify(this.settings.datasets);
-                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('DataSetId') in datasets); }).getRange(), true);
+                if (!this.settings.datasets)
+                    grid.getSelectionModel().selectAll();
+                else
+                {
+                    var datasets = this.setify(this.settings.datasets);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('DataSetId') in datasets); }).getRange(), true);
+                }
             }
-        }, this);
+        };
+
+        grid.on('viewready', viewReadyFunc, this);
+        hiddenGrid.on('viewready', viewReadyFunc, this);
 
         if(this.mode == 'ancillary'){
           var syncTip = '' +
@@ -1086,10 +1105,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
         grid.on('viewready', function(grid){
-            if (this.settings && this.settings.views)
+            if (this.settings)
             {
-                var views = this.setify(this.settings.views);
-                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in views); }).getRange(), true);
+                if (!this.settings.views)
+                    grid.getSelectionModel().selectAll();
+                else
+                {
+                    var views = this.setify(this.settings.views);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in views); }).getRange(), true);
+                }
             }
         }, this);
 
@@ -1188,10 +1212,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
         selectionGrid.on('viewready', function(grid){
-            if (this.settings && this.settings.studyObjects)
+            if (this.settings)
             {
-                var studyObjects = this.setify(this.settings.studyObjects);
-                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in studyObjects); }).getRange(), true);
+                if (!this.settings.studyObjects)
+                    grid.getSelectionModel().selectAll();
+                else
+                {
+                    var studyObjects = this.setify(this.settings.studyObjects);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in studyObjects); }).getRange(), true);
+                }
             }
         }, this);
 
@@ -1297,10 +1326,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
         grid.on('viewready', function(grid){
-            if (this.settings && this.settings.reports)
+            if (this.settings)
             {
-                var reports = this.setify(this.settings.reports);
-                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.data['name'] in reports); }).getRange(), true);
+                if (!this.settings.reports)
+                    grid.getSelectionModel().selectAll();
+                else
+                {
+                    var reports = this.setify(this.settings.reports);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.data['name'] in reports); }).getRange(), true);
+                }
             }
         }, this);
 
@@ -1424,10 +1458,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         grid.on('columnmodelcustomize', this.customizeVisitColumnModel, this);
         grid.selModel.on('selectionchange', function(cmp){this.selectedVisits = cmp.getSelections();}, this);
         grid.on('viewready', function(grid){
-            if (this.settings && this.settings.visits)
+            if (this.settings)
             {
-                var visits = this.setify(this.settings.visits);
-                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('RowId') in visits); }).getRange(), true);
+                if (!this.settings.visits)
+                    grid.getSelectionModel().selectAll();
+                else
+                {
+                    var visits = this.setify(this.settings.visits);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('RowId') in visits); }).getRange(), true);
+                }
             }
         }, this);
 
@@ -1521,10 +1560,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
         grid.on('viewready', function(grid){
-            if (this.settings && this.settings.lists)
+            if (this.settings)
             {
-                var lists = this.setify(this.settings.lists);
-                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in lists); }).getRange(), true);
+                if(!this.settings.lists)
+                    grid.getSelectionModel().selectAll();
+                else
+                {
+                    var lists = this.setify(this.settings.lists);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in lists); }).getRange(), true);
+                }
             }
         }, this);
 
@@ -1590,10 +1634,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cmp.getBottomToolbar().getEl().dom.style.background = 'transparent';
         });
         selectionGrid.on('viewready', function(grid){
-            if (this.settings && this.settings.folderObjects)
+            if (this.settings)
             {
-                var folderObjects = this.setify(this.settings.folderObjects);
-                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in folderObjects); }).getRange(), true);
+                if (!this.settings.folderObjects)
+                    grid.getSelectionModel();
+                else
+                {
+                    var folderObjects = this.setify(this.settings.folderObjects);
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('name') in folderObjects); }).getRange(), true);
+                }
             }
         }, this);
 
@@ -1676,7 +1725,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 publishOptions['removeProtectedColumns'] = this.settings.removeProtectedColumns;
                 publishOptions['shiftDates'] = this.settings.shiftDates;
                 publishOptions['useAlternateParticipantIds'] = this.settings.useAlternateParticipantIds;
-                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return (rec.get('option') in publishOptions); }).getRange(), true);
+                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return publishOptions[rec.get('option')]; }).getRange(), true);
             }
         }, this);
 
@@ -1731,7 +1780,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         if(this.mode == 'publish'){
             if (this.selectedPublishOptions)
                 for (var i = 0; i < this.selectedPublishOptions.length; i++)
-                    params[this.selectedPublishOptions[i].json[2]] = true;
+                    params[this.selectedPublishOptions[i].get('option')] = true;
             params.includeSpecimens = this.includeSpecimensCheckBox.getValue();
             params.specimenRefresh = eval(this.specimenRefreshRadioGroup.getValue().inputValue);
         }
