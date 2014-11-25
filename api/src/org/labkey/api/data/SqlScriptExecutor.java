@@ -19,8 +19,23 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.etl.DataIteratorContext;
+import org.labkey.api.etl.DataIteratorUtil;
+import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.reader.DataLoader;
+import org.labkey.api.reader.ExcelLoader;
+import org.labkey.api.reader.TabLoader;
+import org.labkey.api.resource.Resource;
+import org.labkey.api.util.MimeMap;
+import org.labkey.api.util.Path;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.Connection;
@@ -248,7 +263,7 @@ public class SqlScriptExecutor
         private final String _tableName;
         private final String _filename;
 
-        private BulkImportBlock(String sql, String schemaName, String tableName, String filename)
+        private BulkImportBlock(String sql, @NotNull String schemaName, @NotNull String tableName, @NotNull String filename)
         {
             super(sql);
             _schemaName = schemaName;  // Note: Use schemaName, not _schema... these might not match
@@ -259,20 +274,58 @@ public class SqlScriptExecutor
         @Override
         public void execute()
         {
-            super.execute();
+            // find module that owns this script (may not be the target schema)
+            Module m = ModuleLoader.getInstance().getModuleForSchemaName(SqlScriptExecutor.this._schema.getName());
+            if (null == m)
+                throw new IllegalStateException("Module not found for schema: " + SqlScriptExecutor.this._schema.getName());
 
-            // TODO:
-            // Determine module (based on _schemaName)
-            // Get resource... Resource r = module.getModuleResource("/schemas/" + filename); r.getInputStream()...
-            // Stream resource into table
-            // SQL Server: SET IDENTIFY ON/OFF?
+            Path path;
+            if (_filename.contains("/"))
+                path = Path.parse(_filename).normalize();
+            else
+                path = Path.parse("schemas/dbscripts/" + _filename).normalize();
 
-            // TODO: Delete everything below.
-            // For temporary junit test -- just count number of successful "executions" and verify the test parameters
-            BULK_IMPORT_EXECUTION_COUNT.incrementAndGet();
-            assert "test".equals(_schemaName);
-            assert "TestTable".equals(_tableName);
-            assert "test.xls".equals(_filename);
+            try
+            {
+                DataIteratorContext dix = new DataIteratorContext();
+                dix.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
+
+                // TARGET TABLE
+                DbSchema schema = DbSchema.get(_schemaName);
+                TableInfo dbTable = schema.getTable(_tableName);
+                if (null == dbTable)
+                    throw new IllegalStateException("Table not found for data loading: " + _schemaName + "." + _tableName);
+
+                // SOURCE FILE
+                Resource r = m.getModuleResource(path);
+                if (null == r || !r.isFile())
+                    throw new IllegalStateException("Data file not found for data loading: " + path.toString());
+                String contentType = new MimeMap().getContentTypeFor(r.getName());
+                DataLoader loader;
+
+                // I'm not sure ExcelLoader closes it's input stream, so let's just make sure
+                try (InputStream is = r.getInputStream())
+                {
+                    if (null == is)
+                        throw new IllegalStateException("Could not open resource: " + r.getPath());
+
+                    // DataLoader.get().createLoader() doesn't work, because the loader factories are not registered yet
+                    if (contentType.startsWith("text"))
+                        loader = new TabLoader(new InputStreamReader(is), true, null, false);
+                    else if (contentType.contains("excel") || contentType.contains("spreadsheet"))
+                        loader = new ExcelLoader(is, true, null);
+                    else
+                        throw new IllegalStateException("Unrecognized data file format for file: " + r.getPath());
+
+                    // COPY
+                    // CONSIDER SQL Server: SET IDENTIFY ON/OFF?
+                    DataIteratorUtil.copy(dix, loader, dbTable, null, null);
+                }
+            }
+            catch (IOException|BatchValidationException x)
+            {
+                throw new RuntimeException(x);
+            }
         }
     }
 }

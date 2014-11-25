@@ -111,7 +111,10 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
     public void setMvContainer(Container c)
     {
         _mvContainer = c;
-        _missingValues = MvUtil.getIndicatorsAndLabels(c);
+        if (null == c)
+            _missingValues = new HashMap<>();
+        else
+            _missingValues = MvUtil.getIndicatorsAndLabels(c);
     }
 
     protected boolean validMissingValue(String mv)
