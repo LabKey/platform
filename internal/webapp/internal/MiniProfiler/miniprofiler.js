@@ -214,8 +214,11 @@ LABKEY.internal.MiniProfiler = new function () {
         setStyle(el, 'display', display);
     }
 
-    function toggle(el, isHidden) {
-        if (isHidden)
+    function toggle(el, isVisible) {
+        if (isVisible === undefined)
+            isVisible = visible(el);
+
+        if (isVisible)
             hide(el);
         else
             show(el);
@@ -322,6 +325,137 @@ LABKEY.internal.MiniProfiler = new function () {
     }
 
     //
+    // Minimal jquery.hotkeys.js - https://github.com/jeresig/jquery.hotkeys
+    //
+
+    var specialKeys = {
+      8: "backspace",
+      9: "tab",
+      10: "return",
+      13: "return",
+      16: "shift",
+      17: "ctrl",
+      18: "alt",
+      19: "pause",
+      20: "capslock",
+      27: "esc",
+      32: "space",
+      33: "pageup",
+      34: "pagedown",
+      35: "end",
+      36: "home",
+      37: "left",
+      38: "up",
+      39: "right",
+      40: "down",
+      45: "insert",
+      46: "del",
+      59: ";",
+      61: "=",
+      96: "0",
+      97: "1",
+      98: "2",
+      99: "3",
+      100: "4",
+      101: "5",
+      102: "6",
+      103: "7",
+      104: "8",
+      105: "9",
+      106: "*",
+      107: "+",
+      109: "-",
+      110: ".",
+      111: "/",
+      112: "f1",
+      113: "f2",
+      114: "f3",
+      115: "f4",
+      116: "f5",
+      117: "f6",
+      118: "f7",
+      119: "f8",
+      120: "f9",
+      121: "f10",
+      122: "f11",
+      123: "f12",
+      144: "numlock",
+      145: "scroll",
+      173: "-",
+      186: ";",
+      187: "=",
+      188: ",",
+      189: "-",
+      190: ".",
+      191: "/",
+      192: "`",
+      219: "[",
+      220: "\\",
+      221: "]",
+      222: "'"
+    };
+
+    var shiftNums = {
+      "`": "~",
+      "1": "!",
+      "2": "@",
+      "3": "#",
+      "4": "$",
+      "5": "%",
+      "6": "^",
+      "7": "&",
+      "8": "*",
+      "9": "(",
+      "0": ")",
+      "-": "_",
+      "=": "+",
+      ";": ": ",
+      "'": "\"",
+      ",": "<",
+      ".": ">",
+      "/": "?",
+      "\\": "|"
+    };
+
+    // Returns true if the key combination described in the 'keys' string has been pressed.
+    function isHotKey(keys, event) {
+        if (typeof keys !== 'string') {
+            return;
+        }
+
+        keys = keys.toLowerCase().split(" ");
+
+        var special = event.type !== "keypress" && specialKeys[event.which],
+            character = String.fromCharCode(event.which).toLowerCase(),
+            modif = "",
+            possible = {};
+
+        var altCtrlShift = ["alt", "ctrl", "shift"];
+        for (var i = 0, l = altCtrlShift.length; i < l; i++) {
+            var specialKey = altCtrlShift[i];
+            if (event[specialKey + 'Key'] && special !== specialKey) {
+                modif += specialKey + '+';
+            }
+        }
+
+        if (special) {
+            possible[modif + special] = true;
+        }
+        else {
+            possible[modif + character] = true;
+            possible[modif + shiftNums[character]] = true;
+        }
+
+        for (var i = 0, l = keys.length; i < l; i++) {
+            if (possible[keys[i]]) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    //
     // profiler
     //
 
@@ -351,7 +485,6 @@ LABKEY.internal.MiniProfiler = new function () {
             url: LABKEY.contextPath + "/internal/MiniProfiler/miniprofiler.tmpl?skip-profiling=true",
             success: function (xhr, options) {
                 var text = xhr.responseText;
-                //Ext4.get(document.body).insertHtml('beforeEnd', text);
                 append(document.body, text);
                 success();
             }
@@ -747,10 +880,9 @@ LABKEY.internal.MiniProfiler = new function () {
             setStyle(popup, horizontalPosition, (rect.width - 3) + "px"); // move left or right, based on config
         }
         else {
-            alert("NYI");
-//            popup
-//                .css({ 'top': top, 'max-height': maxHeight })
-//                .css(options.renderPosition, button.outerWidth() - 3); // move left or right, based on config
+            setStyle(popup, 'top', top);
+            //setStyle(popup, 'max-height', maxHeight);
+            setStyle(popup, _options.renderPosition, (rect.width - 3) + "px"); // move left or right, based on config
         }
     }
 
@@ -840,6 +972,14 @@ LABKEY.internal.MiniProfiler = new function () {
 
         addEventListener('click', document, handleEvent);
         addEventListener('keyup', document, handleEvent);
+
+        if (_options.toggleShortcut && !_options.toggleShortcut.match(/None$/i)) {
+            addEventListener('keydown', document, function (e) {
+                if (isHotKey(_options.toggleShortcut, e)) {
+                    toggle(select(document, '.profiler-results'));
+                }
+            });
+        }
     }
 
     function initFullView() {
@@ -852,6 +992,7 @@ LABKEY.internal.MiniProfiler = new function () {
                             '<div class="profiler-controls">' +
                             '<span class="profiler-min-max" title="click to minimize/maximize">m</span>' +
                             '<span class="profiler-clear" title="click to clear log">c</span>' +
+                            '<a href="https://help.labkey.org/wiki/home/Documentation/page.view?name=profiler" target=_blank title="help">?</span>' +
                             '</div>');
 
             click(select(_container, '.profiler-controls .profiler-min-max'), function () {
@@ -900,10 +1041,7 @@ LABKEY.internal.MiniProfiler = new function () {
                 fetchResults(_options.ids);
             });
             if (_options.startHidden) {
-                if (_options.toggleShortcut)
-                    hide(_container);
-                else if (_options.showControls)
-                    addClass(_container, "profiler-min");
+                hide(_container);
             }
         }
         else {

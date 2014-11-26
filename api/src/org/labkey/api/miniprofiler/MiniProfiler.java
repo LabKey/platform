@@ -93,7 +93,7 @@ public class MiniProfiler
         sb.append("  maxTracesToShow:").append(20).append(",\n");
         sb.append("  showControls:").append(settings.isShowControls()).append(",\n");
         sb.append("  authorized:true,\n");
-        sb.append("  toggleShortcut:'alt-p',\n");
+        sb.append("  toggleShortcut:'").append(settings.getToggleShortcut() != null ? settings.getToggleShortcut() : "").append("',\n");
         sb.append("  startHidden:").append(settings.isStartHidden()).append("\n");
         sb.append("});\n");
         sb.append("</script>\n");
@@ -157,13 +157,12 @@ public class MiniProfiler
 
     public static enum RenderPosition
     {
-        // TODO: top left and right not yet implemented
-        //LEFT("left"),
-        //RIGHT("right"),
+        TopLeft("left"),
+        TopRight("right"),
         BottomLeft("bottomleft"),
         BottomRight("bottomright");
 
-        // Part of the css style used to render the value, e.g.: profiler-bottomright
+        // Part of the css style used to render the value, e.g.: profiler-left or profiler-bottomright
         private final String _style;
 
         RenderPosition(String style)
@@ -179,6 +178,7 @@ public class MiniProfiler
 
     public static class Settings
     {
+        private boolean _enabled = AppProps.getInstance().isDevMode();
         private boolean _showChildrenTime = false;
         private boolean _showTrivial = false;
         private int _trivialMillis = 3;
@@ -187,7 +187,17 @@ public class MiniProfiler
         private boolean _showControls = true;
         private RenderPosition _renderPosition = RenderPosition.BottomRight;
         private boolean _captureCustomTimingStacktrace = true;
-        private boolean _enabled = AppProps.getInstance().isDevMode();
+        private String _toggleShortcut = "alt+p";
+
+        public boolean isEnabled()
+        {
+            return _enabled;
+        }
+
+        public void setEnabled(boolean enabled)
+        {
+            _enabled = enabled;
+        }
 
         public boolean isShowTrivial()
         {
@@ -259,14 +269,14 @@ public class MiniProfiler
             _captureCustomTimingStacktrace = captureCustomTimingStacktrace;
         }
 
-        public boolean isEnabled()
+        public String getToggleShortcut()
         {
-            return _enabled;
+            return _toggleShortcut;
         }
 
-        public void setEnabled(boolean enabled)
+        public void setToggleShortcut(String toggleShortcut)
         {
-            _enabled = enabled;
+            _toggleShortcut = toggleShortcut;
         }
     }
 }
