@@ -602,7 +602,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 emptyText: 'Type Description here',
                 listeners: {
                     change:function(cmp, newValue, oldValue) {this.info.description = newValue;},
-                    afterrender: function(cmp) { if(this.settings) cmp.setValue(this.settings.description)},
+                    afterrender: function(cmp) { if(this.settings){ cmp.setValue(this.settings.description); this.info.description = this.settings.description;}},
                     scope:this
                 }
             },
