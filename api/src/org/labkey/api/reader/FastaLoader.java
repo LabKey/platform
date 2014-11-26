@@ -23,14 +23,12 @@ import java.io.IOException;
 import java.util.Iterator;
 
 /**
+ * Users of FastaLoader implementations can simply iterate the loader itself (if all they want is a stream of Ts) or
+ * they can grab the iterator to monitor progress, current line, etc.
+ *
  * User: migra
  * Date: Jun 16, 2004
- * Time: 2:40:58 PM
- *
  */
-
-// Users of FastaLoader implementations can simply iterate the loader itself (if all they want is a stream of Ts) or
-// they can grab the iterator to monitor progress, current line, etc.
 public abstract class FastaLoader<T> implements Iterable<T>
 {
     private final File _fastaFile;
@@ -256,8 +254,18 @@ public abstract class FastaLoader<T> implements Iterable<T>
         public boolean accept(char c);
     }
 
-    public class UppercaseCharacterFilter implements CharacterFilter
+    public static class UpperAndLowercaseCharacterFilter implements CharacterFilter
     {
+        @Override
+        public boolean accept(char c)
+        {
+            return ((c >= 'A') && (c <= 'Z')) || ((c >= 'a') && (c <= 'z'));
+        }
+    }
+
+    public static class UppercaseCharacterFilter implements CharacterFilter
+    {
+        @Override
         public boolean accept(char c)
         {
             return (c >= 'A') && (c <= 'Z');

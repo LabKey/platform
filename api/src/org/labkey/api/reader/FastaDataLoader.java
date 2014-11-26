@@ -49,7 +49,9 @@ public class FastaDataLoader extends DataLoader
         @NotNull @Override
         public DataLoader createLoader(File file, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            return new FastaDataLoader(file, hasColumnHeaders, mvIndicatorContainer);
+            FastaDataLoader result = new FastaDataLoader(file, hasColumnHeaders, mvIndicatorContainer);
+            result.setCharacterFilter(new FastaLoader.UpperAndLowercaseCharacterFilter());
+            return result;
         }
 
         @NotNull @Override
@@ -59,7 +61,9 @@ public class FastaDataLoader extends DataLoader
             f.deleteOnExit();
             IOUtils.copy(is, new FileOutputStream(f));
 
-            return new FastaDataLoader(f, hasColumnHeaders, mvIndicatorContainer);
+            FastaDataLoader result = new FastaDataLoader(f, hasColumnHeaders, mvIndicatorContainer);
+            result.setCharacterFilter(new FastaLoader.UpperAndLowercaseCharacterFilter());
+            return result;
         }
 
         @NotNull @Override
