@@ -78,6 +78,7 @@ public class MimeMap implements FileNameMap
         mimeTypeMap.put("image/jpeg", new MimeType("image/jpeg", true));
         mimeTypeMap.put("image/png", new MimeType("image/png", true));
         mimeTypeMap.put("image/svg+xml", new MimeType("image/svg+xml", true));
+        mimeTypeMap.put("application/pdf", new MimeType("application/pdf", true));
 
         try (InputStream is = MimeMap.class.getResourceAsStream("mime.txt"))
         {
