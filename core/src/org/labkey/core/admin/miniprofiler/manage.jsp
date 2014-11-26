@@ -30,9 +30,8 @@
     MiniProfiler.Settings settings = me.getModelBean();
 
     Map<String, String> renderOptions = new LinkedHashMap<>();
-    // NYI
-    //renderOptions.put(MiniProfiler.RenderPosition.TOPLEFT.name(), MiniProfiler.RenderPosition.TOPLEFT.toString());
-    //renderOptions.put(MiniProfiler.RenderPosition.TOPRIGHT.name(), MiniProfiler.RenderPosition.TOPRIGHT.toString());
+    renderOptions.put(MiniProfiler.RenderPosition.TopLeft.name(), MiniProfiler.RenderPosition.TopLeft.toString());
+    renderOptions.put(MiniProfiler.RenderPosition.TopRight.name(), MiniProfiler.RenderPosition.TopRight.toString());
     renderOptions.put(MiniProfiler.RenderPosition.BottomLeft.name(), MiniProfiler.RenderPosition.BottomLeft.toString());
     renderOptions.put(MiniProfiler.RenderPosition.BottomRight.name(), MiniProfiler.RenderPosition.BottomRight.toString());
 %>
@@ -62,15 +61,21 @@ profiler is enabled when the server is running in dev mode or if the current use
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Show controls<%=helpPopup("Show Controls", "Show the minimize and clear controls in the MiniProfiler widget")%></td>
+            <td class="labkey-form-label">Toggle shortcut<%=helpPopup("Toggle shortcut", "Show/hide the MiniProfiler widget using a keyboard shortcut (e.g., 'alt+p' or 'alt+shift+p', or 'none' to disable toggling.)")%></td>
             <td>
-                <labkey:checkbox name="showControls" id="showControls" value="true" checked="<%=settings.isShowControls()%>"/>
+                <input name="toggleShortcut" id="toggleShortcut" value="<%=h(settings.getToggleShortcut())%>"/>
             </td>
         </tr>
         <tr>
-            <td class="labkey-form-label">Start hidden<%=helpPopup("Start Hidden", "MiniProfiler widget will initially be minimized")%></td>
+            <td class="labkey-form-label">Start hidden<%=helpPopup("Start Hidden", "MiniProfiler widget will initially be hidden, requiring keyboard activation via the 'Toggle shortcut'")%></td>
             <td>
                 <labkey:checkbox name="startHidden" id="startHidden" value="true" checked="<%=settings.isStartHidden()%>"/>
+            </td>
+        </tr>
+        <tr>
+            <td class="labkey-form-label">Show controls<%=helpPopup("Show Controls", "Show the minimize and clear controls in the MiniProfiler widget")%></td>
+            <td>
+                <labkey:checkbox name="showControls" id="showControls" value="true" checked="<%=settings.isShowControls()%>"/>
             </td>
         </tr>
         <tr>
