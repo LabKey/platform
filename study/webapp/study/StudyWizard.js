@@ -1637,7 +1637,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             if (this.settings)
             {
                 if (!this.settings.folderObjects)
-                    grid.getSelectionModel();
+                    grid.getSelectionModel().selectAll();
                 else
                 {
                     var folderObjects = this.setify(this.settings.folderObjects);
