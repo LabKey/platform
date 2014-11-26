@@ -59,7 +59,7 @@
         <tr><td colspan="10" class="labkey-title-area-line"></td></tr>
 
         <tr><td>&nbsp;</td></tr>
-        <tr><td>Snapshot&nbsp;Name:</td><td><input type="text" maxlength="200" size="50" name="<%=bean.isEdit() ? "" : "snapshotName"%>" <%=bean.isEdit() ? "readonly" : ""%> value="<%=StringUtils.trimToEmpty(bean.getSnapshotName())%>"></td></tr>
+        <tr><td>Snapshot&nbsp;Name:</td><td><input type="text" maxlength="200" size="50" name="<%= text(bean.isEdit() ? "" : "snapshotName") %>" <%= text(bean.isEdit() ? "readonly" : "") %> value="<%=h(StringUtils.trimToEmpty(bean.getSnapshotName()))%>"></td></tr>
         <tr><td>&nbsp;</td></tr>
 
         <tr><th colspan="10" class="labkey-header">Snapshot Refresh</th></tr>
@@ -71,27 +71,27 @@
         <tr><td>Manual&nbsp;Refresh</td><td><input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() == 0)%> type="radio" name="updateType" value="manual" id="manualUpdate" onclick="onAutoUpdate();"></td></tr>
         <tr><td>Automatic&nbsp;Refresh</td><td><input<%=disabled(!isAutoUpdateable)%><%=checked(bean.getUpdateDelay() != 0)%> type="radio" name="updateType" onclick="onAutoUpdate();"></td></tr>
         <tr><td>&nbsp;</td></tr>
-        <tr><td></td><td><select name="updateDelay" id="updateDelay" style="display:none"><labkey:options value="<%=String.valueOf(bean.getUpdateDelay())%>" map="<%=updateDelay%>"></labkey:options></select></td></tr>
+        <tr><td></td><td><select name="updateDelay" id="updateDelay" style="display:<%= text(bean.getUpdateDelay() == 0 ? "none" : "block") %>"><labkey:options value="<%=text(String.valueOf(bean.getUpdateDelay()))%>" map="<%=updateDelay%>"></labkey:options></select></td></tr>
         <tr><td colspan="10" class="labkey-title-area-line"></td></tr>
         <tr><td colspan="10">
                 <%
             if (!bean.isEdit())
             {
                 out.println(button("Edit Dataset Definition").submit(true).onClick("this.form.action.value='" + StudyController.StudySnapshotForm.EDIT_DATASET + "'"));
-                out.print("&nbsp;");
+                out.print(text("&nbsp;"));
             }
 
             out.println(button(bean.isEdit() ? "Save" : "Create Snapshot").submit(true));
-            out.print("&nbsp;");
+            out.print(text("&nbsp;"));
 
             out.println(button(bean.isEdit() ? "Done" : "Cancel").submit(true).onClick("this.form.action.value='" + StudyController.StudySnapshotForm.CANCEL + "'"));
 
         %>
     </table>
     <%  if (getActionURL().getParameter(DataSetDefinition.DATASETKEY) != null) { %>
-    <input type="hidden" name="<%=DataSetDefinition.DATASETKEY%>" value="<%=getActionURL().getParameter(DataSetDefinition.DATASETKEY)%>">
+    <input type="hidden" name="<%=h(DataSetDefinition.DATASETKEY)%>" value="<%=h(getActionURL().getParameter(DataSetDefinition.DATASETKEY))%>">
     <%  } %>
-    <input type="hidden" name="action" value="<%=StudyController.StudySnapshotForm.CREATE_SNAPSHOT%>" id="action">
+    <input type="hidden" name="action" value="<%=h(StudyController.StudySnapshotForm.CREATE_SNAPSHOT)%>" id="action">
     <input type="hidden" name="snapshotDatasetId" value="<%=bean.getSnapshotDatasetId()%>">
 </labkey:form>
 
@@ -112,14 +112,3 @@
     }
 
 </script>
-
-<%!
-    String getColumnName(DisplayColumn col)
-    {
-        ColumnInfo info = col.getColumnInfo();
-        if (info != null)
-            return info.getName();
-
-        return col.getName();
-    }
-%>

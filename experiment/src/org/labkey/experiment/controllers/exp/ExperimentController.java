@@ -3296,7 +3296,14 @@ public class ExperimentController extends SpringActionController
         }
         else
         {
-            lsidRelativizer = LSIDRelativizer.valueOf(lsidRelativizerName);
+            try
+            {
+                lsidRelativizer = LSIDRelativizer.valueOf(lsidRelativizerName);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new NotFoundException("No such LSID relativizer available: " + lsidRelativizerName);
+            }
         }
         if (exportTypeName == null)
         {
@@ -3304,7 +3311,14 @@ public class ExperimentController extends SpringActionController
         }
         else
         {
-            exportType = XarExportType.valueOf(exportTypeName);
+            try
+            {
+                exportType = XarExportType.valueOf(exportTypeName);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new NotFoundException("No such export type available: " + exportTypeName);
+            }
         }
 
         if (fileName == null || fileName.equals(""))

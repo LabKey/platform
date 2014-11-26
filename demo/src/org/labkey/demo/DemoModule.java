@@ -31,7 +31,6 @@ import org.labkey.demo.model.DemoManager;
 import org.labkey.demo.model.Person;
 import org.labkey.demo.view.DemoWebPart;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,7 +60,7 @@ public class DemoModule extends DefaultModule
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory("Demo Summary") {
-                public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+                public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart)
                 {
                     return new DemoWebPart();
                 }
@@ -71,7 +70,7 @@ public class DemoModule extends DefaultModule
                     addLegacyNames("Narrow Demo Summary");
                 }
 
-                public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+                public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart)
                 {
                     return new DemoWebPart();
                 }
