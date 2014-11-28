@@ -1221,6 +1221,7 @@ public class AdminController extends SpringActionController
             props.setMaxBLOBSize(form.getMaxBLOBSize());
             props.setExt3Required(form.isExt3Required());
             props.setExt3APIRequired(form.isExt3APIRequired());
+            props.setSelfReportExceptions(form.isSelfReportExceptions());
 
             props.setAdminOnlyMessage(form.getAdminOnlyMessage());
             props.setShowRibbonMessage(form.isShowRibbonMessage());
@@ -1231,15 +1232,12 @@ public class AdminController extends SpringActionController
             props.setMascotUserPassword(form.getMascotUserPassword());
             props.setMascotHTTPProxy(form.getMascotHTTPProxy());
 
-
             try
             {
                 ExceptionReportingLevel level = ExceptionReportingLevel.valueOf(form.getExceptionReportingLevel());
                 props.setExceptionReportingLevel(level);
             }
-            catch (IllegalArgumentException e)
-            {
-            }
+            catch (IllegalArgumentException ignored) {}
 
             UsageReportingLevel level = null;
 
@@ -1312,14 +1310,16 @@ public class AdminController extends SpringActionController
 
     public static class SiteSettingsBean
     {
-        public String helpLink = new HelpTopic("configAdmin").getSimpleLinkHtml("more info...");
-        public boolean upgradeInProgress;
-        public boolean testInPage;
+        public final String helpLink = new HelpTopic("configAdmin").getSimpleLinkHtml("more info...");
+        public final boolean upgradeInProgress;
+        public final boolean testInPage;
+        public final boolean showSelfReportExceptions;
 
         private SiteSettingsBean(boolean upgradeInProgress, boolean testInPage) throws SQLException
         {
             this.upgradeInProgress = upgradeInProgress;
             this.testInPage = testInPage;
+            this.showSelfReportExceptions = MothershipReport.isShowSelfReportExceptions();
         }
     }
 
@@ -1668,6 +1668,7 @@ public class AdminController extends SpringActionController
         private boolean _showRibbonMessage;
         private boolean _ext3Required;
         private boolean _ext3APIRequired;
+        private boolean _selfReportExceptions;
         private String _adminOnlyMessage;
         private String _ribbonMessageHtml;
         private int _sslPort;
@@ -1816,6 +1817,16 @@ public class AdminController extends SpringActionController
         public void setAdminOnlyMessage(String adminOnlyMessage)
         {
             _adminOnlyMessage = adminOnlyMessage;
+        }
+
+        public boolean isSelfReportExceptions()
+        {
+            return _selfReportExceptions;
+        }
+
+        public void setSelfReportExceptions(boolean selfReportExceptions)
+        {
+            _selfReportExceptions = selfReportExceptions;
         }
 
         public String getExceptionReportingLevel()

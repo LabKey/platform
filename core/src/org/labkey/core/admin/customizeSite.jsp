@@ -173,11 +173,11 @@ Click the Save button at any time to accept the current settings and continue.</
     <td>&nbsp;</td>
 </tr>
 <tr>
-    <td colspan=2>Automatically report exceptions to the LabKey team (<%=bean.helpLink%>)</td>
+    <td colspan=2>Automatically report exceptions (<%=bean.helpLink%>)</td>
 </tr>
 <tr><td colspan=3 class=labkey-title-area-line></td></tr>
 <tr>
-    <td class="labkey-form-label" valign="top">Report exceptions to www.labkey.org. All data is transmitted securely over SSL.</td>
+    <td class="labkey-form-label" valign="top">Report exceptions to the LabKey development team. All data is transmitted securely over SSL.</td>
     <td>
         <table>
             <tr>
@@ -199,6 +199,14 @@ Click the Save button at any time to accept the current settings and continue.</
         </table>
     </td>
 </tr>
+<% if (bean.showSelfReportExceptions) { %>
+<tr>
+    <td class="labkey-form-label" valign="top">Report exceptions to the local server</td>
+    <td>
+        <input type="checkbox" name="selfReportExceptions" <%= text(appProps.isSelfReportExceptions() ? "checked" : "" )%> /> Self-reporting is always at the "high" level described above
+    </td>
+</tr>
+<% } %>
 <tr>
     <td>&nbsp;</td>
 </tr>

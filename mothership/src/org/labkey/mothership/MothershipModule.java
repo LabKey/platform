@@ -17,8 +17,10 @@
 package org.labkey.mothership;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
+import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -60,7 +62,7 @@ public class MothershipModule extends DefaultModule
 
     public double getVersion()
     {
-        return 14.30;
+        return 14.31;
     }
 
     protected void init()
@@ -85,6 +87,13 @@ public class MothershipModule extends DefaultModule
     {
         if (moduleContext.isNewInstall())
             bootstrap(moduleContext);
+    }
+
+    @Nullable
+    @Override
+    public UpgradeCode getUpgradeCode()
+    {
+        return new MothershipUpgradeCode();
     }
 
     private void bootstrap(ModuleContext moduleContext)
@@ -132,6 +141,8 @@ public class MothershipModule extends DefaultModule
 
     public void doStartup(ModuleContext moduleContext)
     {
+        MothershipReport.setShowSelfReportExceptions(true);
+
         ContainerManager.addContainerListener(new ContainerManager.AbstractContainerListener()
         {
             public void containerDeleted(Container c, User user)

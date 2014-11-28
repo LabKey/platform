@@ -1754,6 +1754,7 @@ mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-12.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-13.10-13.20.sql -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-13.20-13.30.sql -text
+mothership/resources/schemas/dbscripts/postgresql/mothership-14.30-14.31.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-0.10.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-10.20.sql -text
 mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-0.00-11.30.sql -text
@@ -1793,6 +1794,7 @@ mothership/resources/schemas/dbscripts/postgresql/obsolete/mothership-9.20-9.30.
 mothership/resources/schemas/dbscripts/sqlserver/mothership-0.00-12.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-13.10-13.20.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/mothership-13.20-13.30.sql -text
+mothership/resources/schemas/dbscripts/sqlserver/mothership-14.30-14.31.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-0.10.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-10.20.sql -text
 mothership/resources/schemas/dbscripts/sqlserver/obsolete/mothership-0.00-11.30.sql -text
@@ -1837,6 +1839,7 @@ mothership/src/org/labkey/mothership/ExceptionStackTrace.java -text
 mothership/src/org/labkey/mothership/MothershipController.java -text
 mothership/src/org/labkey/mothership/MothershipManager.java -text
 mothership/src/org/labkey/mothership/MothershipModule.java -text
+mothership/src/org/labkey/mothership/MothershipUpgradeCode.java -text
 mothership/src/org/labkey/mothership/ServerInstallation.java -text
 mothership/src/org/labkey/mothership/ServerSession.java -text
 mothership/src/org/labkey/mothership/SoftwareRelease.java -text
