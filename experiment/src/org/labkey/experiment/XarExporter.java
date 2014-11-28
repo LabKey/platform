@@ -795,6 +795,14 @@ public class XarExporter
 
         ExperimentType xExperiment = _archive.addNewExperiment();
         xExperiment.setAbout(_relativizedLSIDs.relativize(experiment.getLSID()));
+        if (experiment.getBatchProtocolId() != null)
+        {
+            ExpProtocol protocol = ExperimentService.get().getExpProtocol(experiment.getBatchProtocolId());
+            if (protocol != null)
+            {
+                xExperiment.setBatchProtocolLSID(_relativizedLSIDs.relativize(protocol.getLSID()));
+            }
+        }
         if (experiment.getComments() != null)
         {
             xExperiment.setComments(experiment.getComments());

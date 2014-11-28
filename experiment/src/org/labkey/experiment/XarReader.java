@@ -150,11 +150,7 @@ public class XarReader extends AbstractXarImporter
                 document.save(fos, xOpt);
             }
         }
-        catch (IOException e)
-        {
-            throw new XarFormatException(e);
-        }
-        catch (XmlException e)
+        catch (IOException | XmlException e)
         {
             throw new XarFormatException(e);
         }
@@ -165,7 +161,7 @@ public class XarReader extends AbstractXarImporter
                 if (null != fos)
                     fos.close();
             }
-            catch (IOException ioe) {}
+            catch (IOException ignored) {}
         }
     }
 
@@ -206,7 +202,7 @@ public class XarReader extends AbstractXarImporter
                         }
                     }
                // if failback strategy throws, just report original error
-                } catch (Exception e) {   }
+                } catch (Exception ignored) {   }
             }
             bHasDerivedTypeErrorsOnly = false;
             errorSB.append("Schema validation error: ");
@@ -271,14 +267,9 @@ public class XarReader extends AbstractXarImporter
             }
 
             // Then start loading
-            for (ExperimentType exp : _experimentArchive.getExperimentArray())
-            {
-                loadExperiment(exp);
-                getLog().debug("Experiment/Run group import complete");
-            }
-
             if (protocolDefs != null)
             {
+                // Load protocols first as they might be referenced from experiments (assay batches)
                 try (DbScope.Transaction protocolTransaction = ExperimentService.get().getSchema().getScope().ensureTransaction(ExperimentService.get().getProtocolImportLock()))
                 {
                     for (ProtocolBaseType p : protocolDefs.getProtocolArray())
@@ -288,6 +279,12 @@ public class XarReader extends AbstractXarImporter
                     protocolTransaction.commit();
                 }
                 getLog().debug("Protocol import complete");
+            }
+
+            for (ExperimentType exp : _experimentArchive.getExperimentArray())
+            {
+                loadExperiment(exp);
+                getLog().debug("Experiment/Run group import complete");
             }
 
             if (actionDefs != null)
@@ -571,6 +568,17 @@ public class XarReader extends AbstractXarImporter
             experimentDataObject.setExperimentDescriptionURL(trimString(exp.getExperimentDescriptionURL()));
             experimentDataObject.setComments(trimString(exp.getComments()));
             experimentDataObject.setContainer(getContainer());
+
+            if (exp.isSetBatchProtocolLSID())
+            {
+                String batchProtocolLSID = LsidUtils.resolveLsidFromTemplate(exp.getBatchProtocolLSID(), getRootContext(), "Protocol");
+                ExpProtocol batchProtocol = ExperimentService.get().getExpProtocol(batchProtocolLSID);
+                if (batchProtocol == null)
+                {
+                    throw new XarFormatException("Could not resolve protocol with LSID '" + batchProtocolLSID + "'");
+                }
+                experimentDataObject.setBatchProtocolId(batchProtocol.getRowId());
+            }
 
             experimentDataObject = Table.insert(getUser(), tiExperiment, experimentDataObject);
             experiment = new ExpExperimentImpl(experimentDataObject);
@@ -929,7 +937,7 @@ public class XarReader extends AbstractXarImporter
         String declaredType = xbMaterial.getCpasType();
         if (null == declaredType)
             declaredType = "Material";
-        if (declaredType.indexOf("${") != -1)
+        if (declaredType.contains("${"))
         {
             declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, "SampleSet");
         }
@@ -1026,7 +1034,7 @@ public class XarReader extends AbstractXarImporter
         String declaredType = xbData.getCpasType();
         if (null == declaredType)
             declaredType = "Data";
-        if (declaredType.indexOf("${") != -1)
+        if (declaredType.contains("${"))
         {
             declaredType = LsidUtils.resolveLsidFromTemplate(declaredType, context, "Data");
         }
@@ -1247,7 +1255,7 @@ public class XarReader extends AbstractXarImporter
             }
 
             String ontologyEntryURI = trimString(simpleProp.getOntologyEntryURI());
-            if (ontologyEntryURI != null && ontologyEntryURI.indexOf("${") != -1)
+            if (ontologyEntryURI != null && ontologyEntryURI.contains("${"))
             {
                 ontologyEntryURI = LsidUtils.resolveLsidFromTemplate(simpleProp.getOntologyEntryURI(), getRootContext());
             }
@@ -1268,11 +1276,7 @@ public class XarReader extends AbstractXarImporter
                             objectProp.setStringValue(fullPath);
                         }
                     }
-                    catch (URISyntaxException e)
-                    {
-                        // That's OK, don't treat the value as a relative path to the file
-                    }
-                    catch (XarFormatException e)
+                    catch (URISyntaxException | XarFormatException ignored)
                     {
                         // That's OK, don't treat the value as a relative path to the file
                     }
@@ -1298,7 +1302,7 @@ public class XarReader extends AbstractXarImporter
         {
             PropertyObjectDeclarationType propObjDecl = xbPropObject.getPropertyObjectDeclaration();
             String ontologyEntryURI = trimString(propObjDecl.getOntologyEntryURI());
-            if (ontologyEntryURI != null && ontologyEntryURI.indexOf("${") != -1)
+            if (ontologyEntryURI != null && ontologyEntryURI.contains("${"))
             {
                 ontologyEntryURI = LsidUtils.resolveLsidFromTemplate(ontologyEntryURI, getRootContext());
             }
@@ -1537,22 +1541,22 @@ public class XarReader extends AbstractXarImporter
         if ((!p.isSetMaxInputMaterialPerInstance()) || p.isNilMaxInputMaterialPerInstance())
             protocol.setMaxInputMaterialPerInstance(null);
         else
-            protocol.setMaxInputMaterialPerInstance(new Integer(p.getMaxInputMaterialPerInstance()));
+            protocol.setMaxInputMaterialPerInstance(p.getMaxInputMaterialPerInstance());
 
         if ((!p.isSetMaxInputDataPerInstance()) || p.isNilMaxInputDataPerInstance())
             protocol.setMaxInputDataPerInstance(null);
         else
-            protocol.setMaxInputDataPerInstance(new Integer(p.getMaxInputDataPerInstance()));
+            protocol.setMaxInputDataPerInstance(p.getMaxInputDataPerInstance());
 
         if ((!p.isSetOutputMaterialPerInstance()) || p.isNilOutputMaterialPerInstance())
             protocol.setOutputMaterialPerInstance(null);
         else
-            protocol.setOutputMaterialPerInstance(new Integer(p.getOutputMaterialPerInstance()));
+            protocol.setOutputMaterialPerInstance(p.getOutputMaterialPerInstance());
 
         if ((!p.isSetOutputDataPerInstance()) || p.isNilOutputDataPerInstance())
             protocol.setOutputDataPerInstance(null);
         else
-            protocol.setOutputDataPerInstance(new Integer(p.getOutputDataPerInstance()));
+            protocol.setOutputDataPerInstance(p.getOutputDataPerInstance());
 
         String materialType = trimString(p.getOutputMaterialType());
         protocol.setOutputMaterialType(materialType == null ? "Material" : materialType);
@@ -1618,7 +1622,7 @@ public class XarReader extends AbstractXarImporter
                         val = new Double(sVal.getStringValue());
                         break;
                     case (SimpleTypeNames.INT_DATE_TIME):
-                        val = new Date(DateUtil.parseDateTime(sVal.getStringValue()));
+                        val = new Date(DateUtil.parseDateTime(getContainer(), sVal.getStringValue()));
                         break;
                     default:
                         val = sVal.getStringValue();
