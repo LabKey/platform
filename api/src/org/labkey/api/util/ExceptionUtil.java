@@ -193,29 +193,44 @@ public class ExceptionUtil
         return installing ? ExceptionReportingLevel.HIGH : AppProps.getInstance().getExceptionReportingLevel();
     }
 
+    private static boolean isSelfReportExceptions()
+    {
+        // Assume false during initial install, as we likely not far enough along to be able to store the exception
+        boolean installing = ModuleLoader.getInstance().isUpgradeRequired() && ModuleLoader.getInstance().isNewInstall();
+        return !installing && AppProps.getInstance().isSelfReportExceptions();
+    }
+
     // request may be null if this is coming from a background thread or init
     public static void logExceptionToMothership(@Nullable HttpServletRequest request, Throwable ex)
     {
         if (ViewServlet.isShuttingDown())
             return;
 
-        Map<Enum, String> decorations = getExceptionDecorations(ex);
-
         ex = unwrapException(ex);
 
         if (isIgnorable(ex))
             return;
 
-        String originalURL = request == null ? null : (String) request.getAttribute(ViewServlet.ORIGINAL_URL_STRING);
-        ExceptionReportingLevel level = getExceptionReportingLevel();
-
-        if (level == ExceptionReportingLevel.NONE)
-            return;
-
+        String requestURL = request == null ? null : (String) request.getAttribute(ViewServlet.ORIGINAL_URL_STRING);
         // Need this extra check to make sure we're not in an infinite loop if there's
         // an exception when trying to submit an exception
-        if (originalURL != null && MothershipReport.isMothershipExceptionReport(originalURL))
+        if (requestURL != null && MothershipReport.isMothershipExceptionReport(requestURL))
             return;
+
+        // Once to labkey.org, if so configured
+        logExceptionToMothership(request, ex, requestURL, false, getExceptionReportingLevel());
+
+        // And once to the local server, if so configured
+        if (isSelfReportExceptions())
+        {
+            logExceptionToMothership(request, ex, requestURL, true, ExceptionReportingLevel.HIGH);
+        }
+    }
+
+    /** Figure out exactly what text for the stack trace and other details we should submit */
+    private static void logExceptionToMothership(HttpServletRequest request, Throwable ex, String requestURL, boolean local, ExceptionReportingLevel level)
+    {
+        Map<Enum, String> decorations = getExceptionDecorations(ex);
 
         String exceptionMessage = null;
         if (!decorations.isEmpty() && (level == ExceptionReportingLevel.MEDIUM || level == ExceptionReportingLevel.HIGH))
@@ -278,14 +293,9 @@ public class ExceptionUtil
             }
         }
 
-        logExceptionToMothership(
-                stackTrace,
-                exceptionMessage,
-                browser,
-                sqlState,
-                originalURL,
-                referrerURL,
-                username);
+        _logStatic.error("Exception detected and logged to mothership:\n" + stackTrace);
+
+        reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, local, level);
     }
 
     /**
@@ -307,21 +317,14 @@ public class ExceptionUtil
             stackTrace
         );
 
-        reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username);
-    }
+        // Once to labkey.org, if so configured
+        reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, false, getExceptionReportingLevel());
 
-    public static void logExceptionToMothership(
-            String stackTrace,
-            String exceptionMessage,
-            String browser,
-            String sqlState,
-            String requestURL,
-            String referrerURL,
-            String username)
-    {
-        _logStatic.error("Exception detected and logged to mothership:\n" + stackTrace);
-
-        reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username);
+        // And once to the local server, if so configured
+        if (isSelfReportExceptions())
+        {
+            reportExceptionToMothership(stackTrace, exceptionMessage, browser, sqlState, requestURL, referrerURL, username, true, ExceptionReportingLevel.HIGH);
+        }
     }
 
     private static void reportExceptionToMothership(
@@ -331,23 +334,16 @@ public class ExceptionUtil
             String sqlState,
             String requestURL,
             String referrerURL,
-            String username)
+            String username,
+            boolean local,
+            ExceptionReportingLevel level)
     {
-        //if (isIgnorable(stackTrace))
-        //    return;
-
-        ExceptionReportingLevel level = getExceptionReportingLevel();
         if (level == ExceptionReportingLevel.NONE)
-            return;
-
-        // Need this extra check to make sure we're not in an infinite loop if there's
-        // an exception when trying to submit an exception
-        if (requestURL != null && MothershipReport.isMothershipExceptionReport(requestURL))
             return;
 
         try
         {
-            MothershipReport report = new MothershipReport(MothershipReport.Type.ReportException);
+            MothershipReport report = new MothershipReport(MothershipReport.Type.ReportException, local);
             report.addServerSessionParams();
             report.addParam("stackTrace", stackTrace);
             report.addParam("sqlState", sqlState);

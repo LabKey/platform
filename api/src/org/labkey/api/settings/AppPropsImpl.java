@@ -24,6 +24,7 @@ import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.ExceptionReportingLevel;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
@@ -95,6 +96,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     protected static final String MAX_BLOB_SIZE = "maxBLOBSize";
     protected static final String EXT3_REQUIRED = "ext3Required";
     protected static final String EXT3API_REQUIRED = "ext3APIRequired";
+    protected static final String SELF_REPORT_EXCEPTIONS = "selfReportExceptions";
 
     protected static final String SITE_CONFIG_NAME = "SiteConfig";
 
@@ -362,6 +364,8 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
     }
 
     public boolean isExt3APIRequired() { return lookupBooleanValue(EXT3API_REQUIRED, true); }
+
+    public boolean isSelfReportExceptions() { return MothershipReport.isShowSelfReportExceptions() && lookupBooleanValue(SELF_REPORT_EXCEPTIONS, true); }
 
     public ExceptionReportingLevel getExceptionReportingLevel()
     {

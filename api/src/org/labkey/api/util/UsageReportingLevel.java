@@ -136,7 +136,7 @@ public enum UsageReportingLevel
         {
             try
             {
-                MothershipReport report = new MothershipReport(MothershipReport.Type.CheckForUpdates);
+                MothershipReport report = new MothershipReport(MothershipReport.Type.CheckForUpdates, false);
                 report.addServerSessionParams();
                 addExtraParams(report);
                 report.run();

@@ -93,6 +93,7 @@ public class AppProps
         public boolean isExt3Required();
         public boolean isExt3APIRequired();
         public ExceptionReportingLevel getExceptionReportingLevel();
+        public boolean isSelfReportExceptions();
         public String getServerGUID();
         public String getBLASTServerBaseURL();
         public boolean hasMascotServer();

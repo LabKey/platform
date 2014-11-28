@@ -98,6 +98,11 @@ public class WriteableAppProps extends AppPropsImpl
         storeIntValue(MAX_BLOB_SIZE, maxBLOBSize);
     }
 
+    public void setSelfReportExceptions(boolean selfReportExceptions)
+    {
+        storeBooleanValue(SELF_REPORT_EXCEPTIONS, selfReportExceptions);
+    }
+
     public void setExt3Required(boolean ext3Required)
     {
         storeBooleanValue(EXT3_REQUIRED, ext3Required);

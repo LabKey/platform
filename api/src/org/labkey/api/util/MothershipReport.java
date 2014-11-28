@@ -57,6 +57,18 @@ public class MothershipReport implements Runnable
 
     public static final String CONTAINER_PATH = "/_mothership";
     public static final String BASE_URL = "/mothership" + CONTAINER_PATH;
+    private static boolean showSelfReportExceptions = false;
+
+    /** @return true if this server can self-report exceptions (that is, has the Mothership module installed) */
+    public static boolean isShowSelfReportExceptions()
+    {
+        return showSelfReportExceptions;
+    }
+
+    public static void setShowSelfReportExceptions(boolean b)
+    {
+        showSelfReportExceptions = b;
+    }
 
     public enum Type
     {
@@ -88,12 +100,12 @@ public class MothershipReport implements Runnable
         return url.toLowerCase().contains((BASE_URL + "/" + Type.ReportException.getAction()).toLowerCase());
     }
 
-    public MothershipReport(Type type) throws MalformedURLException, URISyntaxException
+    public MothershipReport(Type type, boolean local) throws MalformedURLException, URISyntaxException
     {
         URLHelper urlHelper = type.getURL();
         URL url;
 
-        if (AppProps.getInstance().isDevMode())
+        if (local)
         {
             // Don't submit to the mothership server, go to the local machine
             try

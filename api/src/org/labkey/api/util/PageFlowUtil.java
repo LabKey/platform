@@ -1792,7 +1792,7 @@ public class PageFlowUtil
 
         // Include client-side error reporting scripts only if necessary and as early as possible.
         if ((AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_MOTHERSHIP) || AppProps.getInstance().isExperimentalFeatureEnabled(AppProps.EXPERIMENTAL_JAVASCRIPT_SERVER)) &&
-            AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE)
+                (AppProps.getInstance().getExceptionReportingLevel() != ExceptionReportingLevel.NONE || AppProps.getInstance().isSelfReportExceptions()))
         {
             sb.append("    <script src=\"").append(contextPath).append("/stacktrace-0.6.0.js").append("\" type=\"text/javascript\"></script>\n");
             sb.append("    <script src=\"").append(contextPath).append("/mothership.js?").append(serverHash).append("\" type=\"text/javascript\"></script>\n");
