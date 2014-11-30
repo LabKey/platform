@@ -17,6 +17,9 @@ package org.labkey.search.model;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.cache.Cache;
+import org.labkey.api.cache.CacheLoader;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.RuntimeSQLException;
@@ -40,6 +43,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: matthewb
@@ -95,16 +99,24 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
+    Cache<Path,Integer> idcache = CacheManager.getBlockingCache(1000, TimeUnit.MINUTES.toMillis(5), "SavePaths: path to id cache", new CacheLoader<Path,Integer>()
+    {
+        @Override
+        public Integer load(Path path, @Nullable Object argument)
+        {
+            String pathStr = toPathString(path);
+            SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE ");
+            find.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr));
+            Integer id = new SqlSelector(getSearchSchema(), find).getObject(Integer.class);
+            return null != id ? id : -1;
+        }
+    });
+
+
     // -1 if not exists
     private int getId(Path path) throws SQLException
     {
-        // find parent
-        String pathStr = toPathString(path);
-        SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE ");
-        find.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr));
-        Integer id = new SqlSelector(getSearchSchema(), find).getObject(Integer.class);
-
-        return null != id ? id : -1;
+        return idcache.get(path);
     }
 
 
@@ -272,6 +284,7 @@ public class SavePaths implements DavCrawler.SavePaths
         // UNDONE LIKE ESCAPE
         new SqlExecutor(getSearchSchema()).execute("DELETE FROM search.CrawlResources WHERE Parent IN (SELECT id FROM search.CrawlCollections WHERE Path LIKE ?)", toPathString(path) + "%");
         new SqlExecutor(getSearchSchema()).execute("DELETE FROM search.CrawlCollections WHERE Path LIKE ?", toPathString(path) + "%");
+        idcache.clear();
     }
 
 
