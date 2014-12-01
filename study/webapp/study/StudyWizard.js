@@ -771,7 +771,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             flex: 1,
             selModel: selModel,
             plugins: expander,
-            viewConfig: {forceFit: true, scrollOffset: 0},
+            viewConfig: {forceFit: true},
             cls: 'studyWizardParticipantList',
             listeners: {
                 cellclick: function(cmp, rowIndex, colIndex, event){
@@ -787,7 +787,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
             columns: [
                 selModel,
-                {header:'&nbsp;&nbsp; ' + this.subject.nounSingular + ' Groups', dataIndex:'label', renderer: this.participantGroupRenderer, scope: this}
+                {header:'&nbsp;&nbsp;' + this.subject.nounSingular + ' Groups', dataIndex:'label', renderer: this.participantGroupRenderer, scope: this}
             ]
         });
 
@@ -872,7 +872,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 columns: 'dataSetId, name, label, category, description',
                 sort: 'label'
             }),
-            viewConfig: {forceFit: true, scrollOffset: 0},
+            viewConfig: {forceFit: true},
             loadMask:{msg:"Loading, please wait..."},
             enableFilters: true,
             editable: false,
@@ -892,24 +892,25 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 columns: 'dataSetId, name, label, category, description',
                 sort: 'label',
                 listeners :   {
+                    scope : this,
                     load : function(store)
                     {
                         if(store.data.items.length == 0)
                         {
-                            grid.setHeight(350);
+                            grid.setHeight(this.mode == 'ancillary' ? 350 : 325);
                             hiddenGrid.hide();
                         }
                     }
                 }
             }),
             title : 'Hidden Datasets',
-            viewConfig: {forceFit: true, scrollOffset: 0},
+            viewConfig: {forceFit: true},
             loadMask:{msg:"Loading, please wait..."},
             enableFilters: true,
             editable: false,
             stripeRows: true,
             pageSize: 300000,
-            height : 175,
+            height : this.mode == 'ancillary' ? 175 : 150,
             cls: 'studyWizardHiddenDatasetList',
             bbarCfg: [{hidden:true}],
             tbarCfg: [{hidden:true}]
@@ -950,39 +951,31 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         grid.on('viewready', viewReadyFunc, this);
         hiddenGrid.on('viewready', viewReadyFunc, this);
 
-        if(this.mode == 'ancillary'){
-          var syncTip = '' +
-                '<div>' +
-                    '<div class=\'g-tip-header\'>' +
-                        '<span>Data Refresh</span>' +
-                    '</div>' +
-                    '<div class=\'g-tip-subheader\'>' +
-                     '<span>Automatic:</span>' +
-                        ' When data refreshes or changes in the source study, the data will ' +
-                        'automatically refresh in the ancillary study as well.' +
-                    '</div>' +
-                    '<div class=\'g-tip-subheader\'>' +
-                        '<span>Manual:</span> When data refreshes or changes in the source study, ' +
-                        'the ancillary data will <b>not</b> refresh until you specifically choose to refresh.' +
-                    '</div>' +
+        var syncTip = '' +
+            '<div>' +
+                '<div class=\'g-tip-header\'>' +
+                    '<span>Data Refresh</span>' +
+                '</div>';
+        if (this.mode == 'publish')
+        {
+            syncTip += '<div class=\'g-tip-subheader\'>' +
+                 '<span>None:</span>' +
+                     ' The data in this published study will not refresh.' +
                 '</div>';
         }
-        else {
-            var syncTip = '' +
-                    '<div>' +
-                        '<div class=\'g-tip-header\'>' +
-                            '<span>Data Refresh</span>' +
-                         '</div>' +
-                    '<div class=\'g-tip-subheader\'>' +
-                     '<span>None:</span>' +
-                         ' The data in this published study will not refresh.' +
-                    '</div>' +
-                     '<div class=\'g-tip-subheader\'>' +
-                         '<span>Manual:</span> When data refreshes or changes in the source study, ' +
-                         'the published study data will <b>not</b> refresh until you specifically choose to refresh.' +
-                     '</div>' +
-                    '</div>';
-        }
+        syncTip += '<div class=\'g-tip-subheader\'>' +
+                 '<span>Automatic:</span>' +
+                    ' When data refreshes or changes in the source study, the data will ' +
+                    'automatically refresh in the ' +
+                    (this.mode == 'ancillary' ? 'ancillary' : 'published') +
+                    ' study as well.' +
+                '</div>' +
+                '<div class=\'g-tip-subheader\'>' +
+                    '<span>Manual:</span> When data refreshes or changes in the source study, the ' +
+                    (this.mode == 'ancillary' ? 'ancillary' : 'published') +
+                    ' data will <b>not</b> refresh until you specifically choose to refresh.' +
+                '</div>' +
+            '</div>';
 
         if(this.allowRefresh)
         {
@@ -992,7 +985,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         xtype: 'radiogroup', fieldLabel: 'Data Refresh', gtip : syncTip, columns: 1, width: 300, height: 75, defaults: {style:"margin: 0 0 2px 2px"},
                         items: [
                             {name: 'refreshType', boxLabel: 'None', inputValue: 'None', checked: this.mode != 'ancillary', hidden: this.mode == 'ancillary'},
-                            {name: 'refreshType', boxLabel: 'Automatic', inputValue: 'Automatic', checked: this.mode == 'ancillary', hidden: this.mode != 'ancillary'},
+                            {name: 'refreshType', boxLabel: 'Automatic', inputValue: 'Automatic', checked: this.mode == 'ancillary'},
                             {name: 'refreshType', boxLabel: 'Manual', inputValue: 'Manual'}
                         ],
                         listeners: {
@@ -1007,9 +1000,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         }
                     }
                 ],
-                padding: '10px 0px',
+                padding: '10px 0 0 0',
                 border: false,
-                height: 50,
+                height: 85,
                 width : 300
             });
 
@@ -1785,7 +1778,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         index.Label.renderer = Ext.util.Format.htmlEncode;
         index.description.renderer = Ext.util.Format.htmlEncode;
 
-        index.Label.header = 'Dataset';
+        index.Label.header = 'Label';
         index.Label.width = 250;
         index.DataSetId.hidden = true;
         index.Name.hidden = true;
@@ -1796,6 +1789,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         index.Folder.hidden = true;
         index.DisplayOrder.hidden = true;
 
+        index.Label.header = 'Label';
         index.Label.renderer = Ext.util.Format.htmlEncode;
 
         index.SequenceNumMin.header = 'Sequence Min';
