@@ -22,6 +22,7 @@ import org.apache.xmlbeans.XmlCursor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.DbCache;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CaseInsensitiveTreeSet;
 import org.labkey.api.collections.NamedObjectList;
@@ -109,6 +110,8 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     private int _cacheSize = DbCache.DEFAULT_CACHE_SIZE;
 
     protected final Map<String, ColumnInfo> _columnMap;
+    /** Columns that aren't part of this table any more, but can still be resolved for backwards compatibility */
+    protected final Map<String, ColumnInfo> _resolvedColumns = new CaseInsensitiveHashMap<>();
     private Map<String, MethodInfo> _methodMap;
     protected String _name;
     protected String _title = null;
@@ -379,7 +382,15 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         ColumnInfo ret = _columnMap.get(name);
         if (ret != null)
             return ret;
-        return resolveColumn(name);
+        if (_resolvedColumns.containsKey(name))
+            ret = _resolvedColumns.get(name);
+        else
+        {
+            ret = resolveColumn(name);
+            // Remember both hits and misses and reuse the same ColumnInfo if requested again
+            _resolvedColumns.put(name, ret);
+        }
+        return ret;
     }
 
     @Override
