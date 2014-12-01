@@ -45,6 +45,7 @@ public class CopyConfig
 
     protected SchemaKey _targetSchema;
     protected String _targetQuery;
+    protected boolean _bulkLoad;
     protected TargetOptions _targetOptions = TargetOptions.append;
     protected boolean _useTarget = true;
     protected TargetTypes _targetType = TargetTypes.query;
@@ -161,6 +162,26 @@ public class CopyConfig
     public void setTargetQuery(String targetQuery)
     {
         this._targetQuery = targetQuery;
+    }
+
+    public boolean isBulkLoad()
+    {
+        return _bulkLoad;
+    }
+
+    public void setBulkLoad(boolean bulkLoad)
+    {
+        _bulkLoad = bulkLoad;
+    }
+
+    public String getTargetString()
+    {
+        return _targetString;
+    }
+
+    public void setTargetString(String targetString)
+    {
+        _targetString = targetString;
     }
 
     public SourceOptions getSourceOptions()
