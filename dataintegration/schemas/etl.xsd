@@ -33,6 +33,11 @@
     <complexType name="TargetQueryType">
         <attribute name="schemaName" type="string" use="optional"/>
         <attribute name="queryName" type="string" use="optional"/>
+        <attribute name="bulkLoad" type="boolean" use="optional">
+            <annotation>
+                <documentation>Bulk loads minimize the logging for auditing purposes and other overhead.</documentation>
+            </annotation>
+        </attribute>
         <attribute name="filePath" type="string" use="optional"/>
         <attribute name="fileBaseName" type="string" use="optional"/>
         <attribute name="fileExtension" type="string" use="optional"/>

@@ -138,25 +138,30 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 context.getErrors().addRowError(new ValidationException("Can't import into table: " + meta.getFullTargetString()));
                 return -1;
             }
+            qus.setBulkLoad(meta.isBulkLoad());
+
+            Map<String, Object> extraContext = new HashMap<>();
+            extraContext.put("dataSource", "etl");
+
             setTargetStringForURI(meta.getFullTargetString());
 
             log.info("Target option: " + meta.getTargetOptions());
             if (CopyConfig.TargetOptions.merge == meta.getTargetOptions())
             {
-                return qus.mergeRows(u, c, source, context.getErrors(), null);
+                return qus.mergeRows(u, c, source, context.getErrors(), extraContext);
             }
             else
             if (CopyConfig.TargetOptions.truncate == meta.getTargetOptions())
             {
-                int rows = qus.truncateRows(u, c, null /*extra script context */);
+                int rows = qus.truncateRows(u, c, extraContext);
                 log.info("Deleted " + getNumRowsString(rows) + " from " + meta.getFullTargetString());
-                return qus.importRows(u, c, source, context.getErrors(), null);
+                return qus.importRows(u, c, source, context.getErrors(), extraContext);
             }
             else
             {
                 Map<Enum,Object> options = new HashMap<>();
                 options.put(QueryUpdateService.ConfigParameters.Logger,log);
-                return qus.importRows(u, c, source, context.getErrors(), options, null);
+                return qus.importRows(u, c, source, context.getErrors(), options, extraContext);
             }
         }
         catch (BatchValidationException |QueryUpdateServiceException ex)

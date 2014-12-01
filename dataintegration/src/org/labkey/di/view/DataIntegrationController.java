@@ -64,7 +64,9 @@ public class DataIntegrationController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return new JspView<>(DataIntegrationController.class, "transformConfiguration.jsp", null);
+            JspView<Object> result = new JspView<>(DataIntegrationController.class, "transformConfiguration.jsp", null);
+            result.setTitle("ETL Configurations");
+            return result;
         }
 
         @Override

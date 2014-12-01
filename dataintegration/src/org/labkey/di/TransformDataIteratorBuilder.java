@@ -17,6 +17,7 @@ package org.labkey.di;
 
 import com.drew.lang.annotations.Nullable;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.JdbcType;
@@ -27,8 +28,10 @@ import org.labkey.api.etl.LoggingDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.BatchValidationException;
+import org.labkey.api.util.HeartBeat;
 
-import static org.labkey.di.DataIntegrationQuerySchema.Columns.*;
+import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformModified;
+import static org.labkey.di.DataIntegrationQuerySchema.Columns.TransformRunId;
 
 /**
  * User: matthew
@@ -40,14 +43,17 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
     final int _transformRunId;
     final DataIteratorBuilder _input;
     Logger _statusLogger = null;
+    @NotNull
     PipelineJob _job;
+    private final String _statusName;
 
-    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, PipelineJob job)
+    public TransformDataIteratorBuilder(int transformRunId, DataIteratorBuilder input, @Nullable Logger statusLogger, @NotNull PipelineJob job, String statusName)
     {
         _transformRunId = transformRunId;
         _input = input;
         _statusLogger = statusLogger;
         _job = job;
+        _statusName = statusName;
     }
 
 
@@ -66,20 +72,24 @@ public class TransformDataIteratorBuilder implements DataIteratorBuilder
         final int[] count = new int[] {0};
         SimpleTranslator out = new SimpleTranslator(in, context)
         {
+            long lastChecked = HeartBeat.currentTimeMillis();
+
             @Override
             public boolean next() throws BatchValidationException
             {
                 boolean r = super.next();
                 if (r)
                 {
-                    count[0]++;
-                    if ( 0 == count[0] % 10000)
+                    // Check every 10 seconds to make sure we haven't been cancelled
+                    if (HeartBeat.currentTimeMillis() - lastChecked > 10000)
                     {
-                        if (null != _job && _job.isCancelled())
-                        {
-                            getGlobalError().addGlobalError("Job cancelled");
-                            return false;
-                        }
+                        lastChecked = HeartBeat.currentTimeMillis();
+                        _job.setStatus(_statusName + " RUNNING", count[0] + " rows processed");
+                    }
+
+                    count[0]++;
+                    if (0 == count[0] % 10000)
+                    {
                         if (null != _statusLogger)
                         {
                             _statusLogger.info("" + count[0] + " rows transferred");

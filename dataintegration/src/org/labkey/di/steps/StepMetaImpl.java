@@ -113,6 +113,10 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                 setTargetType(CopyConfig.TargetTypes.query);
                 setTargetSchema(SchemaKey.fromString(destination.getSchemaName()));
                 setTargetQuery(destination.getQueryName());
+                if (destination.isSetBulkLoad())
+                {
+                    setBulkLoad(destination.getBulkLoad());
+                }
             }
             else
             {

@@ -25,6 +25,7 @@ import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.QueryDataIteratorBuilder;
+import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
@@ -73,6 +74,11 @@ public class SimpleQueryTransformStep extends TransformTask
             if (!executeCopy(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger()))
                 throw new PipelineJobException("Error running executeCopy");
             recordWork(action);
+        }
+        catch (CancelledException x)
+        {
+            // Let this through so the job is considered CANCELLED when it's unwound
+            throw x;
         }
         catch (Exception x)
         {
@@ -124,7 +130,7 @@ public class SimpleQueryTransformStep extends TransformTask
                 if (null == source)
                     return false;
                 int transformRunId = getTransformJob().getTransformRunId();
-                DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log, getTransformJob());
+                DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log, getTransformJob(), _factory.getStatusName());
 
                 _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log);
 
@@ -135,6 +141,10 @@ public class SimpleQueryTransformStep extends TransformTask
             }
             long finish = System.currentTimeMillis();
             log.info("Copied " + getNumRowsString(_recordsInserted) + " in " + DateUtil.formatDuration(finish - start));
+        }
+        catch (CancelledException x)
+        {
+            throw x;
         }
         catch (Exception x)
         {
