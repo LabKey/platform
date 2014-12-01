@@ -16,6 +16,7 @@
 package org.labkey.di.steps;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.DbSchema;
@@ -31,6 +32,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.pipeline.RecordedAction;
 import org.labkey.api.query.QueryUpdateService;
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
@@ -214,7 +216,10 @@ public class StoredProcedureStep extends TransformTask
                 warn = warn.getNextWarning();
             }
 
-            returnValue = readOutputParams(stmt);
+            Integer procResult = readOutputParams(stmt);
+            if (procResult == null)
+                return false;
+            else returnValue = procResult;
             if (_meta.isUseTransaction())
                 scope.getCurrentTransaction().commit();
             if ((procReturns.equals(RETURN_TYPE.INTEGER)) && returnValue > 0)
@@ -244,7 +249,7 @@ public class StoredProcedureStep extends TransformTask
      *  For SQL Server. Have to step through all inline resultsets before allowed to access output parameters.
      * Also, the first may be the real resultset we want to write to a target. Postgres result sets are handled later with output parameters
      */
-    private void processInlineResults(CallableStatement stmt, boolean resultsAvailable) throws SQLException
+    private boolean processInlineResults(CallableStatement stmt, boolean resultsAvailable) throws SQLException
     {
         ResultSet inlineResult;
         boolean firstResult = true;
@@ -261,7 +266,8 @@ public class StoredProcedureStep extends TransformTask
                     if (firstResult && _meta.isUseTarget())
                     {
                         firstResult = false;
-                        writeToTarget(inlineResult);
+                        if (!writeToTarget(inlineResult))
+                            return false;
                     }
                     else
                         getJob().warn("Warning: more than one inline result set output by stored procedure. Only the first is processed.");
@@ -269,6 +275,8 @@ public class StoredProcedureStep extends TransformTask
                 resultsAvailable = stmt.getMoreResults();
             }
         }
+
+        return true;
     }
 
     private boolean getParametersFromDbMetadata() throws SQLException
@@ -418,13 +426,16 @@ public class StoredProcedureStep extends TransformTask
         }
     }
 
-    private int readOutputParams(CallableStatement stmt) throws SQLException
+    @Nullable
+    private Integer readOutputParams(CallableStatement stmt) throws SQLException
     {
-        int returnVal;
+        Integer returnVal;
+
         if (procReturns.equals(RETURN_TYPE.RESULTSET) && _meta.isUseTarget()) // Postgres resultset output
         {
-            returnVal = 0;
-            writeToTarget((ResultSet) stmt.getObject(1));
+            if (writeToTarget((ResultSet) stmt.getObject(1)))
+                returnVal = 0;
+            else returnVal = null;
         }
         else returnVal = dialect.readOutputParameters(scope, stmt, parameters);
 
@@ -466,12 +477,23 @@ public class StoredProcedureStep extends TransformTask
     /**
      * Treat the resultset output by the proc the same as a source query output, write it to the specified target
      */
-    private void writeToTarget(ResultSet rs)
+    private boolean writeToTarget(ResultSet rs)
     {
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
         context.setFailFast(true);
 
         _recordsInserted = appendToTarget(_meta, _context.getContainer(), _context.getUser(), context, new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context)) , getJob().getLogger());
+
+        if (context.getErrors().hasErrors())
+        {
+            for (ValidationException v : context.getErrors().getRowErrors())
+            {
+                getJob().error(v.getMessage());
+            }
+            return false;
+        }
+
+        return true;
     }
 }

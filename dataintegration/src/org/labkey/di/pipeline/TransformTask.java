@@ -383,6 +383,11 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                     log.error("ERROR: Target schema not found: " + meta.getTargetSchema());
                     return false;
                 }
+                if (null == targetSchema.getTable(meta.getTargetQuery()))
+                {
+                    log.error("ERROR: Target query not found: " + meta.getTargetQuery());
+                    return false;
+                }
             }
             else // Target is file
             {
