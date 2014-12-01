@@ -80,7 +80,8 @@ public class PipelineJobStoreImpl extends PipelineJobMarshaller
             String oldJobId = sf.getJobId();
             PipelineService.get().queueJob(job);
 
-            job.getLogger().info("Retrying job. Old Job ID: " + oldJobId +
+            job.getLogger().info("Retrying job.");
+            job.getLogger().debug("Retry details: Old Job ID: " + oldJobId +
                     (Objects.equals(sf.getJobId(), job.getJobGUID()) ? "" : ", new Job ID: " + job.getJobGUID()));
         }
         catch (ConversionException e)
