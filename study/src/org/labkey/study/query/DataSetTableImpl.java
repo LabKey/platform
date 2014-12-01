@@ -96,12 +96,13 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     public static final String QCSTATE_ID_COLNAME = "QCState";
     public static final String QCSTATE_LABEL_COLNAME = "QCStateLabel";
 
+    @NotNull
     private final DataSetDefinition _dsd;
 
     private TableInfo _fromTable;
     private ContainerFilterable _assayResultTable;
 
-    public DataSetTableImpl(final StudyQuerySchema schema, DataSetDefinition dsd)
+    public DataSetTableImpl(@NotNull final StudyQuerySchema schema, @NotNull DataSetDefinition dsd)
     {
         super(schema, dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true));
         String nameLabel = dsd.getName();
@@ -566,9 +567,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     @Override
     public Domain getDomain()
     {
-        if (_dsd != null)
-            return _dsd.getDomain();
-        return null;
+        return _dsd.getDomain();
     }
 
     private String getAssayResultAlias(String mainAlias)
