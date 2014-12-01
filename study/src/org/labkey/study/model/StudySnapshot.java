@@ -27,6 +27,7 @@ import org.labkey.api.reports.ReportService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
 import org.labkey.api.study.StudySnapshotType;
+import org.labkey.api.study.Visit;
 import org.labkey.api.util.GUID;
 import org.labkey.study.writer.StudyExportContext;
 
@@ -258,7 +259,11 @@ public class StudySnapshot
         private void loadParticipants(StudyExportContext ctx, ChildStudyDefinition def)
         {
             participants = ctx.getParticipants();
-            if (def.getGroups() != null && def.getGroups().length > 0)
+            if (def.isParticipantGroupsAll())
+            {
+                participantGroups = null; // indicates all selected
+            }
+            else if (def.getGroups() != null && def.getGroups().length > 0)
             {
                 participantGroups = Arrays.asList(ArrayUtils.toObject(def.getGroups()));
             }
@@ -287,9 +292,16 @@ public class StudySnapshot
         {
             // at least one visits is required, so it is either all or a subset
             if (ctx.getVisitIds() != null && !ctx.getVisitIds().isEmpty())
-                visits = ctx.getVisitIds();
+            {
+                if (study != null && ctx.getVisitIds().size() == study.getVisits(Visit.Order.SEQUENCE_NUM).size())
+                    visits = null; // indicates all selected
+                else
+                    visits = ctx.getVisitIds();
+            }
             else
+            {
                 visits = null; // indicates all selected
+            }
         }
 
         private void loadSpecimens(ChildStudyDefinition def, boolean refresh)

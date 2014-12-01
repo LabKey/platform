@@ -55,6 +55,7 @@ public class ChildStudyDefinition
     private List<Vial> _vials = null;
 
     // used to persist the snapshot settings (i.e. all vs selected subset)
+    private boolean _participantGroupsAll;
     private boolean _studyPropsAll;
     private boolean _folderPropsAll;
     private boolean _viewsAll;
@@ -335,5 +336,15 @@ public class ChildStudyDefinition
     public void setReportsAll(boolean reportsAll)
     {
         _reportsAll = reportsAll;
+    }
+
+    public boolean isParticipantGroupsAll()
+    {
+        return _participantGroupsAll;
+    }
+
+    public void setParticipantGroupsAll(boolean participantGroupsAll)
+    {
+        _participantGroupsAll = participantGroupsAll;
     }
 }

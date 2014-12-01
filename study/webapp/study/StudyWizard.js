@@ -22,7 +22,6 @@ LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName
         success: function(data) {
             var row = data.rows[0];
             var settings = Ext.decode(row.Settings);
-            console.log(row['Destination/Name']);
 
             new LABKEY.study.CreateStudyWizard({
                 mode: (settings && settings.type ? settings.type : 'publish'),
@@ -286,10 +285,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             title ='Create Ancillary Study';
         }
         else if (this.mode == "specimen") {
-            title ='Publish Specimen Study';
+            title = (this.settings ? 'Republish' : 'Publish') + ' Specimen Study';
         }
         else {
-            title = 'Publish Study';
+            title = (this.settings ? 'Republish' : 'Publish') + ' Study';
         }
 
         this.win = new Ext.Window({
@@ -709,7 +708,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 }
         );
 
-        this.store = new Ext.data.JsonStore({
+        var participantGroupStore = new Ext.data.JsonStore({
             proxy: new Ext.data.HttpProxy({
                 url : LABKEY.ActionURL.buildURL("participant-group", "browseParticipantGroups", null, {includePrivateGroups : false}),
                 method : 'POST'
@@ -744,7 +743,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         });
 
         var selModel = new Ext.grid.CheckboxSelectionModel({checkOnly:true});
-        selModel.on('selectionchange', function(cmp){this.selectedParticipantGroups = cmp.getSelections();}, this);
+        selModel.on('selectionchange', function(cmp){
+            this.selectedParticipantGroups = cmp.getSelections();
+            this.selectedParticipantGroupsAll = selModel.getCount() == participantGroupStore.getCount();
+        }, this);
 
         var expander = new LABKEY.grid.RowExpander({
             tpl : new Ext.XTemplate(
@@ -765,7 +767,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             });
 
         var grid = new Ext.grid.GridPanel({
-            store: this.store,
+            store: participantGroupStore,
             flex: 1,
             selModel: selModel,
             plugins: expander,
@@ -792,11 +794,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         grid.on('viewready', function(grid){
             if (this.settings && this.settings.participants != null)
             {
-                if (Ext.isDefined(this.settings.participantGroups) && this.settings.pariticpantGroups == null)
+                if (Ext.isDefined(this.settings.participantGroups) && this.settings.participantGroups == null)
                 {
-                    var el = grid.el.dom.getElementsByClassName('x-grid3-hd-checker')[0];
-                    Ext.fly(el).addClass('x-grid3-hd-checker-on');
-                    grid.getSelectionModel().selectAll();
+                    this.gridSelectAll(grid);
                 }
                 else
                 {
@@ -937,9 +937,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             {
                 if (!this.settings.datasets)
                 {
-                    var el = grid.el.dom.getElementsByClassName('x-grid3-hd-checker')[0];
-                    Ext.fly(el).addClass('x-grid3-hd-checker-on');
-                    grid.getSelectionModel().selectAll();
+                    this.gridSelectAll(grid);
                 }
                 else
                 {
@@ -1115,9 +1113,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             {
                 if (!this.settings.views)
                 {
-                    var el = grid.el.dom.getElementsByClassName('x-grid3-hd-checker')[0];
-                    Ext.fly(el).addClass('x-grid3-hd-checker-on');
-                    grid.getSelectionModel().selectAll();
+                    this.gridSelectAll(grid);
                 }
                 else
                 {
@@ -1203,9 +1199,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cls : 'studyObjects',
             store: studyStore,
             selModel: selectionModel,
+            viewConfig: {forceFit: true, scrollOffset: 0},
             columns: [
                 selectionModel,
-                {header: 'Study Object', width: 300, sortable: true, dataIndex: 'name'}
+                {header: 'Study Object', sortable: true, dataIndex: 'name'}
             ],
             loadMask:{msg:"Loading, please wait..."},
             editable: false,
@@ -1226,9 +1223,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             {
                 if (!this.settings.studyObjects)
                 {
-                    var el = grid.el.dom.getElementsByClassName('x-grid3-hd-checker')[0];
-                    Ext.fly(el).addClass('x-grid3-hd-checker-on');
-                    grid.getSelectionModel().selectAll();
+                    this.gridSelectAll(grid);
                 }
                 else
                 {
@@ -1344,9 +1339,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             {
                 if (!this.settings.reports)
                 {
-                    var el = grid.el.dom.getElementsByClassName('x-grid3-hd-checker')[0];
-                    Ext.fly(el).addClass('x-grid3-hd-checker-on');
-                    grid.getSelectionModel().selectAll();
+                    this.gridSelectAll(grid);
                 }
                 else
                 {
@@ -1478,18 +1471,18 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         grid.on('viewready', function(grid){
             if (this.settings)
             {
-                if (!this.settings.visits) // this case should never happen... (as in any republish, this will be a list of some size, include 0)
-                    grid.getSelectionModel().selectAll();
+                if (!this.settings.visits)
+                {
+                    this.gridSelectAll(grid);
+                }
                 else
                 {
                     var visits = this.setify(this.settings.visits);
                     var records = grid.store.queryBy(function(rec) { return (rec.get('RowId') in visits); }).getRange();
                     if ( grid.store.getCount() == records.length )
-                    {
-                        var el = grid.el.dom.getElementsByClassName('x-grid3-hd-checker')[0];
-                        Ext.fly(el).addClass('x-grid3-hd-checker-on');
-                    }
-                    grid.getSelectionModel().selectRecords(records, true);
+                        this.gridSelectAll(grid);
+                    else
+                        grid.getSelectionModel().selectRecords(records, true);
                 }
             }
         }, this);
@@ -1562,9 +1555,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 autoLoad: true
             }),
             selModel: selectionModel,
+            viewConfig : { forceFit : true },
             columns: [
                 selectionModel,
-                {header: 'Name', width: 300, sortable: true, dataIndex: 'name', renderer: Ext.util.Format.htmlEncode}
+                {header: 'Name', sortable: true, dataIndex: 'name', renderer: Ext.util.Format.htmlEncode}
             ],
             loadMask:{msg:"Loading, please wait..."},
             editable: false,
@@ -1588,9 +1582,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             {
                 if(!this.settings.lists)
                 {
-                    var el = grid.el.dom.getElementsByClassName('x-grid3-hd-checker')[0];
-                    Ext.fly(el).addClass('x-grid3-hd-checker-on');
-                    grid.getSelectionModel().selectAll();
+                    this.gridSelectAll(grid);
                 }
                 else
                 {
@@ -1643,9 +1635,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cls: 'folderObjects',
             store: folderStore,
             selModel: selectionModel,
+            viewConfig: {forceFit: true, scrollOffset: 0},
             columns: [
                 selectionModel,
-                {header: 'Folder Object', width: 300, sortable: true, dataIndex: 'name', name: 'name'}
+                {header: 'Folder Object', sortable: true, dataIndex: 'name', name: 'name'}
             ],
             loadMask:{msg:"Loading, please wait..."},
             editable: false,
@@ -1664,25 +1657,22 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         selectionGrid.on('viewready', function(grid){
             if (this.settings)
             {
-                var selModel = grid.getSelectionModel();
                 if (!this.settings.folderObjects)
                 {
-                    var el = grid.el.dom.getElementsByClassName('x-grid3-hd-checker')[0];
-                    Ext.fly(el).addClass('x-grid3-hd-checker-on');
-                    selModel.selectAll();
+                    this.gridSelectAll(grid);
                 }
                 else
                 {
                     var folderObjects = this.setify(this.settings.folderObjects);
                     var records = grid.store.queryBy(function(rec) { return (rec.get('name') in folderObjects); }).getRange();
-                    if (records.length == selModel.getCount())
+                    if (records.length == grid.store.getCount())
                     {
-                        var el = grid.el.dom.getElementsByClassName('x-grid3-hd-checker')[0];
-                        Ext.fly(el).addClass('x-grid3-hd-checker-on');
-                        selModel.selectAll();
+                        this.gridSelectAll(grid);
                     }
                     else
-                        selModel.selectRecords(records, true);
+                    {
+                        grid.getSelectionModel().selectRecords(records, true);
+                    }
                 }
             }
         }, this);
@@ -1744,10 +1734,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             cls: 'studyWizardPublishOptionsList',
             store: publishOptionsStore,
             selModel: selectionModel,
+            viewConfig: {forceFit: true, scrollOffset: 0},
             columns: [
                 selectionModel,
-                {header: 'Publish Option', width: 200, sortable: true, dataIndex: 'name', name: 'name'},
-                {header: 'Description', width: 400, sortable: true, dataIndex: 'description', name: 'description', renderer: columnWrap}
+                {header: 'Publish Option', width: 220, sortable: true, dataIndex: 'name', name: 'name'},
+                {header: 'Description', width: 380, sortable: true, dataIndex: 'description', name: 'description', renderer: columnWrap}
             ],
             loadMask: {msg:"Loading, please wait..."},
             editable: false,
@@ -1772,11 +1763,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 publishOptions['shiftDates'] = this.settings.shiftDates;
                 publishOptions['useAlternateParticipantIds'] = this.settings.useAlternateParticipantIds;
                 if (this.settings.maskClinic && this.settings.removeProtectedColumns && this.settings.shiftDates && this.settings.useAlternateParticipantIds)
-                {
-                    var el = grid.el.dom.getElementsByClassName('x-grid3-hd-checker')[0];
-                    Ext.fly(el).addClass('x-grid3-hd-checker-on');
-                }
-                grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return publishOptions[rec.get('option')]; }).getRange(), true);
+                    this.gridSelectAll(grid);
+                else
+                    grid.getSelectionModel().selectRecords(grid.store.queryBy(function(rec) { return publishOptions[rec.get('option')]; }).getRange(), true);
             }
         }, this);
 
@@ -1818,6 +1807,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         index.SequenceNumMax.width = 70;
     },
 
+    gridSelectAll: function(grid) {
+        var el = grid.el.dom.getElementsByClassName('x-grid3-hd-checker')[0];
+        Ext.fly(el).addClass('x-grid3-hd-checker-on');
+        grid.getSelectionModel().selectAll();
+    },
+
     onFinish : function() {
         // prepare the params to post to the api action
         var params = {};
@@ -1850,6 +1845,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                     var id = Ext.id();
                     hiddenFields.push(id);
                     this.nameFormPanel.add({xtype:'hidden', id: id, name: 'groups', value: category.id});
+                }
+
+                if (this.selectedParticipantGroupsAll) {
+                    params.participantGroupsAll = true;
                 }
             }
         }
