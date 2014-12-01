@@ -208,6 +208,7 @@ public class StudySnapshot
         /* Timepoints */
         private Set<Integer> visits = new HashSet<>();
         /* Specimens */
+        private Integer specimenRequestId;
         private boolean includeSpecimens;
         private boolean specimenRefresh;
         /* Study Objects */
@@ -306,6 +307,7 @@ public class StudySnapshot
 
         private void loadSpecimens(ChildStudyDefinition def, boolean refresh)
         {
+            specimenRequestId = def.getRequestId();
             includeSpecimens = def.isIncludeSpecimens();
             specimenRefresh = refresh;
         }
@@ -492,6 +494,11 @@ public class StudySnapshot
         public StudySnapshotType getType()
         {
             return type;
+        }
+
+        public Integer getSpecimenRequestId()
+        {
+            return specimenRequestId;
         }
     }
 }

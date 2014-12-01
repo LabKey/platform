@@ -22,17 +22,32 @@ LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName
         success: function(data) {
             var row = data.rows[0];
             var settings = Ext.decode(row.Settings);
-
-            new LABKEY.study.CreateStudyWizard({
+            var config = {
                 mode: (settings && settings.type ? settings.type : 'publish'),
                 studyName: availableContainerName,
                 settings: settings,
                 parent: row['Destination/Name'],
                 createdBy: row['CreatedBy/DisplayName'],
                 created: row.Created
-            }).show();
+            };
+
+            // issue 22070: specimen study republish needs to include requestId
+            if (settings.type == 'specimen')
+            {
+                if (!settings.specimenRequestId) {
+                    config.mode = 'publish';
+                }
+                else {
+                    config.requestId = settings.specimenRequestId;
+                    config.allowRefresh = false;
+                }
+            }
+
+            new LABKEY.study.CreateStudyWizard(config).show();
+        },
+        failure: function(response) {
+            Ext.Msg.alert("Error", response.exception);
         }
-        // TODO: failure case
     });
 
 };
