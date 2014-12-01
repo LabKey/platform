@@ -35,10 +35,8 @@
 <%@ page import="org.labkey.study.model.SpecimenRequestStatus" %>
 <%@ page import="org.labkey.study.model.Vial" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
-<%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 
