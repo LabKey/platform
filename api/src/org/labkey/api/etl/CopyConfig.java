@@ -106,7 +106,7 @@ public class CopyConfig
 
     public enum TargetFileProperties
     {
-        path,
+        dir,
         baseName,
         extension,
         columnDelimiter,
