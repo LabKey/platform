@@ -94,6 +94,7 @@ public class RolapCachedCubeFactory
                 }
 
                 generateHierachyMembers(cube, hdef, h);
+                h.levels.seal();
             }
             d.hierarchies.seal();
         }
