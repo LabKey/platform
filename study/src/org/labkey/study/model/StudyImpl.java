@@ -786,12 +786,10 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     @Override
     public boolean isAncillaryStudy()
     {
-        // TODO: prior to 15.1 we couldn't actually correctly distinquish between publish and ancillary studies
-        //       because of this, the specimen tables which are showing data with container filter StudyAndSourceStudy
-        //       cause issues in Publish studies that have a source study (i.e. data refresh = Manual).
-        //       Once that issue is fixed (see VisitManager.getSpecimenTable and StudyQuerySchema.getAncillaryStudyFilterFragments)
-        //       the hasSourceStudy() part of this check can be removed
-        return hasSourceStudy() || StudySnapshotType.ancillary.equals(getStudySnapshotType());
+        // prior to 15.1 we couldn't actually correctly distinquish between publish and ancillary studies,
+        // because of this we have to have the second check for if the study has a source study but isn't of type publish
+        return StudySnapshotType.ancillary.equals(getStudySnapshotType())
+            || (hasSourceStudy() && !StudySnapshotType.publish.equals(getStudySnapshotType()));
     }
 
     @Override
