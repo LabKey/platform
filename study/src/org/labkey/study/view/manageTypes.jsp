@@ -43,7 +43,6 @@
 <%
     Container c = getContainer();
     Study study = StudyManager.getInstance().getStudy(c);
-    boolean sharedDatasets = null != StudyManager.getInstance().getSharedStudy(study);
 
     List<? extends DataSet> datasets = study.getDatasetsByType(DataSet.TYPE_STANDARD, DataSet.TYPE_PLACEHOLDER);
     int countUndefined = 0;
@@ -53,8 +52,8 @@
         if (null == d || 0 == d.getProperties().size())
             countUndefined++;
     }
-    String dateFormat = DateUtil.getDateFormatString(getContainer());
-    String numberFormat = Formats.getNumberFormatString(getContainer());
+    String dateFormat = DateUtil.getDateFormatString(c);
+    String numberFormat = Formats.getNumberFormatString(c);
 %>
 <table>
     <tr>
@@ -108,9 +107,9 @@
     </tr>
 
     <tr>
-        <td>New Datasets can be added to this study at any time.</td>
+        <td>New datasets can be added to this study at any time.</td>
         <%
-            ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, getContainer());
+            ActionURL createURL = new ActionURL(StudyController.DefineDatasetTypeAction.class, c);
             createURL.addParameter("autoDatasetId", "true");
         %>
         <td><%= textLink("Create New Dataset", createURL)%></td>
