@@ -183,7 +183,7 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
             conjunction = " AND ";
         }
 
-        if (!ctx.getParticipants().isEmpty())
+        if (null != ctx.getParticipants() && !ctx.getParticipants().isEmpty())
         {
             sql.append(conjunction);
             if (ctx.isAlternateIds())

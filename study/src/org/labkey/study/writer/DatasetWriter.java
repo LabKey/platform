@@ -218,7 +218,7 @@ public class DatasetWriter implements InternalStudyWriter
             {
                 filter.addInClause(FieldKey.fromParts("VisitRowId"), ctx.getVisitIds());
             }
-            if (!ctx.getParticipants().isEmpty())
+            if (ctx.getParticipants() != null && !ctx.getParticipants().isEmpty())
             {
                 filter.addInClause(FieldKey.fromParts(StudyService.get().getSubjectColumnName(ctx.getContainer())), ctx.getParticipants());
             }
