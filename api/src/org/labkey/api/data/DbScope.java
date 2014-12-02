@@ -38,6 +38,7 @@ import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.Path;
 import org.labkey.data.xml.TablesDocument;
 
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.sql.DataSource;
 import javax.sql.PooledConnection;
@@ -56,6 +57,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -108,6 +110,7 @@ public class DbScope
     private static DbScope _labkeyScope = null;
 
     private final String _dsName;
+    private final String _displayName;
     private final DataSource _dataSource;
     private final @Nullable String _databaseName;    // Possibly null, e.g., for SAS datasources
     private final String _URL;
@@ -138,6 +141,7 @@ public class DbScope
     protected DbScope()
     {
         _dsName = null;
+        _displayName = null;
         _dataSource = null;
         _databaseName = null;
         _URL = null;
@@ -150,9 +154,47 @@ public class DbScope
     }
 
 
-    // Attempt a (non-pooled) connection to a datasource.  We don't use DbSchema or normal pooled connections here
-    // because failed connections seem to get added into the pool.
-    protected DbScope(String dsName, DataSource dataSource) throws ServletException, SQLException
+    // Data source properties that administrators can specify in labkey.xml. To add support for a new property, simply
+    // add a getter & setter to this bean, and then do something with the typed value in DbScope.
+    public static class DataSourceProperties
+    {
+        private boolean _logging = false;
+        private String _displayName = null;
+
+        public DataSourceProperties()
+        {
+        }
+
+        private static DataSourceProperties get(Map<String, String> map)
+        {
+            return map.isEmpty() ? new DataSourceProperties() : BeanObjectFactory.Registry.getFactory(DataSourceProperties.class).fromMap(map);
+        }
+
+        public boolean isLogging()
+        {
+            return _logging;
+        }
+
+        public void setLogging(boolean logging)
+        {
+            _logging = logging;
+        }
+
+        public @Nullable String getDisplayName()
+        {
+            return _displayName;
+        }
+
+        public void setDisplayName(String displayName)
+        {
+            _displayName = displayName;
+        }
+    }
+
+
+    // Standard DbScope constructor. Attempt a (non-pooled) connection to the datasource to gather meta data properties.
+    // We don't use DbSchema or normal pooled connections here because failed connections seem to get added into the pool.
+    protected DbScope(String dsName, DataSource dataSource, DataSourceProperties props) throws ServletException, SQLException
     {
         try (Connection conn = dataSource.getConnection())
         {
@@ -177,6 +219,7 @@ public class DbScope
             }
 
             _dsName = dsName;
+            _displayName = null != props.getDisplayName() ? props.getDisplayName() : extractDisplayName(_dsName);
             _dataSource = dataSource;
             _databaseName = _dialect.getDatabaseName(_dsName, _dataSource);
             _URL = dbmd.getURL();
@@ -187,6 +230,14 @@ public class DbScope
             _schemaCache = new DbSchemaCache(this);
             _tableCache = new SchemaTableInfoCache(this);
         }
+    }
+
+    private static String extractDisplayName(String dsName)
+    {
+        if (dsName.endsWith("DataSource"))
+            return dsName.substring(0, dsName.length() - 10);
+        else
+            return dsName;
     }
 
 
@@ -201,13 +252,9 @@ public class DbScope
         return _dsName;
     }
 
-    // Strip off "DataSource" to create friendly name.  TODO: Add UI to allow site admin to add friendly name to each data source.
     public String getDisplayName()
     {
-        if (_dsName.endsWith("DataSource"))
-            return _dsName.substring(0, _dsName.length() - 10);
-        else
-            return _dsName;
+        return _displayName;
     }
 
     public DataSource getDataSource()
@@ -787,7 +834,7 @@ public class DbScope
     }
 
 
-    // Each scope holds the cache for all its tables.  This makes it easier to 1) configure that cache on a per-scope
+    // Each scope holds the cache for all its tables. This makes it easier to 1) configure that cache on a per-scope
     // basis and 2) invalidate schemas and their tables together
     public <OptionType extends SchemaTableOptions> SchemaTableInfo getTable(OptionType options)
     {
@@ -910,24 +957,35 @@ public class DbScope
                         }
                     }
 
-                    DbScope scope = new DbScope(dsName, dataSources.get(dsName));
+                    Map<String, String> dsProperties = new HashMap<>();
+                    ServletContext ctx = ModuleLoader.getServletContext();
+                    Enumeration enumeration = ctx.getInitParameterNames();
+
+                    while (enumeration.hasMoreElements())
+                    {
+                        String name = (String)enumeration.nextElement();
+                        if (name.startsWith(dsName + ":"))
+                            dsProperties.put(name.substring(name.indexOf(':') + 1), ctx.getInitParameter(name));
+                    }
+
+                    DbScope scope = new DbScope(dsName, dataSources.get(dsName), DataSourceProperties.get(dsProperties));
                     scope.getSqlDialect().prepare(scope);
                     _scopes.put(dsName, scope);
                 }
                 catch (Exception e)
                 {
-                    // Server can't start up if it can't connect to the labkey datasource
+                    // Server can't start up if it can't connect to the labkey data source
                     if (dsName.equals(labkeyDsName))
                     {
                         // Rethrow a ConfigurationException -- it includes important details about the failure
                         if (e instanceof ConfigurationException)
                             throw (ConfigurationException)e;
 
-                        throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in labkey.xml.  Server cannot start.", e);
+                        throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in labkey.xml. Server cannot start.", e);
                     }
 
                     // Failure to connect with any other datasource results in an error message, but doesn't halt startup  
-                    LOG.error("Cannot connect to DataSource \"" + dsName + "\" defined in labkey.xml.  This DataSource will not be available during this server session.", e);
+                    LOG.error("Cannot connect to DataSource \"" + dsName + "\" defined in labkey.xml. This DataSource will not be available during this server session.", e);
                     addDataSourceFailure(dsName, e);
                 }
             }
@@ -935,15 +993,15 @@ public class DbScope
             _labkeyScope = _scopes.get(labkeyDsName);
 
             if (null == _labkeyScope)
-                throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in labkey.xml.  Server cannot start.");
+                throw new ConfigurationException("Cannot connect to DataSource \"" + labkeyDsName + "\" defined in labkey.xml. Server cannot start.");
 
             _labkeyScope.getSqlDialect().prepareNewLabKeyDatabase(_labkeyScope);
         }
     }
 
 
-    // Ensure we can connect to the specified datasource.  If the connection fails with a "database doesn't exist" exception
-    // then attempt to create the database.  Return true if the database existed, false if it was just created.  Throw if some
+    // Ensure we can connect to the specified datasource. If the connection fails with a "database doesn't exist" exception
+    // then attempt to create the database. Return true if the database existed, false if it was just created. Throw if some
     // other exception occurs (e.g., connection fails repeatedly with something other than "database doesn't exist" or database
     // can't be created.)
     public static boolean ensureDataBase(String dsName, DataSource ds) throws ServletException
@@ -1311,7 +1369,7 @@ public class DbScope
         }
     }
 
-    // Represents a single database transaction.  Holds onto the Connection, the temporary caches to use during that
+    // Represents a single database transaction. Holds onto the Connection, the temporary caches to use during that
     // transaction, and the tasks to run immediately after commit to update the shared caches with removals.
     protected class TransactionImpl implements Transaction
     {
