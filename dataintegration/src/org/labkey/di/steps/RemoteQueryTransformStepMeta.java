@@ -17,7 +17,7 @@ package org.labkey.di.steps;
 
 import org.apache.xmlbeans.XmlException;
 import org.labkey.di.pipeline.TransformManager;
-import org.labkey.etl.xml.SchemaQueryType;
+import org.labkey.etl.xml.SourceObjectType;
 import org.labkey.etl.xml.TransformType;
 
 /**
@@ -32,7 +32,7 @@ public class RemoteQueryTransformStepMeta extends SimpleQueryTransformStepMeta
 
     protected void parseSource(TransformType transformXML) throws XmlException
     {
-        SchemaQueryType source = transformXML.getSource();
+        SourceObjectType source = transformXML.getSource();
 
         if (null != source)
         {

@@ -112,8 +112,9 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     {
         if (CopyConfig.TargetTypes.query.equals(meta.getTargetType()))
             return appendToTargetQuery(meta, c, u, context, source, log);
-        else
+        else if (CopyConfig.TargetTypes.file.equals(meta.getTargetType()))
             return appendToTargetFile(meta, context, source, log);
+        else throw new IllegalArgumentException("Invalid target type specified.");
     }
 
     private int appendToTargetQuery(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
@@ -146,22 +147,20 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             setTargetStringForURI(meta.getFullTargetString());
 
             log.info("Target option: " + meta.getTargetOptions());
-            if (CopyConfig.TargetOptions.merge == meta.getTargetOptions())
+            switch (meta.getTargetOptions())
             {
-                return qus.mergeRows(u, c, source, context.getErrors(), extraContext);
-            }
-            else
-            if (CopyConfig.TargetOptions.truncate == meta.getTargetOptions())
-            {
-                int rows = qus.truncateRows(u, c, extraContext);
-                log.info("Deleted " + getNumRowsString(rows) + " from " + meta.getFullTargetString());
-                return qus.importRows(u, c, source, context.getErrors(), extraContext);
-            }
-            else
-            {
-                Map<Enum,Object> options = new HashMap<>();
-                options.put(QueryUpdateService.ConfigParameters.Logger,log);
-                return qus.importRows(u, c, source, context.getErrors(), options, extraContext);
+                case merge:
+                    return qus.mergeRows(u, c, source, context.getErrors(), extraContext);
+                case truncate:
+                    int rows = qus.truncateRows(u, c, extraContext);
+                    log.info("Deleted " + getNumRowsString(rows) + " from " + meta.getFullTargetString());
+                    return qus.importRows(u, c, source, context.getErrors(), extraContext);
+                case append:
+                    Map<Enum, Object> options = new HashMap<>();
+                    options.put(QueryUpdateService.ConfigParameters.Logger, log);
+                    return qus.importRows(u, c, source, context.getErrors(), options, extraContext);
+                default:
+                    throw new IllegalArgumentException("Invalid target option specified: " + meta.getTargetOptions());
             }
         }
         catch (BatchValidationException |QueryUpdateServiceException ex)
@@ -207,6 +206,8 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
             tsv.write(outputFile);
             int rowCount = tsv.getDataRowCount();
+            if (rowCount > 0)
+                getJob().getParameters().put("etlOutputHadRows", "true");
             log.info("Wrote " + rowCount + " rows to file " + outputFile.toString());
 
             // Set some properties in the job for FileAnalysis pipeline steps
@@ -336,7 +337,6 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         {
             // input is source table
             // output is dest table, or a stored procedure
-            // todo: this is a fake URI, figure out the real story for the Data Input/Ouput for a transform step
             if (_meta.isUseSource())
             {
                 action.addInput(new URI(_meta.getSourceSchema() + "." + _meta.getSourceQuery()), TransformTask.INPUT_ROLE);

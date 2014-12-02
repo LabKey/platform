@@ -21,8 +21,8 @@ import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
 import org.labkey.api.etl.CopyConfig;
 import org.labkey.api.query.SchemaKey;
 import org.labkey.di.pipeline.TransformManager;
-import org.labkey.etl.xml.SchemaQueryType;
-import org.labkey.etl.xml.TargetQueryType;
+import org.labkey.etl.xml.SourceObjectType;
+import org.labkey.etl.xml.TargetObjectType;
 import org.labkey.etl.xml.TransformType;
 
 import java.util.LinkedHashMap;
@@ -80,7 +80,7 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
 
     protected void parseSource(TransformType transformXML) throws XmlException
     {
-        SchemaQueryType source = transformXML.getSource();
+        SourceObjectType source = transformXML.getSource();
 
         if (null != source)
         {
@@ -104,7 +104,7 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
 
     protected void parseDestination(TransformType transformXML) throws XmlException
     {
-        TargetQueryType destination = transformXML.getDestination();
+        TargetObjectType destination = transformXML.getDestination();
 
         if (null != destination)
         {

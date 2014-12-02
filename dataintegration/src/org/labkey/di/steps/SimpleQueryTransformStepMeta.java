@@ -38,16 +38,12 @@ public class SimpleQueryTransformStepMeta extends StepMetaImpl
     @Override
     protected void parseWorkOptions(TransformType transformXML) throws XmlException
     {
-        if (null != transformXML.getSource())
-        {
-            parseSource(transformXML);
-        }
-        else throw new XmlException(TransformManager.INVALID_SOURCE);
+        super.parseWorkOptions(transformXML);
 
-        if (null != transformXML.getDestination())
-        {
-            parseDestination(transformXML);
-        }
-        else throw new XmlException(TransformManager.INVALID_DESTINATION);
+        // Source and target are both required for simple query transform
+        if (!isUseSource())
+            throw new XmlException(TransformManager.INVALID_SOURCE);
+        if (!isUseTarget())
+            throw new XmlException(TransformManager.INVALID_DESTINATION);
     }
 }

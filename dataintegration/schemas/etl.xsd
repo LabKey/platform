@@ -22,7 +22,7 @@
         <attribute name="loadReferencedFiles" type="boolean" default="false"/>
     </complexType>
 
-    <complexType name="SchemaQueryType">
+    <complexType name="SourceObjectType">
         <attribute name="schemaName" type="string" use="required"/>
         <attribute name="queryName" type="string" use="required"/>
         <attribute name="timestampColumnName" type="string" use="optional"/>
@@ -30,7 +30,10 @@
         <attribute name="remoteSource" type="string" use="optional"/>
     </complexType>
 
-    <complexType name="TargetQueryType">
+    <complexType name="TargetObjectType">
+        <annotation>
+            <documentation>Targets will be of type 'query' (the default), or 'file'. For query, the schemaName and queryName attributes are required. For file, the fileBaseName and fileExtension attributes are required.</documentation>
+        </annotation>
         <attribute name="schemaName" type="string" use="optional"/>
         <attribute name="queryName" type="string" use="optional"/>
         <attribute name="bulkLoad" type="boolean" use="optional">
@@ -39,12 +42,20 @@
             </annotation>
         </attribute>
         <attribute name="filePath" type="string" use="optional"/>
-        <attribute name="fileBaseName" type="string" use="optional"/>
+        <attribute name="fileBaseName" type="string" use="optional">
+            <annotation>
+                <documentation>The base name to use for an output target table. Special characters:<p/>'#' will be substituted with the transformRunId.<p/>'?' will be substituted with the timestamp at file creation.</documentation>
+            </annotation>
+        </attribute>
         <attribute name="fileExtension" type="string" use="optional"/>
         <attribute name="columnDelimiter" type="string" use="optional"/>
-        <attribute name="quote" type="string" use="optional"/>
+        <attribute name="quote" type="string" use="optional">
+            <annotation>
+                <documentation>Character to qualify text when a field contains the column or row delimiter</documentation>
+            </annotation>
+        </attribute>
         <attribute name="rowDelimiter" type="string" use="optional"/>
-        <attribute name="targetOption" type="etl:TargetOptionType" use="optional"/>
+        <attribute name="targetOption" type="etl:TargetOptionType" use="optional" default="append"/>
         <attribute name="type" type="etl:TargetTypeType" use="optional" default="query"/>
     </complexType>
 
@@ -66,7 +77,15 @@
     <simpleType name="TargetTypeType">
         <restriction base="string">
             <enumeration value="query"/>
-            <enumeration value="file"/>
+            <enumeration value="file">
+                <annotation>
+                    <documentation>The target will be a file of basename and extension specified by fileBaseName and fileExtension.
+                         By default the field and row separators will be for a tsv file, but this can be overridden with optional columnDelimiter and rowDelimiter attributes.
+                        For ETLs that use the target file as input to a pipeline command tasks, it is possible to skip running the command task for a 0 row file. Use the "etlOutputHadRows"
+                        parameter in the pipeline configuration. See nlpContext.xml for an example of this.
+                    </documentation>
+                </annotation>
+            </enumeration>
         </restriction>
     </simpleType>
 
@@ -95,8 +114,8 @@
       <all>
         <!-- <element name="properties" type="etl:PropertiesType" minOccurs="0" maxOccurs="1"/> -->
         <element name="description" type="string" minOccurs="0" />
-        <element name="source" type="etl:SchemaQueryType" minOccurs="0"/>
-        <element name="destination" type="etl:TargetQueryType" minOccurs="0"/>
+        <element name="source" type="etl:SourceObjectType" minOccurs="0"/>
+        <element name="destination" type="etl:TargetObjectType" minOccurs="0"/>
         <element name="procedure" type="etl:SchemaProcedureType" minOccurs="0"/>
         <element name="taskref" type="etl:TaskRefType" maxOccurs="1" minOccurs="0"/>
       </all>

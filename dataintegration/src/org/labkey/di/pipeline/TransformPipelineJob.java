@@ -303,11 +303,18 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     }
 
     /*
-     *   FileAnalysisJobSupport methods
-     */
-
+     *   FileAnalysisJobSupport methods & parameters support
+     *
+    */
     private File _analysisDirectory;
     private String _baseName;
+    private Map<String, String> _parameters = new HashMap<>();
+
+    @Override
+    public Map<String, String> getParameters()
+    {
+        return _parameters;
+    }
 
     @Override
     public String getProtocolName()
@@ -335,7 +342,9 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     @Override
     public String getBaseName()
     {
-        return _baseName;
+        if (_baseName != null)
+            return _baseName;
+        else throw new IllegalStateException("File basename has not been set.");
     }
 
     @Override
@@ -352,7 +361,9 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     @Override
     public File getAnalysisDirectory()
     {
-        return _analysisDirectory;
+        if (_analysisDirectory != null)
+            return _analysisDirectory;
+        else throw new IllegalStateException("File analysis directory has not been set.");
     }
 
     @Override
