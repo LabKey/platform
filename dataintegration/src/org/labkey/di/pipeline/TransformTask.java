@@ -182,7 +182,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         // Also, who's to say the output columns match the existing file?
         try
         {
-            File outputDir = _txJob.getPipeRoot().resolvePath(meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.path));
+            File outputDir = _txJob.getPipeRoot().resolvePath(meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.dir));
             if (!outputDir.exists() && !outputDir.mkdirs())
             {
                 context.getErrors().addRowError(new ValidationException("Can't create output directory: " + outputDir));
@@ -231,8 +231,14 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     private String makeFileBaseName(CopyConfig meta)
     {
         String name = meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.baseName);
-        name = name.replace("#", Integer.toString(_txJob.getTransformRunId()));
-        name = name.replace("?", FileUtil.getTimestamp());
+
+        // We support two special substitions in the base filename.
+        // ${TransformRunId} will be substituted with the txJob transformRunId
+        // ${Timestamp} will be substituted with a timestamp
+        // One could imagine other future substitions, at which point it might be better to
+        // use StringExpressionFactory. Also, could in future support SimpleDateFormat-style formatted timestamp substitutions.
+        name = name.replaceAll("(?i)\\$\\{TransformRunId\\}", Integer.toString(_txJob.getTransformRunId()));
+        name = name.replaceAll("(?i)\\$\\{Timestamp\\}", FileUtil.getTimestamp());
 
         return FileUtil.makeLegalName(name);
     }
@@ -391,7 +397,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             }
             else // Target is file
             {
-                File outputDir = _txJob.getPipeRoot().resolvePath(meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.path));
+                File outputDir = _txJob.getPipeRoot().resolvePath(meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.dir));
                 if (!outputDir.exists() && !outputDir.mkdirs())
                 {
                     log.error("ERROR: Target directory not accessible : " + outputDir.toString());

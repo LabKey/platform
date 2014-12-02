@@ -41,13 +41,17 @@
                 <documentation>Bulk loads minimize the logging for auditing purposes and other overhead.</documentation>
             </annotation>
         </attribute>
-        <attribute name="filePath" type="string" use="optional"/>
+        <attribute name="dir" type="string" use="optional"/>
         <attribute name="fileBaseName" type="string" use="optional">
             <annotation>
-                <documentation>The base name to use for an output target table. Special characters:<p/>'#' will be substituted with the transformRunId.<p/>'?' will be substituted with the timestamp at file creation.</documentation>
+                <documentation>The base name to use for an output target table. Special substitutions:<p/>'${TransformRunId}' will be substituted with the transformRunId.<p/>'${Timestamp}' will be substituted with the timestamp at file creation.</documentation>
             </annotation>
         </attribute>
-        <attribute name="fileExtension" type="string" use="optional"/>
+        <attribute name="fileExtension" type="string" use="optional">
+            <annotation>
+                <documentation>Optional (required for pipeline usage), the extension for the output target table. A leading dot is optional; there will always be a dot separator between the file basename and extension</documentation>
+            </annotation>
+        </attribute>
         <attribute name="columnDelimiter" type="string" use="optional"/>
         <attribute name="quote" type="string" use="optional">
             <annotation>

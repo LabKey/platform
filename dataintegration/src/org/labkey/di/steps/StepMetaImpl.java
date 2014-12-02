@@ -16,6 +16,7 @@
 package org.labkey.di.steps;
 
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.impl.values.XmlValueOutOfRangeException;
 import org.labkey.api.etl.CopyConfig;
@@ -130,9 +131,12 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                 }
 
                 Map<TargetFileProperties, String> fileProps = new LinkedHashMap<>();
-                fileProps.put(TargetFileProperties.path, destination.getFilePath());
+                fileProps.put(TargetFileProperties.dir, destination.getDir());
                 fileProps.put(TargetFileProperties.baseName, destination.getFileBaseName());
-                fileProps.put(TargetFileProperties.extension, destination.getFileExtension());
+                String extension = destination.getFileExtension();
+                if (StringUtils.startsWith(extension, "."))
+                    extension = StringUtils.substringAfter(extension, ".");
+                fileProps.put(TargetFileProperties.extension, extension);
                 if (destination.getColumnDelimiter() != null)
                     fileProps.put(TargetFileProperties.columnDelimiter, StringEscapeUtils.unescapeJava(destination.getColumnDelimiter()));
                 if (destination.getRowDelimiter() != null)
@@ -161,7 +165,7 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
     private void validateDestination() throws XmlException
     {
         if ( (getTargetType().equals(TargetTypes.query) && (getTargetSchema() == null || getTargetQuery() == null))
-                || (getTargetType().equals(TargetTypes.file) && (getTargetFileProperties().get(TargetFileProperties.path) == null || getTargetFileProperties().get(TargetFileProperties.baseName) == null))) // OK to allow empty extension?
+                || (getTargetType().equals(TargetTypes.file) && (getTargetFileProperties().get(TargetFileProperties.dir) == null || getTargetFileProperties().get(TargetFileProperties.baseName) == null))) // OK to allow empty extension?
             throw new XmlException(TransformManager.INVALID_DESTINATION);
     }
 }
