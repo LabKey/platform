@@ -1606,14 +1606,13 @@ public class PageFlowUtil
     // Note that hrefs are relative, so callers may need to output a <base> element prior to calling.
     private static String getStylesheetIncludes(Container c, @Nullable LinkedHashSet<ClientDependency> resources, boolean includeExtStylesheets)
     {
-        boolean useLESS = null != HttpView.currentRequest().getParameter("less");
         WebTheme theme = WebThemeManager.getTheme(c);
 
         CoreUrls coreUrls = urlProvider(CoreUrls.class);
         StringBuilder sb = new StringBuilder();
 
         Formatter F = new Formatter(sb);
-        String link = useLESS ? "    <link href=\"%s\" type=\"text/x-less\" rel=\"stylesheet\">\n" : "    <link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
+        String link = "    <link href=\"%s\" type=\"text/css\" rel=\"stylesheet\">\n";
 
         if (includeExtStylesheets)
         {
