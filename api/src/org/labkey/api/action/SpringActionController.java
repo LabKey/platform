@@ -342,8 +342,9 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 return null;
             }
 
-            // Formerly, this was a check done during permissions, but we've decided to upgrade the priority
-            // of checking for container on view-based URLs.
+            // This container check used to be in checkPermissions(), but that meant actions with lenient permissions checking
+            // (e.g., CustomStylesheetAction) failed to validate the container. We now proactively validate the container on
+            // all view-based URLs. #21950
             Container c = context.getContainer();
             if (null == c)
             {
