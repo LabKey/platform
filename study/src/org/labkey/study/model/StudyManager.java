@@ -589,16 +589,20 @@ public class StudyManager
         if (study.getAlternateIdDigits() == 0)
             study.setAlternateIdDigits(StudyManager.ALTERNATEID_DEFAULT_NUM_DIGITS);
 
-        study = _studyHelper.create(user, study);
+        try (Transaction transaction = StudySchema.getInstance().getScope().ensureTransaction())
+        {
+            study = _studyHelper.create(user, study);
 
-        //note: we no longer copy the container's policy to the study upon creation
-        //instead, we let it inherit the container's policy until the security type
-        //is changed to one of the advanced options. 
+            //note: we no longer copy the container's policy to the study upon creation
+            //instead, we let it inherit the container's policy until the security type
+            //is changed to one of the advanced options.
 
-        // Force provisioned specimen tables to be created
-        StudySchema.getInstance().getTableInfoSpecimen(container, user);
-        StudySchema.getInstance().getTableInfoVial(container, user);
-        StudySchema.getInstance().getTableInfoSpecimenEvent(container, user);
+            // Force provisioned specimen tables to be created
+            StudySchema.getInstance().getTableInfoSpecimen(container, user);
+            StudySchema.getInstance().getTableInfoVial(container, user);
+            StudySchema.getInstance().getTableInfoSpecimenEvent(container, user);
+            transaction.commit();
+        }
         return study;
     }
 

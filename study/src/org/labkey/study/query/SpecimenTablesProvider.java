@@ -19,6 +19,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.PropertyStorageSpec;
+import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.ChangePropertyDescriptorException;
 import org.labkey.api.exp.DomainNotFoundException;
@@ -58,36 +59,56 @@ public class SpecimenTablesProvider
         // if the domain doesn't exist and we're asked to create, create it
         AbstractSpecimenDomainKind domainKind = getDomainKind(tableName);
         String domainURI = domainKind.generateDomainURI(SCHEMA_NAME, tableName, _container, _user);
-        Domain domain = PropertyService.get().getDomain(_container, domainURI);
-        if (null == domain && create)
+        Domain domain = null;
+
+        // it's possible that another thread is attempting to create the table, so we can (rarely) get a constraint violation
+        // so try again if that happens
+        boolean success = true;
+        final int MAX_TRYS = 3;
+        for (int tryCount = 0; tryCount < MAX_TRYS; tryCount += 1)
         {
-            try
+            domain = PropertyService.get().getDomain(_container, domainURI);
+            if (null == domain && create)
             {
-                domain = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
+                try
+                {
+                    domain = PropertyService.get().createDomain(_container, domainURI, domainKind.getKindName());
 
-                // Add properties for all required fields
-                for (PropertyStorageSpec propSpec : domainKind.getBaseProperties())
-                {
-                    DomainProperty prop = domain.addProperty(propSpec);
-                    prop.setRequired(true);
-                }
-                if (null != _template)
-                {
-                    // Add optional fields to table
-                    for (PropertyStorageSpec propSpec : domainKind.getPropertySpecsFromTemplate(_template))
+                    // Add properties for all required fields
+                    for (PropertyStorageSpec propSpec : domainKind.getBaseProperties())
                     {
-                        domain.addProperty(propSpec);
+                        DomainProperty prop = domain.addProperty(propSpec);
+                        prop.setRequired(true);
                     }
+                    if (null != _template)
+                    {
+                        // Add optional fields to table
+                        for (PropertyStorageSpec propSpec : domainKind.getPropertySpecsFromTemplate(_template))
+                        {
+                            domain.addProperty(propSpec);
+                        }
 
+                    }
+                    domain.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, this));
+                    domain.save(_user);
+                    break;      // Sucessfully created domain, so we're done
                 }
-                domain.setPropertyForeignKeys(domainKind.getPropertyForeignKeys(_container, this));
-                domain.save(_user);
+                catch (ChangePropertyDescriptorException e)
+                {
+                    throw new RuntimeException(e);
+                }
+                catch (RuntimeSQLException e)
+                {
+                    if (tryCount + 1 < MAX_TRYS)
+                        continue;     // try again
+                    throw e;
+                }
             }
-            catch (ChangePropertyDescriptorException e)
+            else
             {
-                throw new RuntimeException(e);
+                break;  // No need to create domain so we're done
             }
-        }
+        } // for MAX-TRYS
         return domain;
     }
 
