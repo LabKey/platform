@@ -898,8 +898,6 @@ core/webapp/editInPlaceElement.css -text
 core/webapp/editInPlaceElement.js -text
 core/webapp/fileAddRemoveIcon.css -text
 core/webapp/fileBrowser.js -text
-core/webapp/less-1.0.35.js -text
-core/webapp/less-1.0.35.min.js -text
 core/webapp/printStyle.css -text
 core/webapp/schemaBrowser.css -text
 core/webapp/schemaBrowser.js -text
