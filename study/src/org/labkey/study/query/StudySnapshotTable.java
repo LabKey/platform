@@ -66,7 +66,6 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
         addColumn(source);
 
         ColumnInfo destination = new AliasedColumn(this, "Destination", _rootTable.getColumn("destination"));
-        ContainerForeignKey.initColumn(destination, getUserSchema());
         final User user = schema.getUser();
         destination.setDisplayColumnFactory(new DisplayColumnFactory()
         {
@@ -81,10 +80,10 @@ public class StudySnapshotTable extends FilteredTable<StudyQuerySchema>
                         Container c = ContainerManager.getForId(String.valueOf(o));
                         if (c != null)
                         {
-                            if (!c.hasPermission(user, ReadPermission.class))
-                                return null;
+                            if (c.hasPermission(user, ReadPermission.class))
+                                return c.getStartURL(user).getLocalURIString();
                         }
-                        return super.renderURL(ctx);
+                        return null;
                     }
                 };
             }
