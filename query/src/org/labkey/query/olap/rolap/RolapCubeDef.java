@@ -105,10 +105,12 @@ public class RolapCubeDef
         return annotations;
     }
 
+
+
     public String getMembersSQL(HierarchyDef hdef)
     {
         LevelDef lowest = hdef.levels.get(hdef.levels.size()-1);
-        String selectColumns = lowest.getAllColumnsSQL();
+        String selectColumns = lowest.getAllColumnsSQL(null);
         String joins;
 
         if (null == hdef.join)
@@ -126,15 +128,39 @@ public class RolapCubeDef
     }
 
 
-    public String getFromSQL(LevelDef... levels)
+    public String getFromSQLWithFactTable(LevelDef... levels)
     {
         LinkedHashSet<Join> joins = new LinkedHashSet<>();
         for (LevelDef l : levels)
         {
             if (null != l)
-                l.addJoins(joins);
+                l.addJoins(null, joins);
         }
-        return _getFromSQL(factTable, joins);
+        return _getFromSQL(factTable, null, joins);
+    }
+
+
+    /**
+     * For performance, we sometimes want to push down the outer "DISTINCT" to the inner SELECT on the fact table.
+     * To do that we need to know the columns required by the outer query.  Those columns are listed in the
+     * factTableColumns map.
+     *
+     * Note: that the any code that generates any usages of fact table columns must cooperate in this scheme.
+     * They need to correctly use the columns expression or the column alias and add factTableColumns entries.
+     *
+     * @param factTableColumns
+     * @param levels
+     * @return
+     */
+    public String getFromSQLWithFactTableDistinct(Map<String,String> factTableColumns, LevelDef... levels)
+    {
+        LinkedHashSet<Join> joins = new LinkedHashSet<>();
+        for (LevelDef l : levels)
+        {
+            if (null != l)
+                l.addJoins(factTableColumns, joins);
+        }
+        return _getFromSQL(factTable, factTableColumns, joins);
     }
 
 
@@ -143,15 +169,34 @@ public class RolapCubeDef
         LinkedHashSet<Join> joins = new LinkedHashSet<>();
         for (HierarchyDef h : hierarchyDefs)
         {
-            h.addJoins(joins);
+            h.addJoins(null, joins);
         }
-        return _getFromSQL(factTable, joins);
+        return _getFromSQL(factTable, null, joins);
     }
 
-    private String _getFromSQL(JoinOrTable innerMost, Collection<Join> joinsIn)
+
+    private String _getFromSQL(JoinOrTable innerMost, @Nullable Map<String,String> distinctInnerColumns, Collection<Join> joinsIn)
     {
         StringBuilder sb = new StringBuilder();
-        sb.append(id_quote(innerMost.schemaName, innerMost.tableName));
+
+        if (null == distinctInnerColumns)
+        {
+            sb.append(id_quote(innerMost.schemaName, innerMost.tableName));
+        }
+        else
+        {
+            StringBuilder innerSql = new StringBuilder("(SELECT DISTINCT ");
+            String comma = "";
+            for (Map.Entry<String,String> e : distinctInnerColumns.entrySet())
+            {
+                innerSql.append(comma).append(e.getValue()).append(" AS ").append(e.getKey());
+                comma = ", ";
+            }
+            innerSql.append(" FROM ");
+            innerSql.append(id_quote(innerMost.schemaName, innerMost.tableName));
+            innerSql.append(") ").append(id_quote(factTable.tableName));
+            sb.append(innerSql);
+        }
 
         if (joinsIn.size() == 0)
             return sb.toString();
@@ -554,6 +599,11 @@ public class RolapCubeDef
             return null;
         }
 
+        public boolean hasDimensionTable()
+        {
+            return null != join;
+        }
+
         private void validate()
         {
             // compute uniqueName according to Mondrian rules
@@ -586,16 +636,20 @@ public class RolapCubeDef
         }
 
 
-        public void addJoins(Set<Join> joins)
+        public void addJoins(@Nullable Map<String,String> factTableAliases, Set<Join> joins)
         {
             cube.factTable.addJoins(joins);
             if (null == join)
                 return;
-            join.addJoins(joins);
+            this.join.addJoins(joins);
             JoinOrTable pkTable = join.tables.get(primaryKeyTable);
             Join j = new Join(
                     new Path(cube.factTable.schemaName, cube.factTable.tableName, dimension.foreignKey),
                     new Path(pkTable.schemaName, pkTable.tableName, primaryKey));
+            if (null != factTableAliases)
+            {
+                factTableAliases.put(dimension.foreignKey,dimension.foreignKey);
+            }
             joins.add(j);
         }
     }
@@ -692,30 +746,71 @@ public class RolapCubeDef
 
         public String getAllColumnsSQL()
         {
+            return getAllColumnsSQL(null);
+        }
+
+
+        /*
+         * factTableAliases is minor hack.  If factTableAliases!=null, this indicates that the fact table expressions
+         * will be nested in the FROM clause so only the aliases should be injected into the outer SELECT
+         */
+        public String getAllColumnsSQL(@Nullable Map<String,String> factTableAliases)
+        {
             String comma = "";
             StringBuilder sb = new StringBuilder();
 
             if (null != parent)
             {
-                sb.append(parent.getAllColumnsSQL());
+                sb.append(parent.getAllColumnsSQL(factTableAliases));
                 comma = ", ";
             }
+
+            boolean isFactTable = null == hierarchy.join;
+            boolean onlySelectAliases = isFactTable && null != factTableAliases;
+
             if (null != ordinalExpression)
             {
-                sb.append(comma).append(ordinalExpression);
-                sb.append(" AS ").append(ordinalAlias);
+                sb.append(comma);
+                if (onlySelectAliases)
+                {
+                    sb.append(ordinalAlias);
+                    factTableAliases.put(ordinalAlias, ordinalExpression);
+                }
+                else
+                {
+                    sb.append(ordinalExpression);
+                    sb.append(" AS ").append(ordinalAlias);
+                }
                 comma = ", ";
             }
             if (null != keyExpression)
             {
-                sb.append(comma).append(keyExpression);
-                sb.append(" AS ").append(keyAlias);
+                sb.append(comma);
+                if (onlySelectAliases)
+                {
+                    sb.append(keyAlias);
+                    factTableAliases.put(keyAlias,keyExpression);
+                }
+                else
+                {
+                    sb.append(keyExpression);
+                    sb.append(" AS ").append(keyAlias);
+                }
                 comma = ", ";
             }
             if (null != nameExpression)
             {
-                sb.append(comma).append(nameExpression);
-                sb.append(" AS ").append(nameAlias);
+                sb.append(comma);
+                if (onlySelectAliases)
+                {
+                    sb.append(nameAlias);
+                    factTableAliases.put(nameAlias,nameExpression);
+                }
+                else
+                {
+                    sb.append(nameExpression);
+                    sb.append(" AS ").append(nameAlias);
+                }
             }
             return sb.toString();
         }
@@ -809,9 +904,9 @@ public class RolapCubeDef
         }
 
 
-        public void addJoins(Set<Join> joins)
+        public void addJoins(@Nullable Map<String,String> factTableAliases, Set<Join> joins)
         {
-            hierarchy.addJoins(joins);
+            hierarchy.addJoins(factTableAliases, joins);
         }
 
 

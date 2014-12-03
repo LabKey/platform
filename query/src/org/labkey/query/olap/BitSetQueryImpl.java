@@ -741,7 +741,7 @@ public class BitSetQueryImpl
                 if (!(_dataSourceHelper instanceof SqlDataSourceHelper))
                     throw new IllegalStateException("sql not supported");
                 if (null == expr.level)
-                    throw new IllegalStateException("sql requires that a level specification");
+                    throw new IllegalStateException("sql requires a level specification");
                 // SQL needs to be executed using the current users credentials
                 if (null == user)
                     throw new IllegalStateException("sql requires a user");
@@ -1783,7 +1783,7 @@ public class BitSetQueryImpl
                 sb.append(ldefTo.getAllColumnsSQL());
             }
             sb.append("\nFROM ");
-            sb.append(rolap.getFromSQL(ldefFrom, ldefTo));
+            sb.append(rolap.getFromSQLWithFactTable(ldefFrom, ldefTo));
             sb.append("\nWHERE ");
             String or = "";
             Collection<Member> coll = to.getCollection();
@@ -1812,20 +1812,22 @@ public class BitSetQueryImpl
             if (to.getLevelType() == Level.Type.ALL)
             {
                 StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
-                sb.append(defFrom.getAllColumnsSQL());
+                Map<String,String> factTableAliases = new HashMap<>();
+                sb.append(defFrom.getAllColumnsSQL(factTableAliases));
                 sb.append("\nFROM ");
-                sb.append(rolap.getFromSQL(defFrom));
+                sb.append(rolap.getFromSQLWithFactTableDistinct(factTableAliases, defFrom));
                 return sb.toString();
             }
             else
             {
                 RolapCubeDef.LevelDef defTo = getRolapFromCube(to);
                 StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
-                sb.append(defFrom.getAllColumnsSQL());
+                Map<String,String> factTableAliases = new HashMap<>();
+                sb.append(defFrom.getAllColumnsSQL(factTableAliases));
                 sb.append(", ");
-                sb.append(defTo.getAllColumnsSQL());
+                sb.append(defTo.getAllColumnsSQL(factTableAliases));
                 sb.append("\nFROM ");
-                sb.append(rolap.getFromSQL(defFrom, defTo));
+                sb.append(rolap.getFromSQLWithFactTableDistinct(factTableAliases, defFrom, defTo));
                 return sb.toString();
             }
         }
@@ -1841,19 +1843,22 @@ public class BitSetQueryImpl
             RolapCubeDef.LevelDef ldefFrom = getRolapFromCube(from);
 
             StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
-            sb.append(ldefFrom.getAllColumnsSQL());
+
+            Map<String,String> factTableAliases = new HashMap<>();
+            String allColumns = ldefFrom.getAllColumnsSQL(factTableAliases);
+            sb.append(allColumns);
 
             if (m.isAll())
             {
                 sb.append("\nFROM ");
-                sb.append(rolap.getFromSQL(ldefFrom));
+                sb.append(rolap.getFromSQLWithFactTableDistinct(factTableAliases, ldefFrom));
             }
             else // if (!m.isAll())
             {
                 RolapCubeDef.LevelDef ldefMember = getRolapFromCube(m.getLevel());
 
                 sb.append("\nFROM ");
-                sb.append(rolap.getFromSQL(ldefFrom, ldefMember));
+                sb.append(rolap.getFromSQLWithFactTableDistinct(factTableAliases, ldefFrom, ldefMember));
                 sb.append("\nWHERE ");
                 sb.append(ldefMember.getMemberFilter(m,dialect));
             }
@@ -1866,7 +1871,7 @@ public class BitSetQueryImpl
             RolapCubeDef.LevelDef defFrom = getRolapFromCube(from.getLevel());
 
             StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
-            sb.append(defFrom.getAllColumnsSQL());
+            sb.append(defFrom.getAllColumnsSQL(null));
 
             Set<RolapCubeDef.HierarchyDef> hierarchyDefs = new LinkedHashSet<>();
 
