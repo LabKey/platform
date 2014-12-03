@@ -145,6 +145,7 @@ public class ManageTreatmentsTester
             _test.setFormElement(newVisitLabel, visit.getLabel());
             _test.setFormElement(newVisitRangeMin, visit.getRangeMin().toString());
             _test.setFormElement(newVisitRangeMax, visit.getRangeMax().toString());
+            _test.fireEvent(newVisitRangeMax, BaseWebDriverTest.SeleniumEvent.blur);
             _test.click(addVisitWindow.append(Ext4Helper.Locators.ext4Button("Submit")));
         }
         else
