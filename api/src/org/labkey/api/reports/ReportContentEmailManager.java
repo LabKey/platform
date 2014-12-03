@@ -33,27 +33,23 @@ public class ReportContentEmailManager
     {
         NONE
         {
-            public Integer getInteger() {return -1;}
-            public String getString() {return "none";}
+            public int getSpecialCategoryId() {return -1;}
         },
         ALL
         {
-            public Integer getInteger() {return -2;}
-            public String getString() {return "all";}
+            public int getSpecialCategoryId() {return -2;}
         },
         SELECT
         {
-            public Integer getInteger() {return -3;}
-            public String getString() {return "select";}
+            public int getSpecialCategoryId() {return -3;}
         };
 
-        public abstract Integer getInteger();
-        public abstract String getString();
+        public abstract int getSpecialCategoryId();
         public static NotifyOption getNotifyOption(String str)
         {
-            if (ALL.getString().equals(str))
+            if (ALL.name().equalsIgnoreCase(str))
                 return ALL;
-            if (SELECT.getString().equals(str))
+            if (SELECT.name().equalsIgnoreCase(str))
                 return SELECT;
             return NONE;        // default to NONE even if str is bad
         }
@@ -117,20 +113,20 @@ public class ReportContentEmailManager
     public static NotifyOption removeNotifyOption(SortedSet<Integer> subscriptionSet)
     {
         NotifyOption notifyOption;
-        if (subscriptionSet.contains(NotifyOption.ALL.getInteger()))
+        if (subscriptionSet.contains(NotifyOption.ALL.getSpecialCategoryId()))
         {
             notifyOption = NotifyOption.ALL;
-            subscriptionSet.remove(NotifyOption.ALL.getInteger());
+            subscriptionSet.remove(NotifyOption.ALL.getSpecialCategoryId());
         }
-        else if (subscriptionSet.contains(NotifyOption.SELECT.getInteger()))
+        else if (subscriptionSet.contains(NotifyOption.SELECT.getSpecialCategoryId()))
         {
             notifyOption = NotifyOption.SELECT;
-            subscriptionSet.remove(NotifyOption.SELECT.getInteger());
+            subscriptionSet.remove(NotifyOption.SELECT.getSpecialCategoryId());
         }
-        else if (subscriptionSet.contains(NotifyOption.NONE.getInteger()))
+        else if (subscriptionSet.contains(NotifyOption.NONE.getSpecialCategoryId()))
         {
             notifyOption = NotifyOption.NONE;
-            subscriptionSet.remove(NotifyOption.NONE.getInteger());
+            subscriptionSet.remove(NotifyOption.NONE.getSpecialCategoryId());
         }
         else if (subscriptionSet.isEmpty())
         {
@@ -155,7 +151,7 @@ public class ReportContentEmailManager
     {
         String prefString = makeDelimitedStringFromIntegerSet(subscriptionSet, ";");
         EmailService.get().setEmailPref(user, container, new ReportContentEmailPref(), prefString);
-        boolean addUser = subscriptionSet.size() > 1 || (1 == subscriptionSet.size() && !subscriptionSet.contains(NotifyOption.NONE.getInteger()));
+        boolean addUser = subscriptionSet.size() > 1 || (1 == subscriptionSet.size() && !subscriptionSet.contains(NotifyOption.NONE.getSpecialCategoryId()));
         updateSubscriptionUserList(container, user, addUser);
     }
 
