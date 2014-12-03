@@ -44,7 +44,7 @@ public class HomeTemplate extends PrintTemplate
 
     public HomeTemplate(ViewContext context, Container c, ModelAndView body, PageConfig page, NavTree[] navTrail)
     {
-        super("/org/labkey/api/view/template/CommonTemplate.jsp", page);
+        super("/org/labkey/api/view/template/HomeTemplate.jsp", page);
 
         //show the header on the home template
         page.setShowHeader(true);

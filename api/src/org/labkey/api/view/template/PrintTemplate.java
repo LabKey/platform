@@ -33,7 +33,7 @@ public class PrintTemplate extends JspView<PageConfig>
 
     public PrintTemplate(ModelAndView body, PageConfig page)
     {
-        this("/org/labkey/api/view/template/CommonTemplate.jsp", page);
+        this("/org/labkey/api/view/template/HomeTemplate.jsp", page);
         setBody(body);
     }
 

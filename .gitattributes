@@ -1703,8 +1703,8 @@ api/src/org/labkey/api/view/template/AppBar.java -text
 api/src/org/labkey/api/view/template/AppBarView.java -text
 api/src/org/labkey/api/view/template/BodyTemplate.java -text
 api/src/org/labkey/api/view/template/ClientDependency.java -text
-api/src/org/labkey/api/view/template/CommonTemplate.jsp -text
 api/src/org/labkey/api/view/template/EmptyView.java -text
+api/src/org/labkey/api/view/template/HomeTemplate.jsp -text
 api/src/org/labkey/api/view/template/MenuBarView.java -text
 api/src/org/labkey/api/view/template/PageConfig.java -text
 api/src/org/labkey/api/view/template/PrintTemplate.java -text

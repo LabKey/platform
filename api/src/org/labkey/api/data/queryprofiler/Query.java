@@ -97,7 +97,7 @@ public class Query
             // Ignore everything before HttpView.render, standard action classes, etc., #13753
             if  (
                     line.startsWith(HttpView.class.getName() + ".render") ||
-                    line.startsWith("org.labkey.jsp.compiled.org.labkey.api.view.template.CommonTemplate_jsp._jspService") ||
+                    line.startsWith("org.labkey.jsp.compiled.org.labkey.api.view.template.HomeTemplate_jsp._jspService") ||
                     line.startsWith(WebPartView.class.getName() + ".renderInternal") ||
                     line.startsWith(JspView.class.getName() + ".renderView") ||
                     line.startsWith(SimpleViewAction.class.getName() + ".handleRequest") ||
