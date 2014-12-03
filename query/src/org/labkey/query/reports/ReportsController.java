@@ -3763,7 +3763,7 @@ public class ReportsController extends SpringActionController
             if (null == _subscriptionSet || null == _notifyOption)
             {
                 SortedSet<Integer> subscriptionSet = ReportContentEmailManager.getSubscriptionSet(getContainer(), getUser());
-                _notifyOption = ReportContentEmailManager.removeNotifyOption(subscriptionSet).getString();
+                _notifyOption = ReportContentEmailManager.removeNotifyOption(subscriptionSet).name().toLowerCase();
                 _subscriptionSet = subscriptionSet;
             }
         }
@@ -3792,7 +3792,7 @@ public class ReportsController extends SpringActionController
             JSONArray categories = (JSONArray)props.get("categories");
             if (null != categories)
             {
-                for (int i = 0; i < categories.length(); i += 1)
+                for (int i = 0; i < categories.length(); i++)
                 {
                     Integer rowId = ((JSONObject) categories.get(i)).getInt("rowid");
                     Boolean subscribed = ((JSONObject) categories.get(i)).getBoolean("subscribed");
@@ -3804,9 +3804,9 @@ public class ReportsController extends SpringActionController
             Object notifyOptionObj = props.get("notifyOption");
             Integer notifyOptionInt;
             if (notifyOptionObj instanceof String)
-                notifyOptionInt = ReportContentEmailManager.NotifyOption.getNotifyOption((String)notifyOptionObj).getInteger();
+                notifyOptionInt = ReportContentEmailManager.NotifyOption.getNotifyOption((String)notifyOptionObj).getSpecialCategoryId();
             else
-                notifyOptionInt = ReportContentEmailManager.NotifyOption.NONE.getInteger();     // just in case
+                notifyOptionInt = ReportContentEmailManager.NotifyOption.NONE.getSpecialCategoryId();     // just in case
             _subscriptionSet.add(notifyOptionInt);
         }
 

@@ -26,11 +26,10 @@ Ext4.define('LABKEY.ext4.ManageReportNotifications', {
             returnUrl = LABKEY.ActionURL.buildURL('project', 'begin', null, {'pageId' : 'study.DATA_ANALYSIS'});
 
         var gridConfig = {
-            title    : 'Select Categories',
             margin   : '10',
             disabled : 'select' != notifyOption,
             store    : categoryStore,
-            maxWidth : 700,
+            maxWidth : 706,
             pageId: -1,
             index: -1,
             border   : false, frame: false,
@@ -60,8 +59,9 @@ Ext4.define('LABKEY.ext4.ManageReportNotifications', {
         var gridPanel = Ext4.create('Ext.grid.Panel', gridConfig);
 
         var panelConfig = {
-            maxWidth : 720,
+            maxWidth : 726,
             title : 'Choose Notification Option',
+            frame: false,
             items : [
                 {
                     xtype  : 'radiogroup',
@@ -82,7 +82,7 @@ Ext4.define('LABKEY.ext4.ManageReportNotifications', {
                             checked   : 'all' == notifyOption
                         },
                         {
-                            boxLabel  : 'By category. Your daily digest will list changes and additions to reports and datasets in the selected categories.',
+                            boxLabel  : 'By category. Your daily digest will list changes and additions to reports and datasets in the subscribed categories.',
                             name      : 'rb',
                             inputValue: 'select',
                             checked   : 'select' == notifyOption
@@ -103,6 +103,9 @@ Ext4.define('LABKEY.ext4.ManageReportNotifications', {
             dockedItems: [{
                 xtype: 'toolbar',
                 dock: 'bottom',
+                ui: 'footer',
+                style: 'background-color: transparent;',
+                margin: '2 0 0 0',
                 items: [{
                     type: 'button',
                     text: 'Save',
