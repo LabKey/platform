@@ -14,11 +14,15 @@ Ext.GuidedTips.init();
 
 LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName) {
     // get the rest of the study snapshot details/settings from the server
-    LABKEY.Query.selectRows({
+
+    var sql = "SELECT c.DisplayName as PreviousStudy, u.DisplayName as CreatedBy, ss.Created, ss.Settings " +
+              "FROM study.StudySnapshot AS ss JOIN core.Users AS u ON ss.CreatedBy = u.UserId " +
+              "JOIN core.Containers AS c ON c.EntityId = ss.Destination WHERE ss.RowId = " + parseInt(snapshotId);
+
+    LABKEY.Query.executeSql({
         schemaName: 'study',
-        queryName: 'studySnapshot',
-        columns: ['Destination/Name', 'CreatedBy/DisplayName', 'Created', 'Settings'],
-        filterArray: [ LABKEY.Filter.create('RowId', snapshotId) ],
+        sql: sql,
+        containerFilter: LABKEY.Query.containerFilter.currentAndSubfolders,
         success: function(data) {
             var row = data.rows[0];
             var settings = Ext.decode(row.Settings);
@@ -26,12 +30,12 @@ LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName
                 mode: (settings && settings.type ? settings.type : 'publish'),
                 studyName: availableContainerName,
                 settings: settings,
-                parent: row['Destination/Name'],
-                createdBy: row['CreatedBy/DisplayName'],
+                previousStudy: row.PreviousStudy,
+                createdBy: row.CreatedBy,
                 created: row.Created
             };
 
-            // issue 22070: specimen study republish needs to include requestId
+            //issue 22070: specimen study republish needs to include requestId
             if (settings.type == 'specimen')
             {
                 if (!settings.specimenRequestId) {
@@ -566,26 +570,15 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             treeWin.hide();
         }
 
-        var formItems = [
-            { xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF },
-            {
-                xtype: 'textfield',
-                fieldLabel: 'Name',
-                autoCreate: {tag: 'input', type: 'text', size: '20', autocomplete: 'off', maxlength: '255'},
-                allowBlank: false,
-                name: 'studyName',
-                value: this.info.name,
-                enableKeyEvents: true,
-                listeners: {change: nameChange, keyup:nameChange, scope:this}
-            }];
+        var formItems = [{ xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF }];
 
         if (this.settings) // show extra details if this is a republish
         {
             formItems.push({
                 xtype: 'displayfield',
-                fieldLabel: 'Source Study',
+                fieldLabel: 'Previous Child Study', // uh, better name?
                 style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
-                value: this.parent
+                value: this.previousStudy
             },{
                 xtype: 'displayfield',
                 fieldLabel: 'Created By',
@@ -608,6 +601,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         }
 
         formItems.push([
+            {
+                xtype: 'textfield',
+                fieldLabel: 'Name',
+                autoCreate: {tag: 'input', type: 'text', size: '20', autocomplete: 'off', maxlength: '255'},
+                allowBlank: false,
+                name: 'studyName',
+                value: this.info.name,
+                enableKeyEvents: true,
+                listeners: {change: nameChange, keyup:nameChange, scope:this}
+            },
             {
                 xtype: 'textarea',
                 fieldLabel: 'Description',
