@@ -1844,21 +1844,25 @@ public class BitSetQueryImpl
 
             StringBuilder sb = new StringBuilder("SELECT DISTINCT ");
 
-            Map<String,String> factTableAliases = new HashMap<>();
-            String allColumns = ldefFrom.getAllColumnsSQL(factTableAliases);
-            sb.append(allColumns);
-
             if (m.isAll())
             {
+                Map<String,String> factTableAliases = new HashMap<>();
+                String allColumns = ldefFrom.getAllColumnsSQL(factTableAliases);
+                sb.append(allColumns);
+
                 sb.append("\nFROM ");
                 sb.append(rolap.getFromSQLWithFactTableDistinct(factTableAliases, ldefFrom));
             }
             else // if (!m.isAll())
             {
+                // CONSIDER use getFromSQLWithFactTableDistinct() optimization in this case as well
+                String allColumns = ldefFrom.getAllColumnsSQL();
+                sb.append(allColumns);
+
                 RolapCubeDef.LevelDef ldefMember = getRolapFromCube(m.getLevel());
 
                 sb.append("\nFROM ");
-                sb.append(rolap.getFromSQLWithFactTableDistinct(factTableAliases, ldefFrom, ldefMember));
+                sb.append(rolap.getFromSQLWithFactTable(ldefFrom, ldefMember));
                 sb.append("\nWHERE ");
                 sb.append(ldefMember.getMemberFilter(m,dialect));
             }
