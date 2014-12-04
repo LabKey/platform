@@ -400,11 +400,9 @@ Ext.extend(LABKEY.FileSystem.AbstractFileSystem, Ext.util.Observable, {
 
         this.listFiles({
             path: config.path,
-            success: function (fs, path, records){
-                var rec = this.recordFromCache(filename);
-
-                if (typeof config.success == 'function')
-                    config.success.defer(1, config.scope, [this, config.name, config.path, rec]);
+            success: function (fs, path, records) {
+                if (Ext.isFunction(config.success))
+                    config.success.defer(1, config.scope, [this, config.name, config.path, this.recordFromCache(filename)]);
             },
             failure: config.failure,
             scope: this,
@@ -748,10 +746,10 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
         var cb = function(response, args, success)
         {
             LABKEY.FileSystem.Util._processAjaxResponse(response);
-            if (success && typeof config.success == 'function')
+            if (success && Ext.isFunction(config.success))
                 config.success.call(config.scope, args.filesystem, args.path, response.records);
-            else if (!success & typeof config.failure == 'function')
-                config.failure.call(config.scope, response, options);
+            else if (!success && Ext.isFunction(config.failure))
+                config.failure.call(config.scope, response);
         };
         proxy.request('read', null, {method:"PROPFIND", depth:"0", propname : this.propNames}, this.historyReader, cb, this, {filesystem:this, path:config.path});
     },
@@ -853,11 +851,11 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
                 {
                     fileSystem._deleteListing(config.path, config.isFile);
 
-                    if (typeof config.success == 'function')
+                    if (Ext.isFunction(config.success))
                         config.success.call(config.scope, fileSystem, config.path);
                 }
                 else {
-                    if (typeof config.failure == 'function')
+                    if (Ext.isFunction(config.failure))
                         config.failure.call(config.scope, response, options);
                 }
             },
@@ -868,9 +866,9 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
                 if (response.status == 404)  //NOT_FOUND - not sure if this is the correct behavior or not
                     success = true;
 
-                if (!success && typeof config.failure == 'function')
+                if (!success && Ext.isFunction(config.failure))
                     config.failure.call(config.scope, response, options);
-                if (success && typeof config.success == 'function')
+                if (success && Ext.isFunction(config.success))
                     config.success.call(config.scope, fileSystem, config.path);
             },
             headers: {
@@ -1042,7 +1040,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
             scope: this,
             failure: function(response){
                 LABKEY.FileSystem.Util._processAjaxResponse(response);
-                if(typeof config.failure == 'function')
+                if(Ext.isFunction(config.failure))
                     config.failure.apply(config.scope, arguments);
             },
             success: function(response, options){
@@ -1065,11 +1063,11 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
                     // auto-reload this location, instead just uncaching and relying on consumers to do it??
                     this.fireEvent(LABKEY.FileSystem.FILESYSTEM_EVENTS.fileschanged, this, destParent);
 
-                    if (typeof config.success == 'function')
+                    if (Ext.isFunction(config.success))
                         config.success.call(config.scope, fileSystem, config.source, config.destination);
                 }
                 else {
-                    if (typeof config.failure == 'function')
+                    if (Ext.isFunction(config.failure))
                         config.failure.call(config.scope, response, options);
                 }
             },
@@ -1124,14 +1122,14 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
                 else if (405 == response.status) // METHOD_NOT_ALLOWED
                     success = false;
 
-                if (success && typeof config.success == 'function')
+                if (success && Ext.isFunction(config.success))
                     config.success.call(config.scope, fileSystem, config.path);
-                if (!success && typeof config.failure == 'function')
+                if (!success && Ext.isFunction(config.failure))
                     config.failure.call(config.scope, response, options);
             },
             failure: function(response){
                 LABKEY.FileSystem.Util._processAjaxResponse(response);
-                if(typeof config.failure == 'function')
+                if (Ext.isFunction(config.failure))
                     config.failure.apply(config.scope, arguments);
             },
             headers: {
@@ -1181,7 +1179,7 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
             this._updateRecord(update);
         }
 
-        if (typeof args.callback == "function")
+        if (Ext.isFunction(args.callback))
             args.callback(this, success && null != update, args.path, update);
     },
 
@@ -1191,17 +1189,13 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
         var path = (typeof record == "string") ? record : record.data.path;
 
         // want to uncache all subfolders of the parent folder
-        for (var a in this.directoryMap)
-        {
-            if (typeof a == 'string')
-            {
-                var idx = a.indexOf(path);
-                if (idx == 0)
-                {
-                    this.directoryMap[a] = null;
+        Ext.iterate(this.directoryMap, function(key, value) {
+            if (Ext.isString(key)) {
+                if (key.indexOf(path) === 0) {
+                    this.directoryMap[key] = null;
                 }
             }
-        }
+        }, this);
 
         var args = this.pendingPropfind[path];
         if (args && args.transId)
@@ -1270,14 +1264,14 @@ Ext.extend(LABKEY.FileSystem.WebdavFileSystem, LABKEY.FileSystem.AbstractFileSys
         for (var i=0 ; i<callbacks.length ; i++)
         {
             var callback = callbacks[i];
-            if (typeof callback == 'function'){
+            if (Ext.isFunction(callback)) {
                 callback(this, path, listing);
             }
             else if (typeof callback == 'object') {
                 var scope = callback.scope || this;
-                if (success && typeof callback.success == 'function')
+                if (success && Ext.isFunction(callback.success))
                     callback.success.call(scope, this, path, listing);
-                else if (!success && typeof callback.failure == 'function')
+                else if (!success && Ext.isFunction(callback.failure))
                     callback.failure.call(scope, args.transId.conn);
             }
         }
