@@ -7,7 +7,10 @@ Ext4.USE_NATIVE_JSON = true;
 Ext4.Ajax.timeout = 5 * 60 * 1000;
 
 // set csrf value for all requests
-Ext4.Ajax.defaultHeaders = {'X-LABKEY-CSRF': LABKEY.CSRF};
+if (!Ext4.Ajax.defaultHeaders) {
+    Ext4.Ajax.defaultHeaders = {}
+}
+Ext4.Ajax.defaultHeaders['X-LABKEY-CSRF'] = LABKEY.CSRF;
 
 /**
  * @Override
@@ -99,45 +102,6 @@ Ext4.override(Ext4.form.FieldContainer, {
     labelableRenderTpl: Ext4.form.field.Base.prototype.labelableRenderTpl,
     getLabelableRenderData: Ext4.form.field.Base.prototype.getLabelableRenderData
 });
-
-/**
- * @Override
- * This is an override of the Ext 4.1 selection model for checkboxes due to how easy it was to accidentally uncheck a large set of rows.
- * The fix is to use a DOM Element higher up in the structure making the 'clickable' area for the checkbox larger.
- * The reason for this pertains to issue 15193 linked below.
- * https://www.labkey.org/issues/home/Developer/issues/details.view?issueId=15193
- */
-//Ext4.override(Ext4.selection.CheckboxModel, {
-//
-//    onRowMouseDown: function(view, record, item, index, e) {
-//        view.el.focus();
-//        var me = this,
-//                checker = e.getTarget('.' + Ext4.baseCSSPrefix + 'grid-cell-inner'),
-//                mode;
-//
-//        if (!me.allowRightMouseSelection(e)) {
-//            return;
-//        }
-//
-//        // checkOnly set, but we didn't click on a checker.
-//        if (me.checkOnly && !checker) {
-//            return;
-//        }
-//
-//        if (checker) {
-//            mode = me.getSelectionMode();
-//            // dont change the mode if its single otherwise
-//            // we would get multiple selection
-//            if (mode !== 'SINGLE') {
-//                me.setSelectionMode('SIMPLE');
-//            }
-//            me.selectWithEvent(record, e);
-//            me.setSelectionMode(mode);
-//        } else {
-//            me.selectWithEvent(record, e);
-//        }
-//    }
-//});
 
 /**
  * @Override
