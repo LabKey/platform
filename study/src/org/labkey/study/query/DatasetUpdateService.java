@@ -149,10 +149,23 @@ public class DatasetUpdateService extends AbstractQueryUpdateService
     public DataIteratorBuilder createImportETL(User user, Container container, DataIteratorBuilder data, DataIteratorContext context)
     {
         QCState defaultQCState = StudyManager.getInstance().getDefaultQCState(_dataset.getStudy());
+        DataSetDefinition.CheckForDuplicates dupePolicy;
+        if (isBulkLoad())
+        {
+            dupePolicy = DataSetDefinition.CheckForDuplicates.never;
+        }
+        else
+        if (context.getInsertOption() == InsertOption.MERGE)
+        {
+            dupePolicy = DataSetDefinition.CheckForDuplicates.sourceOnly;
+        }
+        else
+        {
+            dupePolicy = DataSetDefinition.CheckForDuplicates.sourceAndDestination;
+        }
         // for MERGE checking for duplicates within the source rows makes sense, but not against the existing rows
         DataIteratorBuilder insert = _dataset.getInsertDataIterator(user, data, null,
-                context.getInsertOption() == InsertOption.MERGE ? DataSetDefinition.CheckForDuplicates.sourceOnly : DataSetDefinition.CheckForDuplicates.sourceAndDestination
-                , context, defaultQCState, null, false);
+                dupePolicy, context, defaultQCState, null, false);
         return insert;
     }
 

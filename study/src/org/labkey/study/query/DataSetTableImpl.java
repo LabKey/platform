@@ -47,6 +47,7 @@ import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.LookupForeignKey;
 import org.labkey.api.query.PdLookupForeignKey;
 import org.labkey.api.query.QueryException;
+import org.labkey.api.query.QueryForeignKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.UserIdQueryForeignKey;
@@ -221,15 +222,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
             else if (name.equalsIgnoreCase(QCSTATE_ID_COLNAME))
             {
                 ColumnInfo qcStateColumn = new AliasedColumn(this, QCSTATE_ID_COLNAME, baseColumn);
-                qcStateColumn.setFk(new LookupForeignKey("RowId")
-                    {
-                        public TableInfo getLookupTableInfo()
-                        {
-                            // Go through the schema so that metadata is overlaid
-                            return _userSchema.getTable(StudyQuerySchema.QCSTATE_TABLE_NAME);
-                        }
-                    });
-
+                qcStateColumn.setFk(new QueryForeignKey(_userSchema, null, StudyQuerySchema.QCSTATE_TABLE_NAME, "RowId", null));
                 qcStateColumn.setDisplayColumnFactory(new DisplayColumnFactory()
                 {
                     public DisplayColumn createRenderer(ColumnInfo colInfo)
@@ -865,6 +858,8 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     // TODO see BaseStudyTable.addWrapParticipantColumn(), do we need both?
     class ParticipantForeignKey extends LookupForeignKey
     {
+        private ParticipantTable _tableInfo;
+
         ParticipantForeignKey()
         {
             super(StudyService.get().getSubjectColumnName(_userSchema.getContainer()));
@@ -876,12 +871,15 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
         @Override
         public TableInfo getLookupTableInfo()
         {
-            // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
-            // but we need to pass arguments to ParticipantTable constructor to hide datasets.
-            TableInfo table = new ParticipantTable(_userSchema, true);
-            table.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), _userSchema, new ArrayList<QueryException>());
-            ((ParticipantTable)table).afterConstruct();
-            return table;
+            if (_tableInfo == null)
+            {
+                // Ideally we could just ask the schema for the ParticipantTable (e.g., _schema.getTable(...)),
+                // but we need to pass arguments to ParticipantTable constructor to hide datasets.
+                _tableInfo = new ParticipantTable(_userSchema, true);
+                _tableInfo.overlayMetadata(StudyService.get().getSubjectTableName(_userSchema.getContainer()), _userSchema, new ArrayList<QueryException>());
+                _tableInfo.afterConstruct();
+            }
+            return _tableInfo;
         }
 
         @Override
