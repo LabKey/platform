@@ -145,7 +145,7 @@ public class ListManagerSchema extends UserSchema
                     ActionURL urlCreate = new ActionURL(ListController.EditListDefinitionAction.class, getContainer());
                     urlCreate.addReturnURL(getReturnURL());
                     ActionButton btnCreate = new ActionButton(urlCreate, "Create New List");
-                    btnCreate.setActionType(ActionButton.Action.POST);
+                    btnCreate.setActionType(ActionButton.Action.GET);
                     btnCreate.setDisplayPermission(DesignListPermission.class);
                     return btnCreate;
                 }
@@ -155,7 +155,7 @@ public class ListManagerSchema extends UserSchema
                     ActionURL urlImport = new ActionURL(ListController.ImportListArchiveAction.class, getContainer());
                     urlImport.addReturnURL(getReturnURL());
                     ActionButton btnImport = new ActionButton(urlImport, "Import List Archive");
-                    btnImport.setActionType(ActionButton.Action.POST);
+                    btnImport.setActionType(ActionButton.Action.GET);
                     btnImport.setDisplayPermission(DesignListPermission.class);
                     return btnImport;
                 }
