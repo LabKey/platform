@@ -75,7 +75,8 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
         _rootPanel = rootPanel;
 
         _designerURL = Window.Location.getHref();
-        _returnURL = PropertyUtil.getReturnURL();
+        String returnURL = PropertyUtil.getReturnURL();
+        _returnURL = (null != returnURL) ? returnURL : PropertyUtil.getRelativeURL("manageStudy.view", "study");
     }
 
     public void showAsync()
@@ -407,22 +408,14 @@ public class SpecimenDesignerMainPanel extends VerticalPanel implements Saveable
             _closeHandlerManager.removeHandler();
             _closeHandlerManager = null;
         }
-        String url = _returnURL;
-        if (url == null)
-        {
-            url = PropertyUtil.getContextPath() + "/study" + PropertyUtil.getContainerPath() + "/manageStudy.view";
-        }
-        WindowUtil.setLocation(url);
+
+        WindowUtil.setLocation(_returnURL);
     }
 
 
     public void finish()
     {
-        final String doneLink;
-        if (_returnURL != null)
-            doneLink = _returnURL;
-        else
-            doneLink = PropertyUtil.getContextPath() + "/study" + PropertyUtil.getContainerPath() + "/manageStudy.view";
+        final String doneLink = _returnURL;
 
         if (!_dirty)
         {
