@@ -104,9 +104,9 @@ String subjectNounLowercase = subjectNoun != null ? subjectNoun.toLowerCase() : 
             hideLabel: true,
             columns: 1,
             items: [
-                {boxLabel: "Pipeline root <b>export</b> directory, as individual files", name: "location", inputValue: 0},
-                {boxLabel: "Pipeline root <b>export</b> directory, as zip file", name: "location", inputValue: 1},
-                {boxLabel: "Browser as zip file", name: "location", inputValue: 2, checked: true}
+                {boxLabel: "Pipeline root <b>export</b> directory, as individual files", name: "location", inputValue: 0, style:"margin-left: 2px"},
+                {boxLabel: "Pipeline root <b>export</b> directory, as zip file", name: "location", inputValue: 1, style:"margin-left: 2px"},
+                {boxLabel: "Browser as zip file", name: "location", inputValue: 2, checked: true, style:"margin-left: 2px"}
             ]
         });
 
