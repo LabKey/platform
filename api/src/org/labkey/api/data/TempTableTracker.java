@@ -54,6 +54,7 @@ public class TempTableTracker extends WeakReference<Object>
     DbSchema schema;
     String schemaName;
     String tableName;
+    String qualifiedName;
     boolean deleted = false;
 
 
@@ -69,6 +70,7 @@ public class TempTableTracker extends WeakReference<Object>
         super(ref, cleanupQueue);
         this.schemaName = schema;
         this.tableName = name;
+        this.qualifiedName = schema + "." + tableName;
     } 
 
     static final Object initlock = new Object();
@@ -91,29 +93,30 @@ public class TempTableTracker extends WeakReference<Object>
     }
 
 
-    public static TempTableTracker track(DbSchema schema, String name, Object ref)
+    public static TempTableTracker track(String name, Object ref)
+    {
+        init();
+        return track(new TempTableTracker(DbSchema.getTemp(), name, ref));
+    }
+
+
+    private static TempTableTracker track(String schema, String name, Object ref)
     {
         init();
         return track(new TempTableTracker(schema, name, ref));
     }
 
 
-    private static TempTableTracker track(String schema, String name, Object ref)
-    {
-        return track(new TempTableTracker(schema, name, ref));
-    }
-
-
     private static TempTableTracker track(TempTableTracker ttt)
     {
-        _log.debug("track(" + ttt.tableName + ")");
+        _log.debug("track(" + ttt.qualifiedName + ")");
 
         synchronized(createdTableNames)
         {
-            TempTableTracker old = createdTableNames.get(ttt.tableName);
+            TempTableTracker old = createdTableNames.get(ttt.qualifiedName);
             if (old != null)
                 return old;
-            createdTableNames.put(ttt.tableName, ttt);
+            createdTableNames.put(ttt.qualifiedName, ttt);
             appendToLog("+" + ttt.schemaName + "\t" + ttt.tableName + "\n");
             return ttt;
         }
@@ -152,18 +155,18 @@ public class TempTableTracker extends WeakReference<Object>
     protected void finalize() throws Throwable
     {
         if (!deleted)
-            _log.error("finalizing undeleted TempTableTracker: " + tableName);
+            _log.error("finalizing undeleted TempTableTracker: " + qualifiedName);
         super.finalize();
     }
 
 
     private void untrack()
     {
-        _log.debug("untrack(" + tableName + ")");
+        _log.debug("untrack(" + qualifiedName + ")");
 
         synchronized(createdTableNames)
         {
-            createdTableNames.remove(tableName);
+            createdTableNames.remove(qualifiedName);
             appendToLog("-" + schemaName + "\t" + tableName + "\n");
 
             if (createdTableNames.isEmpty() || System.currentTimeMillis() > lastSync + CacheManager.DAY)
@@ -193,6 +196,7 @@ public class TempTableTracker extends WeakReference<Object>
 
     private static void purgeTempSchema()
     {
+        _log.debug("purgeTempSchema");
         // consider: test to see if any of the schemas have different scope (dbName) than core schema
         synchronized(createdTableNames)
         {
@@ -213,6 +217,7 @@ public class TempTableTracker extends WeakReference<Object>
 
                 if (loadFile)
                 {
+                    _log.debug("load log file");
                     TreeSet<String> logEntries = new TreeSet<>();
 
                     try
@@ -258,12 +263,13 @@ public class TempTableTracker extends WeakReference<Object>
                 //
                 // we could create new file and rename, but this doesn't have to be that robust
                 //
+                _log.debug("rewrite log file");
                 tempTableLog.seek(0);
                 tempTableLog.setLength(0);
                 for (TempTableTracker ttt : createdTableNames.values())
                 {
                     if (!ttt.deleted)
-                        appendToLog("+" + ttt.tableName + "\n");
+                        appendToLog("+" + ttt.schemaName + "\t" + ttt.tableName + "\n");
                 }
             }
             catch (IOException x)

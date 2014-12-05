@@ -85,7 +85,7 @@ import java.util.regex.Pattern;
 // dialect holds state specific to each database, for example, reserved words, user defined type information, etc.
 public abstract class SqlDialect
 {
-    private static final Logger LOG = Logger.getLogger(SqlDialect.class);
+    protected static final Logger LOG = Logger.getLogger(SqlDialect.class);
     protected static final String INPUT_TOO_LONG_ERROR_MESSAGE = "The input you provided was too long.";
     public static final String GENERIC_ERROR_MESSAGE = "The database experienced an unexpected problem. Please check your input and try again.";
     public static final String GUID_TYPE = "ENTITYID";
@@ -1278,7 +1278,23 @@ public abstract class SqlDialect
 
     public abstract List<String> getChangeStatements(TableChange change);
     public abstract void initializeConnection(Connection conn) throws SQLException;
+
     public abstract void purgeTempSchema(Map<String, TempTableTracker> createdTableNames);
+
+    // Track any tables found in the temp schema that aren't already known
+    protected void trackTempTables(Map<String, TempTableTracker> createdTableNames) throws SQLException
+    {
+        Object noref = new Object();
+        DbSchema schema = DbSchema.getTemp();
+        Map<String, String> tableNames = DbSchema.loadTableNames(schema.getScope(), schema.getName(), false);
+        for (String tableName : tableNames.values())
+        {
+            String tempName = schema.getName() + "." + tableName;
+            if (!createdTableNames.containsKey(tempName))
+                TempTableTracker.track(tableName, noref);
+        }
+    }
+
     public abstract boolean isCaseSensitive();
     public abstract boolean isEditable();
     public abstract boolean isSqlServer();

@@ -64,6 +64,7 @@ import java.util.Set;
 public class DbSchema
 {
     private static final Logger _log = Logger.getLogger(DbSchema.class);
+    public static final String TEMP_SCHEMA_NAME = "temp";
 
     private final String _name;
     private final DbSchemaType _type;
@@ -104,6 +105,15 @@ public class DbSchema
         }
     }
 
+    /**
+     * Get DbSchema for the 'temp' schema.  Similar to a provisioned schema, XML metadata is not applied and tables aren't loaded.
+     * @see org.labkey.api.data.TempTableInfo
+     * @see org.labkey.api.data.TempTableTracker
+     */
+    public static @NotNull DbSchema getTemp()
+    {
+        return DbScope.getLabkeyScope().getSchema(TEMP_SCHEMA_NAME, DbSchemaType.Provisioned);
+    }
 
     // "core" returns <<labkey scope>, "core">
     // "external.myschema" returns <<external scope>, "myschema">
@@ -216,17 +226,22 @@ public class DbSchema
 
 
     /**
-     * Queries JDBC meta data to retrieve the list of tables in this shcmea. Returns a case-insensitive map of table
-     * names to canonical (meta data) names.
+     * Queries JDBC meta data to retrieve the list of tables in this schema, ignoring any temp tables.
+     * Returns a case-insensitive map of table names to canonical (meta data) names.
      *
      * Note: Do not call this unless you really know what you're doing! You should probably be calling DbSchema.getTables()
      * instead, to ensure you get the cached version.
      */
     public static Map<String, String> loadTableNames(DbScope scope, String schemaName) throws SQLException
     {
+        return loadTableNames(scope, schemaName, true);
+    }
+
+    public static Map<String, String> loadTableNames(DbScope scope, String schemaName, boolean ignoreTemp) throws SQLException
+    {
         final Map<String, String> metaDataTableNameMap = new CaseInsensitiveHashMap<>();
 
-        TableMetaDataLoader loader = new TableMetaDataLoader(scope, schemaName, "%") {
+        TableMetaDataLoader loader = new TableMetaDataLoader(scope, schemaName, "%", ignoreTemp) {
             @Override
             protected void handleTable(String name, ResultSet rs) throws SQLException
             {
@@ -249,12 +264,14 @@ public class DbSchema
         private final String _tableNamePattern;
         private final String _metaDataSchemaName;
         private final DbScope _scope;
+        private final boolean _ignoreTemp;
 
-        private TableMetaDataLoader(DbScope scope, String metaDataSchemaName, String tableNamePattern)
+        private TableMetaDataLoader(DbScope scope, String metaDataSchemaName, String tableNamePattern, boolean ignoreTemp)
         {
             _tableNamePattern = tableNamePattern;
             _metaDataSchemaName = metaDataSchemaName;
             _scope = scope;
+            _ignoreTemp = ignoreTemp;
         }
 
         protected abstract void handleTable(String name, ResultSet rs) throws SQLException;
@@ -281,7 +298,7 @@ public class DbSchema
                             return;
 
                         // skip if it looks like one of our temp table names: name$<32hexchars>
-                        if (tableName.length() > 33 && tableName.charAt(tableName.length() - 33) == '$')
+                        if (_ignoreTemp && tableName.length() > 33 && tableName.charAt(tableName.length() - 33) == '$')
                             return;
 
                         handleTable(tableName, rs);
@@ -382,7 +399,7 @@ public class DbSchema
 
         private SingleTableMetaDataLoader(DbScope scope, String schemaName, String tableName)
         {
-            super(scope, schemaName, tableName);
+            super(scope, schemaName, tableName, true);
             _tableName = tableName;
         }
 
@@ -940,7 +957,7 @@ public class DbSchema
         col.setNullable(false);
         listColInfos.add(col);
 
-        TempTableInfo tTemplate = new TempTableInfo(coreSchema, "cltmp", listColInfos, Collections.singletonList("RowId"));
+        TempTableInfo tTemplate = new TempTableInfo("cltmp", listColInfos, Collections.singletonList("RowId"));
         String tempTableName = tTemplate.getTempTableName();
 
         String createTempTableSql =

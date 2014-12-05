@@ -47,9 +47,9 @@ public class TempTableWriter
         _loader = loader;
     }
 
-    // TODO: Use iterator() instead of load() to support larger files.  Would need to infer varchar column widths via
+    // TODO: Use streaming DataIterator instead of Loader.load() to support larger files.  Would need to infer varchar column widths via
     // first n rows approach (and potentially check and ALTER if we find a larger width later)
-    public TempTableInfo loadTempTable(DbSchema schema) throws IOException, SQLException
+    public TempTableInfo loadTempTable() throws IOException, SQLException
     {
         //
         // Load the file
@@ -59,7 +59,6 @@ public class TempTableWriter
         //
         // create TableInfo
         //
-        SqlDialect dialect = schema.getSqlDialect();
         ColumnDescriptor[] allColumns = _loader.getColumns();
         List<ColumnInfo> activeColumns = new ArrayList<>();
 
@@ -67,16 +66,16 @@ public class TempTableWriter
         {
             if (col.load)
             {
-                String sqlType = getSqlType(dialect, col.clazz);
+                JdbcType type = JdbcType.valueOf(col.clazz);
                 ColumnInfo colTT = new ColumnInfo(col.name);
-                colTT.setSqlTypeName(sqlType);
+                colTT.setJdbcType(type);
                 colTT.setNullable(true);
                 activeColumns.add(colTT);
             }
         }
 
         // note: this call sets col.parentTable()
-        TempTableInfo tinfoTempTable = new TempTableInfo(schema, "ttw", activeColumns, null);
+        TempTableInfo tinfoTempTable = new TempTableInfo("ttw", activeColumns, null);
         String tempTableName = tinfoTempTable.getTempTableName();
 
         //
@@ -121,6 +120,7 @@ public class TempTableWriter
         // Track the table, it will be deleted when tinfoTempTable is GC'd
         //
         tinfoTempTable.track();
+        DbSchema schema = tinfoTempTable.getSchema();
         new SqlExecutor(schema).execute(sql);
 
         //
@@ -157,34 +157,4 @@ public class TempTableWriter
     }
 
 
-    /**
-     * UNDONE: this should be more complete and move to a shared location
-     * TODO: use a map
-     * @see org.labkey.api.data.ColumnInfo
-     */
-    private String getSqlType(SqlDialect dialect, Class clazz)
-    {
-        int sqlType;
-
-        if (clazz == String.class)
-            sqlType = Types.VARCHAR;
-        else if (clazz == Date.class)
-            sqlType = Types.TIMESTAMP;
-        else if (clazz == Integer.class || clazz == Integer.TYPE)
-            sqlType = Types.INTEGER;
-        else if (clazz == Double.class || clazz == Double.TYPE)
-            sqlType = Types.DOUBLE;
-        else if (clazz == Float.class || clazz == Float.TYPE)
-            sqlType = Types.REAL;
-        else if (clazz == String.class)
-            sqlType = Types.VARCHAR;
-        else if (clazz == Boolean.class || clazz == Boolean.TYPE)
-            sqlType = Types.BOOLEAN;
-        else if (clazz == Long.class || clazz == Long.TYPE)
-            sqlType = Types.BIGINT;
-        else
-            sqlType = Types.VARCHAR;
-
-        return dialect.sqlTypeNameFromSqlType(sqlType);
-    }
 }

@@ -46,9 +46,14 @@ public class TempTableInfo extends SchemaTableInfo
         return sb.toString();
     }
 
-    public TempTableInfo(DbSchema parentSchema, String name, List<ColumnInfo> cols, List<String> pk)
+    public TempTableInfo(String name, List<ColumnInfo> cols, List<String> pk)
     {
-        super(parentSchema, DatabaseTableType.TABLE, name, name, parentSchema.getSqlDialect().getGlobalTempTablePrefix() + name + "$" + shortGuid());
+        this(DbSchema.getTemp(), name, cols, pk);
+    }
+
+    private TempTableInfo(DbSchema schema, String name, List<ColumnInfo> cols, List<String> pk)
+    {
+        super(schema, DatabaseTableType.TABLE, name, name, schema.getName() + "." + name + "$" + shortGuid());
 
         // TODO: Do away with _tempTableName?  getSelectName() is synonymous.
         _tempTableName = getSelectName();
@@ -72,7 +77,9 @@ public class TempTableInfo extends SchemaTableInfo
     /** Call this method when table is physically created */
     public void track()
     {
-        _ttt = TempTableTracker.track(getSchema(), getTempTableName(), this);
+        // Remove the schema name and dot
+        String tableName = _tempTableName.substring(getSchema().getName().length() + 1);
+        _ttt = TempTableTracker.track(tableName, this);
     }
 
 
