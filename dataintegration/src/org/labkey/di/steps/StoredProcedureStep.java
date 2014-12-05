@@ -283,11 +283,6 @@ public class StoredProcedureStep extends TransformTask
     private boolean getParametersFromDbMetadata() throws SQLException
     {
         parameters = dialect.getParametersFromDbMetadata(scope, procSchema, procName);
-        if (!parameters.containsKey(SPECIAL_PARMS.transformRunId.name()))
-        {
-            getJob().error("Error: sproc must have transformRunId input parameter");
-            return false;
-        }
 
         if (parameters.containsKey(SPECIAL_PARMS.return_status.name()))
             procReturns = RETURN_TYPE.INTEGER;
