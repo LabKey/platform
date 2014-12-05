@@ -524,31 +524,6 @@ public class ExceptionUtil
         ErrorView errorView;
         Map<String, String> headers = new TreeMap<>();
 
-        // check for redirect to login.jsp
-        //      unauthorized guest
-        if (ex instanceof UnauthorizedException && isGET)
-        {
-            UnauthorizedException uae = (UnauthorizedException)ex;
-            String headerHint = request.getHeader("X-ONUNAUTHORIZED");
-
-            // If user has not logged in or agreed to terms, not really unauthorized yet...
-            if (!(uae instanceof CSRFException) && !uae.getUseBasicAuthentication() &&
-                (user.isGuest() || ex instanceof TermsOfUseException) && !"UNAUTHORIZED".equals(headerHint))
-            {
-                ActionURL redirect;
-
-                if (uae instanceof TermsOfUseException)
-                {
-                    redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
-                }
-                else
-                {
-                    redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
-                }
-                return redirect;
-            }
-        }
-
         if (ViewServlet.isShuttingDown())
         {
             try
@@ -582,15 +557,50 @@ public class ExceptionUtil
         }
         else if (ex instanceof UnauthorizedException)
         {
-            responseStatus = HttpServletResponse.SC_UNAUTHORIZED;
+            UnauthorizedException uae = (UnauthorizedException) ex;
+
+            // This header allows for requests to explictly ask to not get basic auth headers back
+            // useful for when the page wants to handle 401's itself
+            String headerHint = request.getHeader("X-ONUNAUTHORIZED");
+
+            boolean isGuest = user.isGuest();
+            boolean useBasicAuthentication = !"UNAUTHORIZED".equals(headerHint) && uae.getUseBasicAuthentication();
+            boolean isCSRFViolation = uae instanceof CSRFException;
+            boolean isTermsOfUseViolation = uae instanceof TermsOfUseException;
+
+            // check for redirect to login.jsp -- unauthorized guest
+            if (isGET)
+            {
+                // If user has not logged in or agreed to terms, not really unauthorized yet...
+                if (!isCSRFViolation && !useBasicAuthentication && (isGuest || isTermsOfUseViolation))
+                {
+                    ActionURL redirect;
+
+                    if (isTermsOfUseViolation)
+                    {
+                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getAgreeToTermsURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
+                    }
+                    else
+                    {
+                        redirect = PageFlowUtil.urlProvider(LoginUrls.class).getLoginURL(HttpView.getContextContainer(), HttpView.getContextURLHelper());
+                    }
+                    return redirect;
+                }
+            }
+
+            // we know who you are, you're just forbidden from seeing it (unless bad CSRF, silly kids)
+            responseStatus = isGuest || isCSRFViolation ? HttpServletResponse.SC_UNAUTHORIZED : HttpServletResponse.SC_FORBIDDEN;
+
             message = ex.getMessage();
             responseStatusMessage = message;
-            if (user.isGuest() && ((UnauthorizedException)ex).getUseBasicAuthentication())
+
+            if (isGuest && useBasicAuthentication)
             {
                 headers.put("WWW-Authenticate", "Basic realm=\"" + LookAndFeelProperties.getInstance(ContainerManager.getRoot()).getDescription() + "\"");
                 if (isGET)
                     message = "You must log in to view this content.";
             }
+
             unhandledException = null;
         }
         else if (ex instanceof SQLException)
@@ -614,8 +624,10 @@ public class ExceptionUtil
 
         errorView = ExceptionUtil.getErrorView(responseStatus, message, unhandledException, request, startupFailure);
 
-        //don't log unauthorized (basic-auth challenge) or simple not found (404s)
-        if (responseStatus != HttpServletResponse.SC_UNAUTHORIZED && responseStatus != HttpServletResponse.SC_NOT_FOUND)
+        //don't log unauthorized (basic-auth challenge), forbiddens, or simple not found (404s)
+        if (responseStatus != HttpServletResponse.SC_UNAUTHORIZED &&
+                responseStatus != HttpServletResponse.SC_FORBIDDEN &&
+                responseStatus != HttpServletResponse.SC_NOT_FOUND)
         {
             log.error("Unhandled exception: " + (null == message ? "" : message), ex);
         }
@@ -894,7 +906,7 @@ public class ExceptionUtil
             // Non-Guest Unauthorized
             answer = handleIt(me, new UnauthorizedException("Not on my watch"), null);
             assertNull(answer.redirect);
-            assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
+            assertEquals(HttpServletResponse.SC_FORBIDDEN, answer.response.status);
 
             // Guest Basic Unauthorized
             answer = handleIt(guest, new RequestBasicAuthException(), null);
@@ -905,7 +917,7 @@ public class ExceptionUtil
             // Non-Guest Basic Unauthorized
             answer = handleIt(me, new RequestBasicAuthException(), null);
             assertNull("BasicAuth should not redirect", answer.redirect);
-            assertEquals(HttpServletResponse.SC_UNAUTHORIZED, answer.response.status);
+            assertEquals(HttpServletResponse.SC_FORBIDDEN, answer.response.status);
             assertFalse(answer.response.headers.containsKey("WWW-Authenticate"));
 
             // Guest TermsOfUse

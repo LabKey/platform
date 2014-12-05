@@ -8,8 +8,8 @@ Ext.define('LABKEY.app.controller.HttpInterceptor', {
 
         var me = this;
 
-        Ext.Ajax.defaultHeaders['X-ONUNAUTHORIZED'] = 'AUTHORIZED';
-        LABKEY.Ajax.DEFAULT_HEADERS['X-ONUNAUTHORIZED'] = 'AUTHORIZED';
+        Ext.Ajax.defaultHeaders['X-ONUNAUTHORIZED'] = 'UNAUTHORIZED';
+        LABKEY.Ajax.DEFAULT_HEADERS['X-ONUNAUTHORIZED'] = 'UNAUTHORIZED';
 
         Ext.override(Ext.Ajax, {
             request : function(options) {
@@ -17,7 +17,9 @@ Ext.define('LABKEY.app.controller.HttpInterceptor', {
                 Ext.apply(options, {
                     _fail: options.failure,
                     _failScope: options.scope,
-                    failure: me._onAjaxFailure
+                    failure: function(response, options) {
+                        me._onAjaxFailure.call(me, response, options);
+                    }
                 });
 
                 this.callParent(arguments);
@@ -31,7 +33,9 @@ Ext.define('LABKEY.app.controller.HttpInterceptor', {
                 Ext.apply(options, {
                     _fail: options.failure,
                     _failScope: options.scope,
-                    failure: me._onAjaxFailure
+                    failure: function(response, options) {
+                        me._onAjaxFailure.call(me, response, options);
+                    }
                 });
 
                 LABKEY.Ajax._realRequest(options);
@@ -53,20 +57,29 @@ Ext.define('LABKEY.app.controller.HttpInterceptor', {
 
         var status = response.status;
 
-        if (status === 0) {
-            /* The request never happened. E.g. when the server is not responding / shutdown */
+        if (status === 0 || status === -1) {
+            /* The request never happened. E.g. when the server is not responding / shutdown OR request aborted*/
+            if (this.application.fireEvent('httpaborted', response.status, response.statusText) === false) {
+                return;
+            }
         }
         else if (response.status === 401) {
-            /* NOT AUTHORIZED */
-//            AUTH_STOP = true;
-//            Ext.Ajax.abortAll();
-//            LABKEY.user.isSignedIn = false;
-//            window.location.reload();
+            /* UNAUTHORIZED */
+            if (this.application.fireEvent('httpunauthorized', response.status, response.statusText) === false) {
+                return;
+            }
         }
         else if (status === 403) {
             /* FORBIDDEN */
+            if (this.application.fireEvent('httpforbidden', response.status, response.statusText) === false) {
+                return;
+            }
         }
-        else if (options) {
+//        else {
+//            console.log('status was', status);
+//        }
+
+        if (options) {
             if (Ext.isFunction(options._fail)) {
                 options._fail.call(options._failScope, response, options);
             }
