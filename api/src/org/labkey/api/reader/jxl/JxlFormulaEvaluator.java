@@ -74,7 +74,8 @@ public class JxlFormulaEvaluator implements FormulaEvaluator
     @Override
     public int evaluateFormulaCell(Cell cell)
     {
-        throw new UnsupportedOperationException("method not yet supported");
+        // Assume that the formula result is unchanged, works fine for unmodified data
+        return cell.getCachedFormulaResultType();
     }
 
     @Override

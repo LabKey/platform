@@ -78,11 +78,11 @@ Ext.onReady(function () {
         var exportParams;
 
         if (xlsxExportEl.checked) {
-            exportUrl = <%=PageFlowUtil.jsString(model.getXlsxURL().getFullParsedPath().toString())%>;
+            exportUrl = <%=PageFlowUtil.jsString(model.getXlsxURL().getPath(false))%>;
             exportParams = <%=text( new JSONObject(model.getXlsxURL().getParameterMap()).toString(2) )%>;
         }
         else if (xlsExportEl.checked) {
-            exportUrl = <%=PageFlowUtil.jsString(model.getXlsURL().getFullParsedPath().toString())%>;
+            exportUrl = <%=PageFlowUtil.jsString(model.getXlsURL().getPath(false))%>;
             exportParams = <%=text( new JSONObject(model.getXlsURL().getParameterMap()).toString(2) )%>;
         <% if (model.getIqyURL() != null) { %>
         } else if (iqyExportEl.checked) {

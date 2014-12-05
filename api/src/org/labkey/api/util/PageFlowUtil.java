@@ -2105,12 +2105,12 @@ public class PageFlowUtil
                     _reported.add(a);
                     _errors.add("Illegal attribute '" + attributes.getQName(i) + "' on element <" + qName + ">.");
                 }
-                if ("href".equals(a))
+                if ("href".equals(a) || "src".equals(a))
                 {
                     if (value.contains("script") && value.indexOf("script") < value.indexOf(":") && !_reported.contains("href"))
                     {
                         _reported.add("href");
-                        _errors.add("Script is not allowed in 'href' attribute on element <" + qName + ">.");
+                        _errors.add("Script is not allowed in '" + a + "' attribute on element <" + qName + ">.");
                     }
                 }
                 if ("style".equals(a))

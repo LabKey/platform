@@ -22,7 +22,6 @@ import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.SecurityManager;
 import org.labkey.api.util.ExceptionReportingLevel;
-import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.MothershipReport;
 import org.labkey.api.util.PageFlowUtil;
@@ -38,16 +37,12 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 
 /**
@@ -495,24 +490,7 @@ public class AppPropsImpl extends AbstractWriteableSettingsGroup implements AppP
         _projectRoot = projectRoot;
 
         if (null != _projectRoot)
-        {
-            File file = new File(_projectRoot, "enlistment.properties");
-
-            if (file.exists())
-            {
-                Properties props = new Properties();
-
-                try (InputStream is = new FileInputStream(file))
-                {
-                    props.load(is);
-                    _enlistmentId = props.getProperty("enlistment.id");
-                }
-                catch (IOException e)
-                {
-                    ExceptionUtil.logExceptionToMothership(null, e);
-                }
-            }
-        }
+            _enlistmentId = ModuleLoader.getInstance().loadEnlistmentId(new File(_projectRoot));
     }
 
     // Return the root of the main source tree

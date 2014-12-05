@@ -87,6 +87,7 @@ import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -747,6 +748,31 @@ public class ModuleLoader implements Filter
             _log.error("error reading module configuration: " + moduleXml.getPath(), x);
         }
         return null;
+    }
+
+
+    // Attempt to parse "enlistment.id" property from a file named "enlistment.properties" in this directory, if it exists
+    public @Nullable String loadEnlistmentId(File directory)
+    {
+        String enlistmentId = null;
+        File file = new File(directory, "enlistment.properties");
+
+        if (file.exists())
+        {
+            Properties props = new Properties();
+
+            try (InputStream is = new FileInputStream(file))
+            {
+                props.load(is);
+                enlistmentId = props.getProperty("enlistment.id");
+            }
+            catch (IOException e)
+            {
+                ExceptionUtil.logExceptionToMothership(null, e);
+            }
+        }
+
+        return enlistmentId;
     }
 
 

@@ -1138,28 +1138,36 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         // We load resources from the module's source directory if all of the following conditions are true:
         //
         // - devmode = true
+        // - The module's source path is a directory that exists on the web server
         // - The module has an enlistment ID set
-        // - The web server has a source path that matches the core module's source path
-        // - The enlistment ID in the web servers source root matches the module's enlistment ID
-        // - The module's source path exists on the web server
+        // - The module's enlistment ID matches EITHER the enlistment ID in the web server's source root OR the enlistment ID in
+        //   the module's sourcePath
         //
         if (AppProps.getInstance().isDevMode())
         {
-            String moduleEnlistmentId = getEnlistmentId();
+            String sourcePath = getSourcePath();
 
-            if (null != moduleEnlistmentId)
+            if (null != sourcePath)
             {
-                String serverEnlisthmentId = AppProps.getInstance().getEnlistmentId();
+                File sourceDir = new File(sourcePath);
 
-                if (null != serverEnlisthmentId && serverEnlisthmentId.equals(moduleEnlistmentId))
+                if (sourceDir.isDirectory())
                 {
-                    String sourcePath = getSourcePath();
+                    String moduleEnlistmentId = getEnlistmentId();
 
-                    if (null != sourcePath)
+                    if (null != moduleEnlistmentId)
                     {
-                        File sourceDir = new File(sourcePath);
+                        String serverEnlisthmentId = AppProps.getInstance().getEnlistmentId();
+                        boolean useSource = (null != serverEnlisthmentId && serverEnlisthmentId.equals(moduleEnlistmentId));
 
-                        if (sourceDir.isDirectory())
+                        // Server enlistment ID didn't work... try module enlistment ID
+                        if (!useSource)
+                        {
+                            String moduleSourceEnlistmentId = ModuleLoader.getInstance().loadEnlistmentId(sourceDir);
+                            useSource = (null != moduleSourceEnlistmentId && moduleSourceEnlistmentId.equals(moduleEnlistmentId));
+                        }
+
+                        if (useSource)
                             return getResourceDirectory(sourceDir);
                     }
                 }

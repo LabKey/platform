@@ -487,7 +487,8 @@ public class QueryView extends WebPartView<Object>
         // Issue 17313: Exporting from a grid should respect "Apply View Filter" state
         if (_customView != null)
         {
-            ret.addParameter(DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, _customView.getName());
+            if (_customView.getName() != null)
+                ret.addParameter(DATAREGIONNAME_DEFAULT + "." + QueryParam.viewName, _customView.getName());
 
             if (!ignoreUserFilter() && _customView != null && _customView.hasFilterOrSort())
             {
