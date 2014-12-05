@@ -83,8 +83,6 @@ import java.util.regex.Pattern;
 // Dialect specifics for PostgreSQL
 public class PostgreSql84Dialect extends SqlDialect
 {
-    private static final Logger _log = Logger.getLogger(PostgreSql84Dialect.class);
-
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
     private InClauseGenerator _inClauseGenerator = null;
     private AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
@@ -597,7 +595,7 @@ public class PostgreSql84Dialect extends SqlDialect
     @Override
     public String getGlobalTempTablePrefix()
     {
-        return "temp.";
+        return DbSchema.TEMP_SCHEMA_NAME + ".";
     }
 
     @Override
@@ -721,7 +719,7 @@ public class PostgreSql84Dialect extends SqlDialect
     {
         if ("55006".equals(e.getSQLState()))
         {
-            _log.error("You must close down pgAdmin III and all other applications accessing PostgreSQL.");
+            LOG.error("You must close down pgAdmin III and all other applications accessing PostgreSQL.");
             throw (new ServletException("Close down or disconnect pgAdmin III and all other applications accessing PostgreSQL", e));
         }
         else
@@ -1270,42 +1268,15 @@ public class PostgreSql84Dialect extends SqlDialect
     {
         try
         {
+            trackTempTables(createdTableNames);
+
             DbSchema coreSchema = CoreSchema.getInstance().getSchema();
             SqlExecutor executor = new SqlExecutor(coreSchema);
-            DbScope scope = coreSchema.getScope();
-            String tempSchemaName = getGlobalTempTablePrefix();
-            if (tempSchemaName.endsWith("."))
-                tempSchemaName = tempSchemaName.substring(0, tempSchemaName.length() - 1);
-            String dbName = getDatabaseName(scope.getDataSourceName(), scope.getDataSource());
-
-            Object noref = new Object();
-            Connection conn = null;
-
-            try
-            {
-                conn = scope.getConnection();
-
-                try (ResultSet rs = conn.getMetaData().getTables(dbName, tempSchemaName, "%", new String[]{"TABLE"}))
-                {
-                    while (rs.next())
-                    {
-                        String table = rs.getString("TABLE_NAME");
-                        String tempName = getGlobalTempTablePrefix() + table;
-                        if (!createdTableNames.containsKey(tempName))
-                            TempTableTracker.track(coreSchema, tempName, noref);
-                    }
-                }
-            }
-            finally
-            {
-                if (null != conn)
-                    scope.releaseConnection(conn);
-            }
 
             //rs = conn.getMetaData().getFunctions(dbName, tempSchemaName, "%");
             Map<String, String> types = null;
 
-            try (ResultSet rs = new SqlSelector(coreSchema, "SELECT proname AS SPECIFIC_NAME, CAST(proargtypes AS VARCHAR) FROM pg_proc WHERE pronamespace=(select oid from pg_namespace where nspname = ?)", tempSchemaName).getResultSet())
+            try (ResultSet rs = new SqlSelector(coreSchema, "SELECT proname AS SPECIFIC_NAME, CAST(proargtypes AS VARCHAR) FROM pg_proc WHERE pronamespace=(select oid from pg_namespace where nspname = ?)", DbSchema.getTemp().getName()).getResultSet())
             {
                 while (rs.next())
                 {
@@ -1328,9 +1299,9 @@ public class PostgreSql84Dialect extends SqlDialect
                 }
             }
         }
-        catch (SQLException | ServletException x)
+        catch (SQLException x)
         {
-            _log.warn("error cleaning up temp schema", x);
+            LOG.warn("error cleaning up temp schema", x);
         }
     }
 

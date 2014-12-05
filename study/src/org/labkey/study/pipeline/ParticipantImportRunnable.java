@@ -108,7 +108,7 @@ public class ParticipantImportRunnable extends DatasetImportRunnable
             StudySchema schema = StudySchema.getInstance();
 
             TempTableWriter ttl = new TempTableWriter(loader);
-            TempTableInfo tinfoTemp = ttl.loadTempTable(schema.getSchema());
+            TempTableInfo tinfoTemp = ttl.loadTempTable();
             TableInfo site = StudySchema.getInstance().getTableInfoSite();
             ColumnInfo siteLookup = site.getColumn(_siteLookup);
 

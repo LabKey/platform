@@ -615,7 +615,7 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public String getGlobalTempTablePrefix()
     {
-        return "temp.";
+        return DbSchema.TEMP_SCHEMA_NAME + ".";
     }
 
 
@@ -1142,7 +1142,14 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     @Override
     public void purgeTempSchema(Map<String, TempTableTracker> createdTableNames)
     {
-        // Do nothing -- SQL Server cleans up temp tables automatically
+        try
+        {
+            trackTempTables(createdTableNames);
+        }
+        catch (SQLException e)
+        {
+            LOG.warn("error cleaning up temp schema", e);
+        }
     }
 
     @Override
