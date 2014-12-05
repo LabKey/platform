@@ -439,6 +439,11 @@ public class RefNtSequenceModel
             {
                 start = 0;
             }
+            //always keep start 0-based
+            else if (start != 0)
+            {
+                start--;
+            }
 
             if (end == null)
             {

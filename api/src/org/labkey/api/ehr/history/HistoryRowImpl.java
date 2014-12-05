@@ -51,8 +51,8 @@ public class HistoryRowImpl implements HistoryRow
 
     protected static final Logger _log = Logger.getLogger(HistoryRowImpl.class);
 
-    protected final static SimpleDateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-    protected final static SimpleDateFormat _timeFormat = new SimpleDateFormat("kk:mm");
+    protected final SimpleDateFormat _dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+    protected final SimpleDateFormat _timeFormat = new SimpleDateFormat("kk:mm");
 
     public HistoryRowImpl(HistoryDataSource source, String categoryText, String primaryGroup, String categoryColor, String subjectId, Date date, String html, String qcStateLabel, Boolean publicData, String taskId, Integer taskRowId, String formType, String objectId)
     {
