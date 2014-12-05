@@ -18,7 +18,7 @@
  -->
 <ns:tables xmlns:ns="http://labkey.org/data/xml">
   <ns:table tableName="QueryDef" tableDbType="TABLE">
-    <ns:cacheSize>5000</ns:cacheSize>
+    <ns:cacheSize>100000</ns:cacheSize>
     <ns:columns>
       <ns:column columnName="QueryDefId"/>
       <ns:column columnName="EntityId"/>
@@ -37,7 +37,7 @@
     </ns:columns>
   </ns:table>
     <ns:table tableName="CustomView" tableDbType="TABLE">
-      <ns:cacheSize>10000</ns:cacheSize>
+      <ns:cacheSize>100000</ns:cacheSize>
       <ns:columns>
         <ns:column columnName="CustomViewId"/>
         <ns:column columnName="EntityId"/>
@@ -56,6 +56,7 @@
       </ns:columns>
     </ns:table>
     <ns:table tableName="ExternalSchema" tableDbType="TABLE">
+        <ns:cacheSize>10000</ns:cacheSize>
         <ns:columns>
             <ns:column columnName="ExternalSchemaId" />
             <ns:column columnName="EntityId" />

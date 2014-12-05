@@ -60,7 +60,7 @@ public class FreezerProExport
     private String _searchFilterString;
     private boolean _getUserFields;
     private static Map<String, String> COLUMN_MAP;
-    private List<Pair<String, Object>> _columnFilters = new ArrayList<>();
+    private List<Pair<String, List<String>>> _columnFilters = new ArrayList<>();
     private Map<String, String> _columnMap = new CaseInsensitiveHashMap<>();
     private Set<String> _columnSet = new HashSet<>();
     private static int RECORD_CHUNK_SIZE = 1000;
@@ -114,13 +114,21 @@ public class FreezerProExport
                     if (config.isSetFilterString())
                         _searchFilterString = config.getFilterString();
 
+                    Map<String, List<String>> filters = new HashMap<>();
                     FreezerProConfigDocument.FreezerProConfig.ColumnFilters columnFilters = config.getColumnFilters();
                     if (columnFilters != null)
                     {
                         for (FreezerProConfigDocument.FreezerProConfig.ColumnFilters.Filter filter : columnFilters.getFilterArray())
                         {
                             if (filter.getName() != null && filter.getValue() != null)
-                                _columnFilters.add(new Pair<String, Object>(filter.getName(), filter.getValue()));
+                            {
+                                // filters can support multiple values for the same field
+                                if (!filters.containsKey(filter.getName()))
+                                {
+                                    filters.put(filter.getName(), new ArrayList<String>());
+                                }
+                                filters.get(filter.getName()).add(filter.getValue());
+                            }
                         }
                     }
 
@@ -138,6 +146,11 @@ public class FreezerProExport
                                             "The configuration specificed to remap to: " + col.getDestName() + " will be ignored.");
                             }
                         }
+                    }
+
+                    for (Map.Entry<String, List<String>> entry : filters.entrySet())
+                    {
+                        _columnFilters.add(new Pair<String, List<String>>(entry.getKey(), entry.getValue()));
                     }
                 }
             }
@@ -385,6 +398,7 @@ public class FreezerProExport
                         }
                         start += limit;
                         done = (response.getTotalRecords() == 0) || (start >= response.getTotalRecords());
+                        _job.info("Location informatation = retrieved " + start + " records out of a total of " + response.getTotalRecords());
                     }
                     else
                     {
@@ -476,6 +490,7 @@ public class FreezerProExport
                     if (response.getStatusCode() == HttpStatus.SC_OK)
                     {
                         List<Map<String, Object>> data = response.loadData();
+                        _job.info("Loading " + data.size() + " records from freezer : " + freezer.getName());
                         for (Map<String, Object> row : data)
                         {
                             rows.add(row);
@@ -521,9 +536,9 @@ public class FreezerProExport
             for (Map<String, Object> record : data)
             {
                 boolean addRecord = true;
-                for (Pair<String, Object> filter : _columnFilters)
+                for (Pair<String, List<String>> filter : _columnFilters)
                 {
-                    if (record.containsKey(filter.getKey()) && !record.get(filter.getKey()).equals(filter.getValue()))
+                    if (record.containsKey(filter.getKey()) && !valueAllowed(record.get(filter.getKey()), filter.getValue()))
                     {
                         addRecord = false;
                         break;
@@ -536,6 +551,22 @@ public class FreezerProExport
         }
         else
             return data;
+    }
+
+    private boolean valueAllowed(Object value, List<String> allowed)
+    {
+        String str = String.valueOf(value);
+        for (String match : allowed)
+        {
+            if (match.equals(str))
+                return true;
+        }
+        return false;
+    }
+
+    public PipelineJob getJob()
+    {
+        return _job;
     }
 
     public static class Freezer

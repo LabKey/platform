@@ -29,6 +29,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
+import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SqlExecutor;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.search.SearchResultTemplate;
@@ -1480,11 +1481,15 @@ public abstract class AbstractSearchService implements SearchService, ShutdownLi
 
         // TODO: Maintenance task to remove documents for participants that have been deleted
 
-        new SqlExecutor(search).execute("DELETE FROM search.CrawlResources WHERE parent NOT IN (SELECT id FROM search.CrawlCollections)");
-//            if (search.getSqlDialect().isPostgreSQL())
-//            {
-//                Table.execute(search, "CLUSTER search.CrawlResources");
-//            }
+        SQLFragment delete = new SQLFragment(
+            "DELETE FROM search.CrawlResources\n" +
+            "WHERE parent IN (\n" +
+            "  SELECT parent from search.CrawlResources\n" +
+            "  EXCEPT \n" +
+            "  SELECT id from search.crawlcollections\n" +
+            ")\n");
+
+        new SqlExecutor(search).execute(delete);
     }
 
 

@@ -76,7 +76,8 @@ public class ExportSampleUserFieldsCommand
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            _export.getJob().error("An error was encountered trying to get user defined fields for sample : " + _sampleId, e);
+            return null;
         }
     }
 }
