@@ -982,7 +982,6 @@ dataintegration/src/org/labkey/di/steps/TestTask.java -text
 dataintegration/src/org/labkey/di/steps/TestTaskProvider.java -text
 dataintegration/src/org/labkey/di/steps/TestTaskRefTask.java -text
 dataintegration/src/org/labkey/di/view/DataIntegrationController.java -text
-dataintegration/src/org/labkey/di/view/processedETLJobs.jsp -text
 dataintegration/src/org/labkey/di/view/transformConfiguration.jsp -text
 dataintegration/src/org/labkey/di/view/transformDetails.jsp -text
 dataintegration/src/org/labkey/di/view/transformHistory.jsp -text

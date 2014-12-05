@@ -17,17 +17,16 @@
 %>
 <%@ page import="org.labkey.api.di.ScheduledPipelineJobDescriptor" %>
 <%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.di.pipeline.TransformConfiguration" %>
 <%@ page import="org.labkey.di.pipeline.TransformManager" %>
 <%@ page import="org.labkey.di.view.DataIntegrationController" %>
 <%@ page import="java.util.Collection" %>
 <%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.LinkedHashSet" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
 
@@ -61,7 +60,21 @@ for (TransformConfiguration c : configurationsList)
 
 boolean isAdmin = getViewContext().hasPermission(AdminPermission.class);
 %>
-<script>
+<style type="text/css">
+    .etl-table td {
+        height: 35px;
+        padding: 3px 5px;
+    }
+
+    .etl-table-header td {
+        height: 20px;
+    }
+
+    .etl-action-col {
+        text-align: center;
+    }
+</style>
+<script type="text/javascript">
     function onFailedConfigurationUpdate(response,config)
     {
         Ext4.MessageBox.show({
@@ -162,16 +175,6 @@ function onResetStateClicked(el, id)
 {
     Transform_resetState(id);
 }
-
-    Ext4.onReady(function() {
-        Ext4.create('Ext.Button',  {
-            text : 'View Processed Jobs',
-            renderTo : 'jobsButton',
-            handler : function() {
-                window.location = LABKEY.ActionURL.buildURL("DataIntegration", "viewJobs", LABKEY.ActionURL.getContainer(), null);
-            }
-        });
-    });
 </script>
 
 
@@ -180,14 +183,15 @@ function onResetStateClicked(el, id)
 --%>
 
 <div class="labkey-data-region-wrap">
-<table class="labkey-data-region labkey-show-borders">
-    <tr><td class="labkey-column-header">Name</td>
+<table class="labkey-data-region labkey-show-borders etl-table">
+    <tr class="etl-table-header">
+        <td class="labkey-column-header">Name</td>
         <td class="labkey-column-header">Source Module</td>
         <td class="labkey-column-header">Schedule</td>
         <td class="labkey-column-header">Enabled</td>
         <td class="labkey-column-header">Verbose Logging</td>
-        <td class="labkey-column-header">&nbsp;</td>
-        <td class="labkey-column-header">&nbsp;</td>
+        <td class="labkey-column-header"></td>
+        <td class="labkey-column-header"></td>
     </tr><%
 
 int row = 0;
@@ -211,16 +215,9 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox onchange="onEnabledChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isEnabled())%>></td>
         <td><input type=checkbox onchange="onVerboseLoggingChanged(this,<%=q(descriptor.getId())%>)" <%=checked(configuration.isVerboseLogging())%>></td>
-        <td><%= button("run now").href("#").onClick("onRunNowClicked(this," + q(descriptor.getId()) + "); return false;") %></td><%
-        if (configuration.getTransformState().contentEquals("{}"))
-        {
-            %><td><%=PageFlowUtil.generateDisabledButton("reset state")%></td><%
-        }
-        else
-        {
-            %><td><%= button("reset state").href("#").onClick("onResetStateClicked(this," + q(descriptor.getId()) + "); return false;") %></td><%
-        }
-        %></tr><%
+        <td class="etl-action-col"><%= button("run now").href("#").onClick("onRunNowClicked(this," + q(descriptor.getId()) + "); return false;") %></td>
+        <td class="etl-action-col"><%= button("reset state").href("#").onClick("onResetStateClicked(this," + q(descriptor.getId()) + "); return false;").enabled(!configuration.getTransformState().contentEquals("{}")) %></td>
+        </tr><%
     }
     else
     {
@@ -230,8 +227,8 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
         <td><%=h(descriptor.getScheduleDescription())%></td>
         <td><input type=checkbox disabled="true" <%=checked(configuration.isEnabled())%>></td>
         <td><input type=checkbox disabled="true" onchange="onVerboseLoggingChanged()" <%=checked(configuration.isVerboseLogging())%>></td>
-        <td>&nbsp;</td>
-        <td>&nbsp;</td>
+        <td></td>
+        <td></td>
         </tr><%
     }
 }
@@ -239,4 +236,4 @@ for (ScheduledPipelineJobDescriptor descriptor : descriptorsMap.values())
 </div>
 
 <br>
-<div id='jobsButton'></div>
+<div><%= button("View Processed Jobs").href(DataIntegrationController.viewJobsAction.class, getContainer()) %></div>
