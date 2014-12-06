@@ -197,7 +197,6 @@ public class AuditLogService
         @Deprecated // convert usages to getAuditEvent
         public AuditLogEvent getEvent(int rowId);
 
-        @Deprecated
         @Nullable
         public <K extends AuditTypeEvent> K getAuditEvent(User user, String eventType, int rowId);
         public <K extends AuditTypeEvent> List<K> getAuditEvents(Container container, User user, String eventType, @Nullable SimpleFilter filter, @Nullable Sort sort);

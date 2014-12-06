@@ -25,6 +25,7 @@ import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
+import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
@@ -48,10 +49,16 @@ import org.labkey.api.notification.EmailService;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.search.SearchService;
+import org.labkey.api.security.LimitedUser;
 import org.labkey.api.security.SecurityLogger;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.User;
+import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.roles.CanSeeAuditLogRole;
+import org.labkey.api.security.roles.ReaderRole;
+import org.labkey.api.security.roles.Role;
+import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.util.ConfigurationException;
@@ -629,14 +636,22 @@ public class FileSystemResource extends AbstractWebdavResource
     public Collection<WebdavResolver.History> getHistory()
     {
         File file = getFile();
-        SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("EventType"), "FileSystem"); // FileSystemAuditViewFactory.EVENT_TYPE);
-        filter.addCondition(FieldKey.fromParts("Key1"), file.getParent());
-        filter.addCondition(FieldKey.fromParts("Key2"), file.getName());
-        List<AuditLogEvent> logs = AuditLogService.get().getEvents(filter);
+        SimpleFilter filter = new SimpleFilter();
+        filter.addCondition(FieldKey.fromParts(FileSystemAuditProvider.COLUMN_NAME_DIRECTORY), file.getParent());
+        filter.addCondition(FieldKey.fromParts(FileSystemAuditProvider.COLUMN_NAME_FILE), file.getName());
+
+        // Allow all users to see history in the container
+        HashSet<Role> roles = new HashSet<>();
+        roles.add(RoleManager.getRole(ReaderRole.class));
+        roles.add(RoleManager.getRole(CanSeeAuditLogRole.class));
+        User user = new LimitedUser(UserManager.getGuestUser(), new int[0], roles, true);
+
+        List<AuditTypeEvent> logs = AuditLogService.get().getAuditEvents(getContainer(), user, FileSystemAuditProvider.EVENT_TYPE, filter, null);
         if (null == logs)
             return Collections.emptyList();
+
         List<WebdavResolver.History> history = new ArrayList<>(logs.size());
-        for (AuditLogEvent e : logs)
+        for (AuditTypeEvent e : logs)
             history.add(new HistoryImpl(e.getCreatedBy().getUserId(), e.getCreated(), e.getComment(), null));
         return history;
     }
