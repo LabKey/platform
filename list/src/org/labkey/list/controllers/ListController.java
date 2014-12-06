@@ -1179,7 +1179,10 @@ public class ListController extends SpringActionController
 
         public ActionURL getSuccessURL(ListDefinitionForm form)
         {
-            return new ActionURL(form.getReturnUrl());
+            ReturnURLString returnURLString = form.getReturnUrl();
+            if (null != returnURLString)
+                return new ActionURL(returnURLString);
+            return getBeginURL(getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)
