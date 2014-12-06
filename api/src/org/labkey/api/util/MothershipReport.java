@@ -65,6 +65,8 @@ public class MothershipReport implements Runnable
         return showSelfReportExceptions;
     }
 
+    /** @param b whether this server can self-report exceptions.
+     *           Default value is false, but the Mothership module will call this to set it to true if it's installed. */
     public static void setShowSelfReportExceptions(boolean b)
     {
         showSelfReportExceptions = b;
