@@ -16,13 +16,13 @@ LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName
     // get the rest of the study snapshot details/settings from the server
 
     var sql = "SELECT c.DisplayName as PreviousStudy, u.DisplayName as CreatedBy, ss.Created, ss.Settings " +
-              "FROM study.StudySnapshot AS ss JOIN core.Users AS u ON ss.CreatedBy = u.UserId " +
-              "JOIN core.Containers AS c ON c.EntityId = ss.Destination WHERE ss.RowId = " + parseInt(snapshotId);
+              "FROM study.StudySnapshot AS ss LEFT JOIN core.Users AS u ON ss.CreatedBy = u.UserId " +
+              "LEFT JOIN core.Containers AS c ON c.EntityId = ss.Destination WHERE ss.RowId = " + parseInt(snapshotId);
 
     LABKEY.Query.executeSql({
         schemaName: 'study',
         sql: sql,
-        containerFilter: LABKEY.Query.containerFilter.currentAndSubfolders,
+        containerFilter: LABKEY.Query.containerFilter.allFolders,
         success: function(data) {
             var row = data.rows[0];
             var settings = Ext.decode(row.Settings);
@@ -45,6 +45,11 @@ LABKEY.study.openCreateStudyWizard = function(snapshotId, availableContainerName
                     config.requestId = settings.specimenRequestId;
                     config.allowRefresh = false;
                 }
+            }
+
+            // issue 22076: snapshot settings prior to 15.1 didn't have type specific so we guess between publish and ancillary
+            if (settings.type == undefined && settings.visits == null) {
+                config.mode = 'ancillary';
             }
 
             new LABKEY.study.CreateStudyWizard(config).show();
@@ -1213,7 +1218,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             viewConfig: {forceFit: true, scrollOffset: 0},
             columns: [
                 selectionModel,
-                {header: 'Study Object', sortable: true, dataIndex: 'name'}
+                {header: 'Name', sortable: true, dataIndex: 'name'}
             ],
             loadMask:{msg:"Loading, please wait..."},
             editable: false,
@@ -1649,7 +1654,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             viewConfig: {forceFit: true, scrollOffset: 0},
             columns: [
                 selectionModel,
-                {header: 'Folder Object', sortable: true, dataIndex: 'name', name: 'name'}
+                {header: 'Name', sortable: true, dataIndex: 'name', name: 'name'}
             ],
             loadMask:{msg:"Loading, please wait..."},
             editable: false,
@@ -1748,7 +1753,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             viewConfig: {forceFit: true, scrollOffset: 0},
             columns: [
                 selectionModel,
-                {header: 'Publish Option', width: 220, sortable: true, dataIndex: 'name', name: 'name'},
+                {header: 'Name', width: 220, sortable: true, dataIndex: 'name', name: 'name'},
                 {header: 'Description', width: 380, sortable: true, dataIndex: 'description', name: 'description', renderer: columnWrap}
             ],
             loadMask: {msg:"Loading, please wait..."},
