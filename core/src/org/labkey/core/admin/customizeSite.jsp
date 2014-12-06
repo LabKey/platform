@@ -199,6 +199,7 @@ Click the Save button at any time to accept the current settings and continue.</
         </table>
     </td>
 </tr>
+<%-- Only show this option if the mothership module has enabled it --%>
 <% if (bean.showSelfReportExceptions) { %>
 <tr>
     <td class="labkey-form-label" valign="top">Report exceptions to the local server</td>
