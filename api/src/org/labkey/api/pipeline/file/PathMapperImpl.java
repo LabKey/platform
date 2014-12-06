@@ -16,7 +16,6 @@
 package org.labkey.api.pipeline.file;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.Assert;
@@ -33,16 +32,12 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * PathMapper class
- * <p/>
+ * Translates paths from one machine to another, assuming they have access to a shared network file system.
  * Created: Oct 4, 2007
- *
  * @author bmaclean
  */
 public class PathMapperImpl implements PathMapper
 {
-    private static Logger _log = Logger.getLogger(PathMapperImpl.class);
-
     /**
      * Prefix mappings (remote to local):
      * <ul>
