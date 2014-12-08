@@ -27,6 +27,7 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.ConfirmAction;
 import org.labkey.api.action.ExtFormAction;
 import org.labkey.api.action.FormViewAction;
+import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
@@ -45,6 +46,7 @@ import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.ActionNames;
+import org.labkey.api.security.RequiresLogin;
 import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
@@ -2721,8 +2723,8 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresNoPermission
-    public class SetEditorPreferenceAction extends ApiAction<SetEditorPreferenceForm>
+    @RequiresLogin
+    public class SetEditorPreferenceAction extends MutatingApiAction<SetEditorPreferenceForm>
     {
         public static final String CAT_EDITOR_PREFERENCE = "editorPreference";
         public static final String PROP_USE_VISUAL_EDITOR = "useVisualEditor";
@@ -2756,8 +2758,8 @@ public class WikiController extends SpringActionController
         }
     }
 
-    @RequiresNoPermission
-    public class SetTocPreferenceAction extends ApiAction<SetTocPreferenceForm>
+    @RequiresLogin
+    public class SetTocPreferenceAction extends MutatingApiAction<SetTocPreferenceForm>
     {
         public static final String PROP_TOC_DISPLAYED = "displayToc";
 
