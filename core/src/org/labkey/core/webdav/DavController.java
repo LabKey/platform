@@ -285,7 +285,7 @@ public class DavController extends SpringActionController
         Class<? extends Controller> actionClass = action.getClass();
         if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
         {
-            request.setAttribute(IgnoresAllocationTracking.class.getName(), Boolean.TRUE);
+            MemTracker.get().ignore();
         }
         else
         {
