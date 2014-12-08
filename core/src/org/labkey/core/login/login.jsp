@@ -115,22 +115,27 @@
     <%-- Issue 22094: Clear password on login page after session timeout has been exceeded --%>
     (function() {
         var timeout = <%= request.getSession(false) == null ? 30 * 60 * 1000 : request.getSession(false).getMaxInactiveInterval() * 1000 %>;
-        var passwordField = document.getElementById('password');
-        <%-- The function to do the clearing --%>
-        var clearPasswordField = function () {
-            passwordField.value = '';
-        };
-        <%-- Start the clock when the page loads --%>
-        var timer = setInterval(clearPasswordField, timeout);
-        <%-- Any time the value changes reset the clock --%>
-        var changeListener = function () {
-            if (timer) {
-                clearInterval(timer);
-            }
-            timer = setInterval(clearPasswordField, timeout);
-        };
-        <%-- Wire up the listener for changes to the password field --%>
-        passwordField.onchange = changeListener;
-        passwordField.onkeypress = changeListener;
+        if (timeout > 0) {
+            var passwordField = document.getElementById('password');
+            <%-- The function to do the clearing --%>
+            var clearPasswordField = function ()
+            {
+                passwordField.value = '';
+            };
+            <%-- Start the clock when the page loads --%>
+            var timer = setInterval(clearPasswordField, timeout);
+            <%-- Any time the value changes reset the clock --%>
+            var changeListener = function ()
+            {
+                if (timer)
+                {
+                    clearInterval(timer);
+                }
+                timer = setInterval(clearPasswordField, timeout);
+            };
+            <%-- Wire up the listener for changes to the password field --%>
+            passwordField.onchange = changeListener;
+            passwordField.onkeypress = changeListener;
+        }
     })();
 </script>
