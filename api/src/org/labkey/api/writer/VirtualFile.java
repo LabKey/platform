@@ -28,7 +28,7 @@ import java.io.PrintWriter;
  * Date: Apr 16, 2009
  * Time: 3:28:31 PM
  */
-public interface VirtualFile
+public interface VirtualFile extends AutoCloseable
 {
     public PrintWriter getPrintWriter(String path) throws IOException;
     public OutputStream getOutputStream(String filename) throws IOException;
