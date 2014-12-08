@@ -163,8 +163,8 @@ public class ModuleAssayProvider extends TsvAssayProvider
 
         if (providerConfig.getInputDataFileSuffixArray().length > 0)
         {
-            List<String> suffices = Arrays.asList(providerConfig.getInputDataFileSuffixArray());
-            _dataType = new AssayDataType(TsvDataHandler.NAMESPACE, new FileType(suffices, suffices.get(0)));
+            List<String> suffixes = Arrays.asList(providerConfig.getInputDataFileSuffixArray());
+            _dataType = new AssayDataType(TsvDataHandler.NAMESPACE, new FileType(suffixes, suffixes.get(0)));
         }
 
         if (providerConfig.isSetPrimaryDataFileType())
@@ -203,12 +203,12 @@ public class ModuleAssayProvider extends TsvAssayProvider
         {
             namespacePrefix = inputConfig.getNamespacePrefix();
         }
-        List<String> suffices = new ArrayList<>();
+        List<String> suffixes = new ArrayList<>();
         String defaultSuffix = null;
         for (org.labkey.study.assay.xml.AssayDataType.FileSuffix fileSuffix : inputConfig.getFileSuffixArray())
         {
             String suffix = fileSuffix.getStringValue();
-            suffices.add(suffix);
+            suffixes.add(suffix);
             if (defaultSuffix == null && fileSuffix.getDefault())
             {
                 defaultSuffix = suffix;
@@ -216,9 +216,9 @@ public class ModuleAssayProvider extends TsvAssayProvider
         }
         if (defaultSuffix == null)
         {
-            defaultSuffix = suffices.get(0);
+            defaultSuffix = suffixes.get(0);
         }
-        return new AssayDataType(namespacePrefix, new FileType(suffices, defaultSuffix), role);
+        return new AssayDataType(namespacePrefix, new FileType(suffixes, defaultSuffix), role);
     }
 
     @Override

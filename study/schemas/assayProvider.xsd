@@ -27,7 +27,7 @@
                 <xs:annotation>
                     <xs:documentation>
                         If there are related data files available on the server's file system
-                        (ones that share the same base file name, with different suffices/file extensions), they are
+                        (ones that share the same base file name, with different suffixes/file extensions), they are
                         attached to the run at import time. If they happen to match up with a &lt;relatedDataFile&gt;
                         element, they will be added using the associated namespace prefix and role.
                     </xs:documentation>

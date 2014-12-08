@@ -787,7 +787,7 @@ public class AssayController extends SpringActionController
                 {
                     if (!provider.getDataType().getFileType().isType(originalName))
                     {
-                        throw new IllegalArgumentException("File '" + originalName + "' does not match expected suffices for " + provider.getName());
+                        throw new IllegalArgumentException("File '" + originalName + "' does not match expected suffixes for " + provider.getName());
                     }
                     return provider.getDataType();
                 }
