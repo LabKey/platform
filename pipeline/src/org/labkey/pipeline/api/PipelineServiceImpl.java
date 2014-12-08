@@ -64,7 +64,6 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.io.File;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -101,19 +100,13 @@ public class PipelineServiceImpl extends PipelineService
             _mapPipelineProviders.put(alias, provider);
     }
 
+    @Nullable
     public PipeRootImpl findPipelineRoot(Container container)
     {
         PipelineRoot pipelineRoot = PipelineManager.findPipelineRoot(container);
         if (null != pipelineRoot)
         {
-            try
-            {
-                return new PipeRootImpl(pipelineRoot);
-            }
-            catch (URISyntaxException x)
-            {
-                _log.error("unexpected error", x);
-            }
+            return new PipeRootImpl(pipelineRoot);
         }
 
         // if we haven't found a 'real' root, default to a root off the site wide default
@@ -123,10 +116,13 @@ public class PipelineServiceImpl extends PipelineService
     /**
      * Try to locate a default pipeline root from the site file root. Default pipeline roots only
      * extend to the project level and are inherited by sub folders.
+     * @return null if there default root is misconfigured or unavailable
      */
+    @Nullable
     private PipeRootImpl getDefaultPipelineRoot(Container container, String type)
     {
-        try {
+        try
+        {
             if (PipelineRoot.PRIMARY_ROOT.equals(type))
             {
                 FileContentService svc = ServiceRegistry.get().getService(FileContentService.class);
@@ -159,14 +155,11 @@ public class PipelineServiceImpl extends PipelineService
         {
             return null;
         }
-        catch (Exception e)
-        {
-            _log.error("unexpected error", e);
-        }
         return null;
     }
 
-    private PipeRootImpl createDefaultRoot(Container container, File dir, boolean sameAsFilesRoot) throws URISyntaxException
+    @NotNull
+    private PipeRootImpl createDefaultRoot(Container container, File dir, boolean sameAsFilesRoot)
     {
         PipelineRoot p = new PipelineRoot();
 
@@ -202,16 +195,9 @@ public class PipelineServiceImpl extends PipelineService
         Map<Container, PipeRoot> result = new HashMap<>();
         for (PipelineRoot pipeline : pipelines)
         {
-            try
-            {
-                PipeRoot p = new PipeRootImpl(pipeline);
-                if (p.getContainer() != null)
-                    result.put(p.getContainer(), p);
-            }
-            catch (URISyntaxException x)
-            {
-                _log.error("unexpected error", x);
-            }
+            PipeRoot p = new PipeRootImpl(pipeline);
+            if (p.getContainer() != null)
+                result.put(p.getContainer(), p);
         }
 
         return result;
@@ -225,27 +211,17 @@ public class PipelineServiceImpl extends PipelineService
 
     public PipeRootImpl getPipelineRootSetting(Container container, final String type)
     {
-        try
+        PipelineRoot r = PipelineManager.getPipelineRootObject(container, type);
+        if (null == r)
         {
-            PipelineRoot r = PipelineManager.getPipelineRootObject(container, type);
-            if (null == r)
-            {
-                if (container != null)
-                    return getDefaultPipelineRoot(container, type);
-                return null;
-            }
-            return new PipeRootImpl(r);
+            if (container != null)
+                return getDefaultPipelineRoot(container, type);
+            return null;
         }
-        catch (URISyntaxException x)
-        {
-            _log.error("unexpected error", x);
-        }
-
-        return null;
+        return new PipeRootImpl(r);
     }
 
-    public void setPipelineRoot(User user, Container container, String type, GlobusKeyPair globusKeyPair, boolean searchable, URI... roots
-    ) throws SQLException
+    public void setPipelineRoot(User user, Container container, String type, GlobusKeyPair globusKeyPair, boolean searchable, URI... roots) throws SQLException
     {
         if (!canModifyPipelineRoot(user, container))
             throw new UnauthorizedException("You do not have sufficient permissions to set the pipeline root");
@@ -530,11 +506,7 @@ public class PipelineServiceImpl extends PipelineService
                 {
                     _log.error("Failed to get implementation class from descriptor " + descriptor, e);
                 }
-                catch (IllegalAccessException e)
-                {
-                    _log.error("Failed to resume jobs for descriptor " + descriptor, e);
-                }
-                catch (InstantiationException e)
+                catch (IllegalAccessException | InstantiationException e)
                 {
                     _log.error("Failed to resume jobs for descriptor " + descriptor, e);
                 }

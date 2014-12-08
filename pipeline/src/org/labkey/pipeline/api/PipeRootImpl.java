@@ -34,6 +34,7 @@ import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URIUtil;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
@@ -69,20 +70,27 @@ public class PipeRootImpl implements PipeRoot
         _searchable = false;
     }
 
-    public PipeRootImpl(PipelineRoot root, boolean isDefaultRoot) throws URISyntaxException
+    public PipeRootImpl(PipelineRoot root, boolean isDefaultRoot)
     {
         this(root);
         _isDefaultRoot = isDefaultRoot;
     }
 
-    public PipeRootImpl(PipelineRoot root) throws URISyntaxException
+    public PipeRootImpl(PipelineRoot root)
     {
         _containerId = root.getContainerId();
         _uris = new URI[root.getSupplementalPath() == null ? 1 : 2];
-        _uris[0] = new URI(root.getPath());
-        if (root.getSupplementalPath() != null)
+        try
         {
-            _uris[1] = new URI(root.getSupplementalPath());
+            _uris[0] = new URI(root.getPath());
+            if (root.getSupplementalPath() != null)
+            {
+                _uris[1] = new URI(root.getSupplementalPath());
+            }
+        }
+        catch (URISyntaxException e)
+        {
+            throw new UnexpectedException(e);
         }
         _entityId = root.getEntityId();
         _searchable = root.isSearchable();
