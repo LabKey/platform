@@ -126,7 +126,6 @@ import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
-import org.labkey.api.study.StudySnapshotType;
 import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
@@ -1217,22 +1216,22 @@ public class StudyController extends BaseStudyController
 
 
     @RequiresPermissionClass(AdminPermission.class)
-    public class UploadVisitMapAction extends FormViewAction<TSVForm>
+    public class ImportVisitMapAction extends FormViewAction<ImportVisitMapForm>
     {
-        public ModelAndView getView(TSVForm tsvForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(ImportVisitMapForm form, boolean reshow, BindException errors) throws Exception
         {
-            return new StudyJspView<>(getStudyRedirectIfNull(), "uploadVisitMap.jsp", null, errors);
+            return new StudyJspView<>(getStudyRedirectIfNull(), "importVisitMap.jsp", null, errors);
         }
 
-        public void validateCommand(TSVForm target, Errors errors)
+        public void validateCommand(ImportVisitMapForm form, Errors errors)
         {
         }
 
-        public boolean handlePost(TSVForm form, BindException errors) throws Exception
+        public boolean handlePost(ImportVisitMapForm form, BindException errors) throws Exception
         {
             VisitMapImporter importer = new VisitMapImporter();
             List<String> errorMsg = new LinkedList<>();
-            if (!importer.process(getUser(), getStudyThrowIfNull(), form.getContent(), VisitMapImporter.Format.DataFax, errorMsg, _log))
+            if (!importer.process(getUser(), getStudyThrowIfNull(), form.getContent(), VisitMapImporter.Format.Xml, errorMsg, _log))
             {
                 for (String error : errorMsg)
                     errors.reject("uploadVisitMap", error);
@@ -1241,15 +1240,16 @@ public class StudyController extends BaseStudyController
             return true;
         }
 
-        public ActionURL getSuccessURL(TSVForm tsvForm)
+        public ActionURL getSuccessURL(ImportVisitMapForm form)
         {
             return new ActionURL(BeginAction.class, getContainer());
         }
 
         public NavTree appendNavTrail(NavTree root)
         {
+            setHelpTopic("importVisitMap");
             _appendNavTrailVisitAdmin(root);
-            return root.addChild("Create New Study: Visit Map Upload");
+            return root.addChild("Import Visit Map");
         }
     }
 
@@ -6550,7 +6550,7 @@ public class StudyController extends BaseStudyController
 
 
 
-    public static class TSVForm
+    public static class ImportVisitMapForm
     {
         private String _content;
 

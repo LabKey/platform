@@ -3948,6 +3948,7 @@ study/src/org/labkey/study/view/importDataType.jsp -text
 study/src/org/labkey/study/view/importDataset.jsp -text
 study/src/org/labkey/study/view/importStudyBatch.jsp -text
 study/src/org/labkey/study/view/importVisitAliases.jsp -text
+study/src/org/labkey/study/view/importVisitMap.jsp -text
 study/src/org/labkey/study/view/manageAlternateIds.jsp -text
 study/src/org/labkey/study/view/manageCohortsBottom.jsp -text
 study/src/org/labkey/study/view/manageCohortsTop.jsp -text
@@ -4031,7 +4032,6 @@ study/src/org/labkey/study/view/typeNotFound.jsp -text
 study/src/org/labkey/study/view/typeSummary.jsp -text
 study/src/org/labkey/study/view/updateDatasetVisitMapping.jsp -text
 study/src/org/labkey/study/view/updateQCState.jsp -text
-study/src/org/labkey/study/view/uploadVisitMap.jsp -text
 study/src/org/labkey/study/view/vaccineStudy.jsp -text
 study/src/org/labkey/study/view/viewPreferences.jsp -text
 study/src/org/labkey/study/view/visitImportMapping.jsp -text

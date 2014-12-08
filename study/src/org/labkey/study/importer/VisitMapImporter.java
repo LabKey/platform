@@ -58,41 +58,7 @@ public class VisitMapImporter
 
     public enum Format
     {
-        @Deprecated
-        @RefactorIn15_1   // Remove DataFax enum in 15.1
-        DataFax
-                {
-                    public VisitMapReader getReader(String contents, Logger logger)
-                    {
-                        logWarning(logger);
-                        return new DataFaxVisitMapReader(contents);
-                    }
-
-                    public VisitMapReader getReader(VirtualFile file, String name, Logger logger) throws IOException
-                    {
-                        InputStream is = file.getInputStream(name);
-
-                        if (is != null)
-                        {
-                            logWarning(logger);
-                            String contents = PageFlowUtil.getStreamContentsAsString(is);
-                            return new DataFaxVisitMapReader(contents);
-                        }
-
-                        return null;
-                    }
-
-                    public String getExtension()
-                    {
-                        return ".txt";
-                    }
-
-                    private void logWarning(Logger logger)
-                    {
-                        logger.warn("DataFax visit map format is deprecated and scheduled for removal in LabKey release 15.1. Contact LabKey immediately if your organization requires this support.");
-                    }
-                },
-
+        // As of 15.1, XML is the only supported visit map format. We'll leave the enum in place in case we want to support other formats in the future.
         @SuppressWarnings({"UnusedDeclaration"})
         Xml
                 {

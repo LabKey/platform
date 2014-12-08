@@ -61,7 +61,7 @@
     </tr>
     <tr>
         <td>Import a visit map to quickly define a study</td>
-        <td><%= textLink("Import Visit Map", UploadVisitMapAction.class) %></td>
+        <td><%= textLink("Import Visit Map", ImportVisitMapAction.class) %></td>
     </tr>
     <tr>
         <td>Visit import mapping allows data containing visit names instead of numbers</td>
