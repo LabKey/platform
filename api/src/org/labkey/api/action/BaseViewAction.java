@@ -360,6 +360,13 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
             errors.reject(SpringActionController.ERROR_MSG, "Error binding property: " + x.getPropertyName());
             return errors;
         }
+        catch (NumberFormatException x)
+        {
+            // Malfomed array parameter throws this exception, unfortunately. Just reject the request. #21931
+            BindException errors = new BindException(command, commandName);
+            errors.reject(SpringActionController.ERROR_MSG, "Error binding array property; invalid array index (" + x.getMessage() + ")");
+            return errors;
+        }
     }
 
 
