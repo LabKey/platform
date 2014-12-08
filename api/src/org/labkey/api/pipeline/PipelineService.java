@@ -55,6 +55,11 @@ abstract public class PipelineService
 
     abstract public void registerPipelineProvider(PipelineProvider provider, String... aliases);
 
+    /**
+     * Looks up the container hierarchy until it finds a pipeline root defined which is being
+     * inherited by the specified container
+     * @return null if there's no specific pipeline override and the default root is unavailable or misconfigured
+     */
     @Nullable
     abstract public PipeRoot findPipelineRoot(Container container);
 
@@ -67,6 +72,11 @@ abstract public class PipelineService
     @Nullable
     abstract public PipeRoot getPipelineRootSetting(Container container);
 
+    /**
+     * Gets the pipeline root that was explicitly configured for this container, or falls back to the default file root.
+     * Does NOT look up the container hierarchy for a pipeline override defined in a parent container. In most
+     * places where not explicitly doing pipeline configuration, use findPipelineRoot() instead.
+     */
     @Nullable
     abstract public PipeRoot getPipelineRootSetting(Container container, String type);
 

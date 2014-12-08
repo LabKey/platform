@@ -28,6 +28,8 @@ import java.io.*;
 import java.util.*;
 
 /**
+ * A source of things that can be done to files in the pipeline directory. Standard use cases include doing analysis
+ * of data files and importing results into the database.
  */
 abstract public class PipelineProvider
 {
