@@ -272,11 +272,11 @@ public class TableWriter
                 Container container = ContainerManager.getContainerService().getForPath("/");
                 File file = FileUtil.getTempDirectory();
 
-                ZipFile zip = new ZipFile(file, FileUtil.makeFileNameWithTimestamp("JunitTest", "tables.zip"));
-                TableWriter tableWriter = new TableWriter();
-
-                tableWriter.write(container, testContext.getUser(), zip, form);
-                zip.close();
+                try (ZipFile zip = new ZipFile(file, FileUtil.makeFileNameWithTimestamp("JunitTest", "tables.zip")))
+                {
+                    TableWriter tableWriter = new TableWriter();
+                    tableWriter.write(container, testContext.getUser(), zip, form);
+                };
             }
             catch (Exception e)
             {

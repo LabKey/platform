@@ -5980,9 +5980,11 @@ public class QueryController extends SpringActionController
             {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
                 outputStream = new BufferedOutputStream(baos);
-                ZipFile zip = new ZipFile(outputStream, true);
-                writer.write(container, getUser(), zip, form);
-                zip.close();
+
+                try (ZipFile zip = new ZipFile(outputStream, true))
+                {
+                    writer.write(container, getUser(), zip, form);
+                }
 
                 PageFlowUtil.streamFileBytes(httpResponse, FileUtil.makeFileNameWithTimestamp(container.getName(), "tables.zip"), baos.toByteArray(), false);
             }

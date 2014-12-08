@@ -434,11 +434,9 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 }
                 File exportDir = root.resolvePath("export");
                 exportDir.mkdir();
-                ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip"));
-                try
+                try (ZipFile zip = new ZipFile(exportDir, FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip")))
                 {
                     writer.write(container, ctx, zip);
-                    zip.close();
                 }
                 catch (Container.ContainerException e)
                 {
@@ -455,9 +453,12 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
                 {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     outputStream = new BufferedOutputStream(baos);
-                    ZipFile zip = new ZipFile(outputStream, true);
-                    writer.write(container, ctx, zip);
-                    zip.close();
+
+                    try (ZipFile zip = new ZipFile(outputStream, true))
+                    {
+                        writer.write(container, ctx, zip);
+                    }
+
                     PageFlowUtil.streamFileBytes(getViewContext().getResponse(), FileUtil.makeFileNameWithTimestamp(container.getName(), "folder.zip"), baos.toByteArray(), false);
                 }
                 catch (Container.ContainerException e)

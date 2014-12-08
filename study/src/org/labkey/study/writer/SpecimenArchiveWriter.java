@@ -58,24 +58,23 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
     public void write(StudyImpl study, StudyExportContext ctx, VirtualFile root) throws Exception
     {
         StudyDocument.Study.Specimens specimensXml = ensureSpecimensElement(ctx);
-
         VirtualFile specimensDir = root.getDir(DEFAULT_DIRECTORY);
-
         String archiveName = specimensDir.makeLegalName(study.getShortName() + ".specimens");
-        VirtualFile zip = specimensDir.createZipArchive(archiveName);
-        if (!zip.equals(specimensDir)) // MemoryVirtualFile doesn't add a zip archive, it just returns vf
-            specimensXml.setFile(archiveName);
 
-        StudySchema schema = StudySchema.getInstance();
+        try (VirtualFile zip = specimensDir.createZipArchive(archiveName))
+        {
+            if (!zip.equals(specimensDir)) // MemoryVirtualFile doesn't add a zip archive, it just returns vf
+                specimensXml.setFile(archiveName);
 
-        new LocationSpecimenWriter().write(new QueryInfo(schema.getTableInfoSite(), "labs", SpecimenImporter.SITE_COLUMNS), ctx, zip);
-        new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoPrimaryType(), "primary_types", SpecimenImporter.PRIMARYTYPE_COLUMNS), ctx, zip);
-        new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoAdditiveType(), "additives", SpecimenImporter.ADDITIVE_COLUMNS), ctx, zip);
-        new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoDerivativeType(), "derivatives", SpecimenImporter.DERIVATIVE_COLUMNS), ctx, zip);
+            StudySchema schema = StudySchema.getInstance();
 
-        new SpecimenWriter().write(study, ctx, zip);
+            new LocationSpecimenWriter().write(new QueryInfo(schema.getTableInfoSite(), "labs", SpecimenImporter.SITE_COLUMNS), ctx, zip);
+            new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoPrimaryType(), "primary_types", SpecimenImporter.PRIMARYTYPE_COLUMNS), ctx, zip);
+            new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoAdditiveType(), "additives", SpecimenImporter.ADDITIVE_COLUMNS), ctx, zip);
+            new StandardSpecimenWriter().write(new QueryInfo(schema.getTableInfoDerivativeType(), "derivatives", SpecimenImporter.DERIVATIVE_COLUMNS), ctx, zip);
 
-        zip.close();
+            new SpecimenWriter().write(study, ctx, zip);
+        }
 
         // Create specimens metadata file and write out the table infos for the specimens, event, and vial tables
         TablesDocument tablesDoc = TablesDocument.Factory.newInstance();
