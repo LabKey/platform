@@ -992,7 +992,7 @@ LABKEY.internal.MiniProfiler = new function () {
                             '<div class="profiler-controls">' +
                             '<span class="profiler-min-max" title="click to minimize/maximize">m</span>' +
                             '<span class="profiler-clear" title="click to clear log">c</span>' +
-                            '<a href="https://help.labkey.org/wiki/home/Documentation/page.view?name=profiler" target=_blank title="help">?</span>' +
+                            '<span><a href="https://help.labkey.org/wiki/home/Documentation/page.view?name=profiler" target=_blank title="help">?</a></span>' +
                             '</div>');
 
             click(select(_container, '.profiler-controls .profiler-min-max'), function () {

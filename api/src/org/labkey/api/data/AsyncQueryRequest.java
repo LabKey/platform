@@ -19,7 +19,9 @@ package org.labkey.api.data;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.queryprofiler.QueryProfiler;
+import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.query.QueryService;
+import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.MockHttpResponseWithRealPassthrough;
 
@@ -91,11 +93,13 @@ public class AsyncQueryRequest<T>
         QueryProfiler.getInstance().ensureListenerEnvironment();
 
         final Object state = qs.cloneEnvironment();
+        final RequestInfo current = MemTracker.getInstance().current();
 
         Runnable runnable = new Runnable()
         {
             public void run()
             {
+                RequestInfo req = MemTracker.get().startProfiler("async query");
                 qs.copyEnvironment(state);
                 try
                 {
@@ -107,6 +111,7 @@ public class AsyncQueryRequest<T>
                 }
                 finally
                 {
+                    current.merge(req);
                     qs.clearEnvironment();
                 }
             }

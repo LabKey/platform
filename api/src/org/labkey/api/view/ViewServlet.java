@@ -148,9 +148,8 @@ public class ViewServlet extends HttpServlet
         }
 
         MemoryUsageLogger.logMemoryUsage(_requestCount.incrementAndGet());
-        try (RequestInfo r = MemTracker.getInstance().startNewRequest(request))
+        try (RequestInfo r = MemTracker.get().startProfiler(request, request.getRequestURI()))
         {
-            r.setName(request.getRequestURI());
             SessionAppender.initThread(request);
 
             ActionURL url;
@@ -565,9 +564,8 @@ public class ViewServlet extends HttpServlet
             }
         };
 
-        try (RequestInfo r = MemTracker.getInstance().startNewRequest(request))
+        try (RequestInfo r = MemTracker.get().startProfiler(request, url.getController() + "/" + url.getAction()))
         {
-            r.setName(url.getController() + "/" + url.getAction());
             Module module = ModuleLoader.getInstance().getModuleForController(url.getController());
             if (module == null)
             {

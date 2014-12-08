@@ -105,7 +105,6 @@ public class Timing implements AutoCloseable
 
     protected void addChild(Timing timing)
     {
-        assert timing._parent == this;
         if (_children == null)
             _children = new ArrayList<>();
 

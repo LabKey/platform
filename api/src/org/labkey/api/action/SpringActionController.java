@@ -127,7 +127,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
         return _actionResolver;
     }
 
-    private static void registerAction(ActionDescriptor ad)
+    protected static void registerAction(ActionDescriptor ad)
     {
         _classToDescriptor.put(ad.getActionClass(), ad);
     }
@@ -369,7 +369,7 @@ public abstract class SpringActionController implements Controller, HasViewConte
             Class<? extends Controller> actionClass = action.getClass();
             if (actionClass.isAnnotationPresent(IgnoresAllocationTracking.class) || "true".equals(request.getParameter("skip-profiling")))
             {
-                request.setAttribute(IgnoresAllocationTracking.class.getName(), Boolean.TRUE);
+                MemTracker.get().ignore();
             }
             else
             {

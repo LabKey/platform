@@ -18,9 +18,9 @@ package org.labkey.api.util;
 
 import org.apache.commons.collections15.map.AbstractReferenceMap;
 import org.apache.commons.collections15.map.ReferenceIdentityMap;
+import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
-import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.miniprofiler.RequestInfo;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
@@ -173,9 +173,32 @@ public class MemTracker
         return _instance;
     }
 
-    public synchronized RequestInfo startNewRequest(HttpServletRequest request)
+    /**
+     * Create new RequestInfo for the current thread and request.
+     */
+    public RequestInfo startProfiler(HttpServletRequest request, @Nullable String name)
     {
-        RequestInfo req = new RequestInfo(request);
+        String url = request.getRequestURI() + (request.getQueryString() == null ? "" : "?" + request.getQueryString());
+        return startProfiler(url, request.getUserPrincipal(), name);
+    }
+
+    /**
+     * Create new RequestInfo for the current thread and request and mark it as ignored.
+     * Used for profiling background requests that will be merged into a parent profiler.
+     */
+    public RequestInfo startProfiler(@Nullable String name)
+    {
+        RequestInfo req = startProfiler(null, null, name);
+        req.setIgnored(true);
+        return req;
+    }
+
+    /**
+     * Create new RequestInfo for the current thread and request.
+     */
+    public synchronized RequestInfo startProfiler(String url, Principal user, @Nullable String name)
+    {
+        RequestInfo req = new RequestInfo(url, user, name);
         _requestTracker.set(req);
         return req;
     }
@@ -185,10 +208,24 @@ public class MemTracker
         return _requestTracker.get();
     }
 
-    public synchronized void requestComplete(HttpServletRequest request)
+    /**
+     * Mark the current profiling session as ignored.  Timings will still be collected but won't
+     * be reported to the user.
+     */
+    public synchronized void ignore()
     {
         RequestInfo requestInfo = _requestTracker.get();
-        boolean shouldTrack = !Boolean.TRUE.equals(request.getAttribute(IgnoresAllocationTracking.class.getName()));
+        if (requestInfo != null)
+            requestInfo.setIgnored(true);
+    }
+
+    /**
+     * Finish the current profiling session.
+     */
+    public synchronized void requestComplete()
+    {
+        RequestInfo requestInfo = _requestTracker.get();
+        boolean shouldTrack = requestInfo != null && !requestInfo.isIgnored();
         if (requestInfo != null)
         {
             if (shouldTrack)
@@ -196,12 +233,14 @@ public class MemTracker
                 // Now that we're done, move it into the set of recent requests
                 _recentRequests.add(requestInfo);
                 trimOlderRequests();
-                addUnviewed(request.getUserPrincipal(), requestInfo.getId());
+                if (requestInfo.getUser() != null)
+                    addUnviewed(requestInfo.getUser(), requestInfo.getId());
             }
             else
             {
                 // Remove it from the list of unviewed requests
-                setViewed(request.getUserPrincipal(), requestInfo.getId());
+                if (requestInfo.getUser() != null)
+                    setViewed(requestInfo.getUser(), requestInfo.getId());
             }
         }
         _requestTracker.remove();

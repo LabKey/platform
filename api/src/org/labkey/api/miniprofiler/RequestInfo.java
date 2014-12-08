@@ -15,15 +15,13 @@
  */
 package org.labkey.api.miniprofiler;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.MemTrackable;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.ViewServlet;
 
-import javax.servlet.http.HttpServletRequest;
+import java.security.Principal;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
@@ -47,23 +45,26 @@ public class RequestInfo implements AutoCloseable
     // The name field is set after RequestInfo is created -- as soon as the REQUEST_CONTROLLER and REQUEST_ACTION attributes are set.
     private String _name;
 
+    // User that initiated the request.
+    private Principal _user;
+
+    // The ignore flag may be set after profiling starts.  Timings will still be collected, but will be marked as already viewed.
+    private boolean _ignored = false;
+
     /*package*/ Timing _current;
 
-    // TODO: Get rid of request from here
-    private transient HttpServletRequest _request;
-
-    public RequestInfo(HttpServletRequest request)
+    public RequestInfo(@Nullable String url, @Nullable Principal user, @Nullable String name)
     {
-        _url = request.getRequestURI() + (request.getQueryString() == null ? "" : "?" + request.getQueryString());
-        _current = _root = new Timing(this, null, "root");
-        _request = request;
+        _url = url;
+        _current = _root = new Timing(this, null, name == null ? "root" : name);
+        _name = name;
+        _user = user;
     }
 
     @Override
     public void close()
     {
-        MemTracker.getInstance().requestComplete(_request);
-        _request = null;
+        MemTracker.getInstance().requestComplete();
         _root.close();
     }
 
@@ -103,6 +104,17 @@ public class RequestInfo implements AutoCloseable
         _current.addCustomTiming(category, custom);
     }
 
+    /**
+     * Merges timings from the other RequestInfo into the current step, allowing other threads, remote calls
+     * to be profiled and joined into the current session.
+     */
+    public void merge(RequestInfo other)
+    {
+        if (_current == null || other == null)
+            return;
+        _current.addChild(other.getRoot());
+    }
+
     public long getId()
     {
         return _id;
@@ -123,9 +135,25 @@ public class RequestInfo implements AutoCloseable
         return _url;
     }
 
+    public boolean isIgnored()
+    {
+        return _ignored;
+    }
+
+    public void setIgnored(boolean ignored)
+    {
+        _ignored = ignored;
+    }
+
     public Date getDate()
     {
         return _date;
+    }
+
+    @JsonIgnore
+    public Principal getUser()
+    {
+        return _user;
     }
 
     public Map<String, Integer> getObjects()
