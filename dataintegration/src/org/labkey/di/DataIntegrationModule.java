@@ -17,6 +17,7 @@
 package org.labkey.di;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -31,7 +32,9 @@ import org.labkey.api.util.ContainerUtil;
 import org.labkey.api.util.ContextListener;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.StartupListener;
+import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
 import org.labkey.api.view.SimpleWebPartFactory;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
@@ -43,6 +46,8 @@ import org.labkey.di.pipeline.TransformDescriptor;
 import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.steps.RemoteQueryTransformStep;
 import org.labkey.di.view.DataIntegrationController;
+import org.labkey.di.view.ProcessJobsView;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -134,7 +139,17 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     {
         return Arrays.asList(
                 (WebPartFactory)new SimpleWebPartFactory("Data Transforms", WebPartFactory.LOCATION_BODY, TransFormsWebPart.class, null),
-                (WebPartFactory)new SimpleWebPartFactory("Data Transform Jobs", WebPartFactory.LOCATION_BODY, TransformJobsWebPart.class, null)
+                new BaseWebPartFactory("Data Transform Jobs")
+                {
+                    @Override
+                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    {
+                        WebPartView view = new ProcessJobsView(portalCtx.getUser(), portalCtx.getContainer());
+                        view.setTitle("Processed Data Transforms");
+                        view.setFrame(WebPartView.FrameType.PORTAL);
+                        return view;
+                    }
+                }
         );
     }
 
@@ -150,23 +165,6 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
         {
             super(DataIntegrationController.class, "transformConfiguration.jsp", null);
             setTitle("Data Transforms");
-            setFrame(WebPartView.FrameType.PORTAL);
-            setModelBean(this);
-        }
-    }
-
-    @SuppressWarnings("UnusedDeclaration")
-    public static class TransformJobsWebPart extends JspView<Object>
-    {
-        public TransformJobsWebPart(ViewContext portalCtx) throws Exception
-        {
-            this(portalCtx.getContainer());
-        }
-
-        public TransformJobsWebPart(Container c)
-        {
-            super(DataIntegrationController.class, "processedETLJobs.jsp", null);
-            setTitle("Processed Data Transforms");
             setFrame(WebPartView.FrameType.PORTAL);
             setModelBean(this);
         }

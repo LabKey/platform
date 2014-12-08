@@ -25,20 +25,14 @@ import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.di.ScheduledPipelineJobDescriptor;
-import org.labkey.api.query.QuerySettings;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.NotFoundException;
-import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
-import org.labkey.di.DataIntegrationQuerySchema;
 import org.labkey.di.pipeline.TransformConfiguration;
 import org.labkey.di.pipeline.TransformManager;
 import org.springframework.validation.BindException;
@@ -89,15 +83,7 @@ public class DataIntegrationController extends SpringActionController
         @Override
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            DataIntegrationQuerySchema schema = new DataIntegrationQuerySchema(getUser(), getContainer());
-            QuerySettings settings = new QuerySettings(getViewContext(), "processJobs", DataIntegrationQuerySchema.TRANSFORMHISTORY_TABLE_NAME);
-
-            QueryView processedJobsGrid = new QueryView(schema, settings, null);
-            HtmlView buttons = new HtmlView(
-                    PageFlowUtil.button("Scheduler").href(DataIntegrationController.BeginAction.class, getContainer()).toString()
-            );
-
-            return new VBox(processedJobsGrid, buttons);
+            return new ProcessJobsView(getUser(), getContainer());
         }
 
         @Override
