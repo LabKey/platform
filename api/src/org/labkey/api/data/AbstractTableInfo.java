@@ -461,6 +461,8 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
     public boolean removeColumn(ColumnInfo column)
     {
         checkLocked();
+        // Clear the cached resolved columns so we regenerate it if the shape of the table changes
+        _resolvedColumns.clear();
         return _columnMap.remove(column.getName()) != null;
     }
 
@@ -474,6 +476,8 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
             throw new IllegalArgumentException("Column " + column.getName() + " already exists for table " + getName());
         }
         _columnMap.put(column.getName(), column);
+        // Clear the cached resolved columns so we regenerate it if the shape of the table changes
+        _resolvedColumns.clear();
         assert column.lockName();
         return column;
     }
