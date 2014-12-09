@@ -44,7 +44,11 @@ public class CSRFUtil
         String csrf = (String)request.getAttribute(csrfName);
         if (null != csrf)
             return csrf;
+
         csrf = PageFlowUtil.getCookieValue(request.getCookies(), csrfCookie, null);
+        if (null == csrf || csrf.length() != 32 || !StringUtils.containsOnly(csrf,"0123456789abcdef"))
+            csrf = null;
+
         if (null == csrf)
         {
             csrf = GUID.makeHash();
@@ -63,8 +67,8 @@ public class CSRFUtil
                 }
             }
         }
-        request.setAttribute(csrfName, csrf);
 
+        request.setAttribute(csrfName, csrf);
         return csrf;
     }
 
@@ -87,7 +91,7 @@ public class CSRFUtil
         if (StringUtils.isEmpty(provided))
             provided = request.getHeader(csrfHeader);
         if (StringUtils.isEmpty(provided))
-            throw new CSRFException();
+            throw new CSRFException(request);
 
         String expected = getExpectedToken(request, response);
         if (provided.equals(expected))
@@ -98,7 +102,7 @@ public class CSRFUtil
         if (provided.equals(session))
             return;
 
-        throw new CSRFException();
+        throw new CSRFException(request);
     }
 
 
