@@ -24,6 +24,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.Container;
 import org.labkey.api.files.FileSystemDirectoryListener;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.util.PageFlowUtil;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -233,20 +234,22 @@ public final class ModuleResourceCache<T>
 
     public static String createCacheKey(Module module, String resourceName)
     {
-        String name = module.getName();
-
-        if (name.contains("/"))
-            throw new IllegalStateException("Module name contains \"/\" character");
-
-        return module.getName() + "/" + resourceName;
+        // URL encode the parts and concatenate. See #21930.
+        return PageFlowUtil.encode(module.getName()) + "/" + PageFlowUtil.encode(resourceName);
     }
 
-    private static final Pattern STANDARD_CACHE_KEY_PATTERN = Pattern.compile("(" + ModuleLoader.MODULE_NAME_REGEX + ")/(.+)");
+    public static CacheId parseCacheKey(String cacheKey)
+    {
+        // Now split and URL decode the parts
+        String[] parts = cacheKey.split("/");
+        return new CacheId(PageFlowUtil.decode(parts[0]), PageFlowUtil.decode(parts[1]));
+    }
+
 
     public static class CacheId
     {
-        final String _moduleName;
-        final String _name;
+        private final String _moduleName;
+        private final String _name;
 
         public CacheId(String module, String name)
         {
@@ -283,12 +286,7 @@ public final class ModuleResourceCache<T>
     }
 
 
-    public static CacheId parseCacheKey(String cacheKey)
-    {
-        return parseCacheKey(cacheKey, STANDARD_CACHE_KEY_PATTERN);
-    }
-
-
+    @Deprecated // Standard cache keys use URL encode/decode, but this doesn't  TODO: Switch usages to standard cache key
     public static CacheId parseCacheKey(String cacheKey, Pattern pattern)
     {
         // Parse out the module name and the config name
