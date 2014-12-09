@@ -886,12 +886,19 @@ public class SecurityManager
 
         String crypt = Crypt.MD5.digestWithPrefix(tempPassword);
 
-        // Don't need to set LastChanged -- it defaults to current date/time.
-        int rowCount = new SqlExecutor(core.getSchema()).execute("INSERT INTO " + core.getTableInfoLogins() +
-                " (Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)",
-                email.getEmailAddress(), crypt, new Date(), verification, crypt);
-        if (1 != rowCount)
-            throw new UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
+        try
+        {
+            // Don't need to set LastChanged -- it defaults to current date/time.
+            int rowCount = new SqlExecutor(core.getSchema()).execute("INSERT INTO " + core.getTableInfoLogins() +
+                    " (Email, Crypt, LastChanged, Verification, PreviousCrypts) VALUES (?, ?, ?, ?, ?)",
+                    email.getEmailAddress(), crypt, new Date(), verification, crypt);
+            if (1 != rowCount)
+                throw new UserManagementException(email, "Login creation statement affected " + rowCount + " rows.");
+        }
+        catch (DataIntegrityViolationException e)
+        {
+            throw new UserAlreadyExistsException(email);
+        }
 
         return verification;
     }
