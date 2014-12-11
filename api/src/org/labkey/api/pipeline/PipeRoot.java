@@ -25,6 +25,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.URI;
 import java.util.List;
 
@@ -52,6 +53,20 @@ public interface PipeRoot extends SecurableResource
      * a path relative to the root's primary path.
      */
     File resolvePath(String relativePath);
+
+    /**
+     * Create File object for the import directory and ensure that the directory does not exist
+     * @return File object for import directory
+     * @throws DirectoryNotDeletedException if import directory exists and cannot be deleted
+     * @throws FileNotFoundException if import directory path cannot be resolved
+     */
+    File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException, FileNotFoundException;
+
+    /**
+     * Delete the import directory and its contents
+     * @throws DirectoryNotDeletedException if import directory exists and cannot be deleted
+     */
+    void deleteImportDirectory() throws DirectoryNotDeletedException;
 
     /** @return relative path to the file from the root. null if the file isn't under the root. Does not include a leading slash */
     String relativePath(File file);

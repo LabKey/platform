@@ -867,6 +867,7 @@ api/src/org/labkey/api/pipeline/AbstractGlobusSettings.java -text
 api/src/org/labkey/api/pipeline/AbstractTaskFactory.java -text
 api/src/org/labkey/api/pipeline/AbstractTaskFactorySettings.java -text
 api/src/org/labkey/api/pipeline/CancelledException.java -text
+api/src/org/labkey/api/pipeline/DirectoryNotDeletedException.java -text
 api/src/org/labkey/api/pipeline/GlobusKeyPair.java -text
 api/src/org/labkey/api/pipeline/GlobusSettings.java -text
 api/src/org/labkey/api/pipeline/GlobusSettingsImpl.java -text
