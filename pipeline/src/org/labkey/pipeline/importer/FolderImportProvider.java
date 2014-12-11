@@ -50,9 +50,9 @@ public class FolderImportProvider extends PipelineProvider
         addAction(actionId, PipelineController.ImportFolderFromPipelineAction.class, "Import Folder", directory, directory.listFiles(new FolderImportFilter()), false, false, includeAll);
     }
 
-    public static File logForInputFile(File f)
+    public static File logForInputFile(File f, PipeRoot pipeRoot)
     {
-        return new File(f.getParentFile(), FileUtil.makeFileNameWithTimestamp(f.getName(), "log"));
+        return new File(pipeRoot.getRootPath(), FileUtil.makeFileNameWithTimestamp(f.getName(), "log"));
     }    
 
     private static class FolderImportFilter implements FileFilter

@@ -46,6 +46,7 @@ import org.labkey.api.gwt.client.model.GWTDomain;
 import org.labkey.api.gwt.client.model.GWTPropertyDescriptor;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.Module;
+import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineAction;
@@ -80,7 +81,6 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.DateUtil;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -123,6 +123,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -1373,28 +1374,31 @@ public class PipelineController extends SpringActionController
             return false;
         }
         PipeRoot pipelineRoot = PipelineService.get().findPipelineRoot(c);
+        if (null == pipelineRoot)
+        {
+            errors.reject("importFolder", "Pipeline root not found.");
+            return false;
+        }
 
         File folderXml;
 
         if (folderFile.getName().endsWith(".zip"))
         {
-            String dirName = "unzip";
-            File importDir = pipelineRoot.resolvePath(dirName);
-
-            if (importDir.exists() && !FileUtil.deleteDir(importDir))
-            {
-                errors.reject("folderImport", "Import failed: Could not delete the directory \"" + dirName + "\"");
-                return false;
-            }
-
             try
             {
+                File importDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
+
                 ZipUtil.unzipToDirectory(folderFile, importDir);
                 folderXml = new File(importDir, "folder.xml");
             }
             catch (FileNotFoundException e)
             {
                 errors.reject("folderImport", "File not found.");
+                return false;
+            }
+            catch (FileSystemAlreadyExistsException | DirectoryNotDeletedException e)
+            {
+                errors.reject("folderImport", e.getMessage());
                 return false;
             }
             catch (IOException e)

@@ -58,7 +58,7 @@ public class SpecimenBatch extends StudyBatch implements Serializable, StudyJobS
 
     protected File createLogFile()
     {
-        return StudyPipeline.logForInputFile(_definitionFile);
+        return StudyPipeline.logForInputFile(_definitionFile, getPipeRoot());
     }
 
     public String getDescription()

@@ -69,6 +69,7 @@ import org.labkey.api.exp.api.ExperimentService;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusUrls;
@@ -134,7 +135,6 @@ import org.labkey.api.util.ContainerContext;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.DemoMode;
 import org.labkey.api.util.FileStream;
-import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
@@ -236,6 +236,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
+import java.nio.file.FileSystemAlreadyExistsException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -4073,22 +4074,19 @@ public class StudyController extends BaseStudyController
     {
         Container c = context.getContainer();
         PipeRoot pipelineRoot = StudyReload.getPipelineRoot(c);
+        if (null == pipelineRoot)
+        {
+            errors.reject("importFolder", "Pipeline root not found.");
+            return false;
+        }
 
         File studyXml;
 
         if (studyFile.getName().endsWith(".zip"))
         {
-            String dirName = "unzip";
-            File importDir = pipelineRoot.resolvePath(dirName);
-
-            if (importDir.exists() && !FileUtil.deleteDir(importDir))
-            {
-                errors.reject("studyImport", "Import failed: Could not delete the directory \"" + dirName + "\"");
-                return false;
-            }
-
             try
             {
+                File importDir = pipelineRoot.getImportDirectoryPathAndEnsureDeleted();
                 ZipUtil.unzipToDirectory(studyFile, importDir);
 
                 // when importing a folder archive, the study.xml file may not be at the root
@@ -4116,6 +4114,11 @@ public class StudyController extends BaseStudyController
             catch (FileNotFoundException e)
             {
                 errors.reject("studyImport", "File not found.");
+                return false;
+            }
+            catch (FileSystemAlreadyExistsException | DirectoryNotDeletedException e)
+            {
+                errors.reject("studyImport", e.getMessage());
                 return false;
             }
             catch (IOException e)

@@ -54,7 +54,7 @@ public class FolderImportJob extends PipelineJob implements FolderJobSupport
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
         _root = new FileSystemFile(folderXml.getParentFile());
         _originalFilename = originalFilename;
-        setLogFile(FolderImportProvider.logForInputFile(new File(folderXml.getParentFile(), "folder_load")));
+        setLogFile(FolderImportProvider.logForInputFile(new File(folderXml.getParentFile(), "folder_load"), getPipeRoot()));
         _ctx = new FolderImportContext(user, c, folderXml, new PipelineJobLoggerGetter(this), _root);
         _ctx.setSkipQueryValidation(options.isSkipQueryValidation());
         _ctx.setCreateSharedDatasets(options.isCreateSharedDatasets());

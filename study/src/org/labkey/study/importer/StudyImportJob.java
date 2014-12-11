@@ -59,7 +59,7 @@ public class StudyImportJob extends PipelineJob implements StudyJobSupport
         super(null, new ViewBackgroundInfo(c, user, url), pipeRoot);
         _root = new FileSystemFile(studyXml.getParentFile());
         _originalFilename = originalFilename;
-        setLogFile(StudyPipeline.logForInputFile(new File(studyXml.getParentFile(), "study_load")));
+        setLogFile(StudyPipeline.logForInputFile(new File(studyXml.getParentFile(), "study_load"), getPipeRoot()));
         _errors = errors;
         _ctx = new StudyImportContext(user, c, studyXml, new PipelineJobLoggerGetter(this), _root);
         _ctx.setSkipQueryValidation(options.isSkipQueryValidation());

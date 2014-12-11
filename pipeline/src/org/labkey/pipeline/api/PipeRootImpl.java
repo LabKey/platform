@@ -23,6 +23,7 @@ import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.view.FilesWebPart;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
+import org.labkey.api.pipeline.DirectoryNotDeletedException;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineProvider;
@@ -39,6 +40,7 @@ import org.labkey.api.view.NotFoundException;
 import org.labkey.api.view.UnauthorizedException;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -217,6 +219,29 @@ public class PipeRootImpl implements PipeRoot
             return null;
         }
         return file;
+    }
+
+    private final String IMPORT_DIRECTORY_NAME = "unzip";
+    public File getImportDirectoryPathAndEnsureDeleted() throws DirectoryNotDeletedException, FileNotFoundException
+    {
+        File importDir = resolvePath(IMPORT_DIRECTORY_NAME);
+        if (null == importDir)
+            throw new FileNotFoundException();
+
+        if (importDir.exists() && !FileUtil.deleteDir(importDir))
+        {
+            throw new DirectoryNotDeletedException("Import failed: Could not delete the directory \"" + IMPORT_DIRECTORY_NAME + "\"");
+        }
+        return importDir;
+    }
+
+    public void deleteImportDirectory() throws DirectoryNotDeletedException
+    {
+        File importDir = resolvePath(IMPORT_DIRECTORY_NAME);
+        if (null != importDir && importDir.exists() && !FileUtil.deleteDir(importDir))
+        {
+            throw new DirectoryNotDeletedException("Could not delete the directory \"" + IMPORT_DIRECTORY_NAME + "\"");
+        }
     }
 
     public String relativePath(File file)
