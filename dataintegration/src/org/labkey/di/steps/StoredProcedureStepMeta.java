@@ -18,15 +18,15 @@ package org.labkey.di.steps;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
-import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.query.SchemaKey;
+import org.labkey.di.VariableMap;
 import org.labkey.di.pipeline.TransformManager;
+import org.labkey.etl.xml.ProcedureParameterScopeType;
 import org.labkey.etl.xml.ProcedureParameterType;
 import org.labkey.etl.xml.SchemaProcedureType;
 import org.labkey.etl.xml.TransformType;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
  * User: tgaluhn
@@ -34,10 +34,45 @@ import java.util.Set;
  */
 public class StoredProcedureStepMeta extends StepMetaImpl
 {
-    private Map<String, String> xmlParamValues = new CaseInsensitiveHashMap<>();
-    private Set<String> overrideParams = new CaseInsensitiveHashSet();
+    private Map<String, ETLParameterInfo> xmlParamInfos = new CaseInsensitiveHashMap<>();
     private boolean useTransaction;
 
+    final class ETLParameterInfo
+    {
+        private String value;
+        private boolean override = false;
+        private VariableMap.Scope scope = VariableMap.Scope.local;
+
+        public String getValue()
+        {
+            return value;
+        }
+
+        public void setValue(String value)
+        {
+            this.value = value;
+        }
+
+        public boolean isOverride()
+        {
+            return override;
+        }
+
+        public void setOverride(boolean override)
+        {
+            this.override = override;
+        }
+
+        public VariableMap.Scope getScope()
+        {
+            return scope;
+        }
+
+        public void setScope(ProcedureParameterScopeType.Enum scope)
+        {
+            this.scope = VariableMap.Scope.valueOf(scope.toString());
+        }
+    }
 
     @Override
     public String toString()
@@ -75,24 +110,30 @@ public class StoredProcedureStepMeta extends StepMetaImpl
                 String name = xmlParam.getName();
                 if (StringUtils.startsWith(name, "@"))
                     name = StringUtils.substringAfter(name, "@");
-                xmlParamValues.put(name, xmlParam.getValue()); // TODO: Handle dupes?
-                if (xmlParam.getOverride())
-                {
-                    overrideParams.add(name);
-                }
+
+                ETLParameterInfo parameterInfo = new ETLParameterInfo();
+                parameterInfo.setValue(xmlParam.getValue());
+                parameterInfo.setOverride(xmlParam.getOverride());
+                parameterInfo.setScope(xmlParam.getScope());
+                xmlParamInfos.put(name, parameterInfo); // TODO: Handle dupes?
             }
         }
         else throw new XmlException(TransformManager.INVALID_PROCEDURE);
     }
 
-    public Map<String, String> getXmlParamValues()
+    public Map<String, ETLParameterInfo> getXmlParamInfos()
     {
-        return xmlParamValues;
+        return xmlParamInfos;
     }
 
     public boolean isOverrideParam(String paramName)
     {
-        return overrideParams.contains(paramName);
+        return xmlParamInfos.containsKey(paramName) && xmlParamInfos.get(paramName).isOverride();
+    }
+
+    public boolean isGlobalParam(String paramName)
+    {
+        return xmlParamInfos.containsKey(paramName) && xmlParamInfos.get(paramName).getScope().equals(VariableMap.Scope.global);
     }
 
     public boolean isUseTransaction()

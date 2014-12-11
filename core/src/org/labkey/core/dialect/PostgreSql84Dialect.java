@@ -17,7 +17,6 @@
 package org.labkey.core.dialect;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
@@ -1325,9 +1324,9 @@ public class PostgreSql84Dialect extends SqlDialect
     }
 
     @Override
-    public Map<String, ParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
+    public Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
     {
-        CaseInsensitiveMapWrapper<ParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ParameterInfo>());
+        CaseInsensitiveMapWrapper<MetadataParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, MetadataParameterInfo>());
 
         // Get the parameters for the function and also a placeholder for the return if this function returns a resultset
         SQLFragment sqlf = new SQLFragment(
@@ -1389,7 +1388,7 @@ public class PostgreSql84Dialect extends SqlDialect
                 }
                 traitMap.put(ParamTraits.direction, direction);
                 traitMap.put(ParamTraits.datatype, type);
-                parameters.put(rs.getString("parameter_name"), new ParameterInfo(traitMap));
+                parameters.put(rs.getString("parameter_name"), new MetadataParameterInfo(traitMap));
             }
         }
 
@@ -1416,7 +1415,7 @@ public class PostgreSql84Dialect extends SqlDialect
     }
 
     @Override
-    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
+    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
         int position = 0;
         if (registerOutputAssignment)
@@ -1424,7 +1423,7 @@ public class PostgreSql84Dialect extends SqlDialect
             position++;
             stmt.registerOutParameter(position, Types.OTHER);
         }
-        for (ParameterInfo paramInfo : parameters.values())
+        for (MetadataParameterInfo paramInfo : parameters.values())
         {
             if (paramInfo.getParamTraits().get(ParamTraits.direction) != DatabaseMetaData.procedureColumnOut)
             {
@@ -1435,15 +1434,15 @@ public class PostgreSql84Dialect extends SqlDialect
     }
 
     @Override
-    public int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    public int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters) throws SQLException
     {
         ResultSet rs = stmt.getResultSet();
         rs.next();
         int returnVal = -1;
-        for (Map.Entry<String, ParameterInfo> parameter : parameters.entrySet())
+        for (Map.Entry<String, MetadataParameterInfo> parameter : parameters.entrySet())
         {
             String paramName = parameter.getKey();
-            ParameterInfo paramInfo = parameter.getValue();
+            MetadataParameterInfo paramInfo = parameter.getValue();
             int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
             if (direction == DatabaseMetaData.procedureColumnInOut)
                 paramInfo.setParamValue(rs.getObject(paramName));

@@ -29,6 +29,7 @@ public abstract class TransformProperty
     static public final SystemProperty IncrementalEndTimestamp = new SystemProperty(PROPERTY_BASE + "IncrementalEndTimestamp", PropertyType.DATE_TIME);
     static public final SystemProperty IncrementalRunId = new SystemProperty(PROPERTY_BASE + "IncrementalRunId", PropertyType.INTEGER);
     static public final String Parameters = "Parameters";
+    static public final String GlobalParameters = "GlobalParameters";
     static public final String RanStep1 = "RanStep1";
 
     public static void register()

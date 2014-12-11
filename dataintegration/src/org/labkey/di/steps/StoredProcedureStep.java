@@ -23,8 +23,8 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.data.dialect.SqlDialect.MetadataParameterInfo;
 import org.labkey.api.data.dialect.SqlDialect.ParamTraits;
-import org.labkey.api.data.dialect.SqlDialect.ParameterInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.etl.ResultSetDataIterator;
@@ -35,6 +35,7 @@ import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.util.DateUtil;
 import org.labkey.di.TransformDataIteratorBuilder;
+import org.labkey.di.VariableMap;
 import org.labkey.di.data.TransformProperty;
 import org.labkey.di.filters.FilterStrategy;
 import org.labkey.di.filters.ModifiedSinceFilterStrategy;
@@ -70,8 +71,9 @@ public class StoredProcedureStep extends TransformTask
     private DbScope scope;
     private SqlDialect dialect;
     private RETURN_TYPE procReturns = RETURN_TYPE.NONE;
-    private CaseInsensitiveHashMap<Object> savedParamVals = new CaseInsensitiveHashMap<>();
-    private Map<String, ParameterInfo> parameters;
+    private CaseInsensitiveHashMap<Object> localSavedParamVals = new CaseInsensitiveHashMap<>();
+    private CaseInsensitiveHashMap<Object> globalSavedParamVals = new CaseInsensitiveHashMap<>();
+    private Map<String, MetadataParameterInfo> metadataParameters;
 
     private static enum RETURN_TYPE
     {
@@ -193,9 +195,9 @@ public class StoredProcedureStep extends TransformTask
         boolean badReturn = false;
 
         try (Connection conn = scope.getConnection();
-             CallableStatement stmt = conn.prepareCall(dialect.buildProcedureCall(procSchema, procName, parameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET))) )
+             CallableStatement stmt = conn.prepareCall(dialect.buildProcedureCall(procSchema, procName, metadataParameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET))) )
         {
-            dialect.registerParameters(scope, stmt, parameters, procReturns.equals(RETURN_TYPE.RESULTSET));
+            dialect.registerParameters(scope, stmt, metadataParameters, procReturns.equals(RETURN_TYPE.RESULTSET));
 
             getJob().info("Executing stored procedure " + procSchema + "." + procName);
             long start = System.currentTimeMillis();
@@ -247,8 +249,8 @@ public class StoredProcedureStep extends TransformTask
     }
 
     /**
-     *  For SQL Server. Have to step through all inline resultsets before allowed to access output parameters.
-     * Also, the first may be the real resultset we want to write to a target. Postgres result sets are handled later with output parameters
+     *  For SQL Server. Have to step through all inline resultsets before allowed to access output metadataParameters.
+     * Also, the first may be the real resultset we want to write to a target. Postgres result sets are handled later with output metadataParameters
      */
     private boolean processInlineResults(CallableStatement stmt, boolean resultsAvailable) throws SQLException
     {
@@ -282,11 +284,11 @@ public class StoredProcedureStep extends TransformTask
 
     private boolean getParametersFromDbMetadata() throws SQLException
     {
-        parameters = dialect.getParametersFromDbMetadata(scope, procSchema, procName);
+        metadataParameters = dialect.getParametersFromDbMetadata(scope, procSchema, procName);
 
-        if (parameters.containsKey(SPECIAL_PARMS.return_status.name()))
+        if (metadataParameters.containsKey(SPECIAL_PARMS.return_status.name()))
             procReturns = RETURN_TYPE.INTEGER;
-        else if (parameters.containsKey(SPECIAL_PARMS.resultSet.name()))
+        else if (metadataParameters.containsKey(SPECIAL_PARMS.resultSet.name()))
             procReturns = RETURN_TYPE.RESULTSET;
 
         return true;
@@ -296,15 +298,15 @@ public class StoredProcedureStep extends TransformTask
     {
         boolean missingParam = false;
 
-        Map<String, String> xmlParamValues = _meta.getXmlParamValues();
+        Map<String, StoredProcedureStepMeta.ETLParameterInfo> xmlParamInfos= _meta.getXmlParamInfos();
 
         initSavedParamVals();
 
-        for (Map.Entry<String, ParameterInfo> parameter : parameters.entrySet())
+        for (Map.Entry<String, MetadataParameterInfo> parameter : metadataParameters.entrySet())
         {
             String paramName = parameter.getKey();
             String dialectParamName = dialect.translateParameterName(paramName, true);
-            ParameterInfo paramInfo = parameter.getValue();
+            MetadataParameterInfo mdParamInfo = parameter.getValue();
             Object inputValue = null;
 
             if (paramName.equalsIgnoreCase(SPECIAL_PARMS.transformRunId.name()))
@@ -315,17 +317,22 @@ public class StoredProcedureStep extends TransformTask
             {
                 inputValue = _context.getContainer().getEntityId().toString();
             }
-            else if (xmlParamValues.containsKey(paramName) && (!savedParamVals.containsKey(dialectParamName) || _meta.isOverrideParam(paramName)))
+            else if (xmlParamInfos.containsKey(paramName) && ( !(localSavedParamVals.containsKey(dialectParamName) || globalSavedParamVals.containsKey(dialectParamName)) || _meta.isOverrideParam(paramName)))
             {
                 // it's either a new one, or the xml value is set to override the persisted value
-               inputValue = xmlParamValues.get(paramName);
+               inputValue = xmlParamInfos.get(paramName).getValue();
             }
-            else if (savedParamVals.containsKey(dialectParamName))
+            else if (localSavedParamVals.containsKey(dialectParamName))
             {
                 // Use the persisted value.
-                inputValue = savedParamVals.get(dialectParamName);
+                inputValue = localSavedParamVals.get(dialectParamName);
             }
-            else if (!xmlParamValues.containsKey(paramName) && !savedParamVals.containsKey(dialectParamName))
+            else if (globalSavedParamVals.containsKey(dialectParamName))
+            {
+                // Use the persisted global value. local has precedence if the same param name exists in both scopes
+                inputValue = globalSavedParamVals.get(dialectParamName);
+            }
+            else if (!xmlParamInfos.containsKey(paramName) && !localSavedParamVals.containsKey(dialectParamName))
             {
                 if (SPECIAL_PARMS.getSpecialParameterNames().contains(paramName)) // Initialize for first run with this parameter
                 {
@@ -343,7 +350,7 @@ public class StoredProcedureStep extends TransformTask
                     //TODO: check for required, report missing.
             }
 
-            // Now process special filter parameters. Note these aren't persisted in the parameter map, but the other "Incremental" entries the ETL engine uses
+            // Now process special filter metadataParameters. Note these aren't persisted in the parameter map, but the other "Incremental" entries the ETL engine uses
             if (_meta.isUseFilterStrategy())
             {
                 if (paramName.equalsIgnoreCase(SPECIAL_PARMS.filterRunId.name()))
@@ -358,12 +365,12 @@ public class StoredProcedureStep extends TransformTask
                     inputValue = getVariableMap().get(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName());
             }
 
-            if (paramInfo.getParamTraits().get(ParamTraits.datatype) == Types.TIMESTAMP)
+            if (mdParamInfo.getParamTraits().get(ParamTraits.datatype) == Types.TIMESTAMP)
             {
                 inputValue = castStringToTimestamp(inputValue);
             }
 
-            paramInfo.setParamValue(inputValue);
+            mdParamInfo.setParamValue(inputValue);
             
         }
     }
@@ -406,20 +413,30 @@ public class StoredProcedureStep extends TransformTask
     {
         Object o = getVariableMap().get(TransformProperty.Parameters);
         if (null != o)
-            savedParamVals.putAll((Map) o);
+            localSavedParamVals.putAll((Map) o);
 
-        getVariableMap().put(TransformProperty.Parameters, savedParamVals);
+        getVariableMap().put(TransformProperty.Parameters, localSavedParamVals);
 
-        // Trim any parameters that have been deprecated and no longer part of the procedure
-        Iterator<Map.Entry<String,Object>> it = savedParamVals.entrySet().iterator();
+        // Trim any local scoped persisted parameters that have been deprecated and no longer part of the procedure,
+        // or have been rescoped to global
+        Iterator<Map.Entry<String,Object>> it = localSavedParamVals.entrySet().iterator();
         while (it.hasNext())
         {
             Map.Entry<String, Object> e = it.next();
-            if (!parameters.containsKey(dialect.translateParameterName(e.getKey(), false))
+
+            final String paramName = dialect.translateParameterName(e.getKey(), false);
+            if (!metadataParameters.containsKey(paramName)
                     && !e.getKey().equals(TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor().getName())
-                    && !e.getKey().equals(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName()))
+                    && !e.getKey().equals(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName())
+                || _meta.isGlobalParam(paramName))
                 it.remove();
         }
+
+        Object globalO = getVariableMap().get(TransformProperty.GlobalParameters);
+        if (null != globalO)
+            globalSavedParamVals.putAll((Map) globalO);
+        // Don't trim persisted global parameters. If they're not part of this procedure, there's no way to tell whether or not they're part of others
+        getVariableMap().put(TransformProperty.GlobalParameters, globalSavedParamVals, VariableMap.Scope.global );
     }
 
     @Nullable
@@ -433,12 +450,12 @@ public class StoredProcedureStep extends TransformTask
                 returnVal = 0;
             else returnVal = null;
         }
-        else returnVal = dialect.readOutputParameters(scope, stmt, parameters);
+        else returnVal = dialect.readOutputParameters(scope, stmt, metadataParameters);
 
-        for (Map.Entry<String, ParameterInfo> parameter : parameters.entrySet())
+        for (Map.Entry<String, MetadataParameterInfo> parameter : metadataParameters.entrySet())
         {
             String paramName = parameter.getKey();
-            ParameterInfo paramInfo = parameter.getValue();
+            MetadataParameterInfo paramInfo = parameter.getValue();
             if (paramInfo.getParamTraits().get(ParamTraits.direction) == DatabaseMetaData.procedureColumnInOut)
             {
                 Object value = paramInfo.getParamValue();
@@ -462,7 +479,12 @@ public class StoredProcedureStep extends TransformTask
                     getJob().info("Return Msg: " + value);
                 }
 
-                savedParamVals.put(dialect.translateParameterName(paramName, true), value);
+                // Persist the new value to the correct scope
+                String dialectName = dialect.translateParameterName(paramName, true);
+                if (_meta.isGlobalParam(paramName))
+                    globalSavedParamVals.put(dialectName, value);
+                else
+                    localSavedParamVals.put(dialectName, value);
             }
 
         }

@@ -1267,10 +1267,10 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
         return true;
     }
 
-    public Map<String, ParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
+    public Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
     {
 
-        CaseInsensitiveMapWrapper<ParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, ParameterInfo>());
+        CaseInsensitiveMapWrapper<MetadataParameterInfo> parameters = new CaseInsensitiveMapWrapper<>(new LinkedHashMap<String, MetadataParameterInfo>());
 
         try (Connection conn = scope.getConnection();
              ResultSet rs = conn.getMetaData().getProcedureColumns(scope.getDatabaseName(),procSchema, procName, null);)
@@ -1285,14 +1285,14 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
                     // It can only be an integer and output parameter.
                     traitMap.put(ParamTraits.direction, DatabaseMetaData.procedureColumnOut);
                     traitMap.put(ParamTraits.datatype, Types.INTEGER);
-                    parameters.put("return_status", new ParameterInfo(traitMap));
+                    parameters.put("return_status", new MetadataParameterInfo(traitMap));
                 }
                 else
                 {
                     traitMap.put(ParamTraits.direction, rs.getInt("COLUMN_TYPE"));
                     traitMap.put(ParamTraits.datatype, rs.getInt("DATA_TYPE"));
                     //traitMap.put(ParamTraits.required, )
-                    parameters.put(StringUtils.substringAfter(rs.getString("COLUMN_NAME"), "@"), new ParameterInfo(traitMap));
+                    parameters.put(StringUtils.substringAfter(rs.getString("COLUMN_NAME"), "@"), new MetadataParameterInfo(traitMap));
                 }
             }
         }
@@ -1322,12 +1322,12 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     @Override
-    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
+    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
-        for (Map.Entry<String, ParameterInfo> parameter : parameters.entrySet())
+        for (Map.Entry<String, MetadataParameterInfo> parameter : parameters.entrySet())
         {
             String paramName = parameter.getKey();
-            ParameterInfo paramInfo = parameter.getValue();
+            MetadataParameterInfo paramInfo = parameter.getValue();
             int datatype = paramInfo.getParamTraits().get(ParamTraits.datatype);
             int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
 
@@ -1339,13 +1339,13 @@ public class MicrosoftSqlServer2008R2Dialect extends SqlDialect
     }
 
     @Override
-    public int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    public int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters) throws SQLException
     {
         int returnVal = -1;
-        for (Map.Entry<String, ParameterInfo> parameter : parameters.entrySet())
+        for (Map.Entry<String, MetadataParameterInfo> parameter : parameters.entrySet())
         {
             String paramName = parameter.getKey();
-            ParameterInfo paramInfo = parameter.getValue();
+            MetadataParameterInfo paramInfo = parameter.getValue();
             int direction = paramInfo.getParamTraits().get(ParamTraits.direction);
             if (direction == DatabaseMetaData.procedureColumnInOut)
                 paramInfo.setParamValue(stmt.getObject(paramName));
