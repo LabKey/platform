@@ -488,7 +488,7 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public Map<String, ParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
+    public Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException
     {
         throw new UnsupportedOperationException();
     }
@@ -500,13 +500,13 @@ public abstract class SimpleSqlDialect extends SqlDialect
     }
 
     @Override
-    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
+    public void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException
     {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException
+    public int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters) throws SQLException
     {
         throw new UnsupportedOperationException();
     }

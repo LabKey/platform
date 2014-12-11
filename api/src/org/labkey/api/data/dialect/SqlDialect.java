@@ -1317,12 +1317,12 @@ public abstract class SqlDialect
         required
     }
 
-    public final class ParameterInfo
+    public final class MetadataParameterInfo
     {
         private Map<ParamTraits, Integer> paramTraits = new HashMap<>();
         private Object value = new Object();
 
-        public ParameterInfo(Map<ParamTraits, Integer> paramTraits)
+        public MetadataParameterInfo(Map<ParamTraits, Integer> paramTraits)
         {
             this.paramTraits = paramTraits;
         }
@@ -1351,7 +1351,7 @@ public abstract class SqlDialect
      * @return A map of parameter name / ParameterInfo pairs
      * @throws SQLException
      */
-    public abstract Map<String, ParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException;
+    public abstract Map<String, MetadataParameterInfo> getParametersFromDbMetadata(DbScope scope, String procSchema, String procName) throws SQLException;
 
     /**
      * Build the dialect-specific string to call the procedure, with the correct number and placement of parameter placeholders
@@ -1373,7 +1373,7 @@ public abstract class SqlDialect
      * @param registerOutputAssignment true if the assigned result (see buildProcedureCall) of the proc also needs to be registered as an output parameter
      * @throws SQLException
      */
-    public abstract void registerParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException;
+    public abstract void registerParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters, boolean registerOutputAssignment) throws SQLException;
 
     /**
      * Read the values of each INPUT/OUTPUT or OUTPUT parameter, and write them into the parameters map.
@@ -1383,7 +1383,7 @@ public abstract class SqlDialect
      * @return The return code/status from the procedure, if any. Return -1 if procedure does not have a return code.
      * @throws SQLException
      */
-    public abstract int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, ParameterInfo> parameters) throws SQLException;
+    public abstract int readOutputParameters(DbScope scope, CallableStatement stmt, Map<String, MetadataParameterInfo> parameters) throws SQLException;
 
     /**
      * Convert parameter names between dialect specific conventions (for example, SQL Server parameters have a "@" prefix), and plain
