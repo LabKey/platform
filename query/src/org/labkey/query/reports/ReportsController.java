@@ -1457,7 +1457,7 @@ public class ReportsController extends SpringActionController
 
             ThumbnailService svc = ServiceRegistry.get().getService(ThumbnailService.class);
 
-            if (null != svc)
+            if (null != svc && (form.getThumbnailType() != null))
             {
                 if (form.getThumbnailType().equals(ThumbnailType.NONE.name()))
                 {

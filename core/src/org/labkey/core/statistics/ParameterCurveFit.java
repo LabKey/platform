@@ -229,6 +229,11 @@ public class ParameterCurveFit extends DefaultCurveFit implements CurveFit
             {
                 double logXHigh = hasXLogScale() ? Math.log10(data[i-1].getX()) : data[i-1].getX();
                 double logXLow = hasXLogScale() ? Math.log10(data[i].getX()) : data[i].getX();
+
+                // ensure the range is a valid number
+                logXHigh = (Double.isInfinite(logXHigh) || Double.isNaN(logXHigh)) ? 0 : logXHigh;
+                logXLow = (Double.isInfinite(logXLow) || Double.isNaN(logXLow)) ? 0 : logXLow;
+
                 if (reverseCurve)
                 {
                     double temp = logXHigh;
