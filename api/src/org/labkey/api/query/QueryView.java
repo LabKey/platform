@@ -2155,11 +2155,9 @@ public class QueryView extends WebPartView<Object>
         TableInfo table = getTable();
         if (table != null)
         {
-            OutputStream stream = null;
-            try
+            ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+            try (OutputStream stream = new BufferedOutputStream(byteStream))
             {
-                ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
-                stream = new BufferedOutputStream(byteStream);
                 ExcelWriter ew = getExcelWriter(ExcelWriter.ExcelDocumentType.xls);
                 ew.setCaptionType(ExcelWriter.CaptionType.Label);
                 ew.setShowInsertableColumnsOnly(false);
@@ -2169,11 +2167,6 @@ public class QueryView extends WebPartView<Object>
 
                 logAuditEvent("Exported to Excel file", ew.getDataRowCount());
                 return byteArrayAttachmentFile;
-            }
-            finally
-            {
-                if (stream != null)
-                    stream.close();
             }
         }
         else

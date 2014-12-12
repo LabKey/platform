@@ -60,7 +60,7 @@ public abstract class GraphSelectedAction<FormType extends GraphSelectedForm> ex
         else
         {
             Set<String> objectIdStrings = DataRegionSelection.getSelected(getViewContext(), false);
-            if (objectIdStrings == null || objectIdStrings.size() == 0)
+            if (objectIdStrings.isEmpty())
             {
                 throw new NotFoundException("No samples specified.");
             }

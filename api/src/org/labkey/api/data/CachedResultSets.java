@@ -46,24 +46,24 @@ public class CachedResultSets
 
     public static CachedResultSet create(ResultSet rsIn, boolean cacheMetaData, int maxRows, @Nullable StackTraceElement[] stackTrace, QueryLogging queryLogging) throws SQLException
     {
-        ResultSet rs = new LoggingResultSetWrapper(rsIn, queryLogging);         // TODO: avoid is we're passed a read-only and empty one??
-        ArrayList<RowMap<Object>> list = new ArrayList<>();
+        try (ResultSet rs = new LoggingResultSetWrapper(rsIn, queryLogging))         // TODO: avoid is we're passed a read-only and empty one??
+        {
+            ArrayList<RowMap<Object>> list = new ArrayList<>();
 
-        if (maxRows == Table.ALL_ROWS)
-            maxRows = Integer.MAX_VALUE;
+            if (maxRows == Table.ALL_ROWS)
+                maxRows = Integer.MAX_VALUE;
 
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
 
-        // Note: we check in this order to avoid consuming the "extra" row used to detect complete vs. not
-        while (list.size() < maxRows && rs.next())
-            list.add(factory.getRowMap(rs));
+            // Note: we check in this order to avoid consuming the "extra" row used to detect complete vs. not
+            while (list.size() < maxRows && rs.next())
+                list.add(factory.getRowMap(rs));
 
-        // If we have another row, then we're not complete
-        boolean isComplete = !rs.next();
+            // If we have another row, then we're not complete
+            boolean isComplete = !rs.next();
 
-        CachedResultSet cachedResultSet = new CachedResultSet(rs.getMetaData(), cacheMetaData, list, isComplete, stackTrace);
-        rs.close();
-        return cachedResultSet;
+            return new CachedResultSet(rs.getMetaData(), cacheMetaData, list, isComplete, stackTrace);
+        }
     }
 
 

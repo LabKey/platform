@@ -678,7 +678,7 @@ public class ExceptionUtil
                     response.setStatus(responseStatus);
                 else
                     response.setStatus(responseStatus, responseStatusMessage);
-                for (Map.Entry<String,String> entry : headers.entrySet())
+                for (Map.Entry<String, String> entry : headers.entrySet())
                     response.addHeader(entry.getKey(), entry.getValue());
                 errorView.render(request, response);
                 return null;
@@ -733,14 +733,14 @@ public class ExceptionUtil
     }
 
 
-    private final static WeakHashMap<Throwable, HashMap<Enum,String>> _exceptionDecorations = new WeakHashMap<>();
+    private final static WeakHashMap<Throwable, HashMap<Enum, String>> _exceptionDecorations = new WeakHashMap<>();
     
     public static boolean decorateException(Throwable t, Enum key, String value, boolean overwrite)
     {
         t = unwrapException(t);
         synchronized (_exceptionDecorations)
         {
-            HashMap<Enum,String> m = _exceptionDecorations.get(t);
+            HashMap<Enum, String> m = _exceptionDecorations.get(t);
             if (null == m)
                 _exceptionDecorations.put(t, m = new HashMap<>());
             if (overwrite || !m.containsKey(key))
@@ -755,9 +755,9 @@ public class ExceptionUtil
 
 
     @NotNull
-    public static Map<Enum,String> getExceptionDecorations(Throwable start)
+    public static Map<Enum, String> getExceptionDecorations(Throwable start)
     {
-        HashMap<Enum,String> collect = new HashMap<>();
+        HashMap<Enum, String> collect = new HashMap<>();
         LinkedList<Throwable> list = new LinkedList<>();
 
         Throwable next = unwrapException(start);
@@ -771,7 +771,7 @@ public class ExceptionUtil
         {
             for (Throwable th : list)
             {
-                HashMap<Enum,String> m = _exceptionDecorations.get(th);
+                HashMap<Enum, String> m = _exceptionDecorations.get(th);
                 if (null != m)
                     collect.putAll(m);
             }
@@ -792,7 +792,7 @@ public class ExceptionUtil
     public static String getExtendedMessage(Throwable t)
     {
         StringBuilder sb = new StringBuilder(t.toString());
-        for (Map.Entry<Enum,String> e : getExceptionDecorations(t).entrySet())
+        for (Map.Entry<Enum, String> e : getExceptionDecorations(t).entrySet())
             sb.append("\n").append(e.getKey()).append("=").append(e.getValue());
         return sb.toString();
     }

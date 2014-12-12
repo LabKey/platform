@@ -37,6 +37,7 @@ import org.springframework.web.servlet.ModelAndView;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -84,9 +85,7 @@ public class PipelineDataCollectorRedirectAction extends SimpleViewAction<Pipeli
         }
         else
         {
-            int[] dataIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), true));
-
-            for (int dataId : dataIds)
+            for (int dataId : DataRegionSelection.getSelectedIntegers(getViewContext(), true))
             {
                 ExpData data = ExperimentService.get().getExpData(dataId);
                 if (data == null || !data.getContainer().equals(container))

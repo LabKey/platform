@@ -32,7 +32,7 @@ import java.io.PrintWriter;
 * Date: Dec 30, 2010
 * Time: 9:20:44 AM
 */
-public abstract class TextWriter
+public abstract class TextWriter implements AutoCloseable
 {
     private static final Logger LOG = Logger.getLogger(TextWriter.class);
 

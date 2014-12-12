@@ -892,22 +892,13 @@ public abstract class SqlDialect
 
     public Integer getSPID(Connection conn) throws SQLException
     {
-        PreparedStatement stmt = null;
-        ResultSet rs = null;
-        try
+        try (PreparedStatement stmt = conn.prepareStatement(getSIDQuery()); ResultSet rs = stmt.executeQuery())
         {
-            stmt = conn.prepareStatement(getSIDQuery());
-            rs = stmt.executeQuery();
             if (!rs.next())
             {
                 throw new SQLException("SID query returned no results");
             }
             return rs.getInt(1);
-        }
-        finally
-        {
-            if (stmt != null) { try { stmt.close(); } catch (SQLException e) {} }
-            if (rs != null) { try { rs.close(); } catch (SQLException e) {} }
         }
     }
 
@@ -1187,11 +1178,8 @@ public abstract class SqlDialect
 
     protected int getJdbcVersion(DbScope scope)
     {
-        Connection conn = null;
-
-        try
+        try (Connection conn = scope.getConnection())
         {
-            conn = scope.getConnection();
             DatabaseMetaData dbmd = conn.getMetaData();
 
             return Math.min(dbmd.getJDBCMajorVersion(), getTomcatJdbcVersion());
@@ -1200,20 +1188,6 @@ public abstract class SqlDialect
         {
             ExceptionUtil.logExceptionToMothership(null, e);
             return 2;
-        }
-        finally
-        {
-            if (null != conn)
-            {
-                try
-                {
-                    conn.close();
-                }
-                catch (SQLException e)
-                {
-                    ExceptionUtil.logExceptionToMothership(null, e);
-                }
-            }
         }
     }
 

@@ -76,21 +76,16 @@ public abstract class GraphSelectedBean
         if (_graphableIds == null)
         {
             QueryView dataView = getQueryView();
-            ResultSet rs = null;
-            try
+
+            try (ResultSet rs = dataView.getResultSet())
             {
-                rs = dataView.getResultSet();
                 Set<Integer> graphableIds = new HashSet<>();
                 while (rs.next())
                     graphableIds.add(rs.getInt("RowId"));
                 _graphableIds = new int[graphableIds.size()];
                 int i = 0;
                 for (Integer id : graphableIds)
-                    _graphableIds[i++] = id.intValue();
-            }
-            finally
-            {
-                if (rs != null) try { rs.close(); } catch (SQLException e) {}
+                    _graphableIds[i++] = id;
             }
         }
         return _graphableIds;

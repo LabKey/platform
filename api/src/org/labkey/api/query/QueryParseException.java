@@ -112,7 +112,7 @@ public class QueryParseException extends QueryException
             error.put("errorStr", errorStr.substring(getColumn()));
         }
         Map<Enum,String> decorations = ExceptionUtil.getExceptionDecorations(this);
-        if (null != decorations && !decorations.isEmpty())
+        if (!decorations.isEmpty())
         {
             JSONObject d = new JSONObject();
             for (Map.Entry<Enum,String> entry : decorations.entrySet())

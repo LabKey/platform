@@ -1391,18 +1391,19 @@ public class DataRegion extends AbstractDataRegion
     protected int renderTableContents(RenderContext ctx, Writer out, boolean showRecordSelectors, List<DisplayColumn> renderers) throws SQLException, IOException
     {
         Results results = ctx.getResults();
-        // unwrap for efficient use of ResultSetRowMapFactory
-        ResultSet rs = results.getResultSet();
-        ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
         int rowIndex = 0;
-
-        while (rs.next())
+        // unwrap for efficient use of ResultSetRowMapFactory
+        try (ResultSet rs = results.getResultSet())
         {
-            ctx.setRow(factory.getRowMap(rs));
-            renderTableRow(ctx, out, showRecordSelectors, renderers, rowIndex++);
+            ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
+
+            while (rs.next())
+            {
+                ctx.setRow(factory.getRowMap(rs));
+                renderTableRow(ctx, out, showRecordSelectors, renderers, rowIndex++);
+            }
         }
 
-        rs.close();
         return rowIndex;
     }
 
@@ -1601,18 +1602,18 @@ public class DataRegion extends AbstractDataRegion
             return;
         }
 
-        try
+        initDetailsResultSet(ctx);
+        List<DisplayColumn> renderers = getDisplayColumns();
+
+        renderFormHeader(ctx, out, MODE_DETAILS);
+
+        RowMap rowMap = null;
+        int rowIndex = 0;
+
+        try (ResultSet rs = ctx.getResults())
         {
-            initDetailsResultSet(ctx);
-            ResultSet rs = ctx.getResults();
-            List<DisplayColumn> renderers = getDisplayColumns();
-
-            renderFormHeader(ctx, out, MODE_DETAILS);
-
             ResultSetRowMapFactory factory = ResultSetRowMapFactory.create(rs);
-            RowMap rowMap = null;
 
-            int rowIndex = 0;
             while (rs.next())
             {
                 rowIndex++;
@@ -1644,12 +1645,6 @@ public class DataRegion extends AbstractDataRegion
             renderDetailsHiddenFields(out, rowMap);
             _detailsButtonBar.render(ctx, out);
             out.write("</form>");
-        }
-        finally
-        {
-            ResultSet rs = ctx.getResults();
-            if (null != rs)
-                rs.close();
         }
     }
 

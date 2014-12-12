@@ -20,7 +20,6 @@ import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.view.HttpView;
-import org.labkey.api.view.ViewContext;
 
 import java.io.IOException;
 import java.sql.SQLException;

@@ -15,16 +15,15 @@
  */
 package org.labkey.api.study.actions;
 
-import org.labkey.api.security.RequiresPermissionClass;
-import org.labkey.api.security.permissions.*;
 import org.labkey.api.action.RedirectAction;
-import org.labkey.api.study.assay.AssayProtocolSchema;
-import org.labkey.api.study.assay.AssayService;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.data.ContainerFilter;
+import org.labkey.api.data.DataRegionSelection;
+import org.labkey.api.security.RequiresPermissionClass;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.study.assay.AssayProtocolSchema;
 import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.util.PageFlowUtil;
+import org.labkey.api.view.ActionURL;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 
@@ -56,10 +55,8 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
     public ActionURL getSuccessURL(ShowSelectedForm form)
     {
         Set<String> selection = DataRegionSelection.getSelected(getViewContext(), true);
-        int[] selectedIds = new int[selection.size()];
-        int i = 0;
-        for (String id : selection)
-            selectedIds[i++] = Integer.parseInt(id);
+        int[] selectedIds = PageFlowUtil.toInts(selection);
+
         ContainerFilter containerFilter = null;
         if (form.getContainerFilterName() != null)
             containerFilter = ContainerFilter.getContainerFilterByName(form.getContainerFilterName(), getUser());
@@ -72,6 +69,7 @@ public class ShowSelectedDataAction extends RedirectAction<ShowSelectedDataActio
 
         if (form.getContainerFilterName() != null)
             url.addParameter("containerFilterName", form.getContainerFilterName());
+
         return url;
     }
     

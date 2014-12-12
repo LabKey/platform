@@ -449,14 +449,16 @@ public class DbScope
         t._closesToIgnore++;
         if (t.decrement())
         {
-            Connection conn = t.getConnection();
             try
             {
-                t.runCommitTasks(CommitTaskOption.PRECOMMIT);
-                conn.commit();
-                conn.setAutoCommit(true);
-    //            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-                conn.close();
+                try (Connection conn = t.getConnection())
+                {
+                    t.runCommitTasks(CommitTaskOption.PRECOMMIT);
+                    conn.commit();
+                    conn.setAutoCommit(true);
+                    //            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+                }
+
                 synchronized (_transaction)
                 {
                     popCurrentTransaction();
@@ -633,11 +635,9 @@ public class DbScope
     
     public Class getDelegateClass()
     {
-        try
+        try (Connection conn = _dataSource.getConnection())
         {
-            Connection conn = _dataSource.getConnection();
             Connection delegate = getDelegate(conn);
-            conn.close();
             return delegate.getClass();
         }
         catch (Exception x)

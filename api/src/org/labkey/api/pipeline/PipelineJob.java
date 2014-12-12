@@ -70,7 +70,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Vector;
@@ -408,21 +407,15 @@ abstract public class PipelineJob extends Job implements Serializable
 
     public static PipelineJob readFromFile(File file) throws IOException
     {
-        InputStream fIn = null;
         StringBuilder xml = new StringBuilder();
-        try
+        try (InputStream fIn = new FileInputStream(file))
         {
-            fIn = new FileInputStream(file);
             BufferedReader reader = new BufferedReader(new InputStreamReader(fIn));
             String line;
             while ((line = reader.readLine()) != null)
             {
                 xml.append(line);
             }
-        }
-        finally
-        {
-            if (fIn != null) { try { fIn.close(); } catch (IOException ignored) {} }
         }
         return PipelineJobService.get().getJobStore().fromXML(xml.toString());
     }
@@ -435,17 +428,11 @@ abstract public class PipelineJob extends Job implements Serializable
 
         String xml = PipelineJobService.get().getJobStore().toXML(this);
 
-        FileOutputStream fOut = null;
-        try
+        try (FileOutputStream fOut = new FileOutputStream(newFile))
         {
-            fOut = new FileOutputStream(newFile);
             PrintWriter writer = new PrintWriter(fOut);
             writer.write(xml);
             writer.flush();
-        }
-        finally
-        {
-            if (fOut != null) { try { fOut.close(); } catch (IOException ignored) {} }
         }
 
         if (NetworkDrive.exists(file))

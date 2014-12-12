@@ -15,7 +15,6 @@
  */
 package org.labkey.api.writer;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.FileUtil;
@@ -65,58 +64,13 @@ public class ZipUtil
     }
 
 
-    // Unzip all entries to the specified directory; log each file if Logger is non-null
-    public static List<File> unzipToDirectory(Enumeration<? extends ZipEntry> entries, File unzipDir, InputStream zis, @Nullable Logger log) throws IOException
+    // Unzips an input stream to the specified directory; logs each file if Logger is non-null.
+    public static List<File> unzipToDirectory(InputStream is, File unzipDir, @Nullable Logger log) throws IOException
     {
         List<File> files = new ArrayList<>();
 
-        while (entries.hasMoreElements())
+        try (ZipInputStream zis = new ZipInputStream(is))
         {
-            ZipEntry entry = entries.nextElement();
-
-            if (entry.isDirectory())
-            {
-                File newDir = new File(unzipDir, entry.getName());
-                newDir.mkdir();
-                continue;
-            }
-
-            if (null != log)
-                log.info("Expanding " + entry.getName());
-
-            BufferedInputStream is = null;
-            BufferedOutputStream os = null;
-
-            try
-            {
-                is = new BufferedInputStream(zis); // TODO: Make work for file -- zip.getInputStream(entry)
-                File destFile = new File(unzipDir, entry.getName());
-                destFile.getParentFile().mkdirs();
-                destFile.createNewFile();
-                os = new BufferedOutputStream(new FileOutputStream(destFile));
-                FileUtil.copyData(is, os);
-                files.add(destFile);
-            }
-            finally
-            {
-                //if (is != null) is.close();
-                if (os != null) os.close();
-            }
-        }
-
-        return files;
-    }
-
-
-    // Unzip an input stream to the specified directory; log each file if Logger is non-null
-    public static List<File> unzipToDirectory(InputStream is, File unzipDir, @Nullable Logger log) throws IOException
-    {
-        List<File> files = null;
-
-        try
-        {
-            ZipInputStream zis = new ZipInputStream(is);
-            files = new ArrayList<>();
             ZipEntry entry;
 
             while (null != (entry = zis.getNextEntry()))
@@ -131,24 +85,20 @@ public class ZipUtil
                 if (null != log)
                     log.info("Expanding " + entry.getName());
 
-                BufferedOutputStream os = null;
+                File destFile = new File(unzipDir, entry.getName());
+                destFile.getParentFile().mkdirs();
+                destFile.createNewFile();
 
-                try
+                // We can't close() this, otherwise zis will get closed
+                BufferedInputStream bis = new BufferedInputStream(zis);
+
+                try (BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(destFile)))
                 {
-                    is = new BufferedInputStream(zis);
-                    File destFile = new File(unzipDir, entry.getName());
-                    destFile.getParentFile().mkdirs();
-                    destFile.createNewFile();
-                    os = new BufferedOutputStream(new FileOutputStream(destFile));
-                    FileUtil.copyData(is, os);
-                    files.add(destFile);
-                    zis.closeEntry();
+                    FileUtil.copyData(bis, os);
                 }
-                finally
-                {
-                    //if (is != null) is.close();
-                    if (os != null) os.close();
-                }
+
+                files.add(destFile);
+                zis.closeEntry();
             }
         }
         finally
@@ -158,6 +108,7 @@ public class ZipUtil
 
         return files;
     }
+
 
     public static void zipToStream(HttpServletResponse response, File file, boolean preZipped) throws IOException
     {
@@ -170,17 +121,12 @@ public class ZipUtil
             return;
         }
 
-        ZipOutputStream zos = new ZipOutputStream(response.getOutputStream());
-
-        try
+        try (ZipOutputStream zos = new ZipOutputStream(response.getOutputStream()))
         {
             addResource(file, zos);
         }
-        finally
-        {
-            IOUtils.closeQuietly(zos);
-        }
     }
+
 
     private static void addResource(File file, ZipOutputStream out) throws IOException
     {

@@ -16,6 +16,7 @@
 
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.QueryForm;
 import org.labkey.api.query.QueryView;
@@ -53,7 +54,7 @@ public class DataRegionSelection
             HttpSession session = context.getRequest().getSession(false);
             if (session != null)
             {
-                Set<String> result = (Set<String>)session.getAttribute(key);
+                @SuppressWarnings("unchecked") Set<String> result = (Set<String>)session.getAttribute(key);
                 if (result == null && create)
                 {
                     result = new LinkedHashSet<>();
@@ -90,19 +91,24 @@ public class DataRegionSelection
      * @param clearSelection Remove the request parameter selected items from session selection state
      * @return an unmodifiable copy of the selected item ids
      */
-    public static Set<String> getSelected(ViewContext context, boolean clearSelection)
+    public static @NotNull Set<String> getSelected(ViewContext context, boolean clearSelection)
     {
         return getSelected(context, null, false, clearSelection);
     }
 
-    public static int[] toInts(Collection<String> ids)
+    /**
+     * Get selected items from the request parameters as integers (includes only the current page of a data region and no selected items from session state).
+     * @param context Used to get the selection key
+     * @param clearSelection Remove the request parameter selected items from session selection state
+     * @return an unmodifiable copy of the selected item ids
+     */
+    public static @NotNull Set<Integer> getSelectedIntegers(ViewContext context, boolean clearSelection)
     {
-        int[] result = new int[ids.size()];
-        int index = 0;
-        for (String id : ids)
-        {
-            result[index++] = Integer.parseInt(id);
-        }
+        Set<Integer> result = new LinkedHashSet<>();
+
+        for (String s : getSelected(context, null, false, clearSelection))
+            result.add(Integer.parseInt(s));
+
         return result;
     }
 
@@ -124,7 +130,7 @@ public class DataRegionSelection
      * @param clearSession Remove the request parameter selected items from session selection state
      * @return an unmodifiable copy of the selected item ids
      */
-    public static Set<String> getSelected(ViewContext context, @Nullable String key, boolean mergeSession, boolean clearSession)
+    public static @NotNull Set<String> getSelected(ViewContext context, @Nullable String key, boolean mergeSession, boolean clearSession)
     {
         Set<String> result = new LinkedHashSet<>();
         String[] values = context.getRequest().getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);

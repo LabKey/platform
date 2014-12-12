@@ -56,14 +56,13 @@ public abstract class ComparisonCrosstabView extends CrosstabView
 
         StringBuilder sb = new StringBuilder();
 
-        TSVGridWriter tsvWriter = getTsvWriter();
-        try
+        try (TSVGridWriter tsvWriter = getTsvWriter())
         {
             tsvWriter.write(sb);
 
             StringTokenizer lines = new StringTokenizer(sb.toString(), "\n");
             int rowCount = lines.countTokens();
-            
+
             List<CrosstabMember> members = table.getColMembers();
 
             boolean[][] hits = new boolean[members.size()][];
@@ -79,7 +78,7 @@ public abstract class ComparisonCrosstabView extends CrosstabView
             {
                 String line = lines.nextToken();
                 String[] values = line.split("\\t");
-                for (int i = 0; i < members.size() && i + 1 < values.length ; i++)
+                for (int i = 0; i < members.size() && i + 1 < values.length; i++)
                 {
                     hits[i][resultsIndex] = !"".equals(values[i + 1].trim());
                 }
@@ -87,10 +86,6 @@ public abstract class ComparisonCrosstabView extends CrosstabView
             }
 
             return createComparisonResult(hits, table);
-        }
-        finally
-        {
-            tsvWriter.close();
         }
     }
 
