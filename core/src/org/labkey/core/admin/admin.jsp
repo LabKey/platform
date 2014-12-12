@@ -29,6 +29,7 @@
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
@@ -90,6 +91,7 @@
         <tr><td class="labkey-form-label">OS</td><td><%=h(bean.osName)%></td></tr>
         <tr><td class="labkey-form-label">Working Dir</td><td><%=h(bean.workingDir)%></td></tr>
         <tr><td class="labkey-form-label">Server GUID</td><td><%=h(bean.serverGuid)%></td></tr>
+        <tr><td class="labkey-form-label">Server Time</td><td><%=h(DateUtil.formatDateTime(c))%></td></tr>
         <tr><td>&nbsp;</td></tr>
     </table>
     <table>

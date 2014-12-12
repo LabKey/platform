@@ -423,13 +423,12 @@ public class UserController extends SpringActionController
             else
             {
                 //try to get a user selection list from the dataregion
-                Set<String> userIds = DataRegionSelection.getSelected(getViewContext(), true);
-                if (null == userIds || userIds.size() == 0)
+                Set<Integer> userIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
+                if (userIds.isEmpty())
                     throw new RedirectException(new UserUrlsImpl().getSiteUsersURL().getLocalURIString());
 
-                for (String userId : userIds)
+                for (Integer id : userIds)
                 {
-                    int id = Integer.parseInt(userId);
                     if (id != user.getUserId())
                         bean.addUser(UserManager.getUser(id));
                 }
@@ -511,15 +510,14 @@ public class UserController extends SpringActionController
             else
             {
                 //try to get a user selection list from the dataregion
-                Set<String> userIds = DataRegionSelection.getSelected(getViewContext(), true);
-                if (null == userIds || userIds.size() == 0)
+                Set<Integer> userIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
+                if (userIds.isEmpty())
                     throw new RedirectException(siteUsersUrl);
 
-                for (String userId : userIds)
+                for (Integer id : userIds)
                 {
-                    int id = Integer.parseInt(userId);
                     if (id != user.getUserId())
-                        bean.addUser(UserManager.getUser(Integer.parseInt(userId)));
+                        bean.addUser(UserManager.getUser(id));
                 }
             }
 

@@ -65,11 +65,13 @@ class StandardSpecimenWriter implements Writer<StandardSpecimenWriter.QueryInfo,
         }
 
         SQLFragment sql = generateSql(ctx, tinfo, columns);
-        ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false);
 
-        TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs), displayColumns);
-        gridWriter.write(pw);
-        gridWriter.close();  // Closes ResultSet and PrintWriter
+        // TSVGridWriter.close() closes ResultSet and PrintWriter
+        try (ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false);
+             TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs), displayColumns))
+        {
+            gridWriter.write(pw);
+        }
     }
 
     protected SQLFragment generateSql(ImportContext<StudyDocument.Study> ctx, TableInfo tinfo, Collection<ImportableColumn> columns)

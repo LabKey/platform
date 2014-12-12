@@ -1073,7 +1073,7 @@ public class CoreController extends SpringActionController
         {
             Container parentContainer = getContainer();
             Set<String> ids = DataRegionSelection.getSelected(getViewContext(), true);
-            if (null == ids || ids.size() == 0)
+            if (ids.isEmpty())
                 throw new RedirectException(parentContainer.getStartURL(getUser()));
 
             MoveWorkbooksBean bean = new MoveWorkbooksBean();

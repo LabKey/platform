@@ -295,15 +295,10 @@ public class AnnouncementsController extends SpringActionController
 
             Container c = getContainer();
 
-            Set<String> deleteRows = DataRegionSelection.getSelected(getViewContext(), true);
-            if (deleteRows != null)
-            {
-                for (String deleteRow : deleteRows)
-                {
-                    int rowId = Integer.parseInt(deleteRow);
-                    AnnouncementManager.deleteAnnouncement(c, rowId);
-                }
-            }
+            Set<Integer> deleteRows = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
+
+            for (Integer rowId : deleteRows)
+                AnnouncementManager.deleteAnnouncement(c, rowId);
 
             return true;
         }

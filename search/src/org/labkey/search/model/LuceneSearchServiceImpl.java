@@ -885,6 +885,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
         }
     }
 
+    // TODO: Switch these to TikaCoreProperties.*, I guess
     private static final String[] INTERESTING_PROP_NAMES = new String[] {
         Metadata.TITLE,
         Metadata.AUTHOR,
@@ -1253,7 +1254,7 @@ public class LuceneSearchServiceImpl extends AbstractSearchService
             if (null != hit.docid)
             {
                 String docid = "_docid=" + PageFlowUtil.encode(hit.docid);
-                hit.url = hit.url + (-1 == hit.url.indexOf("?") ? "?" : "&") + docid;
+                hit.url = hit.url + (!hit.url.contains("?") ? "?" : "&") + docid;
             }
 
             // Display title

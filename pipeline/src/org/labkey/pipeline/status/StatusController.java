@@ -769,7 +769,7 @@ public class StatusController extends SpringActionController
             getContainerCheckAdmin();
             try
             {
-                deleteStatus(getViewBackgroundInfo(), form.isDeleteRuns(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
+                deleteStatus(getViewBackgroundInfo(), form.isDeleteRuns(), DataRegionSelection.getSelectedIntegers(getViewContext(), true));
             }
             catch (PipelineProvider.HandlerException e)
             {
@@ -797,7 +797,7 @@ public class StatusController extends SpringActionController
     {
         public void handleSelect(SelectStatusForm form) throws PipelineProvider.HandlerException
         {
-            cancelStatus(getViewBackgroundInfo(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
+            cancelStatus(getViewBackgroundInfo(), DataRegionSelection.getSelectedIntegers(getViewContext(), true));
         }
     }
 
@@ -806,7 +806,7 @@ public class StatusController extends SpringActionController
     {
         public void handleSelect(SelectStatusForm form) throws PipelineProvider.HandlerException
         {
-            completeStatus(getUser(), DataRegionSelection.toInts(DataRegionSelection.getSelected(getViewContext(), true)));
+            completeStatus(getUser(), DataRegionSelection.getSelectedIntegers(getViewContext(), true));
         }
     }
 

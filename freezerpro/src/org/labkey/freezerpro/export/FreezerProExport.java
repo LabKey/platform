@@ -238,10 +238,11 @@ public class FreezerProExport
         {
             _job.info("data processing complete, a total of " + data.size() + " records were exported.");
             _job.info("creating the exported data .csv file");
-            TSVMapWriter tsvWriter = new TSVMapWriter(_columnSet, data);
-            tsvWriter.setDelimiterCharacter(TSVWriter.DELIM.COMMA);
-            tsvWriter.write(_archive);
-            tsvWriter.close();
+            try (TSVMapWriter tsvWriter = new TSVMapWriter(_columnSet, data))
+            {
+                tsvWriter.setDelimiterCharacter(TSVWriter.DELIM.COMMA);
+                tsvWriter.write(_archive);
+            }
             _job.info("finished writing data file: " + _archive.getName());
         }
         catch (IOException e)

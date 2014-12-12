@@ -327,12 +327,9 @@ public class DemoController extends SpringActionController
 
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            Set<String> personIds = DataRegionSelection.getSelected(getViewContext(), true);
-            if (personIds != null)
-            {
-                for (String userId : personIds)
-                    DemoManager.getInstance().deletePerson(getContainer(), Integer.parseInt(userId));
-            }
+            Set<Integer> personIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
+            for (Integer userId : personIds)
+                DemoManager.getInstance().deletePerson(getContainer(), userId);
             return true;
         }
 

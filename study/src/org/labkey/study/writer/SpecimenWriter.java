@@ -212,22 +212,13 @@ public class SpecimenWriter implements Writer<StudyImpl, StudyExportContext>
 
         sql.append("\nORDER BY se.ExternalId");
 
-        ResultSet rs = null;
-        TSVGridWriter gridWriter = null;
-        try
+        // Note: must be uncached result set -- this query can be very large
+        try (
+                ResultSet rs = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false);
+                TSVGridWriter gridWriter = new TSVGridWriter(new ResultsImpl(rs, selectColumns), displayColumns)
+            )
         {
-            // Note: must be uncached result set -- this query can be very large
-            rs = new SqlSelector(StudySchema.getInstance().getSchema(), sql).getResultSet(false);
-
-            gridWriter = new TSVGridWriter(new ResultsImpl(rs, selectColumns), displayColumns);
             gridWriter.write(pw);
-        }
-        finally
-        {
-            if (gridWriter != null)
-                gridWriter.close();  // Closes ResultSet and PrintWriter
-            else if (rs != null)
-                rs.close();
         }
     }
 

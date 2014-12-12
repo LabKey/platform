@@ -18,7 +18,6 @@ package org.labkey.study.importer;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.labkey.api.annotations.RefactorIn15_1;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.query.ValidationException;
@@ -26,7 +25,6 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.DataSet;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
@@ -39,7 +37,6 @@ import org.labkey.study.model.VisitTag;
 import org.labkey.study.visitmanager.VisitManager;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;

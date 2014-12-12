@@ -34,7 +34,6 @@ import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
 import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
-import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.util.MultiPhaseCPUTimer;
 import org.labkey.search.model.LuceneSearchServiceImpl.FIELD_NAME;
@@ -43,7 +42,6 @@ import java.io.IOException;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
 
 /*
 * User: adam

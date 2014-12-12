@@ -3617,7 +3617,7 @@ public class StudyController extends BaseStudyController
             QCState newState = null;
             if (updateQCForm.getNewState() != null)
             {
-                newState = StudyManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState().intValue());
+                newState = StudyManager.getInstance().getQCStateForRowId(getContainer(), updateQCForm.getNewState());
                 if (newState == null)
                 {
                     errors.reject(null, "The selected state could not be found.  It may have been deleted from the database.");

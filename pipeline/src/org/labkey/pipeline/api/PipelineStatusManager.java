@@ -52,6 +52,7 @@ import org.labkey.api.view.ViewBackgroundInfo;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -496,7 +497,7 @@ public class PipelineStatusManager
         return filter;
     }
 
-    public static void completeStatus(User user, int... rowIds) throws PipelineProvider.HandlerException
+    public static void completeStatus(User user, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
     {
         // Make entire transaction use the PipelineStatus connection, since Exp.Data/Exp.ExperimentRun are tied to Pipeline.StatusFiles
         try (DbScope.Transaction transaction = PipelineSchema.getInstance().getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
@@ -535,12 +536,12 @@ public class PipelineStatusManager
         }
     }
 
-    public static void deleteStatus(ViewBackgroundInfo info, boolean deleteExpRuns, int... rowIds) throws PipelineProvider.HandlerException
+    public static void deleteStatus(ViewBackgroundInfo info, boolean deleteExpRuns, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
     {
         // Make entire transaction use the PipelineStatus connection, since Exp.Data/Exp.ExperimentRun are tied to Pipeline.StatusFiles
         try (DbScope.Transaction transaction = _schema.getSchema().getScope().ensureTransaction(new PipelineStatusTransactionKind()))
         {
-            Set<Integer> ids = new HashSet<>(rowIds.length);
+            Set<Integer> ids = new HashSet<>(rowIds.size());
             for (int rowId : rowIds)
             {
                 ids.add(rowId);
@@ -678,9 +679,9 @@ public class PipelineStatusManager
         }
     }
 
-    public static void cancelStatus(ViewBackgroundInfo info, int... rowIds) throws PipelineProvider.HandlerException
+    public static void cancelStatus(ViewBackgroundInfo info, Collection<Integer> rowIds) throws PipelineProvider.HandlerException
     {
-        if (rowIds.length == 0)
+        if (rowIds.isEmpty())
         {
             return;
         }

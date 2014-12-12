@@ -1180,7 +1180,7 @@ public class PipelineController extends SpringActionController
         {
             try
             {
-                PipelineStatusManager.cancelStatus(getViewBackgroundInfo(), form.getRowId());
+                PipelineStatusManager.cancelStatus(getViewBackgroundInfo(), Collections.singleton(form.getRowId()));
             }
             catch (PipelineProvider.HandlerException e)
             {

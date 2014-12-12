@@ -22,13 +22,9 @@ import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataRegionSelection;
 import org.labkey.api.message.settings.AbstractConfigTypeProvider;
-import org.labkey.api.message.settings.MessageConfigService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserManager;
-import org.labkey.api.util.ReturnURLString;
 import org.labkey.api.view.ActionURL;
-import org.labkey.api.view.HttpView;
-import org.labkey.api.view.JspView;
 import org.labkey.api.view.ViewContext;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
@@ -82,9 +78,9 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider
         if (selectedOption != null)
         {
             int newOption = NumberUtils.toInt((String)selectedOption);
-            for (String selected : DataRegionSelection.getSelected(context, true))
+            for (Integer selected : DataRegionSelection.getSelectedIntegers(context, true))
             {
-                User projectUser = UserManager.getUser(Integer.parseInt(selected));
+                User projectUser = UserManager.getUser(selected);
                 int currentEmailOption = AnnouncementManager.getUserEmailOption(context.getContainer(), projectUser, srcIdentifier);
 
                 //has this projectUser's option changed? if so, update

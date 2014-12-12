@@ -5044,8 +5044,7 @@ public class QueryController extends SpringActionController
 
         public ApiResponse execute(final SelectForm form, BindException errors) throws Exception
         {
-            Set<String> selected = DataRegionSelection.getSelected(
-                    getViewContext(), form.getKey(), true, false);
+            Set<String> selected = DataRegionSelection.getSelected(getViewContext(), form.getKey(), true, false);
             return new ApiSimpleResponse("selected", selected);
         }
     }

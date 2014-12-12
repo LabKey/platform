@@ -26,7 +26,6 @@ import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.Transient;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.study.Cohort;
-import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.Visit;
 import org.labkey.study.StudySchema;
 

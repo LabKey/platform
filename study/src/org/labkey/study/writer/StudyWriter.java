@@ -59,18 +59,12 @@ public class StudyWriter implements Writer<StudyImpl, StudyExportContext>
             }
             catch (Exception e)
             {
-                OutputStream out = null;
-                try
+                try (OutputStream out = vf.getOutputStream("error.log"))
                 {
                     // Try to get some error information to the client instead of creating a completely invalid archive
-                    out = vf.getOutputStream("error.log");
                     PrintWriter errorWriter = new PrintWriter(out);
                     e.printStackTrace(errorWriter);
                     errorWriter.flush();
-                }
-                finally
-                {
-                    if (out != null) { out.close(); }
                 }
                 throw e;
             }

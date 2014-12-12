@@ -358,11 +358,8 @@ public class MothershipController extends SpringActionController
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
             Set<String> releaseIds = DataRegionSelection.getSelected(getViewContext(), true);
-            if (releaseIds != null)
-            {
-                for (String releaseId : releaseIds)
-                    MothershipManager.get().deleteSoftwareRelease(getContainer(), Integer.parseInt(releaseId));
-            }
+            for (String releaseId : releaseIds)
+                MothershipManager.get().deleteSoftwareRelease(getContainer(), Integer.parseInt(releaseId));
             return true;
         }
 
@@ -1394,7 +1391,7 @@ public class MothershipController extends SpringActionController
             User user = null;
             if (form.getUserId() != null)
             {
-                user = UserManager.getUser(form.getUserId().intValue());
+                user = UserManager.getUser(form.getUserId());
                 if (!MothershipManager.get().getAssignedToList(getContainer()).contains(user))
                 {
                     throw new NotFoundException("User not available to assign to: " + form.getUserId());

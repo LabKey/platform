@@ -29,6 +29,7 @@ import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -53,7 +54,12 @@ public class XarExportSelection implements Serializable
         }
     }
 
-    public void addRunIds(int... runIds)
+    public void addRunId(int runId)
+    {
+        _runIds.add(runId);
+    }
+
+    public void addRunIds(Collection<Integer> runIds)
     {
         for (int runId : runIds)
         {

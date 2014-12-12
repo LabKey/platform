@@ -2589,7 +2589,7 @@ public class ExperimentController extends SpringActionController
         {
             if (_singleObjectRowId != null)
             {
-                return new int[] { _singleObjectRowId.intValue() };
+                return new int[] {_singleObjectRowId};
             }
             return PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), clear));
         }
@@ -2877,7 +2877,7 @@ public class ExperimentController extends SpringActionController
             else
             {
                 Set<String> selectedIds = DataRegionSelection.getSelected(getViewContext(), true);
-                if (selectedIds != null && selectedIds.size() == 1)
+                if (selectedIds.size() == 1)
                 {
                     rowId = selectedIds.iterator().next();
                 }
@@ -3260,12 +3260,11 @@ public class ExperimentController extends SpringActionController
                 return protocols;
             }
 
-            Set<String> protocolIds = DataRegionSelection.getSelected(context, clearSelection);
-            for (String protocolId : protocolIds)
+            for (Integer protocolId : DataRegionSelection.getSelectedIntegers(context, clearSelection))
             {
                 try
                 {
-                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(Integer.parseInt(protocolId));
+                    ExpProtocol protocol = ExperimentService.get().getExpProtocol(protocolId);
                     if (protocol == null || !protocol.getContainer().equals(context.getContainer()))
                     {
                         throw new NotFoundException();
@@ -3417,16 +3416,15 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<String> runIds = DataRegionSelection.getSelected(getViewContext(), true);
-            if (runIds == null || runIds.isEmpty())
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
+            if (runIds.isEmpty())
             {
                 throw new NotFoundException();
             }
 
             try
             {
-                int[] ids = PageFlowUtil.toInts(runIds);
-                for (int id : ids)
+                for (int id : runIds)
                 {
                     ExpRun run = ExperimentService.get().getExpRun(id);
                     if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
@@ -3438,14 +3436,14 @@ public class ExperimentController extends SpringActionController
                 XarExportSelection selection = new XarExportSelection();
                 if (form.getExpRowId() != null)
                 {
-                    ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId().intValue());
+                    ExpExperiment experiment = ExperimentService.get().getExpExperiment(form.getExpRowId());
                     if (experiment != null && !experiment.getContainer().hasPermission(getUser(), ReadPermission.class))
                     {
                         throw new NotFoundException("Run group " + form.getExpRowId());
                     }
                     selection.addExperimentIds(experiment.getRowId());
                 }
-                selection.addRunIds(ids);
+                selection.addRunIds(runIds);
 
                 _resultURL = exportXAR(selection, form.getLsidOutputType(), form.getExportType(), form.getXarFileName());
                 return true;
@@ -3490,16 +3488,15 @@ public class ExperimentController extends SpringActionController
     {
         public boolean handlePost(ExportOptionsForm form, BindException errors) throws Exception
         {
-            Set<String> runIds = DataRegionSelection.getSelected(getViewContext(), true);
-            if (runIds == null || runIds.isEmpty())
+            Set<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
+            if (runIds.isEmpty())
             {
                 throw new NotFoundException();
             }
 
             try
             {
-                int[] ids = PageFlowUtil.toInts(runIds);
-                for (int id : ids)
+                for (int id : runIds)
                 {
                     ExpRun run = ExperimentService.get().getExpRun(id);
                     if (run == null || !run.getContainer().hasPermission(getUser(), ReadPermission.class))
@@ -3514,7 +3511,7 @@ public class ExperimentController extends SpringActionController
                 {
                     selection.addRoles(form.getRoles());
                 }
-                selection.addRunIds(ids);
+                selection.addRunIds(runIds);
 
                 _resultURL = exportXAR(selection, null, null, form.getZipFileName());
                 return true;
@@ -3595,10 +3592,9 @@ public class ExperimentController extends SpringActionController
         }
     }
 
-    private void addSelectedRunsToExperiment(ExpExperiment exp)
-            throws SQLException
+    private void addSelectedRunsToExperiment(ExpExperiment exp) throws SQLException
     {
-        int[] runIds = PageFlowUtil.toInts(DataRegionSelection.getSelected(getViewContext(), true));
+        Collection<Integer> runIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
         List<ExpRun> runs = new ArrayList<>();
         for (int runId : runIds)
         {
@@ -3640,13 +3636,13 @@ public class ExperimentController extends SpringActionController
 
         public boolean handlePost(ExperimentRunListForm form, BindException errors) throws Exception
         {
-            Set<String> runIds = DataRegionSelection.getSelected(getViewContext(), true);
             ExpExperiment exp = form.lookupExperiment();
             if (exp == null || !exp.getContainer().hasPermission(getUser(), DeletePermission.class))
             {
                 throw new NotFoundException("Could not find run group with RowId " + form.getExpRowId());
             }
-            for (int runId : PageFlowUtil.toInts(runIds))
+
+            for (int runId : DataRegionSelection.getSelectedIntegers(getViewContext(), true))
             {
                 ExpRun run = ExperimentService.get().getExpRun(runId);
                 if (run == null || !run.getContainer().hasPermission(getUser(), DeletePermission.class))
