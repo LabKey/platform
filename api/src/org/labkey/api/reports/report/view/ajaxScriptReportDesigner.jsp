@@ -43,6 +43,7 @@
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="org.labkey.api.query.QueryView" %>
+<%@ page import="org.labkey.api.data.views.DataViewProvider" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%!
@@ -134,8 +135,9 @@
     reportConfig.put("javascriptOptions", report instanceof JavaScriptReport);
     reportConfig.put("useGetDataApi", useGetDataApi);
 
-    reportConfig.put("thumbnailOptions", true);
-    reportConfig.put("thumbnailType", bean.getThumbnailType());
+    reportConfig.put("thumbnailOptions", report.supportsDynamicThumbnail());
+    if (report.supportsDynamicThumbnail())
+        reportConfig.put("thumbnailType", bean.getThumbnailType() != null ? bean.getThumbnailType() : DataViewProvider.EditInfo.ThumbnailType.AUTO.name());
 
     StudyService.Service svc = StudyService.get();
     reportConfig.put("studyOptions", (report instanceof RReport) && (svc != null && svc.getStudy(c) != null));

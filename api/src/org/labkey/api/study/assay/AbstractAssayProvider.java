@@ -602,7 +602,7 @@ public abstract class AbstractAssayProvider implements AssayProvider
 
                 // Filter out any files that aren't under the current pipeline root, since we won't be able to resolve
                 // them successfully due to security restrictions for what's an allowable input to the new run. See issue 18387.
-                PipeRoot pipeRoot = PipelineService.get().getPipelineRootSetting(context.getContainer());
+                PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(context.getContainer());
                 for (Iterator<Map.Entry<String, File>> iter = reusableFiles.entrySet().iterator(); iter.hasNext(); )
                 {
                     Map.Entry<String, File> entry = iter.next();

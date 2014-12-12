@@ -778,7 +778,7 @@ public class StatementUtils
             for (SQLFragment f : Arrays.asList(sqlfDeclare, sqlfInsertObject, sqlfSelectObject, sqlfDelete, sqlfUpdate, sqlfInsertInto, sqlfObjectProperty, sqlfSelectIds))
                 if (null != f && !f.isEmpty())
                     script.append(f);
-_log.info(script.toString());
+            _log.debug(script.toString());
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, script, remap);
         }
         else

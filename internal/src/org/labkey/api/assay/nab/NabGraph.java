@@ -63,11 +63,33 @@ public class NabGraph
     public static final int DEFAULT_MAX_SAMPLES_PER_GRAPH = 5;
 
     private static final Color[] GRAPH_COLORS = {
-            ChartColor.BLUE,
-            ChartColor.RED,
+            ChartColor.DARK_BLUE,
+            ChartColor.DARK_RED,
             ChartColor.DARK_GREEN,
             ChartColor.DARK_YELLOW,
-            ChartColor.MAGENTA
+            ChartColor.DARK_MAGENTA,
+            ChartColor.DARK_CYAN,
+
+            ChartColor.VERY_LIGHT_BLUE,
+            ChartColor.VERY_LIGHT_RED,
+            ChartColor.VERY_LIGHT_GREEN,
+            ChartColor.VERY_LIGHT_YELLOW,
+            ChartColor.VERY_LIGHT_MAGENTA,
+            ChartColor.VERY_LIGHT_CYAN,
+
+            ChartColor.VERY_DARK_BLUE,
+            ChartColor.VERY_DARK_RED,
+            ChartColor.VERY_DARK_GREEN,
+            ChartColor.VERY_DARK_YELLOW,
+            ChartColor.VERY_DARK_MAGENTA,
+            ChartColor.VERY_DARK_CYAN,
+
+            ChartColor.LIGHT_BLUE,
+            ChartColor.LIGHT_RED,
+            ChartColor.LIGHT_GREEN,
+            ChartColor.LIGHT_YELLOW,
+            ChartColor.LIGHT_MAGENTA,
+            ChartColor.LIGHT_CYAN
     };
 
     public static class Config

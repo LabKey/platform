@@ -165,7 +165,7 @@ public class FormTag extends BodyTagSupport
             String csrf = CSRFUtil.getExpectedToken(pageContext);
             if (StringUtils.equals("POST", method))
             {
-                pageContext.getOut().write("<input type=hidden name='" + CSRFUtil.csrfName + "' value='" + csrf + "'>");
+                pageContext.getOut().write("<input type=hidden name='" + CSRFUtil.csrfName + "' value='" + PageFlowUtil.filter(csrf) + "'>");
             }
             pageContext.getOut().write("</form>");
         }

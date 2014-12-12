@@ -240,7 +240,9 @@ public class RReport extends ExternalScriptEngineReport
 
         if (inputFile != null && inputFile.exists())
         {
-            labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\\\"\", comment.char=\"\")\n");
+            labkey.append("labkey.debug.startReadLabkeyData <- Sys.time();\n");
+            labkey.append("labkey.data <- read.table(\"${input_data}\", header=TRUE, sep=\"\\t\", quote=\"\\\"\", comment.char=\"\");\n");
+            labkey.append("labkey.debug.endReadLabkeyData <- Sys.time();\n");
         }
 
         labkey.append("labkey.url <- function (controller, action, list){paste(labkey.url.base,controller,labkey.url.path,action,\".view?\",paste(names(list),list,sep=\"=\",collapse=\"&\"),sep=\"\")}\n" +
@@ -597,6 +599,12 @@ public class RReport extends ExternalScriptEngineReport
     public String getStaticThumbnailPath()
     {
         return "/report/RLogo.jpg";
+    }
+
+    @Override
+    public boolean supportsDynamicThumbnail()
+    {
+        return true;
     }
 
     @Override

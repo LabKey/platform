@@ -17,6 +17,7 @@ package org.labkey.api.reports.report.view;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.views.DataViewProvider;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.reports.Report;
@@ -311,10 +312,9 @@ public class ScriptReportBean extends ReportDesignBean
         _sourceTabVisible = sourceTabVisible;
     }
 
+    @Nullable
     public String getThumbnailType()
     {
-        if (_thumbnailType == null)
-            _thumbnailType = DataViewProvider.EditInfo.ThumbnailType.AUTO.name();
         return _thumbnailType;
     }
 
