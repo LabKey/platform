@@ -1335,16 +1335,23 @@ public class SpecimenImporter
         if (!merge)
         {
 //            SimpleFilter containerFilter = SimpleFilter.createContainerFilter(info.getContainer());
-            info("Deleting old data from Specimen Event table...");
-            Table.delete(getTableInfoSpecimenEvent());
-            info("Complete.");
-            ensureNotCanceled();
-            info("Deleting old data from Vial table...");
-            Table.delete(getTableInfoVial());
-            info("Complete.");
-            ensureNotCanceled();
-            info("Deleting old data from Specimen table...");
-            Table.delete(getTableInfoSpecimen());
+            info("Deleting old data from SpecimenEvent, Vial and Specimen tables...");
+            if (getTableInfoSpecimen().getSchema().getSqlDialect().isPostgreSQL())
+            {
+                SQLFragment sql = new SQLFragment("TRUNCATE ");
+                sql.append(getTableInfoSpecimenEvent().getSelectName()).append(", ")
+                        .append(getTableInfoVial().getSelectName()).append(", ")
+                        .append(getTableInfoSpecimen().getSelectName());
+                executeSQL(getTableInfoSpecimen().getSchema(), sql);
+            }
+            else
+            {
+                Table.truncate(getTableInfoSpecimenEvent());   // no foreign keys to this table, so truncate ok
+                ensureNotCanceled();
+                Table.delete(getTableInfoVial());
+                ensureNotCanceled();
+                Table.delete(getTableInfoSpecimen());
+            }
             info("Complete.");
         }
 
@@ -1368,10 +1375,10 @@ public class SpecimenImporter
         _iTimer.setPhase(ImportPhases.PopulateSpecimenEvents);
         populateSpecimenEvents(info, merge);
 
-        _iTimer.setPhase(ImportPhases.DeleteOldData);
         if (merge)
         {
             // Delete any orphaned specimen rows without vials
+            _iTimer.setPhase(ImportPhases.DeleteOldData);
             executeSQL(StudySchema.getInstance().getSchema(), "DELETE FROM " + getTableInfoSpecimen().getSelectName() +
                     " WHERE RowId NOT IN (SELECT SpecimenId FROM " + getTableInfoVial().getSelectName() + ")");
         }
@@ -2949,7 +2956,7 @@ public class SpecimenImporter
         if (hasContainerColumn)
             executeSQL(schema, "DELETE FROM " + tableName + " WHERE Container = ?", _container.getId());
         else
-            executeSQL(schema, "DELETE FROM " + tableName);
+            executeSQL(schema, "TRUNCATE TABLE " + tableName);
 
         // boundColumns is the same as availableColumns, skipping any columns that are computed
         List<T> availableColumns = new ArrayList<>();
