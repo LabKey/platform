@@ -34,7 +34,7 @@ import java.util.Set;
  * Date: May 23, 2011
  * Time: 5:01:51 PM
  */
-public class ListofMapsDataIterator extends AbstractDataIterator implements ScrollableDataIterator, MapDataIterator
+public class ListofMapsDataIterator extends AbstractDataIterator implements ScrollableDataIterator, MapDataIterator, DataIteratorBuilder
 {
     List<ColumnInfo> _cols = new ArrayList<>();
     protected List<Map<String,Object>> _rows;
@@ -58,6 +58,11 @@ public class ListofMapsDataIterator extends AbstractDataIterator implements Scro
         _rows = initRows(rows);
     }
 
+    @Override
+    public DataIterator getDataIterator(DataIteratorContext context)
+    {
+        return this;
+    }
 
     protected List<Map<String,Object>> initRows(List<Map<String,Object>> rows)
     {

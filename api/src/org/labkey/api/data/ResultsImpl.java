@@ -17,7 +17,9 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.etl.DataIterator;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.util.ResultSetUtil;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -38,6 +40,7 @@ import java.sql.SQLXML;
 import java.sql.Statement;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,12 +49,13 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class ResultsImpl implements Results
+public class ResultsImpl implements Results, DataIterator
 {
     private final ResultSet _rs;
     private final Map<FieldKey, ColumnInfo> _fieldMap;  // Usually a LinkedHashMap, to keep column order
     private final Map<FieldKey, Integer> _fieldIndexMap;
-
+    private final ArrayList<ColumnInfo> _columnInfoList;
+    private int rowNumber = 0;
 
     @Deprecated // provide a fieldmap
     public ResultsImpl(ResultSet rs)
@@ -64,6 +68,8 @@ public class ResultsImpl implements Results
             int count = rsmd.getColumnCount();
             _fieldMap = new LinkedHashMap<>(count * 2);
             _fieldIndexMap = new HashMap<>(count * 2);
+            _columnInfoList = new ArrayList<>(count+1);
+            _columnInfoList.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
 
             for (int i = 1; i <= count; i++)
             {
@@ -72,6 +78,7 @@ public class ResultsImpl implements Results
                 col.setAlias(label);
                 _fieldMap.put(col.getFieldKey(), col);
                 _fieldIndexMap.put(col.getFieldKey(), i);
+                _columnInfoList.add(col);
             }
         }
         catch (SQLException x)
@@ -86,13 +93,19 @@ public class ResultsImpl implements Results
         _rs = rs;
         _fieldMap = new LinkedHashMap<>(cols.size() * 2);
         _fieldIndexMap = new HashMap<>(cols.size() * 2);
+        _columnInfoList = new ArrayList<>(cols.size()+1);
+        _columnInfoList.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
 
         for (ColumnInfo col : cols)
         {
             try
             {
                 _fieldMap.put(col.getFieldKey(), col);
-                _fieldIndexMap.put(col.getFieldKey(), rs.findColumn(col.getAlias()));
+                int find = rs.findColumn(col.getAlias());
+                _fieldIndexMap.put(col.getFieldKey(), find);
+                while (_columnInfoList.size() <= find)
+                    _columnInfoList.add(null);
+                _columnInfoList.set(find, col);
             }
             catch (SQLException x)
             {
@@ -108,12 +121,23 @@ public class ResultsImpl implements Results
         _rs = rs;
         _fieldMap = null == fieldMap ? Collections.<FieldKey, ColumnInfo>emptyMap() : fieldMap;
         _fieldIndexMap = new HashMap<>(_fieldMap.size() * 2);
+        _columnInfoList = new ArrayList<>(fieldMap.size()+1);
+        _columnInfoList.add(new ColumnInfo("_rowNumber", JdbcType.INTEGER));
+
         try
         {
             if (null != rs)
             {
                 for (Map.Entry<FieldKey, ColumnInfo> e : _fieldMap.entrySet())
-                    _fieldIndexMap.put(e.getKey(), rs.findColumn(e.getValue().getAlias()));
+                {
+                    FieldKey fk = e.getKey();
+                    ColumnInfo col = e.getValue();
+                    int find = rs.findColumn(col.getAlias());
+                    _fieldIndexMap.put(fk, find);
+                    while (_columnInfoList.size() <= find)
+                        _columnInfoList.add(null);
+                    _columnInfoList.set(find, col);
+                }
             }
         }
         catch (SQLException x)
@@ -410,16 +434,22 @@ public class ResultsImpl implements Results
 
     @Override
     public boolean next()
-            throws SQLException
     {
-        return _rs.next();
+        try
+        {
+            rowNumber++;
+            return _rs.next();
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 
     @Override
     public void close()
-            throws SQLException
     {
-        _rs.close();
+        ResultSetUtil.close(_rs);
     }
 
     @Override
@@ -1727,5 +1757,61 @@ public class ResultsImpl implements Results
     public <T> T getObject(String columnLabel, Class<T> type) throws SQLException
     {
         throw new UnsupportedOperationException();
+    }
+
+
+    /* DataIterator */
+
+    @Override
+    public String getDebugName()
+    {
+        return "ResultsImpl";
+    }
+
+    @Override
+    public int getColumnCount()
+    {
+        try
+        {
+            return _rs.getMetaData().getColumnCount();
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
+    }
+
+    @Override
+    public ColumnInfo getColumnInfo(int i)
+    {
+        return _columnInfoList.get(i);
+    }
+
+    @Override
+    public boolean isConstant(int i)
+    {
+        return false;
+    }
+
+    @Override
+    public Object getConstantValue(int i)
+    {
+        return null;
+    }
+
+    @Override
+    public Object get(int i)
+    {
+        try
+        {
+            if (i == 0)
+                return rowNumber;
+            else
+                return _rs.getObject(i);
+        }
+        catch (SQLException x)
+        {
+            throw new RuntimeSQLException(x);
+        }
     }
 }

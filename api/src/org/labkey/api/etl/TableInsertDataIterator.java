@@ -24,13 +24,11 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
-import org.labkey.api.data.SchemaTableInfo;
 import org.labkey.api.data.StatementUtils;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryUpdateService;
-import org.labkey.api.util.UnexpectedException;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -47,11 +45,14 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     boolean _selectIds = false;
     QueryUpdateService.InsertOption _insertOption = QueryUpdateService.InsertOption.INSERT;
     final Set<String> _skipColumnNames = new CaseInsensitiveHashSet();
+    final Set<String> _dontUpdate = new CaseInsensitiveHashSet();
+    final Set<String> _keyColumns = new CaseInsensitiveHashSet();
 
 
     public static DataIteratorBuilder create(DataIterator data, TableInfo table, DataIteratorContext context)
     {
-        TableInsertDataIterator it = new TableInsertDataIterator(data, table, null, context);
+        TableInsertDataIterator it;
+        it = new TableInsertDataIterator(data, table, null, context, null, null, null);
         return it;
     }
 
@@ -59,24 +60,41 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
     /** If container != null, it will be set as a constant in the insert statement */
     public static DataIteratorBuilder create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context)
     {
+        return create(data, table, c, context, null, null, null);
+    }
+
+
+    public static DataIteratorBuilder create(DataIteratorBuilder data, TableInfo table, @Nullable Container c, DataIteratorContext context,
+         @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
+    {
         DataIterator di = data.getDataIterator(context);
         if (null == di)
         {
+            //noinspection ThrowableResultOfMethodCallIgnored
             if (!context.getErrors().hasErrors())
                 throw new NullPointerException("getDataIterator() returned NULL");
             return null;
         }
-        TableInsertDataIterator it = new TableInsertDataIterator(di, table, c, context);
+        TableInsertDataIterator it;
+        it = new TableInsertDataIterator(di, table, c, context, keyColumns, addlSkipColumns, dontUpdate);
         return it;
     }
 
 
-    protected TableInsertDataIterator(DataIterator data, TableInfo table, Container c, DataIteratorContext context)
+    protected TableInsertDataIterator(DataIterator data, TableInfo table, Container c, DataIteratorContext context,
+          @Nullable Set<String> keyColumns, @Nullable Set<String> addlSkipColumns, @Nullable Set<String> dontUpdate)
     {
         super(data, null, context);
         this._table = table;
         this._c = c;
         this._insertOption = context.getInsertOption();
+
+        if (null != addlSkipColumns)
+            _skipColumnNames.addAll(addlSkipColumns);
+        if (null != dontUpdate)
+            _dontUpdate.addAll(dontUpdate);
+        if (null != keyColumns)
+            _keyColumns.addAll(keyColumns);
 
         ColumnInfo colAutoIncrement = null;
         Integer indexAutoIncrement = null;
@@ -145,7 +163,7 @@ public class TableInsertDataIterator extends StatementDataIterator implements Da
 
             Parameter.ParameterMap stmt;
             if (_insertOption == QueryUpdateService.InsertOption.MERGE)
-                stmt = StatementUtils.mergeStatement(_conn, _table, _skipColumnNames, _c, null, _selectIds, false);
+                stmt = StatementUtils.mergeStatement(_conn, _table, _keyColumns, _skipColumnNames, _dontUpdate, _c, null, _selectIds, false);
             else
                 stmt = StatementUtils.insertStatement(_conn, _table, _skipColumnNames, _c, null, constants, _selectIds, false, _context.supportsAutoIncrementKey());
 

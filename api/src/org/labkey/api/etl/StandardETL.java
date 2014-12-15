@@ -78,7 +78,7 @@ public class StandardETL implements DataIteratorBuilder
     protected StandardETL(TableInfo target, @NotNull DataIteratorBuilder in, @Nullable Container c, @NotNull User user, DataIteratorContext context)
     {
         if (!(target instanceof UpdateableTableInfo))
-            throw new IllegalArgumentException("Must implement UpdateableTableInfo");
+            throw new IllegalArgumentException("Must implement UpdateableTableInfo: " + target.getName() + " (" + target.getClass().getSimpleName() + ")");
         _inputBuilder = in;
         _target = target;
         _c = c;

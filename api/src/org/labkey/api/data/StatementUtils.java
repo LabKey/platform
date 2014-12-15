@@ -109,9 +109,9 @@ public class StatementUtils
     }
 
 
-    public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
+    public static Parameter.ParameterMap mergeStatement(Connection conn, TableInfo table, @Nullable Set<String> skipColumnNames, @Nullable Set<String> dontUpdate, @Nullable Container c, @Nullable User user, boolean selectIds, boolean autoFillDefaultColumns) throws SQLException
     {
-        return new StatementUtils(table).createStatement(conn, table, null, skipColumnNames, null, c, user, selectIds, autoFillDefaultColumns, operation.merge, false);
+        return new StatementUtils(table).createStatement(conn, table, null, skipColumnNames, dontUpdate, c, user, selectIds, autoFillDefaultColumns, operation.merge, false);
     }
 
 
@@ -851,7 +851,7 @@ public class StatementUtils
                 fn.append(";\n");
             }
             fn.append("END;\n$$ LANGUAGE plpgsql;\n");
-_log.info(fn.toString());
+            _log.info(fn.toString());
             new SqlExecutor(table.getSchema()).execute(fn);
             ret = new Parameter.ParameterMap(table.getSchema().getScope(), conn, call, updatable.remapSchemaColumns());
             ret.setDebugSql(fn.getSQL() + "--\n" + call.toString());
@@ -998,11 +998,11 @@ _log.info(fn.toString());
             Parameter.ParameterMap m = null;
             try (Connection conn = issues.getSchema().getScope().getConnection())
             {
-                m = StatementUtils.mergeStatement(conn, issues, null, container, user, false, true);
+                m = StatementUtils.mergeStatement(conn, issues, null, null, container, user, false, true);
                 System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
 
-                m = StatementUtils.mergeStatement(conn, test, null, container, user, false, true);
+                m = StatementUtils.mergeStatement(conn, test, null, null, container, user, false, true);
                 System.err.println(m.getDebugSql()+"\n\n");
                 m.close(); m = null;
             }

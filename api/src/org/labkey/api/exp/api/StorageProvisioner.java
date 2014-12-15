@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
+import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.collections.Sets;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
@@ -35,6 +36,7 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.DbScope.*;
 import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.MVDisplayColumnFactory;
+import org.labkey.api.data.Parameter;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -43,8 +45,11 @@ import org.labkey.api.data.Selector;
 import org.labkey.api.data.SqlSelector;
 import org.labkey.api.data.TableChange;
 import org.labkey.api.data.TableInfo;
+import org.labkey.api.data.UpdateableTableInfo;
 import org.labkey.api.data.VirtualTable;
 import org.labkey.api.data.dialect.SqlDialect;
+import org.labkey.api.etl.DataIteratorBuilder;
+import org.labkey.api.etl.DataIteratorContext;
 import org.labkey.api.exp.DomainDescriptor;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.MvColumn;
@@ -532,7 +537,7 @@ public class StorageProvisioner
 //        if (!needsAliases)
 //            return sti;
 
-        // NOTE we could handl ethis in ProvisionedSchemaOptions.afterLoadTable(), but that would require
+        // NOTE we could handle this in ProvisionedSchemaOptions.afterLoadTable(), but that would require
         // messing with renaming columns etc, and since this is pretty rare, we'll just do this with an aliased table
 
         CaseInsensitiveHashMap<String> map = new CaseInsensitiveHashMap<>();
@@ -547,48 +552,8 @@ public class StorageProvisioner
         if (1==0 && !needsAliases)
             return sti;
 
-        final SchemaTableInfo inner = sti;
-        VirtualTable wrapper = new VirtualTable(schema, sti.getName())
-        {
-            @Override
-            public String toString()
-            {
-                // really shouldn't be doing this any more, use getSelectName()?
-                return inner.toString();
-            }
+        VirtualTable wrapper = new _VirtualTable(schema, sti.getName(), sti, map);
 
-            @Override
-            public Path getNotificationKey()
-            {
-                return inner.getNotificationKey();
-            }
-
-            @Override
-            public DatabaseTableType getTableType()
-            {
-                return inner.getTableType();
-            }
-
-            @Override
-            public String getSelectName()
-            {
-                return inner.getSelectName();
-            }
-
-            @Nullable
-            @Override
-            public String getMetaDataName()
-            {
-                return inner.getMetaDataName();
-            }
-
-            @NotNull
-            @Override
-            public SQLFragment getFromSQL(String alias)
-            {
-                return inner.getFromSQL(alias);
-            }
-        };
         for (ColumnInfo from : sti.getColumns())
         {
             String name = StringUtils.defaultString(map.get(from.getName()), from.getName());
@@ -619,6 +584,143 @@ public class StorageProvisioner
 
         return wrapper;
     }
+
+
+    public static class _VirtualTable extends VirtualTable implements UpdateableTableInfo
+    {
+        final SchemaTableInfo _inner;
+        final CaseInsensitiveHashMap<String> _map = new CaseInsensitiveHashMap<>();
+
+        _VirtualTable(DbSchema schema, String name, SchemaTableInfo inner, Map<String,String> map)
+        {
+            super(schema, name);
+            this._inner = inner;
+            this._map.putAll(map);
+        }
+
+        @Override
+        public String toString()
+        {
+            // really shouldn't be doing this any more, use getSelectName()?
+            return _inner.toString();
+        }
+
+        @Override
+        public Path getNotificationKey()
+        {
+            return _inner.getNotificationKey();
+        }
+
+        @Override
+        public DatabaseTableType getTableType()
+        {
+            return _inner.getTableType();
+        }
+
+        @Override
+        public String getSelectName()
+        {
+            return _inner.getSelectName();
+        }
+
+        @Nullable
+        @Override
+        public String getMetaDataName()
+        {
+            return _inner.getMetaDataName();
+        }
+
+        @NotNull
+        @Override
+        public SQLFragment getFromSQL(String alias)
+        {
+            return _inner.getFromSQL(alias);
+        }
+
+        @Override
+        public boolean insertSupported()
+        {
+            return _inner.insertSupported();
+        }
+
+        @Override
+        public boolean updateSupported()
+        {
+            return _inner.updateSupported();
+        }
+
+        @Override
+        public boolean deleteSupported()
+        {
+            return _inner.deleteSupported();
+        }
+
+        @Override
+        public TableInfo getSchemaTableInfo()
+        {
+            return _inner;
+        }
+
+        @Override
+        public ObjectUriType getObjectUriType()
+        {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public String getObjectURIColumnName()
+        {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public String getObjectIdColumnName()
+        {
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public CaseInsensitiveHashMap<String> remapSchemaColumns()
+        {
+            return _map;
+        }
+
+        @Nullable
+        @Override
+        public CaseInsensitiveHashSet skipProperties()
+        {
+            return null;
+        }
+
+        @Override
+        public DataIteratorBuilder persistRows(DataIteratorBuilder data, DataIteratorContext context)
+        {
+            return _inner.persistRows(data,context);
+        }
+
+        @Override
+        public Parameter.ParameterMap insertStatement(Connection conn, User user) throws SQLException
+        {
+            return _inner.insertStatement(conn, user);
+        }
+
+        @Override
+        public Parameter.ParameterMap updateStatement(Connection conn, User user, Set<String> columns) throws SQLException
+        {
+            return _inner.updateStatement(conn, user, columns);
+        }
+
+        @Override
+        public Parameter.ParameterMap deleteStatement(Connection conn) throws SQLException
+        {
+            return _inner.deleteStatement(conn);
+        }
+    }
+
+
 
     private static final Object ENSURE_LOCK = new Object();
 

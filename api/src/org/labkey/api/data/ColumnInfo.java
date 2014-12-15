@@ -189,6 +189,18 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
         jdbcType = t;
     }
 
+    public ColumnInfo(String name, JdbcType t, int scale, boolean nullable)
+    {
+        this(null != name ? new FieldKey(null,name) : null, null);
+        if (null == name)
+            return;
+//        assert -1 == name.indexOf('/');
+        setJdbcType(t);
+        setScale(scale);
+        setNullable(nullable);
+    }
+
+
     public ColumnInfo(ResultSetMetaData rsmd, int col) throws SQLException
     {
         this(new FieldKey(null, rsmd.getColumnLabel(col)), null);

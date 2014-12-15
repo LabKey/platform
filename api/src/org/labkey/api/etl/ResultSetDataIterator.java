@@ -41,6 +41,10 @@ public class ResultSetDataIterator extends AbstractDataIterator implements Scrol
 {
     static public DataIterator wrap(ResultSet rs, DataIteratorContext context)
     {
+        if (rs instanceof DataIterator)
+        {
+            return (DataIterator)rs;
+        }
         if (rs instanceof DataIteratorBuilder)
         {
             return ((DataIteratorBuilder)rs).getDataIterator(context);
