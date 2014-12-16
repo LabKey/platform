@@ -58,5 +58,6 @@ public interface SchemaReader
         public boolean demographicData;
         public String type = DataSet.TYPE_STANDARD;
         public PropertyList tags;
+        public String tag;
     }
 }

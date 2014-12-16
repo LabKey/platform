@@ -156,6 +156,7 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
     private Integer _cohortId;
     private Integer _protocolId; // indicates that dataset came from an assay. Null indicates no source assay
     private String _fileName; // Filename from the original import  TODO: save this at import time and load it from db
+    private String _tag;
     private String _type = DataSet.TYPE_STANDARD;
 
     private static final String[] BASE_DEFAULT_FIELD_NAMES_ARRAY = new String[]
@@ -491,6 +492,16 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
         SQLFragment sql = new SQLFragment("UPDATE " + ss.getTableInfoDataSet() + " SET Modified = ? WHERE EntityId = ?", modified, def.getEntityId());
         new SqlExecutor(ss.getScope()).execute(sql);
         modifiedDates.remove(def.getEntityId());
+    }
+
+    public String getTag()
+    {
+        return _tag;
+    }
+
+    public void setTag(String tag)
+    {
+        _tag = tag;
     }
 
     public String getTypeURI()

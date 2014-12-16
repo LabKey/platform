@@ -132,6 +132,13 @@ public class DatasetWriter implements InternalStudyWriter
             // serialize any dataset properties (reportPropsManager)
             PropertyList propList = datasetXml.addNewTags();
             ReportPropsManager.get().exportProperties(def.getEntityId(), ctx.getContainer(), propList);
+
+            String tag;
+            if(def.getTag() != null)
+            {
+                tag = def.getTag();
+                datasetXml.setTag(tag.toString());
+            }
         }
 
         SchemaXmlWriter schemaXmlWriter = new SchemaXmlWriter();

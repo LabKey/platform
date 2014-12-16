@@ -352,7 +352,7 @@
       <ns:column columnName="Name">
         <ns:description>The name of each dataset.</ns:description>
       </ns:column>
-      <ns:column columnName="description">
+      <ns:column columnName="Description">
         <ns:description>The description of each dataset.</ns:description>
       </ns:column>
       <ns:column columnName="DemographicData">
@@ -367,6 +367,9 @@
       <ns:column columnName="Modified">
         <ns:description>The timestamp of the last modification of this dataset.</ns:description>
         <ns:formatString>DateTime</ns:formatString>
+      </ns:column>
+      <ns:column columnName="Tag">
+        <ns:description>An additional field to provide flexible categorization of data</ns:description>
       </ns:column>
     </ns:columns>
   </ns:table>

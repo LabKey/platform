@@ -3640,6 +3640,7 @@ public class StudyManager
                 def.setKeyManagementType(info.keyManagementType);
                 def.setDemographicData(info.demographicData);
                 def.setType(info.type);
+                def.setTag(info.tag);
                 defEntryMap.put(name, new DataSetDefinitionEntry(def, true, info.tags));
             }
             else
@@ -3664,6 +3665,7 @@ public class StudyManager
                     def.setCategory(info.category);
                     def.setKeyManagementType(info.keyManagementType);
                     def.setDemographicData(info.demographicData);
+                    def.setTag(info.tag);
                 }
                 else
                 {

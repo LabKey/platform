@@ -40,6 +40,7 @@ public class GWTDataset implements IsSerializable
     private BooleanProperty _isDemographicData = new BooleanProperty();
     private StringProperty _label = new StringProperty();
     private IntegerProperty _cohortId = new IntegerProperty(0);
+    private StringProperty _tag = new StringProperty();
     private BooleanProperty _showByDefault = new BooleanProperty();
     private StringProperty _description = new StringProperty();
     private StringProperty _sourceAssayName = new StringProperty();
@@ -152,6 +153,16 @@ public class GWTDataset implements IsSerializable
     public void setCohortId(Integer cohortId)
     {
         _cohortId.set(cohortId);
+    }
+
+    public String getTag()
+    {
+        return _tag.getString();
+    }
+
+    public void setTag(String tag)
+    {
+        _tag.set(tag);
     }
 
     public boolean getShowByDefault()

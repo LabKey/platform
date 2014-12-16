@@ -100,6 +100,7 @@ public class SchemaXmlReader implements SchemaReader
             info.demographicData = tableProps.isDemographicData();
             info.visitDatePropertyName = null;
             info.tags = tableProps.getTags();
+            info.tag = tableProps.getTag();
 
             if (tableProps.getType() != null)
                 info.type = tableProps.getType();

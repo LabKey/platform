@@ -710,6 +710,21 @@ public class Designer implements EntryPoint, Saveable<GWTDataset>
             cellFormatter.setStyleName(row, 2, labelStyleName);
             _table.setWidget(row++, 3, dsCategory);
 
+            BoundTextBox tag = new BoundTextBox("tag", _dataset.getTag(), new WidgetUpdatable()
+            {
+                public void update(Widget widget)
+                {
+                    _dataset.setTag(((TextBox)widget).getText());
+                }
+            });
+
+            panel = new HorizontalPanel();
+            panel.add(new Label("Tag"));
+            panel.add(new HelpPopup("Tag", "Adding a tag provides an additional, flexible way to categorize this dataset."));
+            _table.setWidget(row, 2, panel);
+            cellFormatter.setStyleName(row, 2, labelStyleName);
+            _table.setWidget(row++, 3, tag);
+
             String selection = null;
             if (_dataset.getCohortId() != null)
                 selection = _dataset.getCohortId().toString();

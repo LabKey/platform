@@ -148,14 +148,19 @@ if (!pipelineSet)
         <td class=labkey-form-label>Additional Key Column</td>
         <td><%=h(dataset.getKeyPropertyName() != null ? h(dataset.getKeyPropertyName()) : "None")%></td>
 
-        <td rowspan="3" class=labkey-form-label>Description</td>
-        <td rowspan="3"><%= h(dataset.getDescription()) %></td>
+        <td class=labkey-form-label>Tag</td>
+        <td><%=h(dataset.getTag())%>
+        </td>
     </tr>
     <tr>
-        <td class=labkey-form-label>Demographic Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each " +
-        StudyService.get().getSubjectNounSingular(c).toLowerCase() +
+        <td class=labkey-form-label>Demographic
+            Data <%=helpPopup("Demographic Data", "Demographic data appears only once for each " +
+                    StudyService.get().getSubjectNounSingular(c).toLowerCase() +
         " in the study.")%></td>
         <td><%=text(dataset.isDemographicData() ? "true" : "false")%></td>
+
+        <td rowspan="2" class=labkey-form-label>Description</td>
+        <td rowspan="2"><%= h(dataset.getDescription()) %></td>
     </tr>
     <tr>
         <td class=labkey-form-label>Show In Overview</td>
