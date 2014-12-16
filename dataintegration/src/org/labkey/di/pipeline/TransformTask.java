@@ -214,7 +214,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             // TODO: refactor these out as a separate method so other tasks that write files can do this too (none yet, but seems a file copy task is likely to be needed soon)
             _txJob.setAnalysisDirectory(outputDir);
             _txJob.setBaseName(baseName);
-            setTargetStringForURI(outputFile.getAbsolutePath());
+            setTargetStringForURI(outputFile.toURI().toString());
 
             return rowCount;
         }
