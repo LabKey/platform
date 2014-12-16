@@ -1373,7 +1373,7 @@ public class SpecimenImporter
             }
             else
             {
-                Table.truncate(getTableInfoSpecimenEvent());   // no foreign keys to this table, so truncate ok
+                Table.delete(getTableInfoSpecimenEvent());
                 ensureNotCanceled();
                 Table.delete(getTableInfoVial());
                 ensureNotCanceled();
