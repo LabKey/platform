@@ -48,7 +48,7 @@ public class ExperimentException extends Exception
         String result = super.getMessage();
         if (result == null)
         {
-            result = toString();
+            result = getClass().getName();
             if (getCause() != null && getCause() != this)
             {
                 if (getCause().getMessage() != null)
