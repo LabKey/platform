@@ -27,7 +27,37 @@ import java.io.File;
  */
 public interface PlateReader
 {
+    /**
+     * Well rejection codes
+     */
+    public static final int WELL_NOT_COUNTED = -1;          // TNTC : too numerous to count
+    public static final int WELL_OFF_SCALE = -2;
+    public static final int WELL_QC_REJECTED = -3;          // rejected during the QC process
+    public static final int WELL_NOT_PERFORMED = -4;        // measurement was not performed
+
     public String getType();
 
+    /**
+     * Parse the specified datafile and populate an array of well values
+     * @param template
+     * @param dataFile
+     * @return
+     * @throws ExperimentException
+     */
     public double[][] loadFile(PlateTemplate template, File dataFile) throws ExperimentException;
+
+    /**
+     * Determines whether the specified well value should be used in any analytical calculations
+     * @param value
+     * @return
+     */
+    public boolean isWellValueValid(double value);
+
+    /**
+     * Return the display value for a specified well value. Used for cases where the underlying value may
+     * be a rejection code (above), and an alternate display value should be rendered.
+     * @param value
+     * @return
+     */
+    public String getWellDisplayValue(Object value);
 }

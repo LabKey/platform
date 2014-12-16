@@ -33,7 +33,7 @@ import java.io.IOException;
  * User: Karl Lum
  * Date: Jan 23, 2008
  */
-public class ExcelPlateReader implements PlateReader
+public class ExcelPlateReader extends AbstractPlateReader implements PlateReader
 {
     public static final String TYPE = "xls";
     

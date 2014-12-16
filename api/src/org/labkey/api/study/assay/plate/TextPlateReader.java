@@ -16,6 +16,7 @@
 
 package org.labkey.api.study.assay.plate;
 
+import org.labkey.api.query.ValidationException;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.exp.ExperimentException;
 import org.apache.commons.lang3.StringUtils;
@@ -35,7 +36,7 @@ import java.util.regex.Pattern;
  * User: Karl Lum
  * Date: Jan 23, 2008
  */
-public class TextPlateReader implements PlateReader
+public class TextPlateReader extends AbstractPlateReader implements PlateReader
 {
     public static final String TYPE = "txt";
 
@@ -87,7 +88,7 @@ public class TextPlateReader implements PlateReader
         }
     }
 
-    private static int getStartRow(List<String> data)
+    private int getStartRow(List<String> data)
     {
         Pattern rowHeader = Pattern.compile("\\s+1\\s+2\\s+3\\s+4\\s+5\\s+6\\s+7\\s+8\\s+9\\s+10\\s+11\\s+12");
         for (int row = 0; row < data.size(); row++)
@@ -99,7 +100,7 @@ public class TextPlateReader implements PlateReader
         return -1;
     }
 
-    private static boolean getRowData(double[] row, String line, int index)
+    private boolean getRowData(double[] row, String line, int index)
     {
         StringTokenizer tokenizer = new StringTokenizer(line);
         char start = 'A';
@@ -107,17 +108,40 @@ public class TextPlateReader implements PlateReader
 
         if (tokenizer.nextToken().equalsIgnoreCase(String.valueOf(start)))
         {
-            int i=0;
-            while (tokenizer.hasMoreTokens())
+            try
             {
-                String token = tokenizer.nextToken();
-                if (!NumberUtilsLabKey.isNumber(token))
-                    return false;
-                row[i++] = NumberUtils.toDouble(token);
-                if (i == row.length)
-                    return true;
+                int i=0;
+                while (tokenizer.hasMoreTokens())
+                {
+                    String token = tokenizer.nextToken();
+                    row[i++] = convertWellValue(token);
+                    if (i == row.length)
+                        return true;
+                }
+            }
+            catch (ValidationException e)
+            {
+                return false;
             }
         }
         return false;
+    }
+
+    /**
+     * Converts the string token value to a numeric well value.
+     * @param token
+     * @return
+     * @throws ValidationException - if the value cannot be converted, will cause the entire upload to fail
+     */
+    protected double convertWellValue(String token) throws ValidationException
+    {
+        if (!NumberUtilsLabKey.isNumber(token))
+        {
+            throw new ValidationException("The specified well value: " + token + " could not be converted into a numeric value");
+        }
+        else
+        {
+            return NumberUtils.toDouble(token);
+        }
     }
 }
