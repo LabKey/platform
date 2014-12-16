@@ -17,11 +17,16 @@
 package org.labkey.query.reports;
 
 import org.apache.batik.transcoder.TranscoderException;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Assert;
+import org.junit.Test;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.Attachment;
+import org.labkey.api.attachments.AttachmentDirectory;
+import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;
@@ -30,8 +35,10 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportNameContext;
+import org.labkey.api.reports.report.r.view.FileOutput;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.thumbnail.Thumbnail;
 import org.labkey.api.thumbnail.ThumbnailOutputStream;
 import org.labkey.api.thumbnail.ThumbnailService;
@@ -49,12 +56,20 @@ import org.labkey.query.reports.ReportsController.DownloadReportFileAction;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.Enumeration;
+import java.util.zip.ZipInputStream;
 
 /**
  * User: Mark Igra
@@ -170,6 +185,7 @@ public class AttachmentReport extends BaseRedirectReport
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
                 DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
+                Attachment latest = report.getLatestVersion();
 
                 if (null != svc)
                 {
@@ -212,6 +228,10 @@ public class AttachmentReport extends BaseRedirectReport
             @Override
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
+                if(report.getLatestVersion().getName().endsWith("x"))
+                {
+                    return report.getOfficeXmlThumbnail(report.getInputStream());
+                }
                 return null;
             }
         },
@@ -227,6 +247,10 @@ public class AttachmentReport extends BaseRedirectReport
             @Override
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
+                if(report.getLatestVersion().getName().endsWith("x"))
+                {
+                    return report.getOfficeXmlThumbnail(report.getInputStream());
+                }
                 return null;
             }
         },
@@ -242,6 +266,10 @@ public class AttachmentReport extends BaseRedirectReport
             @Override
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
+                if(report.getLatestVersion().getName().endsWith("x"))
+                {
+                    return report.getOfficeXmlThumbnail(report.getInputStream());
+                }
                 return null;
             }
         },
@@ -384,6 +412,25 @@ public class AttachmentReport extends BaseRedirectReport
         return null;
     }
 
+    // Retrieve jpeg thumbnail from .pptx, .docx, .xlsx and possibly other Open Office XML documents.
+    // Document must be saved with thumbnail (preview) selected.
+    private @Nullable Thumbnail getOfficeXmlThumbnail(InputStream in) throws IOException
+    {
+
+        try(ZipInputStream zin = new ZipInputStream(in))
+        {
+            ZipEntry entry = null;
+            while(null != (entry=zin.getNextEntry()))
+            {
+                if("docProps/thumbnail.jpeg".equals(entry.getName()))
+                {
+                    return ImageUtil.renderThumbnail(ImageIO.read(zin));
+                }
+            }
+        }
+        return null;
+    }
+
     // we may have up to 3 files (attachment file, Thumbnail, and SmallThumbnail)
     // returns the name of the attachment file
     private String getAttachmentFile(VirtualFile reportDir)
@@ -481,5 +528,27 @@ public class AttachmentReport extends BaseRedirectReport
         }
 
         return false;
+    }
+
+    public static class TestCase extends Assert
+    {
+        @Test
+        public void test() throws FileNotFoundException, IOException
+        {
+            AttachmentReport report = new AttachmentReport();
+            AppProps.Interface props = AppProps.getInstance();
+            String projectRootPath = props.getProjectRoot();
+
+            //String root = System.getProperty("labkey.root", "..");
+
+            try(InputStream inPptx = new FileInputStream(projectRootPath + "/sampledata/query/attachments/PowerPoint_JPEG_Thumbnail.pptx");
+                InputStream inXlsx = new FileInputStream(projectRootPath + "/sampledata/query/attachments/Excel_Document_JPEG_Thumbnail.xlsx");
+                InputStream inDocx = new FileInputStream(projectRootPath + "/sampledata/query/attachments/Word_Document_JPEG_Thumbnail.docx"))
+            {
+                    assertNotNull(report.getOfficeXmlThumbnail(inPptx));
+                    assertNotNull(report.getOfficeXmlThumbnail(inXlsx));
+                    assertNotNull(report.getOfficeXmlThumbnail(inDocx));
+            }
+        }
     }
 }

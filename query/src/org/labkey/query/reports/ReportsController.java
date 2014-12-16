@@ -1678,6 +1678,8 @@ public class ReportsController extends SpringActionController
         {
             this.uploadFileName = fileName;
         }
+
+        public static HelpTopic getHelpTopic() { return new HelpTopic("thumbnails"); }
     }
 
     public static ActionURL getCreateAttachmentReportURL(Container c, ActionURL returnURL)

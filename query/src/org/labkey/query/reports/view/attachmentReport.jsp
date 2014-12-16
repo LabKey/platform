@@ -161,7 +161,14 @@
             }
         };
 
-        extraItems = [ fileUploadRadioGroup, fileUploadTextField, fileUploadButton, serverFileTextField ];
+        var thumbnailInfo = {
+            xtype: 'displayfield',
+            value: '<i><small>LabKey Server can extract a thumbnail image from some '
+            + 'document types to provide a preview in the user interface. '
+            + 'Click <a href=<%= AttachmentReportForm.getHelpTopic() %> >here</a> for more details.</small></i>'
+        };
+
+        extraItems = [ fileUploadRadioGroup, fileUploadTextField, fileUploadButton, serverFileTextField, thumbnailInfo ];
         <% } else { %>
 
         var attachmentTypeField = {
@@ -169,7 +176,7 @@
             name:'attachmentType',
             value:<%=q(AttachmentReportForm.AttachmentReportType.local.toString())%>
         };
-        extraItems = [ attachmentTypeField, fileUploadTextField, fileUploadButton ];
+        extraItems = [ attachmentTypeField, fileUploadTextField, fileUploadButton, thumbnailInfo ];
         <% } %>
 
        <% if (form.isUpdate()) { %>
@@ -201,6 +208,8 @@
          });
     <% } %>
         var refreshDateStr = <%=q(form.getRefreshDate() != null ? form.getRefreshDate().toString() : null)%>;
+
+
 
         var form = Ext4.create('LABKEY.study.DataViewPropertiesPanel', {
             url : LABKEY.ActionURL.buildURL('reports',  <%=q(action)%>, null, {returnUrl: getReturnUrl()}),

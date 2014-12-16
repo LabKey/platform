@@ -281,7 +281,8 @@ public class QueryModule extends DefaultModule
                 AggregateQueryDataTransform.TestCase.class,
                 FilterClauseBuilder.TestCase.class,
                 MemberSet.TestCase.class,
-                MetadataElementBase.TestCase.class
+                MetadataElementBase.TestCase.class,
+                AttachmentReport.TestCase.class
         ));
     }
 
