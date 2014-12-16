@@ -29,8 +29,11 @@ import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIterator;
+import org.labkey.api.module.Module;
+import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.TabLoader;
+import org.labkey.api.resource.Resource;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.CPUTimer;
@@ -229,6 +232,9 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
         String text = getViewContext().getRequest().getParameter("text");
         String path = getViewContext().getRequest().getParameter("path");
 
+        String module = getViewContext().getRequest().getParameter("module");
+        String moduleResource = getViewContext().getRequest().getParameter("moduleResource");
+
         try
         {
             if (null != StringUtils.trimToNull(text))
@@ -258,6 +264,41 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
                     loader = DataLoader.get().createLoader(resource, _hasColumnHeaders, null, null);
                     file = resource.getFileStream(user);
                     originalName = resource.getName();
+                }
+            }
+            else if (null != StringUtils.trimToNull(moduleResource))
+            {
+                if (module == null && _target != null)
+                {
+                    module = _target.getSchema().getName();
+                }
+
+                Module m = module != null ? ModuleLoader.getInstance().getModuleForSchemaName(module) : null;
+                if (m == null)
+                {
+                    errors.reject(SpringActionController.ERROR_MSG, "Module required to import module resource");
+                }
+                else
+                {
+                    Path p;
+                    if (moduleResource.contains("/"))
+                        p = Path.parse(moduleResource).normalize();
+                    else
+                        p = Path.parse("schemas/dbscripts/" + moduleResource).normalize();
+
+                    Resource r = m.getModuleResource(p);
+                    if (r == null || !r.isFile())
+                    {
+                        errors.reject(SpringActionController.ERROR_MSG, "File not found: " + p);
+                    }
+                    else
+                    {
+                        hasPostData = true;
+                        loader = DataLoader.get().createLoader(r, _hasColumnHeaders, null, TabLoader.TSV_FILE_TYPE);
+                        originalName = p.getName();
+                        // Set file to null so assay import doesn't copy the file
+                        file = null;
+                    }
                 }
             }
             else if (getViewContext().getRequest() instanceof MultipartHttpServletRequest)
