@@ -55,7 +55,7 @@ public class DatasetDefinitionImporter implements InternalStudyImporter
         return "Dataset Definition Importer";
     }
 
-    @RefactorIn15_1 // Remove SchemaXmlReader in 15.1
+    @RefactorIn15_1 // Remove SchemaTsvReader in 15.1
     public void process(StudyImportContext ctx, VirtualFile vf, BindException errors) throws IOException, SQLException, DatasetImportUtils.DatasetLockExistsException, XmlException, ImportException
     {
         StudyImpl study = ctx.getStudy();
