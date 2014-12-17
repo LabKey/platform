@@ -525,12 +525,12 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             },
             cls : 'folder-management-tree', // used by selenium helper
             header:false,
-            style: "margin-left: 103px;", //Line up the folder tree with the rest of the form elements.
+            style: "margin-left: 130px;", //Line up the folder tree with the rest of the form elements.
             rootVisible: true,
             enableDD: false,
             animate : true,
             useArrows : true,
-            height: 240,
+            height: 130,
             collapsible : true,
             collapsed: true,
             autoScroll: true,
