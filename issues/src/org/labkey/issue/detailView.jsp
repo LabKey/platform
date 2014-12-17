@@ -25,7 +25,6 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
-<%@ page import="org.labkey.api.wiki.WikiService" %>
 <%@ page import="org.labkey.issue.ColumnType" %>
 <%@ page import="org.labkey.issue.IssuePage" %>
 <%@ page import="org.labkey.issue.IssuesController" %>
@@ -40,9 +39,6 @@
 <%@ page import="org.labkey.issue.model.IssueManager" %>
 <%@ page import="java.util.Arrays" %>
 <%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="java.util.LinkedList" %>
-<%@ page import="java.util.regex.Matcher" %>
-<%@ page import="java.util.regex.Pattern" %>
 <%@ page import="java.util.List" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
@@ -230,8 +226,9 @@
         %><input type="hidden" name="callbackURL" value="<%=bean.getCallbackURL()%>"/><%
     }
 
-    StringBuilder commentText = new StringBuilder();
+    int commentCount = issue.getComments().size();
     boolean hasAttachments = false;
+
     for (Issue.Comment comment : commentLinkedList)
     {
         if (!issue.getComments().contains(comment))
@@ -259,19 +256,12 @@
 
         // Determine if the comment has attachments
         hasAttachments = hasAttachments ? true : !bean.renderAttachments(context, comment).isEmpty();
-
-        // Extract the string value from the last comment entry
-        Pattern pattern = Pattern.compile("(?s)(" + WikiService.WIKI_PREFIX + ")(.*?)(" + WikiService.WIKI_SUFFIX + ")");
-        Matcher matcher = pattern.matcher(comment.getComment());
-        if (matcher.find() && !matcher.group(2).isEmpty()) // add the contexts if we find it
-        {
-            commentText.append(matcher.group(2));
-            commentText.append("\n\n");
-        }
     }
-    if (hasAttachments)
-        commentText.append("** The related issue has attachments.");
-    String commentTextStr = commentText.toString().replaceAll("<br>", "");
+    String commentTextStr="The related issue has " + commentCount;
+    if (commentCount==1) commentTextStr += " comment";
+    else commentTextStr += " comments";
+    if (hasAttachments) commentTextStr += " and includes attachments."; // no nice way to count these as of now
+    else commentTextStr +=".";
 %>
 
 <labkey:form method="POST" id="CreateIssue" action="<%=insertURL%>">
