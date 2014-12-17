@@ -604,8 +604,9 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
             formItems.unshift({
                 xtype: 'box',
-                width: 550,
-                html: '**This study is being republished and has preset values based on the previous publish studies values.',
+                width: 600,
+                html: '**This study is being republished and has preset values based on the previous '
+                      + (this.mode == 'publish' ? 'published' : this.mode) + ' study\'s values.',
                 style: 'font: normal 12px tahoma, arial, helvetica, sans-serif; margin-bottom: 15px;'
             });
         }
