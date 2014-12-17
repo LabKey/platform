@@ -534,7 +534,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             enableDD: false,
             animate : true,
             useArrows : true,
-            height: 130,
+            height: this.settings ? 130 : 240,
             collapsible : true,
             collapsed: true,
             autoScroll: true,
