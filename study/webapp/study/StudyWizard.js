@@ -101,7 +101,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     // helper method to create set-like object for incoming arrays
     setify : function(arr) {
         var setObj = {};
-        for (var i = 0; i < arr.length; i++) setObj[arr[i]] = true;
+        if (arr) {
+            for (var i = 0; i < arr.length; i++) {
+                setObj[arr[i]] = true;
+            }
+        }
         return setObj;
     },
 
@@ -1798,7 +1802,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
     customizeColumnModel : function(colModel, index, c){
         index.Name.renderer = Ext.util.Format.htmlEncode;
         index.Label.renderer = Ext.util.Format.htmlEncode;
-        index.description.renderer = Ext.util.Format.htmlEncode;
+        index.Description.renderer = Ext.util.Format.htmlEncode;
 
         index.Label.header = 'Label';
         index.Label.width = 250;
