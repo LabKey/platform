@@ -554,12 +554,12 @@ public class Table
     }
 
 
-    // Typical finally block cleanup
+    /** Typical finally block cleanup. Tolerant of null or already closed JDBC resources */
     static void doClose(@Nullable ResultSet rs, @Nullable Statement stmt, @Nullable Connection conn, @NotNull DbScope scope)
     {
         try
         {
-            if (stmt == null && rs != null)
+            if (stmt == null && rs != null && !rs.isClosed())
                 stmt = rs.getStatement();
         }
         catch (SQLException x)
