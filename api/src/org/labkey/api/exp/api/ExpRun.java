@@ -63,9 +63,22 @@ public interface ExpRun extends ExpObject
     /** @return map from data object to role name. Multiple inputs might use the same role name, hence the direction of the map */
     Map<ExpData, String> getDataInputs();
 
+    /**
+     * @return all of the materials objects marked as outputs of this run.
+     * This may be a subset of all of the materials that were created by the run if some were intermediate/transient.
+     */
     List<ExpMaterial> getMaterialOutputs();
 
+    /**
+     * @return all of the data objects marked as outputs of this run.
+     * This may be a subset of all of the files that were created by the run if some were intermediate/transient.
+     */
     List<ExpData> getDataOutputs();
+
+    /**
+     * @return all of the data objects referenced by this run,
+     * including top-level inputs and outputs, as well as intermediate files
+     */
     List<? extends ExpData> getAllDataUsedByRun();
     public Integer getJobId();
 
