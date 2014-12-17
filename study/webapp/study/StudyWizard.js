@@ -435,7 +435,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var studyLocation = new Ext.form.TextField({
             fieldLabel: 'Location',
             name: 'studyFolder',
-            width: 446,
+            flex: 1,
             readOnly: true,
             fieldClass: 'x-form-empty-field',
             value: this.info.dstPath,
@@ -445,13 +445,11 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
         var changeFolderBtn = new Ext.Button({
             name:"changeFolderBtn",
             text: "Change",
-            width: 57,
             cls: "labkey-button",
             handler: browseFolders
         });
 
         var locationField = new Ext.form.CompositeField({
-            width: 510,
             items:[
                 studyLocation,
                 changeFolderBtn
@@ -637,9 +635,10 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             border: false,
             defaults: {
                 labelSeparator: '',
-                width: 510
+                width: 475
             },
             flex: 1,
+            labelWidth: 125,
             layout: 'form',
             items: formItems
         });
