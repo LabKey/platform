@@ -17,7 +17,6 @@
 package org.labkey.query.reports;
 
 import org.apache.batik.transcoder.TranscoderException;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
@@ -25,8 +24,6 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.attachments.Attachment;
-import org.labkey.api.attachments.AttachmentDirectory;
-import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.attachments.DocumentConversionService;
 import org.labkey.api.data.Container;
@@ -35,7 +32,6 @@ import org.labkey.api.query.ValidationError;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.reports.report.ReportNameContext;
-import org.labkey.api.reports.report.r.view.FileOutput;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AppProps;
@@ -56,19 +52,13 @@ import org.labkey.query.reports.ReportsController.DownloadReportFileAction;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
-
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.Enumeration;
 import java.util.zip.ZipInputStream;
 
 /**
@@ -185,7 +175,6 @@ public class AttachmentReport extends BaseRedirectReport
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
                 DocumentConversionService svc = ServiceRegistry.get().getService(DocumentConversionService.class);
-                Attachment latest = report.getLatestVersion();
 
                 if (null != svc)
                 {
@@ -419,7 +408,7 @@ public class AttachmentReport extends BaseRedirectReport
 
         try(ZipInputStream zin = new ZipInputStream(in))
         {
-            ZipEntry entry = null;
+            ZipEntry entry;
             while(null != (entry=zin.getNextEntry()))
             {
                 if("docProps/thumbnail.jpeg".equals(entry.getName()))
@@ -533,7 +522,7 @@ public class AttachmentReport extends BaseRedirectReport
     public static class TestCase extends Assert
     {
         @Test
-        public void test() throws FileNotFoundException, IOException
+        public void test() throws IOException
         {
             AttachmentReport report = new AttachmentReport();
             AppProps.Interface props = AppProps.getInstance();

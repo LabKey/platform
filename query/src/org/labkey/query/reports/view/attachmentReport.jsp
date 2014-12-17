@@ -165,7 +165,7 @@
             xtype: 'displayfield',
             value: '<i><small>LabKey Server can extract a thumbnail image from some '
             + 'document types to provide a preview in the user interface. '
-            + 'Click <a href=<%= AttachmentReportForm.getHelpTopic() %> >here</a> for more details.</small></i>'
+            + 'Click <%=text(AttachmentReportForm.getHelpTopic().getSimpleLinkHtml("here"))%> for more details.</small></i>'
         };
 
         extraItems = [ fileUploadRadioGroup, fileUploadTextField, fileUploadButton, serverFileTextField, thumbnailInfo ];
