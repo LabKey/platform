@@ -813,7 +813,7 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
 
             columns: [
                 selModel,
-                {header:'&nbsp;&nbsp;' + this.subject.nounSingular + ' Groups', dataIndex:'label', renderer: this.participantGroupRenderer, scope: this}
+                {header:'&nbsp;&nbsp;' + this.subject.nounSingular + ' Group', dataIndex:'label', renderer: this.participantGroupRenderer, scope: this}
             ]
         });
 
@@ -831,6 +831,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                 }
             }
         }, this);
+
+        //grid.on('columnmodelcustomize', this.customizeVisitColumnModel, this);
 
         this.participantGroupTemplate = new Ext.DomHelper.createTemplate(
                 '<span style="margin-left:10px;" class="labkey-link">{0}</span>&nbsp;<span class="labkey-disabled">' +
