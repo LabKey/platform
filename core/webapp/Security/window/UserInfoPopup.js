@@ -190,7 +190,7 @@ Ext4.define('Security.window.UserInfoPopup', {
                     {
                         html += Ext4.String.htmlEncode(user.Name);
                         // issue 17704, add display name for users
-                        if (user.Name != user.DisplayName)
+                        if (user.Name != user.DisplayName && user.DisplayName && user.DisplayName.length > 0)
                         {
                             html += " (" + Ext4.String.htmlEncode(user.DisplayName) + ")"
                         }
