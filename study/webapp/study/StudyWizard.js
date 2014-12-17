@@ -584,17 +584,20 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             formItems.push({
                 xtype: 'displayfield',
                 fieldLabel: 'Previous Child Study', // uh, better name?
+                labelStyle: 'padding: 0px;',
                 style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
                 value: this.previousStudy
             },{
                 xtype: 'displayfield',
                 fieldLabel: 'Created By',
+                labelStyle: 'padding: 0px;',
                 style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
                 value: this.createdBy
             },
             {
                 xtype: 'displayfield',
                 fieldLabel: 'Created',
+                labelStyle: 'padding: 0px;',
                 style: 'font: normal 12px tahoma, arial, helvetica, sans-serif;',
                 value: new Date(this.created).format(LABKEY.extDefaultDateFormat)
             });
