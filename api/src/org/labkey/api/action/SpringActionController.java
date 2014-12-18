@@ -264,6 +264,12 @@ public abstract class SpringActionController implements Controller, HasViewConte
                 _log.debug("Illegal page template type", ex);
             }
         }
+
+        // If admin has turned off LabKey searching of this folder then turn off external search bot indexing as well.
+        // This should improve search results (e.g., Google will tend to point to latest version of labkey.org docs pages, instead of archived versions).
+        if (!getViewContext().getContainer().isSearchable())
+            page.setNoIndex();
+
         return page;
     }
 
