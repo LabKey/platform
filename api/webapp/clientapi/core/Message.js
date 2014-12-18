@@ -68,8 +68,8 @@ LABKEY.Message = new function()
         },
 
         /**
-         * Sends an email notification message through the LabKey server. Message recipients must exist within the
-         * LabKey server, otherwise an error will be thrown.
+         * Sends an email notification message through the LabKey server. Message recipients and the sender
+         * must exist as valid accounts within the LabKey Server, otherwise an error will be thrown.
          * @param config A configuration object containing the following properties
          * @param {String} config.msgFrom The email address that appears on the email from line.
          * @param {String} [config.msgSubject] The value that appears on the email subject line.
