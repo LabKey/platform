@@ -66,7 +66,7 @@ public class VisitMapImporter
 
                     public VisitMapReader getReader(VirtualFile file, String name, Logger logger) throws VisitMapParseException, IOException
                     {
-                        return new XmlVisitMapReader(file.getXmlBean(name));  //To change body of implemented methods use File | Settings | File Templates.
+                        return new XmlVisitMapReader(file.getXmlBean(name));
                     }
 
                     public String getExtension()

@@ -3550,7 +3550,6 @@ study/src/org/labkey/study/importer/AbstractStudyPipelineJob.java -text
 study/src/org/labkey/study/importer/AssayScheduleImporter.java -text
 study/src/org/labkey/study/importer/CohortImporter.java -text
 study/src/org/labkey/study/importer/CreateChildStudyPipelineJob.java -text
-study/src/org/labkey/study/importer/DataFaxVisitMapReader.java -text
 study/src/org/labkey/study/importer/DatasetCohortAssigner.java -text
 study/src/org/labkey/study/importer/DatasetDefinitionImporter.java -text
 study/src/org/labkey/study/importer/DatasetImportUtils.java -text
