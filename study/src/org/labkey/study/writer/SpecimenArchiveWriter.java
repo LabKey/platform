@@ -155,6 +155,8 @@ public class SpecimenArchiveWriter extends AbstractSpecimenWriter
                 DomainProperty dp = _properties.get(column.getName());
                 if (dp.getName() != null)
                     columnXml.setColumnName(dp.getName());
+                if (0 != dp.getScale())
+                    columnXml.setScale(dp.getScale());
             }
         }
     }

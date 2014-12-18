@@ -891,15 +891,18 @@
       <ns:column columnName="GlobalUniqueId">
           <ns:description>The global unique ID of each vial.  Assumed to be globally unique within a study, but duplicates can exist cross-study.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>50</ns:scale>
           <ns:facetingBehavior>ALWAYS_OFF</ns:facetingBehavior>
       </ns:column>
       <ns:column columnName="Ptid">
           <ns:description>The ID of the subject providing each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>32</ns:scale>
       </ns:column>
       <ns:column columnName="ParticipantSequenceNum">
           <ns:description>A string value uniquely identfying the subject/visit combination for each specimendetail row.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>200</ns:scale>
       </ns:column>
       <ns:column columnName="DrawTimestamp">
           <ns:description>The timestamp of specimen collection.</ns:description>
@@ -923,12 +926,14 @@
       <ns:column columnName="SpecimenHash">
           <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>256</ns:scale>
           <ns:isReadOnly>true</ns:isReadOnly>
           <ns:isHidden>true</ns:isHidden>
       </ns:column>
       <ns:column columnName="ClassId">
           <ns:description>The class, network, or study associated with each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>20</ns:scale>
       </ns:column>
       <ns:column columnName="VisitValue">
           <ns:description>The visit value (sequence num) of specimen collection.</ns:description>
@@ -938,18 +943,22 @@
       <ns:column columnName="ProtocolNumber">
           <ns:description>The protocol associated with each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>20</ns:scale>
       </ns:column>
       <ns:column columnName="VisitDescription">
           <ns:description>A description of the visit type for each specimen.  For example, "visit", "day", or "week".</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>10</ns:scale>
       </ns:column>
       <ns:column columnName="VolumeUnits">
           <ns:description>The units of volume for each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>20</ns:scale>
       </ns:column>
       <ns:column columnName="SubAdditiveDerivative">
           <ns:description>The sub-additive/derivative type of each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>50</ns:scale>
       </ns:column>
       <ns:column columnName="PrimaryTypeId">
           <ns:description>The ID of the primary type of each specimen.</ns:description>
@@ -1003,6 +1012,7 @@
       <ns:column columnName="PrimaryVolumeUnits">
           <ns:description>The units of the primary volume value of each vial.  For example, cells or milliliters.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>20</ns:scale>
       </ns:column>
       <ns:column columnName="AtRepositoryCount">
           <ns:description>The number of vials from each specimen that are currently at a repository.</ns:description>
@@ -1082,24 +1092,36 @@
       <ns:column columnName="FirstProcessedByInitials">
           <ns:description>The value of the ProcessedByInitials from the first recorded event for this vial.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>32</ns:scale>
       </ns:column>
       <ns:column columnName="AvailabilityReason">
           <ns:description>Text explanation for why each vial is or is not available for request.  May be null if the vial is available and no special circumstances apply.</ns:description>
+          <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>256</ns:scale>
           <ns:isReadOnly>true</ns:isReadOnly>
       </ns:column>
       <ns:column columnName="TotalCellCount">
-        <ns:description>The total cell count for each vial.</ns:description>
-        <ns:formatString>0.####</ns:formatString>
+          <ns:description>The total cell count for each vial.</ns:description>
+          <ns:datatype>double</ns:datatype>
+          <ns:formatString>0.####</ns:formatString>
       </ns:column>
       <ns:column columnName="TubeType">
-        <ns:description>The type of vial.</ns:description>
+          <ns:description>The type of vial.</ns:description>
+          <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>64</ns:scale>
       </ns:column>
-        <ns:column columnName="LatestComments">
-            <ns:description>Additional comments on processing quality from latest event.</ns:description>
-        </ns:column>
-        <ns:column columnName="LatestQualityComments">
-            <ns:description>Additional comments on processing quality from latest event.</ns:description>
-        </ns:column>
+      <ns:column columnName="LatestComments">
+          <ns:description>Additional comments on processing quality from latest event.</ns:description>
+          <ns:datatype>Varchar</ns:datatype>
+          <ns:inputType>text</ns:inputType>
+          <ns:scale>500</ns:scale>
+      </ns:column>
+      <ns:column columnName="LatestQualityComments">
+          <ns:description>Additional comments on processing quality from latest event.</ns:description>
+          <ns:datatype>Varchar</ns:datatype>
+          <ns:inputType>text</ns:inputType>
+          <ns:scale>500</ns:scale>
+      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="SpecimenSummary" tableDbType="NOT_IN_DB">
@@ -1115,10 +1137,12 @@
       <ns:column columnName="Ptid">
           <ns:description>The ID of the subject providing each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>32</ns:scale>
       </ns:column>
       <ns:column columnName="ParticipantSequenceNum">
           <ns:description>A string value uniquely identfying the subject/visit combination for each specimensummary row.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>200</ns:scale>
       </ns:column>
       <ns:column columnName="DrawTimestamp">
           <ns:description>The timestamp of specimen collection.</ns:description>
@@ -1142,14 +1166,17 @@
       <ns:column columnName="SpecimenHash">
           <ns:description>A string value that uniquely identifies the specimen/draw-level properties of the vial, including subject, visit, and specimen type.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>256</ns:scale>
       </ns:column>
       <ns:column columnName="ProtocolNumber">
           <ns:description>The protocol associated with each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>20</ns:scale>
       </ns:column>
       <ns:column columnName="ClassId">
           <ns:description>The class, network, or study associated with each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>20</ns:scale>
       </ns:column>
       <ns:column columnName="VisitValue">
           <ns:description>The visit value (sequence num) of specimen collection.</ns:description>
@@ -1159,6 +1186,7 @@
       <ns:column columnName="VisitDescription">
           <ns:description>A description of the visit type for each specimen.  For example, "visit", "day", or "week".</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>10</ns:scale>
       </ns:column>
       <ns:column columnName="TotalVolume">
           <ns:description>The total volume of all vials from each specimen.</ns:description>
@@ -1168,6 +1196,7 @@
       <ns:column columnName="VolumeUnits">
           <ns:description>The units of volume for each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>20</ns:scale>
       </ns:column>
       <ns:column columnName="PrimaryTypeId">
           <ns:description>The ID of the primary type of each specimen.</ns:description>
@@ -1199,6 +1228,7 @@
       <ns:column columnName="SubAdditiveDerivative">
           <ns:description>The sub-additive/derivative type of each specimen.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>50</ns:scale>
       </ns:column>
       <ns:column columnName="LockedInRequestCount">
           <ns:description>The number of vials from each specimen that are currently locked in requests.</ns:description>
@@ -1239,12 +1269,13 @@
           </ns:fk>
       </ns:column>
       <ns:column columnName="ProcessingLocation">
-        <ns:description>The ID of the processing location of each vial.</ns:description>
-        <ns:datatype>int</ns:datatype>
+          <ns:description>The ID of the processing location of each vial.</ns:description>
+          <ns:datatype>int</ns:datatype>
       </ns:column>
       <ns:column columnName="FirstProcessedByInitials">
           <ns:description>The common FirstProcessedByInitials value for all vials in this specimen.  Will be null if all vials do not share a common FirstProcessedByInitials values.</ns:description>
           <ns:datatype>Varchar</ns:datatype>
+          <ns:scale>32</ns:scale>
       </ns:column>
     </ns:columns>
   </ns:table>
