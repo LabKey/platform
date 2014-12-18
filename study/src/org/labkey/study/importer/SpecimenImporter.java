@@ -24,7 +24,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.*;
@@ -80,11 +79,11 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
-import org.labkey.study.model.Vial;
 import org.labkey.study.model.SpecimenComment;
 import org.labkey.study.model.SpecimenEvent;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.Vial;
 import org.labkey.study.query.SpecimenTablesProvider;
 import org.labkey.study.visitmanager.VisitManager;
 
@@ -1487,36 +1486,6 @@ public class SpecimenImporter
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
     }
 
-    private void clearConflictingSpecimenColumns(Vial vial, Set<String> conflicts)
-    {
-        SQLFragment sql = new SQLFragment();
-        sql.append("UPDATE ").append(getTableInfoSpecimen().getSelectName()).append(" SET\n  ");
-
-        boolean hasConflict = false;
-        String sep = "";
-
-        for (SpecimenColumn col : _specimenColumns)
-        {
-            if (col.getAggregateEventFunction() == null && col.getTargetTable().isSpecimens() && !col.isUnique())
-            {
-                if (conflicts.contains(col.getDbColumnName()))
-                {
-                    hasConflict = true;
-                    sql.append(sep);
-                    sql.append(col.getDbColumnName()).append(" = NULL");
-                    sep = ",\n  ";
-                }
-            }
-        }
-
-        if (!hasConflict)
-            return;
-
-        sql.append("\nWHERE AND RowId = ?");
-        sql.add(vial.getSpecimenId());
-
-        new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
-    }
 
     private void updateCommentSpecimenHashes()
     {
@@ -1536,6 +1505,7 @@ public class SpecimenImporter
         new SqlExecutor(StudySchema.getInstance().getSchema()).execute(sql);
         info("Complete.");
     }
+
 
     private void prepareQCComments()
     {
@@ -2569,14 +2539,6 @@ public class SpecimenImporter
         sql.append(" OR ").append(col.getLegalDbColumnName(_dialect)).append(" = ").append(paramCast);
     }
 
-    private void appendEqualCheckNoParams(DbSchema schema, SQLFragment sql, String colname)
-    {
-        sql.append("(");
-        sql.append("(_target_.").append(colname).append(" IS NULL AND _source_.").append(colname).append(" IS NULL)");
-        sql.append(" OR ");
-        sql.append("(_target_.").append(colname).append(" = _source_.").append(colname).append(")");
-        sql.append(")");
-    }
 
     /**
      * Insert or update rows on the target table using the unique columns of <code>potentialColumns</code>
@@ -2822,7 +2784,7 @@ public class SpecimenImporter
         }
         finally
         {
-            if (iter instanceof CloseableIterator) try { ((CloseableIterator)iter).close(); } catch (IOException ioe) { }
+            if (iter instanceof CloseableIterator) try { iter.close(); } catch (IOException ioe) { /* */ }
             if (null != conn)
                 schema.getScope().releaseConnection(conn);    
         }
@@ -2915,6 +2877,8 @@ public class SpecimenImporter
 
         Pump pump = new Pump(tableIter, dix);
         pump.run();
+        if (dix.getErrors().hasErrors())
+            throw dix.getErrors().getLastRowError();
         int rowCount = pump.getRowCount();
 
         info(tableName + "updated or inserted " + rowCount + " rows of data");
@@ -3225,8 +3189,7 @@ public class SpecimenImporter
             });
             pump.run();
             if (dix.getErrors().hasErrors())
-                throw dix.getErrors().getRowErrors().get(0);
-
+                throw dix.getErrors().getLastRowError();
             rowCount = pump.getRowCount();
 
             info(tableName + ": Replaced all data with " + rowCount + " new rows.");
@@ -3258,7 +3221,6 @@ public class SpecimenImporter
         final DataIteratorBuilder dib;
         final Collection<? extends ImportableColumn> importColumns;
         final List<ComputedColumn> computedColumns;
-        final ArrayListMap<String, Object> row = new ArrayListMap<>();
 
         SpecimenImportBuilder(TableInfo table, DataIteratorBuilder in, Collection<? extends ImportableColumn> importColumns, List<ComputedColumn> computedColumns)
         {
@@ -3837,7 +3799,6 @@ public class SpecimenImporter
 
         info("Creating temp table to hold archive data...");
         SqlDialect dialect = DbSchema.getTemp().getSqlDialect();
-        DbSchema tempSchema = DbSchema.getTemp();
 
         StringBuilder sql = new StringBuilder();
         int randomizer = (new Random().nextInt(900000000) + 100000000);  // Ensure 9-digit random number
@@ -3951,7 +3912,7 @@ public class SpecimenImporter
         @Before
         public void createTable() throws SQLException
         {
-            List<ColumnInfo> columns = new ArrayList<ColumnInfo>();
+            List<ColumnInfo> columns = new ArrayList<>();
             columns.add(new ColumnInfo("Container",JdbcType.GUID, 0, false));
             columns.add(new ColumnInfo("id", JdbcType.VARCHAR, 0, false));
             columns.add(new ColumnInfo("s", JdbcType.VARCHAR, 30, true));
@@ -3999,8 +3960,8 @@ public class SpecimenImporter
             );
 
             ListofMapsDataIterator values = new ListofMapsDataIterator(
-                    new LinkedHashSet<String>(Arrays.asList("s","i")),
-                    (List<Map<String,Object>>)Arrays.asList(
+                    new LinkedHashSet<>(Arrays.asList("s","i")),
+                    Arrays.asList(
                         row("Bob", 100),
                         row("Sally", 200),
                         row(null, 300))
@@ -4062,8 +4023,8 @@ public class SpecimenImporter
 
             // Add one new row, update one existing row.
             values = new ListofMapsDataIterator(
-                    new LinkedHashSet<String>(Arrays.asList("s","i")),
-                    (List<Map<String,Object>>) Arrays.asList(
+                    new LinkedHashSet<>(Arrays.asList("s","i")),
+                    Arrays.asList(
                             row("Bob", 105),
                             row(null, 305),
                             row("Jimmy", 405)
@@ -4124,8 +4085,8 @@ public class SpecimenImporter
             );
 
             values = new ListofMapsDataIterator(
-                    new LinkedHashSet<String>(Arrays.asList("s","i")),
-                    (List<Map<String,Object>>) Arrays.asList(
+                    new LinkedHashSet<>(Arrays.asList("s","i")),
+                    Arrays.asList(
                             row("John", 405)
                     )
             );
