@@ -723,11 +723,12 @@ public class ContainerManager
     
     public static List<Container> getAllChildren(Container parent, User u, Class<? extends Permission> perm, Set<Role> roles, boolean includeWorkbooksAndTabs)
     {
-        List<Container> result = new ArrayList<>();
+        Set<Container> allChildren = getAllChildren(parent);
+        List<Container> result = new ArrayList<>(allChildren.size());
 
-        for (Container container : getAllChildren(parent))
+        for (Container container : allChildren)
         {
-            if (container.hasPermission(u, perm, roles) && (includeWorkbooksAndTabs || !container.isWorkbookOrTab()))
+            if ((includeWorkbooksAndTabs || !container.isWorkbookOrTab()) && container.hasPermission(u, perm, roles))
             {
                 result.add(container);
             }
@@ -739,8 +740,9 @@ public class ContainerManager
     // Returns the next available child container name based on the baseName
     public static String getAvailableChildContainerName(Container c, String baseName)
     {
-        Map<String, Container> folders = new HashMap<>();
-        for (Container child : getChildren(c))
+        List<Container> children = getChildren(c);
+        Map<String, Container> folders = new HashMap<>(children.size() * 2);
+        for (Container child : children)
             folders.put(child.getName(), child);
 
         String availableContainerName = baseName;
