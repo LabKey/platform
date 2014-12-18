@@ -2696,7 +2696,6 @@ public class OntologyManager
 
             boolean dimension = m.get("Dimension") != null && ((Boolean)m.get("Dimension")).booleanValue();
             boolean measure = m.get("Measure") != null && ((Boolean)m.get("Measure")).booleanValue();
-            int scale = m.get("Scale") != null ? (Integer)m.get("Scale") : PropertyStorageSpec.DEFAULT_SIZE;
 
             boolean keyVariable = m.get("KeyVariable") != null && ((Boolean)m.get("KeyVariable")).booleanValue();
             DefaultScaleType defaultScale = DefaultScaleType.LINEAR;
@@ -2731,6 +2730,11 @@ public class OntologyManager
                 pt = PropertyType.MULTI_LINE;
             }
             rangeURI = pt.getTypeUri();
+            int scale = m.get("Scale") != null ?
+                            (Integer)m.get("Scale") :
+                            (JdbcType.VARCHAR == pt.getJdbcType() || JdbcType.LONGVARCHAR == pt.getJdbcType()) ?
+                                    PropertyStorageSpec.DEFAULT_SIZE :              // text types
+                                    pt.getScale();                                  // types with fixed scales
 
             if (format != null)
             {

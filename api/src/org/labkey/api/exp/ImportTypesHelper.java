@@ -74,6 +74,7 @@ public class ImportTypesHelper
         _standardKeys.add("FacetingBehaviorType");
         _standardKeys.add("Protected");
         _standardKeys.add("ExcludeFromShifting");
+        _standardKeys.add("Scale");
 
     }
 
@@ -201,7 +202,9 @@ public class ImportTypesHelper
                     ConditionalFormat.convertFromXML(columnXml.getConditionalFormats()),
                     facetingBehaviorType,
                     isProtected,
-                    isExcludeFromShifting
+                    isExcludeFromShifting,
+                    columnXml.isSetScale() ? columnXml.getScale() : null
+
             );
 
             importMaps.add(map);
