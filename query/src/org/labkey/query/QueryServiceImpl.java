@@ -2230,6 +2230,24 @@ public class QueryServiceImpl extends QueryService
     {
         AuditBehaviorType auditType = table.getAuditBehavior();
 
+        // Truncate audit event doesn't accpet any params
+        if (action == AuditAction.TRUNCATE)
+        {
+            assert params.length == 0;
+            switch (auditType)
+            {
+                case NONE:
+                    return;
+
+                case SUMMARY:
+                case DETAILED:
+                    String comment = AuditAction.TRUNCATE.getCommentSummary();
+                    AuditLogEvent event = _createAuditRecord(user, c, table, comment, null);
+                    AuditLogService.get().addEvent(event);
+                    return;
+            }
+        }
+
         switch (auditType)
         {
             case NONE:

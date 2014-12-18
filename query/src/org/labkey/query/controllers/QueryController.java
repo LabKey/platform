@@ -2295,6 +2295,8 @@ public class QueryController extends SpringActionController
             ApiSimpleResponse response = new ApiSimpleResponse();
 
             response.put("success", true);
+            response.put(BaseSaveRowsAction.PROP_SCHEMA_NAME, form.getSchemaName());
+            response.put(BaseSaveRowsAction.PROP_QUERY_NAME, form.getQueryName());
             response.put("deletedRows", deletedRows);
 
             return response;
