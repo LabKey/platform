@@ -62,13 +62,23 @@ class SecurityFilter extends Filter
 
         if (recursive)
         {
+            // Returns root plus all children (including workbooks & tabs) where user has read permissions
             List<Container> containers = ContainerManager.getAllChildren(searchRoot, user);
-            _containerIds = new HashMap<>(containers.size());
+            _containerIds = new HashMap<>(containers.size() * 2);
 
             for (Container c : containers)
             {
-                if ((c.isSearchable() || (c.equals(currentContainer)) && (c.shouldDisplay(user) || c.isWorkbook())))
-                    _containerIds.put(c.getId(), c);
+                boolean searchable = c.isSearchable() || c.equals(currentContainer);
+
+                if (searchable)
+                {
+                    boolean shouldDisplay = c.isWorkbook() || c.shouldDisplay(user);
+
+                    if (shouldDisplay)
+                    {
+                        _containerIds.put(c.getId(), c);
+                    }
+                }
             }
         }
         else
