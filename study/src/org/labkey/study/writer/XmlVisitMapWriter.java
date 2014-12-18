@@ -107,7 +107,7 @@ public class XmlVisitMapWriter implements Writer<StudyImpl, StudyExportContext>
                 if (visit.getChronologicalOrder() > 0)
                     visitXml.setChronologicalOrder(visit.getChronologicalOrder());
 
-                if (null != visit.getSequenceNumHandling())   // TODO: "Normal" is the default on import, so skip setting if getSequenceNumHandlingEnum() == normal
+                if (visit.getSequenceNumHandlingEnum() != Visit.SequenceHandling.normal)
                     visitXml.setSequenceNumHandling(visit.getSequenceNumHandling());
 
                 List<VisitDataSet> vds = visit.getVisitDatasets();

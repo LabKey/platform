@@ -260,9 +260,9 @@ translateToDouble:
                 }
 
                 @Override
-                public SequenceHandling getSequenceNumHandlingEnum()
+                public @NotNull SequenceHandling getSequenceNumHandlingEnum()
                 {
-                    return 9999.0==Math.floor(d) ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
+                    return 9999.0 == Math.floor(d) ? SequenceHandling.logUniqueByDate : SequenceHandling.normal;
                 }
             };
         }

@@ -17,6 +17,7 @@
 package org.labkey.study.model;
 
 import org.apache.axis.utils.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.BeanObjectFactory;
 import org.labkey.api.data.Container;
@@ -135,7 +136,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     {
         if (_typeCode == null)
             return null;
-        return Type.getByCode(_typeCode.charValue());
+        return Type.getByCode(_typeCode);
     }
 
 
@@ -148,7 +149,7 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     
     public void setVisitDateDatasetId(Integer visitDateDatasetId)
     {
-        _visitDateDatasetid = visitDateDatasetId == null ? 0 : visitDateDatasetId.intValue();
+        _visitDateDatasetid = visitDateDatasetId == null ? 0 : visitDateDatasetId;
     }
 
 
@@ -262,9 +263,9 @@ public class VisitImpl extends AbstractStudyEntity<VisitImpl> implements Cloneab
     }
 
     @Override
-    public SequenceHandling getSequenceNumHandlingEnum()
+    public @NotNull SequenceHandling getSequenceNumHandlingEnum()
     {
-        return null==_sequenceHandling ? SequenceHandling.normal : _sequenceHandling;
+        return null == _sequenceHandling ? SequenceHandling.normal : _sequenceHandling;
     }
 
     public String getSequenceNumHandling()

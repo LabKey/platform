@@ -185,8 +185,8 @@
         %></td>
         <td>
             <select name="sequenceNumHandling">
-              <option<%=selected(Visit.SequenceHandling.normal.name().equals(visit.getSequenceNumHandling()))%> value="<%=text(Visit.SequenceHandling.normal.name())%>">Normal</option>
-              <option<%=selected(Visit.SequenceHandling.logUniqueByDate.name().equals(visit.getSequenceNumHandling()))%> value="<%=text(Visit.SequenceHandling.logUniqueByDate.name())%>">Unique Log Events by Date</option>
+              <option<%=selected(Visit.SequenceHandling.normal == visit.getSequenceNumHandlingEnum())%> value="<%=text(Visit.SequenceHandling.normal.name())%>">Normal</option>
+              <option<%=selected(Visit.SequenceHandling.logUniqueByDate == visit.getSequenceNumHandlingEnum())%> value="<%=text(Visit.SequenceHandling.logUniqueByDate.name())%>">Unique Log Events by Date</option>
             </select>
         </td>
     </tr>
