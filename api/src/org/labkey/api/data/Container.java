@@ -31,7 +31,6 @@ import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.search.SearchService;
-import org.labkey.api.security.ACL;
 import org.labkey.api.security.HasPermission;
 import org.labkey.api.security.SecurableResource;
 import org.labkey.api.security.SecurityPolicy;
@@ -39,12 +38,9 @@ import org.labkey.api.security.SecurityPolicyManager;
 import org.labkey.api.security.User;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.permissions.AdminPermission;
-import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EnableRestrictedModules;
-import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
-import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.security.roles.Role;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudyService;
@@ -78,8 +74,7 @@ import java.util.Set;
  *
  * CONSIDER: extend org.labkey.api.data.Entity
  */
-public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission,
-        Parameter.JdbcParameterValue
+public class Container implements Serializable, Comparable<Container>, SecurableResource, ContainerContext, HasPermission, Parameter.JdbcParameterValue
 {
     private GUID _id;
     private Path _path;
@@ -312,6 +307,13 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return getPolicy().hasPermission(user, perm, contextualRoles);
     }
 
+    public boolean hasPermissions(@NotNull User user, @NotNull Set<Class<? extends Permission>> permissions)
+    {
+        if (isForbiddenProject(user))
+            return false;
+        return getPolicy().hasPermissions(user, permissions);
+    }
+
     public boolean hasOneOf(@NotNull User user, @NotNull Collection<Class<? extends Permission>> perms)
     {
         return !isForbiddenProject(user) && getPolicy().hasOneOf(user, perms, null);
@@ -322,41 +324,6 @@ public class Container implements Serializable, Comparable<Container>, Securable
         return hasOneOf(user, Arrays.asList(perms));
     }
 
-
-    /**
-     * Don't use this anymore
-     * @param user the user
-     * @param perm the old nasty integer permission
-     * @return something you don't want anymore
-     * @deprecated Use hasPermission(User user, Class&lt;? extends Permission&gt; perm) instead
-     */
-    @Deprecated
-    public boolean hasPermission(User user, int perm)
-    {
-        if (isForbiddenProject(user))
-            return false;
-
-        SecurityPolicy policy = getPolicy();
-        return policy.hasPermissions(user, getPermissionsForIntPerm(perm));
-    }
-
-    @Deprecated
-    private Set<Class<? extends Permission>> getPermissionsForIntPerm(int perm)
-    {
-        Set<Class<? extends Permission>> perms = new HashSet<>();
-        if ((perm & ACL.PERM_READ) > 0 || (perm & ACL.PERM_READOWN) > 0)
-            perms.add(ReadPermission.class);
-        if ((perm & ACL.PERM_INSERT) > 0)
-            perms.add(InsertPermission.class);
-        if ((perm & ACL.PERM_UPDATE) > 0 || (perm & ACL.PERM_UPDATEOWN) > 0)
-            perms.add(UpdatePermission.class);
-        if ((perm & ACL.PERM_DELETE) > 0 || (perm & ACL.PERM_DELETEOWN) > 0)
-            perms.add(DeletePermission.class);
-        if ((perm & ACL.PERM_ADMIN) > 0)
-            perms.add(AdminPermission.class);
-
-        return perms;
-    }
 
     public boolean isForbiddenProject(User user)
     {

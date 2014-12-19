@@ -165,7 +165,6 @@ public class ModuleHtmlViewDefinition
             {
                 SimpleAction.PermissionEnum perm = SimpleAction.PermissionEnum.valueOf(permEntry.getName().toString());
 
-
                 if (SimpleAction.PermissionEnum.login == perm)
                     _requiresLogin = true;
                 else if (null != perm)

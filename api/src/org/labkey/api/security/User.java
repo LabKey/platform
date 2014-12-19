@@ -362,9 +362,9 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         boolean nonNullContainer = null != container;
         props.put("canInsert", nonNullContainer && container.hasPermission(user, InsertPermission.class));
         props.put("canUpdate", nonNullContainer && container.hasPermission(user, UpdatePermission.class));
-        props.put("canUpdateOwn", nonNullContainer && container.hasPermission(user, ACL.PERM_UPDATEOWN));
+        props.put("canUpdateOwn", nonNullContainer && container.hasPermission(user, UpdatePermission.class));
         props.put("canDelete", nonNullContainer && container.hasPermission(user, DeletePermission.class));
-        props.put("canDeleteOwn", nonNullContainer && container.hasPermission(user, ACL.PERM_DELETEOWN));
+        props.put("canDeleteOwn", nonNullContainer && container.hasPermission(user, DeletePermission.class));
         props.put("isAdmin", nonNullContainer && container.hasPermission(user, AdminPermission.class));
         props.put("isSystemAdmin", user.isSiteAdmin());
         props.put("isGuest", user.isGuest());

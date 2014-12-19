@@ -18,7 +18,12 @@ package org.labkey.api.module;
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NavTrailAction;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.DeletePermission;
+import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
+import org.labkey.api.security.permissions.ReadPermission;
+import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.view.*;
 import org.labkey.api.security.ACL;
 import org.labkey.api.security.User;
@@ -27,6 +32,8 @@ import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.Errors;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 
 /*
 * User: Dave
@@ -122,12 +129,30 @@ public class SimpleAction extends BaseViewAction implements NavTrailAction
         if (null != _view && _view.isRequiresLogin() && user.isGuest())
             throw new UnauthorizedException("You must sign in to see this content.");
 
-        if (null != _view && !container.hasPermission(user, _view.getRequiredPerms()))
+        if (null != _view)
         {
-            if (container.isForbiddenProject(user))
-                throw new ForbiddenProjectException();
-            else
-                throw new UnauthorizedException("You do not have permission to view this content.");
+            // Handle old-style permission bits, for backward compatibility
+            int perm = _view.getRequiredPerms();
+            Set<Class<? extends Permission>> perms = new HashSet<>();
+
+            if ((perm & ACL.PERM_READ) > 0 || (perm & ACL.PERM_READOWN) > 0)
+                perms.add(ReadPermission.class);
+            if ((perm & ACL.PERM_INSERT) > 0)
+                perms.add(InsertPermission.class);
+            if ((perm & ACL.PERM_UPDATE) > 0 || (perm & ACL.PERM_UPDATEOWN) > 0)
+                perms.add(UpdatePermission.class);
+            if ((perm & ACL.PERM_DELETE) > 0 || (perm & ACL.PERM_DELETEOWN) > 0)
+                perms.add(DeletePermission.class);
+            if ((perm & ACL.PERM_ADMIN) > 0)
+                perms.add(AdminPermission.class);
+
+            if (!container.hasPermissions(user, perms))
+            {
+                if (container.isForbiddenProject(user))
+                    throw new ForbiddenProjectException();
+                else
+                    throw new UnauthorizedException("You do not have permission to view this content.");
+            }
         }
 
         if (null != _view && !_view.getRequiredPermissionClasses().isEmpty())
