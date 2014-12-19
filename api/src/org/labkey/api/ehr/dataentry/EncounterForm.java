@@ -35,7 +35,7 @@ public class EncounterForm extends TaskForm
     {
         super(ctx, owner, name, label, category, sections);
         setStoreCollectionClass("EHR.data.EncounterStoreCollection");
-        addClientDependency(ClientDependency.fromFilePath("ehr/data/EncounterStoreCollection.js"));
+        addClientDependency(ClientDependency.fromPath("ehr/data/EncounterStoreCollection.js"));
         setTemplateMode(AbstractFormSection.TEMPLATE_MODE.ENCOUNTER);
 
         for (FormSection s : getFormSections())

@@ -37,7 +37,7 @@ public class BulkEditFormType extends AbstractDataEntryForm
 
         _keyField = keyField;
 
-        addClientDependency(ClientDependency.fromFilePath("ehr/panel/BulkEditDataEntryPanel.js"));
+        addClientDependency(ClientDependency.fromPath("ehr/panel/BulkEditDataEntryPanel.js"));
     }
 
     public static BulkEditFormType create(DataEntryFormContext ctx, Module owner, String name, String title, String keyField, FormSection section)

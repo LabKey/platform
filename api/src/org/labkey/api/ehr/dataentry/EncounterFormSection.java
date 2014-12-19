@@ -16,8 +16,6 @@
 package org.labkey.api.ehr.dataentry;
 
 import org.json.JSONObject;
-import org.labkey.api.data.Container;
-import org.labkey.api.security.User;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.ArrayList;
@@ -39,7 +37,7 @@ public class EncounterFormSection extends SimpleFormSection
         sources.add("Encounter");
         setConfigSources(sources);
         setClientModelClass("EHR.data.ClinicalEncountersClientStore");
-        addClientDependency(ClientDependency.fromFilePath("ehr/data/ClinicalEncountersClientStore.js"));
+        addClientDependency(ClientDependency.fromPath("ehr/data/ClinicalEncountersClientStore.js"));
 
         setTemplateMode(TEMPLATE_MODE.ENCOUNTER);
     }

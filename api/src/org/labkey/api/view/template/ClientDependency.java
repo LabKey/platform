@@ -216,11 +216,6 @@ public class ClientDependency
         return cd;
     }
 
-    public static ClientDependency fromFilePath(String path)
-    {
-        return ClientDependency.fromFilePath(path, ModeTypeEnum.BOTH);
-    }
-
     // converts a semi-colon delimited list of dependencies into a set of
     // appropriate ClientDependency objects
     public static LinkedHashSet<ClientDependency> fromList(String dependencies)
@@ -232,20 +227,31 @@ public class ClientDependency
             for (String d : list)
             {
                 if (StringUtils.isNotBlank(d))
-                {
-                    String s = d.trim();
-                    if (isExternalDependency(s))
-                        set.add(fromURIPath(s));
-                    else
-                        set.add(fromFilePath(s));
-                }
+                    set.add(fromPath(d.trim()));
             }
         }
 
         return set;
     }
 
-    public static ClientDependency fromFilePath(String path, ModeTypeEnum.Enum mode)
+    public static ClientDependency fromPath(String path)
+    {
+        return fromPath(path, ModeTypeEnum.BOTH);
+    }
+
+    public static ClientDependency fromPath(String path, ModeTypeEnum.Enum mode)
+    {
+        ClientDependency cd;
+
+        if (isExternalDependency(path))
+            cd = new ClientDependency(path);
+        else
+            cd = ClientDependency.fromFilePath(path, mode);
+
+        return cd;
+    }
+
+    private static ClientDependency fromFilePath(String path, ModeTypeEnum.Enum mode)
     {
         path = path.replaceAll("^/", "");
 
@@ -265,12 +271,6 @@ public class ClientDependency
 
         ClientDependency cr = new ClientDependency(filePath, mode);
         CacheManager.getSharedCache().put(key, cr);
-        return cr;
-    }
-
-    public static ClientDependency fromURIPath(String uri)
-    {
-        ClientDependency cr = new ClientDependency(uri);
         return cr;
     }
 
@@ -300,15 +300,14 @@ public class ClientDependency
         {
             processLib(filePath);
         }
-        else if (TYPE.jsb2.equals(type))
-        {
-            //NYI
-            //processJsb(filePath);
-        }
-        else if (TYPE.sass.equals(type))
-        {
-            //NYI
-        }
+//        else if (TYPE.jsb2.equals(type))
+//        {
+//            //NYI
+//        }
+//        else if (TYPE.sass.equals(type))
+//        {
+//            //NYI
+//        }
         else
         {
             if(!_mode.equals(ModeTypeEnum.PRODUCTION))
@@ -345,13 +344,7 @@ public class ClientDependency
                     for (ScriptType s : dependencies.getDependencyArray())
                     {
                         ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() : ModeTypeEnum.BOTH;
-                        String path = s.getPath();
-                        ClientDependency cr;
-                        if (ClientDependency.isExternalDependency(path))
-                            cr = ClientDependency.fromURIPath(path);
-                        else
-                            cr = ClientDependency.fromFilePath(s.getPath(), mode);
-                        _children.add(cr);
+                        _children.add(fromPath(s.getPath(), mode));
                     }
                 }
 
@@ -372,13 +365,12 @@ public class ClientDependency
                 {
                     ModeTypeEnum.Enum mode = s.isSetMode() ? s.getMode() :
                         _compileInProductionMode ? ModeTypeEnum.DEV : ModeTypeEnum.BOTH;
-                    ClientDependency cr = ClientDependency.fromFilePath(s.getPath(), mode);
+                    ClientDependency cr = fromPath(s.getPath(), mode);
 
-                    if(!TYPE.lib.equals(cr.getPrimaryType()))
+                    if (!TYPE.lib.equals(cr.getPrimaryType()))
                         _children.add(cr);
-                    else {
+                    else
                         _log.warn("Libraries cannot include other libraries: " + _filePath);
-                    }
 
                     if (_compileInProductionMode && mode != ModeTypeEnum.PRODUCTION)
                     {
@@ -392,13 +384,14 @@ public class ClientDependency
                 //add paths to the compiled scripts we expect to have created in the build.  these are production mode only
                 if (hasJsToCompile)
                 {
-                    ClientDependency c = ClientDependency.fromFilePath(filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension()), ModeTypeEnum.PRODUCTION);
-                    _children.add(c);
+                    String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.js.getExtension());
+                    _children.add(fromFilePath(path, ModeTypeEnum.PRODUCTION));
                 }
+
                 if (hasCssToCompile)
                 {
-                    ClientDependency c = ClientDependency.fromFilePath(filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension()), ModeTypeEnum.PRODUCTION);
-                    _children.add(c);
+                    String path = filePath.toString().replaceAll(TYPE.lib.getExtension() + "$", ".min" + TYPE.css.getExtension());
+                    _children.add(fromFilePath(path, ModeTypeEnum.PRODUCTION));
                 }
             }
         }
@@ -408,86 +401,10 @@ public class ClientDependency
         }
     }
 
-//    public void processJsb(Path filePath)
-//    {
-//        try
-//        {
-//            File jsonFile = new File(ModuleLoader.getInstance().getWebappDir(), _resource.getPath().toString());
-//            String json = FileUtils.readFileToString(jsonFile);
-//            JSONObject o = new JSONObject(json);
-//            JSONArray pkgs = o.getJSONArray("pkgs");
-//
-//            if (pkgs != null)
-//            {
-//                for(int i = 0 ; i < pkgs.length(); i++)
-//                {
-//                    JSONObject pkg = (JSONObject)pkgs.get(i);
-//                    if (pkg.getString("name").equals("Ext Core") || pkg.getString("name").equals("Ext Base"))
-//                    {
-//                        JSONArray files = pkg.getJSONArray("fileIncludes");
-//                        for(int j = 0 ; i < files.length(); i++)
-//                        {
-//                            JSONObject fileInfo = (JSONObject)pkgs.get(j);
-//                            File script = new File(jsonFile.getParentFile(), fileInfo.getString("path") + fileInfo.getString("text"));
-//                            if (script.exists())
-//                            {
-//                                ClientDependency d = ClientDependency.fromFilePath(script.getPath(), ModeTypeEnum.DEV);
-//                                _children.add(d);
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//        catch (IOException e)
-//        {
-//            _log.error("Unable to read file: " + _resource.getPath());
-//        }
-//    }
-
     public TYPE getPrimaryType()
     {
         return _primaryType;
     }
-
-//    private LinkedHashSet<ClientDependency> getUniqueDependencySet(Container c, User u)
-//    {
-//        return getUniqueDependencySet(c, u, new LinkedHashSet<ClientDependency>());
-//    }
-
-    /**
-     * Returns an ordered set of ClientDependencies, recursively including children
-     */
-//    private LinkedHashSet<ClientDependency> getUniqueDependencySet(Container c, User u, LinkedHashSet<ClientDependency> set)
-//    {
-//        if (set.contains(this))
-//            return set;
-//
-//        set.add(this);
-//
-//        if (_children != null)
-//        {
-//            for (ClientDependency cd : _children)
-//            {
-//                LinkedHashSet<ClientDependency> toAdd = cd.getUniqueDependencySet(c, u, set);
-//                set.add(cd);
-//                //set.addAll(toAdd);
-//            }
-//        }
-//
-//        if(TYPE.context.equals(_primaryType))
-//        {
-//            Set<ClientDependency> md = _module.getClientDependencies(c, u);
-//            for (ClientDependency cd : md)
-//            {
-//                LinkedHashSet<ClientDependency> toAdd = cd.getUniqueDependencySet(c, u, set);
-//                set.add(cd);
-//                //set.addAll(toAdd);
-//            }
-//        }
-//
-//        return set;
-//    }
 
     private LinkedHashSet<ClientDependency> getUniqueDependencySet(Container c)
     {
@@ -496,7 +413,7 @@ public class ClientDependency
         if (_children != null)
             cd.addAll(_children);
 
-        if(TYPE.context.equals(_primaryType))
+        if (TYPE.context.equals(_primaryType))
         {
             if (_module != null)
                 cd.addAll(_module.getClientDependencies(c));

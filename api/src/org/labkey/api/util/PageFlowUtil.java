@@ -1538,7 +1538,7 @@ public class PageFlowUtil
             if (req != null)
             {
                 currentId = req.getId();
-                resources.add(ClientDependency.fromFilePath("miniprofiler"));
+                resources.add(ClientDependency.fromPath("miniprofiler"));
             }
         }
 
@@ -1766,17 +1766,17 @@ public class PageFlowUtil
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
 
         if (AppProps.getInstance().isExt3APIRequired())
-            resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+            resources.add(ClientDependency.fromPath("clientapi/ext3"));
         else if (AppProps.getInstance().isExt3Required())
-            resources.add(ClientDependency.fromFilePath("Ext3"));
+            resources.add(ClientDependency.fromPath("Ext3"));
 
         if (coreClientApiOnly)
-            resources.add(ClientDependency.fromFilePath("clientapi_core"));
+            resources.add(ClientDependency.fromPath("clientapi_core"));
         else
-            resources.add(ClientDependency.fromFilePath("clientapi"));
+            resources.add(ClientDependency.fromPath("clientapi"));
 
         if (!coreClientApiOnly)
-            resources.add(ClientDependency.fromFilePath("internal"));
+            resources.add(ClientDependency.fromPath("internal"));
         return resources;
     }
 

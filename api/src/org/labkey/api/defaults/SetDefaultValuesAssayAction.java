@@ -165,7 +165,7 @@ public class SetDefaultValuesAssayAction extends SetDefaultValuesAction<SetDefau
         }
         HttpView result = super.getView(domainIdForm, reshow, errors);
         // Needed for thaw list participant visit resolvers
-        result.addClientDependency(ClientDependency.fromFilePath("sqv"));
+        result.addClientDependency(ClientDependency.fromPath("sqv"));
         return result;
 
     }

@@ -50,7 +50,7 @@ public class JavaScriptDisplayColumn extends DataColumn
         if (null != dependencies)
         {
             for (String dependency : dependencies)
-                _dependencies.add(ClientDependency.fromFilePath(dependency));
+                _dependencies.add(ClientDependency.fromPath(dependency));
         }
 
         _eventExpression = StringExpressionFactory.FieldKeyStringExpression.create(javaScriptEvents, false, StringExpressionFactory.AbstractStringExpression.NullValueBehavior.OutputNull);

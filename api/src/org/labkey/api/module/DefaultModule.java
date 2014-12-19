@@ -259,7 +259,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     final public void startup(ModuleContext moduleContext)
     {
         Resource xml = getModuleResolver().lookup(Path.parse(XML_FILENAME));
-        if(xml != null)
+        if (xml != null)
             loadXmlFile(xml);
 
         doStartup(moduleContext);
@@ -928,9 +928,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
                 {
                     for (DependencyType rt : mt.getClientDependencies().getDependencyArray())
                     {
-                        if (rt.getPath() != null)
+                        String path = rt.getPath();
+                        if (path != null)
                         {
-                            ClientDependency cd = ClientDependency.fromFilePath(rt.getPath());
+                            ClientDependency cd = ClientDependency.fromPath(path);
                             if (cd != null)
                                 _clientDependencies.add(cd);
                         }

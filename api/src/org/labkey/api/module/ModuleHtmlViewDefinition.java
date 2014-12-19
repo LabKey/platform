@@ -218,7 +218,7 @@ public class ModuleHtmlViewDefinition
         {
             if (null != r.getPath())
             {
-                ClientDependency cr = ClientDependency.fromFilePath(r.getPath());
+                ClientDependency cr = ClientDependency.fromPath(r.getPath());
 
                 if (cr != null)
                     result.add(cr);

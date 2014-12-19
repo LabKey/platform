@@ -30,16 +30,16 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromFilePath("FileUploadField.js"));
-      resources.add(ClientDependency.fromFilePath("StatusBar.js"));
-      resources.add(ClientDependency.fromFilePath("fileBrowser.js"));
-      resources.add(ClientDependency.fromFilePath("Reorderer.js"));
-      resources.add(ClientDependency.fromFilePath("ToolbarDroppable.js"));
-      resources.add(ClientDependency.fromFilePath("ToolbarReorderer.js"));
-      resources.add(ClientDependency.fromFilePath("ActionsAdmin.js"));
-      resources.add(ClientDependency.fromFilePath("PipelineAction.js"));
-      resources.add(ClientDependency.fromFilePath("FileProperties.js"));
-      resources.add(ClientDependency.fromFilePath("FileContent.js"));
+      resources.add(ClientDependency.fromPath("FileUploadField.js"));
+      resources.add(ClientDependency.fromPath("StatusBar.js"));
+      resources.add(ClientDependency.fromPath("fileBrowser.js"));
+      resources.add(ClientDependency.fromPath("Reorderer.js"));
+      resources.add(ClientDependency.fromPath("ToolbarDroppable.js"));
+      resources.add(ClientDependency.fromPath("ToolbarReorderer.js"));
+      resources.add(ClientDependency.fromPath("ActionsAdmin.js"));
+      resources.add(ClientDependency.fromPath("PipelineAction.js"));
+      resources.add(ClientDependency.fromPath("FileProperties.js"));
+      resources.add(ClientDependency.fromPath("FileContent.js"));
       return resources;
   }
 %>

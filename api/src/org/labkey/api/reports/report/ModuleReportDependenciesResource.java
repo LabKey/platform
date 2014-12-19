@@ -67,12 +67,7 @@ public class ModuleReportDependenciesResource extends ModuleReportResource
                         {
                             String path = depend.getPath();
                             if (null != path)
-                            {
-                                if (ClientDependency.isExternalDependency(path))
-                                    _dependencies.add(ClientDependency.fromURIPath(path));
-                                else
-                                    _dependencies.add(ClientDependency.fromFilePath(depend.getPath()));
-                            }
+                                _dependencies.add(ClientDependency.fromPath(path));
                         }
                     }
                 }

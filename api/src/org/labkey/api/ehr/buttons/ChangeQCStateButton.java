@@ -36,7 +36,7 @@ public class ChangeQCStateButton extends SimpleButtonConfigFactory
 {
     public ChangeQCStateButton(Module owner)
     {
-        this(owner, "EHR.window.ChangeRequestStatusWindow", Collections.singleton(ClientDependency.fromFilePath("ehr/window/ChangeRequestStatusWindow.js")));
+        this(owner, "EHR.window.ChangeRequestStatusWindow", Collections.singleton(ClientDependency.fromPath("ehr/window/ChangeRequestStatusWindow.js")));
     }
 
     public ChangeQCStateButton(Module owner, @Nullable String jsClass, @Nullable Set<ClientDependency> clientDependencies)

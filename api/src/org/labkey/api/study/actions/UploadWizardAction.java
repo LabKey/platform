@@ -326,7 +326,7 @@ public class UploadWizardAction<FormType extends AssayRunUploadForm<ProviderType
 
         JspView<AssayRunUploadForm> headerView = new JspView<AssayRunUploadForm>("/org/labkey/study/assay/view/newUploadSet.jsp", runForm);
         // Needed for thaw list participant visit resolvers
-        headerView.addClientDependency(ClientDependency.fromFilePath("sqv"));
+        headerView.addClientDependency(ClientDependency.fromPath("sqv"));
         return new VBox(headerView, insertView);
     }
 

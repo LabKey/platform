@@ -2645,7 +2645,7 @@ public class QueryView extends WebPartView<Object>
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        resources.add(ClientDependency.fromPath("clientapi/ext3"));
         resources.addAll(super.getClientDependencies());
 
         ButtonBarConfig cfg = _buttonBarConfig;
@@ -2668,7 +2668,7 @@ public class QueryView extends WebPartView<Object>
         {
             for (String script : cfg.getScriptIncludes())
             {
-                resources.add(ClientDependency.fromFilePath(script));
+                resources.add(ClientDependency.fromPath(script));
             }
         }
 

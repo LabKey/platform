@@ -71,7 +71,7 @@ abstract public class AbstractFormSection implements FormSection
         _xtype = xtype;
         _location = location;
 
-        addClientDependency(ClientDependency.fromFilePath("ehr/window/CopyFromSectionWindow.js"));
+        addClientDependency(ClientDependency.fromPath("ehr/window/CopyFromSectionWindow.js"));
     }
 
     public String getName()
