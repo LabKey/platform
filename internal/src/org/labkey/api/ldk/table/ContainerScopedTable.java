@@ -169,7 +169,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
         }
 
         @Override
-        public List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+        public List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
         {
             int idx = 1;
             for (Map<String,Object> row : rows)
@@ -185,7 +185,7 @@ public class ContainerScopedTable<SchemaType extends UserSchema> extends CustomP
                 idx++;
             }
 
-            return super.insertRows(user, container, rows, errors, extraScriptContext);
+            return super.insertRows(user, container, rows, errors, configParameters, extraScriptContext);
         }
 
         @Override

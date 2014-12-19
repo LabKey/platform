@@ -17,6 +17,9 @@ package org.labkey.api.etl;
 
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
+
+import java.util.Map;
+
 import static org.labkey.api.query.QueryUpdateService.InsertOption.*;
 
 /**
@@ -42,6 +45,8 @@ public class DataIteratorContext
                                                // making it the responsibility of the Context creator to manage auto-incrementing.
 
     int _maxRowErrors = 1;
+
+    private Map<Enum, Object> _configParameters;
 
     public DataIteratorContext()
     {
@@ -127,5 +132,16 @@ public class DataIteratorContext
             return;
         if (_failFast || _errors.getRowErrors().size() > _maxRowErrors)
             throw _errors;
+    }
+
+    /** Extra parameters associated with the DataIterator sequence. */
+    public void setConfigParameters(Map<Enum, Object> configParameters)
+    {
+        _configParameters = configParameters;
+    }
+
+    public Map<Enum, Object> getConfigParameters()
+    {
+        return _configParameters;
     }
 }

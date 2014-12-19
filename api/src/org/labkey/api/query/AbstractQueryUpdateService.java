@@ -97,12 +97,13 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
 
-    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption forImport)
+    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption forImport, Map<Enum, Object> configParameters)
     {
         if (null == errors)
             errors = new BatchValidationException();
         DataIteratorContext context = new DataIteratorContext(errors);
         context.setInsertOption(forImport);
+        context.setConfigParameters(configParameters);
         return context;
     }
 
@@ -135,7 +136,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         {
             while (mapIterator.next())
                 list.add(mapIterator.getMap());
-            ret = insertRows(user, container, list, errors, extraScriptContext);
+            ret = insertRows(user, container, list, errors, null, extraScriptContext);
             if (errors.hasErrors())
                 return 0;
             return ret.size();
@@ -222,20 +223,14 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
 
 
     @Override
-    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
-            throws SQLException
-    {
-        return importRows(user, container, rows, errors, null, extraScriptContext);
-    }
-
-    @Override
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws SQLException
     {
-        return _importRowsUsingInsertRows(user,container,rows.getDataIterator(new DataIteratorContext(errors)),errors,configParameters,extraScriptContext);
+        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
+        return _importRowsUsingInsertRows(user,container,rows.getDataIterator(context),errors,configParameters,extraScriptContext);
     }
 
     @Override
-    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws SQLException
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
         throw new UnsupportedOperationException("merge is not supported for all tables");
     }
@@ -395,7 +390,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
         return newRow;
     }
 
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         try
@@ -444,7 +439,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected abstract Map<String, Object> updateRow(User user, Container container, Map<String, Object> row, @NotNull Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
 
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, UpdatePermission.class))
@@ -502,7 +497,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     protected abstract Map<String, Object> deleteRow(User user, Container container, Map<String, Object> oldRow)
             throws InvalidKeyException, ValidationException, QueryUpdateServiceException, SQLException;
     
-    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, DeletePermission.class))
@@ -562,7 +557,7 @@ public abstract class AbstractQueryUpdateService implements QueryUpdateService
     }
 
     @Override
-    public int truncateRows(User user, Container container, Map<String, Object> extraScriptContext)
+    public int truncateRows(User user, Container container, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, DeletePermission.class))

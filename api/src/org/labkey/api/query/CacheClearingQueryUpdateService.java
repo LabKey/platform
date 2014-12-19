@@ -48,17 +48,9 @@ public abstract class CacheClearingQueryUpdateService implements QueryUpdateServ
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext) throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = _service.insertRows(user, container, rows, errors, extraScriptContext);
-        clearCache();
-        return result;
-    }
-
-    @Override
-    public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext) throws SQLException
-    {
-        int result = _service.importRows(user, container, rows, errors, extraScriptContext);
+        List<Map<String, Object>> result = _service.insertRows(user, container, rows, errors, configParameters, extraScriptContext);
         clearCache();
         return result;
     }
@@ -72,33 +64,33 @@ public abstract class CacheClearingQueryUpdateService implements QueryUpdateServ
     }
 
     @Override
-    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext) throws SQLException
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws SQLException
     {
-        int result = _service.mergeRows(user, container, rows, errors, extraScriptContext);
+        int result = _service.mergeRows(user, container, rows, errors, configParameters, extraScriptContext);
         clearCache();
         return result;
     }
 
     @Override
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = _service.updateRows(user, container, rows, oldKeys, extraScriptContext);
+        List<Map<String, Object>> result = _service.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
         clearCache();
         return result;
     }
 
     @Override
-    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = _service.deleteRows(user, container, keys, extraScriptContext);
+        List<Map<String, Object>> result = _service.deleteRows(user, container, keys, configParameters, extraScriptContext);
         clearCache();
         return result;
     }
 
     @Override
-    public int truncateRows(User user, Container container, Map<String, Object> extraScriptContext) throws BatchValidationException, QueryUpdateServiceException, SQLException
+    public int truncateRows(User user, Container container, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        int result = _service.truncateRows(user, container, extraScriptContext);
+        int result = _service.truncateRows(user, container, configParameters, extraScriptContext);
         clearCache();
         return result;
     }

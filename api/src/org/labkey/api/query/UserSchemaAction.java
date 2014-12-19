@@ -26,7 +26,6 @@ import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TableInfo;
-import org.labkey.api.security.UserManager;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.ExceptionUtil;
@@ -196,7 +195,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
                 if (insert)
                 {
                     BatchValidationException batchErrors = new BatchValidationException();
-                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null);
+                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null, null);
                     if (batchErrors.hasErrors())
                         throw batchErrors;
                 }
@@ -212,7 +211,7 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
 
                     // 18292 - updateRows expects a null list in the case of an "empty" or null map.
                     List<Map<String, Object>> oldKeys = (oldValues == null || oldValues.isEmpty()) ? null : Collections.singletonList(oldValues);
-                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), oldKeys, null);
+                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), oldKeys, null, null);
                 }
 
                 transaction.commit();

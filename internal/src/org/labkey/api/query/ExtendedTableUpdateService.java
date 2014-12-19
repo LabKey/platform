@@ -16,6 +16,7 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.etl.DataIteratorBuilder;
@@ -57,9 +58,9 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
-        return super.insertRows(user, container, rows, errors, extraScriptContext);
+        return super.insertRows(user, container, rows, errors, configParameters, extraScriptContext);
     }
 
     @Override
@@ -74,7 +75,7 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
         Map<String, Object> updatedRow = super.updateRow(user, container, row, oldRow);
         try
         {
-            _baseTableUpdateService.updateRows(user, container, Arrays.asList(row), Arrays.asList(oldRow), null);
+            _baseTableUpdateService.updateRows(user, container, Arrays.asList(row), Arrays.asList(oldRow), null, null);
         }
         catch (BatchValidationException e)
         {
@@ -90,7 +91,7 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
         Map<String, Object> row = super.deleteRow(user, container, oldRowMap);
         try
         {
-            _baseTableUpdateService.deleteRows(user, container, Arrays.asList(oldRowMap), null);
+            _baseTableUpdateService.deleteRows(user, container, Arrays.asList(oldRowMap), null, null);
         }
         catch (BatchValidationException e)
         {
@@ -100,7 +101,7 @@ public class ExtendedTableUpdateService extends SimpleQueryUpdateService
     }
 
     @Override
-    public int truncateRows(User user, Container container, Map<String, Object> extraScriptContext)
+    public int truncateRows(User user, Container container, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws BatchValidationException, QueryUpdateServiceException, SQLException
     {
         throw new UnsupportedOperationException("truncate is not supported for all tables");

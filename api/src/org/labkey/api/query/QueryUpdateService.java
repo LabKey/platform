@@ -95,6 +95,8 @@ public interface QueryUpdateService
      * @param user The current user.
      * @param container The container in which the data should exist.
      * @param rows The row values as maps.
+     * @param configParameters
+     * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers.
      * @return The row values after insert. If the rows have an automatically-assigned
      * primary key value(s), those should be added to the returned map. However, the
      * implementation should not completely refetch the row data. The caller will use
@@ -105,7 +107,7 @@ public interface QueryUpdateService
      * @throws DuplicateKeyException Thrown if primary key values were supplied in the map
      */
     public List<Map<String,Object>> insertRows(User user, Container container, List<Map<String, Object>> rows,
-            BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext)
+                                               BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
         throws DuplicateKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /**
@@ -115,14 +117,13 @@ public interface QueryUpdateService
      * @param user The current user.
      * @param container The container in which the data should exist.
      * @param rows The row values provided using a DataIterator.
+     * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers.
      * @return The row values after insert. If the rows have an automatically-assigned
      * primary key value(s), those should be added to the returned map. However, the
      * implementation should not completely refetch the row data. The caller will use
      * <code>getRows()</code> to refetch if that behavior is necessary.
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
-    public int importRows(User user, Container container, DataIteratorBuilder rows,
-          BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext) throws SQLException;
     public int importRows(User user, Container container, DataIteratorBuilder rows,
           BatchValidationException errors, Map<Enum,Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws SQLException;
 
@@ -133,6 +134,8 @@ public interface QueryUpdateService
      * @param user The current user.
      * @param container The container in which the data should exist.
      * @param rows The row values provided using a DataIterator.
+     * @param configParameters
+     * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers.
      * @return The row values after insert. If the rows have an automatically-assigned
      * primary key value(s), those should be added to the returned map. However, the
      * implementation should not completely refetch the row data. The caller will use
@@ -140,7 +143,7 @@ public interface QueryUpdateService
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
     public int mergeRows(User user, Container container, DataIteratorBuilder rows,
-                          BatchValidationException errors, @Nullable Map<String, Object> extraScriptContext)
+                         BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws SQLException;
 
     /**
@@ -152,6 +155,8 @@ public interface QueryUpdateService
      * not automatically assigned by the database, and if the row map contains
      * modified key values, the client may pass the old key values in this parameter.
      * If the key values cannot or did not change, pass null.
+     * @param configParameters
+     * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers.
      * @return The row values after update. However, the implementation should not
      * completely refetch the row data for this returned map. The caller will use
      * the <code>getRow()</code> method to refetch if that behavior is necessary.
@@ -161,7 +166,7 @@ public interface QueryUpdateService
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
     public List<Map<String,Object>> updateRows(User user, Container container, List<Map<String, Object>> rows,
-                                               List<Map<String, Object>> oldKeys, @Nullable Map<String, Object> extraScriptContext)
+                                               List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /**
@@ -169,13 +174,15 @@ public interface QueryUpdateService
      * @param user The current user.
      * @param container The container in which the row should exist.
      * @param keys The list of primary key values as maps.
+     * @param configParameters
+     * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers.
      * @return The primary key values passed as the keys parameter.
      * @throws InvalidKeyException Thrown if the primary key values are not valid.
      * @throws BatchValidationException Thrown if the data fails one of the validation checks
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
-    public List<Map<String,Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext)
+    public List<Map<String,Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /**
@@ -183,13 +190,14 @@ public interface QueryUpdateService
      * where clause.  Note that this function will fire batch triggers but not row-level triggers.
      * @param user The current user.
      * @param container The container in which the row should exist.
+     * @param configParameters
      * @param extraScriptContext Optional additional bindings to set in the script's context when firing batch triggers.
      * @return the number of rows deleted
      * @throws BatchValidationException Thrown if the data fails one of the validation checks
      * @throws QueryUpdateServiceException Thrown for implementation-specific exceptions.
      * @throws SQLException Thrown if there was an error communicating with the database.
      */
-    public int truncateRows(User user, Container container, Map<String, Object> extraScriptContext)
+    public int truncateRows(User user, Container container, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws BatchValidationException, QueryUpdateServiceException, SQLException;
 
     /**
