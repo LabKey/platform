@@ -30,7 +30,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("dataview/ManageNotifications.js"));
+        resources.add(ClientDependency.fromPath("dataview/ManageNotifications.js"));
         return resources;
     }
 %>

@@ -25,9 +25,9 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("Ext3"));
-        resources.add(ClientDependency.fromFilePath("editInPlaceElement.css"));
-        resources.add(ClientDependency.fromFilePath("editInPlaceElement.js"));
+        resources.add(ClientDependency.fromPath("Ext3"));
+        resources.add(ClientDependency.fromPath("editInPlaceElement.css"));
+        resources.add(ClientDependency.fromPath("editInPlaceElement.js"));
         return resources;
     }
 %>

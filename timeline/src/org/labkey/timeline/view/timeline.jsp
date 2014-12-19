@@ -25,11 +25,11 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("Ext3"));
-        resources.add(ClientDependency.fromFilePath("timeline.js"));
-        resources.add(ClientDependency.fromFilePath("similetimeline/bundle.js"));
-        resources.add(ClientDependency.fromFilePath("similetimeline/scripts/l10n/en/timeline.js"));
-        resources.add(ClientDependency.fromFilePath("similetimeline/scripts/l10n/en/labellers.js"));
+        resources.add(ClientDependency.fromPath("Ext3"));
+        resources.add(ClientDependency.fromPath("timeline.js"));
+        resources.add(ClientDependency.fromPath("similetimeline/bundle.js"));
+        resources.add(ClientDependency.fromPath("similetimeline/scripts/l10n/en/timeline.js"));
+        resources.add(ClientDependency.fromPath("similetimeline/scripts/l10n/en/labellers.js"));
         return resources;
     }
 %>

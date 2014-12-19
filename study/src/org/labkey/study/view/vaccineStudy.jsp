@@ -38,7 +38,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("study/StudyVaccineDesign.css"));
+        resources.add(ClientDependency.fromPath("study/StudyVaccineDesign.css"));
         return resources;
     }
 %>

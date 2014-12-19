@@ -32,13 +32,13 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
-        resources.add(ClientDependency.fromFilePath("/survey/SurveyGridQuestion.js"));
-        resources.add(ClientDependency.fromFilePath("/survey/AttachmentField.js"));
-        resources.add(ClientDependency.fromFilePath("/survey/UsersCombo.js"));
-        resources.add(ClientDependency.fromFilePath("/survey/BaseSurveyPanel.js"));
-        resources.add(ClientDependency.fromFilePath("/survey/SurveyPanel.js"));
-        resources.add(ClientDependency.fromFilePath("/survey/Survey.css"));
+        resources.add(ClientDependency.fromPath("Ext4ClientApi"));
+        resources.add(ClientDependency.fromPath("/survey/SurveyGridQuestion.js"));
+        resources.add(ClientDependency.fromPath("/survey/AttachmentField.js"));
+        resources.add(ClientDependency.fromPath("/survey/UsersCombo.js"));
+        resources.add(ClientDependency.fromPath("/survey/BaseSurveyPanel.js"));
+        resources.add(ClientDependency.fromPath("/survey/SurveyPanel.js"));
+        resources.add(ClientDependency.fromPath("/survey/Survey.css"));
         return resources;
     }
 %>

@@ -31,9 +31,9 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromFilePath("dataviews"));
-      resources.add(ClientDependency.fromFilePath("study/StudySchedule.css"));
-      resources.add(ClientDependency.fromFilePath("study/StudyScheduleGrid.js"));
+      resources.add(ClientDependency.fromPath("dataviews"));
+      resources.add(ClientDependency.fromPath("study/StudySchedule.css"));
+      resources.add(ClientDependency.fromPath("study/StudyScheduleGrid.js"));
       return resources;
   }
 %>

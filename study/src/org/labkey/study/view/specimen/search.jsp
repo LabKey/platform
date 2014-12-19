@@ -26,13 +26,13 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromFilePath("clientapi"));
-      resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
-      resources.add(ClientDependency.fromFilePath("extWidgets/SearchPanel.js"));
-      resources.add(ClientDependency.fromFilePath("study/redesignUtils.js"));
-      resources.add(ClientDependency.fromFilePath("ux/CheckCombo/CheckCombo.js"));
-      resources.add(ClientDependency.fromFilePath("ux/CheckCombo/CheckCombo.css"));
-      resources.add(ClientDependency.fromFilePath("study/SpecimenSearchPanel.js"));
+      resources.add(ClientDependency.fromPath("clientapi"));
+      resources.add(ClientDependency.fromPath("Ext4ClientApi"));
+      resources.add(ClientDependency.fromPath("extWidgets/SearchPanel.js"));
+      resources.add(ClientDependency.fromPath("study/redesignUtils.js"));
+      resources.add(ClientDependency.fromPath("ux/CheckCombo/CheckCombo.js"));
+      resources.add(ClientDependency.fromPath("ux/CheckCombo/CheckCombo.css"));
+      resources.add(ClientDependency.fromPath("study/SpecimenSearchPanel.js"));
       resources.add(ClientDependency.fromModuleName("Study"));
       return resources;
   }

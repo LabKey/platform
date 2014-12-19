@@ -31,8 +31,8 @@
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         //Need to include the Helper for a use of the form panel configuration.
-        resources.add(ClientDependency.fromFilePath("Ext4"));
-        resources.add(ClientDependency.fromFilePath("sqv"));
+        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("sqv"));
         return resources;
     }
 %>

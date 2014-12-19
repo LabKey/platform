@@ -23,10 +23,10 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("clientapi/ext4"));
-        resources.add(ClientDependency.fromFilePath("schemaBrowser.css"));
-        resources.add(ClientDependency.fromFilePath("_images/icons.css"));
-        resources.add(ClientDependency.fromFilePath("schemaBrowser.js"));
+        resources.add(ClientDependency.fromPath("clientapi/ext4"));
+        resources.add(ClientDependency.fromPath("schemaBrowser.css"));
+        resources.add(ClientDependency.fromPath("_images/icons.css"));
+        resources.add(ClientDependency.fromPath("schemaBrowser.js"));
         return resources;
     }
 %>

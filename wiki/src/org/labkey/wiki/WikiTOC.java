@@ -168,7 +168,7 @@ public class WikiTOC extends NavTreeMenu
     {
         // add dependent client-side scripts
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("wiki/internal/Wiki.js"));
+        resources.add(ClientDependency.fromPath("wiki/internal/Wiki.js"));
         return resources;
     }
 

@@ -1037,7 +1037,7 @@ public class FolderManagementAction extends FormViewAction<FolderManagementActio
             if (_errors.hasErrors() && null != StringUtils.trimToNull(form.getTabId()))
                 setSelectedTabId(form.getTabId());
 
-            addClientDependency(ClientDependency.fromFilePath("clientapi/ext3"));
+            addClientDependency(ClientDependency.fromPath("clientapi/ext3"));
         }
 
         public List<NavTree> getTabList()

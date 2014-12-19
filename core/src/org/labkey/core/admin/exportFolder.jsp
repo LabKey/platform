@@ -35,7 +35,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
+        resources.add(ClientDependency.fromPath("clientapi/ext3"));
         return resources;
     }
 %>

@@ -27,9 +27,9 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("clientapi/ext3")); // nested query webpart
-        resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
-        resources.add(ClientDependency.fromFilePath("study/ParticipantGroup.js"));
+        resources.add(ClientDependency.fromPath("clientapi/ext3")); // nested query webpart
+        resources.add(ClientDependency.fromPath("Ext4ClientApi"));
+        resources.add(ClientDependency.fromPath("study/ParticipantGroup.js"));
         return resources;
     }
 %>

@@ -29,7 +29,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("Ext4ClientApi"));
+        resources.add(ClientDependency.fromPath("Ext4ClientApi"));
         return resources;
     }
 %>

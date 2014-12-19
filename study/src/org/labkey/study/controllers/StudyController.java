@@ -975,7 +975,7 @@ public class StudyController extends BaseStudyController
             HtmlView header = new HtmlView(sb.toString());
 
             LinkedHashSet<ClientDependency> dependencies = new LinkedHashSet<>();
-            dependencies.add(ClientDependency.fromFilePath("study/ParticipantGroup.js"));
+            dependencies.add(ClientDependency.fromPath("study/ParticipantGroup.js"));
 
             header.addClientDependencies(dependencies);
             VBox view = new VBox(header, queryView);

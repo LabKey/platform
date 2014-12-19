@@ -31,7 +31,7 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("nav/betanav.css"));
+        resources.add(ClientDependency.fromPath("nav/betanav.css"));
         return resources;
     }
 %>

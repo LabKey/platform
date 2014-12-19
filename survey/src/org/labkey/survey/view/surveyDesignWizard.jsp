@@ -26,10 +26,10 @@
   public LinkedHashSet<ClientDependency> getClientDependencies()
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-      resources.add(ClientDependency.fromFilePath("Ext4"));
-      resources.add(ClientDependency.fromFilePath("codemirror"));
-      resources.add(ClientDependency.fromFilePath("sqv"));
-      resources.add(ClientDependency.fromFilePath("/survey/surveyDesignPanel.js"));
+      resources.add(ClientDependency.fromPath("Ext4"));
+      resources.add(ClientDependency.fromPath("codemirror"));
+      resources.add(ClientDependency.fromPath("sqv"));
+      resources.add(ClientDependency.fromPath("/survey/surveyDesignPanel.js"));
       return resources;
   }
 %>

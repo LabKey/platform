@@ -50,8 +50,8 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("Ext4"));
-        resources.add(ClientDependency.fromFilePath("study/ParticipantFilterPanel.js"));
+        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("study/ParticipantFilterPanel.js"));
         return resources;
     }
 %>

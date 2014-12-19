@@ -38,7 +38,7 @@ public class PipelineWebPart extends WebPartView
     {
         setTitle(getPartName());
         setTitleHref(StatusController.urlShowList(viewContext.getContainer(), false));
-        addClientDependency(ClientDependency.fromFilePath("clientapi/ext3"));
+        addClientDependency(ClientDependency.fromPath("clientapi/ext3"));
     }
 
     @Override

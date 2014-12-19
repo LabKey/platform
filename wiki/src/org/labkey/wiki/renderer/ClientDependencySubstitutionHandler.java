@@ -35,7 +35,7 @@ public class ClientDependencySubstitutionHandler implements HtmlRenderer.Substit
         }
 
         LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>();
-        ClientDependency cd = ClientDependency.fromFilePath(params.get("path"));
+        ClientDependency cd = ClientDependency.fromPath(params.get("path"));
         if (cd == null)
             return new FormattedHtml("<br><font class='error' color='red'>Error: unknown path: " + params.get("path") + "</font>");
 

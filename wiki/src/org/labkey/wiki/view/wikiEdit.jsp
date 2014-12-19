@@ -33,9 +33,9 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("clientapi/ext3"));
-        resources.add(ClientDependency.fromFilePath("tiny_mce/tiny_mce.js"));
-        resources.add(ClientDependency.fromFilePath("wiki/internal/wikiEdit.js"));
+        resources.add(ClientDependency.fromPath("clientapi/ext3"));
+        resources.add(ClientDependency.fromPath("tiny_mce/tiny_mce.js"));
+        resources.add(ClientDependency.fromPath("wiki/internal/wikiEdit.js"));
         return resources;
     }
 %>

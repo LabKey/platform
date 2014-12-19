@@ -29,7 +29,7 @@
   {
       LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
       //Need to include the Util for a use of the form panel configuration.
-      resources.add(ClientDependency.fromFilePath("clientapi/ext4"));
+      resources.add(ClientDependency.fromPath("clientapi/ext4"));
       return resources;
   }
 %>

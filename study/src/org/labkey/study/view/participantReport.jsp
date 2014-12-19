@@ -32,10 +32,10 @@
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromFilePath("Ext4"));
-        resources.add(ClientDependency.fromFilePath("TemplateHelper.js"));
-        resources.add(ClientDependency.fromFilePath("/study/ParticipantReport.js"));
-        resources.add(ClientDependency.fromFilePath("/study/MeasurePicker.js"));
+        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("TemplateHelper.js"));
+        resources.add(ClientDependency.fromPath("/study/ParticipantReport.js"));
+        resources.add(ClientDependency.fromPath("/study/MeasurePicker.js"));
         return resources;
     }
 %>
