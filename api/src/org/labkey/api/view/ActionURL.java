@@ -482,6 +482,10 @@ public class ActionURL extends URLHelper implements Cloneable
         }
 
         String path = uri.getPath();
+        if (path == null)
+        {
+            throw new IllegalArgumentException("No path found in URI: " + p);
+        }
         if (path.startsWith(context))
         {
             if (!"/".equals(context))
