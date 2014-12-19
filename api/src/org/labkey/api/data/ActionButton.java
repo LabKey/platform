@@ -436,7 +436,9 @@ public class ActionButton extends DisplayElement implements Cloneable
             if (_script != null)
                 onClickScript.append(getScript(ctx));
 
-            attributes.append("name='").append(getActionName(ctx)).append("'");
+            String actionName = getActionName(ctx);
+            if (actionName != null)
+                attributes.append("name='").append(actionName).append("'");
             out.write(PageFlowUtil.button(getCaption(ctx)).submit(true).onClick(onClickScript.toString()).attributes(attributes.toString()).toString());
         }
         else if (_actionType.equals(Action.LINK))
