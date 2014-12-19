@@ -737,21 +737,14 @@ public class StatusController extends SpringActionController
         {
             Set<String> runs = DataRegionSelection.getSelected(getViewContext(), true);
 
-            int i = 0;
-            int[] rowIds = new int[runs.size()];
-            for (String run : runs)
+            try
             {
-                try
-                {
-                    rowIds[i++] = Integer.parseInt(run);
-                }
-                catch (NumberFormatException e)
-                {
-                    reject(errors, "The run " + run + " is not a valid number.");
-                    return;
-                }
+                form.setRowIds(PageFlowUtil.toInts(runs));
             }
-            form.setRowIds(rowIds);
+            catch (NumberFormatException e)
+            {
+                reject(errors, "Invalid run: " + e.getMessage());
+            }
         }
 
         @Override

@@ -357,9 +357,9 @@ public class MothershipController extends SpringActionController
 
         public boolean handlePost(Object o, BindException errors) throws Exception
         {
-            Set<String> releaseIds = DataRegionSelection.getSelected(getViewContext(), true);
-            for (String releaseId : releaseIds)
-                MothershipManager.get().deleteSoftwareRelease(getContainer(), Integer.parseInt(releaseId));
+            Set<Integer> releaseIds = DataRegionSelection.getSelectedIntegers(getViewContext(), true);
+            for (Integer releaseId : releaseIds)
+                MothershipManager.get().deleteSoftwareRelease(getContainer(), releaseId);
             return true;
         }
 

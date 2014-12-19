@@ -318,16 +318,16 @@ public class ListController extends SpringActionController
     @RequiresPermissionClass(AdminPermission.class)
     public class DeleteListDefinitionAction extends ConfirmAction<ListDefinitionForm>
     {
-        private ArrayList<Integer> _listIDs = new ArrayList<Integer>();
-        private ArrayList<Container> _containers = new ArrayList<Container>();
+        private ArrayList<Integer> _listIDs = new ArrayList<>();
+        private ArrayList<Container> _containers = new ArrayList<>();
 
         public void validateCommand(ListDefinitionForm form, Errors errors)
         {
-            if(form.getListId() == null)
+            if (form.getListId() == null)
             {
                 String failMessage = "You do not have permission to delete: \n";
                 Set<String> listIDs = DataRegionSelection.getSelected(form.getViewContext(), true);
-                for(String s : listIDs)
+                for (String s : listIDs)
                 {
                     String[] parts = s.split(",");
                     Container c = ContainerManager.getForId(parts[1]);

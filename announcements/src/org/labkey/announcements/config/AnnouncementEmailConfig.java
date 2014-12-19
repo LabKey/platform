@@ -62,9 +62,7 @@ public class AnnouncementEmailConfig extends AbstractConfigTypeProvider
     @Override
     public void validateCommand(ViewContext context, Errors errors)
     {
-        Set<String> selected = DataRegionSelection.getSelected(context, false);
-
-        if (selected.isEmpty())
+        if (!DataRegionSelection.hasSelected(context))
             errors.reject(SpringActionController.ERROR_MSG, "There are no users selected for this update.");
     }
 

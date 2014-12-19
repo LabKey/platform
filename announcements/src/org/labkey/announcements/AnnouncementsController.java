@@ -1627,17 +1627,18 @@ public class AnnouncementsController extends SpringActionController
         @Override
         public ApiResponse execute(AbstractConfigTypeProvider.EmailConfigFormImpl form, BindException errors) throws Exception
         {
-            Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, true);
             ApiSimpleResponse resp = new ApiSimpleResponse();
             MessageConfigService.ConfigTypeProvider provider = form.getProvider();
             String srcIdentifier = getContainer().getId();
 
+            Set<String> selections = DataRegionSelection.getSelected(getViewContext(), form.getDataRegionSelectionKey(), true, true);
+
             if (!selections.isEmpty() && provider != null)
             {
                 int newOption = form.getIndividualEmailOption();
+
                 for (String user : selections)
                 {
-
                     User projectUser = UserManager.getUser(Integer.parseInt(user));
                     MessageConfigService.UserPreference pref = provider.getPreference(getContainer(), projectUser, srcIdentifier);
 
