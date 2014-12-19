@@ -1871,40 +1871,24 @@ public class PageFlowUtil
         if (errors.size() > 0 || (null != scriptWarnings && scriptWarnings.size() > 0))
             throw new IllegalArgumentException("empty errors collection expected");
 
-        String trimmedHtml = StringUtils.trimToEmpty(html);
+        // NOTE: tidy is unhappy if there is nothing but comments and whitespace
+        //       and also about degenerate comments, such as "<!-->"
+        //       We will remove the degenerates from anything we return
+        String htmlWithNoDegenerates = html.replaceAll("<!--*>|<!>", "");
+
+        String trimmedHtml = StringUtils.trimToEmpty(htmlWithNoDegenerates);
 
         // AARON: shouldn't re perseve the whitespace here and return html?
         if (trimmedHtml.length() == 0)
             return "";
 
-        // NOTE: if tidy gets a string that is empty after taking out comments it chokes.
-        boolean stateChange, commentStarted = false;
-        int i;
-        for (i = 0; i < trimmedHtml.length(); i++)
-        {
-            if (!commentStarted)
-            {
-                stateChange = (trimmedHtml.length() >= i + 4) && (trimmedHtml.substring(i, i + 4).equals("<!--"));
-                if (stateChange)
-                {
-                    commentStarted = true;
-                    i += 4;
-                }
-                // break because we have a break in our comments
-                else
-                    break;
-            }
-            else if ((trimmedHtml.length() >= i + 3) && trimmedHtml.substring(i,i+3).equals("-->"))
-            {
-                commentStarted = false;
-                i += 3;
-            }
-        }
-        if (commentStarted || trimmedHtml.endsWith("-->"))
-            return html;
+        trimmedHtml = trimmedHtml.replaceAll("<!--.*?-->", "");
+        trimmedHtml = StringUtils.trimToEmpty(trimmedHtml);
+        if (trimmedHtml.isEmpty())
+            return htmlWithNoDegenerates;
 
         // UNDONE: use convertHtmlToDocument() instead of tidy() to avoid double parsing
-        String xml = TidyUtil.tidyHTML(html, true, errors);
+        String xml = TidyUtil.tidyHTML(trimmedHtml, true, errors);
         if (errors.size() > 0)
             return null;
 
@@ -1938,7 +1922,7 @@ public class PageFlowUtil
             return null;
 
         // let's return html not xhtml
-        String tidy = TidyUtil.tidyHTML(html, false, errors);
+        String tidy = TidyUtil.tidyHTML(htmlWithNoDegenerates, false, errors);
         //FIX: 4528: old code searched for "<body>" but the body element can have attributes
         //and Word includes some when saving as HTML (even Filtered HTML).
         int beginOpenBodyIndex = tidy.indexOf("<body");
@@ -2115,7 +2099,8 @@ public class PageFlowUtil
                 }
                 if ("style".equals(a))
                 {
-                    if ((value.contains("behavior") || value.contains("url") || value.contains("expression")) && !_reported.contains("style"))
+                    String valueStrippedOfComments = value.replaceAll("/\\*.*?\\*/", "");
+                    if ((valueStrippedOfComments.contains("behavior") || valueStrippedOfComments.contains("url") || valueStrippedOfComments.contains("expression")) && !_reported.contains("style"))
                     {
                         _reported.add("style");
                         _errors.add("Style attribute cannot contain behaviors, expresssions, or urls. Error on element <" + qName + ">.");
