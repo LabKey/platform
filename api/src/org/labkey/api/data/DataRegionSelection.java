@@ -97,6 +97,16 @@ public class DataRegionSelection
     }
 
     /**
+     * Tests if selected items are in the request parameters (includes only the current page of a data region and no selected items from session state).
+     * @param context Used to get the selection key
+     * @return true if there are selected item ids, false if not
+     */
+    public static boolean hasSelected(ViewContext context)
+    {
+        return !getSelected(context, null, false, false).isEmpty();
+    }
+
+    /**
      * Get selected items from the request parameters as integers (includes only the current page of a data region and no selected items from session state).
      * @param context Used to get the selection key
      * @param clearSelection Remove the request parameter selected items from session selection state
@@ -234,19 +244,19 @@ public class DataRegionSelection
     {
         QueryView view = new QueryView(form, null);
         TableInfo table = view.getTable();
+
         try (ResultSet rs = view.getResultSet())
         {
             List<String> selection = createSelectionList(rs, table);
             return setSelected(context, key, selection, true);
         }
-
     }
 
-    private static List<String> createSelectionList(ResultSet rs, TableInfo table)
-            throws SQLException
+    private static List<String> createSelectionList(ResultSet rs, TableInfo table) throws SQLException
     {
         List<String> selected = new LinkedList<>();
         List<ColumnInfo> pkColumns = table.getPkColumns();
+
         while (rs.next())
         {
             String and = "";
