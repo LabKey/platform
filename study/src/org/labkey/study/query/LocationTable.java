@@ -17,6 +17,7 @@
 package org.labkey.study.query;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerFilter;
@@ -113,7 +114,7 @@ public class LocationTable extends BaseStudyTable
         }
 
         @Override
-        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+        public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
         {
             if (rows.get(0).get("Label") == null)
                 throw new QueryUpdateServiceException("A Label must be entered");
@@ -121,11 +122,11 @@ public class LocationTable extends BaseStudyTable
             if (rows.get(0).get("LdmsLabCode") == null)
                 throw new QueryUpdateServiceException("You must enter a number for the Ldms Lab Code");
 
-            return super.insertRows(user, container, rows, errors, extraScriptContext);
+            return super.insertRows(user, container, rows, errors, configParameters, extraScriptContext);
         }
 
         @Override
-        public List<Map<String, Object>> updateRows(User user, Container c, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        public List<Map<String, Object>> updateRows(User user, Container c, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
         {
             if (!c.hasPermission(user, AdminPermission.class))
                 throw new UnauthorizedException();
@@ -147,11 +148,11 @@ public class LocationTable extends BaseStudyTable
             if (map.get("LdmsLabCode") == null)
                 throw new QueryUpdateServiceException("You must enter a number for the Ldms Lab Code");
 
-            return super.updateRows(user, c, rows, oldKeys, extraScriptContext);
+            return super.updateRows(user, c, rows, oldKeys, configParameters, extraScriptContext);
         }
 
         @Override
-        public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+        public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
         {
             StudyManager mgr = StudyManager.getInstance();
 
@@ -180,7 +181,7 @@ public class LocationTable extends BaseStudyTable
                     throw new InvalidKeyException("Locations currently in use cannot be deleted");
             }
 
-            return super.deleteRows(user, container, keys, extraScriptContext);
+            return super.deleteRows(user, container, keys, configParameters, extraScriptContext);
         }
     }
 

@@ -701,7 +701,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
             if (insert)
             {
                 BatchValidationException batchErrors = new BatchValidationException();
-                List<Map<String, Object>> updated = qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null);
+                List<Map<String, Object>> updated = qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null, null);
                 if (batchErrors.hasErrors())
                     throw batchErrors;
 
@@ -717,7 +717,7 @@ public class SurveyController extends SpringActionController implements SurveyUr
                     if (!(oldValues instanceof CaseInsensitiveMapWrapper))
                         oldValues = new CaseInsensitiveMapWrapper<>(oldValues);
                 }
-                List<Map<String, Object>> updated = qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null);
+                List<Map<String, Object>> updated = qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), Collections.singletonList(oldValues), null, null);
 
                 assert(updated.size() == 1);
                 row = updated.get(0);

@@ -327,7 +327,7 @@ public class DomainImpl implements Domain
             {
                 try
                 {
-                    kind.getTableInfo(user, getContainer(), getName()).getUpdateService().truncateRows(user, getContainer(), null);
+                    kind.getTableInfo(user, getContainer(), getName()).getUpdateService().truncateRows(user, getContainer(), null, null);
                 }
                 catch (QueryUpdateServiceException | BatchValidationException | SQLException e)
                 {

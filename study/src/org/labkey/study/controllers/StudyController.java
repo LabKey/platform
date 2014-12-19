@@ -1540,7 +1540,7 @@ public class StudyController extends BaseStudyController
                 throw new UnauthorizedException();
             try
             {
-                qus.updateRows(getUser(), getContainer(), Collections.singletonList(values), Collections.singletonList(values), null);
+                qus.updateRows(getUser(), getContainer(), Collections.singletonList(values), Collections.singletonList(values), null, null);
                 List<AttachmentFile> files = getAttachmentFileList();
                 getStudyThrowIfNull().attachProtocolDocument(files, getUser());
             }
@@ -2737,7 +2737,7 @@ public class StudyController extends BaseStudyController
                 QueryUpdateService qus = datasetTable.getUpdateService();
                 assert qus != null;
 
-                qus.deleteRows(getUser(), getContainer(), keys, null);
+                qus.deleteRows(getUser(), getContainer(), keys, null, null);
 
                 transaction.commit();
                 return true;

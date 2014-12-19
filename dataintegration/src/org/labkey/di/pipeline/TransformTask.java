@@ -146,18 +146,19 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
             setTargetStringForURI(meta.getFullTargetString());
 
+            Map<Enum, Object> options = new HashMap<>();
+            options.put(QueryUpdateService.ConfigParameters.Logger, log);
+
             log.info("Target option: " + meta.getTargetOptions());
             switch (meta.getTargetOptions())
             {
                 case merge:
-                    return qus.mergeRows(u, c, source, context.getErrors(), extraContext);
+                    return qus.mergeRows(u, c, source, context.getErrors(), options, extraContext);
                 case truncate:
-                    int rows = qus.truncateRows(u, c, extraContext);
+                    int rows = qus.truncateRows(u, c, options, extraContext);
                     log.info("Deleted " + getNumRowsString(rows) + " from " + meta.getFullTargetString());
-                    return qus.importRows(u, c, source, context.getErrors(), extraContext);
+                    return qus.importRows(u, c, source, context.getErrors(), options, extraContext);
                 case append:
-                    Map<Enum, Object> options = new HashMap<>();
-                    options.put(QueryUpdateService.ConfigParameters.Logger, log);
                     return qus.importRows(u, c, source, context.getErrors(), options, extraContext);
                 default:
                     throw new IllegalArgumentException("Invalid target option specified: " + meta.getTargetOptions());

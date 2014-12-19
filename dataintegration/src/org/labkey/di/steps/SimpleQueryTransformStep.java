@@ -111,8 +111,12 @@ public class SimpleQueryTransformStep extends TransformTask
         }
         DbScope sourceScope = getSourceScope(sourceSchema, targetScope);
 
+        Map<Enum, Object> options = new HashMap<>();
+        options.put(QueryUpdateService.ConfigParameters.Logger, log);
+
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+        context.setConfigParameters(options);
         context.setFailFast(true);
         try
         {

@@ -239,10 +239,10 @@ public class DefaultStudyDesignImporter
                         {
                             if (!(transformHelper instanceof TransformHelper))
                                 throw new ImportException("The specified transform helper does not implement the TransformHelper interface");
-                            insertedRows = qus.insertRows(ctx.getUser(), container, transformHelper.transform(ctx, rows), errors, null);
+                            insertedRows = qus.insertRows(ctx.getUser(), container, transformHelper.transform(ctx, rows), errors, null, null);
                         }
                         else
-                            insertedRows = qus.insertRows(ctx.getUser(), container, rows, errors, null);
+                            insertedRows = qus.insertRows(ctx.getUser(), container, rows, errors, null, null);
 
                         if (transformBuilder != null)
                         {
@@ -253,7 +253,7 @@ public class DefaultStudyDesignImporter
                     }
                     else
                     {
-                        qus.importRows(ctx.getUser(), container, loader, errors, null);
+                        qus.importRows(ctx.getUser(), container, loader, errors, null, null);
                     }
                 }
                 else

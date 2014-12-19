@@ -17,6 +17,7 @@ package org.labkey.experiment.api;
 
 import org.apache.commons.beanutils.converters.IntegerConverter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.Container;
@@ -204,7 +205,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         try
@@ -229,7 +230,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         try
@@ -253,7 +254,7 @@ class SampleSetUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws InvalidKeyException, QueryUpdateServiceException, SQLException
     {
         List<Integer> ids = new LinkedList<>();

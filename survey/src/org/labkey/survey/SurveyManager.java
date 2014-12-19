@@ -425,7 +425,7 @@ public class SurveyManager
                     if (survey.getResponsesPk() != null)
                     {
                         keys.add(Collections.<String, Object>singletonMap(pk.getName(), survey.getResponsesPk()));
-                        qus.deleteRows(user, ContainerManager.getForId(survey.getContainerId()), keys, null);
+                        qus.deleteRows(user, ContainerManager.getForId(survey.getContainerId()), keys, null, null);
                     }
                 }
                 catch (Exception e)

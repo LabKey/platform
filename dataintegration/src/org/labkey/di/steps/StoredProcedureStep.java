@@ -16,6 +16,7 @@
 package org.labkey.di.steps;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -55,6 +56,7 @@ import java.sql.SQLWarning;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -269,7 +271,7 @@ public class StoredProcedureStep extends TransformTask
                     if (firstResult && _meta.isUseTarget())
                     {
                         firstResult = false;
-                        if (!writeToTarget(inlineResult))
+                        if (!writeToTarget(inlineResult, getJob().getLogger()))
                             return false;
                     }
                     else
@@ -446,7 +448,7 @@ public class StoredProcedureStep extends TransformTask
 
         if (procReturns.equals(RETURN_TYPE.RESULTSET) && _meta.isUseTarget()) // Postgres resultset output
         {
-            if (writeToTarget((ResultSet) stmt.getObject(1)))
+            if (writeToTarget((ResultSet) stmt.getObject(1), getJob().getLogger()))
                 returnVal = 0;
             else returnVal = null;
         }
@@ -495,10 +497,14 @@ public class StoredProcedureStep extends TransformTask
     /**
      * Treat the resultset output by the proc the same as a source query output, write it to the specified target
      */
-    private boolean writeToTarget(ResultSet rs)
+    private boolean writeToTarget(ResultSet rs, Logger log)
     {
+        Map<Enum, Object> options = new HashMap<>();
+        options.put(QueryUpdateService.ConfigParameters.Logger, log);
+
         DataIteratorContext context = new DataIteratorContext();
         context.setInsertOption(QueryUpdateService.InsertOption.MERGE);
+        context.setConfigParameters(options);
         context.setFailFast(true);
 
         int transformRunId = getTransformJob().getTransformRunId();

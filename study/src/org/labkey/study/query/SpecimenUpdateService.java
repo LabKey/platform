@@ -79,12 +79,13 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
             if (o instanceof org.apache.log4j.Logger)
                 _logger = (Logger)o;
         }
-        return _importRowsUsingInsertRows(user,container,rows.getDataIterator(new DataIteratorContext(errors)),errors,configParameters,extraScriptContext);
+        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
+        return _importRowsUsingInsertRows(user,container,rows.getDataIterator(context),errors,configParameters,extraScriptContext);
     }
 
 
     @Override
-    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> deleteRows(User user, Container container, List<Map<String, Object>> keys, @Nullable Map<Enum, Object> configParameters, @Nullable Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (!hasPermission(user, DeletePermission.class))
@@ -177,7 +178,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
         Study study = StudyManager.getInstance().getStudy(container);
@@ -312,7 +313,7 @@ public class SpecimenUpdateService extends AbstractQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext)
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
         if (oldKeys != null && rows.size() != oldKeys.size())

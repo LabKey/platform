@@ -208,7 +208,7 @@ public class TreatmentManager
                 List<Map<String, Object>> keys = new ArrayList<>();
                 ColumnInfo treatmentPk = treatmentTable.getColumn(FieldKey.fromParts("RowId"));
                 keys.add(Collections.<String, Object>singletonMap(treatmentPk.getName(), rowId));
-                qus.deleteRows(user, container, keys, null);
+                qus.deleteRows(user, container, keys, null, null);
             }
 
             transaction.commit();
@@ -241,7 +241,7 @@ public class TreatmentManager
                 List<Map<String, Object>> keys = new ArrayList<>();
                 ColumnInfo productPk = productTable.getColumn(FieldKey.fromParts("RowId"));
                 keys.add(Collections.<String, Object>singletonMap(productPk.getName(), rowId));
-                qus.deleteRows(user, container, keys, null);
+                qus.deleteRows(user, container, keys, null, null);
             }
             else
                 throw new IllegalStateException("Could not find table: " + StudyQuerySchema.PRODUCT_TABLE_NAME);
@@ -274,7 +274,7 @@ public class TreatmentManager
                     keys.add(Collections.<String, Object>singletonMap(productAntigenPk.getName(), productAntigenId));
                 }
 
-                qus.deleteRows(user, container, keys, null);
+                qus.deleteRows(user, container, keys, null, null);
             }
             else
                 throw new IllegalStateException("Could not find query update service for table: " + StudyQuerySchema.PRODUCT_ANTIGEN_TABLE_NAME);
@@ -301,7 +301,7 @@ public class TreatmentManager
                     keys.add(Collections.<String, Object>singletonMap(productMapPk.getName(), productMapId));
                 }
 
-                qus.deleteRows(user, container, keys, null);
+                qus.deleteRows(user, container, keys, null, null);
             }
             else
                 throw new IllegalStateException("Could not find query update service for table: " + StudyQuerySchema.TREATMENT_PRODUCT_MAP_TABLE_NAME);

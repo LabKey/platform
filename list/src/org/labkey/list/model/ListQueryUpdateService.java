@@ -120,9 +120,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption insertOption)
+    protected DataIteratorContext getDataIteratorContext(BatchValidationException errors, InsertOption insertOption, Map<Enum, Object> configParameters)
     {
-        DataIteratorContext context = super.getDataIteratorContext(errors, insertOption);
+        DataIteratorContext context = super.getDataIteratorContext(errors, insertOption, configParameters);
         if (insertOption.batch)
         {
             context.setMaxRowErrors(100);
@@ -175,9 +175,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
-    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> insertRows(User user, Container container, List<Map<String, Object>> rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws DuplicateKeyException, QueryUpdateServiceException, SQLException
     {
-        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT);
+        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.INSERT, configParameters);
         List<Map<String, Object>> result = super._insertRowsUsingETL(user, container, rows, context, extraScriptContext);
 
         if (null != result)
@@ -252,17 +252,17 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
 
 
     @Override
-    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<String, Object> extraScriptContext)
+    public int mergeRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext)
             throws SQLException
     {
-        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE), extraScriptContext);
+        return _importRowsUsingETL(user, container, rows, null,  getDataIteratorContext(errors, InsertOption.MERGE, configParameters), extraScriptContext);
     }
 
 
     @Override
     public int importRows(User user, Container container, DataIteratorBuilder rows, BatchValidationException errors, Map<Enum,Object> configParameters, Map<String, Object> extraScriptContext) throws SQLException
     {
-        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT);
+        DataIteratorContext context = getDataIteratorContext(errors, InsertOption.IMPORT, configParameters);
         int count = super._importRowsUsingETL(user, container, rows, null, context, extraScriptContext);
         if (count > 0 && !errors.hasErrors())
             ListManager.get().indexList(_list);
@@ -270,9 +270,9 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
     }
 
     @Override
-    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
+    public List<Map<String, Object>> updateRows(User user, Container container, List<Map<String, Object>> rows, List<Map<String, Object>> oldKeys, @Nullable Map<Enum, Object> configParameters, Map<String, Object> extraScriptContext) throws InvalidKeyException, BatchValidationException, QueryUpdateServiceException, SQLException
     {
-        List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, extraScriptContext);
+        List<Map<String, Object>> result = super.updateRows(user, container, rows, oldKeys, configParameters, extraScriptContext);
         if (result.size() > 0)
             ListManager.get().indexList(_list);
         return result;

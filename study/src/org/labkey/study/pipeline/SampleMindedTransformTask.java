@@ -50,6 +50,7 @@ import org.labkey.api.pipeline.PipelineJobException;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.QuerySchema;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.reader.DataLoaderFactory;
@@ -477,6 +478,10 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
         DbScope scope = target.getSchema().getScope();
         DataIteratorContext context = new DataIteratorContext();
 
+        Map<Enum, Object> options = new HashMap<>();
+        options.put(QueryUpdateService.ConfigParameters.Logger, job.getLogger());
+        context.setConfigParameters(options);
+
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             DataLoaderFactory df = DataLoader.get().findFactory(source, null);
@@ -488,7 +493,7 @@ public class SampleMindedTransformTask extends AbstractSpecimenTransformTask
 
             // would be nice to have deleteAll() in QueryUpdateService
             new SqlExecutor(scope).execute("DELETE FROM rho." + target.getName() + " WHERE container=?", study.getContainer());
-            int count = target.getUpdateService().importRows(job.getUser(), study.getContainer(), sampleminded, context.getErrors(), empty);
+            int count = target.getUpdateService().importRows(job.getUser(), study.getContainer(), sampleminded, context.getErrors(), null, empty);
             if (!context.getErrors().hasErrors())
             {
                 transaction.commit();
