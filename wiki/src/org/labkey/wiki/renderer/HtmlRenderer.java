@@ -77,6 +77,9 @@ public class HtmlRenderer implements WikiRenderer
         if (text == null)
             return new FormattedHtml("");
 
+        // Remove degenerate comments (e.g. "<!-->") as Tidy does not handle them properly
+        text = text.replaceAll("<!--*>|<!>", "");
+
         LinkedHashSet<ClientDependency> cds = new LinkedHashSet<>();
         FormattedHtml formattedHtml = handleLabkeySubstitutions(text);
         boolean volatilePage = formattedHtml.isVolatile();
