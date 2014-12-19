@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.security.permissions.Permission;
 
 /**
 * User: adam
@@ -46,4 +47,19 @@ public enum PHI
         return rank;
     }
     public boolean isLevelAllowed(PHI level) { return this.rank <= level.getRank(); }
+
+    @Nullable
+    public Class<? extends Permission> getRequiredPermission()
+    {
+        switch(this)
+        {
+            case Limited:
+                return LimitedPHIPermission.class;
+            case PHI:
+                return FullPHIPermission.class;
+            case Restricted:
+                return RestrictedPHIPermission.class;
+        }
+        return null;
+    }
 }

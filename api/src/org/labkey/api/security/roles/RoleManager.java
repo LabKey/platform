@@ -70,6 +70,14 @@ public class RoleManager
         registerRole(new TroubleshooterRole());
         registerRole(new SeeEmailAddressesRole());
         registerRole(new CanSeeAuditLogRole());
+
+        // Argos roles
+        registerRole(new ResearchRole());
+        registerRole(new HealthcareRole());
+        registerRole(new QualityAssuranceRole());
+        registerRole(new PublicHealthReportingRole());
+        registerRole(new LimitedPHIRole());
+        registerRole(new FullPHIRole());
     }
 
     public static Role getRole(String name)
