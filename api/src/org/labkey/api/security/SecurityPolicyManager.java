@@ -56,6 +56,8 @@ public class SecurityPolicyManager
         return getPolicy(resource, true);
     }
 
+    private static final RoleAssignment[] NO_ROLES = new RoleAssignment[0];
+
     @NotNull
     public static SecurityPolicy getPolicy(@NotNull final SecurableResource resource, boolean findNearest)
     {
@@ -64,14 +66,16 @@ public class SecurityPolicyManager
             @Override
             public SecurityPolicy load(String key, @Nullable Object argument)
             {
-                SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies())
-                        .getObject(resource.getResourceId(), SecurityPolicyBean.class);
+                SecurityPolicyBean policyBean = new TableSelector(core.getTableInfoPolicies()).getObject(resource.getResourceId(), SecurityPolicyBean.class);
 
-                TableInfo table = core.getTableInfoRoleAssignments();
+                RoleAssignment[] assignments = NO_ROLES;
 
-                SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());
-                Selector selector = new TableSelector(table, filter, new Sort("UserId"));
-                RoleAssignment[] assignments = selector.getArray(RoleAssignment.class);
+                if (null != policyBean)
+                {
+                    SimpleFilter filter = new SimpleFilter(FieldKey.fromParts("ResourceId"), resource.getResourceId());
+                    Selector selector = new TableSelector(core.getTableInfoRoleAssignments(), filter, new Sort("UserId"));
+                    assignments = selector.getArray(RoleAssignment.class);
+                }
 
                 return new SecurityPolicy(resource, assignments, null != policyBean ? policyBean.getModified() : new Date());
             }
