@@ -1253,6 +1253,7 @@ public class SpecimenImporter
         _job = job;
 
         DbScope scope = schema.getScope();
+        boolean commitSuccessfully = false;
         try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
             _iTimer = TIMER.getInvocationTimer();
@@ -1326,17 +1327,28 @@ public class SpecimenImporter
 
             _iTimer.setPhase(ImportPhases.CommitTransaction);
             transaction.commit();
+            commitSuccessfully = true;
         }
         finally
         {
-            _iTimer.setPhase(ImportPhases.ClearCaches);
-            StudyManager.getInstance().clearCaches(_container, false);
-            SpecimenManager.getInstance().clearCaches(_container);
+            try
+            {
+                if (commitSuccessfully)
+                {
+                    _iTimer.setPhase(ImportPhases.ClearCaches);
+                    StudyManager.getInstance().clearCaches(_container, false);
+                    SpecimenManager.getInstance().clearCaches(_container);
 
-            TIMER.releaseInvocationTimer(_iTimer);
-            info(_iTimer.getTimings("Timings for each phase of this import are listed below:", Order.HighToLow, "|"));
+                    info(_iTimer.getTimings("Timings for each phase of this import are listed below:", Order.HighToLow, "|"));
+                }
+            }
+            finally
+            {
+                TIMER.releaseInvocationTimer(_iTimer);
+            }
         }
     }
+
 
     private SpecimenLoadInfo populateTempSpecimensTable(SpecimenImportFile file, boolean merge) throws SQLException, IOException, ValidationException
     {
@@ -3158,6 +3170,7 @@ public class SpecimenImporter
             dix.setInsertOption(QueryUpdateService.InsertOption.IMPORT);
             DataLoader tsv = loadTsv(file);
             tsvColumns = tsv.getColumns();
+
             DataIteratorBuilder specimenWrapped = new SpecimenImportBuilder(target, tsv, file.getTableType().getColumns(), computedColumns);
             DataIteratorBuilder standardEtl = StandardETL.forInsert(target, specimenWrapped, _container, getUser(), dix);
             DataIteratorBuilder persist = ((UpdateableTableInfo)target).persistRows(standardEtl, dix);
@@ -3238,6 +3251,9 @@ public class SpecimenImporter
         }
     }
 
+    // TODO We should consider tyring to let the Standard ETL "import alias" replace some of this ImportableColumn behavior
+    // TODO that might let us switch SpecimenImportBuilder to after StandardETL instead of before
+    // TODO StandardETL should be enforcing max length
     private class SpecimenImportIterator extends SimpleTranslator
     {
         Map<String,Object> _rowMap;
@@ -3297,6 +3313,16 @@ public class SpecimenImporter
                                 ret = _rowMap.get(name);
                             if (null == ret)
                                 ret = ic.getDefaultValue();
+
+                            if (ic.getMaxSize() >= 0 && ret instanceof String)
+                            {
+                                if (((String)ret).length() > ic.getMaxSize())
+                                {
+                                    throw new SQLException("Value \"" + ((String)ret) + "\" is too long for column " +
+                                            ic.getDbColumnName() + ".  The maximum allowable length is " + ic.getMaxSize() + ".");
+                                }
+                            }
+
                             return ret;
                         }
                     };
