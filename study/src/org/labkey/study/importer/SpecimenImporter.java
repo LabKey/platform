@@ -2558,7 +2558,7 @@ public class SpecimenImporter
             ComputedColumn idCol, boolean hasContainerColumn)
             throws SQLException, ValidationException
     {
-        boolean a=false;
+        boolean a=true;
         if (a)
             return mergeTableOneAtATime(schema, tableName, target, potentialColumns, loader, idCol, hasContainerColumn);
         else
