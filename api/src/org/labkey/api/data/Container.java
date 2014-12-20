@@ -911,9 +911,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         //Short-circuit for root module
         if (isRoot())
         {
-            //get active modules from database
-            Set<Module> modules = new HashSet<>();
-            return Collections.unmodifiableSet(modules);
+            return Collections.emptySet();
         }
 
         Map<String, String> props = PropertyManager.getProperties(this, "activeModules");
