@@ -1,6 +1,6 @@
 <%
 /*
- * Copyright (c) 2011-2013 LabKey Corporation
+ * Copyright (c) 2011-2014 LabKey Corporation
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
  */
 %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
-<%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="org.labkey.api.view.template.ClientDependency" %>
+<%@ page import="org.labkey.core.security.SecurityController" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
