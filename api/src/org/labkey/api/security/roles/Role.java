@@ -38,9 +38,8 @@ import java.util.Set;
 public interface Role extends Parameter.JdbcParameterValue
 {
     /**
-     * Returns a unique name for this role. Typically, this is the
-     * fully qualified class name of the role, but it could also be
-     * some other name that is unique within the web application.
+     * Returns a unique name for this role. Typically, this is the fully qualified class name of the role, but it could
+     * also be some other name that is unique within the web application.
      * @return A unique name for this role
      */
     @NotNull
@@ -68,8 +67,7 @@ public interface Role extends Parameter.JdbcParameterValue
     public Set<Class<? extends Permission>> getPermissions();
 
     /**
-     * Adds a new permission to this role. Modules may use this method
-     * to add permissions defined by the module to system-defined roles
+     * Adds a new permission to this role. Modules may use this method to add permissions defined by the module to system-defined roles
      * @param perm The new permission
      */
     public void addPermission(@NotNull Class<? extends Permission> perm);
@@ -82,29 +80,24 @@ public interface Role extends Parameter.JdbcParameterValue
     public Module getSourceModule();
 
     /**
-     * Returns true if this role may be assigned to groups/users.
-     * If this returns false, the role should not be displayed in a
-     * security management user interface. An example where this would
-     * return true are contextual roles, which are dynamically assigned
-     * by the system based on context (e.g., Owner).
+     * Returns true if this role may be assigned to groups/users. If this returns false, the role should not be displayed in a
+     * security management user interface. An example where this would return false are contextual roles, which are dynamically
+     * assigned by the system based on context (e.g., Owner).
      * @return True if this role is assignable.
      */
     public boolean isAssignable();
 
     /**
-     * Returns a set of user principals that should never be assigned
-     * to this role. This is typically used to prohibit assigning
-     * the Guests or Users group to an administrator role. Note that
-     * this method is called only if isAssignable() returns true.
+     * Returns a set of user principals that should never be assigned to this role. This is typically used to prohibit assigning
+     * the Guests or Users group to an administrator role. Note that this method is called only if isAssignable() returns true.
      * @return A set of principals that should not be assigned to this role
      */
     @NotNull
     public Set<UserPrincipal> getExcludedPrincipals();
 
     /**
-     * @return Whether this role is applicable to the policy. For example, some roles might only
-     * make sense in the context of a certain type of resource, such as a folder (or particular type of folder) or
-     * dataset
+     * @return Whether this role is applicable to the policy. For example, some roles might only make sense in the context of a
+     * certain type of resource, such as a folder (or particular type of folder) or dataset
      */
     boolean isApplicable(SecurityPolicy policy, SecurableResource resource);
 }
