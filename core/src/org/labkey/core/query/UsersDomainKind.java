@@ -20,7 +20,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.CoreSchema;
 import org.labkey.api.data.DbScope;
-import org.labkey.api.data.PropertyManager;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.exp.Handler;
@@ -31,6 +30,7 @@ import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.gwt.client.model.GWTDomain;
+import org.labkey.api.module.ModuleContext;
 import org.labkey.api.module.SimpleModule;
 import org.labkey.api.query.SimpleTableDomainKind;
 import org.labkey.api.query.SimpleUserSchema;
@@ -118,23 +118,6 @@ public class UsersDomainKind extends SimpleTableDomainKind
     @Override
     public Set<String> getReservedPropertyNames(Domain domain)
     {
-/*
-        SimpleUserSchema.SimpleTable table = getTable(domain);
-        if (table != null)
-        {
-            // return the set of built-in column names.
-            return Sets.newHashSet(Iterables.transform(table.getBuiltInColumns(),
-                    new Function<ColumnInfo, String>()
-                    {
-                        public String apply(ColumnInfo col)
-                        {
-                            return col.getName();
-                        }
-                    }
-            ));
-        }
-        return Collections.emptySet();
-*/
         return _reservedNames;
     }
 
@@ -176,50 +159,33 @@ public class UsersDomainKind extends SimpleTableDomainKind
         return columns;
     }
 
-    public static void ensureDomainProperties(Domain domain, User user, boolean isNewInstallation)
+    public static void ensureDomain(ModuleContext context)
     {
-        DbScope scope = CoreSchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction())
+        User user = context.getUpgradeUser();
+        String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), user);
+        Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
+
+
+        if (domain == null)
         {
-            Map<String, DomainProperty> existingProps = new HashMap<>();
-            Map<String, Boolean> requiredMap = new HashMap<>();
-            boolean dirty = false;
-
-            if (user == null)
-                user = UserManager.getGuestUser();
-
-            for (DomainProperty dp : domain.getProperties())
+            try
             {
-                existingProps.put(dp.getName(), dp);
-            }
+                domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
 
-            // map in the existing required user fields
-            Map<String, String> map = UserManager.getUserPreferences(true);
-            if (map.containsKey("UserInfoRequiredFields"))
+                createPropertyDescriptor(domain, user, "FirstName", PropertyType.STRING, 64, false);
+                createPropertyDescriptor(domain, user, "LastName", PropertyType.STRING, 64, false);
+                createPropertyDescriptor(domain, user, "Phone", PropertyType.STRING, 64, false);
+                createPropertyDescriptor(domain, user, "Mobile", PropertyType.STRING, 64, false);
+                createPropertyDescriptor(domain, user, "Pager", PropertyType.STRING, 64, true);
+                createPropertyDescriptor(domain, user, "IM", PropertyType.STRING, 64, true);
+                createPropertyDescriptor(domain, user, "Description", PropertyType.STRING, 255, true);
+
+                domain.save(context.getUpgradeUser());
+            }
+            catch (Exception e)
             {
-                String required = map.get("UserInfoRequiredFields");
-                for (String field : required.split(";"))
-                    requiredMap.put(field, true);
+                throw new RuntimeException(e);
             }
-            map.remove("UserInfoRequiredFields");
-            PropertyManager.saveProperties(map);
-
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "FirstName", PropertyType.STRING, 64, false)|| dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "LastName", PropertyType.STRING, 64, false) || dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Phone", PropertyType.STRING, 64, false)    || dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Mobile", PropertyType.STRING, 64, false)   || dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Pager", PropertyType.STRING, 64, isNewInstallation)    || dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "IM", PropertyType.STRING, 64, isNewInstallation)       || dirty);
-            dirty = (createPropertyDescriptor(domain, user, existingProps, requiredMap, "Description", PropertyType.STRING, 255, isNewInstallation) || dirty);
-
-            if (dirty)
-                domain.save(user);
-
-            transaction.commit();
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException(e);
         }
     }
 
@@ -259,35 +225,23 @@ public class UsersDomainKind extends SimpleTableDomainKind
         }
     }
 
-    private static boolean createPropertyDescriptor(Domain domain, User user, Map<String, DomainProperty> existing,
-                                             Map<String, Boolean> required, String name, PropertyType type, int scale, boolean hidden)
+    private static void createPropertyDescriptor(Domain domain, User user, String name, PropertyType type, int scale, boolean hidden)
     {
-        if (!existing.containsKey(name))
-        {
-            String propertyURI = UsersDomainKind.createPropertyURI("core", CoreQuerySchema.USERS_TABLE_NAME, getDomainContainer(), user);
+        String propertyURI = UsersDomainKind.createPropertyURI("core", CoreQuerySchema.USERS_TABLE_NAME, getDomainContainer(), user);
 
-            DomainProperty prop = domain.addProperty();
-            prop.setName(name);
-            prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
-            prop.setScale(scale);
-            prop.setPropertyURI(propertyURI);
-            prop.setRequired(required.containsKey(name));
+        DomainProperty prop = domain.addProperty();
+        prop.setName(name);
+        prop.setType(PropertyService.get().getType(domain.getContainer(), type.getXmlName()));
+        prop.setScale(scale);
+        prop.setPropertyURI(propertyURI);
 
-            if (hidden)
-            {
-                prop.setShownInDetailsView(false);
-                prop.setShownInInsertView(false);
-                prop.setShownInUpdateView(false);
-                prop.setHidden(true);
-            }
-            return true;
-        }
-        else
+        if (hidden)
         {
-            DomainProperty prop = existing.get(name);
-            return ensurePropertyDescriptorScale(prop, scale);
+            prop.setShownInDetailsView(false);
+            prop.setShownInInsertView(false);
+            prop.setShownInUpdateView(false);
+            prop.setHidden(true);
         }
-//        return false;
     }
 
     private static boolean ensurePropertyDescriptorScale(DomainProperty prop, int scale)

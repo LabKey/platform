@@ -42,6 +42,7 @@ import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.StorageProvisioner;
+import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.module.FirstRequestHandler;
@@ -691,6 +692,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 false);
 
         PropertyService.get().registerDomainKind(new UsersDomainKind());
+        UsersDomainKind.ensureDomain(moduleContext);
     }
 
     @Override

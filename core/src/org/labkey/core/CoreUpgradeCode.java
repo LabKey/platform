@@ -76,20 +76,6 @@ public class CoreUpgradeCode implements UpgradeCode
         ModuleLoader.getInstance().handleUnkownModules();
     }
 
-    // invoked by core-12.21-12.22.sql
-    @SuppressWarnings({"UnusedDeclaration"})
-    @DeferredUpgrade
-    public void ensureCoreUserPropertyDescriptors(ModuleContext context)
-    {
-        String domainURI = UsersDomainKind.getDomainURI("core", CoreQuerySchema.USERS_TABLE_NAME, UsersDomainKind.getDomainContainer(), context.getUpgradeUser());
-        Domain domain = PropertyService.get().getDomain(UsersDomainKind.getDomainContainer(), domainURI);
-
-        if (domain == null)
-            domain = PropertyService.get().createDomain(UsersDomainKind.getDomainContainer(), domainURI, CoreQuerySchema.USERS_TABLE_NAME);
-
-        UsersDomainKind.ensureDomainProperties(domain, context.getUpgradeUser(), context.isNewInstall());
-    }
-
     // invoked by core-13.13-13.14.sql
     @SuppressWarnings({"UnusedDeclaration"})
     public void setPortalPageUniqueIndexes(ModuleContext moduleContext)
