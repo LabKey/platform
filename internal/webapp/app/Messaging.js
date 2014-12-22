@@ -36,6 +36,8 @@ Ext.define('LABKEY.app.controller.Messaging', {
         }
     },
 
+    _localStorageKey: 'Connector.Messages',
+
     init : function() {
 
         if (LABKEY.devMode) {
@@ -129,5 +131,43 @@ Ext.define('LABKEY.app.controller.Messaging', {
         {
             console.warn('Messaging Service: Unable to persist messages. Local storage quota exceeded.');
         }
+    },
+
+    _getCache : function() {
+        var cache = {};
+
+        if (Ext.isDefined(localStorage)) {
+            var _cache = localStorage.getItem(this._localStorageKey);
+            if (_cache) {
+                cache = Ext.decode(_cache);
+            }
+        }
+
+        return cache;
+    },
+
+    _setCache : function(cache) {
+        if (Ext.isDefined(localStorage)) {
+            localStorage.setItem(this._localStorageKey, Ext.encode(cache));
+        }
+        return cache;
+    },
+
+    isAllowed : function(key) {
+        return this._getCache()[key] !== 1;
+    },
+
+    block : function(key) {
+        var cache = this._getCache();
+        cache[key] = 1;
+        this._setCache(cache);
+    },
+
+    unblock : function(key) {
+        var cache = this._getCache();
+        if (cache[key]) {
+            delete cache[key];
+        }
+        this._setCache(cache);
     }
 });
