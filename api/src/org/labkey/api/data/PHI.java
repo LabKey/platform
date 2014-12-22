@@ -25,10 +25,10 @@ import org.labkey.api.security.permissions.Permission;
 */
 public enum PHI
 {
-    NotPHI(0),
-    Limited(1),
-    PHI(2),
-    Restricted(3);
+    NotPHI(0, null),
+    Limited(1, LimitedPHIPermission.class),
+    PHI(2, FullPHIPermission.class),
+    Restricted(3, RestrictedPHIPermission.class);
 
     public static PHI fromString(@Nullable String value)
     {
@@ -40,8 +40,10 @@ public enum PHI
     }
 
     private final int rank;
-    private PHI(int rank) {
+    private final Class<? extends Permission> permission;
+    private PHI(int rank, @Nullable Class<? extends Permission> permission) {
         this.rank = rank;
+        this.permission = permission;
     }
     public int getRank() {
         return rank;
@@ -51,15 +53,6 @@ public enum PHI
     @Nullable
     public Class<? extends Permission> getRequiredPermission()
     {
-        switch(this)
-        {
-            case Limited:
-                return LimitedPHIPermission.class;
-            case PHI:
-                return FullPHIPermission.class;
-            case Restricted:
-                return RestrictedPHIPermission.class;
-        }
-        return null;
+        return this.permission;
     }
 }
