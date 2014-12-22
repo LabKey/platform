@@ -33,8 +33,6 @@ import java.io.PrintWriter;
  */
 public class DotGraph
 {
-    PrintWriter pwOut;
-    ActionURL urlBase;
     private static final String GROUP_ID_PREFIX = "Grp";
     private static final String PROTOCOLAPP_COLOR = "#F7F7A3";
     private static final String MATERIAL_COLOR = "#FFCC99";
@@ -47,19 +45,23 @@ public class DotGraph
     private static final int LABEL_SMALL_FONTSIZE = 24;
     private static final int LABEL_CHAR_WIDTH = 20;
 
-    SortedMap<Integer, DotNode> pendingMNodes;
-    SortedMap<Integer, DotNode> pendingDNodes;
-    SortedMap<Integer, DotNode> pendingProcNodes;
-    Map<Integer, GroupedNode> groupMNodes;
-    Map<Integer, GroupedNode> groupDNodes;
-    Map<Integer, GroupedNode> groupPANodes;
-    Map<Integer, DotNode> writtenMNodes;
-    Map<Integer, DotNode> writtenDNodes;
-    Map<Integer, DotNode> writtenProcNodes;
-    Set<String> pendingConnects;
-    Set<String> writtenConnects;
-    Integer focusId = null;
-    String objectType = null;
+    private final PrintWriter _pwOut;
+    private final ActionURL _urlBase;
+
+    private final SortedMap<Integer, DotNode> _pendingMNodes = new TreeMap<>();
+    private final SortedMap<Integer, DotNode> _pendingDNodes = new TreeMap<>();
+    private final SortedMap<Integer, DotNode> _pendingProcNodes = new TreeMap<>();
+    private final Map<Integer, GroupedNode> _groupMNodes = new HashMap<>();
+    private final Map<Integer, GroupedNode> _groupDNodes = new HashMap<>();
+    private final Map<Integer, GroupedNode> _groupPANodes = new HashMap<>();
+    private final Map<Integer, DotNode> _writtenMNodes = new HashMap<>();
+    private final Map<Integer, DotNode> _writtenDNodes = new HashMap<>();
+    private final Map<Integer, DotNode> _writtenProcNodes = new HashMap<>();
+    private final Set<String> _pendingConnects = new HashSet<>();
+    private final Set<String> _writtenConnects = new HashSet<>();
+
+    private Integer _focusId = null;
+    private String _objectType = null;
 
     // following are used in URLs to generate lineage graphs
     public static String TYPECODE_MATERIAL = "M";
@@ -68,52 +70,40 @@ public class DotGraph
 
     public DotGraph(PrintWriter out, ActionURL url, boolean bSmallFonts)
     {
-        pwOut = out;
-        urlBase = url;
-        pendingMNodes = new TreeMap<>();
-        pendingDNodes = new TreeMap<>();
-        pendingProcNodes = new TreeMap<>();
-        groupMNodes = new HashMap<>();
-        groupDNodes = new HashMap<>();
-        groupPANodes = new HashMap<>();
-        writtenMNodes = new HashMap<>();
-        writtenDNodes = new HashMap<>();
-        writtenProcNodes = new HashMap<>();
-        pendingConnects = new HashSet<>();
-        writtenConnects = new HashSet<>();
+        _pwOut = out;
+        _urlBase = url;
 
         if (bSmallFonts)
-            pwOut.println("digraph G { node[fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + "]");
+            _pwOut.println("digraph G { node[fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + "]");
         else
-            pwOut.println("digraph G { node[fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_DEFAULT_FONTSIZE + "]");
+            _pwOut.println("digraph G { node[fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_DEFAULT_FONTSIZE + "]");
     }
 
     public void setFocus(Integer focusid, String objtype)
     {
-        focusId = focusid;
-        objectType = objtype;
+        _focusId = focusid;
+        _objectType = objtype;
     }
 
     public void dispose()
     {
         flushPending();
-        pwOut.println("}");
-        pwOut = null;
+        _pwOut.println("}");
     }
 
     public Integer getPAGroupId(Integer rowIdPA)
     {
-        return getGroupId(rowIdPA, pendingProcNodes, writtenProcNodes);
+        return getGroupId(rowIdPA, _pendingProcNodes, _writtenProcNodes);
     }
 
     public Integer getMGroupId(Integer rowIdM)
     {
-        return getGroupId(rowIdM, pendingMNodes, writtenMNodes);
+        return getGroupId(rowIdM, _pendingMNodes, _writtenMNodes);
     }
 
     public Integer getDGroupId(Integer rowIdD)
     {
-        return getGroupId(rowIdD, pendingDNodes, writtenDNodes);
+        return getGroupId(rowIdD, _pendingDNodes, _writtenDNodes);
     }
 
     public Integer getGroupId(Integer rowId, Map<Integer, DotNode> pendingNodes, Map<Integer, DotNode> writtenNodes)
@@ -126,7 +116,7 @@ public class DotGraph
         if (null == node)
             return null;
         if (node instanceof GroupedNode)
-            return ((GroupedNode) node).gid;
+            return ((GroupedNode) node)._gid;
 
         return null;
     }
@@ -136,15 +126,15 @@ public class DotGraph
         DotNode node = new MNode(m);
         node.setLink("resolveLSID", "type=material&lsid=" + PageFlowUtil.encode(m.getLSID()));
 
-        if (null != focusId && objectType.equals(TYPECODE_MATERIAL) && focusId.intValue() == m.getRowId())
+        if (null != _focusId && _objectType.equals(TYPECODE_MATERIAL) && _focusId == m.getRowId())
             node.setFocus(true);
         if (null != groupId)
         {
-            node = addNodeToGroup(node, groupId, actionseq, groupMNodes);
+            node = addNodeToGroup(node, groupId, actionseq, _groupMNodes);
             node.setLink("showGraphMoreList.view", "runId="+  runId
                     + "&objtype=" + TYPECODE_MATERIAL);
         }
-        pendingMNodes.put(m.getRowId(), node);
+        _pendingMNodes.put(m.getRowId(), node);
     }
 
     public void addStartingData (ExpData d, Integer groupId, Integer actionseq, Integer runId)
@@ -152,15 +142,15 @@ public class DotGraph
         DotNode node = new DNode(d);
         node.setLink("resolveLSID", "type=data&lsid=" + PageFlowUtil.encode(d.getLSID()));
 
-        if (null != focusId && objectType.equals(TYPECODE_DATA) && focusId.intValue() == d.getRowId())
+        if (null != _focusId && _objectType.equals(TYPECODE_DATA) && _focusId == d.getRowId())
             node.setFocus(true);
         if (null != groupId)
         {
-            node = addNodeToGroup(node, groupId, actionseq, groupDNodes);
+            node = addNodeToGroup(node, groupId, actionseq, _groupDNodes);
             node.setLink("showGraphMoreList.view", "runId="+  runId
                     + "&objtype=" + TYPECODE_DATA);
         }
-        pendingDNodes.put(d.getRowId(), node);
+        _pendingDNodes.put(d.getRowId(), node);
     }
 
     private GroupedNode addNodeToGroup(DotNode node, Integer groupId, Integer actionseq, Map<Integer, GroupedNode> groupNodes)
@@ -182,108 +172,108 @@ public class DotGraph
 
     public void addMaterial(ExpMaterial m, Integer groupId, Integer actionseq, boolean output)
     {
-        if (writtenMNodes.containsKey(m.getRowId()) || pendingMNodes.containsKey(m.getRowId()))
+        if (_writtenMNodes.containsKey(m.getRowId()) || _pendingMNodes.containsKey(m.getRowId()))
             return;
         DotNode node = new MNode(m);
         if (output)
         {
             node.setBold(true);
         }
-        if (null != focusId && objectType.equals(TYPECODE_MATERIAL) && focusId.intValue() == m.getRowId())
+        if (null != _focusId && _objectType.equals(TYPECODE_MATERIAL) && _focusId == m.getRowId())
             node.setFocus(true);
         if (null != groupId)
-            node = addNodeToGroup(node, groupId, actionseq, groupMNodes);
-        pendingMNodes.put(m.getRowId(), node);
+            node = addNodeToGroup(node, groupId, actionseq, _groupMNodes);
+        _pendingMNodes.put(m.getRowId(), node);
     }
 
     public void addData(ExpData d, Integer groupId, Integer actionseq, boolean output)
     {
-        if (writtenDNodes.containsKey(d.getRowId()) || pendingDNodes.containsKey(d.getRowId()))
+        if (_writtenDNodes.containsKey(d.getRowId()) || _pendingDNodes.containsKey(d.getRowId()))
             return;
         DotNode node = new DNode(d);
         if (output)
         {
             node.setBold(true);
         }
-        if (null != focusId && objectType.equals(TYPECODE_DATA) && focusId.intValue() == d.getRowId())
+        if (null != _focusId && _objectType.equals(TYPECODE_DATA) && _focusId == d.getRowId())
             node.setFocus(true);
         if (null != groupId)
-            node = addNodeToGroup(node, groupId, actionseq, groupDNodes);
-        pendingDNodes.put(d.getRowId(), node);
+            node = addNodeToGroup(node, groupId, actionseq, _groupDNodes);
+        _pendingDNodes.put(d.getRowId(), node);
     }
 
     public void addProtApp(Integer groupId, int rowId, String name, Integer actionseq)
     {
-        if (writtenProcNodes.containsKey(rowId) || pendingProcNodes.containsKey(rowId))
+        if (_writtenProcNodes.containsKey(rowId) || _pendingProcNodes.containsKey(rowId))
             return;
         DotNode node = new PANode(rowId, name);
-        if (null != focusId && objectType.equals(TYPECODE_PROT_APP) && focusId.intValue() == rowId)
+        if (null != _focusId && _objectType.equals(TYPECODE_PROT_APP) && _focusId == rowId)
             node.setFocus(true);
         if (null != groupId)
-            node = addNodeToGroup(node, groupId, actionseq, groupPANodes);
-        pendingProcNodes.put(rowId, node);
+            node = addNodeToGroup(node, groupId, actionseq, _groupPANodes);
+        _pendingProcNodes.put(rowId, node);
     }
 
     public void addOutputNode(Integer groupId, int rowId, String name, Integer actionseq)
     {
-        if (writtenProcNodes.containsKey(rowId) || pendingProcNodes.containsKey(rowId))
+        if (_writtenProcNodes.containsKey(rowId) || _pendingProcNodes.containsKey(rowId))
             return;
         DotNode node = new OutputNode(rowId, name);
         if (null != groupId)
-            node = addNodeToGroup(node, groupId, actionseq, groupPANodes);
-        pendingProcNodes.put(rowId, node);
+            node = addNodeToGroup(node, groupId, actionseq, _groupPANodes);
+        _pendingProcNodes.put(rowId, node);
     }
 
     public void addExpRun(Integer runId, String name)
     {
         DotNode node = new ExpNode(runId, name);
-        pendingProcNodes.put(runId, node);
+        _pendingProcNodes.put(runId, node);
     }
 
     public void addLinkedRun(Integer runId, String name)
     {
         DotNode node = new LinkedExpNode(runId, name);
-        pendingProcNodes.put(runId, node);
+        _pendingProcNodes.put(runId, node);
     }
 
     public void connectMaterialToProtocolApp(Integer rowIdM, Integer rowIdPA, String label)
     {
-        addConnectorObject(rowIdM, rowIdPA, pendingMNodes, writtenMNodes, pendingProcNodes, writtenProcNodes, label);
+        addConnectorObject(rowIdM, rowIdPA, _pendingMNodes, _writtenMNodes, _pendingProcNodes, _writtenProcNodes, label);
     }
 
     public void connectDataToProtocolApp(Integer rowIdD, Integer rowIdPA, String label)
     {
-        addConnectorObject(rowIdD, rowIdPA, pendingDNodes, writtenDNodes, pendingProcNodes, writtenProcNodes, label);
+        addConnectorObject(rowIdD, rowIdPA, _pendingDNodes, _writtenDNodes, _pendingProcNodes, _writtenProcNodes, label);
     }
 
     public void connectProtocolAppToMaterial(Integer rowIdPA, Integer rowIdM)
     {
-        addConnectorObject(rowIdPA, rowIdM, pendingProcNodes, writtenProcNodes, pendingMNodes, writtenMNodes, null);
+        addConnectorObject(rowIdPA, rowIdM, _pendingProcNodes, _writtenProcNodes, _pendingMNodes, _writtenMNodes, null);
     }
 
     public void connectProtocolAppToData(Integer rowIdPA, Integer rowIdD)
     {
-        addConnectorObject(rowIdPA, rowIdD, pendingProcNodes, writtenProcNodes, pendingDNodes, writtenDNodes, null);
+        addConnectorObject(rowIdPA, rowIdD, _pendingProcNodes, _writtenProcNodes, _pendingDNodes, _writtenDNodes, null);
     }
 
     public void connectRunToMaterial(Integer runId, Integer rowIdM)
     {
-        addConnectorObject(runId, rowIdM, pendingProcNodes, null, pendingMNodes, writtenMNodes, null);
+        addConnectorObject(runId, rowIdM, _pendingProcNodes, null, _pendingMNodes, _writtenMNodes, null);
     }
 
     public void connectRunToData(Integer runId, Integer rowIdD)
     {
-        addConnectorObject(runId, rowIdD, pendingProcNodes, null, pendingDNodes, writtenDNodes, null);
+        addConnectorObject(runId, rowIdD, _pendingProcNodes, null, _pendingDNodes, _writtenDNodes, null);
     }
 
     public void connectMaterialToRun(Integer rowIdM, Integer runId, String label)
     {
-        addConnectorObject(rowIdM, runId, pendingMNodes, writtenMNodes, pendingProcNodes, writtenProcNodes, label);
+        addConnectorObject(rowIdM, runId, _pendingMNodes, _writtenMNodes, _pendingProcNodes, _writtenProcNodes, label);
     }
 
     public void connectDataToRun(Integer rowIdD, Integer runId, String label)
     {
-        addConnectorObject(rowIdD, runId, pendingDNodes, writtenDNodes, pendingProcNodes, writtenProcNodes, label);
+        addConnectorObject(rowIdD, runId, _pendingDNodes, _writtenDNodes, _pendingProcNodes, _writtenProcNodes, label);
     }
 
     private void addConnectorObject(Integer srcRow, Integer trgtRow,
@@ -305,18 +295,18 @@ public class DotGraph
         else if ((null != writtenTrgtMap) && writtenTrgtMap.containsKey(trgtRow))
             trgt = writtenTrgtMap.get(trgtRow);
         if (null != src)
-            connect += src.key;
+            connect += src._key;
         connect += " -> ";
         if (null != trgt)
         {
-            if (null == trgt.shape)  // it's an output node, drawn just as an arrow to a label
+            if (null == trgt._shape)  // it's an output node, drawn just as an arrow to a label
             {
-                String outnodekey = src.key + "out";
+                String outnodekey = src._key + "out";
                 connect += outnodekey + " [arrowhead = diamond] ";
                 connect += "\n" + outnodekey + "[shape=plaintext label=\"Output\"]";
             }
             else
-                connect += trgt.key + "[arrowsize = 2]";
+                connect += trgt._key + "[arrowsize = 2]";
         }
         if (label != null && !(src instanceof GroupedNode) && !(trgt instanceof GroupedNode))
         {
@@ -326,32 +316,32 @@ public class DotGraph
         {
             connect += " [ style=\"setlinewidth(3)\" ]";
         }
-        if (!writtenConnects.contains(connect) && !pendingConnects.contains(connect))
-            pendingConnects.add(connect);
+        if (!_writtenConnects.contains(connect) && !_pendingConnects.contains(connect))
+            _pendingConnects.add(connect);
     }
 
     public void writePendingConnects()
     {
         String connect;
-        for (String pendingConnect : pendingConnects)
+        for (String pendingConnect : _pendingConnects)
         {
             connect = pendingConnect;
-            pwOut.println(connect);
-            writtenConnects.add(connect);
+            _pwOut.println(connect);
+            _writtenConnects.add(connect);
         }
-        pendingConnects.clear();
+        _pendingConnects.clear();
     }
 
     public void flushPending()
     {
-        writePending(pendingProcNodes, writtenProcNodes);
-        writePending(pendingMNodes, writtenMNodes);
-        writePending(pendingDNodes, writtenDNodes);
-        writePending(pendingProcNodes, writtenProcNodes);
+        writePending(_pendingProcNodes, _writtenProcNodes);
+        writePending(_pendingMNodes, _writtenMNodes);
+        writePending(_pendingDNodes, _writtenDNodes);
+        writePending(_pendingProcNodes, _writtenProcNodes);
         writePendingConnects();
-        groupMNodes.clear();
-        groupDNodes.clear();
-        groupPANodes.clear();
+        _groupMNodes.clear();
+        _groupDNodes.clear();
+        _groupPANodes.clear();
     }
 
     public void writePending(Map<Integer, DotNode> pendingMap, Map<Integer, DotNode> writtenMap)
@@ -361,10 +351,10 @@ public class DotGraph
         {
             DotNode node = pendingMap.get(key);
             if (!nodesToMove.contains(key))
-                node.save(pwOut, urlBase);
+                node.save(_pwOut, _urlBase);
             if (node instanceof GroupedNode)
             {
-                for (Integer memberkey : ((GroupedNode) node).gMap.keySet())
+                for (Integer memberkey : ((GroupedNode) node)._gMap.keySet())
                 {
                     assert (pendingMap.containsKey(memberkey));
                     if (null != writtenMap)
@@ -386,58 +376,61 @@ public class DotGraph
 
     private class DotNode
     {
-        Integer id;
-        String type;
-        String label;
-        String key;
-        String linkUrlBase;
-        String linkParams;
-        String color;
-        String shape;
-        Float height = null;
-        Float width = null;
-        boolean focus = false;
-        boolean bold = false;
+        private final Integer _id;
+        private final String _type;
+
+        protected final String _key;
+
+        private String _linkUrlBase = null;
+        private boolean _focus = false;
+        private boolean _bold = false;
+
+        protected String _label;
+        protected String _linkParams = null;
+        protected String _color = null;
+        protected String _shape = null;
+        protected Float _height = null;
+        protected Float _width = null;
 
         public DotNode(String nodeType, Integer nodeId, String nodeLabel)
         {
-            id = nodeId;
-            type = nodeType;
-            label = ((null == nodeLabel) ? "(no name)" : nodeLabel);
-            key = nodeType + id;
+            _id = nodeId;
+            _type = nodeType;
+            _label = ((null == nodeLabel) ? "(no name)" : nodeLabel);
+            _key = nodeType + _id;
         }
 
         public void setBold(boolean bold)
         {
-            this.bold = bold;
+            _bold = bold;
         }
 
         public void setLink(String urlBase, String urlParams)
         {
-            linkUrlBase = urlBase;
-            linkParams = urlParams;
+            _linkUrlBase = urlBase;
+            _linkParams = urlParams;
         }
 
         public void setShape(String dotShape, String dotColor)
         {
-            shape = dotShape;
-            color = dotColor;
+            _shape = dotShape;
+            _color = dotColor;
         }
 
         public void setSize(Float nodeHeight, Float nodeWidth)
         {
-            height = nodeHeight;
-            width = nodeWidth;
+            _height = nodeHeight;
+            _width = nodeWidth;
         }
 
         public void setFocus(boolean f)
         {
-            focus = f;
+            _focus = f;
         }
 
         private String wrap(String l)
         {
-            String [] labelParts = StringUtils.split(label);
+            String[] labelParts = StringUtils.split(l);
             StringBuilder sb = new StringBuilder(labelParts[0]);
             int linewidth = sb.length();
             for (int i = 1; i < labelParts.length; i++)
@@ -457,39 +450,39 @@ public class DotGraph
         public void save(PrintWriter out, ActionURL url)
         {
             String tooltip;
-            if (TYPECODE_DATA.equals(type))
+            if (TYPECODE_DATA.equals(_type))
             {
-                tooltip = "Data: " + label;
+                tooltip = "Data: " + _label;
             }
-            else if (TYPECODE_MATERIAL.equals(type))
+            else if (TYPECODE_MATERIAL.equals(_type))
             {
-                tooltip = "Material: " + label;
+                tooltip = "Material: " + _label;
             }
             else
             {
-                tooltip = label;
+                tooltip = _label;
             }
-            if (bold)
+            if (_bold)
             {
                 tooltip += " (Run Output)";
             }
 
-            if (focus)
-                color = EXPRUN_COLOR;
-            if (label.length() > LABEL_CHAR_WIDTH)
-                label = wrap(label);
+            if (_focus)
+                _color = EXPRUN_COLOR;
+            if (_label.length() > LABEL_CHAR_WIDTH)
+                _label = wrap(_label);
             String link = null;
-            if (null != linkUrlBase)
-                link = url.relativeUrl(linkUrlBase, linkParams);
-            if (null != shape)
+            if (null != _linkUrlBase)
+                link = url.relativeUrl(_linkUrlBase, _linkParams);
+            if (null != _shape)
             {
-                out.println(key + "["
-                        + "label=\"" + escape(label) + "\", tooltip=\"" + escape(tooltip) + "\" "
-                        + ",style=\"filled" + (bold ? ", setlinewidth(6)" : ", setlinewidth(2)") + "\" "
-                        + ", fillcolor=\"" + color + "\" shape=" + shape
-                        + ((null != height) ? ", height=\"" + height + "\"" : "")
-                        + ((null != width) ? ", width=\"" + width + "\"" : "")
-                        + ((null != width) || (null != height) ? ", fixedsize=true" : "")
+                out.println(_key + "["
+                        + "label=\"" + escape(_label) + "\", tooltip=\"" + escape(tooltip) + "\" "
+                        + ",style=\"filled" + (_bold ? ", setlinewidth(6)" : ", setlinewidth(2)") + "\" "
+                        + ", fillcolor=\"" + _color + "\" shape=" + _shape
+                        + ((null != _height) ? ", height=\"" + _height + "\"" : "")
+                        + ((null != _width) ? ", width=\"" + _width + "\"" : "")
+                        + ((null != _width) || (null != _height) ? ", fixedsize=true" : "")
                         + ((null != link) ? ",  URL=\"" + escape(link) + "\"" : "")
                         + "]");
             }
@@ -507,8 +500,8 @@ public class DotGraph
 
     private class MNode extends DotNode
     {
-        Integer srcPAId;
-        String LSID;
+        private final Integer _srcPAId;
+        private final String _LSID;
 
         public MNode(ExpMaterial m)
         {
@@ -516,15 +509,15 @@ public class DotGraph
             setShape("box", MATERIAL_COLOR);
             setLink("resolveLSID", "type=material&lsid=" + PageFlowUtil.encode(m.getLSID()));
             ExpProtocolApplication sourceApplication = m.getSourceApplication();
-            srcPAId = sourceApplication == null ? null : sourceApplication.getRowId();
-            LSID = m.getLSID();
+            _srcPAId = sourceApplication == null ? null : sourceApplication.getRowId();
+            _LSID = m.getLSID();
         }
     }
 
     private class DNode extends DotNode
     {
-        Integer srcPAId;
-        String LSID;
+        private final Integer srcPAId;
+        private final String LSID;
 
         public DNode(ExpData d)
         {
@@ -578,49 +571,48 @@ public class DotGraph
 
     private class GroupedNode extends DotNode
     {
-        Integer gid;
-        Integer sequence;
-        SortedMap<Integer, DotNode> gMap;
+        private final Integer _gid;
+        private final Integer _sequence;
+        private final SortedMap<Integer, DotNode> _gMap = new TreeMap<>();
 
         public GroupedNode(Integer groupId, Integer actionseq, DotNode node)
         {
-            super(GROUP_ID_PREFIX + actionseq + node.type, node.id, "More... ");
-            gid = groupId;
-            sequence = actionseq;
-            gMap = new TreeMap<>();
-            gMap.put(node.id, node);
+            super(GROUP_ID_PREFIX + actionseq + node._type, node._id, "More... ");
+            _gid = groupId;
+            _sequence = actionseq;
+            _gMap.put(node._id, node);
             //setShape(node.shape, node.color + GROUP_OPACITY);
-            setShape(node.shape, GROUP_COLOR);
-            setSize(node.height, node.width);
-            setLink("showGraphMoreList.view", "objtype=" + node.type);
+            setShape(node._shape, GROUP_COLOR);
+            setSize(node._height, node._width);
+            setLink("showGraphMoreList.view", "objtype=" + node._type);
         }
 
         public void addNode(DotNode newnode)
         {
-            assert (Objects.equals(gMap.get(gMap.firstKey()).type, newnode.type));
-            gMap.put(newnode.id, newnode);
+            assert (Objects.equals(_gMap.get(_gMap.firstKey())._type, newnode._type));
+            _gMap.put(newnode._id, newnode);
         }
 
         public void save(PrintWriter out, ActionURL url)
         {
             String sep = "";
             StringBuilder sbIn = new StringBuilder();
-            for (Integer rowid : gMap.keySet())
+            for (Integer rowid : _gMap.keySet())
             {
                 sbIn.append(sep).append(rowid);
                 sep = ",";
             }
-            linkParams += "&rowId~in=" + PageFlowUtil.encode(sbIn.toString()); 
-            String link = url.relativeUrl("showGraphMoreList", linkParams, "Experiment");
+            _linkParams += "&rowId~in=" + PageFlowUtil.encode(sbIn.toString());
+            String link = url.relativeUrl("showGraphMoreList", _linkParams, "Experiment");
 
-            label += " (" + gMap.keySet().size() + " entries)";
-            if (null != shape)
+            _label += " (" + _gMap.keySet().size() + " entries)";
+            if (null != _shape)
             {
-                out.println(key + "[label=\"" + escape(label)
-                        + "\",style=\"filled\", fillcolor=\"" + color + "\" shape=" + shape
-                        + ((null != height) ? ", height=\"" + height + "\"" : "")
-                        + ((null != width) ? ", width=\"" + width + "\"" : "")
-                        + ((null != width) || (null != height) ? ", fixedsize=true" : "")
+                out.println(_key + "[label=\"" + escape(_label)
+                        + "\",style=\"filled\", fillcolor=\"" + _color + "\" shape=" + _shape
+                        + ((null != _height) ? ", height=\"" + _height + "\"" : "")
+                        + ((null != _width) ? ", width=\"" + _width + "\"" : "")
+                        + ((null != _width) || (null != _height) ? ", fixedsize=true" : "")
                         + ((null != link) ? ",  URL=\"" + escape(link) + "\"" : "")
                         + "]");
             }
