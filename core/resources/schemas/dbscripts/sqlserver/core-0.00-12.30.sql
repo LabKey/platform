@@ -500,6 +500,3 @@ BEGIN
 END;
 
 GO
-
--- extensible users table
-EXEC core.executeJavaUpgradeCode 'ensureCoreUserPropertyDescriptors';

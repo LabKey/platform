@@ -421,6 +421,3 @@ CREATE AGGREGATE core.array_accum(text) (
     INITCOND = '{}',
     SORTOP = >
 );
-
--- extensible users table
-SELECT core.executeJavaUpgradeCode('ensureCoreUserPropertyDescriptors');
