@@ -15,14 +15,20 @@
  */
 package org.labkey.api.data;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.ExprColumn;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
-import org.jetbrains.annotations.NotNull;
 
 import java.sql.Types;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Provides a table info that will generate a cross-tab layout based upon
@@ -182,7 +188,10 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
      */
     protected ColumnInfo createMemberMeasureCol(@Nullable CrosstabMember member, CrosstabMeasure measure)
     {
-        return new AggregateColumnInfo(this, member, measure);
+        AggregateColumnInfo result = new AggregateColumnInfo(this, member, measure);
+        result.setMeasure(true);
+        result.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
+        return result;
     }
 
     /**
@@ -194,10 +203,12 @@ public class CrosstabTable extends VirtualTable implements CrosstabTableInfo
         ColumnInfo instanceCountCol = addColumn(new ExprColumn(this, COL_INSTANCE_COUNT,
                 new SQLFragment(COL_INSTANCE_COUNT), JdbcType.INTEGER));
         instanceCountCol.setLabel(getSettings().getInstanceCountCaption());
+        instanceCountCol.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
 
         ColumnInfo sortPatternCol = addColumn(new ExprColumn(this, COL_SORT_PATTERN,
                 new SQLFragment(COL_SORT_PATTERN), JdbcType.INTEGER));
         sortPatternCol.setHidden(true);
+        sortPatternCol.setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
     }
 
     protected void addCrosstabQuery(SQLFragment sql)

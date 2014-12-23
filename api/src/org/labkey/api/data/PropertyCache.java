@@ -35,7 +35,7 @@ public class PropertyCache
 
     PropertyCache(String name, CacheLoader<String, Map<String, String>> propertyLoader)
     {
-        _blockingCache = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, name, propertyLoader);
+        _blockingCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, name, propertyLoader);
     }
 
     @Nullable Map<String, String> getProperties(User user, Container container, String category)

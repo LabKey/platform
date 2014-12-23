@@ -15,6 +15,7 @@
  */
 package org.labkey.api.data;
 
+import org.labkey.api.gwt.client.FacetingBehaviorType;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -34,6 +35,8 @@ public class DimensionColumnInfo extends ColumnInfo
         setName(_dimension.getSourceColumn().getAlias());
         setLabel(_dimension.getSourceColumn().getLabel());
         setURL(StringExpressionFactory.createURL(dimension.getUrl()));
+        setDimension(true);
+        setFacetingBehaviorType(FacetingBehaviorType.ALWAYS_OFF);
     }
 
     @Override

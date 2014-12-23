@@ -249,7 +249,7 @@ public class WebdavResolverImpl implements WebdavResolver
 
     // Cache with short-lived entries to make webdav perform reasonably.  WebdavResolvedImpl is a singleton, so we
     // end up with just one of these.
-    private Cache<Path, WebdavResource> _folderCache = CacheManager.getCache(10000, 5 * CacheManager.MINUTE, "WebDAV folders");
+    private Cache<Path, WebdavResource> _folderCache = CacheManager.getCache(CacheManager.UNLIMITED, 5 * CacheManager.MINUTE, "WebDAV folders");
 
     public class WebFolderResource extends AbstractWebdavResourceCollection implements WebdavResolver.WebFolder
     {
