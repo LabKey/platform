@@ -750,6 +750,14 @@ public class ModuleLoader implements Filter
         return null;
     }
 
+    public void setWebappDir(File webappDir)
+    {
+        if (_webappDir != null && !_webappDir.equals(webappDir))
+        {
+            throw new IllegalStateException("WebappDir is already set to " + _webappDir + ", cannot reset it to " + webappDir);
+        }
+        _webappDir = webappDir;
+    }
 
     // Attempt to parse "enlistment.id" property from a file named "enlistment.properties" in this directory, if it exists
     public @Nullable String loadEnlistmentId(File directory)
