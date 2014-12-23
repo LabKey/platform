@@ -1021,8 +1021,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
                         listeners: {
                             scope: this,
                             afterrender: function(cmp) {
-                                if (this.settings) {
-                                    if (!this.settings.datasetRefresh) cmp.setValue('None');
+                                if (this.settings && Ext.isDefined(this.settings.datasetRefresh)) {
+                                    if (!this.settings.datasetRefresh && this.mode != 'ancillary') cmp.setValue('None');
                                     else if (this.settings.datasetRefreshDelay == null) cmp.setValue('Manual');
                                     else cmp.setValue('Automatic');
                                 }
