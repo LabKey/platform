@@ -179,14 +179,15 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     }
 
     /**
-     * Allows specifying transactions should be every n rows rather than a single wrapping transaction. Add any batch trigger as a pre-commit task.
-     * A
+     * Allows specifying transactions should be every n rows rather than a single wrapping transaction. Add "after insert" batch trigger as a pre-commit task.
+     * Add "before insert" as post-commit task to init for the next transaction.
      */
     private void addTransactionOptions(final TableInfo target, final Container c, final DataIteratorContext context, DbScope.Transaction txTarget, final Map<String, Object> extraContext, final Map<Enum, Object> options)
     {
         if (_meta.getTransactionSize() > 0)
         {
             options.put(QueryUpdateService.ConfigParameters.TransactionSize, _meta.getTransactionSize());
+            ((Logger)options.get(QueryUpdateService.ConfigParameters.Logger)).info("Target transactions will be committed every " + Integer.toString(_meta.getTransactionSize()) + " rows");
             if (target.hasTriggers(c))
             {
                 txTarget.addCommitTask(new Runnable()
