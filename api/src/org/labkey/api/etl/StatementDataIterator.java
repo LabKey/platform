@@ -16,6 +16,7 @@
 package org.labkey.api.etl;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.SwapQueue;
@@ -64,6 +65,7 @@ class StatementDataIterator extends AbstractDataIterator
     int _currentBatchSize = 0;
     int _currentTxSize = 0;
     int _txSize = -1;
+    Logger _log = null;
     CPUTimer _elapsed = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".elapsed");
     CPUTimer _execute = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".execute()");
 
@@ -143,7 +145,10 @@ class StatementDataIterator extends AbstractDataIterator
 
         Integer contextTxSize = null;
         if (_context.getConfigParameters() != null)
-            contextTxSize = (Integer)_context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TransactionSize);
+        {
+            contextTxSize = (Integer) _context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TransactionSize);
+            _log = (Logger)_context.getConfigParameters().get(QueryUpdateService.ConfigParameters.Logger); // may still be null
+        }
         if (contextTxSize != null && contextTxSize > 1)
             _txSize = contextTxSize;
 
@@ -259,7 +264,7 @@ class StatementDataIterator extends AbstractDataIterator
                 _currentBatchSize++;
                 _currentTxSize++;
             }
-            else
+            else if (_errors.getExtraContext() != null)
                 _errors.getExtraContext().put("hasNextRow", false);
 
             if (_currentBatchSize == _batchSize || !hasNextRow && _currentBatchSize > 0)
@@ -273,6 +278,8 @@ class StatementDataIterator extends AbstractDataIterator
                 _currentTxSize = 0;
                 if (_currentBatchSize > 0) // flush the statement batch buffer
                     processBatch();
+                if (_log != null)
+                    _log.info("Committing " + Integer.toString(_txSize) + " rows");
                 _currentStmt.getScope().getCurrentTransaction().commitAndKeepConnection();
             }
 

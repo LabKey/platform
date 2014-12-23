@@ -15,6 +15,7 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.Nullable;
 import org.springframework.validation.Errors;
 
 import java.io.PrintStream;
@@ -88,6 +89,7 @@ public class BatchValidationException extends Exception
         this.extraContext = extraContext;
     }
     
+    @Nullable
     public Map<String, Object> getExtraContext()
     {
         return extraContext;
