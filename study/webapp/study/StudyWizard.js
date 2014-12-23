@@ -836,8 +836,6 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             }
         }, this);
 
-        //grid.on('columnmodelcustomize', this.customizeVisitColumnModel, this);
-
         this.participantGroupTemplate = new Ext.DomHelper.createTemplate(
                 '<span style="margin-left:10px;" class="labkey-link">{0}</span>&nbsp;<span class="labkey-disabled">' +
                 '<i>({1} ' + this.subject.nounPlural.toLowerCase() + ')</i></span>').compile();
