@@ -429,6 +429,13 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
 
     public boolean hasTriggers(Container c);
 
+    /**
+     * Reset the trigger script context by reloading them. Note there could still be caches that need to be reset
+     * and script init() to rerun.
+     *
+     * @param c The current container
+     */
+    public void resetTriggers(Container c);
 
     /**
      * TableInfos that can be associated with a DbCache need a reliable key other than a TableInfo instance.

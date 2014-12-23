@@ -46,6 +46,7 @@ public class CopyConfig
     protected SchemaKey _targetSchema;
     protected String _targetQuery;
     protected boolean _bulkLoad;
+    protected int _transactionSize;
     protected TargetOptions _targetOptions = TargetOptions.append;
     protected boolean _useTarget = true;
     protected TargetTypes _targetType = TargetTypes.query;
@@ -53,6 +54,9 @@ public class CopyConfig
 
     protected SchemaKey _procedureSchema;
     protected String _procedure;
+    protected boolean _useSourceTransaction;
+    protected boolean _useProcTransaction;
+    protected boolean _useTargetTransaction;
     private String _targetString;
 
     public CopyConfig()
@@ -284,4 +288,43 @@ public class CopyConfig
         _targetFileProperties = targetFileProperties;
     }
 
+    public boolean isUseSourceTransaction()
+    {
+        return _useSourceTransaction;
+    }
+
+    public void setUseSourceTransaction(boolean useSourceTransaction)
+    {
+        _useSourceTransaction = useSourceTransaction;
+    }
+
+    public boolean isUseProcTransaction()
+    {
+        return _useProcTransaction;
+    }
+
+    public void setUseProcTransaction(boolean useProcTransaction)
+    {
+        _useProcTransaction = useProcTransaction;
+    }
+
+    public boolean isUseTargetTransaction()
+    {
+        return _useTargetTransaction;
+    }
+
+    public void setUseTargetTransaction(boolean useTargetTransaction)
+    {
+        _useTargetTransaction = useTargetTransaction;
+    }
+
+    public int getTransactionSize()
+    {
+        return _transactionSize;
+    }
+
+    public void setTransactionSize(int transactionSize)
+    {
+        _transactionSize = transactionSize;
+    }
 }

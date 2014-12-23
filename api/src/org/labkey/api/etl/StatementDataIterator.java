@@ -27,6 +27,7 @@ import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.MvFieldWrapper;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.util.CPUTimer;
 
 import java.io.IOException;
@@ -61,6 +62,8 @@ class StatementDataIterator extends AbstractDataIterator
     Integer _objectIdIndex = null;
     int _batchSize = -1;
     int _currentBatchSize = 0;
+    int _currentTxSize = 0;
+    int _txSize = -1;
     CPUTimer _elapsed = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".elapsed");
     CPUTimer _execute = new CPUTimer("StatementDataIterator@" + System.identityHashCode(this) + ".execute()");
 
@@ -137,6 +140,12 @@ class StatementDataIterator extends AbstractDataIterator
 
         if (_batchSize < 1 && null == _rowIdIndex && null == _objectIdIndex)
             _batchSize = Math.max(10, 10000/Math.max(2,_bindings.length));
+
+        Integer contextTxSize = null;
+        if (_context.getConfigParameters() != null)
+            contextTxSize = (Integer)_context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TransactionSize);
+        if (contextTxSize != null && contextTxSize > 1)
+            _txSize = contextTxSize;
 
         if (_stmts.length > 1)
         {
@@ -248,27 +257,23 @@ class StatementDataIterator extends AbstractDataIterator
                 if (_batchSize > 1)
                     _currentStmt.addBatch();
                 _currentBatchSize++;
+                _currentTxSize++;
             }
+            else
+                _errors.getExtraContext().put("hasNextRow", false);
 
             if (_currentBatchSize == _batchSize || !hasNextRow && _currentBatchSize > 0)
             {
-                _currentBatchSize = 0;
-                assert _execute.start();
+                processBatch();
+            }
 
-                if (_batchSize == 1)
-                {
-                    _currentStmt.execute();
-                }
-                else if (_useAsynchronousExecute && _stmts.length > 1)
-                {
-                    _currentStmt = _queue.swapFullForEmpty(_currentStmt);
-                    _currentBinding = (_currentStmt == _stmts[0] ? _bindings[0] : _bindings[1]);
-                }
-                else
-                {
-                    _currentStmt.executeBatch();
-                }
-                assert _execute.stop();
+            // ETL's allow specifying more granular commits than the transaction wrapping the entire operation
+            if (_currentTxSize == _txSize && _currentStmt.getScope().isTransactionActive() && hasNextRow)
+            {
+                _currentTxSize = 0;
+                if (_currentBatchSize > 0) // flush the statement batch buffer
+                    processBatch();
+                _currentStmt.getScope().getCurrentTransaction().commitAndKeepConnection();
             }
 
             if (null != _rowIdIndex)
@@ -299,6 +304,27 @@ class StatementDataIterator extends AbstractDataIterator
             }
             throw new RuntimeSQLException(x);
         }
+    }
+
+    private void processBatch() throws SQLException
+    {
+        _currentBatchSize = 0;
+        assert _execute.start();
+
+        if (_batchSize == 1)
+        {
+            _currentStmt.execute();
+        }
+        else if (_useAsynchronousExecute && _stmts.length > 1)
+        {
+            _currentStmt = _queue.swapFullForEmpty(_currentStmt);
+            _currentBinding = (_currentStmt == _stmts[0] ? _bindings[0] : _bindings[1]);
+        }
+        else
+        {
+            _currentStmt.executeBatch();
+        }
+        assert _execute.stop();
     }
 
 

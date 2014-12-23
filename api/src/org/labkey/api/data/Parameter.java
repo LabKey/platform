@@ -850,6 +850,11 @@ public class Parameter implements AutoCloseable
         {
             _debugSql = sql;
         }
+
+        public DbScope getScope()
+        {
+            return _scope;
+        }
     }
 
     public static class ParameterList extends ArrayList<Parameter> implements AutoCloseable

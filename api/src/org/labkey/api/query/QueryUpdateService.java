@@ -16,14 +16,13 @@
 package org.labkey.api.query;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.etl.DataIterator;
+import org.labkey.api.data.Container;
 import org.labkey.api.etl.DataIteratorBuilder;
 import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
-import java.sql.SQLException;
 /*
  * User: Dave
  * Date: Jun 9, 2008
@@ -72,7 +71,8 @@ public interface QueryUpdateService
 
     enum ConfigParameters
     {
-        Logger
+        Logger,
+        TransactionSize
     }
 
 

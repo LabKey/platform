@@ -835,6 +835,12 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return false;
     }
 
+    @Override
+    public void resetTriggers(Container c)
+    {
+        throw new UnsupportedOperationException("Table triggers not yet supported on schema tables");
+    }
+
     //
     // UpdateableTableInfo
     //

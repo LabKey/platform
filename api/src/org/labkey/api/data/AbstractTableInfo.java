@@ -1303,6 +1303,12 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         return svc.compile(r);
     }
 
+    @Override
+    public void resetTriggers(Container c)
+    {
+        scriptLoaded = false;
+        tableScript = null;
+    }
 
     protected <T> T invokeTableScript(Container c, Class<T> resultType, String methodName, Map<String, Object> extraContext, Object... args)
     {

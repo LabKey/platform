@@ -1357,6 +1357,12 @@ public class DbScope
         public Connection getConnection();
         public void close();
         public void commit();
+
+        /**
+         * Commit the current transaction, running pre and post commit tasks, but don't close the connection
+         * or remove transaction from thread pool. Effectively starts new transaction with same pre and post commit tasks.
+         */
+        public void commitAndKeepConnection();
     }
 
     private void popCurrentTransaction()
@@ -1488,15 +1494,29 @@ public class DbScope
             DbScope.this.commitTransaction();
         }
 
+        @Override
+        public void commitAndKeepConnection()
+        {
+            try
+            {
+                runCommitTasks(CommitTaskOption.PRECOMMIT);
+                getConnection().commit();
+                _caches.clear();
+                runCommitTasks(CommitTaskOption.POSTCOMMIT);
+            }
+            catch (SQLException e)
+            {
+                throw new RuntimeSQLException(e);
+            }
+        }
+
         private void runCommitTasks(CommitTaskOption taskOption)
         {
             Set<Runnable> tasks = (taskOption == CommitTaskOption.PRECOMMIT ? _preCommitTasks : _postCommitTasks);
 
-            while (!tasks.isEmpty())
+            for (Runnable task : tasks)
             {
-                Iterator<Runnable> i = tasks.iterator();
-                i.next().run();
-                i.remove();
+                task.run();
             }
 
             closeCaches();
@@ -1506,6 +1526,7 @@ public class DbScope
         {
             for (StringKeyCache<?> cache : _caches.values())
                 cache.close();
+            _caches.clear();
         }
 
         /** @return whether we've reached zero and should therefore commit if that's the request, or false if we should defer to a future call*/

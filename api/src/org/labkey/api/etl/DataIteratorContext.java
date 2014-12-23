@@ -15,12 +15,13 @@
  */
 package org.labkey.api.etl;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.QueryUpdateService;
 
 import java.util.Map;
 
-import static org.labkey.api.query.QueryUpdateService.InsertOption.*;
+import static org.labkey.api.query.QueryUpdateService.InsertOption.INSERT;
 
 /**
  * User: matthewb
@@ -140,6 +141,7 @@ public class DataIteratorContext
         _configParameters = configParameters;
     }
 
+    @Nullable
     public Map<Enum, Object> getConfigParameters()
     {
         return _configParameters;
