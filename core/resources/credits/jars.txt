@@ -38,7 +38,7 @@ jcommon-1.0.17.jar|JCommon|1.0.17|{link:JCommon|http://www.jfree.org/jcommon/ind
 jfreechart-1.0.14.jar|JFreeChart|1.0.14|{link:JFreeChart|http://www.jfree.org/jfreechart/}|{link:LGPL|http://www.gnu.org/copyleft/lesser.html}|mbellew|Charting
 jmock-2.6.0.jar|jMock|2.6.0|{link:jMock|http://www.jmock.org/}|{link:jMock Project License|http://www.jmock.org/license.html}|jeckels|jMock mock object testing framework
 jmock-legacy-2.6.0.jar|jMock|2.6.0|{link:jMock|http://www.jmock.org/}|{link:jMock Project License|http://www.jmock.org/license.html}|jeckels|jMock mock object testing framework
-js.jar|Mozilla Rhino|1.7R3 PRERELEASE 2010/12/16|{link:Mozilla Rhino|http://www.mozilla.org/rhino/}|{link:MPL 1.1|http://www.mozilla.org/MPL}|kevink|Embedded JavaScript engine
+js.jar|Mozilla Rhino|1.7R4|{link:Mozilla Rhino|http://www.mozilla.org/rhino/}|{link:MPL 1.1|http://www.mozilla.org/MPL}|kevink|Embedded JavaScript engine
 js-engine.jar|JSR-223 ScriptEngine for Rhino|Aug. 8th, 2008|{link:Scripting Project|https://scripting.dev.java.net/}|{link:BSD|http://www.opensource.org/licenses/bsd-license.php}|kevink|JSR-223 ScriptEngine APIs for Rhino
 json_simple-1.1.jar|JSON.simple - A Simple Java toolkit for JSON|Version 1.1|{link:JSON.simple|https://code.google.com/p/json-simple/}|{link:Apache License 2.0|http://www.apache.org/licenses/LICENSE-2.0}|gktaylor|JSON parser for remoteapi
 junit-4.11.jar|JUnit|4.11|{link:Junit|http://www.junit.org}|{link:CPL 1.0|http://www.opensource.org/licenses/cpl1.0.php}|jeckels|Unit testing

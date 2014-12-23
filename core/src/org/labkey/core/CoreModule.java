@@ -27,6 +27,8 @@ import org.labkey.api.attachments.AttachmentService;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.ClientAPIAuditViewFactory;
 import org.labkey.api.audit.ClientApiAuditProvider;
+import org.labkey.api.cache.CacheListener;
+import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -259,6 +261,15 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         AnalyticsServiceImpl.register();
         FirstRequestHandler.addFirstRequestListener(new CoreFirstRequestHandler());
         RhinoService.register();
+        CacheManager.addListener(new CacheListener()
+        {
+            @Override
+            public void clearCaches()
+            {
+                RhinoService.clearCaches();
+            }
+        });
+
         ServiceRegistry.get().registerService(ThumbnailService.class, new ThumbnailServiceImpl());
         ServiceRegistry.get().registerService(DataLoaderService.I.class, new DataLoaderServiceImpl());
         ServiceRegistry.get().registerService(ShortURLService.class, new ShortURLServiceImpl());
