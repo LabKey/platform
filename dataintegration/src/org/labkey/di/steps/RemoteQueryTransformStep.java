@@ -70,7 +70,7 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
     }
 
     @Override
-    DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log)
+    protected DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log)
     {
         // find the category to look up in the property manager, provided by the .xml
         if (! (meta instanceof RemoteQueryTransformStepMeta) )

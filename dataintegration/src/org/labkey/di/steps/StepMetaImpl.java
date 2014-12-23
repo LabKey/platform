@@ -89,6 +89,7 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
             setSourceQuery(source.getQueryName());
             if (null != source.getTimestampColumnName())
                 setSourceTimestampColumnName(source.getTimestampColumnName());
+            setUseSourceTransaction(source.getUseTransaction());
             try
             {
                 if (null != source.getSourceOption())
@@ -118,6 +119,8 @@ public abstract class StepMetaImpl extends CopyConfig implements StepMeta
                 {
                     setBulkLoad(destination.getBulkLoad());
                 }
+                setUseTargetTransaction(destination.getUseTransaction());
+                setTransactionSize(destination.getTransactionSize().intValue());
             }
             else
             {

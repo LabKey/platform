@@ -28,6 +28,11 @@
         <attribute name="timestampColumnName" type="string" use="optional"/>
         <attribute name="sourceOption" type="etl:SourceOptionType" use="optional"/>
         <attribute name="remoteSource" type="string" use="optional"/>
+        <attribute name="useTransaction" type="boolean" use="optional" default="true">
+            <annotation>
+                <documentation>Wrap selecting from source query in a transaction. Only used for simple query transform types.</documentation>
+            </annotation>
+        </attribute>
     </complexType>
 
     <complexType name="TargetObjectType">
@@ -61,6 +66,16 @@
         <attribute name="rowDelimiter" type="string" use="optional"/>
         <attribute name="targetOption" type="etl:TargetOptionType" use="optional" default="append"/>
         <attribute name="type" type="etl:TargetTypeType" use="optional" default="query"/>
+        <attribute name="useTransaction" type="boolean" use="optional" default="true">
+            <annotation>
+                <documentation>Wrap writing to target query in a transaction. Not used when target is a file.</documentation>
+            </annotation>
+        </attribute>
+        <attribute name="transactionSize" type="nonNegativeInteger" use="optional" default="0">
+            <annotation>
+                <documentation>Incrementally commit target transaction every n rows instead of in a single wrapping transaction.</documentation>
+            </annotation>
+        </attribute>
     </complexType>
 
     <simpleType name ="SourceOptionType">
@@ -99,7 +114,11 @@
         </sequence>
         <attribute name="schemaName" type="string" use="required"/>
         <attribute name="procedureName" type="string" use="required"/>
-        <attribute name="useTransaction" type="boolean" use="optional" default="true"/>
+        <attribute name="useTransaction" type="boolean" use="optional" default="true">
+            <annotation>
+                <documentation>Wrap the call of the procedure in a transaction.</documentation>
+            </annotation>
+        </attribute>
     </complexType>
 
     <complexType name="ProcedureParameterType">

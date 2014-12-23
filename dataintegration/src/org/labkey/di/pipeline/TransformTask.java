@@ -15,9 +15,12 @@
  */
 package org.labkey.di.pipeline;
 
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DataIteratorResultsImpl;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ParameterDescription;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TSVColumnWriter;
@@ -108,16 +111,16 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         return rows + " row" + (rows != 1 ? "s" : "");
     }
 
-    protected int appendToTarget(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
+    protected int appendToTarget(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log, @Nullable DbScope.Transaction txTarget)
     {
         if (CopyConfig.TargetTypes.query.equals(meta.getTargetType()))
-            return appendToTargetQuery(meta, c, u, context, source, log);
+            return appendToTargetQuery(meta, c, u, context, source, log, txTarget);
         else if (CopyConfig.TargetTypes.file.equals(meta.getTargetType()))
             return appendToTargetFile(meta, context, source, log);
         else throw new IllegalArgumentException("Invalid target type specified.");
     }
 
-    private int appendToTargetQuery(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log)
+    private int appendToTargetQuery(CopyConfig meta, Container c, User u, DataIteratorContext context, DataIteratorBuilder source, Logger log, DbScope.Transaction txTarget)
     {
         QuerySchema querySchema =  DefaultSchema.get(u, c, meta.getTargetSchema());
         if (null == querySchema || null == querySchema.getDbSchema())
@@ -148,6 +151,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
             Map<Enum, Object> options = new HashMap<>();
             options.put(QueryUpdateService.ConfigParameters.Logger, log);
+            addTransactionOptions(targetTableInfo, c, context, txTarget, extraContext, options);
 
             log.info("Target option: " + meta.getTargetOptions());
             switch (meta.getTargetOptions())
@@ -171,6 +175,59 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
         catch (SQLException sqlx)
         {
             throw new RuntimeSQLException(sqlx);
+        }
+    }
+
+    /**
+     * Allows specifying transactions should be every n rows rather than a single wrapping transaction. Add any batch trigger as a pre-commit task.
+     * A
+     */
+    private void addTransactionOptions(final TableInfo target, final Container c, final DataIteratorContext context, DbScope.Transaction txTarget, final Map<String, Object> extraContext, final Map<Enum, Object> options)
+    {
+        if (_meta.getTransactionSize() > 0)
+        {
+            options.put(QueryUpdateService.ConfigParameters.TransactionSize, _meta.getTransactionSize());
+            if (target.hasTriggers(c))
+            {
+                txTarget.addCommitTask(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        if (BooleanUtils.isNotFalse((Boolean) extraContext.get("hasNextRow")))
+                        {
+                            try
+                            {
+                                target.fireBatchTrigger(c, TableInfo.TriggerType.INSERT, false, context.getErrors(), extraContext);
+                                target.resetTriggers(c);
+                            }
+                            catch (BatchValidationException e)
+                            {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+                }, DbScope.CommitTaskOption.PRECOMMIT);
+
+                txTarget.addCommitTask(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        if (BooleanUtils.isNotFalse((Boolean) extraContext.get("hasNextRow")))
+                        {
+                            try
+                            {
+                                target.fireBatchTrigger(c, TableInfo.TriggerType.INSERT, true, context.getErrors(), extraContext);
+                            }
+                            catch (BatchValidationException e)
+                            {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    }
+                }, DbScope.CommitTaskOption.POSTCOMMIT);
+            }
         }
     }
 

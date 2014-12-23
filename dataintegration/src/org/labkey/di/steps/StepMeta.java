@@ -51,4 +51,8 @@ public interface StepMeta
     boolean isUseSource();
 
     boolean isUseTarget();
+
+    boolean isUseTargetTransaction();
+
+    int getTransactionSize();
 }

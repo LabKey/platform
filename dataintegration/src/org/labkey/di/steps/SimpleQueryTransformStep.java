@@ -97,7 +97,7 @@ public class SimpleQueryTransformStep extends TransformTask
     public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws IOException, SQLException
     {
         boolean validationResult = validate(meta, c, u, log);
-        if (validationResult == false)
+        if (!validationResult)
             return false;
 
         QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
@@ -123,8 +123,8 @@ public class SimpleQueryTransformStep extends TransformTask
             long start = System.currentTimeMillis();
 
             try (
-                    DbScope.Transaction txTarget = (meta.getTargetType().equals(CopyConfig.TargetTypes.query)) ? targetScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE) : null;
-                    DbScope.Transaction txSource = (null==sourceScope)?null:sourceScope.ensureTransaction(Connection.TRANSACTION_REPEATABLE_READ)
+                    DbScope.Transaction txTarget = (null==targetScope || !_meta.isUseTargetTransaction()) ? null : targetScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
+                    DbScope.Transaction txSource = (null==sourceScope || !_meta.isUseSourceTransaction()) ? null : sourceScope.ensureTransaction(Connection.TRANSACTION_REPEATABLE_READ)
             )
             {
                 log.info("Copying data from " + meta.getSourceSchema() + "." + meta.getSourceQuery() + " to " +
@@ -136,7 +136,7 @@ public class SimpleQueryTransformStep extends TransformTask
                 int transformRunId = getTransformJob().getTransformRunId();
                 DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, source, log, getTransformJob(), _factory.getStatusName());
 
-                _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log);
+                _recordsInserted = appendToTarget(meta, c, u, context, transformSource, log, txTarget);
 
                 if (null != txTarget)
                     txTarget.commit();
@@ -175,7 +175,7 @@ public class SimpleQueryTransformStep extends TransformTask
     }
 
 
-    DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log)
+    protected DataIteratorBuilder selectFromSource(CopyConfig meta, Container c, User u, DataIteratorContext context, Logger log)
     {
         try
         {

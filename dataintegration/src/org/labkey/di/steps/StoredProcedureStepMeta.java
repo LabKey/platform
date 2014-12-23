@@ -35,7 +35,6 @@ import java.util.Map;
 public class StoredProcedureStepMeta extends StepMetaImpl
 {
     private Map<String, ETLParameterInfo> xmlParamInfos = new CaseInsensitiveHashMap<>();
-    private boolean useTransaction;
 
     final class ETLParameterInfo
     {
@@ -103,7 +102,7 @@ public class StoredProcedureStepMeta extends StepMetaImpl
         {
             setProcedureSchema(SchemaKey.fromString(procedure.getSchemaName()));
             setProcedure(procedure.getProcedureName());
-            useTransaction = procedure.isSetUseTransaction();
+            setUseProcTransaction(procedure.getUseTransaction());
 
             for (ProcedureParameterType xmlParam: procedure.getParameterArray())
             {
@@ -134,10 +133,5 @@ public class StoredProcedureStepMeta extends StepMetaImpl
     public boolean isGlobalParam(String paramName)
     {
         return xmlParamInfos.containsKey(paramName) && xmlParamInfos.get(paramName).getScope().equals(VariableMap.Scope.global);
-    }
-
-    public boolean isUseTransaction()
-    {
-        return useTransaction;
     }
 }

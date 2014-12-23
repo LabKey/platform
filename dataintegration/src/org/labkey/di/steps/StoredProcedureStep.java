@@ -70,8 +70,9 @@ public class StoredProcedureStep extends TransformTask
 
     private String procSchema;
     private String procName;
-    private DbScope scope;
-    private SqlDialect dialect;
+    private DbScope procScope;
+    private DbScope targetScope = null;
+    private SqlDialect procDialect;
     private RETURN_TYPE procReturns = RETURN_TYPE.NONE;
     private CaseInsensitiveHashMap<Object> localSavedParamVals = new CaseInsensitiveHashMap<>();
     private CaseInsensitiveHashMap<Object> globalSavedParamVals = new CaseInsensitiveHashMap<>();
@@ -169,7 +170,7 @@ public class StoredProcedureStep extends TransformTask
     private boolean executeProcedure() throws SQLException
     {
         if (!validate(_meta, _context.getContainer(), _context.getUser(), getJob().getLogger())) return false;
-        if (!validateAndSetDbScope()) return false;
+        if (!validateAndSetDbScopes()) return false;
         if (!getParametersFromDbMetadata()) return false;
         seedParameterValues();
         logFilterValues();
@@ -177,16 +178,22 @@ public class StoredProcedureStep extends TransformTask
 
     }
 
-    private boolean validateAndSetDbScope()
+    private boolean validateAndSetDbScopes()
     {
         // TODO: This is misnamed; we're not really doing validation, nor do we ever return false
         procSchema = _meta.getProcedureSchema().toString();
         procName = _meta.getProcedure();
 
         DbSchema schema = DbSchema.get(procSchema);
-        scope = schema.getScope();
-        dialect = scope.getSqlDialect();
+        procScope = schema.getScope();
+        procDialect = procScope.getSqlDialect();
 
+        if (_meta.getTargetSchema() != null && StringUtils.isNotEmpty(_meta.getTargetSchema().toString()))
+        {
+            schema = DbSchema.get(_meta.getTargetSchema().toString());
+            if (!schema.getScope().equals(procScope))
+                targetScope = schema.getScope();
+        }
         return true;
     }
 
@@ -196,15 +203,17 @@ public class StoredProcedureStep extends TransformTask
         long duration = 0;
         boolean badReturn = false;
 
-        try (Connection conn = scope.getConnection();
-             CallableStatement stmt = conn.prepareCall(dialect.buildProcedureCall(procSchema, procName, metadataParameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET))) )
+        try (Connection conn = procScope.getConnection();
+             CallableStatement stmt = conn.prepareCall(procDialect.buildProcedureCall(procSchema, procName, metadataParameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET)));
+             DbScope.Transaction txProc = _meta.isUseProcTransaction() ?  procScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE) : null;
+             DbScope.Transaction txTarget = (targetScope != null && _meta.isUseTargetTransaction()) ? procScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE) : null
+        )
+
         {
-            dialect.registerParameters(scope, stmt, metadataParameters, procReturns.equals(RETURN_TYPE.RESULTSET));
+            procDialect.registerParameters(procScope, stmt, metadataParameters, procReturns.equals(RETURN_TYPE.RESULTSET));
 
             getJob().info("Executing stored procedure " + procSchema + "." + procName);
             long start = System.currentTimeMillis();
-            if (_meta.isUseTransaction())
-                scope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
 
             if (procReturns.equals(RETURN_TYPE.RESULTSET))
                 conn.setAutoCommit(false);
@@ -212,7 +221,7 @@ public class StoredProcedureStep extends TransformTask
 
             long finish = System.currentTimeMillis();
 
-            processInlineResults(stmt, resultsAvailable);
+            processInlineResults(stmt, resultsAvailable, txTarget == null ? txProc : txTarget);
 
             SQLWarning warn = stmt.getWarnings();
             while (warn != null)
@@ -221,12 +230,14 @@ public class StoredProcedureStep extends TransformTask
                 warn = warn.getNextWarning();
             }
 
-            Integer procResult = readOutputParams(stmt);
+            Integer procResult = readOutputParams(stmt, txTarget == null ? txProc : txTarget);
             if (procResult == null)
                 return false;
             else returnValue = procResult;
-            if (_meta.isUseTransaction())
-                scope.getCurrentTransaction().commit();
+            if (txProc != null)
+                txProc.commit();
+            if (txTarget != null)
+                txTarget.commit();
             if ((procReturns.equals(RETURN_TYPE.INTEGER)) && returnValue > 0)
                 badReturn = true;
 
@@ -238,7 +249,7 @@ public class StoredProcedureStep extends TransformTask
         }
         finally
         {
-            scope.closeConnection();
+            procScope.closeConnection();
         }
         if (badReturn)
         {
@@ -254,11 +265,11 @@ public class StoredProcedureStep extends TransformTask
      *  For SQL Server. Have to step through all inline resultsets before allowed to access output metadataParameters.
      * Also, the first may be the real resultset we want to write to a target. Postgres result sets are handled later with output metadataParameters
      */
-    private boolean processInlineResults(CallableStatement stmt, boolean resultsAvailable) throws SQLException
+    private boolean processInlineResults(CallableStatement stmt, boolean resultsAvailable, DbScope.Transaction txTarget) throws SQLException
     {
         ResultSet inlineResult;
         boolean firstResult = true;
-        if (dialect.isProcedureSupportsInlineResults())
+        if (procDialect.isProcedureSupportsInlineResults())
         {
             while (resultsAvailable || stmt.getUpdateCount() > -1) // row counts of queries internal to the proc are also in the set of resultsets. Nice, huh?
             {
@@ -271,7 +282,7 @@ public class StoredProcedureStep extends TransformTask
                     if (firstResult && _meta.isUseTarget())
                     {
                         firstResult = false;
-                        if (!writeToTarget(inlineResult, getJob().getLogger()))
+                        if (!writeToTarget(inlineResult, getJob().getLogger(), txTarget))
                             return false;
                     }
                     else
@@ -286,7 +297,7 @@ public class StoredProcedureStep extends TransformTask
 
     private boolean getParametersFromDbMetadata() throws SQLException
     {
-        metadataParameters = dialect.getParametersFromDbMetadata(scope, procSchema, procName);
+        metadataParameters = procDialect.getParametersFromDbMetadata(procScope, procSchema, procName);
 
         if (metadataParameters.containsKey(SPECIAL_PARMS.return_status.name()))
             procReturns = RETURN_TYPE.INTEGER;
@@ -307,7 +318,7 @@ public class StoredProcedureStep extends TransformTask
         for (Map.Entry<String, MetadataParameterInfo> parameter : metadataParameters.entrySet())
         {
             String paramName = parameter.getKey();
-            String dialectParamName = dialect.translateParameterName(paramName, true);
+            String dialectParamName = procDialect.translateParameterName(paramName, true);
             MetadataParameterInfo mdParamInfo = parameter.getValue();
             Object inputValue = null;
 
@@ -402,7 +413,7 @@ public class StoredProcedureStep extends TransformTask
             SimpleFilter f = filterStrategy.getFilter(getVariableMap());
             try
             {
-                getJob().info(filterStrategy.getClass().getSimpleName() + ": " + (null == f ? "no filter" : f.toSQLString(dialect)));
+                getJob().info(filterStrategy.getClass().getSimpleName() + ": " + (null == f ? "no filter" : f.toSQLString(procDialect)));
             }
             catch (UnsupportedOperationException|IllegalArgumentException x)
             {
@@ -426,7 +437,7 @@ public class StoredProcedureStep extends TransformTask
         {
             Map.Entry<String, Object> e = it.next();
 
-            final String paramName = dialect.translateParameterName(e.getKey(), false);
+            final String paramName = procDialect.translateParameterName(e.getKey(), false);
             if (!metadataParameters.containsKey(paramName)
                     && !e.getKey().equals(TransformProperty.IncrementalStartTimestamp.getPropertyDescriptor().getName())
                     && !e.getKey().equals(TransformProperty.IncrementalEndTimestamp.getPropertyDescriptor().getName())
@@ -442,17 +453,17 @@ public class StoredProcedureStep extends TransformTask
     }
 
     @Nullable
-    private Integer readOutputParams(CallableStatement stmt) throws SQLException
+    private Integer readOutputParams(CallableStatement stmt, DbScope.Transaction txTarget) throws SQLException
     {
         Integer returnVal;
 
         if (procReturns.equals(RETURN_TYPE.RESULTSET) && _meta.isUseTarget()) // Postgres resultset output
         {
-            if (writeToTarget((ResultSet) stmt.getObject(1), getJob().getLogger()))
+            if (writeToTarget((ResultSet) stmt.getObject(1), getJob().getLogger(), txTarget))
                 returnVal = 0;
             else returnVal = null;
         }
-        else returnVal = dialect.readOutputParameters(scope, stmt, metadataParameters);
+        else returnVal = procDialect.readOutputParameters(procScope, stmt, metadataParameters);
 
         for (Map.Entry<String, MetadataParameterInfo> parameter : metadataParameters.entrySet())
         {
@@ -482,7 +493,7 @@ public class StoredProcedureStep extends TransformTask
                 }
 
                 // Persist the new value to the correct scope
-                String dialectName = dialect.translateParameterName(paramName, true);
+                String dialectName = procDialect.translateParameterName(paramName, true);
                 if (_meta.isGlobalParam(paramName))
                     globalSavedParamVals.put(dialectName, value);
                 else
@@ -497,7 +508,7 @@ public class StoredProcedureStep extends TransformTask
     /**
      * Treat the resultset output by the proc the same as a source query output, write it to the specified target
      */
-    private boolean writeToTarget(ResultSet rs, Logger log)
+    private boolean writeToTarget(ResultSet rs, Logger log, DbScope.Transaction txTarget)
     {
         Map<Enum, Object> options = new HashMap<>();
         options.put(QueryUpdateService.ConfigParameters.Logger, log);
@@ -509,7 +520,7 @@ public class StoredProcedureStep extends TransformTask
 
         int transformRunId = getTransformJob().getTransformRunId();
         DataIteratorBuilder transformSource = new TransformDataIteratorBuilder(transformRunId, new DataIteratorBuilder.Wrapper(ResultSetDataIterator.wrap(rs, context)), getJob().getLogger(), getTransformJob(), _factory.getStatusName());
-        _recordsInserted = appendToTarget(_meta, _context.getContainer(), _context.getUser(), context, transformSource , getJob().getLogger());
+        _recordsInserted = appendToTarget(_meta, _context.getContainer(), _context.getUser(), context, transformSource , getJob().getLogger(), txTarget);
 
         if (context.getErrors().hasErrors())
         {
