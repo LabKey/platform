@@ -71,7 +71,7 @@ public class PipelineManager
 {
     private static final Logger _log = Logger.getLogger(PipelineManager.class);
     private static final PipelineSchema pipeline = PipelineSchema.getInstance();
-    private static final BlockingStringKeyCache<PipelineRoot> CACHE = CacheManager.getBlockingStringKeyCache(10000, CacheManager.DAY, "Pipeline roots", new CacheLoader<String, PipelineRoot>()
+    private static final BlockingStringKeyCache<PipelineRoot> CACHE = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, "Pipeline roots", new CacheLoader<String, PipelineRoot>()
     {
         @Override
         public PipelineRoot load(String key, @Nullable Object argument)

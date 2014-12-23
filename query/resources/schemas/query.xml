@@ -56,7 +56,7 @@
       </ns:columns>
     </ns:table>
     <ns:table tableName="ExternalSchema" tableDbType="TABLE">
-        <ns:cacheSize>10000</ns:cacheSize>
+        <ns:cacheSize>0</ns:cacheSize><!-- Unlimited, since size scales with Container count -->
         <ns:columns>
             <ns:column columnName="ExternalSchemaId" />
             <ns:column columnName="EntityId" />

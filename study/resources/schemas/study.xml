@@ -19,7 +19,7 @@
 <ns:tables xsi:schemaLocation="http://cpas.fhcrc.org/data/xml ..\..\..\..\schemas\tableInfo.xsd" xmlns:ns="http://labkey.org/data/xml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ns:table tableName="Study" tableDbType="TABLE">
     <ns:description>Contains one row per study, describing basic and extended study properties.</ns:description>
-    <ns:cacheSize>40000</ns:cacheSize>
+    <ns:cacheSize>0</ns:cacheSize><!-- Unlimited, since size scales with Container count -->
     <ns:columns>
       <ns:column columnName="Label">
         <ns:description>The long/friendly name of each study.</ns:description>
