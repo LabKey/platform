@@ -89,7 +89,9 @@ public class SimpleQueryTransformStep extends TransformTask
     protected DbScope getSourceScope(QuerySchema sourceSchema, DbScope targetScope)
     {
         DbScope sourceScope = sourceSchema.getDbSchema().getScope();
-        if (sourceScope.equals(targetScope))
+        // On postgres, if we're going to be commit the transaction along the way, we need two separate connections
+        // See http://www.postgresql.org/message-id/j2sca24673e1004151639r3b5e84b5hb757cc736ae5aaa1@mail.gmail.com
+        if (sourceScope.equals(targetScope) && _meta.getTransactionSize() == 0)
             return null;
         return sourceScope;
     }
@@ -124,7 +126,9 @@ public class SimpleQueryTransformStep extends TransformTask
 
             try (
                     DbScope.Transaction txTarget = (null==targetScope || !_meta.isUseTargetTransaction()) ? null : targetScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
-                    DbScope.Transaction txSource = (null==sourceScope || !_meta.isUseSourceTransaction()) ? null : sourceScope.ensureTransaction(Connection.TRANSACTION_REPEATABLE_READ)
+                    // On postgres, if we're going to be commit the transaction along the way, we need two separate connections
+                    // See http://www.postgresql.org/message-id/j2sca24673e1004151639r3b5e84b5hb757cc736ae5aaa1@mail.gmail.com
+                    DbScope.Transaction txSource = ((null == sourceScope) || !_meta.isUseSourceTransaction()) ? null : (sourceScope.equals(targetScope) ? sourceScope.beginTransaction() : sourceScope.ensureTransaction(Connection.TRANSACTION_REPEATABLE_READ))
             )
             {
                 log.info("Copying data from " + meta.getSourceSchema() + "." + meta.getSourceQuery() + " to " +
