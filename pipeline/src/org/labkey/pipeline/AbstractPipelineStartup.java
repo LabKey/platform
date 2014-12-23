@@ -45,12 +45,14 @@ public abstract class AbstractPipelineStartup
     /**
      * @return map from module name to BeanFactory
      */
-    protected Map<String, BeanFactory> initContext(String log4JConfigPath, List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, PipelineJobService.LocationType locationType) throws IOException
+    protected Map<String, BeanFactory> initContext(String log4JConfigPath, List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, PipelineJobService.LocationType locationType) throws IOException
     {
         LoggerUtil.initLogging(log4JConfigPath);
 
         //load the modules and sort them by dependencies
-        List<Module> modules = new ModuleLoader().doInit(moduleFiles);
+        ModuleLoader moduleLoader = new ModuleLoader();
+        List<Module> modules = moduleLoader.doInit(moduleFiles);
+        moduleLoader.setWebappDir(webappDir);
         ModuleDependencySorter sorter = new ModuleDependencySorter();
         modules = sorter.sortModulesByDependencies(modules, Collections.<ModuleResourceLoader>emptySet());
 

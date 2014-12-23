@@ -17,12 +17,12 @@
 package org.labkey.pipeline.cluster;
 
 import org.labkey.api.pipeline.PipelineJob;
-import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.pipeline.AbstractPipelineStartup;
-import org.labkey.pipeline.api.PipelineJobServiceImpl;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
@@ -36,9 +36,9 @@ public class ClusterStartup extends AbstractPipelineStartup
     /**
      * This method is invoked by reflection - don't change its signature without changing org.labkey.bootstrap.ClusterBootstrap 
      */
-    public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, String[] args) throws IOException, URISyntaxException, PipelineJobException 
+    public void run(List<File> moduleFiles, List<File> moduleConfigFiles, List<File> customConfigFiles, File webappDir, String[] args) throws IOException, URISyntaxException, PipelineJobException
     {
-        initContext("org/labkey/pipeline/mule/config/cluster.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles, PipelineJobService.LocationType.Cluster);
+        initContext("org/labkey/pipeline/mule/config/cluster.log4j.properties", moduleFiles, moduleConfigFiles, customConfigFiles, webappDir, PipelineJobService.LocationType.Cluster);
 
         if (args.length < 1)
         {
