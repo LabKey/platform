@@ -110,6 +110,13 @@ public final class RhinoService
         ServiceRegistry.get().registerService(ScriptService.class, new RhinoFactory());
     }
 
+    public static void clearCaches()
+    {
+        // Clear Rhino's internal module script cache and shared topLevel.  LabKey caches will be cleared seprately.
+        LOG.info("Purging RhinoService caches");
+        RhinoEngine.clearTopLevel();
+    }
+
     public static class TestCase extends Assert
     {
         @BeforeClass
@@ -415,12 +422,46 @@ class ScriptReferenceImpl implements ScriptReference
 
     public boolean hasFn(String name) throws ScriptException
     {
+        ScriptContext ctxt = getContext();
+        Scriptable scope = engine.getRuntimeScope(ctxt);
+        return hasFn(scope, name);
+    }
+
+    public boolean hasFn(Object thiz, String name) throws ScriptException
+    {
+        if (!(thiz instanceof Scriptable))
+            throw new ScriptException("Scope must be a Rhino Scriptable object");
+
         // compile and evaluate if necessary
         if (!evaluated)
             eval();
-        ScriptContext ctxt = getContext();
-        Scriptable scope = engine.getRuntimeScope(ctxt);
-        return ScriptableObject.getProperty(scope, name) instanceof Function;
+        return ScriptableObject.getProperty((Scriptable)thiz, name) instanceof Function;
+    }
+
+    public <T> T invokeFn(Class<T> resultType, Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException
+    {
+        // compile and evaluate if necessary
+        if (!evaluated)
+            eval();
+
+        Context ctx = Context.enter();
+        try
+        {
+            RhinoService.LOG.debug("Invoking method '" + name + "' in script '" + r.getPath().toString() + "'");
+            Object result = engine.invokeMethod(thiz, name, args);
+            if (result == null)
+                return null;
+            return (T)ScriptUtils.jsToJava(result, resultType);
+        }
+        finally
+        {
+            Context.exit();
+        }
+    }
+
+    public Object invokeFn(String name, Object... args) throws ScriptException, NoSuchMethodException
+    {
+        return invokeFn(Object.class, name, args);
     }
 
     public <T> T invokeFn(Class<T> resultType, String name, Object... args) throws ScriptException, NoSuchMethodException
@@ -446,9 +487,9 @@ class ScriptReferenceImpl implements ScriptReference
         }
     }
 
-    public Object invokeFn(String name, Object... args) throws ScriptException, NoSuchMethodException
+    public Object invokeFn(Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException
     {
-        return invokeFn(Object.class, name, args);
+        return invokeFn(Object.class, thiz, name, args);
     }
 }
 
@@ -463,7 +504,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     @Override
     protected ModuleSource loadFromUri(URI uri, URI base, Object validator) throws IOException, URISyntaxException
     {
-        return load(uri.getPath(), validator);
+        return load(uri.getPath() + ".js", validator);
     }
 
     @Override
@@ -560,6 +601,15 @@ class RhinoEngine extends RhinoScriptEngine
         setEngineFactory(factory);
     }
 
+    static void clearTopLevel()
+    {
+        synchronized (sharedTopLevelLock) {
+            if (sharedTopLevel != null)
+                sharedTopLevel.clear();
+            _moduleScriptProvider = null;
+        }
+    }
+
     // Similar to the topLevel scope created in RhinoScriptEngine
     // except it is sealed to prevent modifications to built-in objects
     // or adding any additional objects to the scope.  In addition, the
@@ -640,7 +690,7 @@ class RhinoEngine extends RhinoScriptEngine
     {
         try
         {
-            ModuleScript global = _moduleScriptProvider.getModuleScript(cx, "global", null, null);
+            ModuleScript global = _moduleScriptProvider.getModuleScript(cx, "global", null, null, null);
             global.getScript().exec(cx, scope);
         }
         catch (Exception e)

@@ -45,11 +45,21 @@ public interface ScriptReference
 
     /**
      * Checks if a JavaScript function is in scope after {@link eval()}uating the compiled script.
+     * The scope is the top-level script context.
      * @param name
      * @return
      * @throws ScriptException
      */
     public boolean hasFn(String name) throws ScriptException;
+
+    /**
+     * Checks if a JavaScript function is in scope after {@link eval()}uating the compiled script.
+     * @param thiz The scope to interrogate (must be a Rhino Scriptable object.)
+     * @param name
+     * @return
+     * @throws ScriptException
+     */
+    public boolean hasFn(Object thiz, String name) throws ScriptException;
 
     /**
      * Calls a JavaScript function after {@link eval()}uating the compiled script.  These are loose
@@ -62,4 +72,17 @@ public interface ScriptReference
      */
     public Object invokeFn(String name, Object... args) throws ScriptException, NoSuchMethodException;
     public <T> T invokeFn(Class<T> resultType, String name, Object... args) throws ScriptException, NoSuchMethodException;
+
+    /**
+     * Calls a JavaScript function after {@link eval()}uating the compiled script.  These are loose
+     * functions defined in the top-level of the script and not methods of objects.
+     * @param thiz The scope to invoke the function in.
+     * @param name
+     * @param args
+     * @return
+     * @throws ScriptException
+     * @throws NoSuchMethodException
+     */
+    public Object invokeFn(Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException;
+    public <T> T invokeFn(Class<T> resultType, Object thiz, String name, Object... args) throws ScriptException, NoSuchMethodException;
 }
