@@ -15,12 +15,14 @@
  */
 package org.labkey.api.study.assay;
 
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.actions.PlateUploadForm;
+import org.labkey.api.study.assay.plate.PlateReader;
 
 import java.io.File;
 
@@ -33,7 +35,8 @@ public interface PlateBasedAssayProvider extends AssayProvider
     public void setPlateTemplate(Container container, ExpProtocol protocol, PlateTemplate template);
     public PlateTemplate getPlateTemplate(Container container, ExpProtocol protocol);
     public File getSampleMetadataFile(Container container, int runId);
-    public String getPlateReaderListName();
+    @Nullable
+    public PlateReader getPlateReader(String readerName);
     public SampleMetadataInputFormat[] getSupportedMetadataInputFormats();
     public SampleMetadataInputFormat getMetadataInputFormat(ExpProtocol protocol);
     public void setMetadataInputFormat(ExpProtocol protocol, SampleMetadataInputFormat format) throws ExperimentException;

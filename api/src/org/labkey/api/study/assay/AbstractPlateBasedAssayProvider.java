@@ -33,6 +33,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.PlateService;
 import org.labkey.api.study.PlateTemplate;
 import org.labkey.api.study.actions.PlateUploadForm;
+import org.labkey.api.study.assay.plate.PlateReader;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.InsertView;
@@ -223,10 +224,13 @@ public abstract class AbstractPlateBasedAssayProvider extends AbstractTsvAssayPr
         return new PlateSampleFilePropertyHelper(c, protocol, sampleProperties, template, inputFormat);
     }
 
+    /**
+     * Resolves a plate reader instance from a reader name
+     */
     @Override
-    public String getPlateReaderListName()
+    public PlateReader getPlateReader(String readerName)
     {
-        return getName();
+        return null;
     }
 
     public static class SpecimenIDLookupResolverType extends StudyParticipantVisitResolverType
