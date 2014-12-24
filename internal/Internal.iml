@@ -28,7 +28,7 @@
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="jar://$MODULE_DIR$/lib/rhino1_7R4.zip!/rhino1_7R4/src" />
+          <root url="jar://$MODULE_DIR$/lib/rhino1_7R2.zip!/rhino1_7R2/src" />
         </SOURCES>
       </library>
     </orderEntry>

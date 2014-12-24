@@ -504,7 +504,7 @@ class LabKeyModuleSourceProvider extends ModuleSourceProviderBase
     @Override
     protected ModuleSource loadFromUri(URI uri, URI base, Object validator) throws IOException, URISyntaxException
     {
-        return load(uri.getPath() + ".js", validator);
+        return load(uri.getPath(), validator);
     }
 
     @Override
@@ -690,7 +690,7 @@ class RhinoEngine extends RhinoScriptEngine
     {
         try
         {
-            ModuleScript global = _moduleScriptProvider.getModuleScript(cx, "global", null, null, null);
+            ModuleScript global = _moduleScriptProvider.getModuleScript(cx, "global", null, null);
             global.getScript().exec(cx, scope);
         }
         catch (Exception e)
