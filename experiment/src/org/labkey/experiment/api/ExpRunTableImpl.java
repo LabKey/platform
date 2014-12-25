@@ -39,7 +39,6 @@ import org.labkey.api.data.Sort;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.data.VirtualTable;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.ExperimentException;
 import org.labkey.api.exp.PropertyColumn;
 import org.labkey.api.exp.PropertyDescriptor;

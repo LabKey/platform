@@ -51,10 +51,8 @@ public class ProtocolApplicationDisplayColumn extends SimpleDisplayColumn
         }
         else
         {
-            ActionURL url = new ActionURL(ExperimentController.ShowApplicationAction.class, ctx.getContainer());
-            url.addParameter("rowId", Integer.toString(_protocolApplication.getRowId()));
-            out.write("<a href=\"" + url.toString() + "\">" + _protocolApplication.getName() + "</a>");
+            ActionURL url = ExperimentController.getShowApplicationURL(ctx.getContainer(), _protocolApplication.getRowId());
+            out.write("<a href=\"" + url.getEncodedLocalURIString() + "\">" + _protocolApplication.getName() + "</a>");
         }
     }
-
 }

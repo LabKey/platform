@@ -498,7 +498,7 @@ public class ReportsController extends BaseStudyController
             if (!StringUtils.isBlank(form.getRedirectUrl()))
                 return new ActionURL(form.getRedirectUrl());
 
-            // after the save just redirect to the newly created view, ask the report for it's run URL
+            // after the save just redirect to the newly created view, ask the report for its run URL
             Report r = ReportService.get().getReport(_savedReportId);
             if (r != null)
                 return r.getRunReportURL(getViewContext());
@@ -1118,14 +1118,6 @@ public class ReportsController extends BaseStudyController
 
     public static class ExternalReportForm extends BeanViewForm<ExternalReport>
     {
-        @Override
-        public ExternalReport getBean()
-        {
-            ExternalReport rpt = super.getBean();
-            rpt.setContainer(getContainer());
-            return rpt;
-        }
-
         public ExternalReportForm()
         {
             super(ExternalReport.class);

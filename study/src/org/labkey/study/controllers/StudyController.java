@@ -3821,34 +3821,41 @@ public class StudyController extends BaseStudyController
         }
     }
 
+
+    public static ActionURL getViewPreferencesURL(Container c, int id, String viewName)
+    {
+        return new ActionURL(ViewPreferencesAction.class, c).addParameter(DataSetDefinition.DATASETKEY, id).addParameter("defaultView", viewName);
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class)
     public class ViewPreferencesAction extends SimpleViewAction
     {
-        StudyImpl study;
-        DataSet def;
+        private StudyImpl _study;
+        private DataSet _def;
 
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            study = getStudyRedirectIfNull();
+            _study = getStudyRedirectIfNull();
 
-
+            // TODO: Here's an idea... use a form!
             String id = getViewContext().getRequest().getParameter(DataSetDefinition.DATASETKEY);
             String defaultView = getViewContext().getRequest().getParameter("defaultView");
 
             if (NumberUtils.isDigits(id))  // Should be a positive integer
             {
                 int dsid = NumberUtils.toInt(id);
-                def = StudyManager.getInstance().getDatasetDefinition(study, dsid);
-                if (def != null)
+                _def = StudyManager.getInstance().getDatasetDefinition(_study, dsid);
+                if (_def != null)
                 {
-                    List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), def);
+                    List<Pair<String, String>> views = ReportManager.get().getReportLabelsForDataset(getViewContext(), _def);
                     if (defaultView != null)
                     {
                         setDefaultView(dsid, defaultView);
                     }
                     else
                     {
-                        defaultView = getDefaultView(getViewContext(), def.getDatasetId());
+                        defaultView = getDefaultView(getViewContext(), _def.getDatasetId());
                         if (!StringUtils.isEmpty(defaultView))
                         {
                             boolean defaultExists = false;
@@ -3865,8 +3872,8 @@ public class StudyController extends BaseStudyController
                         }
                     }
 
-                    ViewPrefsBean bean = new ViewPrefsBean(views, def);
-                    return new StudyJspView<>(study, "viewPreferences.jsp", bean, errors);
+                    ViewPrefsBean bean = new ViewPrefsBean(views, _def);
+                    return new StudyJspView<>(_study, "viewPreferences.jsp", bean, errors);
                 }
             }
             throw new NotFoundException("Invalid dataset ID");
@@ -3876,12 +3883,12 @@ public class StudyController extends BaseStudyController
         {
             setHelpTopic(new HelpTopic("Set Default View"));
 
-            root.addChild(study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
+            root.addChild(_study.getLabel(), new ActionURL(BeginAction.class, getContainer()));
 
             ActionURL datasetURL = getViewContext().getActionURL().clone();
             datasetURL.setAction(DatasetAction.class);
 
-            String label = def.getLabel() != null ? def.getLabel() : "" + def.getDatasetId();
+            String label = _def.getLabel() != null ? _def.getLabel() : "" + _def.getDatasetId();
             root.addChild(new NavTree(label, datasetURL.getLocalURIString()));
 
             root.addChild(new NavTree("View Preferences"));

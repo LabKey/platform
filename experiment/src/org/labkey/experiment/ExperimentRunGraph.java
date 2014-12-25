@@ -167,7 +167,6 @@ public class ExperimentRunGraph
         {
             testDotPath();
 
-            ActionURL url = ctx.getActionURL();
             Integer focusId = null;
             String typeCode = focusType;
 
@@ -192,7 +191,7 @@ public class ExperimentRunGraph
             {
                 GraphCtrlProps ctrlProps = analyzeGraph(run);
 
-                DotGraph dg = new DotGraph(out, url, ctrlProps.fUseSmallFonts);
+                DotGraph dg = new DotGraph(out, ctx.getContainer(), ctrlProps.fUseSmallFonts);
 
                 if (!detail)
                     generateSummaryGraph(run, dg, ctrlProps);

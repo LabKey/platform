@@ -18,9 +18,7 @@ package org.labkey.study.reports;
 import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.data.Container;
 import org.labkey.api.data.Results;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.TSVGridWriter;
@@ -44,10 +42,9 @@ import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.ViewContext;
 import org.labkey.study.StudySchema;
-import org.labkey.study.model.DataSetDefinition;
+import org.labkey.study.controllers.reports.ReportsController;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
-import org.labkey.study.model.VisitImpl;
 import org.labkey.study.query.StudyQuerySchema;
 
 import javax.servlet.ServletException;
@@ -71,10 +68,7 @@ import java.util.Map;
 public class ExternalReport extends AbstractReport
 {
     public static final String TYPE = "Study.externalReport";
-    private static Logger _log = Logger.getLogger(ExternalReport.class);
 
-    private Container _container;
-    private String queryString;
     private RecomputeWhen recomputeWhen = RecomputeWhen.Always;
     public static final String REPORT_DIR = "reports_temp";
     public static final String DATA_FILE_SUBST = "${DATA_FILE}";
@@ -98,11 +92,6 @@ public class ExternalReport extends AbstractReport
     public String getTypeDescription()
     {
         return "Advanced View";
-    }
-
-    public void setContainer(Container c)
-    {
-        _container = c;
     }
 
     public @Nullable String getProgram()
@@ -321,10 +310,11 @@ public class ExternalReport extends AbstractReport
         {
             pb.redirectErrorStream(true);
             proc = pb.start();
+            proc.waitFor();
         }
-        catch (SecurityException se)
+        catch (SecurityException | InterruptedException e)
         {
-            throw new RuntimeException(se);
+            throw new RuntimeException(e);
         }
         catch (IOException eio)
         {
@@ -371,105 +361,6 @@ public class ExternalReport extends AbstractReport
         return reportDir;
     }
 
-    public File getOutputFile(ViewContext viewContext)
-    {
-        File reportDir = getReportDir(viewContext);
-        return new File(reportDir, getFilePrefix());
-    }
-
-    // TODO: Delete... no used?
-    public String getParams()
-    {
-        ActionURL url = new ActionURL();
-        if (null != queryString)
-            url.setRawQuery(queryString);
-
-        replaceOrDelete(url, "program", getProgram());
-        replaceOrDelete(url, "arguments", getArguments());
-        replaceOrDelete(url, "fileExtension", getFileExtension());
-        replaceOrDelete(url, VisitImpl.VISITKEY, getVisitRowId());
-        replaceOrDelete(url, DataSetDefinition.DATASETKEY, getDatasetId());
-        replaceOrDelete(url, "queryName", getQueryName());
-        url.replaceParameter("recomputeWhen", recomputeWhen.toString());
-
-        return url.getRawQuery();
-    }
-
-    ActionURL replaceOrDelete(ActionURL url, String paramName, Object paramVal)
-    {
-        if (null == paramVal)
-            url.deleteParameter(paramName);
-        else
-            url.replaceParameter(paramName, paramVal.toString());
-
-        return url;
-
-    }
-
-    public void setParams(String params)
-    {
-        if (null == params)
-        {
-            queryString = null;
-            setProgram(null);
-            setArguments(null);
-            setCommandLine(null);   // TODO: Remove
-            setFileExtension(null);
-            setVisitId(0);
-            setDatasetId(null);
-            recomputeWhen = RecomputeWhen.Always;
-            return;
-        }
-
-        Map m = PageFlowUtil.mapFromQueryString(params);
-
-        setProgram((String)m.get("program"));
-        setArguments((String)m.get("arguments"));
-        setCommandLine((String)m.get("commandLine"));  // TODO: Remove
-        setFileExtension((String)m.get("fileExtension"));
-        setQueryName((String) m.get("queryName"));
-        String recomputeString = StringUtils.trimToNull((String)m.get("recomputeWhen"));
-        recomputeWhen = null == recomputeString ? RecomputeWhen.Always : RecomputeWhen.valueOf(recomputeString);
-
-        setVisitId(visitRowIdParameter(m));
-        String datasetIdStr = StringUtils.trimToNull((String)m.get(DataSetDefinition.DATASETKEY));
-        setDatasetId(NumberUtils.toInt(datasetIdStr));
-    }
-
-    /** Backwards compatibility hack */
-    protected int visitRowIdParameter(Map m)
-    {
-        int visitRowId = 0;
-
-        String visitRowIdStr = StringUtils.trimToNull((String)m.get("visitRowId"));
-        if (null != visitRowIdStr)
-        {
-            visitRowId = Integer.parseInt(visitRowIdStr);
-        }
-        else
-        {
-            String visitIdStr = StringUtils.trimToNull((String)m.get("sequenceNum"));
-            if (null != visitIdStr)
-            {
-                double visitId = NumberUtils.toDouble(visitIdStr);
-                VisitImpl v = StudyManager.getInstance().getVisitForSequence(StudyManager.getInstance().getStudy(_container),visitId);
-                if (null != v)
-                    visitRowId = v.getRowId();
-            }
-        }
-        return visitRowId;
-    }
-
-    public void setRecomputeWhen(RecomputeWhen when)
-    {
-        this.recomputeWhen = when;
-    }
-
-    public RecomputeWhen getRecomputeWhen()
-    {
-        return recomputeWhen;
-    }
-
     public class InlineReportView extends HttpView
     {
         File file;
@@ -494,17 +385,17 @@ public class ExternalReport extends AbstractReport
 
     public class TabReportView extends HttpView
     {
-        File file;
+        private final File _file;
 
         TabReportView(File file)
         {
-            this.file = file;
+            _file = file;
         }
 
         @Override
         protected void renderInternal(Object model, PrintWriter out) throws Exception
         {
-            TabLoader tabLoader = new TabLoader(file);
+            TabLoader tabLoader = new TabLoader(_file);
             ColumnDescriptor[] cols = tabLoader.getColumns();
             List<Map<String, Object>> data = tabLoader.load();
             out.write("<table><tr>");
@@ -536,7 +427,7 @@ public class ExternalReport extends AbstractReport
             out.write("</table>");
 
             if (recomputeWhen == RecomputeWhen.Always)
-                file.delete();
+                _file.delete();
         }
     }
 
@@ -554,8 +445,13 @@ public class ExternalReport extends AbstractReport
         {
             String key = "temp:" + GUID.makeGUID();
             getViewContext().getRequest().getSession(true).setAttribute(key, file);
+
+//            out.write("<img src=\"");
+//            out.write(getViewContext().getActionURL().relativeUrl("streamFile", PageFlowUtil.map("sessionKey", key), "Study-Reports", true));
+//            out.write("\">");
+//
             out.write("<img src=\"");
-            out.write(getViewContext().getActionURL().relativeUrl("streamFile", PageFlowUtil.map("sessionKey", key), "Study-Reports", true));
+            out.write(PageFlowUtil.filter(new ActionURL(ReportsController.StreamFileAction.class, getViewContext().getContainer()).addParameter("sessionKey", key)));
             out.write("\">");
         }
     }

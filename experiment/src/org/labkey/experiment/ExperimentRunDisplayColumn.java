@@ -51,8 +51,7 @@ public class ExperimentRunDisplayColumn extends SimpleDisplayColumn
         }
         else
         {
-            ActionURL url = new ActionURL(ExperimentController.ShowRunGraphAction.class, ctx.getContainer());
-            url.addParameter("rowId", Integer.toString(_run.getRowId()));
+            ActionURL url = ExperimentController.getRunGraphURL(ctx.getContainer(), _run.getRowId());
             out.write("<a href=\"" + url.toString() + "\">" + _run.getName() + "</a>");
         }
     }

@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -989,6 +990,13 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+
+    public static ActionURL getRunGraphURL(Container c, int runId)
+    {
+        return new ActionURL(ShowRunGraphAction.class, c).addParameter("rowId", runId);
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunGraphAction extends AbstractShowRunAction
     {
@@ -1304,6 +1312,16 @@ public class ExperimentController extends SpringActionController
         }
 
     }
+
+
+    public static ActionURL getShowRunGraphDetailURL(Container c, int rowId)
+    {
+        ActionURL url = new ActionURL(ShowRunGraphDetailAction.class, c);
+        url.addParameter("rowId", rowId);
+
+        return url;
+    }
+
 
     @RequiresPermissionClass(ReadPermission.class)
     public class ShowRunGraphDetailAction extends AbstractShowRunAction
@@ -1839,6 +1857,14 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+
+    public static ActionURL getShowApplicationURL(Container c, int rowId)
+    {
+        ActionURL url = new ActionURL(ShowApplicationAction.class, c);
+        url.addParameter("rowId", rowId);
+
+        return url;
+    }
 
 
     @RequiresPermissionClass(ReadPermission.class)
@@ -3660,6 +3686,17 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+
+    public static ActionURL getResolveLsidURL(Container c, @NotNull String type, @NotNull String lsid)
+    {
+        ActionURL url = new ActionURL(ResolveLSIDAction.class, c);
+        url.addParameter("type", type);
+        url.addParameter("lsid", lsid);
+
+        return url;
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class)
     public class ResolveLSIDAction extends SimpleViewAction<LsidForm>
     {
@@ -4497,6 +4534,21 @@ public class ExperimentController extends SpringActionController
         }
     }
 
+
+    // TODO: DotGraph has been adding a "runId" parameter, but ShowGraphMoreListAction
+    public static ActionURL getShowGraphMoreListURL(Container c, @Nullable Integer runId, @NotNull String objtype)
+    {
+        ActionURL url = new ActionURL(ShowGraphMoreListAction.class, c);
+
+        if (null != runId)
+            url.addParameter("runId", runId);
+
+        url.addParameter("objtype", objtype);
+
+        return url;
+    }
+
+
     @RequiresPermissionClass(ReadPermission.class)
     public class ShowGraphMoreListAction extends SimpleViewAction<ExperimentRunForm>
     {
@@ -4587,7 +4639,7 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getProtocolApplicationDetailsURL(ExpProtocolApplication app)
         {
-            return new ActionURL(ShowApplicationAction.class, app.getContainer()).addParameter("rowId", app.getRowId());
+            return getShowApplicationURL(app.getContainer(), app.getRowId());
         }
 
         public ActionURL getProtocolGridURL(Container c)
@@ -4597,7 +4649,7 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getRunGraphDetailURL(ExpRun run)
         {
-            return new ActionURL(ShowRunGraphDetailAction.class, run.getContainer()).addParameter("rowId", run.getRowId());
+            return getShowRunGraphDetailURL(run.getContainer(), run.getRowId());
         }
 
         public ActionURL getRunGraphDetailURL(ExpRun run, ExpData focus)
@@ -4617,15 +4669,14 @@ public class ExperimentController extends SpringActionController
 
         private ActionURL getRunGraphDetailURL(ExpRun run, ExpObject focus, String typeCode)
         {
-            return new ActionURL(ShowRunGraphDetailAction.class, run.getContainer())
-                    .addParameter("rowId", run.getRowId())
+            return getShowRunGraphDetailURL(run.getContainer(), run.getRowId())
                     .addParameter("detail", "true")
                     .addParameter("focus", typeCode + focus.getRowId());
         }
 
         public ActionURL getRunGraphURL(Container container, int runId)
         {
-            return new ActionURL(ShowRunGraphAction.class, container).addParameter("rowId", runId);
+            return ExperimentController.getRunGraphURL(container, runId);
         }
 
         public ActionURL getRunGraphURL(ExpRun run)
@@ -4822,7 +4873,7 @@ public class ExperimentController extends SpringActionController
 
         public ActionURL getShowRunGraphURL(ExpRun run)
         {
-            return new ActionURL(ShowRunGraphAction.class, run.getContainer()).addParameter("rowId", run.getRowId());
+            return ExperimentController.getRunGraphURL(run.getContainer(), run.getRowId());
         }
 
         public ActionURL getUploadXARURL(Container container)

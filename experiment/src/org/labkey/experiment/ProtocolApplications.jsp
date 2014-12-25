@@ -44,7 +44,7 @@
         rowCount++;
     %>
         <tr class="<%=text(rowCount%2==0 ? "labkey-row" : "labkey-alternate-row")%>">
-            <td valign="top"><a href="<%=new ActionURL(ExperimentController.ShowApplicationAction.class, c).addParameter("rowId", protocolApplication.getRowId())%>"><%= h(protocolApplication.getName()) %></a></td>
+            <td valign="top"><a href="<%=h(ExperimentController.getShowApplicationURL(c, protocolApplication.getRowId()))%>"><%= h(protocolApplication.getName()) %></a></td>
             <td valign="top">
                 <% for (ExpMaterial material : protocolApplication.getInputMaterials()) { %>
                     <a href="<%=new ActionURL(ExperimentController.ShowMaterialAction.class, c).addParameter("rowId", material.getRowId())%>"><%= h(material.getName()) %></a><br>

@@ -15,16 +15,23 @@
  */
 package org.labkey.experiment;
 
-import org.jetbrains.annotations.Nullable;
-import org.labkey.api.view.ActionURL;
-import org.labkey.api.util.PageFlowUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
 import org.labkey.api.exp.api.ExpProtocolApplication;
-import org.labkey.api.exp.api.ExpData;
+import org.labkey.api.view.ActionURL;
+import org.labkey.experiment.controllers.exp.ExperimentController;
 
-import java.util.*;
 import java.io.PrintWriter;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 /**
  * User: migra
@@ -46,7 +53,7 @@ public class DotGraph
     private static final int LABEL_CHAR_WIDTH = 20;
 
     private final PrintWriter _pwOut;
-    private final ActionURL _urlBase;
+    private final Container _c;
 
     private final SortedMap<Integer, DotNode> _pendingMNodes = new TreeMap<>();
     private final SortedMap<Integer, DotNode> _pendingDNodes = new TreeMap<>();
@@ -68,10 +75,10 @@ public class DotGraph
     public static String TYPECODE_DATA = "D";
     public static String TYPECODE_PROT_APP = "A";
 
-    public DotGraph(PrintWriter out, ActionURL url, boolean bSmallFonts)
+    public DotGraph(PrintWriter out, Container c, boolean bSmallFonts)
     {
         _pwOut = out;
-        _urlBase = url;
+        _c = c;
 
         if (bSmallFonts)
             _pwOut.println("digraph G { node[fontname=\"" + LABEL_FONT + "\" fontsize=" + LABEL_SMALL_FONTSIZE + "]");
@@ -91,7 +98,7 @@ public class DotGraph
         _pwOut.println("}");
     }
 
-    public Integer getPAGroupId(Integer rowIdPA)
+    public Integer getPAGroupId(int rowIdPA)
     {
         return getGroupId(rowIdPA, _pendingProcNodes, _writtenProcNodes);
     }
@@ -101,12 +108,12 @@ public class DotGraph
         return getGroupId(rowIdM, _pendingMNodes, _writtenMNodes);
     }
 
-    public Integer getDGroupId(Integer rowIdD)
+    public Integer getDGroupId(int rowIdD)
     {
         return getGroupId(rowIdD, _pendingDNodes, _writtenDNodes);
     }
 
-    public Integer getGroupId(Integer rowId, Map<Integer, DotNode> pendingNodes, Map<Integer, DotNode> writtenNodes)
+    public @Nullable Integer getGroupId(Integer rowId, Map<Integer, DotNode> pendingNodes, Map<Integer, DotNode> writtenNodes)
     {
         DotNode node = null;
         if (pendingNodes.containsKey(rowId))
@@ -121,34 +128,31 @@ public class DotGraph
         return null;
     }
 
-    public void addStartingMaterial (ExpMaterial m, Integer groupId, Integer actionseq, Integer runId)
+    public void addStartingMaterial(ExpMaterial m, Integer groupId, Integer actionseq, int runId)
     {
         DotNode node = new MNode(m);
-        node.setLink("resolveLSID", "type=material&lsid=" + PageFlowUtil.encode(m.getLSID()));
-
+        node.setLinkURL(ExperimentController.getResolveLsidURL(_c, "material", m.getLSID()));
         if (null != _focusId && _objectType.equals(TYPECODE_MATERIAL) && _focusId == m.getRowId())
             node.setFocus(true);
         if (null != groupId)
         {
             node = addNodeToGroup(node, groupId, actionseq, _groupMNodes);
-            node.setLink("showGraphMoreList.view", "runId="+  runId
-                    + "&objtype=" + TYPECODE_MATERIAL);
+            node.setLinkURL(ExperimentController.getShowGraphMoreListURL(_c, runId, TYPECODE_MATERIAL));
         }
         _pendingMNodes.put(m.getRowId(), node);
     }
 
-    public void addStartingData (ExpData d, Integer groupId, Integer actionseq, Integer runId)
+    public void addStartingData(ExpData d, Integer groupId, Integer actionseq, int runId)
     {
         DotNode node = new DNode(d);
-        node.setLink("resolveLSID", "type=data&lsid=" + PageFlowUtil.encode(d.getLSID()));
+        node.setLinkURL(ExperimentController.getResolveLsidURL(_c, "data", d.getLSID()));
 
         if (null != _focusId && _objectType.equals(TYPECODE_DATA) && _focusId == d.getRowId())
             node.setFocus(true);
         if (null != groupId)
         {
             node = addNodeToGroup(node, groupId, actionseq, _groupDNodes);
-            node.setLink("showGraphMoreList.view", "runId="+  runId
-                    + "&objtype=" + TYPECODE_DATA);
+            node.setLinkURL(ExperimentController.getShowGraphMoreListURL(_c, runId, TYPECODE_DATA));
         }
         _pendingDNodes.put(d.getRowId(), node);
     }
@@ -224,13 +228,13 @@ public class DotGraph
         _pendingProcNodes.put(rowId, node);
     }
 
-    public void addExpRun(Integer runId, String name)
+    public void addExpRun(int runId, String name)
     {
         DotNode node = new ExpNode(runId, name);
         _pendingProcNodes.put(runId, node);
     }
 
-    public void addLinkedRun(Integer runId, String name)
+    public void addLinkedRun(int runId, String name)
     {
         DotNode node = new LinkedExpNode(runId, name);
         _pendingProcNodes.put(runId, node);
@@ -351,7 +355,7 @@ public class DotGraph
         {
             DotNode node = pendingMap.get(key);
             if (!nodesToMove.contains(key))
-                node.save(_pwOut, _urlBase);
+                node.save(_pwOut);
             if (node instanceof GroupedNode)
             {
                 for (Integer memberkey : ((GroupedNode) node)._gMap.keySet())
@@ -376,23 +380,22 @@ public class DotGraph
 
     private class DotNode
     {
-        private final Integer _id;
+        private final int _id;
         private final String _type;
 
         protected final String _key;
 
-        private String _linkUrlBase = null;
         private boolean _focus = false;
         private boolean _bold = false;
+        private ActionURL _linkURL;
 
         protected String _label;
-        protected String _linkParams = null;
         protected String _color = null;
         protected String _shape = null;
         protected Float _height = null;
         protected Float _width = null;
 
-        public DotNode(String nodeType, Integer nodeId, String nodeLabel)
+        public DotNode(String nodeType, int nodeId, String nodeLabel)
         {
             _id = nodeId;
             _type = nodeType;
@@ -405,10 +408,9 @@ public class DotGraph
             _bold = bold;
         }
 
-        public void setLink(String urlBase, String urlParams)
+        public void setLinkURL(ActionURL url)
         {
-            _linkUrlBase = urlBase;
-            _linkParams = urlParams;
+            _linkURL = url;
         }
 
         public void setShape(String dotShape, String dotColor)
@@ -447,7 +449,7 @@ public class DotGraph
             return sb.toString();
         }
 
-        public void save(PrintWriter out, ActionURL url)
+        public void save(PrintWriter out)
         {
             String tooltip;
             if (TYPECODE_DATA.equals(_type))
@@ -472,8 +474,8 @@ public class DotGraph
             if (_label.length() > LABEL_CHAR_WIDTH)
                 _label = wrap(_label);
             String link = null;
-            if (null != _linkUrlBase)
-                link = url.relativeUrl(_linkUrlBase, _linkParams);
+            if (null != _linkURL)
+                link = _linkURL.toString();
             if (null != _shape)
             {
                 out.println(_key + "["
@@ -507,7 +509,7 @@ public class DotGraph
         {
             super(TYPECODE_MATERIAL, m.getRowId(), m.getName());
             setShape("box", MATERIAL_COLOR);
-            setLink("resolveLSID", "type=material&lsid=" + PageFlowUtil.encode(m.getLSID()));
+            setLinkURL(ExperimentController.getResolveLsidURL(_c, "material", m.getLSID()));
             ExpProtocolApplication sourceApplication = m.getSourceApplication();
             _srcPAId = sourceApplication == null ? null : sourceApplication.getRowId();
             _LSID = m.getLSID();
@@ -523,7 +525,7 @@ public class DotGraph
         {
             super(TYPECODE_DATA, d.getRowId(), d.getName());
             setShape("ellipse", DATA_COLOR);
-            setLink("resolveLSID", "type=data&lsid=" + PageFlowUtil.encode(d.getLSID()));
+            setLinkURL(ExperimentController.getResolveLsidURL(_c, "data", d.getLSID()));
             ExpProtocolApplication sourceApplication = d.getSourceApplication();
             srcPAId = sourceApplication == null ? null : sourceApplication.getRowId();
             LSID = d.getLSID();
@@ -532,37 +534,37 @@ public class DotGraph
 
     private class PANode extends DotNode
     {
-        public PANode(Integer id, String name)
+        public PANode(int id, String name)
         {
             super(TYPECODE_PROT_APP, id, name);
             setShape("diamond", PROTOCOLAPP_COLOR);
-            setLink("showApplication", "rowId=" + id.toString());
+            setLinkURL(ExperimentController.getShowApplicationURL(_c, id));
         }
     }
 
     private class ExpNode extends PANode
     {
-        public ExpNode(Integer runid, String name)
+        public ExpNode(int runid, String name)
         {
             super(runid, name);
             setShape("hexagon", EXPRUN_COLOR);
-            setLink("showRunGraphDetail.view", "rowId=" + runid.toString());
+            setLinkURL(ExperimentController.getShowRunGraphDetailURL(_c, runid));
         }
     }
 
     private class LinkedExpNode extends PANode
     {
-        public LinkedExpNode(Integer runid, String name)
+        public LinkedExpNode(int runid, String name)
         {
             super(runid, name);
             setShape("hexagon", LINKEDRUN_COLOR);
-            setLink("showRunGraph.view", "rowId=" + runid.toString());
+            setLinkURL(ExperimentController.getRunGraphURL(_c, runid));
         }
     }
 
     private class OutputNode extends PANode
     {
-        public OutputNode(Integer id, String name)
+        public OutputNode(int id, String name)
         {
             super(id, name);
             setShape(null, null);
@@ -574,6 +576,7 @@ public class DotGraph
         private final Integer _gid;
         private final Integer _sequence;
         private final SortedMap<Integer, DotNode> _gMap = new TreeMap<>();
+        private final String _nodeType;
 
         public GroupedNode(Integer groupId, Integer actionseq, DotNode node)
         {
@@ -584,7 +587,7 @@ public class DotGraph
             //setShape(node.shape, node.color + GROUP_OPACITY);
             setShape(node._shape, GROUP_COLOR);
             setSize(node._height, node._width);
-            setLink("showGraphMoreList.view", "objtype=" + node._type);
+            _nodeType = node._type;
         }
 
         public void addNode(DotNode newnode)
@@ -593,8 +596,10 @@ public class DotGraph
             _gMap.put(newnode._id, newnode);
         }
 
-        public void save(PrintWriter out, ActionURL url)
+        public void save(PrintWriter out)
         {
+            ActionURL url = ExperimentController.getShowGraphMoreListURL(_c, null, _nodeType);
+
             String sep = "";
             StringBuilder sbIn = new StringBuilder();
             for (Integer rowid : _gMap.keySet())
@@ -602,10 +607,11 @@ public class DotGraph
                 sbIn.append(sep).append(rowid);
                 sep = ",";
             }
-            _linkParams += "&rowId~in=" + PageFlowUtil.encode(sbIn.toString());
-            String link = url.relativeUrl("showGraphMoreList", _linkParams, "Experiment");
+
+            url.addParameter("rowId~in", sbIn.toString());
 
             _label += " (" + _gMap.keySet().size() + " entries)";
+
             if (null != _shape)
             {
                 out.println(_key + "[label=\"" + escape(_label)
@@ -613,7 +619,7 @@ public class DotGraph
                         + ((null != _height) ? ", height=\"" + _height + "\"" : "")
                         + ((null != _width) ? ", width=\"" + _width + "\"" : "")
                         + ((null != _width) || (null != _height) ? ", fixedsize=true" : "")
-                        + ((null != link) ? ",  URL=\"" + escape(link) + "\"" : "")
+                        + (",  URL=\"" + escape(url.toString()) + "\"")
                         + "]");
             }
         }

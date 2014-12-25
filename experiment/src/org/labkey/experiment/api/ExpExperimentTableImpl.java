@@ -25,7 +25,6 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.UnionContainerFilter;
-import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.exp.api.ExpRun;
 import org.labkey.api.exp.query.ExpExperimentTable;
@@ -119,12 +118,6 @@ public class ExpExperimentTableImpl extends ExpTableImpl<ExpExperimentTable.Colu
         final SQLFragment sql;
         if (run != null)
         {
-//            sql = new SQLFragment("(SELECT CAST((CASE WHEN (SELECT MAX(ExperimentId) FROM ");
-//            sql.append(ExperimentServiceImpl.get().getTinfoRunList());
-//            sql.append(" WHERE ExperimentRunId = " + run.getRowId() + " AND ExperimentId = " + ExprColumn.STR_TABLE_ALIAS + ".RowId)");
-//            sql.append(" IS NOT NULL THEN 1 ELSE NULL END) AS ");
-//            sql.append(getSqlDialect().getBooleanDatatype());
-//            sql.append("))");
             SQLFragment existsSql = new SQLFragment("EXISTS (SELECT ExperimentId FROM ");
             existsSql.append(ExperimentServiceImpl.get().getTinfoRunList(), "rl");
             existsSql.append(" WHERE ExperimentRunId = ").append(run.getRowId()).append(" AND ExperimentId = ").append(ExprColumn.STR_TABLE_ALIAS).append(".RowId)");

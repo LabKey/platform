@@ -96,7 +96,7 @@ public class ExpRunImpl extends ExpIdentifiableEntityImpl<ExperimentRun> impleme
 
     public URLHelper detailsURL()
     {
-        return new ActionURL(ExperimentController.ShowRunGraphAction.class, getContainer()).addParameter("rowId", getRowId());
+        return ExperimentController.getRunGraphURL(getContainer(), getRowId());
     }
 
     public Container getContainer()

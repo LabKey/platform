@@ -25,15 +25,14 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
-<%@ page import="java.util.Collections" %>
 <%@ page extends="org.labkey.api.jsp.JspBase"%>
 <%
     JspView<StudyController.ViewPrefsBean> me = (JspView<StudyController.ViewPrefsBean>) HttpView.currentView();
     StudyController.ViewPrefsBean bean = me.getModelBean();
 
     ViewContext context = getViewContext();
-    ActionURL url = context.cloneActionURL();
-    String defaultView = StudyController.getDefaultView(context, bean.getDatasetDefinition().getDatasetId());
+    int datasetId = bean.getDatasetDefinition().getDatasetId();
+    String defaultView = StudyController.getDefaultView(context, datasetId);
 %>
 
 <table>
@@ -48,7 +47,7 @@
 %>
             <tr><td><%=text(getLabel(view, defaultView))%></td>
                 <td>&nbsp;</td>
-                <td><%=textLink("select", url.relativeUrl("viewPreferences", Collections.singletonMap("defaultView", view.getValue()), "Study", false))%></td>
+                <td><%=textLink("select", StudyController.getViewPreferencesURL(getContainer(), datasetId, view.getValue()))%></td>
             </tr>
 <%
         }
