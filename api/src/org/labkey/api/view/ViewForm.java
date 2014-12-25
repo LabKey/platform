@@ -15,7 +15,6 @@
  */
 package org.labkey.api.view;
 
-import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.HasViewContext;
 import org.labkey.api.action.ReturnUrlForm;
@@ -31,7 +30,6 @@ public class ViewForm extends ReturnUrlForm implements HasViewContext
     protected Container _c;
     protected ViewContext _context = null;
     protected HttpServletRequest _request;
-    protected static Logger _formLog = Logger.getLogger(ViewForm.class);
 
 
     @NotNull

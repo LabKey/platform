@@ -159,8 +159,7 @@ public class ActionURL extends URLHelper implements Cloneable
     /**
      * used by ViewContext
      */
-    ActionURL(HttpServletRequest request)
-            throws ServletException
+    ActionURL(HttpServletRequest request) throws ServletException
     {
         this();
 
@@ -213,88 +212,6 @@ public class ActionURL extends URLHelper implements Cloneable
         }
         String str = encode ? path.encode() : path.toString();
         return str;
-    }
-
-
-    private String toPathString(String pageFlow, String action, Path extraPath, boolean encode)
-    {
-        Path contextPath = AppProps.getInstance().getParsedContextPath();
-        return toPathString(contextPath, pageFlow, action, extraPath, encode);
-    }
-
-
-    /**
-     * Create a url based on the container in this URL
-     *
-     * @param action   New action. No encoding or substitution will occur
-     * @param params   New params. All old params will be deleted. No encoding will occur so that substitution using
-     *                 ${} will work properly
-     * @param pageFlow Name of the pageflow to redirect to
-     */
-    @Deprecated
-    public String relativeUrl(String action, String params, String pageFlow)
-    {
-        String pathString = toPathString(pageFlow, action, _path, true);
-        return pathString + "?" + (null == params ? "" : params);
-    }
-    
-
-    /**
-     * Return a string URL based on the container in this URL.
-     * param map will be placed in params. No encoding will be done on param values of the
-     * form ${substExpression}  Other param values will be encoded.
-     *
-     * @param action       The page flow action. Cannot be null
-     * @param params       Params will be "replaced" on URL. Don't use duplicate params here.
-     * @param pageFlow     current pageflow if null
-     * @param deleteParams delete parameters before replacing
-     */
-    @Deprecated
-    public String relativeUrl(String action, Map params, String pageFlow, boolean deleteParams)
-    {
-        assert null != action;
-        String paramStr;
-
-        ActionURL url = this.clone();
-        if (deleteParams)
-            url.deleteParameters();
-
-        if (null != params)
-        {
-            Collection<Map.Entry<String, String>> entries = params.entrySet();
-
-            for (Map.Entry entry : entries)
-                url.replaceParameter(entry.getKey().toString(), entry.getValue().toString());
-        }
-
-        //NOTE. Don't encode parameters cause we'll use for subst later
-        StringBuffer sb = new StringBuffer();
-        for (Pair<String, String> parameter : url._parameters)
-        {
-            sb.append("&").append(parameter.getKey()).append("=");
-            String value = parameter.getValue();
-            if (null != value && value.length() >= 3 && value.charAt(0) == '$' && value.charAt(1) == '{' && value.charAt(value.length() - 1) == '}')
-                sb.append(value);
-            else
-                sb.append(PageFlowUtil.encode(value));
-        }
-        paramStr = sb.toString();
-
-        return relativeUrl(action, paramStr, pageFlow != null ? pageFlow : getController());
-    }
-
-
-    /**
-     * Create a url based on the container in this URL and pageFlow
-     *
-     * @param action New action. No encoding or substitution will occur
-     * @param params New params. All old params will be deleted. No encoding will occur so that substitution using
-     *               ${} will work properly
-     */
-    @Deprecated
-    public String relativeUrl(String action, String params)
-    {
-        return relativeUrl(action, params, getController());
     }
 
 
@@ -528,13 +445,12 @@ public class ActionURL extends URLHelper implements Cloneable
         if (_readOnly)
             throw new java.lang.IllegalStateException();
 
-        String action = null;
         String controller = null;
         Path path = Path.parse(pathStr);
 
         if (path.size() < 1)
             throw new IllegalArgumentException(pathStr);
-        action = path.get(path.size()-1);
+        String action = path.get(path.size()-1);
         path = path.getParent();
 
         // parse action.view or controller-action.view
