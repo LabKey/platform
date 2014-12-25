@@ -30,6 +30,7 @@ import org.labkey.test.util.PortalHelper;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 
 @Category({DailyA.class, Study.class})
 public class VaccineProtocolTest extends BaseWebDriverTest
@@ -390,7 +391,7 @@ public class VaccineProtocolTest extends BaseWebDriverTest
         deleteProject(getProjectName(), afterTest);
     }
 
-    public java.util.List<String> getAssociatedModules()
+    public List<String> getAssociatedModules()
     {
         return Arrays.asList("study");
     }
