@@ -123,3 +123,36 @@ var pieChartData = [
     {label: "test6", value: 6},
     {label: "test7", value: 7}
 ];
+
+var leveyJenningsData = [
+    {xaxislabel: 'test1', colorlabel: 'ABC123', value: 64000, mean: 63500, stddev: 2000},
+    {xaxislabel: 'test1', colorlabel: 'ABC123', value: 63879, mean: 63500, stddev: 2000},
+    {xaxislabel: 'test3', colorlabel: 'ABC123', value: 64598, mean: 63500, stddev: 2000},
+    {xaxislabel: 'test4', colorlabel: 'ABC123', value: 63485, mean: 63500, stddev: 2000},
+    {xaxislabel: 'test5', colorlabel: 'ABC123', value: 65787, mean: 63500, stddev: 2000},
+    {xaxislabel: 'test6', colorlabel: 'ABC123', value: 64896, mean: 63500, stddev: 2000},
+    {xaxislabel: 'test7', colorlabel: 'DEF456', value: 63121, mean: 64000, stddev: 1000},
+    {xaxislabel: 'test8', colorlabel: 'DEF456', value: 63558, mean: 64000, stddev: 1000},
+    {xaxislabel: 'test9', colorlabel: 'GHI789', value: 64879, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test10', colorlabel: 'GHI789', value: 65541, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test11', colorlabel: 'GHI789', value: 64000, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test12', colorlabel: 'GHI789', value: 63879, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test13', colorlabel: 'GHI789', value: 64598, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test14', colorlabel: 'GHI789', value: 63485, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test15', colorlabel: 'GHI789', value: 65787, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test16', colorlabel: 'GHI789', value: 64896, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test17', colorlabel: 'GHI789', value: 63121, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test18', colorlabel: 'GHI789', value: 63558, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test19', colorlabel: 'GHI789', value: 64879, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test20', colorlabel: 'GHI789', value: 65541, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test21', colorlabel: 'GHI789', value: 64000, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test22', colorlabel: 'GHI789', value: 63879, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test23', colorlabel: 'GHI789', value: 64598, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test24', colorlabel: 'GHI789', value: 63485, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test25', colorlabel: 'GHI789', value: 65787, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test26', colorlabel: 'GHI789', value: 64896, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test27', colorlabel: 'GHI789', value: 63121, mean: 63500, stddev: 1500},
+    {xaxislabel: 'test28', colorlabel: 'JKL000', value: null, mean: 60000, stddev: 600},
+    {xaxislabel: 'test29', colorlabel: 'JKL000', value: 64879, mean: 60000, stddev: 600},
+    {xaxislabel: 'test29', colorlabel: 'JKL000', value: 65541, mean: 60000, stddev: null}
+];

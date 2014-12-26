@@ -1218,3 +1218,126 @@ boxPlot.render();
         return new d3pie(config.renderTo, config);
     };
 })();
+
+/**
+ * @name LABKEY.vis.LeveyJenningsPlot
+ * @class LeveyJenningsPlot Wrapper to create a plot which shows data points compared to expected ranges (+/- 3 standard deviations from a mean).
+ * @description This helper will take the input data and generate a sequencal x-axis so that all data points are the same distance apart.
+ * @param {Object} config An object that contains the following properties
+ * @param {String} [config.renderTo] The id of the div/span to insert the svg element into.
+ * @param {Number} [config.width] The chart canvas width in pixels.
+ * @param {Number} [config.height] The chart canvas height in pixels.
+ * @param {Array} [config.data] The array of chart segment data. Each object is of the form: { label: "label", value: 123 }.
+ * @param {Object} [config.properties] An object that contains the properties specific to the Levey-Jennings plot
+ * @param {String} [config.properties.value] The data property name for the value to be plotted on the y-axis.
+ * @param {String} [config.properties.mean] The data property name for the mean of the expected range.
+ * @param {String} [config.properties.stdDev] The data property name for the standard deviation of the expected range.
+ * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
+ * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
+ * @param {Array} [config.properties.colorRange] (Optional) The array of color values to use for the data points.
+ * @param {Function} [config.properties.hoverTextFn] (Optional) The hover text to display for each data point. The parameter
+*                  to that function will be a row of data with access to all values for that row.
+ */
+(function(){
+
+    LABKEY.vis.LeveyJenningsPlot = function(config){
+
+        if(config.renderTo == null){
+            throw new Error("Unable to create Levey-Jennings plot, renderTo not specified");
+        }
+
+        if(config.data == null){
+            throw new Error("Unable to create Levey-Jennings plot, data array not specified");
+        }
+
+        if (config.properties == null || config.properties.value == null || config.properties.mean == null
+                || config.properties.stdDev == null || config.properties.xTickLabel == null)
+        {
+            throw new Error("Unable to create Levey-Jennings plot, properties object not specified. "
+                    + "Required: value, mean, stdDev, xTickLabel. Optional: color, colorRange, hoverTextFn.");
+        }
+
+        // create a sequencial index to use for the x-axis value and keep a map from that index to the tick label
+        var tickLabelMap = {};
+        var index = 0;
+        for (var i = 0; i < config.data.length; i++) {
+            tickLabelMap[index] = config.data[i][config.properties.xTickLabel];
+            config.data[i].seqValue = index;
+            index++;
+        }
+
+        config.tickOverlapRotation = 35;
+        config.scales = {
+            color: {
+                scaleType: 'discrete',
+                range: config.properties.colorRange
+            },
+            x: {
+                scaleType: 'discrete',
+                tickFormat: function(index) { return tickLabelMap[index]; }
+            },
+            yLeft: {
+                scaleType: 'continuous',
+                trans: 'linear'
+            }
+        };
+        config.margins = {
+            top: config.labels && config.labels.main ? 50 : 10,
+            right: config.properties.color ? 140 : 30,
+            bottom: config.labels && config.labels.x ? 75 : 55,
+            left: config.labels && config.labels.y ? 75 : 55
+        };
+        config.aes = {
+            yLeft: config.properties.value,
+            x: 'seqValue'
+        };
+
+        // points based on the data value, color and hover text can be added via params to config
+        var pointLayerConfig = { geom: new LABKEY.vis.Geom.Point({size: 3}), aes: {} };
+        if (config.properties.color) {
+            pointLayerConfig.aes.color = function(row){return row[config.properties.color];};
+        }
+        if (config.properties.hoverTextFn) {
+            pointLayerConfig.aes.hoverText = config.properties.hoverTextFn;
+        }
+        var pointLayer = new LABKEY.vis.Layer(pointLayerConfig);
+
+        // +/- 3 standard deviation displayed using the ErrorBar geom with different colors
+        var stdDev3Layer = new LABKEY.vis.Layer({
+            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'red', dashed: true, altColor: 'darkgrey'}),
+            data: config.data,
+            aes: {
+                error: function(row){return row[config.properties.stdDev] * 3;},
+                yLeft: function(row){return row[config.properties.mean];}
+            }
+        });
+        var stdDev2Layer = new LABKEY.vis.Layer({
+            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'blue', dashed: true, altColor: 'darkgrey'}),
+            data: config.data,
+            aes: {
+                error: function(row){return row[config.properties.stdDev] * 2;},
+                yLeft: function(row){return row[config.properties.mean];}
+            }
+        });
+        var stdDev1Layer = new LABKEY.vis.Layer({
+            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'green', dashed: true, altColor: 'darkgrey'}),
+            data: config.data,
+            aes: {
+                error: function(row){return row[config.properties.stdDev];},
+                yLeft: function(row){return row[config.properties.mean];}
+            }
+        });
+        var meanLayer = new LABKEY.vis.Layer({
+            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'darkgrey'}),
+            data: config.data,
+            aes: {
+                error: function(row){return 0;},
+                yLeft: function(row){return row[config.properties.mean];}
+            }
+        });
+
+        config.layers = [stdDev3Layer, stdDev2Layer, stdDev1Layer, meanLayer, pointLayer];
+
+        return new LABKEY.vis.Plot(config);
+    };
+})();

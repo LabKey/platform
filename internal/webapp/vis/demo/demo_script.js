@@ -760,6 +760,7 @@ var barChart2 = new LABKEY.vis.BarPlot({
 
 var pieChart = new LABKEY.vis.PieChart({
     renderTo: "pie",
+    rendererType: 'd3',
     data: pieChartData,
     width: 300,
     height: 250
@@ -767,6 +768,7 @@ var pieChart = new LABKEY.vis.PieChart({
 
 var pieChart2 = new LABKEY.vis.PieChart({
     renderTo: "pie2",
+    rendererType: 'd3',
     data: pieChartData,
     width: 300,
     height: 250,
@@ -823,6 +825,7 @@ var pieChart2 = new LABKEY.vis.PieChart({
 
 var pieChart3 = new LABKEY.vis.PieChart({
     renderTo: "pie3",
+    rendererType: 'd3',
     width: 300,
     height: 250,
     // d3pie lib config properties
@@ -878,6 +881,29 @@ var pieChart3 = new LABKEY.vis.PieChart({
     }
 });
 
+var leveyJenningsPlot = LABKEY.vis.LeveyJenningsPlot({
+    renderTo: 'leveyJennings',
+    rendererType: 'd3',
+    width: 900,
+    height: 300,
+    data: leveyJenningsData,
+    properties: {
+        value: 'value',
+        mean: 'mean',
+        stdDev: 'stddev',
+        xTickLabel: 'xaxislabel',
+        color: 'colorlabel',
+        colorRange: ['red', 'blue', 'green', 'brown'],
+        hoverTextFn: function(row){return 'X-Value: ' + row.xaxislabel + '\nColor: ' + row.colorlabel + '\nY-Value: ' + row.value;}
+    },
+    gridLineColor: 'white',
+    labels: {
+        main: {value: 'Example Levey-Jennings Plot'},
+        y: {value: 'Value'},
+        x: {value: 'Assay'}
+    }
+});
+
 var renderStats = function(){
     var labResultsStats = LABKEY.vis.Stat.summary(labResultsRows, function(row){return row.study_LabResults_CD4.value});
     var statsDiv = document.getElementById('stats');
@@ -909,5 +935,6 @@ errorPlot.render();
 statFnPlot.render();
 barChart.render();
 barChart2.render();
+leveyJenningsPlot.render();
 console.log(new Date().getTime() - start);
 renderStats();
