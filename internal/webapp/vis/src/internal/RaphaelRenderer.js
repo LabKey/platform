@@ -67,11 +67,12 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             y2 = plot.grid.bottomEdge;
 
             tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2));
+            tick.attr('stroke-width', plot.tickWidth || 1);
             tickText = plot.scales.x.tickFormat ? plot.scales.x.tickFormat(xTicks[i]) : xTicks[i];
             // add hover for x-axis tick mark descriptions
             tickHoverText = plot.scales.x.tickHoverText ? plot.scales.x.tickHoverText(xTicks[i]) : null;
             text = this.paper.text(plot.scales.x.scale(xTicks[i])+.5, plot.grid.bottomEdge + 15, tickText);
-
+            text.attr('fill', plot.tickTextColor || '#000000');
             if (tickHoverText)
                 text.attr("title", tickHoverText);
 
@@ -89,7 +90,8 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             var curBBox = xTicksSet[i].getBBox(),
                     nextBBox = xTicksSet[i+1].getBBox();
             if (curBBox.x2 >= nextBBox.x) {
-                xTicksSet.attr('text-anchor', 'start').transform('t0,0r15');
+                var rotation = plot.tickOverlapRotation ? plot.tickOverlapRotation : 15;
+                xTicksSet.attr('text-anchor', 'start').transform('t0,0r'+rotation);
                 adjustRotatedTicks(xTicksSet);
                 break;
             }
@@ -111,6 +113,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                 y1 = y2 = Math.floor(plot.scales.yLeft.scale(leftTicks[i])) + .5; // Floor it and add .5 to keep the lines sharp.
                 x2 = plot.grid.leftEdge;
                 tick = this.paper.path(LABKEY.vis.makeLine(x1, y1, x2, y2));
+                tick.attr('stroke-width', plot.tickWidth || 1);
                 tickText = plot.scales.yLeft.tickFormat ? plot.scales.yLeft.tickFormat(leftTicks[i]) : leftTicks[i];
                 if (y1 !== plot.grid.bottomEdge + .5) {
                     // Dont draw a grid line on top of the x-axis border.
@@ -120,6 +123,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
                     gridLine.attr('stroke', plot.gridLineColor);
                 }
                 text = this.paper.text(x1 - 15, y1, tickText);
+                text.attr('fill', plot.tickTextColor || '#000000');
             }
         }
 
@@ -463,7 +467,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
     };
 
     var renderErrorBarGeom = function(data, geom) {
-        var i, x, y, color, yBottom, yTop, error, topBar, bottomBar, middleBar;
+        var i, x, y, color, altColor, yBottom, yTop, error, topBar, bottomBar, middleBar;
         this.paper.setStart();
 
         for (i = 0; i < data.length; i ++) {
@@ -473,14 +477,20 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             yBottom = geom.yScale.scale(y - error);
             yTop = geom.yScale.scale(y + error);
             color = geom.colorAes && geom.colorScale ? geom.colorScale.scale(geom.colorAes.getValue(data[i]) + geom.layerName) : geom.color;
+            altColor = geom.altColor ? geom.altColor : color;
 
             if (LABKEY.vis.isValid(yBottom) && LABKEY.vis.isValid(yTop)) {
                 topBar = LABKEY.vis.makeLine(x-6, yTop, x+6, yTop);
                 bottomBar = LABKEY.vis.makeLine(x-6, yBottom, x+6, yBottom);
-                middleBar = LABKEY.vis.makeLine(x, yBottom, x, yTop);
-                this.paper.path(topBar + middleBar + bottomBar)
+                this.paper.path(topBar + bottomBar)
                         .attr('stroke-width', geom.size)
+                        .attr('stroke-dasharray', geom.dashed ? "-" : "")
                         .attr('stroke', color);
+
+                middleBar = LABKEY.vis.makeLine(x, yBottom, x, yTop);
+                this.paper.path(middleBar)
+                        .attr('stroke-width', geom.size)
+                        .attr('stroke', altColor);
             }
         }
 

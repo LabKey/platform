@@ -217,6 +217,8 @@ LABKEY.vis.Geom.Path.prototype.render = function(renderer, grid, scales, data, l
  * @param config An object with the following properties:
  * @param {String} [config.color] (Optional) String used to determine the color of all paths. Defaults to black (#000000).
  * @param {Number} [config.size] (Optional) Number used to determine the size of all paths.  Defaults to 2.
+ * @param {Boolean} [config.dashed] (Optional) Whether or not to use dashed lines for top and bottom bars. Defaults to false.
+ * @param {String} [config.altColor] (Optional) String used to determine the color of the vertical bar. Defaults to config.color.
  */
 LABKEY.vis.Geom.ErrorBar = function(config){
     this.type = "ErrorBar";
@@ -226,6 +228,8 @@ LABKEY.vis.Geom.ErrorBar = function(config){
     }
     this.color = ('color' in config && config.color != null && config.color != undefined) ? config.color : '#000000';
     this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 2;
+    this.dashed = ('dashed' in config && config.dashed != null && config.dashed != undefined) ? config.dashed : false;
+    this.altColor = ('altColor' in config && config.altColor != null && config.altColor != undefined) ? config.altColor : null;
 
     return this;
 };

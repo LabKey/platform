@@ -14,7 +14,7 @@ LABKEY.vis.internal.Axis = function() {
     var scale, orientation, tickFormat = function(v) {return v}, tickHover, ticks, axisSel, tickSel, textSel,
             gridLineSel, borderSel, grid;
     var tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000';
-    var tickPadding = 0, tickLength = 8, tickWidth = 1, gridLineWidth = 1, borderWidth = 1;
+    var tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1;
 
     var axis = function(selection) {
         var data, textAnchor, textXFn, textYFn, gridLineFn, tickFn, border, gridLineData, hasOverlap, bBoxA, bBoxB, i,
@@ -121,7 +121,7 @@ LABKEY.vis.internal.Axis = function() {
             }
 
             if (hasOverlap) {
-                textEls.attr('transform', function(v) {return 'rotate(15,' + textXFn(v) + ',' + textYFn(v) + ')';})
+                textEls.attr('transform', function(v) {return 'rotate(' + tickOverlapRotation + ',' + textXFn(v) + ',' + textYFn(v) + ')';})
                         .attr('text-anchor', 'start');
             } else {
                 textEls.attr('transform', '');
@@ -198,6 +198,12 @@ LABKEY.vis.internal.Axis = function() {
     axis.tickTextColor = function(c) {
         if (c !== undefined && c !== null) {
             tickTextColor = c;
+        }
+        return axis;
+    };
+    axis.tickOverlapRotation = function(rotate) {
+        if (rotate !== undefined && rotate !== null) {
+            tickOverlapRotation = rotate;
         }
         return axis;
     };
@@ -301,6 +307,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             .borderColor(plot.borderColor)
             .borderWidth(plot.borderWidth)
             .tickTextColor(plot.tickTextColor)
+            .tickOverlapRotation(plot.tickOverlapRotation)
     };
 
     var renderXAxis = function() {
@@ -1228,9 +1235,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
     };
 
     var renderErrorBar = function(layer, plot, geom, data) {
-        var colorAcc, sizeAcc, topFn, bottomFn, middleFn, selection, newBars;
+        var colorAcc, altColorAcc, sizeAcc, topFn, bottomFn, middleFn, selection, newBars;
 
         colorAcc = geom.colorAes && geom.colorScale ? function(row) {return geom.colorScale.scale(geom.colorAes.getValue(row) + geom.layerName);} : geom.color;
+        altColorAcc = geom.altColor ? geom.altColor : colorAcc;
         sizeAcc = geom.sizeAes && geom.sizeScale ? function(row) {return geom.sizeScale.scale(geom.sizeAes.getValue(row));} : geom.size;
         topFn = function(d) {
             var x, y, value, error;
@@ -1273,8 +1281,13 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
         newBars.append('path').attr('class','error-bar-bottom');
 
         selection.selectAll('.error-bar-top').attr('d', topFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
-        selection.selectAll('.error-bar-mid').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
-        selection.selectAll('.error-bar-bottom').attr('d', middleFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+        selection.selectAll('.error-bar-bottom').attr('d', bottomFn).attr('stroke', colorAcc).attr('stroke-width', sizeAcc);
+        selection.selectAll('.error-bar-mid').attr('d', middleFn).attr('stroke', altColorAcc).attr('stroke-width', sizeAcc);
+
+        if (geom.dashed) {
+            selection.selectAll('.error-bar-top').style("stroke-dasharray", ("2, 1"));
+            selection.selectAll('.error-bar-bottom').style("stroke-dasharray", ("2, 1"));
+        }
     };
 
     var renderErrorBarGeom = function(data, geom) {
