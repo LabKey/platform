@@ -623,10 +623,9 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     else
                         Logger.getLogger(CoreModule.class).warn("Could not rollover the action stats tsv file--there was no appender named ACTION_STATS, or it is not a RollingFileAppender.");
 
-                    TSVWriter writer = new ActionsTsvWriter();
                     StringBuilder buf = new StringBuilder();
 
-                    try
+                    try (TSVWriter writer = new ActionsTsvWriter())
                     {
                         writer.write(buf);
                     }

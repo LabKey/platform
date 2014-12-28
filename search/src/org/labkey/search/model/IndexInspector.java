@@ -56,7 +56,7 @@ public class IndexInspector
 
     public void export(HttpServletResponse response, final String format) throws IOException
     {
-        TextWriter writer = !"Excel".equals(format) ? new TSVIndexWriter() : new TSVIndexWriter() {
+        try (TextWriter writer = !"Excel".equals(format) ? new TSVIndexWriter() : new TSVIndexWriter() {
             @Override
             protected String getContentType()
             {
@@ -68,8 +68,10 @@ public class IndexInspector
             {
                 return "xls";
             }
-        };
-        writer.write(response);
+        })
+        {
+            writer.write(response);
+        }
     }
 
     private static String getType(String uid)

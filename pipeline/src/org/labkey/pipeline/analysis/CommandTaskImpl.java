@@ -525,9 +525,11 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
             }
         }
 
-        TSVMapWriter tsvWriter = new TSVMapWriter(columns, rows);
-        tsvWriter.setHeaderRowVisible(false);
-        tsvWriter.write(file);
+        try (TSVMapWriter tsvWriter = new TSVMapWriter(columns, rows))
+        {
+            tsvWriter.setHeaderRowVisible(false);
+            tsvWriter.write(file);
+        }
     }
 
     // CONDISER: Use PipelineJobService.get().getPathMapper() when translating paths
