@@ -431,9 +431,10 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
             rows.add(factory.getRowMap("inputFile", inputFile));
         }
 
-        TSVMapWriter tsvWriter = new TSVMapWriter(rows);
-        tsvWriter.setHeaderRowVisible(false);
-        tsvWriter.write(file);
+        try (TSVMapWriter tsvWriter = new TSVMapWriter(rows))
+        {
+            tsvWriter.setHeaderRowVisible(false);
+            tsvWriter.write(file);
+        }
     }
-
 }

@@ -162,9 +162,10 @@ public class TSVWriter extends TextWriter
         String escaped = value;
         if (shouldQuote(value))
         {
-            StringBuffer sb = new StringBuffer(value.length() + 10);
+            StringBuilder sb = new StringBuilder(value.length() + 10);
             sb.append(_chQuote);
-            int i = -1, lastMatch = 0;
+            int i;
+            int lastMatch = 0;
 
             while (-1 != (i = value.indexOf(_chQuote, lastMatch)))
             {

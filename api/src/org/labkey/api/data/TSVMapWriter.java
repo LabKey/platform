@@ -20,7 +20,9 @@ import com.google.common.base.Function;
 import com.google.common.collect.Iterables;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.iterator.MarkableIterator;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,33 +38,35 @@ import java.util.Map;
  */
 public class TSVMapWriter extends TSVWriter
 {
-    private final Iterable<String> _columns;
-    private final Iterable<Map<String, Object>> _rows;
+    private final Collection<String> _columns;
+    private final Iterator<Map<String, Object>> _rows;
 
     /**
      * Columns will be written in order of the first row's keySet() iteration.
      * @param rows The data rows
      */
-    // TODO: This could be very expensive, since it creates the Iterator and then throws it away. Not a problem for
-    // collections, but could be for Iterators that have large upfront cost. Consider a MarkableIterator or similar.
     public TSVMapWriter(Iterable<Map<String, Object>> rows)
     {
-        _rows = rows;
+        // Using a MarkableIterator keeps us from generating the iterator() twice, which could be expensive
+        MarkableIterator<Map<String, Object>> iter = new MarkableIterator<>(rows.iterator());
 
-        Iterator<Map<String, Object>> it = _rows.iterator();
+        // Infer columns from first map: mark the iterator, read the first map, reset the iterator
+        iter.mark();
         Map<String, Object> firstRow;
+        _columns = (iter.hasNext() && null != (firstRow = iter.next())) ? firstRow.keySet() : null;
+        iter.reset();
 
-        _columns = (it.hasNext() && null != (firstRow = it.next())) ? firstRow.keySet() : null;
+        _rows = iter;
     }
 
     /**
      * Columns will be written in order of the columns collection.
      * @param rows The data rows
      */
-    public TSVMapWriter(Iterable<String> columns, Iterable<Map<String, Object>> rows)
+    public TSVMapWriter(Collection<String> columns, Iterable<Map<String, Object>> rows)
     {
         _columns = columns;
-        _rows = rows;
+        _rows = rows.iterator();
     }
 
     @Override
@@ -71,6 +75,7 @@ public class TSVMapWriter extends TSVWriter
         writeLine(_columns);
     }
 
+    // Make public
     @Override
     public void write()
     {
@@ -80,9 +85,9 @@ public class TSVMapWriter extends TSVWriter
     @Override
     protected void writeBody()
     {
-        for (Map<String, Object> row : _rows)
+        while (_rows.hasNext())
         {
-            writeRow(row);
+            writeRow(_rows.next());
         }
     }
 
@@ -122,42 +127,57 @@ public class TSVMapWriter extends TSVWriter
 
             rows.add(Collections.<String, Object>singletonMap("three", 3.3));
 
-            TSVWriter writer = new TSVMapWriter(columns, rows);
+            String lineSep = "|";
+
+            String expectedWithColumnHeaders = "# file header" + lineSep +
+                    "one,two,three" + lineSep +
+                    "1.1,TWO,'test,quoting'" + lineSep +
+                    ",2.2," + lineSep +
+                    ",,3.3" + lineSep;
+
+            String expectedWithoutColumnHeaders = "# file header" + lineSep +
+                    "1.1,TWO,'test,quoting'" + lineSep +
+                    ",2.2," + lineSep +
+                    ",,3.3" + lineSep;
+
+            // Provide columns and output header row
+            try (TSVWriter writer = new TSVMapWriter(columns, rows))
+            {
+                testWriter(writer, expectedWithColumnHeaders);
+            }
+
+            // Provide columns and don't output header row
+            try (TSVWriter writer = new TSVMapWriter(columns, rows))
+            {
+                writer.setHeaderRowVisible(false);
+                testWriter(writer, expectedWithoutColumnHeaders);
+            }
+
+            // Infer columns and output header row
+            try (TSVWriter writer = new TSVMapWriter(rows))
+            {
+                testWriter(writer, expectedWithColumnHeaders);
+            }
+
+            // Infer columns and don't output header row
+            try (TSVWriter writer = new TSVMapWriter(rows))
+            {
+                writer.setHeaderRowVisible(false);
+                testWriter(writer, expectedWithoutColumnHeaders);
+            }
+        }
+
+        private void testWriter(TSVWriter writer, String expected) throws IOException
+        {
             writer.setFileHeader(Arrays.asList("# file header"));
             writer.setDelimiterCharacter(',');
             writer.setQuoteCharacter('\'');
             writer.setRowSeparator("|");
 
-            String lineSep = "|";
+            StringBuilder sb = new StringBuilder();
+            writer.write(sb);
 
-            // Test
-            {
-                StringBuilder sb = new StringBuilder();
-                writer.write(sb);
-
-                String expected = "# file header" + lineSep +
-                        "one,two,three" + lineSep +
-                        "1.1,TWO,'test,quoting'" + lineSep +
-                        ",2.2," + lineSep +
-                        ",,3.3" + lineSep;
-
-                assertEquals(expected, sb.toString());
-            }
-
-            // Test header row not visible
-            {
-                writer.setHeaderRowVisible(false);
-
-                StringBuilder sb = new StringBuilder();
-                writer.write(sb);
-
-                String expected = "# file header" + lineSep +
-                        "1.1,TWO,'test,quoting'" + lineSep +
-                        ",2.2," + lineSep +
-                        ",,3.3" + lineSep;
-
-                assertEquals(expected, sb.toString());
-            }
+            assertEquals(expected, sb.toString());
         }
     }
 }

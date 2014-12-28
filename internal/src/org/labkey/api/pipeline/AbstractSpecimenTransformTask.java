@@ -219,7 +219,7 @@ public abstract class AbstractSpecimenTransformTask
         }
     }
 
-    protected void toDate(String key, Map<String,Object> row)
+    protected void toDate(String key, Map<String, Object> row)
     {
         Object d = row.get(key);
         if (null == d || d instanceof Date)
@@ -236,7 +236,7 @@ public abstract class AbstractSpecimenTransformTask
     }
 
     @Nullable
-    protected Date parseDateTime(String keyDate, @Nullable String keyTime, Map<String,Object> row)
+    protected Date parseDateTime(String keyDate, @Nullable String keyTime, Map<String, Object> row)
     {
         Object d = row.get(keyDate);
         if (null == d)
@@ -262,7 +262,7 @@ public abstract class AbstractSpecimenTransformTask
         return null;
     }
 
-    protected Date parseDate(String keyDate, Map<String,Object> row)
+    protected Date parseDate(String keyDate, Map<String, Object> row)
     {
         Object d = row.get(keyDate);
         if (null == d)
@@ -279,7 +279,7 @@ public abstract class AbstractSpecimenTransformTask
         return null;
     }
 
-    protected Date parseTime(String key, Map<String,Object> row)
+    protected Date parseTime(String key, Map<String, Object> row)
     {
         Object d = row.get(key);
         if (null == d)
@@ -296,7 +296,7 @@ public abstract class AbstractSpecimenTransformTask
         return null;
     }
 
-    protected void toInt(String key, Map<String,Object> row)
+    protected void toInt(String key, Map<String, Object> row)
     {
         Object i = row.get(key);
         if (null == i || i instanceof Integer)
