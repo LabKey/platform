@@ -39,7 +39,7 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     protected WikiWebPartFactory(String name, @NotNull String defaultLocation, String... availableLocations)
     {
-        super(name, defaultLocation, availableLocations);
+        super(name, true, false, defaultLocation, availableLocations);
     }
 
     public WikiWebPartFactory()
