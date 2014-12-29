@@ -1886,7 +1886,7 @@ public class SpecimenImporter
 
                         if (comment != null)
                         {
-                            // if we have a comment, it may be because we're in a bad QC state.  If so, we should update
+                            // if we have a comment, it may be because we're in a bad QC state. If so, we should update
                             // the reason for the QC problem.
                             String message = null;
 
@@ -1902,9 +1902,8 @@ public class SpecimenImporter
                                     {
                                         // NOTE: in checkForConflictingSpecimens() we check the imported specimen columns used
                                         // to generate the specimen hash are not in conflict so we shouldn't need to clear any
-                                        // columns on the specimen table.  Vial columns are not part of the specimen hash and
+                                        // columns on the specimen table. Vial columns are not part of the specimen hash and
                                         // can safely be cleared without compromising the specimen hash.
-                                        //clearConflictingSpecimenColumns(specimen, conflicts);
                                         clearConflictingVialColumns(vial, conflicts);
                                     }
 
