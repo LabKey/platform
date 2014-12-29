@@ -49,7 +49,7 @@
 <p>If you want to import an existing assay design in the <a href="<%= h(new HelpTopic("XarTutorial").getHelpTopicHref()) %>">XAR file format</a> (a .xar or .xar.xml file), you can
     <%= textLink("upload", urlProvider(ExperimentUrls.class).getUploadXARURL(getContainer())) %>it directly
     or upload the file into this folder's pipeline directory and import using the
-    <%= textLink("Data Pipeline", urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getActionURL().toString())) %>
+    <%= textLink("Data Pipeline", urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getActionURL())) %>
 </p>
 <p>
     To create a new assay design, please choose which assay type you would like to customize with your own settings and input options.
@@ -65,7 +65,7 @@
         </tr>
         <tr>
             <td />
-            <td><label for="providerName_<%=h(provider.getName())%>"><%= provider.getDescription() %></label></td>
+            <td><label for="providerName_<%=h(provider.getName())%>"><%= text(provider.getDescription()) %></label></td>
         </tr>
         <% } %>
         <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
@@ -78,7 +78,7 @@
         </tr>
         <tr>
             <td></td>
-            <td><select name="assayContainer" id="assayContainer"><labkey:options value="<%=defaultLocation%>" map="<%=locations%>"></labkey:options></select></td>
+            <td><select name="assayContainer" id="assayContainer"><labkey:options value="<%=h(defaultLocation)%>" map="<%=locations%>"></labkey:options></select></td>
         </tr>
         <tr><td>&nbsp;</td><td>&nbsp;</td></tr>
         <%

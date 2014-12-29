@@ -37,7 +37,6 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineStatusFile;
-import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.TaskFactory;
 import org.labkey.api.pipeline.TaskId;
@@ -110,7 +109,7 @@ public class AnalysisController extends SpringActionController
                 if (_taskPipeline == null)
                     throw new NotFoundException("Task pipeline not found: " + analyzeForm.getTaskId());
 
-                return new JspView<>("/org/labkey/pipeline/analysis/analyze.jsp", PageFlowUtil.urlProvider(PipelineUrls.class).urlReferer(getContainer()));
+                return new JspView<>("/org/labkey/pipeline/analysis/analyze.jsp", getViewContext().getActionURL());
             }
             catch (ClassNotFoundException e)
             {

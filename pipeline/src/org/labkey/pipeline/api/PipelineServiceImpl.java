@@ -304,10 +304,7 @@ public class PipelineServiceImpl extends PipelineService
 
     public HttpView getSetupView(SetupForm form)
     {
-        if (form.getErrors() != null)
-            return new JspView<>("/org/labkey/pipeline/setup.jsp", form, form.getErrors());
-        else
-            return new JspView<>("/org/labkey/pipeline/setup.jsp", form);
+        return new JspView<>("/org/labkey/pipeline/setup.jsp", form, form.getErrors());
     }
 
     public boolean savePipelineSetup(ViewContext context, SetupForm form, BindException errors) throws Exception

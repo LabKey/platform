@@ -132,7 +132,7 @@
             button below, navigate to a zip archive or a study.xml file, and click the "Import Data" button.
         </td></tr>
     <tr>
-        <td><%= button("Import Study Using Pipeline").href(urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline")) %></td>
+        <td><%= button("Import Study Using Pipeline").href(urlProvider(PipelineUrls.class).urlBrowse(c, getViewContext().getActionURL())) %></td>
     </tr>
 
 <% } else if(requestOrigin.equals("Reload")) { %>
@@ -143,7 +143,7 @@
         button below, navigate to a zip archive or a study.xml file, and click the "Import Data" button.
     </td></tr>
     <tr>
-        <td><%= button("Reload Folder Using Pipeline").href(urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline")) %></td>
+        <td><%= button("Reload Folder Using Pipeline").href(urlProvider(PipelineUrls.class).urlBrowse(c, getViewContext().getActionURL())) %></td>
     </tr>
 
 <% } else { %>
@@ -154,7 +154,7 @@
         button below, navigate to a zip archive or a folder.xml file, and click the "Import Data" button.
     </td></tr>
     <tr>
-        <td><%= button("Import Folder Using Pipeline").href(urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline")) %></td>
+        <td><%= button("Import Folder Using Pipeline").href(urlProvider(PipelineUrls.class).urlBrowse(c, getViewContext().getActionURL())) %></td>
     </tr>
 <% } %>
 

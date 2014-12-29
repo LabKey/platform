@@ -30,6 +30,7 @@ import org.labkey.api.action.GWTServiceAction;
 import org.labkey.api.action.LabkeyError;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.RedirectAction;
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.action.SimpleErrorView;
 import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
@@ -60,7 +61,6 @@ import org.labkey.api.pipeline.PipelineUrls;
 import org.labkey.api.pipeline.PipelineValidationException;
 import org.labkey.api.pipeline.browse.PipelinePathForm;
 import org.labkey.api.pipeline.view.SetupForm;
-import org.labkey.api.portal.ProjectUrls;
 import org.labkey.api.security.CSRF;
 import org.labkey.api.security.Group;
 import org.labkey.api.security.MutableSecurityPolicy;
@@ -138,20 +138,7 @@ public class PipelineController extends SpringActionController
 {
     private static DefaultActionResolver _resolver = new DefaultActionResolver(PipelineController.class);
 
-    public enum RefererValues { portal, pipeline }
-
-    public enum Params { referer, path, rootset, overrideRoot }
-
-    private void saveReferer()
-    {
-        getViewContext().getRequest().getSession().setAttribute(Params.referer.toString(),
-                getViewContext().getRequest().getParameter(Params.referer.toString()));
-    }
-
-    private String getSavedReferer()
-    {
-        return (String) getViewContext().getRequest().getSession().getAttribute(Params.referer.toString());
-    }
+    public enum Params { path, rootset, overrideRoot }
 
     private static HelpTopic getHelpTopic(String topic)
     {
@@ -180,33 +167,21 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    @RequiresPermissionClass(ReadPermission.class)
-    public class ReturnToRefererAction extends SimpleRedirectAction
-    {
-        public ActionURL getRedirectURL(Object o)
-        {
-            if (RefererValues.pipeline.toString().equals(getSavedReferer()))
-                return StatusController.urlShowList(getContainer(), true);
-            else
-                return PageFlowUtil.urlProvider(ProjectUrls.class).getStartURL(getContainer());
-        }
-    }
-
     public static ActionURL urlSetup(Container c)
     {
         return urlSetup(c, null);
     }
     
-    public static ActionURL urlSetup(Container c, String referer)
+    public static ActionURL urlSetup(Container c, ActionURL returnURL)
     {
-        return urlSetup(c, referer, false, false);
+        return urlSetup(c, returnURL, false, false);
     }
 
-    public static ActionURL urlSetup(Container c, String referer, boolean rootSet, boolean overrideRoot)
+    public static ActionURL urlSetup(Container c, ActionURL returnURL, boolean rootSet, boolean overrideRoot)
     {
         ActionURL url = new ActionURL(SetupAction.class, c);
-        if (referer != null && referer.length() > 0)
-            url.addParameter(Params.referer, referer);
+        if (returnURL != null)
+            url.addParameter(ActionURL.Param.returnUrl, returnURL.toString());
         if (rootSet)
             url.addParameter(Params.rootset, "1");
         if (overrideRoot)
@@ -233,7 +208,7 @@ public class PipelineController extends SpringActionController
 
         public ActionURL getSuccessURL(SetupForm form)
         {
-            return urlSetup(getContainer(), getSavedReferer(), true, false);
+            return urlSetup(getContainer(), form.getReturnActionURL(getContainer().getStartURL(getUser())), true, false);
         }
     }
 
@@ -357,7 +332,7 @@ public class PipelineController extends SpringActionController
         return true;
     }
 
-    abstract public class AbstractSetupAction<FORM> extends FormViewAction<FORM>
+    abstract public class AbstractSetupAction<FORM extends ReturnUrlForm> extends FormViewAction<FORM>
     {
         abstract protected SetupField getFormField();
 
@@ -397,8 +372,8 @@ public class PipelineController extends SpringActionController
 
             if (!c.isRoot())
             {
-                saveReferer();
                 SetupForm bean = SetupForm.init(c);
+                bean.setReturnUrl(form.getReturnUrl());
                 bean.setErrors(errors);
 
                 PipeRoot pipeRoot = SetupForm.getPipelineRoot(c);
@@ -735,7 +710,7 @@ public class PipelineController extends SpringActionController
     {
         public ActionURL getSuccessURL(PermissionForm permissionForm)
         {
-            return new ActionURL(SetupAction.class, getContainer());
+            return permissionForm.getReturnActionURL(new ActionURL(SetupAction.class, getContainer()));
         }
 
         public boolean doAction(PermissionForm form, BindException errors) throws Exception
@@ -786,16 +761,16 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    public static class PermissionForm
+    public static class PermissionForm extends ReturnUrlForm
     {
-        private ArrayList<Integer> groups = new FormArrayList<Integer>(Integer.class)
+        private List<Integer> groups = new FormArrayList<Integer>(Integer.class)
         {
             protected Integer newInstance() throws IllegalAccessException, InstantiationException
             {
                 return Integer.valueOf(Integer.MIN_VALUE);
             }
         };
-        private ArrayList<String> perms = new FormArrayList<>(String.class);
+        private List<String> perms = new FormArrayList<>(String.class);
 
         private boolean enable = false;
 
@@ -814,22 +789,22 @@ public class PipelineController extends SpringActionController
             this.enable = enable;
         }
 
-        public ArrayList<Integer> getGroups()
+        public List<Integer> getGroups()
         {
             return groups;
         }
 
-        public void setGroups(ArrayList<Integer> groups)
+        public void setGroups(List<Integer> groups)
         {
             this.groups = groups;
         }
 
-        public ArrayList<String> getPerms()
+        public List<String> getPerms()
         {
             return perms;
         }
 
-        public void setPerms(ArrayList<String> perms)
+        public void setPerms(List<String> perms)
         {
             this.perms = perms;
         }
@@ -903,7 +878,7 @@ public class PipelineController extends SpringActionController
 
         public ActionURL getSuccessURL(EmailNotificationForm form)
         {
-            return urlSetup(getContainer());
+            return form.getReturnActionURL(urlSetup(getContainer()));
         }
 
         private void validateStartTime(String startTime, BindException errors)
@@ -942,7 +917,7 @@ public class PipelineController extends SpringActionController
         }
     }
 
-    public static class EmailNotificationForm
+    public static class EmailNotificationForm extends ReturnUrlForm
     {
         boolean _notifyOnSuccess;
         boolean _notifyOnError;
@@ -1441,27 +1416,22 @@ public class PipelineController extends SpringActionController
             return urlBrowse(container, null, null);
         }
 
-        public ActionURL urlBrowse(Container container, @Nullable String referer)
+        public ActionURL urlBrowse(Container container, @Nullable URLHelper returnUrl)
         {
-            return urlBrowse(container, referer, null);
+            return urlBrowse(container, returnUrl, null);
         }
 
-        public ActionURL urlBrowse(Container container, @Nullable String referer, @Nullable String path)
+        public ActionURL urlBrowse(Container container, @Nullable URLHelper returnUrl, @Nullable String path)
         {
             ActionURL url = new ActionURL(BrowseAction.class, container);
 
-            if (null != referer)
-                url.addParameter(Params.referer, referer);
+            if (null != returnUrl)
+                url.addParameter(ActionURL.Param.returnUrl, returnUrl.toString());
 
             if (path != null)
                 url.addParameter(Params.path, path);
 
             return url;
-        }
-
-        public ActionURL urlReferer(Container container)
-        {
-            return new ActionURL(ReturnToRefererAction.class, container);
         }
 
         public ActionURL urlSetup(Container container)

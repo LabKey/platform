@@ -26,6 +26,7 @@
 <%@ page import="org.labkey.api.security.roles.Role" %>
 <%@ page import="org.labkey.api.security.roles.RoleManager" %>
 <%@ page import="org.labkey.api.util.Pair" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.pipeline.PipelineController" %>
 <%@ page import="java.io.IOException" %>
@@ -44,7 +45,8 @@
 <b>Pipeline&nbsp;Files&nbsp;Permissions</b><br>
 These permissions control whether pipeline files can be downloaded and updated via the web server.
 <p />
-<labkey:form id="permissionsForm" action="updateRootPermissions.post" method="POST">
+<labkey:form id="permissionsForm" action="<%= h(buildURL(PipelineController.UpdateRootPermissionsAction.class))%>" method="POST">
+<input type="hidden" name="<%= h(ActionURL.Param.returnUrl) %>" value="<%= h(getViewContext().getActionURL())%>" />
 <input id="enabledCheckbox" type="checkbox" name="enable"<%=checked(enableFTP)%> onclick="toggleEnableFTP(this)" onchange="toggleEnableFTP(this)"> Share files via web site<br>
     <%
     Group[] groups = SecurityManager.getGroups(c.getProject(), true);
@@ -70,8 +72,8 @@ These permissions control whether pipeline files can be downloaded and updated v
             name = "Site&nbsp;Administrators";
         else if (g.isUsers())
             name = "All Users";
-        %><tr><td><%=name%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td><td><select name="perms[<%=i%>]">
-        <%=writeOptions(g.isGuests() ? optionsGuest : optionsFull, assignedRole)%>
+        %><tr><td><%=text(name)%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td><td><select name="perms[<%=i%>]">
+        <%=text(writeOptions(g.isGuests() ? optionsGuest : optionsFull, assignedRole))%>
         </select></td></tr><%
         i++;
     }
@@ -83,7 +85,7 @@ These permissions control whether pipeline files can be downloaded and updated v
         List<Role> assignedRoles = policy.getAssignedRoles(g);
         Role assignedRole = assignedRoles.size() > 0 ? assignedRoles.get(0) : RoleManager.getRole(NoPermissionsRole.class);
         %><tr><td><%=h(g.getName())%><input type="hidden" name="groups[<%=i%>]" value="<%=g.getUserId()%>"></td><td><select name="perms[<%=i%>]">
-        <%=writeOptions(g.isGuests() ? optionsGuest : optionsFull, assignedRole)%>
+        <%=text(writeOptions(g.isGuests() ? optionsGuest : optionsFull, assignedRole))%>
         </select></td></tr><%
         i++;
     }

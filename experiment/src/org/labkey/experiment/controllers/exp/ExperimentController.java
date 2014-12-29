@@ -1423,7 +1423,7 @@ public class ExperimentController extends SpringActionController
 
                 if (getContainer().hasPermission(getUser(), InsertPermission.class))
                 {
-                    ActionURL browseURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getViewContext().getActionURL().toString(), relativePath);
+                    ActionURL browseURL = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getViewContext().getActionURL(), relativePath);
                     bb.add(new ActionButton("Browse in pipeline", browseURL));
                 }
             }
@@ -3375,7 +3375,7 @@ public class ExperimentController extends SpringActionController
                 PipeRoot pipeRoot = PipelineService.get().findPipelineRoot(getContainer());
                 XarExportPipelineJob job = new XarExportPipelineJob(getViewBackgroundInfo(), pipeRoot, fileName, lsidRelativizer, selection, xarXmlFileName);
                 PipelineService.get().queueJob(job);
-                return PageFlowUtil.urlProvider(PipelineUrls.class).urlReferer(getContainer());
+                return getContainer().getStartURL(getUser());
             default:
                 throw new IllegalArgumentException("Unknown export type: " + exportType);
         }

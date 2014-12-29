@@ -254,6 +254,7 @@ public class PipelineJobRunnerGlobus implements Callable, ResumableDescriptor
         return null;
     }
 
+    /** @return plaintext configuration problems related to Globus */
     public static List<String> checkGlobusConfiguration(GlobusKeyPair keyPair)
     {
         List<String> result = new ArrayList<>();

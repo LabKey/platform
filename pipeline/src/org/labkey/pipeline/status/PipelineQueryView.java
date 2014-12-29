@@ -115,7 +115,7 @@ public class PipelineQueryView extends QueryView
             {
                 ActionButton button = new ActionButton(PipelineController.BrowseAction.class, "Process and Import Data");
                 button.setActionType(ActionButton.Action.LINK);
-                button.setURL(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), PipelineController.RefererValues.pipeline.toString()));
+                button.setURL(PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(getContainer(), getViewContext().getActionURL()));
                 bar.add(button);
             }
         }
@@ -132,7 +132,7 @@ public class PipelineQueryView extends QueryView
             {
                 ActionButton button = new ActionButton(PipelineController.SetupAction.class, "Setup");
                 button.setActionType(ActionButton.Action.LINK);
-                button.setURL(PipelineController.urlSetup(getContainer(), PipelineController.RefererValues.pipeline.toString()));
+                button.setURL(PipelineController.urlSetup(getContainer(), getViewContext().getActionURL()));
                 bar.add(button);
             }
         }

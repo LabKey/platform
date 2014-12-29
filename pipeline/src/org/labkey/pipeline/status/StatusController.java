@@ -1037,7 +1037,7 @@ public class StatusController extends SpringActionController
                     {
                         relativePath = "/";
                     }
-                    ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(sf.lookupContainer(), getViewContext().getActionURL().toString(), relativePath);
+                    ActionURL url = PageFlowUtil.urlProvider(PipelineUrls.class).urlBrowse(sf.lookupContainer(), getViewContext().getActionURL(), relativePath);
                     ActionButton showData = new ActionButton(url, "Browse Files");
                     showData.setActionType(ActionButton.Action.LINK);
                     bb.add(showData);

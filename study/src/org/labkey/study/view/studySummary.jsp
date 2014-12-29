@@ -86,7 +86,7 @@
                     <%
                         if(investigator != null)
                         {
-                            out.print("Investigator: " + h(investigator));
+                            out.print(h("Investigator: " + investigator));
                         }
                     %>
                 </span>
@@ -95,7 +95,7 @@
                     <%
                         if(grant != null)
                         {
-                            out.print("Grant: " + h(grant));
+                            out.print(h("Grant: " + grant));
                         }
                     %>
                 </span>
@@ -148,7 +148,7 @@
                     ActionURL pipelineUrl;
 
                     if (PipelineService.get().hasSiteDefaultRoot(c))
-                        pipelineUrl = urlProvider(PipelineUrls.class).urlBrowse(c, "pipeline");
+                        pipelineUrl = urlProvider(PipelineUrls.class).urlBrowse(c, getViewContext().getActionURL());
                     else
                         pipelineUrl = urlProvider(PipelineUrls.class).urlBegin(c);
 
