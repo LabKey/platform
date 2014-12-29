@@ -55,7 +55,6 @@ import org.labkey.survey.query.SurveyQueryView;
 import org.labkey.survey.query.SurveyTableDomainKind;
 import org.springframework.validation.BindException;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -154,7 +153,7 @@ public class SurveyModule extends DefaultModule
             super("Survey Designs", WebPartFactory.LOCATION_BODY);
         }
 
-        public WebPartView getWebPartView(ViewContext context, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+        public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
         {
             if (!context.hasPermission(AdminPermission.class))
                 return new HtmlView("Survey Designs", "You do not have permission to see this data");
@@ -191,7 +190,7 @@ public class SurveyModule extends DefaultModule
             return new JspView<>("/org/labkey/survey/view/customizeSurveysWebPart.jsp", webPart);
         }
 
-        public WebPartView getWebPartView(ViewContext context, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+        public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull Portal.WebPart webPart)
         {
             if (!context.hasPermission(ReadPermission.class) || context.getUser().isGuest())
                 return new HtmlView("Surveys", "You do not have permission to see this data");

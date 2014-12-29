@@ -15,8 +15,8 @@
  */
 package org.labkey.study.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.*;
-import org.labkey.api.query.QueryView;
 import org.labkey.api.study.assay.AssayService;
 import org.labkey.study.controllers.assay.AssayController;
 
@@ -31,7 +31,7 @@ public class AssayListWebPartFactory extends BaseWebPartFactory
         super("Assay List");
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         WebPartView listView = AssayService.get().createAssayListView(portalCtx, true, null);
         ActionURL url = new ActionURL(AssayController.BeginAction.class, portalCtx.getContainer());

@@ -44,7 +44,6 @@ import org.labkey.di.pipeline.TransformTask;
 import org.labkey.di.pipeline.TransformTaskFactory;
 
 import java.io.IOException;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -125,10 +124,10 @@ public class SimpleQueryTransformStep extends TransformTask
             long start = System.currentTimeMillis();
 
             try (
-                    DbScope.Transaction txTarget = (null==targetScope || !_meta.isUseTargetTransaction()) ? null : targetScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
+                    DbScope.Transaction txTarget = (null==targetScope || !_meta.isUseTargetTransaction()) ? null : targetScope.ensureTransaction();
                     // On postgres, if we're going to be commit the transaction along the way, we need two separate connections
                     // See http://www.postgresql.org/message-id/j2sca24673e1004151639r3b5e84b5hb757cc736ae5aaa1@mail.gmail.com
-                    DbScope.Transaction txSource = ((null == sourceScope) || !_meta.isUseSourceTransaction()) ? null : (sourceScope.equals(targetScope) ? sourceScope.beginTransaction() : sourceScope.ensureTransaction(Connection.TRANSACTION_REPEATABLE_READ))
+                    DbScope.Transaction txSource = ((null == sourceScope) || !_meta.isUseSourceTransaction()) ? null : (sourceScope.equals(targetScope) ? sourceScope.beginTransaction() : sourceScope.ensureTransaction())
             )
             {
                 log.info("Copying data from " + meta.getSourceSchema() + "." + meta.getSourceQuery() + " to " +

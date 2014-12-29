@@ -150,7 +150,7 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
     protected abstract String getTitle();
 
     @Override
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         return new StudyToolsWebPart(getTitle(), webPart.getLocation().equals(HttpView.BODY), getItems(portalCtx));
     }

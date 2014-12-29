@@ -205,8 +205,8 @@ public class StoredProcedureStep extends TransformTask
 
         try (Connection conn = procScope.getConnection();
              CallableStatement stmt = conn.prepareCall(procDialect.buildProcedureCall(procSchema, procName, metadataParameters.size(), procReturns.equals(RETURN_TYPE.INTEGER), procReturns.equals(RETURN_TYPE.RESULTSET)));
-             DbScope.Transaction txProc = _meta.isUseProcTransaction() ?  procScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE) : null;
-             DbScope.Transaction txTarget = (targetScope != null && _meta.isUseTargetTransaction()) ? procScope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE) : null
+             DbScope.Transaction txProc = _meta.isUseProcTransaction() ?  procScope.ensureTransaction() : null;
+             DbScope.Transaction txTarget = (targetScope != null && _meta.isUseTargetTransaction()) ? procScope.ensureTransaction() : null
         )
 
         {

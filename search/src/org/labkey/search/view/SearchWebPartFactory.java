@@ -15,10 +15,16 @@
  */
 package org.labkey.search.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.BooleanFormat;
-import org.labkey.api.view.*;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 
-import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 
 /**
@@ -34,7 +40,7 @@ public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
         addLegacyNames("Narrow Search");
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         boolean includeSubfolders = includeSubfolders(webPart);
 

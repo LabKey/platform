@@ -198,7 +198,6 @@ import org.labkey.study.writer.StudySerializationRegistryImpl;
 import org.labkey.study.writer.StudyWriterFactory;
 
 import javax.servlet.ServletContext;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -541,7 +540,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             addLegacyNames("Reports", "Reports and Views");
         }
 
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView("Views", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
@@ -560,7 +559,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         @Override
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/studySchedule.jsp", webPart);
             view.setTitle("Study Schedule");
@@ -599,7 +598,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         @Override
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView("Specimens", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
@@ -620,7 +619,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         @Override
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView("Specimens", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
@@ -645,7 +644,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
         @Override
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView(getDisplayName(portalCtx.getContainer(),  webPart.getLocation()), portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
@@ -674,7 +673,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
         }
 
 
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             if (!portalCtx.hasPermission(ReadPermission.class))
                 return new HtmlView("Datasets", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
@@ -694,7 +693,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             super("Enrollment Report");
         }
 
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             Container c = portalCtx.getContainer();
             Report report = EnrollmentReport.getEnrollmentReport(portalCtx.getUser(), StudyManager.getInstance().getStudy(c), true);
@@ -711,7 +710,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             super("Vaccine Study Protocols");
             addLegacyNames("Study Designs");
         }
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             return new StudyDesignsWebPart(portalCtx, true);
         }
@@ -724,7 +723,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             super("Study Protocol Summary");
         }
 
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             JspView view = new JspView("/org/labkey/study/designer/view/studyDesignSummary.jsp");
             view.setTitle("Study Protocol Summary");

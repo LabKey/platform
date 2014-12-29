@@ -16,10 +16,13 @@
 
 package org.labkey.query.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.query.QueryWebPart;
-import org.labkey.api.view.*;
-
-import java.lang.reflect.InvocationTargetException;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 
 public class QueryWebPartFactory extends AlwaysAvailableWebPartFactory
 {
@@ -28,7 +31,7 @@ public class QueryWebPartFactory extends AlwaysAvailableWebPartFactory
         super("Query", true, true);
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         QueryWebPart ret = new QueryWebPart(portalCtx, webPart);
         populateProperties(ret, webPart.getPropertyMap());

@@ -16,6 +16,7 @@
 package org.labkey.query;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.query.QueryUrls;
 import org.labkey.api.reports.ReportService;
@@ -56,7 +57,7 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         JspView<Portal.WebPart> view = new JspView<>("/org/labkey/query/reports/view/dataViews.jsp", webPart);
         view.setTitle("Data Views");

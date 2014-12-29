@@ -64,7 +64,7 @@ public class DemoModule extends DefaultModule
                     addLegacyNames("Narrow Demo Summary");
                 }
 
-                public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart)
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                 {
                     return new DemoWebPart();
                 }

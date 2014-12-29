@@ -16,6 +16,7 @@
 
 package org.labkey.query.reports;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
@@ -42,7 +43,7 @@ public class ReportsWebPartFactory extends AlwaysAvailableWebPartFactory
         super("Report", true, true);
     }
     
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         ReportsWebPart wp = new ReportsWebPart(portalCtx, webPart);
         populateProperties(wp, webPart.getPropertyMap());

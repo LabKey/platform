@@ -353,8 +353,8 @@ public class StudyController extends BaseStudyController
         {
             _study = getStudy();
 
-            WebPartView overview = StudyModule.manageStudyPartFactory.getWebPartView(getViewContext(), null);
-            WebPartView right = StudyModule.reportsPartFactory.getWebPartView(getViewContext(), null);
+            WebPartView overview = StudyModule.manageStudyPartFactory.getWebPartView(getViewContext(), StudyModule.manageStudyPartFactory.createWebPart());
+            WebPartView right = StudyModule.reportsPartFactory.getWebPartView(getViewContext(), StudyModule.reportsPartFactory.createWebPart());
 			return new SimpleTemplate(overview,right);
         }
 
@@ -1994,7 +1994,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return StudyModule.studyScheduleWebPartFactory.getWebPartView(getViewContext(), null);
+            return StudyModule.studyScheduleWebPartFactory.getWebPartView(getViewContext(), StudyModule.studyScheduleWebPartFactory.createWebPart());
         }
 
         public NavTree appendNavTrail(NavTree root)

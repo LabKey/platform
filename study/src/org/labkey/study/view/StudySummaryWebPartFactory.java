@@ -16,6 +16,7 @@
 
 package org.labkey.study.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
@@ -39,7 +40,6 @@ import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
 import org.springframework.validation.BindException;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 /**
@@ -133,7 +133,7 @@ public class StudySummaryWebPartFactory extends BaseWebPartFactory
         }
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         if (!portalCtx.hasPermission(ReadPermission.class))
             return new HtmlView(NAME, portalCtx.getUser().isGuest() ? "Please log in to see this data" : "You do not have permission to see this data");

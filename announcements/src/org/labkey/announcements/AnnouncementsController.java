@@ -2162,7 +2162,7 @@ public class AnnouncementsController extends SpringActionController
 
     public static class AnnouncementWebPart extends JspView<AnnouncementWebPart.MessagesBean>
     {
-        public AnnouncementWebPart(String jsp, Container c, ActionURL url, User user, Settings settings, boolean displayAll, boolean asWebPart) throws SQLException, ServletException
+        public AnnouncementWebPart(String jsp, Container c, ActionURL url, User user, Settings settings, boolean displayAll, boolean asWebPart)
         {
             super(jsp,
                 new MessagesBean(c, url, user, settings, displayAll));
@@ -2193,12 +2193,12 @@ public class AnnouncementsController extends SpringActionController
             setNavMenu(menu);
         }
 
-        public AnnouncementWebPart(String jsp, ViewContext ctx) throws SQLException, ServletException
+        public AnnouncementWebPart(String jsp, ViewContext ctx)
         {
             this(jsp, ctx.getContainer(), getPageURL(ctx), ctx.getUser(), getSettings(ctx.getContainer()), false, true);
         }
 
-        public AnnouncementWebPart(Container c, ActionURL url, User user, Settings settings, boolean displayAll, boolean asWebPart) throws SQLException, ServletException
+        public AnnouncementWebPart(Container c, ActionURL url, User user, Settings settings, boolean displayAll, boolean asWebPart)
         {
             this("/org/labkey/announcements/announcementWebPartWithExpandos.jsp", c, url, user, settings, displayAll, asWebPart);
         }
@@ -2252,19 +2252,12 @@ public class AnnouncementsController extends SpringActionController
             super(name);
         }
 
-        public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)
+        public WebPartView getWebPartView(@NotNull ViewContext parentCtx, @NotNull Portal.WebPart webPart)
         {
-            try
-            {
-                String jsp = "/org/labkey/announcements/announcementWebPartWithExpandos.jsp";
-                if ("simple".equals(webPart.getPropertyMap().get("style")))
-                    jsp =  "/org/labkey/announcements/announcementWebPartSimple.jsp";
-                return new AnnouncementsController.AnnouncementWebPart(jsp, parentCtx);
-            }
-            catch(Exception e)
-            {
-                throw new RuntimeException(e); // TODO: getWebPartView should throw Exception?
-            }
+            String jsp = "/org/labkey/announcements/announcementWebPartWithExpandos.jsp";
+            if ("simple".equals(webPart.getPropertyMap().get("style")))
+                jsp =  "/org/labkey/announcements/announcementWebPartSimple.jsp";
+            return new AnnouncementsController.AnnouncementWebPart(jsp, parentCtx);
         }
 
         @Override

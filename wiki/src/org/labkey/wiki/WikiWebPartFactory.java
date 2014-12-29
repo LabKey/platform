@@ -27,7 +27,6 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.wiki.model.WikiWebPart;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,7 +48,7 @@ public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
         addLegacyNames("Narrow Wiki");
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         Map<String, String> props = webPart.getPropertyMap();
         return new WikiWebPart(webPart.getRowId(), props);

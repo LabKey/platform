@@ -15,6 +15,7 @@
  */
 package org.labkey.study.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
@@ -44,7 +45,7 @@ public class StudyListWebPartFactory extends BaseWebPartFactory
         return location.equals(WebPartFactory.LOCATION_MENUBAR) || location.equals(HttpView.BODY);
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         WebPartView view;
 

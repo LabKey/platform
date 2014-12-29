@@ -15,6 +15,7 @@
  */
 package org.labkey.announcements.model;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.announcements.DiscussionService;
 import org.labkey.api.data.BooleanFormat;
 import org.labkey.api.data.Container;
@@ -49,7 +50,7 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
         return new JspView<>("/org/labkey/announcements/customizeDiscussionWebPart.jsp", webPart);
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException
     {
         Container c = portalCtx.getContainer();
         User user = portalCtx.getUser();

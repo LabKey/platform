@@ -276,7 +276,7 @@ public class EnrollmentReport extends ChartReport implements Report.ImageReport
         }
     }
 
-    public static Report getEnrollmentReport(User user, Study study, boolean create) throws Exception
+    public static Report getEnrollmentReport(User user, Study study, boolean create)
     {
         if (study != null)
         {

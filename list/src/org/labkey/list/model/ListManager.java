@@ -1400,7 +1400,7 @@ public class ListManager implements SearchService.DocumentProvider
         }
 
         DbScope scope = ListSchema.getInstance().getSchema().getScope();
-        try (DbScope.Transaction transaction = scope.ensureTransaction(Connection.TRANSACTION_SERIALIZABLE);
+        try (DbScope.Transaction transaction = scope.ensureTransaction();
              Connection conn = transaction.getConnection())
         {
             for (ListDef def : listDefs)

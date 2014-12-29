@@ -15,6 +15,7 @@
  */
 package org.labkey.study.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.*;
 import org.labkey.api.exp.api.ExpProtocol;
 import org.labkey.api.study.actions.ProtocolIdForm;
@@ -60,7 +61,7 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
 //        return getIntPropertry(webPart, RUN_ID_KEY);
 //    }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         Integer protocolId = getProtocolId(webPart);
         ProtocolIdForm protocolIdForm = new ProtocolIdForm();

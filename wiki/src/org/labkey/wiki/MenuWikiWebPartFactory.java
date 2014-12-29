@@ -15,14 +15,14 @@
  */
 package org.labkey.wiki;
 
-import org.labkey.api.view.WebPartView;
-import org.labkey.api.view.ViewContext;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
 import org.labkey.wiki.model.WikiWebPart;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /*
 * User: Mark Igra
@@ -36,7 +36,7 @@ public class MenuWikiWebPartFactory extends WikiWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         Map<String, String> props = new HashMap<>(webPart.getPropertyMap());
         if (null == props.get("webPartContainer"))

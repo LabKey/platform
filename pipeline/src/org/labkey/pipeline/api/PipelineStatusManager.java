@@ -17,6 +17,7 @@
 package org.labkey.pipeline.api;
 
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
@@ -69,6 +70,7 @@ public class PipelineStatusManager
 {
     public static class PipelineStatusTransactionKind implements DbScope.TransactionKind
     {
+        @NotNull
         public String getKind()
         {
             return "PIPELINESTATUS";

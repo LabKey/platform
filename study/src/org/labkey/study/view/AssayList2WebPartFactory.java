@@ -15,6 +15,7 @@
  */
 package org.labkey.study.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.*;
 
 /**
@@ -29,7 +30,7 @@ public class AssayList2WebPartFactory extends AlwaysAvailableWebPartFactory
        super("AssayList2", false, false, WebPartFactory.LOCATION_MENUBAR);
    }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         WebPartView view = new JspView(this.getClass(), "assayList2.jsp", null);
         view.setTitle("Assays");

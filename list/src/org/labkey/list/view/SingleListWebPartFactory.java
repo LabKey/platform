@@ -16,6 +16,7 @@
 
 package org.labkey.list.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -38,7 +39,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
         addLegacyNames("Single List");
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         Map<String, String> props = webPart.getPropertyMap();
 

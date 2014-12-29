@@ -146,7 +146,7 @@ public class ReportsController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             _study = getStudy();
-            return StudyModule.reportsPartFactory.getWebPartView(getViewContext(), null);
+            return StudyModule.reportsPartFactory.getWebPartView(getViewContext(), StudyModule.reportsPartFactory.createWebPart());
         }
 
         public NavTree appendNavTrail(NavTree root)

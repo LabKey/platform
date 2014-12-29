@@ -15,12 +15,18 @@
  */
 package org.labkey.wiki;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.view.*;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -37,7 +43,7 @@ public class WikiTOCFactory extends BaseWebPartFactory
         addLegacyNames("Wiki TOC");
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         WebPartView v = new WikiTOC(portalCtx, webPart);
         //TODO: Should just use setters

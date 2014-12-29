@@ -32,6 +32,7 @@ import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobService;
 import org.labkey.api.pipeline.PipelineQueue;
 import org.labkey.api.pipeline.PipelineService;
+import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.labkey.api.security.User;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.ContextListener;
@@ -72,14 +73,12 @@ import org.labkey.pipeline.mule.filters.TaskJmsSelectorFilter;
 import org.labkey.pipeline.status.StatusController;
 import org.labkey.pipeline.xml.ExecTaskType;
 import org.labkey.pipeline.xml.ScriptTaskType;
-import org.labkey.api.pipeline.file.PathMapperImpl;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
 
 import javax.servlet.ServletContext;
 import java.beans.PropertyChangeEvent;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -167,7 +166,7 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
         return new ArrayList<WebPartFactory>(Arrays.asList(
             new BaseWebPartFactory(PipelineWebPart.getPartName())
             {
-                public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+                public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                 {
                     return new PipelineWebPart(portalCtx);
                 }

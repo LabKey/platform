@@ -15,6 +15,7 @@
  */
 package org.labkey.experiment;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentRunListView;
 import org.labkey.api.exp.ExperimentRunType;
 import org.labkey.api.exp.api.ExpProtocol;
@@ -82,7 +83,7 @@ public class ExperimentRunWebPartFactory extends BaseWebPartFactory
         return new JspView<>("/org/labkey/experiment/customizeRunWebPart.jsp", new Bean(types, getConfiguredRunFilterName(webPart)));
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart)
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         String selectedTypeName = getConfiguredRunFilterName(webPart);
         Set<ExperimentRunType> types = ExperimentService.get().getExperimentRunTypes(portalCtx.getContainer());

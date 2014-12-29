@@ -16,6 +16,7 @@
 
 package org.labkey.list.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.list.ListDefinition;
 import org.labkey.api.exp.list.ListService;
@@ -41,7 +42,7 @@ public class ListWebPart extends WebPartView<ViewContext>
 {
     public static final BaseWebPartFactory FACTORY = new BaseWebPartFactory("Lists")
     {
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             boolean narrow = webPart.getLocation().equals(WebPartFactory.LOCATION_RIGHT);
             return new ListWebPart(narrow, portalCtx);

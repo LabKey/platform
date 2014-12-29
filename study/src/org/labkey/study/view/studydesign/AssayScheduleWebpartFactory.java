@@ -15,6 +15,7 @@
  */
 package org.labkey.study.view.studydesign;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
@@ -43,7 +44,7 @@ public class AssayScheduleWebpartFactory extends BaseWebPartFactory
     }
 
     @Override
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         JspView<Portal.WebPart> view = new JspView<>("/org/labkey/study/view/studydesign/assayScheduleWebpart.jsp", webPart);
         view.setTitle(NAME);

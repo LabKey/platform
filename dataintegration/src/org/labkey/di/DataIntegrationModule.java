@@ -140,7 +140,7 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
                 new BaseWebPartFactory("Data Transform Jobs")
                 {
                     @Override
-                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                     {
                         WebPartView view = new ProcessJobsView(portalCtx.getUser(), portalCtx.getContainer());
                         view.setTitle("Processed Data Transforms");

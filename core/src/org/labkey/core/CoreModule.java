@@ -179,7 +179,6 @@ import org.labkey.core.workbook.WorkbookSearchView;
 import javax.servlet.ServletContextEvent;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -322,14 +321,14 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
         return new ArrayList<WebPartFactory>(Arrays.asList(
                 new AlwaysAvailableWebPartFactory("Contacts")
                 {
-                    public WebPartView getWebPartView(ViewContext ctx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+                    public WebPartView getWebPartView(@NotNull ViewContext ctx, @NotNull Portal.WebPart webPart)
                     {
                         return new ContactWebPart();
                     }
                 },
                 new BaseWebPartFactory("FolderNav")
                 {
-                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                     {
                         FolderNavigationForm form = getForm(portalCtx);
 
@@ -357,7 +356,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 },
                 new BaseWebPartFactory("Workbooks")
                 {
-                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                     {
                         UserSchema schema = QueryService.get().getUserSchema(portalCtx.getUser(), portalCtx.getContainer(), SchemaKey.fromParts(CoreQuerySchema.NAME));
                         WorkbookQueryView wbqview = new WorkbookQueryView(portalCtx, schema);
@@ -375,7 +374,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 },
                 new BaseWebPartFactory("Workbook Description")
                 {
-                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                     {
                         JspView view = new JspView("/org/labkey/core/workbook/workbookDescription.jsp");
                         view.setTitle("Workbook Description");
@@ -391,7 +390,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 },
                 new AlwaysAvailableWebPartFactory("Projects")
                 {
-                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                     {
                         JspView<Portal.WebPart> view = new JspView<>("/org/labkey/core/project/projects.jsp", webPart);
 
@@ -409,7 +408,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 },
                 new BaseWebPartFactory("ProjectNav")
                 {
-                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                     {
                         JspView<Portal.WebPart> view = new JspView<>("/org/labkey/core/project/projectNav.jsp", webPart);
                         view.setTitle("Project Navigation");
@@ -424,7 +423,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                     }
                 },
                 new AlwaysAvailableWebPartFactory("Custom Menu", true, true, WebPartFactory.LOCATION_MENUBAR) {
-                    public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    public WebPartView getWebPartView(@NotNull final ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                     {
                         final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);
                         String title = "My Menu";
@@ -456,7 +455,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 new BaseWebPartFactory("BetaNav")
                 {
                     @Override
-                    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+                    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
                     {
                         FolderNavigationForm form = getForm(portalCtx);
 

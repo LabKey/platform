@@ -20,6 +20,7 @@ import org.apache.commons.beanutils.BeanUtils;
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
+import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
@@ -29,6 +30,7 @@ import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.timeline.view.TimelineView;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -61,10 +63,17 @@ public class TimelineModule extends DefaultModule
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory(NAME, true, true, WebPartFactory.LOCATION_BODY){
 
-            public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+            public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
             {
                 TimelineSettings settings = new TimelineSettings();
-                BeanUtils.populate(settings, webPart.getPropertyMap());
+                try
+                {
+                    BeanUtils.populate(settings, webPart.getPropertyMap());
+                }
+                catch (InvocationTargetException | IllegalAccessException e)
+                {
+                    throw new UnexpectedException(e);
+                }
                 settings.setDivId("TimelineWebPart." + webPart.getIndex());
                 return new TimelineView(settings);
             }

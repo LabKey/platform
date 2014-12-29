@@ -118,7 +118,7 @@ public class AnnouncementModule extends DefaultModule implements SearchService.D
             new AnnouncementsController.AnnoucementWebPartFactory(WEB_PART_NAME),
             new AlwaysAvailableWebPartFactory(WEB_PART_NAME + " List")
             {
-                public WebPartView getWebPartView(ViewContext parentCtx, Portal.WebPart webPart)
+                public WebPartView getWebPartView(@NotNull ViewContext parentCtx, @NotNull Portal.WebPart webPart)
                 {
                     return new AnnouncementsController.AnnouncementListWebPart(parentCtx);
                 }

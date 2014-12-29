@@ -15,6 +15,7 @@
  */
 package org.labkey.issue;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.view.*;
 
 import java.lang.reflect.InvocationTargetException;
@@ -32,7 +33,7 @@ class IssuesWebPartFactory extends AlwaysAvailableWebPartFactory
         addLegacyNames(IssuesModule.NAME);
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         WebPartView v = new IssuesController.SummaryWebPart();
         populateProperties(v, webPart.getPropertyMap());

@@ -15,6 +15,7 @@
  */
 package org.labkey.study.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
 import org.labkey.api.study.Study;
@@ -81,7 +82,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
         return StudyModule.getWebPartSubjectNoun(container) + " Details";
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         String participantId = webPart.getPropertyMap().get(PARTICIPANT_ID_KEY);
         String currentUrl = webPart.getPropertyMap().get(CURRENT_URL_KEY);

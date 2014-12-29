@@ -18,6 +18,7 @@ package org.labkey.study.controllers.specimen;
 
 import gwt.client.org.labkey.study.StudyApplication;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.action.ApiAction;
@@ -3350,7 +3351,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         // TODO: listView parameter is always false... remove?
-        public ReportConfigurationBean(SpecimenVisitReportParameters singleFactory, boolean listView, int uniqueId) throws ServletException
+        public ReportConfigurationBean(SpecimenVisitReportParameters singleFactory, boolean listView, int uniqueId)
         {
             _listView = listView;
             _viewContext = singleFactory.getViewContext();
@@ -5347,7 +5348,7 @@ public class SpecimenController extends BaseStudyController
         }
 
         @Override
-        public WebPartView getWebPartView(ViewContext context, WebPart part) throws Exception
+        public WebPartView getWebPartView(@NotNull ViewContext context, @NotNull WebPart part)
         {
             SpecimenVisitReportParameters factory = getFactory(context, part);
 
