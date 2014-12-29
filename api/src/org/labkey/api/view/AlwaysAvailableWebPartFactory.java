@@ -15,7 +15,7 @@
  */
 package org.labkey.api.view;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 
 /**
@@ -27,14 +27,19 @@ import org.labkey.api.data.Container;
 // Base class for factories that produce webparts available in all folder types
 public abstract class AlwaysAvailableWebPartFactory extends BaseWebPartFactory
 {
-    public AlwaysAvailableWebPartFactory(String name, @Nullable String defaultLocation, boolean isEditable, boolean showCustomizeOnInsert)
+    public AlwaysAvailableWebPartFactory(String name, boolean isEditable, boolean showCustomizeOnInsert, @NotNull String defaultLocation, String... additionaLocations)
     {
-        super(name, defaultLocation, isEditable, showCustomizeOnInsert);
+        super(name, isEditable, showCustomizeOnInsert, defaultLocation, additionaLocations);
     }
 
-    public AlwaysAvailableWebPartFactory(String name, @Nullable String defaultLocation)
+    public AlwaysAvailableWebPartFactory(String name, boolean isEditable, boolean showCustomizeOnInsert)
     {
-        super(name, defaultLocation);
+        super(name, isEditable, showCustomizeOnInsert);
+    }
+
+    public AlwaysAvailableWebPartFactory(String name, @NotNull String defaultLocation, String... allowableLocations)
+    {
+        super(name, defaultLocation, allowableLocations);
     }
 
     public AlwaysAvailableWebPartFactory(String name)
@@ -47,6 +52,6 @@ public abstract class AlwaysAvailableWebPartFactory extends BaseWebPartFactory
     @Override
     public final boolean isAvailable(Container c, String location)
     {
-        return location.equals(getDefaultLocation());
+        return getAllowableLocations().contains(location);
     }
 }

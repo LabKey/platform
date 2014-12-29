@@ -16,6 +16,7 @@
 
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.permissions.ReadPermission;
 
 import java.lang.reflect.InvocationTargetException;
@@ -35,9 +36,9 @@ public class DefaultWebPartFactory extends BaseWebPartFactory
         this.cls = cls;
     }
     
-    public DefaultWebPartFactory(String name, String location, Class<? extends WebPartView> cls)
+    public DefaultWebPartFactory(String name, Class<? extends WebPartView> cls, @NotNull String location, String... additionalLocations)
     {
-        super(name, location);
+        super(name, location, additionalLocations);
         this.cls = cls;
     }
 

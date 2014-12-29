@@ -7239,7 +7239,6 @@ internal/src/org/labkey/api/util/SessionTempFileHolder.java -text
 internal/src/org/labkey/api/util/TextExtractor.java -text
 internal/src/org/labkey/api/util/wiki_markup.properties -text
 internal/src/org/labkey/api/view/CGIServlet.java -text
-internal/src/org/labkey/api/view/ClientAPIWebPartFactory.java -text
 internal/src/org/labkey/api/view/ContactWebPart.java -text
 internal/src/org/labkey/api/view/DefaultWebPartFactory.java -text
 internal/src/org/labkey/api/view/FileServlet.java -text
@@ -7247,7 +7246,6 @@ internal/src/org/labkey/api/view/LinkBarView.java -text
 internal/src/org/labkey/api/view/SiteDownServlet.java -text
 internal/src/org/labkey/api/view/StaticContentCachingFilter.java -text
 internal/src/org/labkey/api/view/addWebPart.jsp -text
-internal/src/org/labkey/api/view/customizeClientAPIWebPart.jsp -text
 internal/src/org/labkey/api/webdav/ActionResource.java -text
 internal/src/org/labkey/api/webdav/FileSystemAuditProvider.java -text
 internal/src/org/labkey/api/webdav/FileSystemAuditViewFactory.java -text

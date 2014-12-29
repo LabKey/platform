@@ -46,13 +46,13 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
 
     public SimpleWebPartFactory(String name, Class<? extends ModelAndView> viewClass)
     {
-        this(name, null, viewClass, null);
+        this(name, WebPartFactory.LOCATION_BODY, viewClass, null);
     }
 
 
     public SimpleWebPartFactory(String name, Class<? extends ModelAndView> viewClass, Class formClass)
     {
-        this(name, null, viewClass, formClass);
+        this(name, WebPartFactory.LOCATION_BODY, viewClass, formClass);
     }
 
     public SimpleWebPartFactory(String name, String defaultLocation, Class<? extends ModelAndView> viewClass, Class formClass)
@@ -133,8 +133,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     {
         Object form = null;
         BindException errors = null;
-        Constructor<? extends ModelAndView> c = null;
-                
+
         if (null != _formClass)
         {
             form = _formClass.newInstance();

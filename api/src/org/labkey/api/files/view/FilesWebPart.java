@@ -384,9 +384,9 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
 
     public static class Factory extends AlwaysAvailableWebPartFactory
     {
-        public Factory(String location)
+        public Factory()
         {
-            super(PART_NAME, location, true, false);
+            super(PART_NAME, true, false, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
         }
 
         public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception

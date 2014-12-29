@@ -19,14 +19,20 @@ package org.labkey.api.view;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.log4j.Logger;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * User: brittp
@@ -38,30 +44,42 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     private static Logger _log = Logger.getLogger(Portal.class);
 
     String name;
-    protected String defaultLocation;
+    protected Set<String> allowableLocations;
     Module module = null;
     private boolean editable;
     private boolean showCustomizeOnInsert;
     private List<String> _legacyNames = Collections.emptyList();
 
-    public BaseWebPartFactory(String name, @Nullable String defaultLocation, boolean isEditable, boolean showCustomizeOnInsert)
+    public BaseWebPartFactory(String name, boolean isEditable, boolean showCustomizeOnInsert, @NotNull String defaultLocation, String... additionalLocations)
     {
         if (!isEditable && showCustomizeOnInsert)
             throw new IllegalArgumentException("CustomizeOnInsert is only valid when web part is editable.");
         this.name = name;
         this.showCustomizeOnInsert = showCustomizeOnInsert;
         this.editable = isEditable;
-        this.defaultLocation = null == defaultLocation ? HttpView.BODY : defaultLocation;
+        Set<String> locations = new LinkedHashSet<>();
+        locations.add(defaultLocation);
+        locations.addAll(Arrays.asList(additionalLocations));
+        if (locations.contains(null))
+        {
+            throw new IllegalArgumentException("Can't add a null allowable location");
+        }
+        this.allowableLocations = Collections.unmodifiableSet(locations);
     }
 
-    public BaseWebPartFactory(String name, @Nullable String defaultLocation)
+    public BaseWebPartFactory(String name, boolean isEditable, boolean showCustomizeOnInsert)
     {
-        this(name, defaultLocation, false, false);
+        this(name, isEditable, showCustomizeOnInsert, WebPartFactory.LOCATION_BODY);
+    }
+
+    public BaseWebPartFactory(String name, @NotNull String defaultLocation, String... additionalLocations)
+    {
+        this(name, false, false, defaultLocation, additionalLocations);
     }
 
     public BaseWebPartFactory(String name)
     {
-        this(name, null);
+        this(name, WebPartFactory.LOCATION_BODY);
     }
 
     public String getName()
@@ -80,11 +98,15 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         this.name = name;
     }
 
-    public String getDefaultLocation()
+    public Set<String> getAllowableLocations()
     {
-        return defaultLocation;
+        return allowableLocations;
     }
 
+    public String getDefaultLocation()
+    {
+        return allowableLocations.iterator().next();
+    }
 
     public HttpView getEditView(Portal.WebPart webPart, ViewContext context)
     {
@@ -93,7 +115,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
 
     public Portal.WebPart createWebPart()
     {
-        return createWebPart(defaultLocation);
+        return createWebPart(getDefaultLocation());
     }
 
     public Portal.WebPart createWebPart(String location)
@@ -164,7 +186,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
 
     public boolean isAvailable(Container c, String location)
     {
-        if (!location.equals(getDefaultLocation()))
+        if (!getAllowableLocations().contains(location))
         {
             return false;
         }

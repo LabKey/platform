@@ -15,7 +15,7 @@
  */
 package org.labkey.api.view;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.protein.ProteomicsModule;
@@ -28,9 +28,9 @@ import org.labkey.api.protein.ProteomicsModule;
 // Base class for factories that produce webparts available in all proteomics folder types
 public abstract class ProteomicsWebPartFactory extends BaseWebPartFactory
 {
-    public ProteomicsWebPartFactory(String name, @Nullable String defaultLocation)
+    public ProteomicsWebPartFactory(String name, @NotNull String defaultLocation, String... additionalLocations)
     {
-        super(name, defaultLocation);
+        super(name, defaultLocation, additionalLocations);
     }
 
     public ProteomicsWebPartFactory(String name)

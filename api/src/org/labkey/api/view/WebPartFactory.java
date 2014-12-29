@@ -21,6 +21,7 @@ import org.labkey.api.module.Module;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * User: matthewb
@@ -46,6 +47,8 @@ public interface WebPartFactory
     String getDisplayName(Container container, String location);
 
     String getDefaultLocation();
+
+    Set<String> getAllowableLocations();
 
     WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception;
 

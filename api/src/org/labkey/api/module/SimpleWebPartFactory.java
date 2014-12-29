@@ -23,6 +23,7 @@ import org.labkey.api.util.Path;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.data.xml.webpart.AvailableEnum;
 import org.labkey.data.xml.webpart.LocationType;
@@ -30,8 +31,11 @@ import org.labkey.data.xml.webpart.WebpartDocument;
 import org.labkey.data.xml.webpart.WebpartType;
 
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 
 /*
 * User: Dave
@@ -116,6 +120,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
 
             // Establish a default location, which the base class can use to do a first pass of determining if this
             // web part should be available in the list
+            Set<String> locations = new LinkedHashSet<>();
             if(null != _webPartDef.getLocations())
             {
                 for(LocationType declaredLoc : _webPartDef.getLocations().getLocationArray())
@@ -125,11 +130,18 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
                     {
                         if (entry.getValue().equalsIgnoreCase(friendlyLocation))
                         {
-                            defaultLocation = entry.getKey();
+                            locations.add(entry.getKey());
                         }
                     }
                 }
             }
+            // Make sure we have at least one location
+            if (locations.isEmpty())
+            {
+                // Assume we should default to the main body location
+                locations.add(WebPartFactory.LOCATION_BODY);
+            }
+            allowableLocations = Collections.unmodifiableSet(locations);
 
         }
         catch(Exception e)
@@ -206,15 +218,7 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
         if(AvailableEnum.ALWAYS.equals(_webPartDef.getAvailable()) ||
                 c.getActiveModules().contains(getModule()))
         {
-            if(null != _webPartDef.getLocations())
-            {
-                for(LocationType declaredLoc : _webPartDef.getLocations().getLocationArray())
-                {
-                    if(publicLocName.equalsIgnoreCase(declaredLoc.getName().toString()))
-                        return true;
-                }
-            }
-            else if(location.equalsIgnoreCase(getDefaultLocation())) //if no locations defined, check against default location
+            if(getAllowableLocations().contains(location))
                 return true;
         }
         

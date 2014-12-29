@@ -90,8 +90,7 @@ public class Portal
     public static final ModuleResourceCache<SimpleWebPartFactory> WEB_PART_FACTORY_CACHE =
         ModuleResourceCaches.create(new Path(SimpleController.VIEWS_DIRECTORY), "File-based webpart definitions", new SimpleWebPartFactoryCacheHandler());
 
-    private static HashMap<String, WebPartFactory> _viewMap = null;
-    private static MultiHashMap<String, String> _regionMap = null;
+    private static Map<String, WebPartFactory> _viewMap = null;
 
 
     public static DbSchema getSchema()
@@ -887,9 +886,15 @@ public class Portal
         public Map<String, String> rightWebPartNames;
     }
 
-    private static void addCustomizeDropdowns(Container c, HttpView template, String id, Collection occupiedLocations)
+    private static void addCustomizeDropdowns(Container c, HttpView template, String id, Collection<String> occupiedLocations)
     {
-        Set<String> regionNames = getRegionMap().keySet();
+        Set<String> regionNames = new HashSet<>();
+
+        for (WebPartFactory webPartFactory : _viewMap.values())
+        {
+            regionNames.addAll(webPartFactory.getAllowableLocations());
+        }
+
         boolean rightEmpty = !occupiedLocations.contains(WebPartFactory.LOCATION_RIGHT);
         AddWebParts bodyAddPart = null;
         Map<String, String> rightParts = null;
@@ -1101,7 +1106,7 @@ public class Portal
         return viewMap.get(name);
     }
 
-    private static synchronized HashMap<String, WebPartFactory> getViewMap()
+    private static synchronized Map<String, WebPartFactory> getViewMap()
     {
         if (null == _viewMap)
             initMaps();
@@ -1109,46 +1114,45 @@ public class Portal
         return _viewMap;
     }
 
-
-    private static synchronized MultiHashMap<String, String> getRegionMap()
-    {
-        if (null == _regionMap)
-            initMaps();
-
-        return _regionMap;
-    }
-
     private synchronized static void initMaps()
     {
         _viewMap = new HashMap<>(20);
-        _regionMap = new MultiHashMap<>();
 
         List<Module> modules = ModuleLoader.getInstance().getModules();
         for (Module module : modules)
         {
             for (WebPartFactory factory : module.getWebPartFactories())
             {
-                _viewMap.put(factory.getName(), factory);
+                if (validateFactoryName(factory.getName(), module))
+                {
+                    _viewMap.put(factory.getName(), factory);
+                }
                 for (String legacyName : factory.getLegacyNames())
                 {
-                    _viewMap.put(legacyName, factory);
+                    if (validateFactoryName(legacyName, module))
+                    {
+                        _viewMap.put(legacyName, factory);
+                    }
                 }
-                _regionMap.put(factory.getDefaultLocation(), factory.getName());
             }
         }
 
-        //noinspection unchecked
-        for (String key : _regionMap.keySet())
+    }
+
+    private static boolean validateFactoryName(String name, Module module)
+    {
+        WebPartFactory existingFactory = _viewMap.get(name);
+        if (existingFactory != null)
         {
-            List<String> list = (List<String>)_regionMap.getCollection(key);
-            Collections.sort(list);
+            ModuleLoader.getInstance().addModuleFailure(module.getName(), new IllegalStateException("A webpart named '" + name + "' was already registered by the module '" + existingFactory.getModule().getName() + "'"));
+            return false;
         }
+        return true;
     }
 
     synchronized static void clearMaps()
     {
         _viewMap = null;
-        _regionMap = null;
     }
 
     static void clearWebPartFactories(Module module)
