@@ -579,12 +579,12 @@ public class AdminController extends SpringActionController
             else if (upgradeInProgress)
             {
                 title = "Upgrade in progress";
-                content = "Upgrade in progress: only site admins may login at this time. You will be redirected when startup is complete.";
+                content = "Upgrade in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.";
             }
             else if (startupInProgress)
             {
                 title = "Startup in progress";
-                content = "Startup in progress: only site admins may login at this time. You will be redirected when startup is complete.";
+                content = "Startup in progress: only site admins may login at this time. Your browser will be redirected when startup is complete.";
             }
             else if (maintenanceMode)
             {
