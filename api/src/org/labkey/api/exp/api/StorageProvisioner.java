@@ -516,7 +516,7 @@ public class StorageProvisioner
 
         String tableName = ensureStorageTable(domain, kind, scope);
 
-        assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds must declare a schema type of DbSchemaType.Provisioned";
+        assert kind.getSchemaType() == DbSchemaType.Provisioned : "provisioned DomainKinds must declare a schema type of DbSchemaType.Provisioned, but type " + kind + " declared " + kind.getSchemaType();
 
         DbSchema schema = scope.getSchema(schemaName, kind.getSchemaType());
         ProvisionedSchemaOptions options = new ProvisionedSchemaOptions(schema, tableName, domain);
