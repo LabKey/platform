@@ -21,6 +21,11 @@ package org.labkey.core.dialect;
 * Date: May 22, 2011
 * Time: 9:28:59 PM
 */
-public class PostgreSql91Dialect extends PostgreSql90Dialect
+public class PostgreSql91Dialect extends PostgreSql90DialectNEW
 {
+    @Override
+    public String getAdminWarningMessage()
+    {
+        return null;
+    }
 }

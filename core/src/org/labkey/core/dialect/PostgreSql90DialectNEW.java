@@ -80,11 +80,12 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for PostgreSQL
-public class PostgreSql84Dialect extends SqlDialect
+public class PostgreSql90DialectNEW extends SqlDialect
 {
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
+    private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
+
     private InClauseGenerator _inClauseGenerator = null;
-    private AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
 
     // Specifies if this PostgreSQL server treats backslashes in string literals as normal characters (as per the SQL
     // standard) or as escape characters (old, non-standard behavior). As of PostgreSQL 9.1, the setting
@@ -93,12 +94,12 @@ public class PostgreSql84Dialect extends SqlDialect
     private Boolean _standardConformingStrings = null;
 
     // Standard constructor used by factory and subclasses
-    PostgreSql84Dialect()
+    PostgreSql90DialectNEW()
     {
     }
 
     // Constructor used to test standardConformingStrings setting
-    PostgreSql84Dialect(boolean standardConformingStrings)
+    PostgreSql90DialectNEW(boolean standardConformingStrings)
     {
         _standardConformingStrings = standardConformingStrings;
     }
@@ -121,9 +122,6 @@ public class PostgreSql84Dialect extends SqlDialect
             "localtimestamp, natural, not, notnull, null, offset, on, only, or, order, outer, over, overlaps, placing, " +
             "primary, references, returning, right, select, session_user, similar, some, symmetric, table, then, to, " +
             "trailing, union, unique, user, using, variadic, verbose, when, where, window, with" +
-
-            // For <= PostgreSQL 8.4
-            ", between, new, off, old" +
 
             // For = PostgreSQL 8.3
             ", false, true"));

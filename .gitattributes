@@ -781,8 +781,7 @@ core/src/org/labkey/core/attachment/DatabaseAttachmentFile.java -text
 core/src/org/labkey/core/attachment/refreshParent.jsp -text
 core/src/org/labkey/core/attachment/showErrors.jsp -text
 core/src/org/labkey/core/dialect/ArrayParameterInClauseGenerator.java -text
-core/src/org/labkey/core/dialect/PostgreSql84Dialect.java -text
-core/src/org/labkey/core/dialect/PostgreSql90Dialect.java -text
+core/src/org/labkey/core/dialect/PostgreSql90DialectNEW.java -text
 core/src/org/labkey/core/dialect/PostgreSql91Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql92Dialect.java -text
 core/src/org/labkey/core/dialect/PostgreSql93Dialect.java -text
