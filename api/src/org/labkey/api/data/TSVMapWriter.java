@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -114,7 +115,7 @@ public class TSVMapWriter extends TSVWriter
             Collection<String> columns = Arrays.asList("one", "two", "three");
             List<Map<String, Object>> rows = new ArrayList<>();
 
-            Map<String, Object> row = new HashMap<>();
+            Map<String, Object> row = new LinkedHashMap<>();
             row.put("one", 1.1);
             row.put("two", "TWO");
             row.put("three", "test,quoting");
