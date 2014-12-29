@@ -1234,7 +1234,7 @@ public abstract class SqlDialect
     // This ensures that unusual connection settings and other side effects are always discarded.
     public final Collection<String> getExecutionPlan(DbScope scope, SQLFragment sql)
     {
-        try (DbScope.Transaction t = scope.beginTransaction())
+        try (DbScope.Transaction ignored = scope.beginTransaction())
         {
             return getQueryExecutionPlan(scope, sql);
         }
