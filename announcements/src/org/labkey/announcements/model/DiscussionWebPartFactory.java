@@ -35,7 +35,7 @@ public class DiscussionWebPartFactory extends BaseWebPartFactory
 {
     public DiscussionWebPartFactory()
     {
-        super("Discussion", null, true, false);
+        super("Discussion", true, false);
     }
 
     @Override

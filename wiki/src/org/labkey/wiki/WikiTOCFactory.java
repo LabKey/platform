@@ -33,7 +33,7 @@ public class WikiTOCFactory extends BaseWebPartFactory
 {
     public WikiTOCFactory()
     {
-        super("Wiki Table of Contents", WebPartFactory.LOCATION_RIGHT, true, false);
+        super("Wiki Table of Contents", true, false, WebPartFactory.LOCATION_RIGHT);
         addLegacyNames("Wiki TOC");
     }
 

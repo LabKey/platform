@@ -17,6 +17,7 @@
 package org.labkey.study.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.study.StudyFolderTabs;
 import org.labkey.api.study.StudyService;
@@ -28,6 +29,7 @@ import org.labkey.api.view.FolderTab;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.api.visualization.VisualizationUrls;
 import org.labkey.study.SpecimenManager;
@@ -47,16 +49,16 @@ import java.util.List;
  */
 public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
 {
-    public StudyToolsWebPartFactory(String name, String position)
+    public StudyToolsWebPartFactory(String name, @NotNull String defaultLocation, String... additionalLocations)
     {
-        super(name, position);
+        super(name, defaultLocation, additionalLocations);
     }
 
     public static class Specimens extends StudyToolsWebPartFactory
     {
-        public Specimens(String position)
+        public Specimens()
         {
-            super(StudyService.SPECIMEN_TOOLS_WEBPART_NAME, position);
+            super(StudyService.SPECIMEN_TOOLS_WEBPART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
         }
 
         @Override
@@ -91,9 +93,9 @@ public abstract class StudyToolsWebPartFactory extends BaseWebPartFactory
 
     public static class Data extends StudyToolsWebPartFactory
     {
-        public Data(String position)
+        public Data()
         {
-            super(StudyService.DATA_TOOLS_WEBPART_NAME, position);
+            super(StudyService.DATA_TOOLS_WEBPART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
         }
 
         @Override

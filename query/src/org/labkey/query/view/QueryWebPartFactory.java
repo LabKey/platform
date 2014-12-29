@@ -25,7 +25,7 @@ public class QueryWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     public QueryWebPartFactory()
     {
-        super("Query", null, true, true);
+        super("Query", true, true);
     }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException

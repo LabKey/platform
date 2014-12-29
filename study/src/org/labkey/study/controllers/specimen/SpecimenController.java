@@ -5343,7 +5343,7 @@ public class SpecimenController extends BaseStudyController
 
         public SpecimenReportWebPartFactory()
         {
-            super("Specimen Report", LOCATION_BODY, true, true);
+            super("Specimen Report", true, true, LOCATION_BODY);
         }
 
         @Override

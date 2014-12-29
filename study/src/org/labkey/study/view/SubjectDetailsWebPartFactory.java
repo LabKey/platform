@@ -17,15 +17,24 @@ package org.labkey.study.view;
 
 import org.labkey.api.data.Container;
 import org.labkey.api.security.User;
-import org.labkey.api.view.*;
-import org.labkey.study.StudyModule;
-import org.labkey.study.model.QCStateSet;
-import org.labkey.study.model.Participant;
-import org.labkey.study.model.StudyManager;
-import static org.labkey.api.util.PageFlowUtil.filter;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.view.BaseWebPartFactory;
+import org.labkey.api.view.HtmlView;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.JspView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.VBox;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartView;
+import org.labkey.study.StudyModule;
+import org.labkey.study.model.Participant;
+import org.labkey.study.model.QCStateSet;
+import org.labkey.study.model.StudyManager;
+
 import java.util.Map;
+
+import static org.labkey.api.util.PageFlowUtil.filter;
 
 /**
  * User: brittp
@@ -62,7 +71,7 @@ public class SubjectDetailsWebPartFactory extends BaseWebPartFactory
 
     public SubjectDetailsWebPartFactory()
     {
-        super("Subject Details", null, true, true);
+        super("Subject Details", true, true);
         addLegacyNames("Participant Details");
     }
 

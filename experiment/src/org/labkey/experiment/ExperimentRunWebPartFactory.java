@@ -44,7 +44,7 @@ public class ExperimentRunWebPartFactory extends BaseWebPartFactory
 
     public ExperimentRunWebPartFactory()
     {
-        super(ExperimentModule.EXPERIMENT_RUN_WEB_PART_NAME, null, true, false);
+        super(ExperimentModule.EXPERIMENT_RUN_WEB_PART_NAME, true, false);
 
     }
 

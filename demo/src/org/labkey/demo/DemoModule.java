@@ -59,13 +59,7 @@ public class DemoModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory("Demo Summary") {
-                public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart)
-                {
-                    return new DemoWebPart();
-                }
-            },
-            new BaseWebPartFactory("Demo Summary", WebPartFactory.LOCATION_RIGHT) {
+        return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory("Demo Summary", WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT) {
                 {
                     addLegacyNames("Narrow Demo Summary");
                 }

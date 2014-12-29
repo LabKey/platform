@@ -28,9 +28,9 @@ import java.text.ParseException;
  */
 public class SearchWebPartFactory extends AlwaysAvailableWebPartFactory
 {
-    public SearchWebPartFactory(String name, String location)
+    public SearchWebPartFactory()
     {
-        super(name, location, true, false);
+        super("Search", true, false, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
         addLegacyNames("Narrow Search");
     }
 

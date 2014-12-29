@@ -15,11 +15,16 @@
  */
 package org.labkey.wiki;
 
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
-import org.labkey.api.view.*;
+import org.labkey.api.view.AlwaysAvailableWebPartFactory;
+import org.labkey.api.view.HttpView;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartFactory;
+import org.labkey.api.view.WebPartView;
 import org.labkey.wiki.model.WikiWebPart;
 
 import java.lang.reflect.InvocationTargetException;
@@ -33,14 +38,14 @@ import java.util.Map;
  */
 public class WikiWebPartFactory extends AlwaysAvailableWebPartFactory
 {
-    public WikiWebPartFactory()
+    protected WikiWebPartFactory(String name, @NotNull String defaultLocation, String... availableLocations)
     {
-        this(WikiModule.WEB_PART_NAME, null);
+        super(name, defaultLocation, availableLocations);
     }
 
-    public WikiWebPartFactory(String name, @Nullable String location)
+    public WikiWebPartFactory()
     {
-        super(name, location, true, false);
+        this(WikiModule.WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
         addLegacyNames("Narrow Wiki");
     }
 

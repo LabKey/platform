@@ -28,12 +28,7 @@ class IssuesWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     public IssuesWebPartFactory()
     {
-        this("Issues Summary", null);
-    }
-
-    public IssuesWebPartFactory(String name, String location)
-    {
-        super(name, location, true, false);
+        super("Issues Summary", true, false);
         addLegacyNames(IssuesModule.NAME);
     }
 

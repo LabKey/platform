@@ -44,7 +44,6 @@ import org.labkey.api.etl.ResultSetDataIterator;
 import org.labkey.api.etl.SimpleTranslator;
 import org.labkey.api.exp.Lsid;
 import org.labkey.api.exp.api.StorageProvisioner;
-import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.module.FirstRequestHandler;
@@ -424,7 +423,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                         return false;
                     }
                 },
-                new AlwaysAvailableWebPartFactory("Custom Menu", WebPartFactory.LOCATION_MENUBAR, true, true) {
+                new AlwaysAvailableWebPartFactory("Custom Menu", true, true, WebPartFactory.LOCATION_MENUBAR) {
                     public WebPartView getWebPartView(final ViewContext portalCtx, Portal.WebPart webPart) throws Exception
                     {
                         final CustomizeMenuForm form = AdminController.getCustomizeMenuForm(webPart);

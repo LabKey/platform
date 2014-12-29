@@ -34,7 +34,7 @@ public class SingleListWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     public SingleListWebPartFactory()
     {
-        super("List - Single", null, true, true);
+        super("List - Single", true, true);
         addLegacyNames("Single List");
     }
 

@@ -33,7 +33,6 @@ import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
-import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 
 import java.util.ArrayList;
@@ -52,7 +51,7 @@ public class DataViewsWebPartFactory extends BaseWebPartFactory
 
     public DataViewsWebPartFactory()
     {
-        super(NAME, WebPartFactory.LOCATION_BODY, true, false); // is editable
+        super(NAME, true, false); // is editable
         addLegacyNames("Dataset Browse", "Dataset Browse (Experimental)");
     }
 

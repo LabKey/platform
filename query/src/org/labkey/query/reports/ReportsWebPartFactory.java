@@ -39,7 +39,7 @@ public class ReportsWebPartFactory extends AlwaysAvailableWebPartFactory
 {
     public ReportsWebPartFactory()
     {
-        super("Report", null, true, true);
+        super("Report", true, true);
     }
     
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception

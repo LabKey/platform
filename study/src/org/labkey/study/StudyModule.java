@@ -130,7 +130,6 @@ import org.labkey.study.model.DataSetDefinition;
 import org.labkey.study.model.DateDatasetDomainKind;
 import org.labkey.study.model.ParticipantGroupManager;
 import org.labkey.study.model.ParticipantIdImportHelper;
-import org.labkey.study.model.SecurityType;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.SpecimenDomainKind;
 import org.labkey.study.model.SpecimenEventDomainKind;
@@ -217,11 +216,8 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final String MODULE_NAME = "Study";
 
     public static final BaseWebPartFactory reportsPartFactory = new ReportsWebPartFactory();
-    public static final WebPartFactory reportsWidePartFactory = new ReportsWideWebPartFactory();
-    public static final WebPartFactory samplesPartFactory = new SamplesWebPartFactory(WebPartFactory.LOCATION_RIGHT);
-    public static final WebPartFactory samplesWidePartFactory = new SamplesWebPartFactory(HttpView.BODY);
-    public static final WebPartFactory subjectsWideWebPartFactory = new SubjectsWebPartFactory(HttpView.BODY);
-    public static final WebPartFactory subjectsWebPartFactory = new SubjectsWebPartFactory(WebPartFactory.LOCATION_RIGHT);
+    public static final WebPartFactory samplesPartFactory = new SamplesWebPartFactory();
+    public static final WebPartFactory subjectsWebPartFactory = new SubjectsWebPartFactory();
     public static final WebPartFactory sampleSearchPartFactory = new SampleSearchWebPartFactory(HttpView.BODY);
     public static final WebPartFactory datasetsPartFactory = new DatasetsWebPartFactory();
     public static final WebPartFactory manageStudyPartFactory = new StudySummaryWebPartFactory();
@@ -235,11 +231,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     public static final WebPartFactory subjectDetailsWebPartFactory = new SubjectDetailsWebPartFactory();
     public static final WebPartFactory assayList2WebPartFactory = new AssayList2WebPartFactory();
     public static final WebPartFactory studyListWebPartFactory = new StudyListWebPartFactory();
-    public static final WebPartFactory dataToolsWideWebPartFactory = new StudyToolsWebPartFactory.Data(HttpView.BODY);
     public static final WebPartFactory studyScheduleWebPartFactory = new StudyScheduleWebPartFactory();
-    public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory.Data(WebPartFactory.LOCATION_RIGHT);
-    public static final WebPartFactory specimenToolsWideWebPartFactory = new StudyToolsWebPartFactory.Specimens(HttpView.BODY);
-    public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens(WebPartFactory.LOCATION_RIGHT);
+    public static final WebPartFactory dataToolsWebPartFactory = new StudyToolsWebPartFactory.Data();
+    public static final WebPartFactory specimenToolsWebPartFactory = new StudyToolsWebPartFactory.Specimens();
     public static final WebPartFactory specimenReportWebPartFactory = new SpecimenController.SpecimenReportWebPartFactory();
     public static final WebPartFactory assayScheduleWebPartFactory = new AssayScheduleWebpartFactory();
     public static final WebPartFactory vaccineDesignWebPartFactory = new VaccineDesignWebpartFactory();
@@ -327,13 +321,13 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<>(Arrays.asList(reportsPartFactory, reportsWidePartFactory, samplesPartFactory,
-                samplesWidePartFactory, datasetsPartFactory, manageStudyPartFactory,
+        return new ArrayList<>(Arrays.asList(reportsPartFactory, samplesPartFactory,
+                datasetsPartFactory, manageStudyPartFactory,
                 enrollmentChartPartFactory, studyDesignsWebPartFactory, studyDesignSummaryWebPartFactory,
                 assayListWebPartFactory, assayBatchesWebPartFactory, assayRunsWebPartFactory, assayResultsWebPartFactory,
                 subjectDetailsWebPartFactory, assayList2WebPartFactory, studyListWebPartFactory, sampleSearchPartFactory,
-                subjectsWebPartFactory, subjectsWideWebPartFactory, dataToolsWebPartFactory,
-                dataToolsWideWebPartFactory, specimenToolsWebPartFactory, specimenToolsWideWebPartFactory,
+                subjectsWebPartFactory, dataToolsWebPartFactory,
+                specimenToolsWebPartFactory,
                 specimenReportWebPartFactory, studyScheduleWebPartFactory,
                 assayScheduleWebPartFactory, vaccineDesignWebPartFactory, immunizationScheduleWebpartFactory));
     }
@@ -543,7 +537,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         public ReportsWebPartFactory()
         {
-            super("Views", WebPartFactory.LOCATION_RIGHT);
+            super("Views", WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
             addLegacyNames("Reports", "Reports and Views");
         }
 
@@ -554,26 +548,6 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
             if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
                 return new HtmlView("Views", "This folder does not contain a study");
-            return new ReportsController.ReportsWebPart(false);
-        }
-    }
-
-    private static class ReportsWideWebPartFactory extends BaseWebPartFactory
-    {
-        public ReportsWideWebPartFactory()
-        {
-            super("Views");
-            addLegacyNames("Reports", "Reports and Views");
-        }
-
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
-        {
-            if (!portalCtx.hasPermission(ReadPermission.class))
-                return new HtmlView("Views", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
-
-            if (null == StudyManager.getInstance().getStudy(portalCtx.getContainer()))
-                return new HtmlView("Views", "This folder does not contain a study");
-
             return new ReportsController.ReportsWebPart(!WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()));
         }
     }
@@ -582,7 +556,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         public StudyScheduleWebPartFactory()
         {
-            super("Study Schedule", WebPartFactory.LOCATION_BODY, true, false); // is editable
+            super("Study Schedule", true, false, WebPartFactory.LOCATION_BODY); // is editable
         }
 
         @Override
@@ -618,9 +592,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     private static class SamplesWebPartFactory extends DefaultWebPartFactory
     {
-        public SamplesWebPartFactory(String position)
+        public SamplesWebPartFactory()
         {
-            super("Specimens", position, SpecimenWebPart.class);
+            super("Specimens", SpecimenWebPart.class, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
             addLegacyNames("Specimen Browse (Experimental)");
         }
 
@@ -641,7 +615,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
     {
         public SampleSearchWebPartFactory(String position)
         {
-            super("Specimen Search", position, SpecimenSearchWebPart.class);
+            super("Specimen Search", SpecimenSearchWebPart.class, position);
             addLegacyNames("Specimen Search (Experimental)");
         }
 
@@ -659,9 +633,9 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     private static class SubjectsWebPartFactory extends DefaultWebPartFactory
     {
-        public SubjectsWebPartFactory(String position)
+        public SubjectsWebPartFactory()
         {
-            super("Subject List", position, SubjectsWebPart.class);
+            super("Subject List", SubjectsWebPart.class, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
         }
 
         @Override

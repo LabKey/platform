@@ -17,7 +17,6 @@
 package org.labkey.di;
 
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
@@ -47,7 +46,6 @@ import org.labkey.di.pipeline.TransformManager;
 import org.labkey.di.steps.RemoteQueryTransformStep;
 import org.labkey.di.view.DataIntegrationController;
 import org.labkey.di.view.ProcessJobsView;
-import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
@@ -137,8 +135,8 @@ public class DataIntegrationModule extends DefaultModule implements ContainerMan
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return Arrays.asList(
-                (WebPartFactory)new SimpleWebPartFactory("Data Transforms", WebPartFactory.LOCATION_BODY, TransFormsWebPart.class, null),
+        return Arrays.<WebPartFactory>asList(
+                new SimpleWebPartFactory("Data Transforms", WebPartFactory.LOCATION_BODY, TransFormsWebPart.class, null),
                 new BaseWebPartFactory("Data Transform Jobs")
                 {
                     @Override

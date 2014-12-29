@@ -6299,7 +6299,7 @@ public class StudyController extends BaseStudyController
     {
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
-            return StudyModule.samplesWidePartFactory.getWebPartView(getViewContext(), StudyModule.samplesWidePartFactory.createWebPart());
+            return StudyModule.samplesPartFactory.getWebPartView(getViewContext(), StudyModule.samplesPartFactory.createWebPart());
         }
 
         public NavTree appendNavTrail(NavTree root)
@@ -6318,7 +6318,7 @@ public class StudyController extends BaseStudyController
         public ModelAndView getView(Object o, BindException errors) throws Exception
         {
             return new VBox(
-                StudyModule.reportsWidePartFactory.getWebPartView(getViewContext(), StudyModule.reportsPartFactory.createWebPart()),
+                StudyModule.reportsPartFactory.getWebPartView(getViewContext(), StudyModule.reportsPartFactory.createWebPart()),
                 StudyModule.datasetsPartFactory.getWebPartView(getViewContext(), StudyModule.datasetsPartFactory.createWebPart())
             );
         }

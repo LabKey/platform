@@ -27,7 +27,6 @@ import java.util.HashMap;
 /*
 * User: Mark Igra
 * Date: Jan 25, 2009
-* Time: 8:07:17 PM
 */
 public class MenuWikiWebPartFactory extends WikiWebPartFactory
 {

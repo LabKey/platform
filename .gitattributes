@@ -874,7 +874,6 @@ core/src/org/labkey/core/workbook/WorkbookFolderType.java -text
 core/src/org/labkey/core/workbook/WorkbookQueryView.java -text
 core/src/org/labkey/core/workbook/WorkbookSearchBean.java -text
 core/src/org/labkey/core/workbook/WorkbookSearchView.java -text
-core/src/org/labkey/core/workbook/WorkbookWebPartFactory.java -text
 core/src/org/labkey/core/workbook/WorkbooksTableInfo.java -text
 core/src/org/labkey/core/workbook/createWorkbook.jsp -text
 core/src/org/labkey/core/workbook/moveWorkbooks.jsp -text

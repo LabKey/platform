@@ -26,7 +26,6 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
-import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.DefaultSchema;
 import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QuerySchema;
@@ -37,6 +36,8 @@ import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.survey.SurveyService;
+import org.labkey.api.survey.model.Survey;
+import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.api.util.StringUtilsLabKey;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.HtmlView;
@@ -47,8 +48,6 @@ import org.labkey.api.view.VBox;
 import org.labkey.api.view.ViewContext;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
-import org.labkey.api.survey.model.Survey;
-import org.labkey.api.survey.model.SurveyDesign;
 import org.labkey.survey.model.SurveyServiceImpl;
 import org.labkey.survey.query.SurveyQuerySchema;
 import org.labkey.survey.query.SurveyQuerySettings;
@@ -183,7 +182,7 @@ public class SurveyModule extends DefaultModule
     {
         public SurveysWebPartFactory()
         {
-            super("Surveys", WebPartFactory.LOCATION_BODY, true, true);
+            super("Surveys", true, true, WebPartFactory.LOCATION_BODY);
         }
 
         @Override

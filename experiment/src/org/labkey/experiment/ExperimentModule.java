@@ -136,26 +136,17 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
     {
         List<WebPartFactory> result = new ArrayList<>();
 
-        BaseWebPartFactory runGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME)
+        BaseWebPartFactory runGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
                 return new RunGroupWebPart(portalCtx, WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), webPart);
             }
         };
-        runGroupsFactory.addLegacyNames("Experiments", "Experiment", "Experiment Navigator");
+        runGroupsFactory.addLegacyNames("Experiments", "Experiment", "Experiment Navigator", "Narrow Experiments");
         result.add(runGroupsFactory);
-        BaseWebPartFactory narrowRunGroupsFactory = new BaseWebPartFactory(RunGroupWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
-        {
-            public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
-            {
-                return new RunGroupWebPart(portalCtx, WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), webPart);
-            }
-        };
-        narrowRunGroupsFactory.addLegacyNames("Experiments", "Narrow Experiments");
-        result.add(narrowRunGroupsFactory);
 
-        BaseWebPartFactory runTypesFactory = new BaseWebPartFactory(RunTypeWebPart.WEB_PART_NAME)
+        BaseWebPartFactory runTypesFactory = new BaseWebPartFactory(RunTypeWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
@@ -164,32 +155,17 @@ public class ExperimentModule extends SpringModule implements SearchService.Docu
         };
         result.add(runTypesFactory);
 
-        BaseWebPartFactory runTypesNarrowFactory = new BaseWebPartFactory(RunTypeWebPart.WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
-        {
-            public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
-            {
-                return new RunTypeWebPart();
-            }
-        };
-        result.add(runTypesNarrowFactory);
-
         result.add(new ExperimentRunWebPartFactory());
-        result.add(new BaseWebPartFactory(SAMPLE_SET_WEB_PART_NAME){
-            public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
-            {
-                return new SampleSetWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
-            }
-        });
-        BaseWebPartFactory narrowSampleSetFactory = new BaseWebPartFactory(SAMPLE_SET_WEB_PART_NAME, WebPartFactory.LOCATION_RIGHT)
+        BaseWebPartFactory sampleSetFactory = new BaseWebPartFactory(SAMPLE_SET_WEB_PART_NAME, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT)
         {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException
             {
                 return new SampleSetWebPart(WebPartFactory.LOCATION_RIGHT.equalsIgnoreCase(webPart.getLocation()), portalCtx);
             }
         };
-        narrowSampleSetFactory.addLegacyNames("Narrow Sample Sets");
-        result.add(narrowSampleSetFactory);
-        result.add(new AlwaysAvailableWebPartFactory("Samples Menu", WebPartFactory.LOCATION_MENUBAR, false, false) {
+        sampleSetFactory.addLegacyNames("Narrow Sample Sets");
+        result.add(sampleSetFactory);
+        result.add(new AlwaysAvailableWebPartFactory("Samples Menu", false, false, WebPartFactory.LOCATION_MENUBAR) {
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
             {
                 WebPartView view = new JspView<>(ExperimentModule.class, "samplesAndAnalytes.jsp", webPart);

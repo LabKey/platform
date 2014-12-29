@@ -59,7 +59,7 @@ public class TimelineModule extends DefaultModule
     @NotNull
     protected Collection<WebPartFactory> createWebPartFactories()
     {
-        return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory(NAME, null, true, true){
+        return new ArrayList<WebPartFactory>(Arrays.asList(new BaseWebPartFactory(NAME, true, true, WebPartFactory.LOCATION_BODY){
 
             public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
             {

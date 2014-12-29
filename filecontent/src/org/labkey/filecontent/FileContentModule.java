@@ -71,8 +71,7 @@ public class FileContentModule extends DefaultModule
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         return new ArrayList<WebPartFactory>(Arrays.asList(
-                new FilesWebPart.Factory(WebPartFactory.LOCATION_RIGHT),
-                new FilesWebPart.Factory(WebPartFactory.LOCATION_BODY)
+                new FilesWebPart.Factory()
         ));
     }
 

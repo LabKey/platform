@@ -26,7 +26,7 @@ public abstract class AssayBaseWebPartFactory extends BaseWebPartFactory
 
     public AssayBaseWebPartFactory(String name)
     {
-        super(name, null, true, true);
+        super(name, true, true, WebPartFactory.LOCATION_BODY);
     }
 
     protected static Integer getIntPropertry(Portal.WebPart webPart, String propertyName)

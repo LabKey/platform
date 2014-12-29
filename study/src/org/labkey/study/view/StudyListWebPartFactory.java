@@ -35,7 +35,7 @@ public class StudyListWebPartFactory extends BaseWebPartFactory
 
     public StudyListWebPartFactory()
     {
-       super("Study List", LOCATION_MENUBAR, true, false);
+       super("Study List", true, false, LOCATION_MENUBAR);
     }
 
     @Override

@@ -26,7 +26,7 @@ public class AssayList2WebPartFactory extends AlwaysAvailableWebPartFactory
 {
    public AssayList2WebPartFactory()
    {
-       super("AssayList2", "menubar", false, false);
+       super("AssayList2", false, false, WebPartFactory.LOCATION_MENUBAR);
    }
 
     public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
