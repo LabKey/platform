@@ -17,19 +17,20 @@
 package org.labkey.api.view;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.action.HasViewContext;
 import org.labkey.api.jsp.JspBase;
+import org.labkey.api.jsp.JspLoader;
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.MemTracker;
-import org.labkey.api.jsp.JspLoader;
-import org.labkey.api.action.HasViewContext;
-import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
+import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -43,23 +44,24 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
 {
     protected String _path;
     protected HttpJspPage _page;
+    @Nullable
     protected Errors _errors;
 
     // HttpJspPage constructors
 
-    public JspView(HttpJspPage page)
+    public JspView(@NotNull HttpJspPage page)
     {
         _page = page;
         MemTracker.getInstance().put(this);
     }
 
-    public JspView(HttpJspPage page, ModelClass model)
+    public JspView(@NotNull HttpJspPage page, ModelClass model)
     {
         super(model);
         _page = page;
     }
 
-    public JspView(HttpJspPage page, ModelClass model, Errors errors)
+    public JspView(@NotNull HttpJspPage page, ModelClass model, Errors errors)
     {
         super(model);
         _page = page;
@@ -68,11 +70,13 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
 
     // String constructors 
 
+    /** @param page path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
     public JspView(String page)
     {
         this(page, null);
     }
 
+    /** @param page path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
     public JspView(String page, @Nullable ModelClass model)
     {
         super(model);
@@ -84,13 +88,18 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
             addClientDependencies(((JspBase)_page).getClientDependencies());
     }
 
-    public JspView(String page, @Nullable ModelClass model, BindException errors)
+    /** @param page path to the JSP source, interpreted relative to the Java source root. For example, /org/labkey/module/subdir/mypage.jsp */
+    public JspView(@NotNull String page, @Nullable ModelClass model, @Nullable BindException errors)
     {
         this(page, model);
         _errors = errors;
     }
 
-    public JspView(Class packageClass, String jspName, ModelClass model)
+    /**
+     * @param packageClass a class whose package will be used as the source directory when resolving the JSP file
+     * @param jspName the file name of the JSP, without any path information
+     */
+    public JspView(@NotNull Class packageClass, @NotNull String jspName, @Nullable ModelClass model)
     {
         super(model);
         MemTracker.getInstance().put(this);
@@ -102,7 +111,11 @@ public class JspView<ModelClass> extends WebPartView<ModelClass>
     }
 
 
-    public JspView(Class packageClass, String jspName, ModelClass model, Errors errors)
+    /**
+     * @param packageClass a class whose package will be used as the source directory when resolving the JSP file
+     * @param jspName the file name of the JSP, without any path information
+     */
+    public JspView(@NotNull Class packageClass, @NotNull String jspName, @Nullable ModelClass model, @Nullable Errors errors)
     {
         this(packageClass, jspName, model);
         _errors = errors;

@@ -18,6 +18,7 @@ package org.labkey.api.pipeline;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.UrlProvider;
 import org.labkey.api.data.Container;
+import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ActionURL;
 
 /**
@@ -26,10 +27,8 @@ import org.labkey.api.view.ActionURL;
 public interface PipelineUrls extends UrlProvider
 {
     ActionURL urlBrowse(Container container);
-    ActionURL urlBrowse(Container container, @Nullable String referer);
-    ActionURL urlBrowse(Container container, @Nullable String referer, @Nullable String path);
-
-    ActionURL urlReferer(Container container);
+    ActionURL urlBrowse(Container container, @Nullable URLHelper returnUrl);
+    ActionURL urlBrowse(Container container, @Nullable URLHelper returnUrl, @Nullable String path);
 
     ActionURL urlSetup(Container container);
 

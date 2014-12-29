@@ -16,6 +16,7 @@
 
 package org.labkey.api.pipeline.view;
 
+import org.labkey.api.action.ReturnUrlForm;
 import org.labkey.api.data.Container;
 import org.labkey.api.pipeline.GlobusKeyPair;
 import org.labkey.api.pipeline.PipeRoot;
@@ -26,10 +27,9 @@ import org.springframework.validation.BindException;
  * User: klum
  * Date: Dec 14, 2009
  */
-public class SetupForm
+public class SetupForm extends ReturnUrlForm
 {
     public static final String REVERT_OVERRIDE = "revertOverride";
-    public static final String SITE_DEFAULT = "siteDefault";
 
     private String _path;
     private String _supplementalPath;
@@ -154,14 +154,17 @@ public class SetupForm
         return REVERT_OVERRIDE.equals(getPipelineRootOption());
     }
 
+    public static final String PROJECT_SPECIFIED_TYPE = "projectSpecified";
+    public static final String SITE_DEFAULT_TYPE = "siteDefault";
+
     public static SetupForm init(Container c)
     {
         SetupForm form = new SetupForm();
 
         if (PipelineService.get().hasSiteDefaultRoot(c))
-            form.setPipelineRootOption("siteDefault");
+            form.setPipelineRootOption(SITE_DEFAULT_TYPE);
         else
-            form.setPipelineRootOption("projectSpecified");
+            form.setPipelineRootOption(PROJECT_SPECIFIED_TYPE);
         
         PipeRoot root = getPipelineRoot(c);
         if (root != null)
