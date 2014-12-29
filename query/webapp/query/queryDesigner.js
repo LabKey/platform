@@ -1199,7 +1199,7 @@ function QueryDesigner(urlCheckSyntax, tableInfoService)
             }
     ret.rgFilterDisplay = function(type )
             {
-                return ['Has Any Value', 'Equals', 'Equals One Of (e.g. \'a;b;c\')', 'Does Not Equal', 'Is Blank', 'Is Not Blank', 'Is Greater Than', 'Is Less Than',
+                return ['Has Any Value', 'Equals', 'Equals One Of (example usage: a;b;c)', 'Does Not Equal', 'Is Blank', 'Is Not Blank', 'Is Greater Than', 'Is Less Than',
                         'Is Greater Than Or Equal To', 'Is Less Than Or Equal To', 'Starts With', 'Does Not Start With', 'Contains', 'Does Not Contain', 'Equals', 'Does Not Equal', 'Has a QC Value', 'Does not have a QC Value'];
             }
     ret.updateDocument = function ()
@@ -1313,7 +1313,7 @@ function ViewDesigner(tableInfoService)
         var oField = this.fieldInfo(field);
         if (!isBoolType(oField))
         {
-            ret = ret.concat(['Equals One Of (e.g. \'a;b;c\')']);
+            ret = ret.concat(['Equals One Of (example usage: a;b;c)']);
         }
         ret = ret.concat(['Does Not Equal', 'Is Blank', 'Is Not Blank']);
         if (!isBoolType(oField))
