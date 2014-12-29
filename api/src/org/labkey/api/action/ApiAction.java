@@ -43,7 +43,6 @@ import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -300,7 +299,7 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
     protected Pair<FORM, BindException> populateJacksonForm() throws Exception
     {
         FORM form = null;
-        BindException errors = null;
+        BindException errors;
 
         try
         {
@@ -321,15 +320,13 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
         catch (JsonMappingException x)
         {
             // JSON mapping
-            if (errors == null)
-                errors = new NullSafeBindException(new Object(), "form");
+            errors = new NullSafeBindException(new Object(), "form");
             errors.reject(SpringActionController.ERROR_MSG, "Error binding property: " + x.getMessage());
         }
         catch (JsonProcessingException x)
         {
             // Bad JSON
-            getViewContext().getResponse().sendError(HttpServletResponse.SC_BAD_REQUEST, x.getMessage());
-            return null;
+            throw new BadRequestException(x.getMessage(), x);
         }
 
         saveRequestedApiVersion(getViewContext().getRequest(), form);
