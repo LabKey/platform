@@ -1870,7 +1870,7 @@ LABKEY.Query.Filter.StartsWith.prototype = new LABKEY.Query.Filter;
 /**
  * @class LABKEY.Query.Filter.In subclass of {@link LABKEY.Query.Filter}.
  *      Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a
- *      semi-colon-delimited list (e.g., 'a;b;c').
+ *      semi-colon-delimited list (example usage: a;b;c).
  * @augments LABKEY.Query.Filter
  * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
  * or a {@link LABKEY.FieldKey}
@@ -1886,7 +1886,7 @@ LABKEY.Query.Filter.In.prototype = new LABKEY.Query.Filter;
 /**
  * @class LABKEY.Query.Filter.EqualsOneOf subclass of {@link LABKEY.Query.Filter}.
  *      Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a
- *      semi-colon-delimited list (e.g., 'a;b;c').
+ *      semi-colon-delimited list (example usage: a;b;c).
  * @augments LABKEY.Query.Filter
  * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
  * or a {@link LABKEY.FieldKey}
@@ -1902,7 +1902,7 @@ LABKEY.Query.Filter.EqualsOneOf.prototype = new LABKEY.Query.Filter;
 /**
  * @class LABKEY.Query.Filter.EqualsNoneOf subclass of {@link LABKEY.Query.Filter}.
  *      Finds rows where the column value does not equal one of the supplied filter values. The values should be supplied as a
- *      semi-colon-delimited list (e.g., 'a;b;c').
+ *      semi-colon-delimited list (example usage: a;b;c).
  * @augments LABKEY.Query.Filter
  * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
  * or a {@link LABKEY.FieldKey}
@@ -1918,7 +1918,7 @@ LABKEY.Query.Filter.EqualsNoneOf.prototype = new LABKEY.Query.Filter;
 /**
  * @class LABKEY.Query.Filter.NotIn subclass of {@link LABKEY.Query.Filter}.
  *      Finds rows where the column value is not in any of the supplied filter values. The values should be supplied as
- *      a semi-colon-delimited list (e.g., 'a;b;c').
+ *      a semi-colon-delimited list (example usage: a;b;c).
  * @augments LABKEY.Query.Filter
  * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
  * or a {@link LABKEY.FieldKey}
@@ -1934,7 +1934,7 @@ LABKEY.Query.Filter.NotIn.prototype = new LABKEY.Query.Filter;
 /**
  * @class LABKEY.Query.Filter.ContainsOneOf subclass of {@link LABKEY.Query.Filter}.
  *      Finds rows where the column value contains any of the supplied filter values. The values should be supplied as a
- *      semi-colon-delimited list (e.g., 'a;b;c').
+ *      semi-colon-delimited list (example usage: a;b;c).
  * @augments LABKEY.Query.Filter
  * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
  * or a {@link LABKEY.FieldKey}
@@ -1965,7 +1965,7 @@ LABKEY.Query.Filter.ContainsOneOf.prototype = new LABKEY.Query.Filter;
 /**
  * @class LABKEY.Query.Filter.ContainsNoneOf subclass of {@link LABKEY.Query.Filter}.
  *      Finds rows where the column value does not contain any of the supplied filter values. The values should be supplied
- *      as a semi-colon-delimited list (e.g., 'a;b;c').
+ *      as a semi-colon-delimited list (example usage: a;b;c).
  * @augments LABKEY.Query.Filter
  * @param columnName Required. The name of the column the filter will be applied to. Can be a string, array of strings,
  * or a {@link LABKEY.FieldKey}

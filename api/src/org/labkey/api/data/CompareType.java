@@ -293,7 +293,7 @@ public enum CompareType
             }
         },
 
-    CONTAINS_ONE_OF("Contains One Of (e.g. 'a;b;c')", "containsoneof", "CONTAINS_ONE_OF", true, null, OperatorType.CONTAINSONEOF)
+    CONTAINS_ONE_OF("Contains One Of (example usage: a;b;c)", "containsoneof", "CONTAINS_ONE_OF", true, null, OperatorType.CONTAINSONEOF)
         {
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -319,7 +319,7 @@ public enum CompareType
                 throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.ContainsOneOfClause.class);
             }
         },
-    CONTAINS_NONE_OF("Does Not Contain Any Of (e.g. 'a;b;c')", "containsnoneof", "CONTAINS_NONE_OF", true, null, OperatorType.CONTAINSNONEOF)
+    CONTAINS_NONE_OF("Does Not Contain Any Of (example usage: a;b;c)", "containsnoneof", "CONTAINS_NONE_OF", true, null, OperatorType.CONTAINSNONEOF)
         {
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -343,7 +343,7 @@ public enum CompareType
             }
         },
 
-    IN("Equals One Of (e.g. 'a;b;c')", "in", "IN", true, null, OperatorType.IN)
+    IN("Equals One Of (example usage: a;b;c)", "in", "IN", true, null, OperatorType.IN)
         {
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)
@@ -376,7 +376,7 @@ public enum CompareType
                 throw new UnsupportedOperationException("Should be handled inside of " + SimpleFilter.InClause.class);
             }
         },
-    NOT_IN("Does Not Equal Any Of (e.g. 'a;b;c')", "notin", "NOT_IN", true, null, OperatorType.NOTIN)
+    NOT_IN("Does Not Equal Any Of (example usage: a;b;c)", "notin", "NOT_IN", true, null, OperatorType.NOTIN)
         {
             // Each compare type uses CompareClause by default
             FilterClause createFilterClause(@NotNull FieldKey fieldKey, Object value)

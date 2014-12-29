@@ -42,13 +42,13 @@
  * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_CONTAIN Finds rows where the column value does not contain the filter value. Note that this may result in a slow query as this cannot use indexes.
  * @property {LABKEY.Filter.FilterDefinition} Types.DOES_NOT_START_WITH Finds rows where the column value does not start with the filter value.
  * @property {LABKEY.Filter.FilterDefinition} Types.STARTS_WITH Finds rows where the column value starts with the filter value.
- * @property {LABKEY.Filter.FilterDefinition} Types.IN Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
- * @property {LABKEY.Filter.FilterDefinition} Types.NOT_IN Finds rows where the column value is not in any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
+ * @property {LABKEY.Filter.FilterDefinition} Types.IN Finds rows where the column value equals one of the supplied filter values. The values should be supplied as a semi-colon-delimited list (example usage: a;b;c).
+ * @property {LABKEY.Filter.FilterDefinition} Types.NOT_IN Finds rows where the column value is not in any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (example usage: a;b;c).
  * @property {LABKEY.Filter.FilterDefinition} Types.MEMBER_OF Finds rows where the column value contains a user id that is a member of the group id of the supplied filter value.
- * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_ONE_OF Finds rows where the column value contains any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
- * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_NONE_OF Finds rows where the column value does not contain any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (e.g., 'a;b;c').
- * @property {LABKEY.Filter.FilterDefinition} Types.BETWEEN Finds rows where the column value is between the two filter values, inclusive. The values should be supplied as a comma-delimited list (e.g., '-4,4').
- * @property {LABKEY.Filter.FilterDefinition} Types.NOT_BETWEEN Finds rows where the column value is not between the two filter values, exclusive. The values should be supplied as a comma-delimited list (e.g., '-4,4').
+ * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_ONE_OF Finds rows where the column value contains any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (example usage: a;b;c).
+ * @property {LABKEY.Filter.FilterDefinition} Types.CONTAINS_NONE_OF Finds rows where the column value does not contain any of the supplied filter values. The values should be supplied as a semi-colon-delimited list (example usage: a;b;c).
+ * @property {LABKEY.Filter.FilterDefinition} Types.BETWEEN Finds rows where the column value is between the two filter values, inclusive. The values should be supplied as a comma-delimited list (example usage: -4,4).
+ * @property {LABKEY.Filter.FilterDefinition} Types.NOT_BETWEEN Finds rows where the column value is not between the two filter values, exclusive. The values should be supplied as a comma-delimited list (example usage: -4,4).
  *
  */
 LABKEY.Filter = new function()
@@ -352,19 +352,19 @@ LABKEY.Filter = new function()
             CONTAINS : createSingleValueFilterType("Contains", "contains", null),
             DOES_NOT_CONTAIN : createSingleValueFilterType("Does Not Contain", "doesnotcontain", null),
 
-            CONTAINS_ONE_OF : createMultiValueFilterType("Contains One Of", "containsoneof", 'Contains One Of (e.g. \"a;b;c\")', ";"),
-            CONTAINS_NONE_OF : createMultiValueFilterType("Does Not Contain Any Of", "containsnoneof", 'Does Not Contain Any Of (e.g. \"a;b;c\")', ";"),
+            CONTAINS_ONE_OF : createMultiValueFilterType("Contains One Of", "containsoneof", 'Contains One Of (example usage: a;b;c)', ";"),
+            CONTAINS_NONE_OF : createMultiValueFilterType("Does Not Contain Any Of", "containsnoneof", 'Does Not Contain Any Of (example usage: a;b;c)', ";"),
 
-            IN : createMultiValueFilterType("Equals One Of", "in", 'Equals One Of (e.g. \"a;b;c\")', ";"),
+            IN : createMultiValueFilterType("Equals One Of", "in", 'Equals One Of (example usage: a;b;c)', ";"),
             //NOTE: for some reason IN is aliased as EQUALS_ONE_OF.  not sure if this is for legacy purposes or it was determined EQUALS_ONE_OF was a better phrase
             //to follow this pattern I did the same for IN_OR_MISSING
-            EQUALS_ONE_OF : createMultiValueFilterType("Equals One Of", "in", 'Equals One Of (e.g. \"a;b;c\")', ";"),
+            EQUALS_ONE_OF : createMultiValueFilterType("Equals One Of", "in", 'Equals One Of (example usage: a;b;c)', ";"),
 
-            NOT_IN: createMultiValueFilterType("Does Not Equal Any Of", "notin", 'Does Not Equal Any Of (e.g. \"a;b;c\")', ";"),
-            EQUALS_NONE_OF: createMultiValueFilterType("Does Not Equal Any Of", "notin", 'Does Not Equal Any Of (e.g. \"a;b;c\")', ";"),
+            NOT_IN: createMultiValueFilterType("Does Not Equal Any Of", "notin", 'Does Not Equal Any Of (example usage: a;b;c)', ";"),
+            EQUALS_NONE_OF: createMultiValueFilterType("Does Not Equal Any Of", "notin", 'Does Not Equal Any Of (example usage: a;b;c)', ";"),
 
-            BETWEEN : createMultiValueFilterType("Between", "between", 'Between, Inclusive (e.g., \"-4,4\")', ",", 2, 2),
-            NOT_BETWEEN : createMultiValueFilterType("Not Between", "notbetween", 'Not Between, Exclusive (e.g., \"-4,4\")', ",", 2, 2),
+            BETWEEN : createMultiValueFilterType("Between", "between", 'Between, Inclusive (example usage: -4,4)', ",", 2, 2),
+            NOT_BETWEEN : createMultiValueFilterType("Not Between", "notbetween", 'Not Between, Exclusive (example usage: -4,4)', ",", 2, 2),
 
             MEMBER_OF : createSingleValueFilterType("Member Of", "memberof", 'Member Of'),
 
