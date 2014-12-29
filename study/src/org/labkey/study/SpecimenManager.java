@@ -109,6 +109,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
     private final RequirementProvider<SpecimenRequestRequirement, SpecimenRequestActor> _requirementProvider =
             new SpecimenRequestRequirementProvider();
     private final Map<String, Resource> _moduleExtendedSpecimenRequestViews = new ConcurrentHashMap<>();
+    private final Comparator<SpecimenEvent> _specimenEventDateComparator = new SpecimenEventDateComparator();
 
     private SpecimenManager()
     {
@@ -374,7 +375,7 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         if (events == null || events.isEmpty())
             return eventList;
         eventList.addAll(events);
-        Collections.sort(eventList, new SpecimenEventDateComparator());
+        Collections.sort(eventList, getSpecimenEventDateComparator());
         return eventList;
     }
 
@@ -400,13 +401,19 @@ public class SpecimenManager implements ContainerManager.ContainerListener
         {
             List<SpecimenEvent> events = vialIdToEvents.get(vial.getRowId());
             if (events != null && events.size() > 0)
-                Collections.sort(events, new SpecimenEventDateComparator());
+                Collections.sort(events, getSpecimenEventDateComparator());
             else
                 events = Collections.emptyList();
             results.put(vial, events);
         }
 
         return results;
+    }
+
+
+    public Comparator<SpecimenEvent> getSpecimenEventDateComparator()
+    {
+        return _specimenEventDateComparator;
     }
 
 

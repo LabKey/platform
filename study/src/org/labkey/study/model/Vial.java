@@ -33,6 +33,7 @@ public class Vial extends AbstractStudyCachable<Vial>
     private final Map<String, Object> _rowMap;
     private final Container _container;
 
+    @Deprecated // TODO: Delete? Is this ever used by reflection?
     public Vial()
     {
         _container = null;

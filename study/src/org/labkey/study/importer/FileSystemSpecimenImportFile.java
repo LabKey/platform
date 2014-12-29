@@ -22,7 +22,6 @@ import org.labkey.api.util.Filter;
 import org.labkey.api.writer.VirtualFile;
 import org.labkey.study.importer.SpecimenImporter.SpecimenTableType;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;

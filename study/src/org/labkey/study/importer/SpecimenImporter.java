@@ -17,6 +17,7 @@
 package org.labkey.study.importer;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.mutable.MutableInt;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -46,6 +47,7 @@ import org.labkey.api.exp.list.ListImportProgress;
 import org.labkey.api.exp.property.Domain;
 import org.labkey.api.exp.property.DomainProperty;
 import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.iterator.MarkableIterator;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
@@ -54,6 +56,7 @@ import org.labkey.api.query.ValidationException;
 import org.labkey.api.reader.ColumnDescriptor;
 import org.labkey.api.reader.DataLoader;
 import org.labkey.api.security.User;
+import org.labkey.api.study.Location;
 import org.labkey.api.study.SpecimenImportStrategy;
 import org.labkey.api.study.SpecimenImportStrategyFactory;
 import org.labkey.api.study.SpecimenService;
@@ -76,7 +79,6 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.SpecimenServiceImpl;
 import org.labkey.study.StudySchema;
 import org.labkey.study.model.DataSetDefinition;
-import org.labkey.study.model.LocationImpl;
 import org.labkey.study.model.ParticipantIdImportHelper;
 import org.labkey.study.model.SequenceNumImportHelper;
 import org.labkey.study.model.SpecimenComment;
@@ -99,6 +101,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1422,9 +1425,6 @@ public class SpecimenImporter
         }
     }
 
-    private static final int CURRENT_SITE_UPDATE_SIZE = 1000;
-    private static final int CURRENT_SITE_UPDATE_LOGGING_SIZE = 10000;   // Can choose to log at a less frequent rate than the update batch size
-
     private Set<String> getConflictingEventColumns(List<SpecimenEvent> events)
     {
         if (events.size() <= 1)
@@ -1664,8 +1664,11 @@ public class SpecimenImporter
         info("Complete.");
     }
 
+    private static final int CURRENT_SITE_UPDATE_SIZE = 1000;
+    private static final int CURRENT_SITE_UPDATE_LOGGING_SIZE = 10000;   // Can choose to log at a less frequent rate than the update batch size
+
     // UNDONE: add vials in-clause to only update data for rows that changed
-    private void updateCalculatedSpecimenData(boolean merge) throws SQLException
+    private void updateCalculatedSpecimenData(final boolean merge) throws SQLException
     {
         setStatus(GENERAL_JOB_STATUS_MSG + " (update)");
         _iTimer.setPhase(ImportPhases.PrepareQcComments);
@@ -1683,14 +1686,11 @@ public class SpecimenImporter
         _iTimer.setPhase(ImportPhases.VialUpdatePreLoopPrep);
         // clear caches before determining current sites:
         SpecimenManager.getInstance().clearCaches(_container);
-        Map<Integer, LocationImpl> siteMap = new HashMap<>();
+        final Map<Integer, Location> siteMap = new HashMap<>();
 
-        TableInfo specimenEventTable = getTableInfoSpecimenEvent();
         TableInfo vialTable = getTableInfoVial();
-        String vialPropertiesSql = "UPDATE " + vialTable.getSelectName() +
-                " SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), " +
-                "FirstProcessedByInitials = ?, AtRepository = ?, " +
-                "LatestComments = ?, LatestQualityComments = ? ";
+        StringBuilder vialPropertiesSB = new StringBuilder("UPDATE ").append(vialTable.getSelectName())
+            .append(" SET CurrentLocation = CAST(? AS INTEGER), ProcessingLocation = CAST(? AS INTEGER), FirstProcessedByInitials = ?, AtRepository = ?, LatestComments = ?, LatestQualityComments = ? ");
 
         for (List<RollupInstance<EventVialRollup>> rollupList : _eventToVialRollups.values())
         {
@@ -1700,208 +1700,240 @@ public class SpecimenImporter
                 ColumnInfo column = vialTable.getColumn(colName);
                 if (null == column)
                     throw new IllegalStateException("Expected Vial table column to exist.");
-                vialPropertiesSql += ", " + column.getSelectName() + " = " +
-                        (JdbcType.VARCHAR.equals(column.getJdbcType()) ?
-                        "?" :
-                        "CAST(? AS " + vialTable.getSqlDialect().sqlCastTypeNameFromJdbcType(column.getJdbcType()) + ")");
+                vialPropertiesSB.append(", ").append(column.getSelectName()).append(" = ")
+                    .append(JdbcType.VARCHAR.equals(column.getJdbcType()) ? "?" : "CAST(? AS " + vialTable.getSqlDialect().sqlCastTypeNameFromJdbcType(column.getJdbcType()) + ")");
             }
         }
 
-        vialPropertiesSql += " WHERE RowId = ?";
-        String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() +
-                " SET QualityControlComments = ? WHERE GlobalUniqueId = ?";
+        vialPropertiesSB.append(" WHERE RowId = ?");
 
-        final List<Vial> vials = new ArrayList<>();
-        int offset = 0;
-        TableSelector vialSelector = new TableSelector(getTableInfoVial()).setMaxRows(CURRENT_SITE_UPDATE_SIZE);
+        final String vialPropertiesSql = vialPropertiesSB.toString();
+        final String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() + " SET QualityControlComments = ? WHERE GlobalUniqueId = ?";
+
+        final MutableInt rowCount = new MutableInt();
 
 //        if (!merge)
 //            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
 
-        do
+        // TODO: Select only required subset of Event and Vial columns?
+        _iTimer.setPhase(ImportPhases.GetDateOrderedEvents);
+
+        TableSelector eventSelector = new TableSelector(getTableInfoSpecimenEvent(), new SimpleFilter(FieldKey.fromString("Obsolete"), false), new Sort("VialId"));
+
+        try (Results eventResults = eventSelector.getResults(false))
         {
-            if (offset % CURRENT_SITE_UPDATE_LOGGING_SIZE == 0)
-                info("Updating vial rows " + (offset + 1) + " through " + (offset + CURRENT_SITE_UPDATE_LOGGING_SIZE) + ".");
+            final MarkableIterator<Map<String, Object>> eventIterator = new MarkableIterator<>(eventResults.iterator());
+            final Comparator<SpecimenEvent> eventComparator = SpecimenManager.getInstance().getSpecimenEventDateComparator();
 
-            setStatus(GENERAL_JOB_STATUS_MSG + " (update vials)");
             _iTimer.setPhase(ImportPhases.GetVialBatch);
+            TableSelector vialSelector = new TableSelector(getTableInfoVial(), null, new Sort("RowId"));
+
+            vialSelector.forEachMapBatch(new Selector.ForEachBatchBlock<Map<String, Object>>()
             {
-                vials.clear();
-                vialSelector.setOffset(offset).forEachMap(new Selector.ForEachBlock<Map<String, Object>>()
+                @Override
+                public boolean accept(Map<String, Object> element)
                 {
-                    @Override
-                    public void exec(Map<String, Object> map) throws SQLException
-                    {
+                    return true;
+                }
+
+                @Override
+                public void exec(List<Map<String, Object>> vialBatch) throws SQLException
+                {
+                    int count = rowCount.intValue();
+                    if (count % CURRENT_SITE_UPDATE_LOGGING_SIZE == 0)
+                        info("Updating vial rows " + (count + 1) + " through " + (count + CURRENT_SITE_UPDATE_LOGGING_SIZE) + ".");
+
+                    setStatus(GENERAL_JOB_STATUS_MSG + " (update vials)");
+
+                    final List<Vial> vials = new ArrayList<>(CURRENT_SITE_UPDATE_SIZE);
+
+                    for (Map<String, Object> map : vialBatch)
                         vials.add(new Vial(_container, map));
-                    }
-                });
-            }
 
-            _iTimer.setPhase(ImportPhases.GetDateOrderedEvents);
-            Map<Vial, List<SpecimenEvent>> specimenToOrderedEvents = SpecimenManager.getInstance().getDateOrderedEventLists(vials, false);
-            _iTimer.setPhase(ImportPhases.GetSpecimenComments);
-            Map<Vial, SpecimenComment> specimenComments = SpecimenManager.getInstance().getSpecimenComments(vials);
+                    _iTimer.setPhase(ImportPhases.GetSpecimenComments);
+                    Map<Vial, SpecimenComment> specimenComments = SpecimenManager.getInstance().getSpecimenComments(vials);
 
-            List<List<?>> vialPropertiesParams = new ArrayList<>();
-            List<List<?>> commentParams = new ArrayList<>();
+                    List<List<?>> vialPropertiesParams = new ArrayList<>(CURRENT_SITE_UPDATE_SIZE);
+                    List<List<?>> commentParams = new ArrayList<>();
 
-            for (Map.Entry<Vial, List<SpecimenEvent>> entry : specimenToOrderedEvents.entrySet())
-            {
-                Vial vial = entry.getKey();
-                List<SpecimenEvent> dateOrderedEvents = entry.getValue();
-                _iTimer.setPhase(ImportPhases.GetProcessingLocationId);
-                Integer processingLocation = SpecimenManager.getInstance().getProcessingLocationId(dateOrderedEvents);
-                _iTimer.setPhase(ImportPhases.GetFirstProcessedBy);
-                String firstProcessedByInitials = SpecimenManager.getInstance().getFirstProcessedByInitials(dateOrderedEvents);
-                _iTimer.setPhase(ImportPhases.GetCurrentLocationId);
-                Integer currentLocation = SpecimenManager.getInstance().getCurrentLocationId(dateOrderedEvents);
-
-                _iTimer.setPhase(ImportPhases.CalculateLocation);
-                boolean atRepository = false;
-
-                if (currentLocation != null)
-                {
-                    LocationImpl location;
-
-                    if (!siteMap.containsKey(currentLocation))
+                    for (Vial vial : vials)
                     {
-                        location = StudyManager.getInstance().getLocation(_container, currentLocation);
-                        if (location != null)
-                            siteMap.put(currentLocation, location);
-                    }
-                    else
-                    {
-                        location = siteMap.get(currentLocation);
-                    }
+                        long vialId = vial.getRowId();
 
-                    if (location != null)
-                        atRepository = location.isRepository() != null && location.isRepository();
-                }
-
-                // All of the additional fields (deviationCodes, Concetration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value
-                _iTimer.setPhase(ImportPhases.GetLastEvent);
-                SpecimenEvent lastEvent = SpecimenManager.getInstance().getLastEvent(dateOrderedEvents);
-
-                _iTimer.setPhase(ImportPhases.DetermineUpdateVial);
-                boolean updateVial = false;
-                List<Object> params = new ArrayList<>();
-
-                if (!Objects.equals(currentLocation, vial.getCurrentLocation()) ||
-                    !Objects.equals(processingLocation, vial.getProcessingLocation()) ||
-                    !Objects.equals(firstProcessedByInitials, vial.getFirstProcessedByInitials()) ||
-                    atRepository != vial.isAtRepository() ||
-                    !Objects.equals(vial.getLatestComments(), lastEvent.getComments()) ||
-                    !Objects.equals(vial.getLatestQualityComments(), lastEvent.getQualityComments()))
-                {
-                    updateVial = true;          // Something is different
-                }
-
-                if (!updateVial)
-                {
-                    for (Map.Entry<String, List<RollupInstance<EventVialRollup>>> rollupEntry : _eventToVialRollups.entrySet())
-                    {
-                        String eventColName = rollupEntry.getKey();
-                        ColumnInfo column = specimenEventTable.getColumn(eventColName);
-                        if (null == column)
-                            throw new IllegalStateException("Expected Specimen Event table column to exist.");
-                        String eventColSelectName =  column.getSelectName();
-                        for (RollupInstance<EventVialRollup> rollupItem : rollupEntry.getValue())
+                        _iTimer.setPhase(ImportPhases.GetDateOrderedEvents);
+                        List<SpecimenEvent> dateOrderedEvents = new ArrayList<>();
+                        while (eventIterator.hasNext())
                         {
-                            String vialColName = rollupItem.first;
-                            Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColSelectName,
-                                                                    rollupItem.getFromType(), rollupItem.getToType());
-                            if (!Objects.equals(vial.get(vialColName), rollupResult))
+                            eventIterator.mark();
+                            Map<String, Object> map = eventIterator.next();
+
+                            if (vialId == (Long) map.get("VialId"))
                             {
-                                updateVial = true;      // Something is different
+                                dateOrderedEvents.add(new SpecimenEvent(_container, map));
+                            }
+                            else
+                            {
+                                eventIterator.reset();
                                 break;
                             }
                         }
+                        Collections.sort(dateOrderedEvents, eventComparator);
+
+                        _iTimer.setPhase(ImportPhases.GetProcessingLocationId);
+                        Integer processingLocation = SpecimenManager.getInstance().getProcessingLocationId(dateOrderedEvents);
+                        _iTimer.setPhase(ImportPhases.GetFirstProcessedBy);
+                        String firstProcessedByInitials = SpecimenManager.getInstance().getFirstProcessedByInitials(dateOrderedEvents);
+                        _iTimer.setPhase(ImportPhases.GetCurrentLocationId);
+                        Integer currentLocation = SpecimenManager.getInstance().getCurrentLocationId(dateOrderedEvents);
+
+                        _iTimer.setPhase(ImportPhases.CalculateLocation);
+                        boolean atRepository = false;
+
+                        if (currentLocation != null)
+                        {
+                            Location location;
+
+                            if (!siteMap.containsKey(currentLocation))
+                            {
+                                location = StudyManager.getInstance().getLocation(_container, currentLocation);
+                                if (location != null)
+                                    siteMap.put(currentLocation, location);
+                            }
+                            else
+                            {
+                                location = siteMap.get(currentLocation);
+                            }
+
+                            if (location != null)
+                                atRepository = location.isRepository() != null && location.isRepository();
+                        }
+
+                        // All of the additional fields (deviationCodes, Concetration, Integrity, Yield, Ratio, QualityComments, Comments) always take the latest value
+                        _iTimer.setPhase(ImportPhases.GetLastEvent);
+                        SpecimenEvent lastEvent = SpecimenManager.getInstance().getLastEvent(dateOrderedEvents);
+
+                        _iTimer.setPhase(ImportPhases.DetermineUpdateVial);
+                        boolean updateVial = false;
+                        List<Object> params = new ArrayList<>();
+
+                        if (!Objects.equals(currentLocation, vial.getCurrentLocation()) ||
+                                !Objects.equals(processingLocation, vial.getProcessingLocation()) ||
+                                !Objects.equals(firstProcessedByInitials, vial.getFirstProcessedByInitials()) ||
+                                atRepository != vial.isAtRepository() ||
+                                !Objects.equals(vial.getLatestComments(), lastEvent.getComments()) ||
+                                !Objects.equals(vial.getLatestQualityComments(), lastEvent.getQualityComments()))
+                        {
+                            updateVial = true;          // Something is different
+                        }
+
+                        if (!updateVial)
+                        {
+                            for (Map.Entry<String, List<RollupInstance<EventVialRollup>>> rollupEntry : _eventToVialRollups.entrySet())
+                            {
+                                String eventColName = rollupEntry.getKey();
+                                ColumnInfo column = getTableInfoSpecimenEvent().getColumn(eventColName);
+                                if (null == column)
+                                    throw new IllegalStateException("Expected Specimen Event table column to exist.");
+                                String eventColSelectName = column.getSelectName();
+                                for (RollupInstance<EventVialRollup> rollupItem : rollupEntry.getValue())
+                                {
+                                    String vialColName = rollupItem.first;
+                                    Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColSelectName,
+                                            rollupItem.getFromType(), rollupItem.getToType());
+                                    if (!Objects.equals(vial.get(vialColName), rollupResult))
+                                    {
+                                        updateVial = true;      // Something is different
+                                        break;
+                                    }
+                                }
+                                if (updateVial)
+                                    break;
+                            }
+                        }
+
+                        _iTimer.setPhase(ImportPhases.SetUpdateParameters);
                         if (updateVial)
-                            break;
-                    }
-                }
-
-                _iTimer.setPhase(ImportPhases.SetUpdateParameters);
-                if (updateVial)
-                {
-                    // Something is different; update everything
-                    params.add(currentLocation);
-                    params.add(processingLocation);
-                    params.add(firstProcessedByInitials);
-                    params.add(atRepository);
-                    params.add(lastEvent.getComments());
-                    params.add(lastEvent.getQualityComments());
-
-                    for (Map.Entry<String, List<RollupInstance<EventVialRollup>>> rollupEntry : _eventToVialRollups.entrySet())
-                    {
-                        String eventColName = rollupEntry.getKey();
-                        ColumnInfo column = specimenEventTable.getColumn(eventColName);
-                        if (null == column)
-                            throw new IllegalStateException("Expected Specimen Event table column to exist.");
-                        String eventColAlias =  column.getAlias();     // Use alias since we're looking up in the rowMap
-                        for (RollupInstance<EventVialRollup> rollupItem : rollupEntry.getValue())
                         {
-                            Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColAlias,
-                                                                    rollupItem.getFromType(), rollupItem.getToType());
-                            params.add(rollupResult);
-                        }
-                    }
+                            // Something is different; update everything
+                            params.add(currentLocation);
+                            params.add(processingLocation);
+                            params.add(firstProcessedByInitials);
+                            params.add(atRepository);
+                            params.add(lastEvent.getComments());
+                            params.add(lastEvent.getQualityComments());
 
-                    params.add(vial.getRowId());
-                    vialPropertiesParams.add(params);
-                }
-
-                _iTimer.setPhase(ImportPhases.HandleComments);
-                SpecimenComment comment = specimenComments.get(vial);
-
-                if (comment != null)
-                {
-                    // if we have a comment, it may be because we're in a bad QC state.  If so, we should update
-                    // the reason for the QC problem.
-                    String message = null;
-
-                    if (comment.isQualityControlFlag() || comment.isQualityControlFlagForced())
-                    {
-                        List<SpecimenEvent> events = SpecimenManager.getInstance().getSpecimenEvents(vial);
-                        Set<String> conflicts = getConflictingEventColumns(events);
-
-                        if (!conflicts.isEmpty())
-                        {
-                            // Null out conflicting Vial columns
-                            if (merge)
+                            for (Map.Entry<String, List<RollupInstance<EventVialRollup>>> rollupEntry : _eventToVialRollups.entrySet())
                             {
-                                // NOTE: in checkForConflictingSpecimens() we check the imported specimen columns used
-                                // to generate the specimen hash are not in conflict so we shouldn't need to clear any
-                                // columns on the specimen table.  Vial columns are not part of the specimen hash and
-                                // can safely be cleared without compromising the specimen hash.
-                                //clearConflictingSpecimenColumns(specimen, conflicts);
-                                clearConflictingVialColumns(vial, conflicts);
+                                String eventColName = rollupEntry.getKey();
+                                ColumnInfo column = getTableInfoSpecimenEvent().getColumn(eventColName);
+                                if (null == column)
+                                    throw new IllegalStateException("Expected Specimen Event table column to exist.");
+                                String eventColAlias = column.getAlias();     // Use alias since we're looking up in the rowMap
+                                for (RollupInstance<EventVialRollup> rollupItem : rollupEntry.getValue())
+                                {
+                                    Object rollupResult = rollupItem.second.getRollupResult(dateOrderedEvents, eventColAlias,
+                                            rollupItem.getFromType(), rollupItem.getToType());
+                                    params.add(rollupResult);
+                                }
                             }
 
-                            String sep = "";
-                            message = "Conflicts found: ";
-                            for (String conflict : conflicts)
+                            params.add(vial.getRowId());
+                            vialPropertiesParams.add(params);
+                        }
+
+                        _iTimer.setPhase(ImportPhases.HandleComments);
+                        SpecimenComment comment = specimenComments.get(vial);
+
+                        if (comment != null)
+                        {
+                            // if we have a comment, it may be because we're in a bad QC state.  If so, we should update
+                            // the reason for the QC problem.
+                            String message = null;
+
+                            if (comment.isQualityControlFlag() || comment.isQualityControlFlagForced())
                             {
-                                message += sep + conflict;
-                                sep = ", ";
+                                List<SpecimenEvent> events = SpecimenManager.getInstance().getSpecimenEvents(vial);
+                                Set<String> conflicts = getConflictingEventColumns(events);
+
+                                if (!conflicts.isEmpty())
+                                {
+                                    // Null out conflicting Vial columns
+                                    if (merge)
+                                    {
+                                        // NOTE: in checkForConflictingSpecimens() we check the imported specimen columns used
+                                        // to generate the specimen hash are not in conflict so we shouldn't need to clear any
+                                        // columns on the specimen table.  Vial columns are not part of the specimen hash and
+                                        // can safely be cleared without compromising the specimen hash.
+                                        //clearConflictingSpecimenColumns(specimen, conflicts);
+                                        clearConflictingVialColumns(vial, conflicts);
+                                    }
+
+                                    String sep = "";
+                                    message = "Conflicts found: ";
+                                    for (String conflict : conflicts)
+                                    {
+                                        message += sep + conflict;
+                                        sep = ", ";
+                                    }
+                                }
+                                commentParams.add(Arrays.asList(message, vial.getGlobalUniqueId()));
                             }
                         }
-                        commentParams.add(Arrays.asList(message, vial.getGlobalUniqueId()));
                     }
+
+                    _iTimer.setPhase(ImportPhases.UpdateVials);
+                    if (!vialPropertiesParams.isEmpty())
+                        Table.batchExecute(StudySchema.getInstance().getSchema(), vialPropertiesSql, vialPropertiesParams);
+
+                    _iTimer.setPhase(ImportPhases.UpdateComments);
+                    if (!commentParams.isEmpty())
+                        Table.batchExecute(StudySchema.getInstance().getSchema(), commentSql, commentParams);
+
+                    rowCount.add(CURRENT_SITE_UPDATE_SIZE);
+                    _iTimer.setPhase(ImportPhases.GetVialBatch);
                 }
-            }
-
-            _iTimer.setPhase(ImportPhases.UpdateVials);
-            if (!vialPropertiesParams.isEmpty())
-                Table.batchExecute(StudySchema.getInstance().getSchema(), vialPropertiesSql, vialPropertiesParams);
-
-            _iTimer.setPhase(ImportPhases.UpdateComments);
-            if (!commentParams.isEmpty())
-                Table.batchExecute(StudySchema.getInstance().getSchema(), commentSql, commentParams);
-
-            offset += CURRENT_SITE_UPDATE_SIZE;
+            }, CURRENT_SITE_UPDATE_SIZE);
         }
-        while (!vials.isEmpty());
 
 //        if (!merge)
 //            new SpecimenTablesProvider(getContainer(), getUser(), null).addTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
@@ -2005,7 +2037,7 @@ public class SpecimenImporter
     private void ensureNotCanceled()
     {
         if (null != _job)
-            _job.setStatus(_currentStatus);     // Will throw if job conceled
+            _job.setStatus(_currentStatus);     // Will throw if job has been canceled
     }
 
     private List<SpecimenColumn> getSpecimenCols(List<SpecimenColumn> availableColumns)
@@ -3190,12 +3222,12 @@ public class SpecimenImporter
                 {
                     if (0 == currentRow%SQL_BATCH_SIZE)
                     {
+                        if (0 == currentRow % (SQL_BATCH_SIZE*100))
+                            info(currentRow + " rows loaded...");
                         long hb = HeartBeat.currentTimeMillis();
                         if (hb == heartBeat)
                             return;
                         ensureNotCanceled();
-                        if (0 == currentRow % (SQL_BATCH_SIZE*100))
-                            info(currentRow + " rows loaded...");
                         heartBeat = hb;
                     }
                 }
@@ -3251,7 +3283,7 @@ public class SpecimenImporter
         }
     }
 
-    // TODO We should consider tyring to let the Standard ETL "import alias" replace some of this ImportableColumn behavior
+    // TODO We should consider trying to let the Standard ETL "import alias" replace some of this ImportableColumn behavior
     // TODO that might let us switch SpecimenImportBuilder to after StandardETL instead of before
     // TODO StandardETL should be enforcing max length
     private class SpecimenImportIterator extends SimpleTranslator
@@ -3377,8 +3409,7 @@ public class SpecimenImporter
     }
 
 
-    private Pair<List<SpecimenColumn>, Integer> populateTempTable(TempTableInfo tti,
-            SpecimenImportFile file, boolean merge)
+    private Pair<List<SpecimenColumn>, Integer> populateTempTable(TempTableInfo tti, SpecimenImportFile file, boolean merge)
         throws SQLException, IOException, ValidationException
     {
         info("Populating specimen temp table...");

@@ -35,6 +35,7 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     {
         _container = container;
         _rowMap = rowMap;
+        _rowMap.remove("_row");  // TODO: Temp!!
     }
 
     public Object get(String key)
@@ -129,5 +130,27 @@ public class SpecimenEvent extends AbstractStudyCachable<SpecimenEvent>
     public String getQualityComments()
     {
         return (String)get("qualitycomments");
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        SpecimenEvent that = (SpecimenEvent) o;
+
+        if (!_container.equals(that._container)) return false;
+        if (!_rowMap.equals(that._rowMap)) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        int result = _rowMap.hashCode();
+        result = 31 * result + _container.hashCode();
+        return result;
     }
 }
