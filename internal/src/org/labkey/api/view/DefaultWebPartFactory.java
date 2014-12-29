@@ -18,8 +18,7 @@ package org.labkey.api.view;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.security.permissions.ReadPermission;
-
-import java.lang.reflect.InvocationTargetException;
+import org.labkey.api.util.UnexpectedException;
 
 /**
  * User: matthewb
@@ -42,11 +41,18 @@ public class DefaultWebPartFactory extends BaseWebPartFactory
         this.cls = cls;
     }
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws IllegalAccessException, InvocationTargetException, InstantiationException
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         if (!portalCtx.hasPermission(ReadPermission.class))
             return new HtmlView("Not Authorized", portalCtx.getUser().isGuest() ? "Please log in to see this data." : "You do not have permission to see this data");
 
-        return cls.newInstance();
+        try
+        {
+            return cls.newInstance();
+        }
+        catch (InstantiationException | IllegalAccessException e)
+        {
+            throw new UnexpectedException(e);
+        }
     }
 }

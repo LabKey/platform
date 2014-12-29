@@ -25,7 +25,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.module.FolderType;
 import org.labkey.api.module.Module;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -126,7 +125,7 @@ public abstract class BaseWebPartFactory implements WebPartFactory
         return part;
     }
 
-    protected void populateProperties(WebPartView view, Map<String, String> properties) throws IllegalAccessException, InvocationTargetException
+    protected void populateProperties(WebPartView view, Map<String, String> properties)
     {
         for (Map.Entry<String, String> entry : properties.entrySet())
         {

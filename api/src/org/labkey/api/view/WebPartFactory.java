@@ -15,6 +15,7 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.admin.ImportContext;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
@@ -50,7 +51,7 @@ public interface WebPartFactory
 
     Set<String> getAllowableLocations();
 
-    WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception;
+    WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException;
 
     HttpView getEditView(Portal.WebPart webPart, ViewContext context);
 

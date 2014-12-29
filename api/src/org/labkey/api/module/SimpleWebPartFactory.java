@@ -17,12 +17,14 @@ package org.labkey.api.module;
 
 import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlOptions;
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.BaseWebPartFactory;
 import org.labkey.api.view.Portal;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.WebPartConfigurationException;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.api.view.WebPartView;
 import org.labkey.data.xml.webpart.AvailableEnum;
@@ -165,13 +167,13 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     }
 
 
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart) throws WebPartConfigurationException
     {
         if (null != _loadException)
-            throw new Exception("Error thrown during load", _loadException);
+            throw new WebPartConfigurationException(this, "Error thrown during load", _loadException);
 
         if (null == getViewName())
-            throw new Exception("No view name specified for the module web part defined in " + _resourceName);
+            throw new WebPartConfigurationException(this, "No view name specified for the module web part defined in " + _resourceName);
 
         WebPartView ret = SimpleAction.getModuleHtmlView(getModule(), getViewName(), webPart);
         if (null != _webPartDef && null != _webPartDef.getView())

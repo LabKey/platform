@@ -19,6 +19,7 @@ package org.labkey.api.files.view;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.cloud.CloudStoreService;
@@ -389,7 +390,7 @@ public class FilesWebPart extends JspView<FilesWebPart.FilesForm>
             super(PART_NAME, true, false, WebPartFactory.LOCATION_BODY, WebPartFactory.LOCATION_RIGHT);
         }
 
-        public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+        public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             return new FilesWebPart(portalCtx, webPart);
         }

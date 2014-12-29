@@ -17,21 +17,26 @@ package org.labkey.api.module;
 
 import org.labkey.api.action.BaseViewAction;
 import org.labkey.api.action.NavTrailAction;
+import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
+import org.labkey.api.security.ACL;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
-import org.labkey.api.view.*;
-import org.labkey.api.security.ACL;
-import org.labkey.api.security.User;
-import org.labkey.api.data.Container;
-import org.springframework.web.servlet.ModelAndView;
+import org.labkey.api.view.ForbiddenProjectException;
+import org.labkey.api.view.NavTree;
+import org.labkey.api.view.NotFoundException;
+import org.labkey.api.view.Portal;
+import org.labkey.api.view.TermsOfUseException;
+import org.labkey.api.view.UnauthorizedException;
+import org.labkey.api.view.WebPartView;
 import org.springframework.validation.Errors;
+import org.springframework.web.servlet.ModelAndView;
 
-import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -46,7 +51,7 @@ import java.util.Set;
  */
 public class SimpleAction extends BaseViewAction implements NavTrailAction
 {
-    public static WebPartView getModuleHtmlView(Module module, String viewName, Portal.WebPart webpart) throws IOException
+    public static WebPartView getModuleHtmlView(Module module, String viewName, Portal.WebPart webpart)
     {
         Resource r = module.getModuleResource(SimpleController.VIEWS_DIRECTORY + "/" + viewName + ModuleHtmlViewDefinition.HTML_VIEW_EXTENSION);
         return r != null && r.isFile() ? new ModuleHtmlView(r, webpart) : null;

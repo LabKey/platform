@@ -15,6 +15,8 @@
  */
 package org.labkey.api.view;
 
+import org.jetbrains.annotations.NotNull;
+import org.labkey.api.util.UnexpectedException;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.validation.BindException;
 import org.labkey.api.action.BaseViewAction;
@@ -129,14 +131,21 @@ public class SimpleWebPartFactory extends BaseWebPartFactory
     }
 
     
-    public WebPartView getWebPartView(ViewContext portalCtx, Portal.WebPart webPart) throws Exception
+    public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
     {
         Object form = null;
         BindException errors = null;
 
         if (null != _formClass)
         {
-            form = _formClass.newInstance();
+            try
+            {
+                form = _formClass.newInstance();
+            }
+            catch (InstantiationException | IllegalAccessException e)
+            {
+                throw new UnexpectedException(e);
+            }
             errors = BaseViewAction.simpleBindParameters(form, "command", webPart.getPropertyValues());
         }
 

@@ -126,11 +126,14 @@ public class DbScope
 
     public interface TransactionKind
     {
+        /** A short description of what this transactions usage scenario is */
+        @NotNull
         String getKind();
     }
 
     public class NormalTransactionKind implements TransactionKind
     {
+        @NotNull
         public String getKind()
         {
             return "NORMAL";
@@ -311,28 +314,6 @@ public class DbScope
      */
     public Transaction ensureTransaction(TransactionKind transactionKind, Lock... locks)
     {
-        return ensureTransaction(transactionKind, Connection.TRANSACTION_READ_COMMITTED, locks);
-    }
-
-
-    /**
-     * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
-     *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
-     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
-     */
-    public Transaction ensureTransaction(int isolationLevel, Lock... locks)
-    {
-        return ensureTransaction(new NormalTransactionKind(), isolationLevel, locks);
-    }
-
-    /**
-     * @param transactionKind transaction kind
-     * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
-     *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
-     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
-     * */
-    public Transaction ensureTransaction(TransactionKind transactionKind, int isolationLevel, Lock... locks)
-    {
         // Note: it's theorectically possible to get 3 or more transactions on the transaction stack, if we call this
         //       with isPipelineStatus (false, true, false) or (true, false, true). This should not be done because
         //       it could cause a deadlock. We could change getCurrentTransactionImpl to take the flag and look past
@@ -342,16 +323,13 @@ public class DbScope
         {
             TransactionImpl transaction = getCurrentTransactionImpl();
             assert null != transaction;
-            if (transactionKind.getKind() == transaction.getTransactionKind().getKind())
+            if (transactionKind.getKind().equals(transaction.getTransactionKind().getKind()))
             {
                 transaction.increment(locks);
-                Connection conn = transaction.getConnection();
-//            if (conn.getTransactionIsolation() < isolationLevel)
-//                conn.setTransactionIsolation(isolationLevel);
                 return transaction;
             }
         }
-        return beginTransaction(transactionKind, isolationLevel, locks);
+        return beginTransaction(transactionKind, locks);
     }
 
 
@@ -366,21 +344,6 @@ public class DbScope
     }
 
     public Transaction beginTransaction(TransactionKind transactionKind, Lock... locks)
-    {
-        return beginTransaction(transactionKind, Connection.TRANSACTION_READ_COMMITTED, locks);
-    }
-
-    /**
-     * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
-     *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
-     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
-     */
-    public Transaction beginTransaction(int isolationLevel, Lock... locks)
-    {
-        return beginTransaction(new NormalTransactionKind(), isolationLevel, locks);
-    }
-
-    public Transaction beginTransaction(TransactionKind transactionKind, int isolationLevel, Lock... locks)
     {
         Connection conn = null;
         TransactionImpl result = null;
@@ -1940,6 +1903,7 @@ public class DbScope
                     assertSame(connection, t2.getConnection());
                     try (Transaction t3 = getLabkeyScope().ensureTransaction(new TransactionKind()
                     {
+                        @NotNull
                         @Override
                         public String getKind()
                         {
