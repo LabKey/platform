@@ -80,7 +80,7 @@ import java.util.regex.Pattern;
  */
 
 // Dialect specifics for PostgreSQL
-public class PostgreSql90DialectNEW extends SqlDialect
+public class PostgreSql90Dialect extends SqlDialect
 {
     private final Map<String, Integer> _domainScaleMap = new ConcurrentHashMap<>();
     private final AtomicBoolean _arraySortFunctionExists = new AtomicBoolean(false);
@@ -94,12 +94,12 @@ public class PostgreSql90DialectNEW extends SqlDialect
     private Boolean _standardConformingStrings = null;
 
     // Standard constructor used by factory and subclasses
-    PostgreSql90DialectNEW()
+    PostgreSql90Dialect()
     {
     }
 
     // Constructor used to test standardConformingStrings setting
-    PostgreSql90DialectNEW(boolean standardConformingStrings)
+    PostgreSql90Dialect(boolean standardConformingStrings)
     {
         _standardConformingStrings = standardConformingStrings;
     }
