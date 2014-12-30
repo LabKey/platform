@@ -204,7 +204,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
             {
                 QueryView view = createQueryView(context, qsDef, errors);
 
-                if (view != null && !errors.hasErrors())
+                if (view != null && !errors.hasErrors() && view.getTable() != null)
                 {
                     Results results = getResults(context, view, qsDef, def);
 
@@ -400,6 +400,11 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
 
                     if (view != null && !errors.hasErrors())
                     {
+                        if (view.getTable() == null)
+                        {
+                            errors.reject(SpringActionController.ERROR_MSG, "Unable to create a TableInfo for the source query, it may no longer exist.");
+                            return null;
+                        }
                         Results results = getResults(form.getViewContext(), view, def, dsDef);
 
                         // TODO: Create class ResultSetDataLoader and use it here instead of round-tripping through a TSV StringBuilder
@@ -453,6 +458,7 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
                 }
             }
         }
+        errors.reject(SpringActionController.ERROR_MSG, "Unable to create a QueryDefinition for the source query, it may no longer exist.");
         return null;
     }
 

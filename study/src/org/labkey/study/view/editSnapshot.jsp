@@ -27,6 +27,7 @@
 <%@ page import="org.labkey.api.view.ViewContext" %>
 <%@ page import="org.labkey.study.controllers.StudyController" %>
 <%@ page import="org.labkey.study.model.StudyManager" %>
+<%@ page import="org.labkey.api.query.QueryDefinition" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 
@@ -36,6 +37,7 @@
     ViewContext context = getViewContext();
 
     QuerySnapshotDefinition def = QueryService.get().getSnapshotDef(getContainer(), bean.getSchemaName(), bean.getSnapshotName());
+    QueryDefinition queryDef = def.getQueryDefinition(getUser());
 
     boolean showHistory = BooleanUtils.toBoolean(getActionURL().getParameter("showHistory"));
     String historyLabel = showHistory ? "Hide History" : "Show History";
@@ -55,7 +57,7 @@
     <tr><td class="labkey-form-label">Modified By</td><td><%=h(def.getModifiedBy())%></td>
     <tr><td class="labkey-form-label">Created</td><td><%=h(def.getCreated())%></td>
     <tr><td class="labkey-form-label">Last Updated</td><td><%=formatDateTime(def.getLastUpdated())%></td>
-    <tr><td class="labkey-form-label">Query Source</td><td><textarea rows="20" cols="65" readonly="true"><%=def.getQueryDefinition(getUser()).getSql()%></textarea></td>
+    <tr><td class="labkey-form-label">Query Source</td><td><textarea rows="20" cols="65" readonly="true"><%=h(queryDef != null ? queryDef.getSql() : null)%></textarea></td>
 </table>
 <%  } %>
 

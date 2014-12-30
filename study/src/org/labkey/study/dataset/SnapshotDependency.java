@@ -175,23 +175,26 @@ public abstract class SnapshotDependency
 
                     BindException errors = new NullSafeBindException(def, "snapshot");
                     QueryView view = DatasetSnapshotProvider.createQueryView(context, def, errors);
-                    TableInfo tinfo = view.getTable();
+                    if (view != null)
+                    {
+                        TableInfo tinfo = view.getTable();
 
-                    if (tinfo instanceof UnionTableInfo)
-                    {
-                        for (ColumnInfo info : ((UnionTableInfo)tinfo).getUnionColumns())
+                        if (tinfo instanceof UnionTableInfo)
                         {
-                            propertyMap.put(info.getPropertyURI(), info.getPropertyURI());
-                        }
-                    }
-                    else
-                    {
-                        for (DisplayColumn dc : view.getDisplayColumns())
-                        {
-                            ColumnInfo info = dc.getColumnInfo();
-                            if (info != null)
+                            for (ColumnInfo info : ((UnionTableInfo)tinfo).getUnionColumns())
                             {
                                 propertyMap.put(info.getPropertyURI(), info.getPropertyURI());
+                            }
+                        }
+                        else
+                        {
+                            for (DisplayColumn dc : view.getDisplayColumns())
+                            {
+                                ColumnInfo info = dc.getColumnInfo();
+                                if (info != null)
+                                {
+                                    propertyMap.put(info.getPropertyURI(), info.getPropertyURI());
+                                }
                             }
                         }
                     }
