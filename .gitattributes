@@ -532,7 +532,6 @@ api/src/org/labkey/api/ehr/security/EHRDeleteRequestedAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRDeleteRequestedDeletePermission.java -text
 api/src/org/labkey/api/ehr/security/EHRDeleteRequestedInsertPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRDeleteRequestedUpdatePermission.java -text
-api/src/org/labkey/api/ehr/security/EHRFormularyEditPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRHousingTransferPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRInProgressAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRInProgressDeletePermission.java -text
@@ -578,6 +577,7 @@ api/src/org/labkey/api/ehr/security/EHRScheduledAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRScheduledDeletePermission.java -text
 api/src/org/labkey/api/ehr/security/EHRScheduledInsertPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRScheduledUpdatePermission.java -text
+api/src/org/labkey/api/ehr/security/EHRSnomedEditPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRSurgeryEntryPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRVeternarianPermission.java -text
 api/src/org/labkey/api/etl/AbstractDataIterator.java -text

@@ -199,7 +199,7 @@ Ext4.define('LABKEY.ext4.ExcelUploadPanel', {
                 ,width: 50
                 ,scope: this
                 ,handler: function(){
-                    window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin.view')
+                    window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL') || LABKEY.ActionURL.getParameter('returnUrl') || LABKEY.ActionURL.buildURL('project', 'begin.view')
                 }
             }]
         })

@@ -118,6 +118,10 @@ abstract public class LaboratoryService
 
     abstract public void registerTableIndex(String schemaName, String queryName, List<String> columnsToIndex);
 
+    abstract public void registerTableCustomizer(Module owner, Class<? extends TableCustomizer> customizerClass, String schemaName, String queryName);
+
+    abstract public List<TableCustomizer> getCustomizers(Container c, String schemaName, String queryName);
+
     public static enum NavItemCategory
     {
         samples(),

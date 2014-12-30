@@ -36,7 +36,7 @@ Ext4.define('LABKEY.ext.ImportPanel', {
                 store: this.store,
                 listeners: {
                     uploadcomplete: function(panel, response){
-                        window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.buildURL('project', 'begin');
+                        window.location = LABKEY.ActionURL.getParameter('srcURL') || LABKEY.ActionURL.getParameter('returnURL') || LABKEY.ActionURL.getParameter('returnUrl') || LABKEY.ActionURL.buildURL('project', 'begin');
                     }
                 }
 //            },{

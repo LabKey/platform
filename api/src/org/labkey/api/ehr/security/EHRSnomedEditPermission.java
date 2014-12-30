@@ -20,10 +20,10 @@ package org.labkey.api.ehr.security;
  * Date: 1/17/13
  * Time: 7:49 PM
  */
-public class EHRFormularyEditPermission extends AbstractEHRPermission
+public class EHRSnomedEditPermission extends AbstractEHRPermission
 {
-    public EHRFormularyEditPermission()
+    public EHRSnomedEditPermission()
     {
-        super("EHRFormularyEditPermission", "This is the base permission used to grant edit rights to ehr.drug_defaults.");
+        super("EHRSnomedEditPermission", "This is the base permission used to grant edit rights to SNOMED and associated tables.");
     }
 }
