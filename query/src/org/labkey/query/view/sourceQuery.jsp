@@ -126,7 +126,7 @@
 
         Ext.QuickTips.init();
 
-        Ext.Ajax.timeout = 86400000; // 1 day
+        Ext.Ajax.timeout = 60 * 60 * 24 * 1000; // 1 day in ms
 
         // TODO: Replace the following object with an Ajax call
         var query = {

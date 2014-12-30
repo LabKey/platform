@@ -14,19 +14,117 @@ if (window.RegExp && !window.RegExp.quote) {
 
 LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
 
-    constructor : function(config) {
-        Ext.applyIf(config, {
-            title        : 'Source',
-            bodyStyle    : 'padding: 5px',
-            monitorValid : true
-        });
+    title: 'Source',
 
-        LABKEY.query.SourceEditorPanel.superclass.constructor.call(this, config);
+    bodyStyle: 'padding: 5px',
+
+    monitorValid: true,
+
+    layout: {
+        type: 'vbox',
+        align: 'stretch'
     },
 
-    initComponent : function() {
-        var items = [];
+    display: 'query-response-panel',
 
+    initComponent : function() {
+
+        this.editorId = 'queryText';
+        this.editorBoxId = Ext.id();
+        
+        this.editor = new Ext.Panel({
+            border: true, frame: false,
+            autoHeight: true,
+            items : [
+                {
+                    id    : this.editorBoxId,
+                    xtype : 'box',
+                    autoEl: {
+                        tag  : 'textarea',
+                        id   : this.editorId,
+                        rows : 17,
+                        cols : 80,
+                        style: 'width: 100%; height: 100%;',
+                        wrap : 'off',
+                        html : Ext.util.Format.htmlEncode(this.query.queryText)
+                    }
+                }
+            ],
+            listeners : {
+                afterrender : function(cmp)
+                {
+                    var code = Ext.get(this.editorId);
+                    var size = cmp.getSize();
+
+                    if (code) {
+
+                        this.codeMirror = CodeMirror.fromTextArea(code.dom, {
+                            mode            : 'text/x-plsql',
+                            lineNumbers     : true,
+                            lineWrapping    : true,
+                            readOnly        : this.query.builtIn || !this.query.canEditSql,
+                            indentUnit      : 3
+                        });
+
+                        this.codeMirror.setSize(null, size.height + 'px');
+                        LABKEY.codemirror.RegisterEditorInstance(this.editorId, this.codeMirror);
+                        this.doLayout(false, true);
+                    }
+                },
+                resize : function(x)
+                {
+                    if (!x)
+                    {
+                        var h = this.getHeight() - 125;
+                        this.editor.setHeight(h);
+                        var box = Ext.getCmp(this.editorBoxId);
+                        if (box)
+                        {
+                            box.setHeight(h);
+                            var _f = Ext.get('frame_' + this.editorId);
+                            if (_f)
+                                _f.setHeight(h, false);
+
+                            if (this.codeMirror && h > 0)
+                                this.codeMirror.setSize(null, h + 'px');
+                        }
+                        this.doLayout(false, true);
+                    }
+                },
+                scope : this
+            },
+            scope : this
+        });
+
+        this.items = [
+            this.initButtonBar(),
+            this.editor,
+            {
+                xtype: 'panel',
+                autoScroll: true,
+                flex: 1,
+                border: false, frame: false,
+                items: [{
+                    id: this.getDisplay(),
+                    layout: 'fit',
+                    border: false, frame: false
+                }]
+            }
+        ];
+
+        this.executeTask = new Ext.util.DelayedTask(function(args){
+            this.onExecuteQuery(args.force);
+        }, this, []);
+
+        LABKEY.query.SourceEditorPanel.superclass.initComponent.apply(this, arguments);
+
+        this.on('resize', function(){
+            this.editor.fireEvent('resize');
+        });
+    },
+
+    initButtonBar : function() {
+        var items = [];
         if (this.query.canEdit)
         {
             items.push({
@@ -82,7 +180,7 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
                 scope : this
             });
         }
-        
+
         if (this.query.metadataEdit) {
             items.push({
                 xtype   : 'button',
@@ -105,131 +203,45 @@ LABKEY.query.SourceEditorPanel = Ext.extend(Ext.Panel, {
             cls   : 'query-button',
             style : 'float: none;',
             menu  : new Ext.menu.Menu({
-                        id : 'keyboard-menu',
-                        cls : 'extContainer',
-                        items : [{
-                            text  : 'Shortcuts',
-                            menu  : {
-                                id   : '',
-                                cls  : 'extContainer',
-                                items: [{
-                                    text : 'Save&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+S',
-                                    handler : this.onSave,
-                                    scope : this
-                                },{
-                                    text : 'Execute&nbsp;&nbsp;&nbsp;Ctrl+Enter',
-                                    handler : function() { this.execute(true); },
-                                    scope   : this
-                                },{
-                                    text : 'Edit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+E',
-                                    handler : function() { this.focusEditor(); },
-                                    scope : this
-                                }]
-                            }
-                        },'-',{
-                            text  : 'SQL Reference',
-                            handler : function() { window.open(this.query.help, '_blank'); },
+                id : 'keyboard-menu',
+                cls : 'extContainer',
+                items : [{
+                    text  : 'Shortcuts',
+                    menu  : {
+                        id   : '',
+                        cls  : 'extContainer',
+                        items: [{
+                            text : 'Save&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+S',
+                            handler : this.onSave,
+                            scope : this
+                        },{
+                            text : 'Execute&nbsp;&nbsp;&nbsp;Ctrl+Enter',
+                            handler : function() { this.execute(true); },
+                            scope   : this
+                        },{
+                            text : 'Edit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Ctrl+E',
+                            handler : function() { this.focusEditor(); },
                             scope : this
                         }]
-                    })      
-        });
-
-        this.editorId = 'queryText';
-        this.editorBoxId = Ext.id();
-        
-        this.editor = new Ext.Panel({
-            padding : '10px 0 0 0',
-            border  : true, frame : false,
-            autoHeight : true,
-            items : [
-                {
-                    id    : this.editorBoxId,
-                    xtype : 'box',
-                    autoEl: {
-                        tag  : 'textarea',
-                        id   : this.editorId,
-                        rows : 17,
-                        cols : 80,
-                        style: 'width: 100%; height: 100%;',
-                        wrap : 'off',
-                        html : Ext.util.Format.htmlEncode(this.query.queryText)
                     }
-                }
-            ],
-            listeners : {
-                afterrender : function(cmp)
-                {
-                    var code = Ext.get(this.editorId);
-                    var size = cmp.getSize();
-
-                    if (code) {
-
-                        this.codeMirror = CodeMirror.fromTextArea(code.dom, {
-                            mode            : 'text/x-plsql',
-                            lineNumbers     : true,
-                            lineWrapping    : true,
-                            readOnly        : this.query.builtIn || !this.query.canEditSql,
-                            indentUnit      : 3
-                        });
-
-                        this.codeMirror.setSize(null, size.height + 'px');
-                        LABKEY.codemirror.RegisterEditorInstance(this.editorId, this.codeMirror);
-                    }
-
-                    this.doLayout(false, true);
-                },
-                resize : function(x)
-                {
-                    if (!x)
-                    {
-                        var h = this.getHeight() - 100;
-                        this.editor.setHeight(h);
-                        var box = Ext.getCmp(this.editorBoxId);
-                        if (box)
-                        {
-                            box.setHeight(h);
-                            var _f = Ext.get('frame_' + this.editorId);
-                            if (_f)
-                                _f.setHeight(h, false);
-
-                            if (this.codeMirror && h > 0)
-                                this.codeMirror.setSize(null, h + 'px');
-                        }
-                        this.doLayout(false, true);
-                    }
-                },
-                scope : this
-            },
-            scope : this
+                },'-',{
+                    text  : 'SQL Reference',
+                    handler : function() { window.open(this.query.help, '_blank'); },
+                    scope : this
+                }]
+            })
         });
 
-        items.push(this.editor);
+        return {
+            xtype: 'container',
+            layout: 'hbox',
+            items: items
+        };
+    },
 
-        this.display = 'query-response-panel';
-        this.queryResponse = new Ext.Panel(
-        {
-            autoScroll : true,
-            border: false, frame: false,
-            items : [{
-                layout : 'fit',
-                id : this.display,
-                border : false, frame : false
-            }]
-        });
-
-        items.push(this.queryResponse);
-
-        this.items = items;
-
-        this.executeTask = new Ext.util.DelayedTask(function(args){
-            this.onExecuteQuery(args.force);
-        }, this, []);
-
-        LABKEY.query.SourceEditorPanel.superclass.initComponent.apply(this, arguments);
-
-        this.on('resize', function(){
-            this.editor.fireEvent('resize');
-        });
+    getDisplay : function()
+    {
+        return this.display;
     },
 
     setDisplay : function(id)
@@ -581,7 +593,6 @@ LABKEY.query.QueryEditorPanel = Ext.extend(Ext.Panel, {
 
         this.tabPanel = new Ext.TabPanel({
             activeTab : this.activeTab,
-            width     : '100%',
             items     : [this.sourceEditor, this.dataTab, this.metaEditor]
         });
 
