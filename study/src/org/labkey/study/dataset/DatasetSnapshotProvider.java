@@ -17,6 +17,7 @@ package org.labkey.study.dataset;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.audit.AuditLogService;
@@ -291,32 +292,37 @@ public class DatasetSnapshotProvider extends AbstractSnapshotProvider implements
         return QueryService.get().select(tinfo, colMap.values(), filter, null);
     }
 
+    @Nullable
     static QueryView createQueryView(ViewContext context, QuerySnapshotDefinition qsDef, BindException errors)
     {
         QueryDefinition queryDef = qsDef.getQueryDefinition(context.getUser());
-        UserSchema schema = QueryService.get().getUserSchema(context.getUser(), queryDef.getContainer(), queryDef.getSchemaName());
-        if (schema == null)
-            return null;
-
-        DataSetQuerySettings settings = new DataSetQuerySettings(context.getBindPropertyValues(), QueryView.DATAREGIONNAME_DEFAULT);
-        settings.setQueryName(queryDef.getName());
-
-        QueryView view = schema.createView(context, settings, errors);
-
-        //if (!qsDef.getColumns().isEmpty() || !StringUtils.isBlank(qsDef.getFilter()))
+        if (queryDef != null)
         {
-            // create a temporary custom view to add additional display columns to the base query definition
-            CustomView custView = queryDef.createCustomView(context.getUser(), "tempCustomView");
+            UserSchema schema = QueryService.get().getUserSchema(context.getUser(), queryDef.getContainer(), queryDef.getSchemaName());
+            if (schema == null)
+                return null;
 
-            if (!qsDef.getColumns().isEmpty())
-                custView.setColumns(qsDef.getColumns());
+            DataSetQuerySettings settings = new DataSetQuerySettings(context.getBindPropertyValues(), QueryView.DATAREGIONNAME_DEFAULT);
+            settings.setQueryName(queryDef.getName());
 
-            if (!StringUtils.isBlank(qsDef.getFilter()))
-                custView.setFilterAndSort(qsDef.getFilter());
+            QueryView view = schema.createView(context, settings, errors);
 
-            view.setCustomView(custView);
+            //if (!qsDef.getColumns().isEmpty() || !StringUtils.isBlank(qsDef.getFilter()))
+            {
+                // create a temporary custom view to add additional display columns to the base query definition
+                CustomView custView = queryDef.createCustomView(context.getUser(), "tempCustomView");
+
+                if (!qsDef.getColumns().isEmpty())
+                    custView.setColumns(qsDef.getColumns());
+
+                if (!StringUtils.isBlank(qsDef.getFilter()))
+                    custView.setFilterAndSort(qsDef.getFilter());
+
+                view.setCustomView(custView);
+            }
+            return view;
         }
-        return view;
+        return null;
     }
 
     public ActionURL createSnapshot(QuerySnapshotForm form, BindException errors) throws Exception
