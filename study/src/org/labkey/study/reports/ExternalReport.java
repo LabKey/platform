@@ -310,9 +310,8 @@ public class ExternalReport extends AbstractReport
         {
             pb.redirectErrorStream(true);
             proc = pb.start();
-            proc.waitFor();
         }
-        catch (SecurityException | InterruptedException e)
+        catch (SecurityException e)
         {
             throw new RuntimeException(e);
         }
