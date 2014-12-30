@@ -39,7 +39,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public abstract class MessageDigest
 {
     private static final String LAST_KEY = "LastSuccessfulSend";
-    private Timer _timer = null;
     private MessageDigestTask _timerTask = null;
     private final List<Provider> _providers = new CopyOnWriteArrayList<>();
 
@@ -126,17 +125,22 @@ public abstract class MessageDigest
     {
         _timerTask = new MessageDigestTask(this);
         ContextListener.addShutdownListener(_timerTask);
-
-        _timer = createTimer(new MessageDigestTask(this));
+        _timerTask.setTimer(createTimer(_timerTask));
     }
 
     private static class MessageDigestTask extends TimerTask implements ShutdownListener
     {
         private MessageDigest _digest;
+        private Timer _timer;
 
         public MessageDigestTask(MessageDigest digest)
         {
             _digest = digest;
+        }
+
+        public void setTimer(Timer timer)
+        {
+            _timer = timer;
         }
 
         public void run()
@@ -161,8 +165,7 @@ public abstract class MessageDigest
 
         public void shutdownPre(ServletContextEvent servletContextEvent)
         {
-            ContextListener.removeShutdownListener(_digest._timerTask);
-            _digest._timer.cancel();
+            _timer.cancel();
         }
 
         public void shutdownStarted(ServletContextEvent servletContextEvent)

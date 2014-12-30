@@ -159,8 +159,8 @@ public abstract class AbstractSpecimenTransformTask
             // We know the id and the name
             row.put("lab_id", entry.getValue());
             row.put("lab_name", entry.getKey());
+            row.put("ldms_lab_code", -1);               // ldms code required : issue #22217
             // Everything else is left blank
-            row.put("ldms_lab_code", null);
             row.put("lab_upload_code", null);
             row.put("is_sal", null);
             row.put("is_repository", null);
