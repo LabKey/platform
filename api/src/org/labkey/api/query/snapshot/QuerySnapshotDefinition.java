@@ -33,6 +33,7 @@ public interface QuerySnapshotDefinition
     String getName();
     String getQueryTableName();
     int getId();
+    @Nullable
     QueryDefinition getQueryDefinition(User user);
 
     boolean canEdit(User user);
