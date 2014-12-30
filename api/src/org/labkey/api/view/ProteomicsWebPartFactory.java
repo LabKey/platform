@@ -46,7 +46,7 @@ public abstract class ProteomicsWebPartFactory extends BaseWebPartFactory
         for (Module module1 : c.getActiveModules())
         {
             if (module1 instanceof ProteomicsModule)
-                return location.equals(getDefaultLocation());
+                return getAllowableLocations().contains(location);
         }
         return false;
     }

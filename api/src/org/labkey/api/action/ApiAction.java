@@ -252,11 +252,6 @@ public abstract class ApiAction<FORM> extends BaseViewAction<FORM>
                     _reqFormat = ApiResponseWriter.Format.JSON;
                     return populateJsonForm();
                 }
-//              else if (contentType.contains(ApiXmlWriter.CONTENT_TYPE))
-//              {
-//                  _reqFormat = ApiResponseWriter.Format.XML;
-//                  return populateXmlForm();
-//              }
             }
 
             return defaultPopulateForm();
