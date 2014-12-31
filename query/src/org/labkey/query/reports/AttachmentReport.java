@@ -217,11 +217,7 @@ public class AttachmentReport extends BaseRedirectReport
             @Override
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
-                if(report.getLatestVersion().getName().endsWith("x"))
-                {
-                    return report.getOfficeXmlThumbnail(report.getInputStream());
-                }
-                return null;
+                return report.getOfficeXmlThumbnail(report.getInputStream());
             }
         },
 
@@ -236,11 +232,7 @@ public class AttachmentReport extends BaseRedirectReport
             @Override
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
-                if(report.getLatestVersion().getName().endsWith("x"))
-                {
-                    return report.getOfficeXmlThumbnail(report.getInputStream());
-                }
-                return null;
+                return report.getOfficeXmlThumbnail(report.getInputStream());
             }
         },
 
@@ -255,11 +247,7 @@ public class AttachmentReport extends BaseRedirectReport
             @Override
             Thumbnail getDynamicThumbnail(AttachmentReport report) throws IOException
             {
-                if(report.getLatestVersion().getName().endsWith("x"))
-                {
-                    return report.getOfficeXmlThumbnail(report.getInputStream());
-                }
-                return null;
+                return report.getOfficeXmlThumbnail(report.getInputStream());
             }
         },
 
