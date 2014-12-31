@@ -403,8 +403,8 @@ boxPlot.render();
         }
 
         if (min == max ) {
-            max = max * 2;
-            min = min - min;
+            max = max + 1;
+            min = min - 1;
         }
 
         /*
@@ -1257,13 +1257,39 @@ boxPlot.render();
                     + "Required: value, mean, stdDev, xTickLabel. Optional: color, colorRange, hoverTextFn.");
         }
 
+        // min x-axis tick length is 10 by default
+        if (config.data.length < 10) {
+            for (var i = config.data.length; i < 10; i++) {
+                var temp = {};
+                temp[config.properties.xTickLabel] = "";
+                if (config.properties.color && config.data[0]) {
+                    temp[config.properties.color] = config.data[0][config.properties.color];
+                }
+                config.data.push(temp);
+            }
+        }
+
         // create a sequencial index to use for the x-axis value and keep a map from that index to the tick label
         var tickLabelMap = {};
+        var distinctColorValues = [];
         var index = 0;
-        for (var i = 0; i < config.data.length; i++) {
-            tickLabelMap[index] = config.data[i][config.properties.xTickLabel];
+        for (var i = 0; i < config.data.length; i++)
+        {
+            var row = config.data[i];
+
+            // track the distinct values in the color variable so that we know if we need the legend or not
+            if (config.properties.color && distinctColorValues.indexOf(row[config.properties.color]) == -1) {
+                distinctColorValues.push(row[config.properties.color]);
+            }
+
+            tickLabelMap[index] = row[config.properties.xTickLabel];
             config.data[i].seqValue = index;
             index++;
+        }
+
+        // we only need the color aes if there is > 1 distinct value in the color variable
+        if (distinctColorValues.length < 2) {
+            config.properties.color = undefined;
         }
 
         config.tickOverlapRotation = 35;
@@ -1274,7 +1300,15 @@ boxPlot.render();
             },
             x: {
                 scaleType: 'discrete',
-                tickFormat: function(index) { return tickLabelMap[index]; }
+                tickFormat: function(index) {
+                    // only show a max of 30 labels on the x-axis to avoid overlap
+                    if (index % Math.ceil(config.data.length/30) == 0) {
+                        return tickLabelMap[index];
+                    }
+                    else {
+                        return "";
+                    }
+                }
             },
             yLeft: {
                 scaleType: 'continuous',
@@ -1302,9 +1336,12 @@ boxPlot.render();
         }
         var pointLayer = new LABKEY.vis.Layer(pointLayerConfig);
 
+        // determine the width the error bars
+        var barWidth = Math.max(config.width / config.data.length / 5, 3);
+
         // +/- 3 standard deviation displayed using the ErrorBar geom with different colors
         var stdDev3Layer = new LABKEY.vis.Layer({
-            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'red', dashed: true, altColor: 'darkgrey'}),
+            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'red', dashed: true, altColor: 'darkgrey', width: barWidth}),
             data: config.data,
             aes: {
                 error: function(row){return row[config.properties.stdDev] * 3;},
@@ -1312,7 +1349,7 @@ boxPlot.render();
             }
         });
         var stdDev2Layer = new LABKEY.vis.Layer({
-            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'blue', dashed: true, altColor: 'darkgrey'}),
+            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'blue', dashed: true, altColor: 'darkgrey', width: barWidth}),
             data: config.data,
             aes: {
                 error: function(row){return row[config.properties.stdDev] * 2;},
@@ -1320,7 +1357,7 @@ boxPlot.render();
             }
         });
         var stdDev1Layer = new LABKEY.vis.Layer({
-            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'green', dashed: true, altColor: 'darkgrey'}),
+            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'green', dashed: true, altColor: 'darkgrey', width: barWidth}),
             data: config.data,
             aes: {
                 error: function(row){return row[config.properties.stdDev];},
@@ -1328,7 +1365,7 @@ boxPlot.render();
             }
         });
         var meanLayer = new LABKEY.vis.Layer({
-            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'darkgrey'}),
+            geom: new LABKEY.vis.Geom.ErrorBar({size: 1, color: 'darkgrey', width: barWidth}),
             data: config.data,
             aes: {
                 error: function(row){return 0;},

@@ -480,8 +480,8 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             altColor = geom.altColor ? geom.altColor : color;
 
             if (LABKEY.vis.isValid(yBottom) && LABKEY.vis.isValid(yTop)) {
-                topBar = LABKEY.vis.makeLine(x-6, yTop, x+6, yTop);
-                bottomBar = LABKEY.vis.makeLine(x-6, yBottom, x+6, yBottom);
+                topBar = LABKEY.vis.makeLine(x-geom.width, yTop, x+geom.width, yTop);
+                bottomBar = LABKEY.vis.makeLine(x-geom.width, yBottom, x+geom.width, yBottom);
                 this.paper.path(topBar + bottomBar)
                         .attr('stroke-width', geom.size)
                         .attr('stroke-dasharray', geom.dashed ? "-" : "")

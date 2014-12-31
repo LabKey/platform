@@ -230,6 +230,7 @@ LABKEY.vis.Geom.ErrorBar = function(config){
     this.size = ('size' in config && config.size != null && config.size != undefined) ? config.size : 2;
     this.dashed = ('dashed' in config && config.dashed != null && config.dashed != undefined) ? config.dashed : false;
     this.altColor = ('altColor' in config && config.altColor != null && config.altColor != undefined) ? config.altColor : null;
+    this.width = ('width' in config && config.width != null && config.width != undefined) ? config.width : 6;
 
     return this;
 };
