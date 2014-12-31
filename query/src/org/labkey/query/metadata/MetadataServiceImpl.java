@@ -188,11 +188,8 @@ public class MetadataServiceImpl extends DomainEditorServiceBase implements Meta
                         GWTColumnInfo gwtColumnInfo = columnInfos.get(column.getColumnName());
                         if (gwtColumnInfo == null)
                         {
-                            gwtColumnInfo = new GWTColumnInfo();
-                            gwtColumnInfo.setPropertyId(-1);
-                            gwtColumnInfo.setName(column.getColumnName());
-                            columnInfos.put(gwtColumnInfo.getName(), gwtColumnInfo);
-                            orderedPDs.add(gwtColumnInfo);
+                            // Omit columns that are in the XML but are no longer in the underlying table/query
+                            break;
                         }
                         if (column.isSetColumnTitle())
                         {
