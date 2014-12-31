@@ -51,6 +51,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     private final Container _container;
 
     // Optional fields
+    private final Logger _logger;
     private final ViewContext _context;
     private final String _comments;
     private final String _name;
@@ -75,6 +76,7 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
         _user = factory._user;
         _container = factory._container;
         _context = factory._context;
+        _logger = factory._logger;
 
         _name = factory._name;
         _comments = factory._comments;
@@ -287,6 +289,6 @@ public class AssayRunUploadContextImpl<ProviderType extends AssayProvider> imple
     @Override
     public Logger getLogger()
     {
-        return null;
+        return _logger;
     }
 }

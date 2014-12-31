@@ -99,6 +99,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
 
     void uploadComplete(ExpRun run) throws ExperimentException;
 
+    @Nullable
     Logger getLogger();
 
 
@@ -114,6 +115,7 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
         protected final Container _container;
 
         // Optional fields
+        protected Logger _logger;
         protected ViewContext _context;
         protected String _comments;
         protected String _name;
@@ -143,6 +145,12 @@ public interface AssayRunUploadContext<ProviderType extends AssayProvider>
             _provider = provider;
             _user = user;
             _container = container;
+        }
+
+        public FACTORY setLogger(Logger logger)
+        {
+            _logger = logger;
+            return self();
         }
 
         public FACTORY setViewContext(ViewContext context)
