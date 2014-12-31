@@ -434,6 +434,8 @@ public class AssayImportRunTask extends PipelineJob.Task<AssayImportRunTask.Fact
 
             factory.setTargetStudy(getTargetStudy());
 
+            factory.setLogger(getJob().getLogger());
+
             AssayRunUploadContext uploadContext = factory.create();
 
             Integer batchId = null;
