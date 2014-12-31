@@ -121,9 +121,9 @@
 
         var thumbnailInfo = {
             xtype: 'displayfield',
-            value: '<i><small>LabKey Server can extract a thumbnail image from some '
+            value: 'LabKey Server can extract a thumbnail image from some '
             + 'document types to provide a preview in the user interface. '
-            + 'Click <%=text(AttachmentReportForm.getHelpTopic().getSimpleLinkHtml("here"))%> for more details.</small></i>'
+            + 'Click <%=text(AttachmentReportForm.getHelpTopic().getSimpleLinkHtml("here"))%> for more details.'
         };
 
         <% if (canUseDiskFile) { %>
