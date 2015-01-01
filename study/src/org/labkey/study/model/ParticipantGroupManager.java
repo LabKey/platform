@@ -65,6 +65,7 @@ import org.labkey.study.StudySchema;
 import org.labkey.study.controllers.CohortController;
 import org.labkey.study.controllers.StudyController;
 
+import java.lang.String;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -647,24 +648,8 @@ public class ParticipantGroupManager
 
             Study study = StudyManager.getInstance().getStudy(ContainerManager.getForId(group.getContainerId()));
             SqlExecutor executor = new SqlExecutor(scope);
+            Map<String, String> participantIdMap = getParticipantIdMap(c, user, group);
 
-            //For dataspace folders, participants may come from multiple subfolders. We want to preserve this
-            //So pull participants and containers via the user schema which should be properly filtered
-            //TODO: Really need to pass in containers for each participant rather than rely on uniqueness of ids
-            final String subjectColumnName = StudyService.get().getSubjectColumnName(c);
-            final CaseInsensitiveHashMap<String> participantIdMap = new CaseInsensitiveHashMap<>();
-            QuerySchema schema = QueryService.get().getUserSchema(user, c, "study");
-            TableInfo participantTable = schema.getTable(StudyService.get().getSubjectTableName(c));
-            SimpleFilter participantFilter = new SimpleFilter();
-            participantFilter.addInClause(FieldKey.fromParts(subjectColumnName), Arrays.asList(group.getParticipantIds()));
-            TableSelector ts = new TableSelector(participantTable, PageFlowUtil.set(subjectColumnName, "container"), participantFilter, null);
-            ts.forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
-                @Override
-                public void exec(Map<String, Object> m) throws SQLException
-                {
-                    participantIdMap.put((String) m.get(subjectColumnName), (String) m.get("container"));
-                }
-            });
             for (String id : group.getParticipantIds())
             {
                 // don't let the database catch the invalid ptid, so we can show a more reasonable error
@@ -678,6 +663,45 @@ public class ParticipantGroupManager
             transaction.commit();
             return ret;
         }
+    }
+
+    /**
+     * For dataspace folders, participants may come from multiple subfolders. We want to preserve this
+     * So pull participants and containers via the user schema which should be properly filtered.
+     *
+     * TODO: Really need to pass in containers for each participant rather than rely on uniqueness of ids
+     * @return
+     */
+    private Map<String, String> getParticipantIdMap(Container c, User user, ParticipantGroup group)
+    {
+        final String subjectColumnName = StudyService.get().getSubjectColumnName(c);
+        final CaseInsensitiveHashMap<String> participantIdMap = new CaseInsensitiveHashMap<>();
+        final int BLOCK_SIZE = 1000;
+
+        QuerySchema schema = QueryService.get().getUserSchema(user, c, "study");
+        TableInfo participantTable = schema.getTable(StudyService.get().getSubjectTableName(c));
+        String[] participantIds = group.getParticipantIds();
+        int idx = 0;
+
+        // avoid the IN clause parameter limit, issue : 21901
+        while (idx < participantIds.length)
+        {
+            int start = idx;
+            int end = Math.min(idx + BLOCK_SIZE, participantIds.length);
+            SimpleFilter participantFilter = new SimpleFilter();
+            participantFilter.addInClause(FieldKey.fromParts(subjectColumnName), Arrays.asList(Arrays.copyOfRange(participantIds, start, end)));
+            TableSelector ts = new TableSelector(participantTable, PageFlowUtil.set(subjectColumnName, "container"), participantFilter, null);
+            ts.forEachMap(new Selector.ForEachBlock<Map<String, Object>>() {
+                @Override
+                public void exec(Map<String, Object> m) throws SQLException
+                {
+                    participantIdMap.put((String) m.get(subjectColumnName), (String) m.get("container"));
+                }
+            });
+
+            idx += BLOCK_SIZE;
+        }
+        return participantIdMap;
     }
 
     public ParticipantGroup setParticipantGroup(Container c, User user, ParticipantGroup group) throws SQLException, ValidationException
