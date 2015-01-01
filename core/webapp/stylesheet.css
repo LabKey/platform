@@ -1004,7 +1004,8 @@ table.labkey-data-region {
 
 /* Within the wrap do not outline the Data Region */
 .labkey-data-region-wrap table.labkey-show-borders {
-    border-width: 0px;
+    border-right-width: 0;
+    border-bottom-width: 0;
 }
 
 div.facet_header
