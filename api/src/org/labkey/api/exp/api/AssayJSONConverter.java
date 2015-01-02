@@ -115,15 +115,21 @@ public class AssayJSONConverter
     {
         JSONObject jsonObject = ExperimentJSONConverter.serializeRun(run, provider.getRunDomain(protocol));
 
-        JSONArray dataRows;
+        JSONArray dataRows = new JSONArray();
         List<? extends ExpData> datas = run.getOutputDatas(provider.getDataType());
+
         if (datas.size() == 1)
         {
             dataRows = serializeDataRows(datas.get(0), provider, protocol, user);
         }
-        else
+        else if (datas.size() > 1)
         {
-            dataRows = new JSONArray();
+            // more than one output datas, check for a transformed data object
+            List<? extends ExpData> transformedDatas = run.getInputDatas(ExpDataRunInput.IMPORTED_DATA_ROLE,  ExpProtocol.ApplicationType.ExperimentRunOutput);
+            if (transformedDatas.size() == 1)
+            {
+                dataRows = serializeDataRows(transformedDatas.get(0), provider, protocol, user);
+            }
         }
         jsonObject.put(DATA_ROWS, dataRows);
 

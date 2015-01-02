@@ -434,7 +434,7 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
                     }
                     expData.save(context.getUser());
 
-                    run.getOutputProtocolApplication().addDataInput(context.getUser(), expData, ExpDataRunInput.DEFAULT_ROLE);
+                    run.getOutputProtocolApplication().addDataInput(context.getUser(), expData, ExpDataRunInput.IMPORTED_DATA_ROLE);
                     // Add to the cached list of outputs
                     run.getDataOutputs().add(expData);
 
