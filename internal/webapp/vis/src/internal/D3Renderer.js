@@ -1246,7 +1246,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = geom.yScale.scale(value + error);
-            return isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
+            return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
         };
         bottomFn = function(d) {
             var x, y, value, error;
@@ -1254,7 +1254,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             value = geom.yAes.getValue(d);
             error = geom.errorAes.getValue(d);
             y = geom.yScale.scale(value - error);
-            return isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
+            return value == null || isNaN(x) || isNaN(y) ? null : LABKEY.vis.makeLine(x - geom.width, y, x + geom.width, y);
         };
         middleFn = function(d) {
             var x, value, error;

@@ -380,7 +380,12 @@ boxPlot.render();
         } else {
             if ((aesName == 'yLeft' || aesName == 'yRight') && errorAes) {
                 minAcc = function(d) {
-                    return acc(d) - errorAes.getValue(d);
+                    if (LABKEY.vis.isValid(acc(d))) {
+                        return acc(d) - errorAes.getValue(d);
+                    }
+                    else {
+                        return null;
+                    }
                 };
             } else {
                 minAcc = acc;
@@ -1233,6 +1238,7 @@ boxPlot.render();
  * @param {String} [config.properties.mean] The data property name for the mean of the expected range.
  * @param {String} [config.properties.stdDev] The data property name for the standard deviation of the expected range.
  * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
+ * @param {String} [config.properties.yAxisScale] (Optional) Whether the y-axis should be plotted with linear or log scale. Default linear.
  * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
  * @param {Array} [config.properties.colorRange] (Optional) The array of color values to use for the data points.
  * @param {Function} [config.properties.hoverTextFn] (Optional) The hover text to display for each data point. The parameter
@@ -1254,7 +1260,7 @@ boxPlot.render();
                 || config.properties.stdDev == null || config.properties.xTickLabel == null)
         {
             throw new Error("Unable to create Levey-Jennings plot, properties object not specified. "
-                    + "Required: value, mean, stdDev, xTickLabel. Optional: color, colorRange, hoverTextFn.");
+                    + "Required: value, mean, stdDev, xTickLabel. Optional: color, colorRange, hoverTextFn, yAxisScale.");
         }
 
         // min x-axis tick length is 10 by default
@@ -1312,7 +1318,7 @@ boxPlot.render();
             },
             yLeft: {
                 scaleType: 'continuous',
-                trans: 'linear'
+                trans: config.properties.yAxisScale || 'linear'
             }
         };
         config.margins = {

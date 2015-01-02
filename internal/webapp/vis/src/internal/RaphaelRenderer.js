@@ -479,7 +479,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             color = geom.colorAes && geom.colorScale ? geom.colorScale.scale(geom.colorAes.getValue(data[i]) + geom.layerName) : geom.color;
             altColor = geom.altColor ? geom.altColor : color;
 
-            if (LABKEY.vis.isValid(yBottom) && LABKEY.vis.isValid(yTop)) {
+            if (LABKEY.vis.isValid(y) && LABKEY.vis.isValid(yBottom) && LABKEY.vis.isValid(yTop)) {
                 topBar = LABKEY.vis.makeLine(x-geom.width, yTop, x+geom.width, yTop);
                 bottomBar = LABKEY.vis.makeLine(x-geom.width, yBottom, x+geom.width, yBottom);
                 this.paper.path(topBar + bottomBar)
