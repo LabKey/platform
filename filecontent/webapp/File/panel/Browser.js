@@ -1303,7 +1303,8 @@ Ext4.define('File.panel.Browser', {
                 else
                 {
                     if (tree.getSelectionModel().isSelected(node) && this.getFileStore().LOCKED && this.STATE_LOCK) {
-                        this.unlockState();
+                        // degenerate case
+                        this.unlockState(true);
                     }
                     else {
                         tree.getView().getTreeStore().on('load', function (cmp, node, recs) {
@@ -1318,10 +1319,13 @@ Ext4.define('File.panel.Browser', {
     },
 
     // clean up once initial folder selection has finished
-    unlockState : function() {
+    unlockState : function(refresh) {
         this.getFileStore().LOCKED = false;
         this.STATE_LOCK = false;
         this.vStack = undefined;
+
+        if (refresh)
+            this.onRefresh();
     },
 
     expandPath : function(p, model) {
