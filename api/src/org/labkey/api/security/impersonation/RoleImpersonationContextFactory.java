@@ -42,7 +42,7 @@ import java.util.Set;
  * Date: 4/10/12
  * Time: 8:28 AM
  */
-public class ImpersonateRoleContextFactory implements ImpersonationContextFactory
+public class RoleImpersonationContextFactory extends AbstractImpersonationContextFactory implements ImpersonationContextFactory
 {
     private final @Nullable GUID _projectId;
     private final int _adminUserId;
@@ -50,7 +50,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
     private final URLHelper _returnURL;
     private final String _cacheKey;
 
-    public ImpersonateRoleContextFactory(Container project, User adminUser, Collection<Role> roles, URLHelper returnURL)
+    public RoleImpersonationContextFactory(Container project, User adminUser, Collection<Role> roles, URLHelper returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
         _adminUserId = adminUser.getUserId();
@@ -82,7 +82,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
-        return new ImpersonateRoleContext(project, getAdminUser(), _roleNames, _returnURL);
+        return new RoleImpersonationContext(project, getAdminUser(), _roleNames, _returnURL);
     }
 
     @Override
@@ -90,6 +90,10 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
     {
         // Retrieving the context will get the role and force permissions check
         getImpersonationContext();
+
+        // Stash (and remove) just the registered session attributes (e.g., permissions-related attributes)
+        stashRegisteredSessionAttributes(context.getSession());
+
         // TODO: Audit log?
     }
 
@@ -102,6 +106,8 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
     @Override
     public void stopImpersonating(HttpServletRequest request)
     {
+        restoreSessionAttributes(request.getSession(true));
+
         // TODO: Audit log?
     }
 
@@ -125,14 +131,14 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         return validRoles;
     }
 
-    private class ImpersonateRoleContext extends AbstractImpersonatingContext
+    private class RoleImpersonationContext extends AbstractImpersonationContext
     {
         /** Hold on to the role names and not the Roles themselves for serialization purposes. See issue #15660 */
         // TODO: Hold only Set<Role> and use custom serialization, see below
         private final Set<String> _roleNames;
         private transient Set<Role> _roles;
 
-        private ImpersonateRoleContext(@Nullable Container project, User user, Set<String> roleNames, URLHelper returnURL)
+        private RoleImpersonationContext(@Nullable Container project, User user, Set<String> roleNames, URLHelper returnURL)
         {
             super(user, project, returnURL);
             verifyPermissions(project, user);
@@ -176,7 +182,7 @@ public class ImpersonateRoleContextFactory implements ImpersonationContextFactor
         @Override
         public ImpersonationContextFactory getFactory()
         {
-            return ImpersonateRoleContextFactory.this;
+            return RoleImpersonationContextFactory.this;
         }
 
         // TODO: More expensive than it needs to be... should actually hold onto a Set<Roles> and use custom serialization (using unique names)

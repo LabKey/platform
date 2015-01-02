@@ -46,9 +46,9 @@ import org.labkey.api.data.Table;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.FieldKey;
-import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
-import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
-import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
+import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
+import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
+import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.impersonation.ImpersonationContextFactory;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
@@ -507,14 +507,14 @@ public class SecurityManager
         User user = viewContext.getUser();
         if (user.isSiteAdmin())
             project = null;
-        impersonate(viewContext, new ImpersonateUserContextFactory(project, user, impersonatedUser, returnURL));
+        impersonate(viewContext, new UserImpersonationContextFactory(project, user, impersonatedUser, returnURL));
     }
 
 
     public static void impersonateGroup(ViewContext viewContext, Group group, URLHelper returnURL)
     {
         @Nullable Container project = viewContext.getContainer().getProject();
-        impersonate(viewContext, new ImpersonateGroupContextFactory(project, viewContext.getUser(), group, returnURL));
+        impersonate(viewContext, new GroupImpersonationContextFactory(project, viewContext.getUser(), group, returnURL));
     }
 
 
@@ -526,7 +526,7 @@ public class SecurityManager
         if (user.isSiteAdmin())
             project = null;
 
-        impersonate(viewContext, new ImpersonateRoleContextFactory(project, user, roles, returnURL));
+        impersonate(viewContext, new RoleImpersonationContextFactory(project, user, roles, returnURL));
     }
 
 

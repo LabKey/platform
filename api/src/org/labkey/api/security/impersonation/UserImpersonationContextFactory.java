@@ -32,12 +32,8 @@ import org.labkey.api.view.NavTree;
 import org.labkey.api.view.ViewContext;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -48,16 +44,14 @@ import java.util.Set;
 */
 
 // We stash simple properties (container and user id) in session and turn them into a context with objects on each request
-public class ImpersonateUserContextFactory implements ImpersonationContextFactory
+public class UserImpersonationContextFactory extends AbstractImpersonationContextFactory implements ImpersonationContextFactory
 {
     private final @Nullable GUID _projectId;
     private final int _adminUserId;
     private final int _impersonatedUserId;
     private final URLHelper _returnURL;
-    /** Don't remove/rename without updating PipelineJobMarshaller.getXStream() */
-    private final Map<String, Object> _adminSessionAttributes = new HashMap<>();
 
-    public ImpersonateUserContextFactory(@Nullable Container project, User adminUser, User impersonatedUser, URLHelper returnURL)
+    public UserImpersonationContextFactory(@Nullable Container project, User adminUser, User impersonatedUser, URLHelper returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
         _adminUserId = adminUser.getUserId();
@@ -77,32 +71,24 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
     {
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
 
-        return new ImpersonateUserContext(project, getAdminUser(), UserManager.getUser(_impersonatedUserId), _returnURL);
+        return new UserImpersonationContext(project, getAdminUser(), UserManager.getUser(_impersonatedUserId), _returnURL);
     }
 
 
     @Override
     public void startImpersonating(ViewContext context)
     {
+        // Retrieving the context will force permissions check
         getImpersonationContext();
         HttpServletRequest request = context.getRequest();
+
+        // When impersonating a user we clear the session, so stash all the admin's session attributes.
+        stashAllSessionAttributes(request.getSession(true));
+
+        // setAuthenticatedUser clears the session; caller will add the factory (including the admin's session attributes)
         User impersonatedUser = UserManager.getUser(_impersonatedUserId);
-        User adminUser = getAdminUser();
-
-        // We clear the session when we impersonate a user; we stash all the admin's session attributes in the factory
-        // (which gets put into session) so we can reinstate them after impersonation is over.
-        _adminSessionAttributes.clear();
-        HttpSession adminSession = request.getSession(true);
-        Enumeration names = adminSession.getAttributeNames();
-
-        while (names.hasMoreElements())
-        {
-            String name = (String) names.nextElement();
-            _adminSessionAttributes.put(name, adminSession.getAttribute(name));
-        }
-
-        // This clears the session; caller will add the factory (including the admin's session attributes)
         SecurityManager.setAuthenticatedUser(request, impersonatedUser);
+        User adminUser = getAdminUser();
 
         AuditLogService.get().addEvent(adminUser, context.getContainer(), UserManager.USER_AUDIT_EVENT, adminUser.getUserId(),
                 adminUser.getEmail() + " impersonated " + impersonatedUser.getEmail());
@@ -115,10 +101,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
     public void stopImpersonating(HttpServletRequest request)
     {
         SecurityManager.invalidateSession(request);
-        HttpSession adminSession = request.getSession(true);
-
-        for (Map.Entry<String, Object> entry : _adminSessionAttributes.entrySet())
-            adminSession.setAttribute(entry.getKey(), entry.getValue());
+        restoreSessionAttributes(request.getSession(true));
 
         User impersonatedUser = UserManager.getUser(_impersonatedUserId);
 
@@ -167,9 +150,9 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         return validUsers;
     }
 
-    private class ImpersonateUserContext extends AbstractImpersonatingContext
+    private class UserImpersonationContext extends AbstractImpersonationContext
     {
-        private ImpersonateUserContext(@Nullable Container project, User adminUser, User impersonatedUser, URLHelper returnURL)
+        private UserImpersonationContext(@Nullable Container project, User adminUser, User impersonatedUser, URLHelper returnURL)
         {
             super(adminUser, project, returnURL);
             verifyPermissions(project, impersonatedUser, adminUser);
@@ -213,7 +196,7 @@ public class ImpersonateUserContextFactory implements ImpersonationContextFactor
         @Override
         public ImpersonationContextFactory getFactory()
         {
-            return ImpersonateUserContextFactory.this;
+            return UserImpersonationContextFactory.this;
         }
 
         @Override

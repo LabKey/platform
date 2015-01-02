@@ -245,7 +245,8 @@ public class User extends UserPrincipal implements Serializable, Cloneable
         _impersonationContext = impersonationContext;
     }
 
-    public @NotNull ImpersonationContext getImpersonationContext()
+    public @NotNull
+    ImpersonationContext getImpersonationContext()
     {
         return _impersonationContext;
     }

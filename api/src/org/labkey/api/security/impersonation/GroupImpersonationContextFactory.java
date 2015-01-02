@@ -44,14 +44,14 @@ import java.util.Set;
  * Date: 11/9/11
  * Time: 10:23 PM
  */
-public class ImpersonateGroupContextFactory implements ImpersonationContextFactory
+public class GroupImpersonationContextFactory extends AbstractImpersonationContextFactory implements ImpersonationContextFactory
 {
     private final @Nullable GUID _projectId;
     private final int _groupId;
     private final URLHelper _returnURL;
     private final int _adminUserId;
 
-    public ImpersonateGroupContextFactory(@Nullable Container project, User adminUser, Group group, URLHelper returnURL)
+    public GroupImpersonationContextFactory(@Nullable Container project, User adminUser, Group group, URLHelper returnURL)
     {
         _projectId = null != project ? project.getEntityId() : null;
         _adminUserId = adminUser.getUserId();
@@ -65,21 +65,27 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         Container project = (null != _projectId ? ContainerManager.getForId(_projectId) : null);
         Group group = SecurityManager.getGroup(_groupId);
 
-        return new ImpersonateGroupContext(project, getAdminUser(), group, _returnURL);
+        return new GroupImpersonationContext(project, getAdminUser(), group, _returnURL);
     }
 
 
     @Override
     public void startImpersonating(ViewContext context)
     {
-        // Retrieving the context will get the groups and force permissions check
+        // Retrieving the context will get the group and force permissions check
         getImpersonationContext();
+
+        // Stash (and remove) just the registered session attributes (e.g., permissions-related attributes)
+        stashRegisteredSessionAttributes(context.getSession());
+
         // TODO: Audit log?
     }
 
     @Override
     public void stopImpersonating(HttpServletRequest request)
     {
+        restoreSessionAttributes(request.getSession(true));
+
         // TODO: Audit log?
     }
 
@@ -133,12 +139,12 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         return validGroups;
     }
 
-    private class ImpersonateGroupContext extends AbstractImpersonatingContext
+    private class GroupImpersonationContext extends AbstractImpersonationContext
     {
         private final Group _group;
         private final int[] _groups;
 
-        private ImpersonateGroupContext(@Nullable Container project, User user, Group group, URLHelper returnURL)
+        private GroupImpersonationContext(@Nullable Container project, User user, Group group, URLHelper returnURL)
         {
             // project is used to verify authorization, but isn't needed while impersonating... the group itself will
             // limit the admin user appropriately
@@ -179,7 +185,7 @@ public class ImpersonateGroupContextFactory implements ImpersonationContextFacto
         @Override
         public ImpersonationContextFactory getFactory()
         {
-            return ImpersonateGroupContextFactory.this;
+            return GroupImpersonationContextFactory.this;
         }
 
         @Override

@@ -15,7 +15,6 @@
  */
 package org.labkey.api.security.impersonation;
 
-import org.labkey.api.security.User;
 import org.labkey.api.view.UnauthorizedException;
 
 /**

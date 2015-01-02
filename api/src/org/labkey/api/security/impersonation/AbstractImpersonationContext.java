@@ -27,13 +27,13 @@ import org.labkey.api.view.NavTree;
  * Date: 3/28/2014
  * Time: 9:42 AM
  */
-public abstract class AbstractImpersonatingContext implements ImpersonationContext
+public abstract class AbstractImpersonationContext implements ImpersonationContext
 {
     private final User _adminUser;
     private final @Nullable Container _project;
     private final URLHelper _returnURL;
 
-    protected AbstractImpersonatingContext(User adminUser, @Nullable Container project, URLHelper returnURL)
+    protected AbstractImpersonationContext(User adminUser, @Nullable Container project, URLHelper returnURL)
     {
         _adminUser = adminUser;
         _project = project;
