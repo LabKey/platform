@@ -1708,9 +1708,33 @@ public class SpecimenImporter
         vialPropertiesSB.append(" WHERE RowId = ?");
 
         final String vialPropertiesSql = vialPropertiesSB.toString();
-        final String commentSql = "UPDATE " + StudySchema.getInstance().getTableInfoSpecimenComment() + " SET QualityControlComments = ? WHERE GlobalUniqueId = ?";
 
-        final MutableInt rowCount = new MutableInt();
+        _iTimer.setPhase(ImportPhases.HandleComments);
+
+        TableInfo commentTable = StudySchema.getInstance().getTableInfoSpecimenComment();
+        final String updateCommentSql = "UPDATE " + commentTable + " SET QualityControlComments = ? WHERE GlobalUniqueId = ?";
+
+        // Populate a GlobalUniqueId -> SpecimenEvent map containing all quality control vial comments in this container
+        final Map<String, SpecimenComment> qcCommentMap = new HashMap<>();
+
+        SQLFragment selectCommentsSql = new SQLFragment();
+        selectCommentsSql.append("SELECT c.* FROM ");
+        selectCommentsSql.append(commentTable, "c");
+        selectCommentsSql.append(" INNER JOIN ");
+        selectCommentsSql.append(getTableInfoVial(), "v");
+        selectCommentsSql.append(" ON c.GlobalUniqueId = v.GlobalUniqueId WHERE Container = ? AND (QualityControlFlag = ? OR QualityControlFlagForced = ?)");
+        selectCommentsSql.add(getContainer());
+        selectCommentsSql.add(true);
+        selectCommentsSql.add(true);
+
+        new SqlSelector(StudySchema.getInstance().getSchema(), selectCommentsSql).forEach(new Selector.ForEachBlock<SpecimenComment>()
+        {
+            @Override
+            public void exec(SpecimenComment comment) throws SQLException
+            {
+                qcCommentMap.put(comment.getGlobalUniqueId(), comment);
+            }
+        }, SpecimenComment.class);
 
 //        if (!merge)
 //            new SpecimenTablesProvider(getContainer(), getUser(), null).dropTableIndices(SpecimenTablesProvider.VIAL_TABLENAME);
@@ -1722,6 +1746,7 @@ public class SpecimenImporter
 
         try (Results eventResults = eventSelector.getResults(false))
         {
+            final MutableInt rowCount = new MutableInt();
             final MarkableIterator<Map<String, Object>> eventIterator = new MarkableIterator<>(eventResults.iterator());
             final Comparator<SpecimenEvent> eventComparator = SpecimenManager.getInstance().getSpecimenEventDateComparator();
 
@@ -1749,9 +1774,6 @@ public class SpecimenImporter
 
                     for (Map<String, Object> map : vialBatch)
                         vials.add(new Vial(_container, map));
-
-                    _iTimer.setPhase(ImportPhases.GetSpecimenComments);
-                    Map<Vial, SpecimenComment> specimenComments = SpecimenManager.getInstance().getSpecimenComments(vials);
 
                     List<List<?>> vialPropertiesParams = new ArrayList<>(CURRENT_SITE_UPDATE_SIZE);
                     List<List<?>> commentParams = new ArrayList<>();
@@ -1882,7 +1904,7 @@ public class SpecimenImporter
                         }
 
                         _iTimer.setPhase(ImportPhases.HandleComments);
-                        SpecimenComment comment = specimenComments.get(vial);
+                        SpecimenComment comment = qcCommentMap.get(vial.getGlobalUniqueId());
 
                         if (comment != null)
                         {
@@ -1890,33 +1912,30 @@ public class SpecimenImporter
                             // the reason for the QC problem.
                             String message = null;
 
-                            if (comment.isQualityControlFlag() || comment.isQualityControlFlagForced())
+                            Set<String> conflicts = getConflictingEventColumns(dateOrderedEvents);
+
+                            if (!conflicts.isEmpty())
                             {
-                                List<SpecimenEvent> events = SpecimenManager.getInstance().getSpecimenEvents(vial);
-                                Set<String> conflicts = getConflictingEventColumns(events);
-
-                                if (!conflicts.isEmpty())
+                                // Null out conflicting Vial columns
+                                if (merge)
                                 {
-                                    // Null out conflicting Vial columns
-                                    if (merge)
-                                    {
-                                        // NOTE: in checkForConflictingSpecimens() we check the imported specimen columns used
-                                        // to generate the specimen hash are not in conflict so we shouldn't need to clear any
-                                        // columns on the specimen table. Vial columns are not part of the specimen hash and
-                                        // can safely be cleared without compromising the specimen hash.
-                                        clearConflictingVialColumns(vial, conflicts);
-                                    }
-
-                                    String sep = "";
-                                    message = "Conflicts found: ";
-                                    for (String conflict : conflicts)
-                                    {
-                                        message += sep + conflict;
-                                        sep = ", ";
-                                    }
+                                    // NOTE: in checkForConflictingSpecimens() we check the imported specimen columns used
+                                    // to generate the specimen hash are not in conflict so we shouldn't need to clear any
+                                    // columns on the specimen table. Vial columns are not part of the specimen hash and
+                                    // can safely be cleared without compromising the specimen hash.
+                                    clearConflictingVialColumns(vial, conflicts);
                                 }
-                                commentParams.add(Arrays.asList(message, vial.getGlobalUniqueId()));
+
+                                String sep = "";
+                                message = "Conflicts found: ";
+                                for (String conflict : conflicts)
+                                {
+                                    message += sep + conflict;
+                                    sep = ", ";
+                                }
                             }
+
+                            commentParams.add(Arrays.asList(message, vial.getGlobalUniqueId()));
                         }
                     }
 
@@ -1926,7 +1945,7 @@ public class SpecimenImporter
 
                     _iTimer.setPhase(ImportPhases.UpdateComments);
                     if (!commentParams.isEmpty())
-                        Table.batchExecute(StudySchema.getInstance().getSchema(), commentSql, commentParams);
+                        Table.batchExecute(StudySchema.getInstance().getSchema(), updateCommentSql, commentParams);
 
                     rowCount.add(CURRENT_SITE_UPDATE_SIZE);
                     _iTimer.setPhase(ImportPhases.GetVialBatch);
