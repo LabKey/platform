@@ -79,9 +79,9 @@ import org.labkey.api.security.UserManager;
 import org.labkey.api.security.UserPrincipal;
 import org.labkey.api.security.UserUrls;
 import org.labkey.api.security.ValidEmail;
-import org.labkey.api.security.impersonation.ImpersonateGroupContextFactory;
-import org.labkey.api.security.impersonation.ImpersonateRoleContextFactory;
-import org.labkey.api.security.impersonation.ImpersonateUserContextFactory;
+import org.labkey.api.security.impersonation.GroupImpersonationContextFactory;
+import org.labkey.api.security.impersonation.RoleImpersonationContextFactory;
+import org.labkey.api.security.impersonation.UserImpersonationContextFactory;
 import org.labkey.api.security.impersonation.UnauthorizedImpersonationException;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
@@ -2033,7 +2033,7 @@ public class UserController extends SpringActionController
 
             User currentUser = getUser();
             Container project = currentUser.isSiteAdmin() ? null : getContainer().getProject();
-            Collection<User> users = ImpersonateUserContextFactory.getValidImpersonationUsers(project, getUser());
+            Collection<User> users = UserImpersonationContextFactory.getValidImpersonationUsers(project, getUser());
 
             Collection<Map<String, Object>> responseUsers = new LinkedList<>();
 
@@ -2136,7 +2136,7 @@ public class UserController extends SpringActionController
         public ApiResponse execute(Object object, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Collection<Group> groups = ImpersonateGroupContextFactory.getValidImpersonationGroups(getContainer(), getUser());
+            Collection<Group> groups = GroupImpersonationContextFactory.getValidImpersonationGroups(getContainer(), getUser());
             Collection<Map<String, Object>> responseGroups = new LinkedList<>();
 
             for (Group group : groups)
@@ -2215,7 +2215,7 @@ public class UserController extends SpringActionController
         public ApiResponse execute(Object object, BindException errors) throws Exception
         {
             ApiSimpleResponse response = new ApiSimpleResponse();
-            Collection<Role> roles = ImpersonateRoleContextFactory.getValidImpersonationRoles(getContainer());
+            Collection<Role> roles = RoleImpersonationContextFactory.getValidImpersonationRoles(getContainer());
             Collection<Map<String, Object>> responseRoles = new LinkedList<>();
 
             for (Role role : roles)
