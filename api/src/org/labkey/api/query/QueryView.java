@@ -1787,25 +1787,28 @@ public class QueryView extends WebPartView<Object>
         //add those specifically to the region
         if (null != getSettings().getFieldKeys())
         {
-            rgn.clearColumns();
-            List<FieldKey> keys = getSettings().getFieldKeys();
-            FieldKey starKey = FieldKey.fromParts("*");
             TableInfo table = getTable();
-
-            //special-case: if one of the keys is *, add all columns from the
-            //TableInfo and remove the * so that Query doesn't choke on it
-            if (keys.contains(starKey))
+            if (table != null)
             {
-                addDetailsAndUpdateColumns(rgn.getDisplayColumns(), table);
-                rgn.addColumns(table.getColumns());
-                keys.remove(starKey);
-            }
+                rgn.clearColumns();
+                List<FieldKey> keys = getSettings().getFieldKeys();
+                FieldKey starKey = FieldKey.fromParts("*");
 
-            if (keys.size() > 0)
-            {
-                Map<FieldKey, ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
-                for (ColumnInfo col : selectedCols.values())
-                    rgn.addColumn(col);
+                //special-case: if one of the keys is *, add all columns from the
+                //TableInfo and remove the * so that Query doesn't choke on it
+                if (keys.contains(starKey))
+                {
+                    addDetailsAndUpdateColumns(rgn.getDisplayColumns(), table);
+                    rgn.addColumns(table.getColumns());
+                    keys.remove(starKey);
+                }
+
+                if (keys.size() > 0)
+                {
+                    Map<FieldKey, ColumnInfo> selectedCols = QueryService.get().getColumns(table, keys);
+                    for (ColumnInfo col : selectedCols.values())
+                        rgn.addColumn(col);
+                }
             }
         }
 
