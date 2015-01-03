@@ -18,6 +18,7 @@ package org.labkey.api.study.assay;
 
 import org.jetbrains.annotations.NotNull;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.view.HttpView;
 import org.labkey.api.view.JspView;
 
@@ -134,7 +135,11 @@ public class FileUploadDataCollector<ContextType extends AssayRunUploadContext<?
         }
 
         if (!foundFiles)
-            throw new ExperimentException("No data file was uploaded. Please select a file.");
+        {
+            ExperimentException x = new ExperimentException("No data file was uploaded. Please select a file.");
+            ExceptionUtil.decorateException(x, ExceptionUtil.ExceptionInfo.SkipMothershipLogging, "true", true);
+            throw x;
+        }
         return files;
     }
 
