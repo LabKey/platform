@@ -23,6 +23,7 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.ViewContext" %>
+<%@ page import="org.labkey.api.query.QueryUrls" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     JspView<RReport> me = (JspView<RReport>) HttpView.currentView();
@@ -33,10 +34,7 @@
     // TODO: wrap javascript in anonymous function
     // TOOD: disable start button?
     // TODO: Fix these URLs
-    ActionURL startReportURL = context.cloneActionURL().
-            setController("reports").
-                setAction("startBackgroundRReport").
-                replaceParameter(ReportDescriptor.Prop.reportId, String.valueOf(bean.getReportId()));
+    ActionURL startReportURL = PageFlowUtil.urlProvider(QueryUrls.class).urlStartBackgroundRReport(context.cloneActionURL(), String.valueOf(bean.getReportId()));
 %>
 <script type="text/javascript">
     var timer;

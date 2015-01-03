@@ -54,7 +54,7 @@ abstract public class AbstractFileAnalysisJob extends PipelineJob implements Fil
 {
     private static Logger _log = Logger.getLogger(AbstractFileAnalysisJob.class);
 
-    private Integer _experimentRunRowId;
+    protected Integer _experimentRunRowId;
     private String _protocolName;
     private String _joinedBaseName;
     private String _baseName;

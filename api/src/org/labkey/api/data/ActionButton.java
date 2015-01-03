@@ -288,8 +288,7 @@ public class ActionButton extends DisplayElement implements Cloneable
             return _eval(_url, ctx);
         String action = getActionName(ctx);
         assert StringUtils.containsNone(action,"/:?") : "this is for _actions_, use setUrl() or setScript()";
-        ActionURL url = ctx.getViewContext().cloneActionURL().deleteParameters();
-        url.setAction(action);
+        ActionURL url = new ActionURL(ctx.getViewContext().getActionURL().getController(), action, ctx.getViewContext().getContainer());
         return url.getLocalURIString();
     }
 

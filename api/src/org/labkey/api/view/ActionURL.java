@@ -22,7 +22,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.HString;
-import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.util.URLHelper;
@@ -32,7 +31,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -198,8 +196,7 @@ public class ActionURL extends URLHelper implements Cloneable
                 action = action + ".view";
             path = path.append(action, false);
         }
-        String str = encode ? path.encode() : path.toString();
-        return str;
+        return encode ? path.encode() : path.toString();
     }
 
     private static String toPathStringNew(Path contextPath, String pageFlow, String action, Path extraPath, boolean encode)
@@ -210,8 +207,7 @@ public class ActionURL extends URLHelper implements Cloneable
             action = pageFlow + "-" + action + (-1 == action.indexOf('.') ? ".view" : "");
             path = path.append(action, false);
         }
-        String str = encode ? path.encode() : path.toString();
-        return str;
+        return encode ? path.encode() : path.toString();
     }
 
 
@@ -330,6 +326,11 @@ public class ActionURL extends URLHelper implements Cloneable
     public ActionURL replaceParameter(Enum key, String value)
     {
         return replaceParameter(key.toString(), value);
+    }
+
+    public ActionURL replaceParameter(Enum key, long value)
+    {
+        return replaceParameter(key.toString(), Long.toString(value));
     }
 
     @Override
@@ -483,31 +484,11 @@ public class ActionURL extends URLHelper implements Cloneable
     }
 
 
-    @Deprecated
-    public ActionURL setController(String pageFlow)
-    {
-        if (_readOnly) throw new java.lang.IllegalStateException();
-        _controller = pageFlow;
-        return this;
-    }
-
     public ActionURL setAction(Class<? extends Controller> actionClass)
     {
-        setController(SpringActionController.getControllerName(actionClass));
-        setAction(SpringActionController.getActionName(actionClass));
-        return this;
-    }
-
-
-    /**
-     *
-     * @deprecated use the version that takes a class instead
-     */
-    @Deprecated
-    public ActionURL setAction(String action)
-    {
         if (_readOnly) throw new java.lang.IllegalStateException();
-        _action = action;
+        _controller = SpringActionController.getControllerName(actionClass);
+        _action = SpringActionController.getActionName(actionClass);
         return this;
     }
 

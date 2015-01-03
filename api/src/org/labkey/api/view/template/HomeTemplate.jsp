@@ -26,7 +26,6 @@
 <%@ page import="org.labkey.api.view.GWTView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.ThemeFont" %>
-<%@ page import="org.labkey.api.view.ViewServlet" %>
 <%@ page import="org.labkey.api.view.WebPartFactory" %>
 <%@ page import="org.labkey.api.view.template.PageConfig" %>
 <%@ page import="org.labkey.api.view.template.PrintTemplate" %>
@@ -36,9 +35,6 @@
     PrintTemplate me = (PrintTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
     ActionURL url = getActionURL();
-    ActionURL base = url.clone();
-    base.setAction((String)null);
-    base.deleteParameters();
     Set<String> gwtModules = GWTView.getModulesForRootContext();
     Container c = getContainer();
     User user = getUser();
@@ -73,7 +69,6 @@
     %>
     <title><%=h(bean.getTitle()) %></title>
     <!-- <%=h(url.getURIString())%> -->
-    <!-- <base href="<%=h(base.getURIString())%>" /> -->
 <%= bean.getMetaTags(url) %>
 <%= PageFlowUtil.getStandardIncludes(getViewContext(), bean.getClientDependencies()) %>
     <%

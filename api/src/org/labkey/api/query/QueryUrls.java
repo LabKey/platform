@@ -15,9 +15,10 @@
  */
 package org.labkey.api.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.action.UrlProvider;
-import org.labkey.api.view.ActionURL;
 import org.labkey.api.data.Container;
+import org.labkey.api.view.ActionURL;
 /*
  * User: Karl Lum
  * Date: Jul 15, 2008
@@ -30,4 +31,9 @@ public interface QueryUrls extends UrlProvider
     ActionURL urlSchemaBrowser(Container c, String schemaName);
     ActionURL urlSchemaBrowser(Container c, String schemaName, String queryName);
     ActionURL urlCreateExcelTemplate(Container c, String schemaName, String queryName);
+    /** @param baseURL URL from which to preserve parameters when creating the new URL */
+    ActionURL urlStartBackgroundRReport(@NotNull ActionURL baseURL, String reportId);
+    /**
+     * @param baseURL URL from which to preserve parameters (such as schemaName and queryName) when creating the new URL  */
+    ActionURL urlExecuteQuery(@NotNull ActionURL baseURL);
 }

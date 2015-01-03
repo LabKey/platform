@@ -38,6 +38,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.InsertPermission;
 import org.labkey.api.util.CPUTimer;
 import org.labkey.api.util.FileStream;
+import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.Path;
 import org.labkey.api.view.ActionURL;
@@ -159,7 +160,7 @@ public abstract class AbstractQueryImportAction<FORM> extends FormApiAction<FORM
             else if (null != _target && null != _target.getGridURL(c))
                 bean.urlReturn = _target.getGridURL(c).getLocalURIString(false);
             else
-                bean.urlReturn =  url.clone().setAction("executeQuery").getLocalURIString(false);
+                bean.urlReturn = PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(url).getLocalURIString(false);
         }
         if (null == bean.urlCancel)
             bean.urlCancel = bean.urlReturn;

@@ -31,7 +31,6 @@ public interface CoreUrls extends UrlProvider
     ActionURL getThemeStylesheetURL(Container c);
     ActionURL getCustomStylesheetURL();
     ActionURL getCustomStylesheetURL(Container c);
-    ActionURL getContainerRedirectURL(Container c, String pageFlow, String action);
     ActionURL getAttachmentIconURL(Container c, String filename);
     ActionURL getProjectsURL(Container c);
 
