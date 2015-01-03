@@ -131,13 +131,10 @@ public class DatasetImportRunnable implements Runnable
             return;
         }
 
-        boolean needToClose = true;
         DataLoader loader = null;
 
-        try
+        try (DbScope.Transaction transaction = scope.ensureTransaction())
         {
-            scope.ensureTransaction();
-
             final String visitDatePropertyURI = getVisitDateURI(_job.getUser());
             boolean useCutoff =
                     _action == AbstractDatasetImportTask.Action.REPLACE &&
@@ -200,7 +197,7 @@ public class DatasetImportRunnable implements Runnable
                     if (errors.size() == 0)
                     {
                         assert cpuCommit.start();
-                        scope.commitTransaction();
+                        transaction.commit();
                         String msg = _datasetDefinition.getLabel() + ": Successfully imported " + imported.size() + " rows from " + _tsvName;
                         if (useCutoff && skippedRowCount[0] > 0)
                             msg += " (skipped " + skippedRowCount[0] + " rows older than cutoff)";
@@ -225,22 +222,12 @@ public class DatasetImportRunnable implements Runnable
         }
         catch (Exception x)
         {
-            // If we have an active transaction, we need to close it
-            // before we log the error or the logging will take place inside the transaction
-            scope.closeConnection();
-            needToClose = false;
-
             _job.error("Exception while importing dataset " + _datasetDefinition.getName() + " from " + _tsvName, x);
         }
         finally
         {
             if (loader != null)
                 loader.close();
-
-            if (needToClose)
-            {
-                scope.closeConnection();
-            }
 
             boolean debug = false;
             assert debug = true;

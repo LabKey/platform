@@ -159,13 +159,6 @@ public class SimpleQueryTransformStep extends TransformTask
             log.error("Failed to run transform from source.", x);
             return false;
         }
-        finally
-        {
-            if (null != targetScope)
-                targetScope.closeConnection();
-            if (null != sourceScope)
-                sourceScope.closeConnection();
-        }
         if (context.getErrors().hasErrors())
         {
             for (ValidationException v : context.getErrors().getRowErrors())

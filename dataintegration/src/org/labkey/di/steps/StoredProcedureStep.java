@@ -243,14 +243,6 @@ public class StoredProcedureStep extends TransformTask
 
             duration = finish - start;
         }
-        catch (SQLException e)
-        {
-           throw e;
-        }
-        finally
-        {
-            procScope.closeConnection();
-        }
         if (badReturn)
         {
             getJob().error("Error: Sproc exited with return code " + returnValue);

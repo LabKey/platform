@@ -906,16 +906,6 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         return getExpSchema().getScope().ensureTransaction();
     }
 
-    public void commitTransaction()
-    {
-        getExpSchema().getScope().commitTransaction();
-    }
-
-    public void closeTransaction()
-    {
-        getExpSchema().getScope().closeConnection();
-    }
-
     public ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type)
     {
         ExperimentRunListView view = ExperimentRunListView.createView(context, type, true);
