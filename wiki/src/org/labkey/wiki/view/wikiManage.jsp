@@ -82,7 +82,7 @@
                 swapWiki.text = selText;
                 swapWiki.value = selValue;
                 saveWikiList(listName, targetName);
-                document.manage.nextAction.value = "manage";
+                document.manage.nextAction.value = <%= PageFlowUtil.jsString(WikiController.NextAction.manage.name()) %>;
                 return false;
             }
         }
@@ -104,11 +104,11 @@
     FieldError nameError = errors.getFieldError("name");
 	if (null != nameError)
     {
-		%><tr><td colspan=2><span class="labkey-error"><%=context.getMessage(nameError)%></span></td></tr><%
+		%><tr><td colspan=2><span class="labkey-error"><%=h(context.getMessage(nameError))%></span></td></tr><%
     }
   %>
     <tr>
-      <td class='labkey-form-label'>Name</td>
+      <td class='labkey-form-label'><label for="name">Name</label></td>
       <td><input type="text" size="40" id="name" name="name" value="<%=h(wiki.getName()) %>"></td>
     </tr>
     <tr>
@@ -116,16 +116,16 @@
       <td>WARNING: Changing a page's name will break any links to the page.</td>
     </tr>
     <tr>
-      <td class='labkey-form-label'>Title</td>
-      <td><input type="text" size="40" name="title" value="<%=h(wiki.getLatestVersion().getTitle()) %>"></td>
+      <td class='labkey-form-label'><label for="title">Title</label></td>
+      <td><input type="text" size="40" name="title" id="title" value="<%=h(wiki.getLatestVersion().getTitle()) %>"></td>
     </tr>
     <tr>
-      <td class='labkey-form-label'>Index</td>
+      <td class='labkey-form-label'><label for="shouldIndex">Index</label></td>
       <td><input type="checkbox" name="shouldIndex" id="shouldIndex"<%=checked(wiki.isShouldIndex())%>></td>
     </tr>
     <tr>
-      <td class='labkey-form-label'>Parent</td>
-      <td><select name="parent" onChange="document.manage.nextAction.value = 'manage'; submit();">
+      <td class='labkey-form-label'><label for="parent">Parent</label></td>
+      <td><select name="parent" id="parent" onChange="document.manage.nextAction.value = <%= PageFlowUtil.jsString(WikiController.NextAction.manage.name()) %>; submit();">
         <option<%=selected(wiki.getParent() == -1)%> value="-1">[none]</option><%
 
     for (WikiTree possibleParent : bean.possibleParents)
@@ -144,11 +144,11 @@
 
   <td><table width="100%">
     <tr>
-      <td class='labkey-form-label'>Sibling Order</td>
+      <td class='labkey-form-label'><label for="siblings">Sibling Order</label></td>
       <td>
         <table>
           <tr>
-            <td><select name="siblings" size="10"><%
+            <td><select name="siblings" id="siblings" size="10"><%
 
         for (WikiTree sibling : bean.siblings)
         {
@@ -157,7 +157,7 @@
         }
 %>
             </select></td>
-            <td align="center" valign="center">
+            <td align="center" valign="middle">
               <%= button("Move Up").submit(true).onClick("return orderModule('siblings', 0, 'siblingOrder')") %><br><br>
               <%= button("Move Down").submit(true).onClick("return orderModule('siblings', 1, 'siblingOrder')") %>
             </td>
@@ -171,11 +171,11 @@
     {
 %>
     <tr>
-      <td class='labkey-form-label'>Child Order</td>
+      <td class='labkey-form-label'><label for="children">Child Order</label></td>
       <td><table>
         <tr>
           <td>
-            <select name="children" size="10">
+            <select name="children" id="children" size="10">
 <%
         for (Wiki child : wiki.children())
         {
@@ -185,7 +185,7 @@
 %>
             </select>
           </td>
-          <td align="center" valign="center">
+          <td align="center" valign="middle">
             <%= button("Move Up").submit(true).onClick("return orderModule('children', 0, 'childOrder')")%><br><br>
             <%= button("Move Down").submit(true).onClick("return orderModule('children', 1, 'childOrder')")%>
           </td>
@@ -203,12 +203,12 @@
 <input type="hidden" name="originalName" value="<%= wiki.getName() %>">
 <input type="hidden" name="rowId" value="<%= wiki.getRowId() %>">
 <input type="hidden" name="nextAction" value="">
-<%= button("Save").submit(true).onClick("document.manage.nextAction.value = 'page'; return true;").attributes("title=\"Save Changes\"")%>
+<%= button("Save").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.page.name()) + "; return true;").attributes("title=\"Save Changes\"")%>
 <%= PageFlowUtil.button("Delete").href(new ActionURL(WikiController.DeleteAction.class, c).addParameter("name", wiki.getName())) %>
-<%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = 'editWiki'; return true;").attributes("title=\"Edit Content and Attachments\"")%>
+<%= button("Edit Content").submit(true).onClick("document.manage.nextAction.value = " + PageFlowUtil.jsString(WikiController.NextAction.edit.name()) + "; return true;").attributes("title=\"Edit Content and Attachments\"")%>
 
 <script type="text/javascript">
-    existingWikiPages = [<% for (HString name : bean.pageNames) out.print(PageFlowUtil.jsString(name) + ","); %>];
+    existingWikiPages = [<% for (HString name : bean.pageNames) out.print(text(PageFlowUtil.jsString(name) + ",")); %>];
 
     function checkWikiName(name)
     {

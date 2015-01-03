@@ -113,7 +113,7 @@ LABKEY.requiresExt3(true, function() {
     });
 });
 </script>
-<labkey:form method="post" action='<%=baseUrl.setAction("update.post")%>' enctype="multipart/form-data" onsubmit="return validateForm(this)">
+<labkey:form method="post" action='<%=baseUrl.setAction(AnnouncementsController.UpdateAction.class)%>' enctype="multipart/form-data" onsubmit="return validateForm(this)">
 <input type="hidden" name="rowId" value="<%=ann.getRowId()%>">
 <input type="hidden" name="entityId" value="<%=h(ann.getEntityId())%>">
 <input type="hidden" name=".oldValues" value="<%=PageFlowUtil.encodeObject(ann)%>">

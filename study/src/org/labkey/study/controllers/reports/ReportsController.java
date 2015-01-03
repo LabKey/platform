@@ -503,7 +503,7 @@ public class ReportsController extends BaseStudyController
             if (r != null)
                 return r.getRunReportURL(getViewContext());
             else
-                return getViewContext().cloneActionURL().deleteParameters().setAction("begin.view");
+                return getViewContext().cloneActionURL().deleteParameters().setAction(BeginAction.class);
 
         }
 

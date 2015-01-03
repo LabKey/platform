@@ -29,7 +29,6 @@ import org.labkey.api.action.ExportAction;
 import org.labkey.api.action.IgnoresAllocationTracking;
 import org.labkey.api.action.MutatingApiAction;
 import org.labkey.api.action.SimpleApiJsonForm;
-import org.labkey.api.action.SimpleRedirectAction;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.admin.CoreUrls;
@@ -204,16 +203,6 @@ public class CoreController extends SpringActionController
             if (css instanceof NoContent)
                 return null;
             return getRevisionURL(CustomStylesheetAction.class, settingsContainer);
-        }
-
-        @Override
-        public ActionURL getContainerRedirectURL(Container c, String pageFlow, String action)
-        {
-            ActionURL url = new ActionURL(ContainerRedirectAction.class, c);
-            url.addParameter("pageflow", pageFlow);
-            url.addParameter("action", action);
-
-            return url;
         }
 
         @Override
@@ -600,67 +589,6 @@ public class CoreController extends SpringActionController
             // replaceAll() can blow up
         }
         return Compress.compressGzip(c.trim());
-    }
-
-
-    @RequiresNoPermission
-    @IgnoresTermsOfUse
-    public class ContainerRedirectAction extends SimpleRedirectAction<RedirectForm>
-    {
-        public ActionURL getRedirectURL(RedirectForm form) throws Exception
-        {
-            Container targetContainer = ContainerManager.getForId(form.getContainerId());
-            if (targetContainer == null)
-            {
-                throw new NotFoundException();
-            }
-            ActionURL url = getViewContext().getActionURL().clone();
-            url.deleteParameter("action");
-            url.deleteParameter("pageflow");
-            url.deleteParameter("containerId");
-            url.setController(form.getPageflow());
-            url.setAction(form.getAction());
-            url.setContainer(targetContainer);
-            return url;
-        }
-    }
-
-
-    public static class RedirectForm
-    {
-        private String _containerId;
-        private String _action;
-        private String _pageflow;
-
-        public String getAction()
-        {
-            return _action;
-        }
-
-        public void setAction(String action)
-        {
-            _action = action;
-        }
-
-        public String getContainerId()
-        {
-            return _containerId;
-        }
-
-        public void setContainerId(String containerId)
-        {
-            _containerId = containerId;
-        }
-
-        public String getPageflow()
-        {
-            return _pageflow;
-        }
-
-        public void setPageflow(String pageflow)
-        {
-            _pageflow = pageflow;
-        }
     }
 
     public static class GetAttachmentIconForm

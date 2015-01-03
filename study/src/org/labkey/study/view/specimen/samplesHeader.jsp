@@ -110,7 +110,7 @@
             }
             filterString.append(".");
         }
-        ActionURL noFitlerUrl = getViewContext().cloneActionURL().setAction("samples");
+        ActionURL noFitlerUrl = getViewContext().cloneActionURL().setAction(SpecimenController.SamplesAction.class);
 %>
     <p>
         <table width="700px">

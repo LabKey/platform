@@ -2554,7 +2554,7 @@ public class ReportsController extends SpringActionController
             if (_report instanceof ChartReport)
             {
                 ActionURL url = getViewContext().cloneActionURL();
-                url.setAction("plotChart");
+                url.setAction(PlotChartAction.class);
                 url.addParameter("reportId", _report.getDescriptor().getReportId().toString());
 
                 out.write("<img src='" + url + "'>");

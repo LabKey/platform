@@ -20,7 +20,6 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpMaterial;
-import org.labkey.api.exp.api.ExpProtocolApplication;
 import org.labkey.api.view.ActionURL;
 import org.labkey.experiment.controllers.exp.ExperimentController;
 
@@ -303,7 +302,7 @@ public class DotGraph
         connect += " -> ";
         if (null != trgt)
         {
-            if (null == trgt._shape)  // it's an output node, drawn just as an arrow to a label
+            if (null == trgt._shape && src != null)  // it's an output node, drawn just as an arrow to a label
             {
                 String outnodekey = src._key + "out";
                 connect += outnodekey + " [arrowhead = diamond] ";
@@ -361,8 +360,7 @@ public class DotGraph
                 for (Integer memberkey : ((GroupedNode) node)._gMap.keySet())
                 {
                     assert (pendingMap.containsKey(memberkey));
-                    if (null != writtenMap)
-                        writtenMap.put(memberkey, node);
+                    writtenMap.put(memberkey, node);
                     nodesToMove.add(memberkey);
                 }
             }
@@ -502,33 +500,21 @@ public class DotGraph
 
     private class MNode extends DotNode
     {
-        private final Integer _srcPAId;
-        private final String _LSID;
-
         public MNode(ExpMaterial m)
         {
             super(TYPECODE_MATERIAL, m.getRowId(), m.getName());
             setShape("box", MATERIAL_COLOR);
             setLinkURL(ExperimentController.getResolveLsidURL(_c, "material", m.getLSID()));
-            ExpProtocolApplication sourceApplication = m.getSourceApplication();
-            _srcPAId = sourceApplication == null ? null : sourceApplication.getRowId();
-            _LSID = m.getLSID();
         }
     }
 
     private class DNode extends DotNode
     {
-        private final Integer srcPAId;
-        private final String LSID;
-
         public DNode(ExpData d)
         {
             super(TYPECODE_DATA, d.getRowId(), d.getName());
             setShape("ellipse", DATA_COLOR);
             setLinkURL(ExperimentController.getResolveLsidURL(_c, "data", d.getLSID()));
-            ExpProtocolApplication sourceApplication = d.getSourceApplication();
-            srcPAId = sourceApplication == null ? null : sourceApplication.getRowId();
-            LSID = d.getLSID();
         }
     }
 
@@ -574,7 +560,6 @@ public class DotGraph
     private class GroupedNode extends DotNode
     {
         private final Integer _gid;
-        private final Integer _sequence;
         private final SortedMap<Integer, DotNode> _gMap = new TreeMap<>();
         private final String _nodeType;
 
@@ -582,7 +567,6 @@ public class DotGraph
         {
             super(GROUP_ID_PREFIX + actionseq + node._type, node._id, "More... ");
             _gid = groupId;
-            _sequence = actionseq;
             _gMap.put(node._id, node);
             //setShape(node.shape, node.color + GROUP_OPACITY);
             setShape(node._shape, GROUP_COLOR);

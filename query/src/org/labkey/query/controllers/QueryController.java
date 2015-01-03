@@ -49,6 +49,7 @@ import org.labkey.api.exp.OntologyManager;
 import org.labkey.api.gwt.server.BaseRemoteService;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.query.*;
+import org.labkey.api.reports.report.ReportDescriptor;
 import org.labkey.api.security.ActionNames;
 import org.labkey.api.security.AdminConsoleAction;
 import org.labkey.api.security.IgnoresTermsOfUse;
@@ -115,6 +116,7 @@ import org.labkey.query.persist.ExternalSchemaDef;
 import org.labkey.query.persist.LinkedSchemaDef;
 import org.labkey.query.persist.QueryDef;
 import org.labkey.query.persist.QueryManager;
+import org.labkey.query.reports.ReportsController;
 import org.labkey.query.reports.getdata.DataRequest;
 import org.labkey.query.sql.QNode;
 import org.labkey.query.sql.Query;
@@ -596,6 +598,23 @@ public class QueryController extends SpringActionController
             ActionURL url = new ActionURL(QueryController.DeleteExternalSchemaAction.class, c);
             url.addParameter("externalSchemaId", Integer.toString(def.getExternalSchemaId()));
             return url;
+        }
+
+        @Override
+        public ActionURL urlStartBackgroundRReport(@NotNull ActionURL baseURL, String reportId)
+        {
+            ActionURL result = baseURL.clone();
+            result.setAction(ReportsController.StartBackgroundRReportAction.class);
+            result.replaceParameter(ReportDescriptor.Prop.reportId, reportId);
+            return result;
+        }
+
+        @Override
+        public ActionURL urlExecuteQuery(@NotNull ActionURL baseURL)
+        {
+            ActionURL result = baseURL.clone();
+            result.setAction(ExecuteQueryAction.class);
+            return result;
         }
 
         public ActionURL urlCreateExcelTemplate(Container c, String schemaName, String queryName)
@@ -2031,7 +2050,7 @@ public class QueryController extends SpringActionController
         ActionURL returnURL = srcURL;
         if (null == returnURL)
         {
-            returnURL = getViewContext().cloneActionURL().setAction(QueryAction.executeQuery.name());
+            returnURL = getViewContext().cloneActionURL().setAction(ExecuteQueryAction.class);
         }
         else
         {
@@ -3433,14 +3452,6 @@ public class QueryController extends SpringActionController
 
             Map<String, Object> extraContext = json.optJSONObject("extraContext");
 
-            //we will transact operations by default, but the user may
-            //override this by sending a "transacted" property set to false
-            // 11741: A transaction may already be active if we're trying to
-            // insert/update/delete from within a transformation/validation script.
-            boolean transacted = allowTransaction && json.optBoolean("transacted", true);
-            if (transacted)
-                table.getSchema().getScope().ensureTransaction();
-
             //setup the response, providing the schema name, query name, and operation
             //so that the client can sort out which request this response belongs to
             //(clients often submit these async)
@@ -3449,7 +3460,13 @@ public class QueryController extends SpringActionController
             response.put("command", commandType.name());
             response.put("containerPath", container.getPath());
 
-            try
+            //we will transact operations by default, but the user may
+            //override this by sending a "transacted" property set to false
+            // 11741: A transaction may already be active if we're trying to
+            // insert/update/delete from within a transformation/validation script.
+            boolean transacted = allowTransaction && json.optBoolean("transacted", true);
+
+            try (DbScope.Transaction transaction = transacted ? table.getSchema().getScope().ensureTransaction() : NO_OP_TRANSACTION)
             {
                 List<Map<String, Object>> responseRows =
                         commandType.saveRows(qus, rowsToProcess, getUser(), getContainer(), extraContext);
@@ -3457,8 +3474,7 @@ public class QueryController extends SpringActionController
                 if (commandType != CommandType.importRows)
                     response.put("rows", responseRows);
 
-                if (transacted)
-                    table.getSchema().getScope().commitTransaction();
+                transaction.commit();
             }
             catch (Table.OptimisticConflictException e)
             {
@@ -3480,11 +3496,6 @@ public class QueryController extends SpringActionController
                 {
                     throw e;
                 }
-            }
-            finally
-            {
-                if (transacted)
-                    table.getSchema().getScope().closeConnection();
             }
 
             response.put("rowsAffected", rowsAffected);
@@ -3573,6 +3584,38 @@ public class QueryController extends SpringActionController
         }
     }
 
+    /** A dummy object for swap-in uasge when no transaction is actually desired */
+    public static final DbScope.Transaction NO_OP_TRANSACTION = new DbScope.Transaction()
+    {
+        @Override
+        public <T extends Runnable> T addCommitTask(T runnable, DbScope.CommitTaskOption taskOption)
+        {
+            runnable.run();
+            return runnable;
+        }
+
+        @Override
+        public Connection getConnection()
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void close()
+        {
+        }
+
+        @Override
+        public void commit()
+        {
+        }
+
+        @Override
+        public void commitAndKeepConnection()
+        {
+        }
+    };
+
     @RequiresNoPermission //will check below
     public class SaveRowsAction extends BaseSaveRowsAction
     {
@@ -3638,15 +3681,14 @@ public class QueryController extends SpringActionController
                         throw new IllegalArgumentException("All queries must be from the same source database");
                     }
                 }
-
-                // 11741: A transaction may already be active if we're trying to
-                // insert/update/delete from within a transformation/validation script.
-                scope.ensureTransaction();
             }
 
             int startingErrorIndex = 0;
             int errorCount = 0;
-            try
+            // 11741: A transaction may already be active if we're trying to
+            // insert/update/delete from within a transformation/validation script.
+
+            try (DbScope.Transaction transaction = transacted ? scope.ensureTransaction() : NO_OP_TRANSACTION)
             {
                 for (int i = 0; i < commands.length(); i++)
                 {
@@ -3694,24 +3736,10 @@ public class QueryController extends SpringActionController
                 }
 
                 // Don't commit if we had errors or if the client requested that we only validate (and not commit)
-                if (transacted && !errors.hasErrors() && !validateOnly && errorCount == 0)
+                if (!errors.hasErrors() && !validateOnly && errorCount == 0)
                 {
-                    scope.commitTransaction();
+                    transaction.commit();
                     committed = true;
-                }
-
-                if (!transacted && !errors.hasErrors())
-                {
-                    // We're not transacting so we didn't explicitly call commit(). Check if we had any errors
-                    // as a way to see if it was successful or not
-                    committed = true;
-                }
-            }
-            finally
-            {
-                if (transacted)
-                {
-                    scope.closeConnection();
                 }
             }
 

@@ -238,7 +238,7 @@ else
         <%
         }
         ActionURL urlGroup = getViewContext().cloneActionURL();
-        urlGroup.setAction("groupExport");
+        urlGroup.setAction(SecurityController.GroupExportAction.class);
         urlGroup.replaceParameter("group", bean.groupName);
 
         ActionURL urlGroupActive = urlGroup.clone();

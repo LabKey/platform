@@ -1318,7 +1318,6 @@ public class ExperimentController extends SpringActionController
     {
         ActionURL url = new ActionURL(ShowRunGraphDetailAction.class, c);
         url.addParameter("rowId", rowId);
-
         return url;
     }
 
@@ -4652,26 +4651,30 @@ public class ExperimentController extends SpringActionController
             return getShowRunGraphDetailURL(run.getContainer(), run.getRowId());
         }
 
-        public ActionURL getRunGraphDetailURL(ExpRun run, ExpData focus)
+        public ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpData focus)
         {
             return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_DATA);
         }
 
-        public ActionURL getRunGraphDetailURL(ExpRun run, ExpMaterial focus)
+        public ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpMaterial focus)
         {
             return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_MATERIAL);
         }
 
-        public ActionURL getRunGraphDetailURL(ExpRun run, ExpProtocolApplication focus)
+        public ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpProtocolApplication focus)
         {
             return getRunGraphDetailURL(run, focus, DotGraph.TYPECODE_PROT_APP);
         }
 
-        private ActionURL getRunGraphDetailURL(ExpRun run, ExpObject focus, String typeCode)
+        private ActionURL getRunGraphDetailURL(ExpRun run, @Nullable ExpObject focus, String typeCode)
         {
-            return getShowRunGraphDetailURL(run.getContainer(), run.getRowId())
-                    .addParameter("detail", "true")
-                    .addParameter("focus", typeCode + focus.getRowId());
+            ActionURL result = getShowRunGraphDetailURL(run.getContainer(), run.getRowId());
+            result.addParameter("detail", "true");
+            if (focus != null)
+            {
+                result.addParameter("focus", typeCode + focus.getRowId());
+            }
+            return result;
         }
 
         public ActionURL getRunGraphURL(Container container, int runId)

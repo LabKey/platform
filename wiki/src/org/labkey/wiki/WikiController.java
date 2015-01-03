@@ -429,6 +429,22 @@ public class WikiController extends SpringActionController
         }
     }
 
+    public enum NextAction
+    {
+        page(PageAction.class), manage(ManageAction.class), edit(EditWikiAction.class);
+
+        private Class<? extends Controller> _action;
+
+        private NextAction(Class<? extends Controller> action)
+        {
+            _action = action;
+        }
+
+        public Class<? extends Controller> getAction()
+        {
+            return _action;
+        }
+    }
 
     @RequiresPermissionClass(ReadPermission.class) //will test explicitly below
     public class ManageAction extends FormViewAction<WikiManageForm>
@@ -552,9 +568,18 @@ public class WikiController extends SpringActionController
 
         public ActionURL getSuccessURL(WikiManageForm form)
         {
-            HString nextAction = form.getNextAction();
             ActionURL nextPage = getViewContext().cloneActionURL();
-            nextPage.setAction(nextAction == null || nextAction.isEmpty() ? "page" : nextAction.getSource());
+            nextPage.setAction(PageAction.class);
+            try
+            {
+                // Check if we have a request of where to send the user next
+                HString nextActionString = form.getNextAction();
+                if (nextActionString != null && !nextActionString.isEmpty())
+                {
+                    nextPage.setAction(NextAction.valueOf(nextActionString.getSource()).getAction());
+                }
+            }
+            catch (IllegalArgumentException ignored) {}
             nextPage.deleteParameters();
             nextPage.addParameter("name", form.getName());
             return nextPage;
@@ -1517,8 +1542,8 @@ public class WikiController extends SpringActionController
             GridView gridView = new WikiVersionsGrid(_wiki, _wikiversion, errors);
 
             LinkBarView lb = new LinkBarView(
-                    new Pair<>("return to page", getViewContext().cloneActionURL().setAction("page").toString()),
-                    new Pair<>("view current version", getViewContext().cloneActionURL().setAction("version").toString())
+                    new Pair<>("return to page", getViewContext().cloneActionURL().setAction(PageAction.class).toString()),
+                    new Pair<>("view current version", getViewContext().cloneActionURL().setAction(VersionAction.class).toString())
                     );
             lb.setDrawLine(true);
             lb.setFrame(WebPartView.FrameType.NONE);

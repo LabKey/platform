@@ -4724,7 +4724,6 @@ wiki/src/org/labkey/wiki/export/WikiWriterFactory.java -text
 wiki/src/org/labkey/wiki/model/BaseWikiView.java -text
 wiki/src/org/labkey/wiki/model/CollaborationFolderType.java -text
 wiki/src/org/labkey/wiki/model/RadeoxMacroProxy.java -text
-wiki/src/org/labkey/wiki/model/SearchViewContext.java -text
 wiki/src/org/labkey/wiki/model/Wiki.java -text
 wiki/src/org/labkey/wiki/model/WikiEditModel.java -text
 wiki/src/org/labkey/wiki/model/WikiTree.java -text
@@ -4751,6 +4750,5 @@ wiki/src/org/labkey/wiki/view/wikiPrint.jsp -text
 wiki/src/org/labkey/wiki/view/wikiPrintAll.jsp -text
 wiki/src/org/labkey/wiki/view/wikiPrintRaw.jsp -text
 wiki/src/org/labkey/wiki/view/wikiRadeoxHelp.jsp -text
-wiki/src/org/labkey/wiki/view/wikiSearch.jsp -text
 wiki/src/org/labkey/wiki/view/wikiVersion.jsp -text
 wiki/src/org/labkey/wiki/welcomeWiki.txt -text

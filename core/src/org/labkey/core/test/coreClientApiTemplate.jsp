@@ -32,9 +32,6 @@
     CoreClientApiTemplate me = (CoreClientApiTemplate) HttpView.currentView();
     PageConfig bean = me.getModelBean();
     ActionURL url = getActionURL();
-    ActionURL base = url.clone();
-    base.setAction((String)null);
-    base.deleteParameters();
     Set<String> gwtModules = GWTView.getModulesForRootContext();
     Container c = getContainer();
     ThemeFont themeFont = ThemeFont.getThemeFont(c);
@@ -64,7 +61,6 @@
     } %>
     <title><%=h(bean.getTitle()) %></title>
     <!-- <%=h(url.getURIString())%> -->
-    <!-- <base href="<%=h(base.getURIString())%>" /> -->
     <%= bean.getMetaTags(url) %>
     <%= PageFlowUtil.getCoreClientApiIncludes(getViewContext(), bean.getClientDependencies()) %>
 </head>
