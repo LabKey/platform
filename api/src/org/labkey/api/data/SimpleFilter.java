@@ -1048,7 +1048,7 @@ public class SimpleFilter implements Filter
                 catch (ConversionException e)
                 {
                     // rethrow with better error message.  Date CompareTypes convert the parameter when created.
-                    throw new ConversionException("Could not convert \"" + param + "\" for column \"" + fieldKey.toDisplayString() + "\": " + e.getMessage(), e);
+                    throw new ConversionException("Could not convert filter value \"" + param + "\" for column \"" + fieldKey.toDisplayString() + "\". Please check your input. " + (e.getMessage() != null ? e.getMessage() : ""), e);
                 }
             }
         }

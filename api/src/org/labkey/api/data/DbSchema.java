@@ -766,12 +766,14 @@ public class DbSchema
 
             //Make sure things are not inserted in transaction
             m.remove("RowId");
-            testSchema.getScope().beginTransaction();
-            m = Table.insert(ctx.getUser(), testTable, m);
-            int rowId4 = ((Integer) m.get("RowId"));
-            String key2 = "RowId" + rowId4;
-            DbCache.put(testTable, key2, m);
-            testSchema.getScope().closeConnection();
+            String key2;
+            try (DbScope.Transaction transaction = testSchema.getScope().beginTransaction())
+            {
+                m = Table.insert(ctx.getUser(), testTable, m);
+                int rowId4 = ((Integer) m.get("RowId"));
+                key2 = "RowId" + rowId4;
+                DbCache.put(testTable, key2, m);
+            }
             m2 = (Map) DbCache.get(testTable, key2);
             assertNull(m2);
 

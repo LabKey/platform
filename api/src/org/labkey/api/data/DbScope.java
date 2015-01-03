@@ -297,9 +297,23 @@ public class DbScope
 
 
     /**
+     * Ensures that there is an active database transaction. If one is already in progress for this DbScope, it is
+     * joined (and a counter is incrememted) such that the outer-most commit() attempt actually performs the commit.
+     *
+     * The preferred usage pattern is:
+     * <pre>
+     *     try (DbScope.Transaction transaction = scope.ensureTransaction()) {
+     *         // Do some database work
+     *         transaction.commit();
+     *     } // Transaction.close() automatically invoked by auto-closeable.
+     * </pre>
+     *
+     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
+     * they should all call commit() first if the transaction should be persisted.
+     *
      * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
      *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
-     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
+     *              Locks will be released when close() is called on the Transaction.
      */
     public Transaction ensureTransaction(Lock... locks)
     {
@@ -307,10 +321,24 @@ public class DbScope
     }
 
     /**
-     * @param transactionKind transaction kind
+     * Ensures that there is an active database transaction. If one is already in progress for this DbScope, it is
+     * joined (and a counter is incrememted) such that the outer-most commit() attempt actually performs the commit.
+     * The preferred usage pattern is:
+     * <pre>
+     *     try (DbScope.Transaction transaction = scope.ensureTransaction()) {
+     *         // Do some database work
+     *         transaction.commit();
+     *     } // Transaction.close() automatically invoked by auto-closeable.
+     * </pre>
+     *
+     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
+     * they should all call commit() first if the transaction should be persisted.
+     *
+     * @param transactionKind indication of the purpose of this usage. If it doesn't match an existing transaction's kind,
+     *                        a new Connection is handed out and used until it is committed/rolled back.
      * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
      *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
-     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
+     *              Locks will be released when close() is called on the Transaction.
      */
     public Transaction ensureTransaction(TransactionKind transactionKind, Lock... locks)
     {
@@ -334,6 +362,18 @@ public class DbScope
 
 
     /**
+     * Starts a new transaction using a new Connection.
+     * The preferred usage pattern is:
+     * <pre>
+     *     try (DbScope.Transaction transaction = scope.beginTransaction()) {
+     *         // Do some database work
+     *         transaction.commit();
+     *     } // Transaction.close() automatically invoked by auto-closeable.
+     * </pre>
+     *
+     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
+     * they should all call commit() first if the transaction should be persisted.
+     *
      * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
      *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
      *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
@@ -343,6 +383,25 @@ public class DbScope
         return beginTransaction(new NormalTransactionKind(), locks);
     }
 
+    /**
+     * Starts a new transaction using a new Connection.
+     * The preferred usage pattern is:
+     * <pre>
+     *     try (DbScope.Transaction transaction = scope.beginTransaction()) {
+     *         // Do some database work
+     *         transaction.commit();
+     *     } // Transaction.close() automatically invoked by auto-closeable.
+     * </pre>
+     *
+     * Note that if there are multiple exit points from inside of the try-block (such as return statements),
+     * they should all call commit() first if the transaction should be persisted.
+     *
+     * @param transactionKind indication of the purpose of this usage. If it doesn't match an existing transaction's kind,
+     *                        a new Connection is handed out and used until it is committed/rolled back.
+     * @param locks locks which should be acquired AFTER a connection has been retrieved from the connection pool,
+     *              which prevents Java/connection pool deadlocks by always taking the locks in the same order.
+     *              Locks will be released when close() is called on the Transaction (or closeConnection() on the scope).
+     */
     public Transaction beginTransaction(TransactionKind transactionKind, Lock... locks)
     {
         Connection conn = null;
@@ -369,7 +428,7 @@ public class DbScope
                 // Acquire the requested locks BEFORE entering the synchronized block for mapping the transaction
                 // to the current thread
                 result = new TransactionImpl(conn, transactionKind, locks);
-                int stackDepth = 0;
+                int stackDepth;
                 synchronized (_transaction)
                 {
                     List<TransactionImpl> transactions = _transaction.get(getEffectiveThread());
@@ -388,53 +447,6 @@ public class DbScope
 
         return result;
     }
-
-    /** Use DbScope.Transaction.commit() instead */
-    @Deprecated
-    public void commitTransaction()
-    {
-        TransactionImpl t = getCurrentTransactionImpl();
-        if (t == null)
-        {
-            throw new IllegalStateException("No transaction is associated with this thread");
-        }
-        if (t._aborted)
-        {
-            throw new IllegalStateException("Transaction has already been rolled back");
-        }
-        if (t._closesToIgnore > 0)
-        {
-            t._closesToIgnore = 0;
-            closeConnection();
-            throw new IllegalStateException("Missing expected call to close after prior commit");
-        }
-
-        t._closesToIgnore++;
-        if (t.decrement())
-        {
-            try
-            {
-                try (Connection conn = t.getConnection())
-                {
-                    t.runCommitTasks(CommitTaskOption.PRECOMMIT);
-                    conn.commit();
-                    conn.setAutoCommit(true);
-                    //            conn.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
-                }
-
-                synchronized (_transaction)
-                {
-                    popCurrentTransaction();
-                }
-                t.runCommitTasks(CommitTaskOption.POSTCOMMIT);
-            }
-            catch (SQLException e)
-            {
-                throw new RuntimeSQLException(e);
-            }
-        }
-    }
-
 
     private Thread getEffectiveThread()
     {
@@ -711,23 +723,10 @@ public class DbScope
         }
     }
 
-    /** Use DbScope.Transaction.close() instead. Or better yet, use a try-with-resources to auto-close the Transaction object */
-    @Deprecated
-    public void closeConnection()
-    {
-        TransactionImpl t = getCurrentTransactionImpl();
-        if (null != t)
-        {
-            t.close();
-        }
-    }
-
-
     public SqlDialect getSqlDialect()
     {
         return _dialect;
     }
-
 
     @NotNull
     // Load meta data from database and overlay schema.xml, if DbSchemaType requires it
@@ -1454,7 +1453,40 @@ public class DbScope
         @Override
         public void commit()
         {
-            DbScope.this.commitTransaction();
+            if (_aborted)
+            {
+                throw new IllegalStateException("Transaction has already been rolled back");
+            }
+            if (_closesToIgnore > 0)
+            {
+                _closesToIgnore = 0;
+                closeConnection();
+                throw new IllegalStateException("Missing expected call to close after prior commit");
+            }
+
+            _closesToIgnore++;
+            if (decrement())
+            {
+                try
+                {
+                    try (Connection conn = getConnection())
+                    {
+                        runCommitTasks(CommitTaskOption.PRECOMMIT);
+                        conn.commit();
+                        conn.setAutoCommit(true);
+                    }
+
+                    synchronized (_transaction)
+                    {
+                        popCurrentTransaction();
+                    }
+                    runCommitTasks(CommitTaskOption.POSTCOMMIT);
+                }
+                catch (SQLException e)
+                {
+                    throw new RuntimeSQLException(e);
+                }
+            }
         }
 
         @Override
@@ -1844,12 +1876,6 @@ public class DbScope
                 // This call should cause an IllegalStateException, since we already committed the transaction
                 t.commit();
             }
-        }
-
-        @Test(expected = IllegalStateException.class)
-        public void testStandaloneCommitException()
-        {
-            getLabkeyScope().commitTransaction();
         }
 
         @Test(expected = IllegalStateException.class)

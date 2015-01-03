@@ -202,10 +202,6 @@ public class ExperimentService
         DataType getDataType(String namespacePrefix);
 
         DbScope.Transaction ensureTransaction();
-        @Deprecated /** Call DbScope.Transaction.commit() instead */
-        void commitTransaction();
-        @Deprecated /** Call DbScope.Transaction.close() instead */
-        void closeTransaction();
 
         ExperimentRunListView createExperimentRunWebPart(ViewContext context, ExperimentRunType type);
 
