@@ -18,9 +18,6 @@ package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Set;
 
@@ -30,29 +27,24 @@ import java.util.Set;
  * Date: Sep 3, 2011
 */
 
-public class LegacyTableSelector extends LegacySelector<TableSelector, LegacyTableSelector>
+class LegacyTableSelector extends LegacySelector<TableSelector, LegacyTableSelector>
 {
-    public LegacyTableSelector(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
+    LegacyTableSelector(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort)
     {
         super(new TableSelector(table, columns, filter, sort));
     }
 
-    public LegacyTableSelector(TableInfo table, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
+    LegacyTableSelector(TableInfo table, Set<String> columnNames, @Nullable Filter filter, @Nullable Sort sort)
     {
         super(new TableSelector(table, columnNames, filter, sort));
     }
 
-    public LegacyTableSelector(TableInfo table, @Nullable Filter filter, @Nullable Sort sort)
+    LegacyTableSelector(TableInfo table, @Nullable Filter filter, @Nullable Sort sort)
     {
         super(new TableSelector(table, filter, sort));
     }
 
-    public LegacyTableSelector(TableInfo table)
-    {
-        super(new TableSelector(table, null, null));
-    }
-
-    public LegacyTableSelector(ColumnInfo column, @Nullable Filter filter, @Nullable Sort sort)
+    LegacyTableSelector(ColumnInfo column, @Nullable Filter filter, @Nullable Sort sort)
     {
         super(new TableSelector(column, filter, sort));
     }
@@ -63,24 +55,14 @@ public class LegacyTableSelector extends LegacySelector<TableSelector, LegacyTab
         return this;
     }
 
-    public LegacyTableSelector setForDisplay(boolean forDisplay)
+    LegacyTableSelector setForDisplay(boolean forDisplay)
     {
         _selector.setForDisplay(forDisplay);
         return getThis();
     }
 
-    public Results getResults() throws SQLException
+    Results getResults()
     {
         return _selector.getResults();
-    }
-
-    public Results getResults(boolean cache, boolean scrollable) throws SQLException
-    {
-        return _selector.getResults(cache, scrollable);
-    }
-
-    public Results getResultsAsync(boolean cache, boolean scrollable, HttpServletResponse response) throws SQLException, IOException
-    {
-        return _selector.getResultsAsync(cache, scrollable, response);
     }
 }

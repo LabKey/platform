@@ -22,16 +22,16 @@ import java.sql.SQLException;
  * Date: 10/26/11
  * Time: 12:05 AM
  */
-public class LegacySqlExecutor
+class LegacySqlExecutor
 {
     private final SqlExecutor _executor;
 
-    public LegacySqlExecutor(DbSchema schema)
+    LegacySqlExecutor(DbSchema schema)
     {
         _executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
     }
 
-    public int execute(SQLFragment sql) throws SQLException
+    int execute(SQLFragment sql) throws SQLException
     {
         try
         {
@@ -43,7 +43,7 @@ public class LegacySqlExecutor
         }
     }
 
-    public int execute(String sql, Object... params) throws SQLException
+    int execute(String sql, Object... params) throws SQLException
     {
         try
         {

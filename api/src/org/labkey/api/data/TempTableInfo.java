@@ -17,7 +17,6 @@ package org.labkey.api.data;
 
 import org.labkey.api.util.GUID;
 
-import java.sql.SQLException;
 import java.util.List;
 
 /**
@@ -92,10 +91,10 @@ public class TempTableInfo extends SchemaTableInfo
     {
         try
         {
-            new LegacyTableSelector(this).getRowCount();
+            new TableSelector(this).exists();
             return true;
         }
-        catch (SQLException e)
+        catch (Exception e)
         {
             return false;
         }

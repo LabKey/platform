@@ -23,9 +23,9 @@ package org.labkey.api.data;
  * Date: Sep 3, 2011
 */
 
-public class LegacySqlSelector extends LegacySelector<SqlSelector, LegacySqlSelector>
+class LegacySqlSelector extends LegacySelector<SqlSelector, LegacySqlSelector>
 {
-    public LegacySqlSelector(DbSchema schema, SQLFragment sql)
+    LegacySqlSelector(DbSchema schema, SQLFragment sql)
     {
         super(new SqlSelector(schema, sql));
     }

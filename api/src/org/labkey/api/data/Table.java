@@ -217,7 +217,7 @@ public class Table
             throws SQLException
     {
         LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParameters(parameters);
 
         return selector.getResults();
     }
@@ -227,7 +227,7 @@ public class Table
             throws SQLException
     {
         LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParameters(parameters);
 
         return selector.getResults();
     }

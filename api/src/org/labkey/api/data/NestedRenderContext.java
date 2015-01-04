@@ -206,7 +206,7 @@ public class NestedRenderContext extends RenderContext
     }
 
     @Override
-    protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String,Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
+    protected Results selectForDisplay(TableInfo table, Collection<ColumnInfo> columns, Map<String, Object> parameters, SimpleFilter filter, Sort sort, int maxRows, long offset, boolean async) throws SQLException, IOException
     {
         if (_nestingOption != null)
         {
@@ -215,8 +215,8 @@ public class NestedRenderContext extends RenderContext
             offset = 0;
         }
 
-        LegacyTableSelector selector = new LegacyTableSelector(table, columns, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParamters(parameters);
+        TableSelector selector = new TableSelector(table, columns, filter, sort).setForDisplay(true);
+        selector.setMaxRows(maxRows).setOffset(offset).setNamedParameters(parameters);
 
         // Force the result set to be cached so that we can do our nesting
         if (async)
