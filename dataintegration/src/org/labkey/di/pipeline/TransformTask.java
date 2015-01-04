@@ -265,8 +265,8 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
             tsv.write(outputFile);
             int rowCount = tsv.getDataRowCount();
-            if (rowCount > 0)
-                getJob().getParameters().put("etlOutputHadRows", "true");
+            if (rowCount == 0)
+                getJob().getParameters().put("etlOutputHadRows", "false");
             log.info("Wrote " + rowCount + " rows to file " + outputFile.toString());
 
             // Set some properties in the job for FileAnalysis pipeline steps
