@@ -72,7 +72,7 @@ public interface QueryUpdateService
     enum ConfigParameters
     {
         Logger,
-        TransactionSize
+        TransactionSize // For configurations which support granular transaction boundaries, the # of target rows to write between commits
     }
 
 
