@@ -125,7 +125,7 @@ public class MultiValuedLookupColumn extends LookupColumn
                     sqlType = dialect.getLsidType();
                 else
                     throw new IllegalStateException("Unexpected sql type '" + lc.getSqlTypeName() + "' for column '" + lc.getName() + "'");
-                valueSql.append(") AS " + sqlType + ")");
+                valueSql.append(") AS ").append(sqlType).append(")");
             }
 
             col.declareJoins(baseJoinTarget, joins);
