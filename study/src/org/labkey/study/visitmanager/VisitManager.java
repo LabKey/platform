@@ -26,8 +26,8 @@ import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
+import org.labkey.api.data.ExceptionFramework;
 import org.labkey.api.data.JdbcType;
-import org.labkey.api.data.LegacySqlExecutor;
 import org.labkey.api.data.Parameter;
 import org.labkey.api.data.RuntimeSQLException;
 import org.labkey.api.data.SQLFragment;
@@ -697,16 +697,17 @@ public abstract class VisitManager
                 del.append("    (SELECT ParticipantId FROM (").append(ptids).append(") _existing_)\n");
                 del.append(")");
 
-                return new LegacySqlExecutor(schema).execute(del);
+                SqlExecutor executor = new SqlExecutor(schema).setExceptionFramework(ExceptionFramework.JDBC);
+                executor.execute(del);
             }
-            catch (SQLException x)
+            catch (Exception x)
             {
                 if (retry != 0 && (SqlDialect.isObjectNotFoundException(x)))
                 {
                     StudyManager.getInstance().clearCaches(study.getContainer(), false);
                     continue; // retry
                 }
-                throw new RuntimeSQLException(x);
+                throw x;
             }
         }
         return 0;

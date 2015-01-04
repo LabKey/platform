@@ -727,17 +727,18 @@ public class DataSetDefinition extends AbstractStudyEntity<DataSetDefinition> im
             studyDataFrag.add(getContainer());
             if (cutoff != null)
                 studyDataFrag.append(" AND _VisitDate > ?").add(cutoff);
-            count = new LegacySqlExecutor(StudySchema.getInstance().getSchema()).execute(studyDataFrag);
+            SqlExecutor executor = new SqlExecutor(StudySchema.getInstance().getSchema()).setExceptionFramework(ExceptionFramework.JDBC);
+            count = executor.execute(studyDataFrag);
             StudyManager.datasetModified(this, user, true);
 
             time.stop();
             _log.debug("purgeDataset " + getDisplayString() + " " + DateUtil.formatDuration(time.getTotal()/1000));
         }
-        catch (SQLException s)
+        catch (Exception s)
         {
             if (SqlDialect.isObjectNotFoundException(s)) // UNDEFINED TABLE
                 return 0;
-            throw new RuntimeSQLException(s);
+            throw s;
         }
         return count;
     }
