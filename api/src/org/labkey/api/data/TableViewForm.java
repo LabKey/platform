@@ -240,7 +240,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
         {
             throw new NotFoundException("Invalid PK value - cannot be null");
         }
-        Map<String, Object>[] maps = new TableSelector(_tinfo, _tinfo.getColumnNameSet(), new PkFilter(_tinfo, pkVals), null).getMapArray();
+        Map<String, Object>[] maps = new TableSelector(_tinfo, new PkFilter(_tinfo, pkVals), null).getMapArray();
 
         if (maps.length > 0)
         {

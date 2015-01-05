@@ -294,7 +294,7 @@ public abstract class DilutionAssayRun extends Luc5Assay
                 if (null != virusLsid)
                 {
                     SimpleFilter filter = new SimpleFilter(FieldKey.fromString("VirusLsid"), virusLsid);
-                    Map<String, Object> results = new TableSelector(virusTable, TableSelector.ALL_COLUMNS, filter, null).getMap();
+                    Map<String, Object> results = new TableSelector(virusTable, filter, null).getMap();
                     if (null != results)
                     {
                         CaseInsensitiveHashMap<Object> props = new CaseInsensitiveHashMap<>();
