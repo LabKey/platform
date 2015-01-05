@@ -98,6 +98,11 @@ public class ExternalSchemaDocumentProvider implements SearchService.DocumentPro
                         try
                         {
                             table = schema.getTable(mdName);
+
+                            // Address likely race condition from exception report #19080
+                            if (null == table)
+                                continue;
+
                             assert mdName.equalsIgnoreCase(table.getName());
                         }
                         catch (UnauthorizedException e)
