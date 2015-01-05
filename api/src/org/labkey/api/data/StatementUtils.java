@@ -288,7 +288,7 @@ public class StatementUtils
        @Nullable Container c, User user, boolean selectIds, boolean autoFillDefaultColumns, operation op, boolean supportsAutoIncrementKey) throws SQLException
     {
         if (!(t instanceof UpdateableTableInfo))
-            throw new IllegalArgumentException("Table must be an UpdatedableTableInfo");
+            throw new IllegalArgumentException("Table must be an UpdateableTableInfo");
 
         UpdateableTableInfo updatable = (UpdateableTableInfo)t;
         TableInfo table = updatable.getSchemaTableInfo();
