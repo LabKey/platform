@@ -48,6 +48,7 @@ import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.UnauthorizedException;
+import org.labkey.core.security.SecurityController;
 import org.labkey.core.user.UserController;
 
 import java.util.ArrayList;
@@ -76,6 +77,17 @@ public class UsersTable extends SimpleUserSchema.SimpleTable<UserSchema>
                 " The data in this table are available only to users who are signed-in (not guests). Guests will see no rows." +
                 " All signed-in users will see the columns UserId, EntityId, DisplayName, Email, FirstName, LastName, Description, Created, Modified." +
                 " Users with administrator permissions will also see the columns Phone, Mobile, Pager, IM, Active and LastLogin.");
+        setImportURL(LINK_DISABLER);
+        if (schema.getUser().isSiteAdmin())
+        {
+            setDeleteURL(new DetailsURL(new ActionURL(UserController.DeleteUsersAction.class, schema.getContainer())));
+            setInsertURL(new DetailsURL(new ActionURL(SecurityController.AddUsersAction.class, schema.getContainer())));
+        }
+        else
+        {
+            setDeleteURL(LINK_DISABLER);
+            setInsertURL(LINK_DISABLER);
+        }
     }
 
     @Override
