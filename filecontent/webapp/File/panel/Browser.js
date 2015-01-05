@@ -2391,6 +2391,8 @@ Ext4.define('File.panel.Browser', {
                 failure: function(response) {
                     if (response.status == 500)
                         this.showErrorMsg('Error', 'Failed to move file on server. This may be a server configuration problem. Please contact the site administrator.');
+                    else if (response.status == 412)
+                        this.showErrorMsg('Error', 'Failed to move file on server. File already exists in destination folder. Please remove the file in the destination folder and try again.');
                     else
                         LABKEY.Utils.displayAjaxErrorResponse(response);
                 },
