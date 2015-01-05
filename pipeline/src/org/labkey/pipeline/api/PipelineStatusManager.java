@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
 import org.labkey.api.data.CompareType;
 import org.labkey.api.data.Container;
+import org.labkey.api.data.ContainerFilter;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.Filter;
@@ -640,10 +641,12 @@ public class PipelineStatusManager
 
             if (!c.isRoot())
             {
-                sql.append(" AND Container = ?");
-                expSql.append(" AND Container = ?");
-                sql.add(c.getId());
-                expSql.add(c.getId());
+                // Use a ContainerFilter to generate the SQL so that we include workbooks - see issue 22236
+                SQLFragment containerSQL = ContainerFilter.CURRENT.getSQLFragment(PipelineSchema.getInstance().getSchema(), new SQLFragment("Container"), c);
+                sql.append(" AND ");
+                sql.append(containerSQL);
+                expSql.append(" AND ");
+                expSql.append(containerSQL);
             }
 
             if (!deleteExpRuns)
@@ -714,7 +717,7 @@ public class PipelineStatusManager
     private static boolean cancelStatus(ViewBackgroundInfo info, PipelineStatusFileImpl statusFile)
     {
         Container jobContainer = statusFile.lookupContainer();
-        if (!jobContainer.hasPermission(info.getUser(), DeletePermission.class))
+        if (jobContainer == null || !jobContainer.hasPermission(info.getUser(), DeletePermission.class))
         {
             throw new UnauthorizedException();
         }
