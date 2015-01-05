@@ -428,6 +428,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
 
     public boolean validate(CopyConfig meta, Container c, User u, Logger log)
     {
+        DbScope sourceDbScope = null;
         if (_validateSource && meta.isUseSource()) // RemoteQuery has a source, but we don't validate it. Stored proc may not have a source.
         {
             QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
@@ -436,6 +437,8 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 log.error("ERROR: Source schema not found: " + meta.getSourceSchema());
                 return false;
             }
+            else
+                sourceDbScope = sourceSchema.getDbSchema().getScope();
         }
 
         if (meta.isUseTarget()) // Stored proc may not have a target
@@ -451,6 +454,13 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 if (null == targetSchema.getTable(meta.getTargetQuery()))
                 {
                     log.error("ERROR: Target query not found: " + meta.getTargetQuery());
+                    return false;
+                }
+                if (meta.getTransactionSize() > 0 && targetSchema.getDbSchema().getScope().equals(sourceDbScope) && sourceDbScope.getSqlDialect().isPostgreSQL())
+                {
+                    // See issue 22213. Postgres doesn't allow committing transactions mid-stream when source and target
+                    // are on the same connection.
+                    log.error("ERROR: Specifying transaction size is not supported on Postgres when source and destination are in the same data source.");
                     return false;
                 }
             }
