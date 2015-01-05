@@ -692,12 +692,19 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
         return Collections.unmodifiableList(QueryService.get().getDefaultVisibleColumns(getColumns()));
     }
 
-    public void setDefaultVisibleColumns(Iterable<FieldKey> keys)
+    public void setDefaultVisibleColumns(@Nullable Iterable<FieldKey> keys)
     {
         checkLocked();
-        _defaultVisibleColumns = new ArrayList<>();
-        for (FieldKey key : keys)
-            _defaultVisibleColumns.add(key);
+        if (keys == null)
+        {
+            _defaultVisibleColumns = null;
+        }
+        else
+        {
+            _defaultVisibleColumns = new ArrayList<>();
+            for (FieldKey key : keys)
+                _defaultVisibleColumns.add(key);
+        }
     }
 
     @Override

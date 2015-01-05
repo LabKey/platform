@@ -687,7 +687,7 @@ abstract public class AbstractTableInfo implements TableInfo, MemTrackable
         _aggregateRowConfig = config;
     }
 
-    public void setDefaultVisibleColumns(Iterable<FieldKey> list)
+    public void setDefaultVisibleColumns(@Nullable Iterable<FieldKey> list)
     {
         checkLocked();
         _defaultVisibleColumns = list;

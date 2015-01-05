@@ -163,7 +163,11 @@ public interface TableInfo extends HasPermission, SchemaTreeNode
      */
     List<FieldKey> getDefaultVisibleColumns();
 
-    void setDefaultVisibleColumns(Iterable<FieldKey> keys);
+    /**
+     * @param keys the new set of columns to show when there is no explicit default view defined. Use null to indicate
+     * that the list should be inferred based on the column metadata
+     */
+    void setDefaultVisibleColumns(@Nullable Iterable<FieldKey> keys);
 
     ButtonBarConfig getButtonBarConfig();
 
