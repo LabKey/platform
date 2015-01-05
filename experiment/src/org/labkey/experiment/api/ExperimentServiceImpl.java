@@ -2117,7 +2117,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
         }
 
         sort = new Sort("RowId");
-        List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(new TableSelector(getTinfoMaterial(), getTinfoMaterial().getColumns(), filt, sort).getArrayList(Material.class));
+        List<ExpMaterialImpl> materials = ExpMaterialImpl.fromMaterials(new TableSelector(getTinfoMaterial(), filt, sort).getArrayList(Material.class));
         final Map<Integer, ExpMaterialImpl> runMaterialMap = new HashMap<>(materials.size());
 
         for (ExpMaterialImpl mat : materials)
@@ -2130,7 +2130,7 @@ public class ExperimentServiceImpl implements ExperimentService.Interface
             mat.markAsPopulated(protStepMap.get(srcAppId));
         }
 
-        List<ExpDataImpl> datas = ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), getTinfoData().getColumns(), filt, sort).getArrayList(Data.class));
+        List<ExpDataImpl> datas = ExpDataImpl.fromDatas(new TableSelector(getTinfoData(), filt, sort).getArrayList(Data.class));
         final Map<Integer, ExpDataImpl> runDataMap = new HashMap<>(datas.size());
 
         for (ExpDataImpl dat : datas)

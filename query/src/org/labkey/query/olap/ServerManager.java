@@ -60,7 +60,6 @@ import org.labkey.api.util.Path;
 import org.labkey.api.util.ShutdownListener;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.view.ViewServlet;
-import org.labkey.query.controllers.OlapController;
 import org.labkey.query.olap.metadata.CachedCube;
 import org.labkey.query.olap.metadata.Olap4JCachedCubeFactory;
 import org.labkey.query.olap.metadata.RolapCachedCubeFactory;
@@ -82,11 +81,9 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -232,7 +229,7 @@ public class ServerManager
         // TODO: add list of all olap descriptors in the container to the cache
         //List<OlapSchemaDescriptor> descriptors = DB_SCHEMA_DESCRIPTOR_CACHE.get(c.getId());
         SimpleFilter filter = SimpleFilter.createContainerFilter(c);
-        TableSelector s = new TableSelector(QueryManager.get().getTableInfoOlapDef(), new HashSet<>(Arrays.asList("name")), filter, null);
+        TableSelector s = new TableSelector(QueryManager.get().getTableInfoOlapDef(), Collections.singleton("name"), filter, null);
         for (String name : s.getArrayList(String.class))
         {
             // look for descriptor in database by container and name
