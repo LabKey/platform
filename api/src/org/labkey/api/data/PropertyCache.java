@@ -16,7 +16,6 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
-import org.labkey.api.cache.BlockingStringKeyCache;
 import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
@@ -31,18 +30,21 @@ import java.util.Map;
  */
 public class PropertyCache
 {
-    private final BlockingStringKeyCache<Map<String, String>> _blockingCache;
+    private final DatabaseCache<Map<String, String>> _blockingCache;
+    private final CacheLoader<String, Map<String, String>> _loader;
 
     PropertyCache(String name, CacheLoader<String, Map<String, String>> propertyLoader)
     {
-        _blockingCache = CacheManager.getBlockingStringKeyCache(CacheManager.UNLIMITED, CacheManager.DAY, name, propertyLoader);
+        _loader = propertyLoader;
+        _blockingCache = new DatabaseCache(CoreSchema.getInstance().getSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, name);
+
     }
 
     @Nullable Map<String, String> getProperties(User user, Container container, String category)
     {
         String key = getCacheKey(container, user, category);
 
-        return _blockingCache.get(key, new Object[]{container, user, category});
+        return _blockingCache.get(key, new Object[]{container, user, category}, _loader);
     }
 
     void remove(PropertyMap map)

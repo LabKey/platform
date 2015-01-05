@@ -37,7 +37,7 @@ public class PreferenceService
     private static final String PREFERENCE_SERVICE_MAP_KEY = "PreferenceServiceMap";
     private static final PreferenceService _instance = new PreferenceService();
 
-    private final Map<String, Map<String, String>> _nullPreferenceMap = new HashMap<>();
+    private final Map<String, Map<String, String>> _nullPreferenceMap = Collections.synchronizedMap(new HashMap<String, Map<String, String>>());
 
     public static PreferenceService get()
     {
@@ -108,10 +108,7 @@ public class PreferenceService
         prefs.put(name, value);
 
         PropertyManager.saveProperties(prefs);
-        synchronized (container.getId().intern())
-        {
-            _nullPreferenceMap.remove(container.getId());
-        }
+        _nullPreferenceMap.remove(container.getId());
     }
 
     /** Uses a session-based set of properties if the user is a guest, and a database-backed set if authenticated */
@@ -136,10 +133,7 @@ public class PreferenceService
         prefs.remove(name);
 
         PropertyManager.saveProperties(prefs);
-        synchronized (container.getId().intern())
-        {
-            _nullPreferenceMap.remove(container.getId());
-        }
+        _nullPreferenceMap.remove(container.getId());
     }
 
     public void deleteProperty(String name, User user)
@@ -217,19 +211,13 @@ public class PreferenceService
 
     private Map<String, String> getReadOnlyPreferences(Container container)
     {
-        String containerId = container.getId().intern();
-        synchronized (containerId)
-        {
-            if (_nullPreferenceMap.containsKey(containerId))
-                return null;
-        }
+        String containerId = container.getId();
+        if (_nullPreferenceMap.containsKey(containerId))
+            return null;
         Map<String, String> prefs = PropertyManager.getProperties(container, PREFERENCE_SERVICE_MAP_KEY);
         if (prefs.isEmpty())
         {
-            synchronized (containerId)
-            {
-                _nullPreferenceMap.put(containerId, null);
-            }
+            _nullPreferenceMap.put(containerId, null);
         }
         return prefs;
     }

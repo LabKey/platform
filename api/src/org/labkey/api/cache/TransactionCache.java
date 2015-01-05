@@ -18,14 +18,12 @@ package org.labkey.api.cache;
 
 import org.labkey.api.util.Filter;
 
-/*
-* User: adam
-* Date: Nov 9, 2009
-* Time: 10:49:04 PM
-*/
-
-// A read-through transaction cache.  Reads through to the shared cache until any write occurs, at which point it
-// switches to using a private cache for the remainder of the transaction.
+/**
+ * A read-through, transaction-specific cache.  Reads through to the shared cache until any write occurs, at which point it
+ * switches to using a private cache for the remainder of the transaction.
+ * User: adam
+ * Date: Nov 9, 2009
+ */
 public class TransactionCache<K, V> implements Cache<K, V>
 {
     private final Cache<K, V> _sharedCache;

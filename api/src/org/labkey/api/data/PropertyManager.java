@@ -361,6 +361,39 @@ public class PropertyManager
         {
             return new Object[]{_objectId, _userId, _category};
         }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            if (!super.equals(o)) return false;
+
+            PropertyMap that = (PropertyMap) o;
+
+            if (_set != that._set) return false;
+            if (_userId != that._userId) return false;
+            if (_category != null ? !_category.equals(that._category) : that._category != null) return false;
+            if (_objectId != null ? !_objectId.equals(that._objectId) : that._objectId != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = super.hashCode();
+            result = 31 * result + _set;
+            result = 31 * result + _userId;
+            result = 31 * result + (_objectId != null ? _objectId.hashCode() : 0);
+            result = 31 * result + (_category != null ? _category.hashCode() : 0);
+            return result;
+        }
+
+        public boolean isModified()
+        {
+            return _modified;
+        }
     }
 
 
