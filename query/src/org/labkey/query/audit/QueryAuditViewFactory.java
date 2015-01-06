@@ -44,7 +44,7 @@ import java.util.Set;
  *
  * key1 - schemaName
  * key2 - queryName
- * key3 - DetailsURL including sort/filter paramters.
+ * key3 - DetailsURL including sort/filter parameters.
  *
  * User: kevink
  * Date: 6/15/12
