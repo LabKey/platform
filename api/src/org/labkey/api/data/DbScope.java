@@ -342,7 +342,7 @@ public class DbScope
      */
     public Transaction ensureTransaction(TransactionKind transactionKind, Lock... locks)
     {
-        // Note: it's theorectically possible to get 3 or more transactions on the transaction stack, if we call this
+        // Note: it's theoretically possible to get 3 or more transactions on the transaction stack, if we call this
         //       with isPipelineStatus (false, true, false) or (true, false, true). This should not be done because
         //       it could cause a deadlock. We could change getCurrentTransactionImpl to take the flag and look past
         //       the top of the stack, but that would require a *lot* of places knowing which they are looking for,
