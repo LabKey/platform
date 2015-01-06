@@ -40,6 +40,7 @@ import org.labkey.api.exp.PropertyDescriptor;
 import org.labkey.api.exp.PropertyType;
 import org.labkey.api.query.BatchValidationException;
 import org.labkey.api.query.FieldKey;
+import org.labkey.api.query.QueryUpdateService;
 import org.labkey.api.security.User;
 import org.labkey.api.util.GUID;
 import org.labkey.api.util.Pair;
@@ -382,6 +383,31 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         }
     }
 
+    private class PropertyConvertAndTrimColumn extends PropertyConvertColumn
+    {
+        boolean trimRightOnly;
+
+        PropertyConvertAndTrimColumn(String fieldName, int fromIndex, int mvIndex, PropertyDescriptor pd, PropertyType pt, boolean trimRightOnly)
+        {
+            super(fieldName, fromIndex, mvIndex, pd, pt);
+            this.trimRightOnly = trimRightOnly;
+        }
+
+        @Override
+        Object innerConvert(Object value)
+        {
+            value = super.innerConvert(value);
+            if (null != value && value instanceof String)
+            {
+                if (trimRightOnly)
+                    value = StringUtils.stripEnd((String) value, "\t\r\n ");
+                else
+                    value = StringUtils.trim((String) value);
+            }
+            return value;
+        }
+    }
+
     // CONSIDER: Add JdbcType or PropertyType for array types instead of handling conversion here.
     private class MultiValueConvertColumn extends SimpleConvertColumn
     {
@@ -655,16 +681,24 @@ public class SimpleTranslator extends AbstractDataIterator implements DataIterat
         ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
         col.setName(name);
         col.setJdbcType(pt.getJdbcType());
-        return addColumn(col, new PropertyConvertColumn(name, fromIndex, mvIndex, pd, pt));
+
+        boolean trimString = false;
+        boolean trimStringRight = false;
+        if (null != _context.getConfigParameters())
+        {
+            trimString = _context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TrimString) == Boolean.TRUE;
+            trimStringRight = _context.getConfigParameters().get(QueryUpdateService.ConfigParameters.TrimStringRight) == Boolean.TRUE;
+        }
+        if (PropertyType.STRING == pt && (trimString || trimStringRight))
+            return addColumn(col, new PropertyConvertAndTrimColumn(name, fromIndex, mvIndex, pd, pt, !trimString));
+        else
+            return addColumn(col, new PropertyConvertColumn(name, fromIndex, mvIndex, pd, pt));
     }
 
 
     public int addConvertColumn(String name, int fromIndex, PropertyDescriptor pd, PropertyType pt)
     {
-        ColumnInfo col = new ColumnInfo(_data.getColumnInfo(fromIndex));
-        col.setName(name);
-        col.setJdbcType(pt.getJdbcType());
-        return addColumn(col, new PropertyConvertColumn(name, fromIndex, 0, pd, pt));
+        return addConvertColumn(name, fromIndex, 0, pd, pt);
     }
 
 
