@@ -80,7 +80,7 @@ public class AutoCompleteAction extends ApiAction<AutoCompleteAction.AutoComplet
             throw new IllegalArgumentException("Completion type " + form.getType() + " not recognized.");
 
         ApiSimpleResponse response = new ApiSimpleResponse();
-        if (null == tinfo)      // theorectically possible from getTableInfoVial
+        if (null == tinfo)      // theoretically possible from getTableInfoVial
             return response;
         final List<AjaxCompletion> completions = new ArrayList<>();
 
