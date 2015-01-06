@@ -39,7 +39,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public abstract class MessageDigest
 {
     private static final String LAST_KEY = "LastSuccessfulSend";
-    private MessageDigestTask _timerTask = null;
+
     private final List<Provider> _providers = new CopyOnWriteArrayList<>();
 
     private static final Logger _log = Logger.getLogger(MessageDigest.class);
@@ -97,7 +97,7 @@ public abstract class MessageDigest
 
     /**
      * The name of this digest type
-     * @return
+     * @return Digest name
      */
     public abstract String getName();
 
@@ -123,9 +123,9 @@ public abstract class MessageDigest
 
     public void initializeTimer()
     {
-        _timerTask = new MessageDigestTask(this);
-        ContextListener.addShutdownListener(_timerTask);
-        _timerTask.setTimer(createTimer(_timerTask));
+        MessageDigestTask timerTask = new MessageDigestTask(this);
+        ContextListener.addShutdownListener(timerTask);
+        timerTask.setTimer(createTimer(timerTask));
     }
 
     private static class MessageDigestTask extends TimerTask implements ShutdownListener
