@@ -128,6 +128,10 @@ public class ListQueryUpdateService extends DefaultQueryUpdateService
             context.setMaxRowErrors(100);
             context.setFailFast(false);
         }
+
+        Map<Enum, Object> options = new HashMap<>();
+        options.put(ConfigParameters.TrimStringRight, Boolean.TRUE);
+        context.setConfigParameters(options);
         return context;
     }
 
