@@ -129,7 +129,10 @@ public class FormatItem<DomainType extends GWTDomain<FieldType>, FieldType exten
 
     public void showPropertyDescriptor(DomainType domain, FieldType field)
     {
-        _formatTextBox.setText(field.getFormat());
+        if (!_formatTextBox.getText().equals(field.getFormat()))
+        {
+            _formatTextBox.setText(field.getFormat());
+        }
         _canFormat = canFormat(field.getRangeURI());
         if (_canFormat)
         {
