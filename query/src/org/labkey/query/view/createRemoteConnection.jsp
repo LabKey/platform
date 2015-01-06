@@ -49,27 +49,27 @@
 <labkey:form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlSaveRemoteConnection(c) %>" method="post">
 <table>
     <tr>
-        <td>Connection Name: </td>
-        <td><input type="text" name="newConnectionName" size="50" value="<%=h(nameToShow)%>"><br></td>
+        <td class="labkey-form-label"><label for="newConnectionName">Connection Name</label></td>
+        <td><input type="text" name="newConnectionName" id="newConnectionName" size="50" value="<%=h(nameToShow)%>"><br></td>
     </tr>
     <tr>
-        <td>Server URL: <%= PageFlowUtil.helpPopup("Server URL", "Enter in the server URL. Include both the protocol (http:// or https://) and a context path if necessary. As an example, http://localhost:8080/labkey would be a valid name.")%></td>
+        <td class="labkey-form-label"><label for="url">Server URL</label><%= PageFlowUtil.helpPopup("Server URL", "Enter in the server URL. Include both the protocol (http:// or https://) and a context path if necessary. As an example, http://localhost:8080/labkey would be a valid name.")%></td>
         <td><input id="url" type="text" name="url" size="50" value="<%= h(url) %>"><br></td>
     </tr>
     <tr>
-        <td>User: </td>
+        <td class="labkey-form-label"><label for="user">User</label></td>
         <td><input id="user" type="text" name="user" size="50" value="<%= h(user)%>"></td>
     </tr>
     <tr>
-        <td>Password: </td>
+        <td class="labkey-form-label"><label for="password">Password</label></td>
         <td><input id="password" type="password" name="password" size="50" value="<%=h(password)%>"></td>
     </tr>
     <tr>
-        <td>Folder Path: <%= PageFlowUtil.helpPopup("Folder Path", "Enter the folder path on the LabKey server. An example folder path is 'My Folder/My Subfolder'.")%></td>
+        <td class="labkey-form-label"><label for="container">Folder Path</label><%= PageFlowUtil.helpPopup("Folder Path", "Enter the folder path on the LabKey server. An example folder path is 'My Folder/My Subfolder'.")%></td>
         <td><input id="container" type="text" name="container" size="50" value="<%=h(container)%>"></td>
     </tr>
 </table>
     <%= button("save").submit(true) %>
     <%= button("cancel").href(QueryController.ManageRemoteConnectionsAction.class, getContainer()) %>
-    <input type="text" name="connectionName"  value="<%=h(name)%>" hidden><br>
+    <input type="hidden" name="connectionName"  value="<%=h(name)%>"><br>
 </labkey:form>
