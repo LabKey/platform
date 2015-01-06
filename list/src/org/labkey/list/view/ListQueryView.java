@@ -73,6 +73,8 @@ public class ListQueryView extends QueryView
             ActionButton btnUpload = new ActionButton("View Design", designURL);
             bar.add(btnUpload);
         }
+        bar.add(super.createDeleteAllRowsButton());
+
     }
 
     public ListDefinition getList()
