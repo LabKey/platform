@@ -795,6 +795,10 @@ public class CachedCube extends MetadataElementBase implements Cube
             return true;
         }
 
+        public boolean isReadOnly()
+        {
+            return readonly;
+        }
 
         private void recompute()
         {
