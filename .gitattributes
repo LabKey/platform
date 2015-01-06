@@ -304,10 +304,6 @@ api/src/org/labkey/api/data/JdbcType.java -text
 api/src/org/labkey/api/data/JsonPrettyPrintDisplayColumnFactory.java -text
 api/src/org/labkey/api/data/JsonTest.java -text
 api/src/org/labkey/api/data/JsonWriter.java -text
-api/src/org/labkey/api/data/LegacySelector.java -text
-api/src/org/labkey/api/data/LegacySqlExecutor.java -text
-api/src/org/labkey/api/data/LegacySqlSelector.java -text
-api/src/org/labkey/api/data/LegacyTableSelector.java -text
 api/src/org/labkey/api/data/LimitedPHIPermission.java -text
 api/src/org/labkey/api/data/LinkedSchemaCustomizer.java -text
 api/src/org/labkey/api/data/LockManager.java -text

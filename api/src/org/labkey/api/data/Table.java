@@ -62,7 +62,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
@@ -73,7 +72,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * Table manipulation methods
@@ -105,243 +103,6 @@ public class Table
     public static boolean validMaxRows(int maxRows)
     {
         return NO_ROWS == maxRows | ALL_ROWS == maxRows | maxRows > 0;
-    }
-
-    // ================== These methods & members are no longer used by LabKey code ==================
-
-    public static final Set<String> ALL_COLUMNS = TableSelector.ALL_COLUMNS;
-
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, select, filter, sort).getObject(clss);
-    }
-
-    @Deprecated /** Use TableSelector */
-    @NotNull
-    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss, int maxRows, long offset)
-            throws SQLException
-    {
-        return new LegacyTableSelector(table, select, filter, sort).setMaxRows(maxRows).setOffset(offset).getArray(clss);
-    }
-
-    @NotNull
-    @Deprecated /** Use TableSelector */
-    public static <K> K[] selectForDisplay(TableInfo table, Collection<ColumnInfo> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
-            throws SQLException
-    {
-        TableSelector selector = new TableSelector(table, select, filter, sort);
-        selector.setForDisplay(true);
-
-        return selector.getArray(clss);
-    }
-
-    // return a result from a one column resultset. K should be a string or number type
-    @Deprecated /** Use TableSelector */
-    public static <K> K[] executeArray(TableInfo table, ColumnInfo col, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
-    {
-        return new LegacyTableSelector(col, filter, sort).getArray(c);
-    }
-
-    @NotNull
-    @Deprecated /** Use TableSelector */
-    public static <K> K[] selectForDisplay(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss)
-            throws SQLException
-    {
-        TableSelector selector = new TableSelector(table, select, filter, sort);
-        selector.setForDisplay(true);
-
-        return selector.getArray(clss);
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, filter, sort).getObject(clss);
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, @Nullable Container c, Object pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(c, pk, clss);
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, Object pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(pk, clss);
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static <K> K selectObject(TableInfo table, int pk, Class<K> clss)
-    {
-        return new TableSelector(table).getObject(pk, clss);
-    }
-
-    @NotNull
-    @Deprecated /** Use TableSelector */
-    public static <K> K[] select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, columns, filter, sort).getArray(clss);
-    }
-
-    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
-    @Deprecated /** Use TableSelector */
-    public static <K> K[] executeArray(TableInfo table, String column, @Nullable Filter filter, @Nullable Sort sort, Class<K> c) throws SQLException
-    {
-        return new LegacyTableSelector(table.getColumn(column), filter, sort).getArray(c);
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static Map<String, Object>[] selectMaps(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort);
-
-        return selector.getMapArray();
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static Results select(TableInfo table, Collection<ColumnInfo> columns, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
-    {
-        return new LegacyTableSelector(table, columns, filter, sort).getResults();
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static ResultSet select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort) throws SQLException
-    {
-        return new LegacyTableSelector(table, select, filter, sort).getResultSet();
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static Results selectForDisplay(TableInfo table, Set<String> select, @Nullable Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
-            throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParameters(parameters);
-
-        return selector.getResults();
-    }
-
-    @Deprecated /** Use TableSelector */
-    public static Results selectForDisplay(TableInfo table, Collection<ColumnInfo> select, Map<String, Object> parameters, @Nullable Filter filter, @Nullable Sort sort, int maxRows, long offset)
-            throws SQLException
-    {
-        LegacyTableSelector selector = new LegacyTableSelector(table, select, filter, sort).setForDisplay(true);
-        selector.setMaxRows(maxRows).setOffset(offset).setNamedParameters(parameters);
-
-        return selector.getResults();
-    }
-
-    @NotNull
-    @Deprecated /** Use TableSelector */
-    public static <K> K[] select(TableInfo table, Set<String> select, @Nullable Filter filter, @Nullable Sort sort, Class<K> clss) throws SQLException
-    {
-        return new LegacyTableSelector(table, select, filter, sort).getArray(clss);
-    }
-
-    /**
-     * This is a shortcut method that can be used for two-column ResultSets
-     * The first column is key, the second column is the value
-     */
-    @Deprecated /** Use SqlSelector */
-    public static Map executeValueMap(DbSchema schema, String sql, Object[] parameters, @Nullable Map<Object, Object> m)
-            throws SQLException
-    {
-        if (null == m)
-            return new LegacySqlSelector(schema, fragment(sql, parameters)).getValueMap();
-        else
-            return new LegacySqlSelector(schema, fragment(sql, parameters)).fillValueMap(m);
-    }
-
-    // return a result from a one column resultset. K can be simple type (string, number, date), a map, or a bean
-    @Deprecated /** Use SqlSelector */
-    public static <K> K[] executeArray(DbSchema schema, String sql, Object[] parameters, Class<K> c) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(c);
-    }
-
-    // return an array from a one column resultset. K can be simple type (string, number, date), a map, or a bean
-    @Deprecated /** Use SqlSelector */
-    public static <K> K[] executeArray(DbSchema schema, SQLFragment sql, Class<K> c) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).getArray(c);
-    }
-
-    @Deprecated /** Use SqlSelector */   // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
-    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, int maxRows, boolean cache)
-            throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).setMaxRows(maxRows).getResultSet(cache);
-    }
-
-    @Deprecated /** Use SqlSelector */    // TODO: Note, maxRows is misleading... query still selects Table.ALL_ROWS
-    public static TableResultSet executeQuery(DbSchema schema, SQLFragment sql, int maxRows) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).setMaxRows(maxRows).getResultSet();
-    }
-
-    @Deprecated /** Use SqlSelector */
-    public static ResultSet executeQuery(DbSchema schema, String sql, Object[] parameters, boolean cache)
-            throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet(cache);
-    }
-
-    @Deprecated /** Use SqlExecutor */
-    public static int execute(DbSchema schema, SQLFragment f) throws SQLException
-    {
-        return new LegacySqlExecutor(schema).execute(f);
-    }
-
-    @Deprecated /** Use SqlSelector */
-    public static ResultSet executeQuery(DbSchema schema, SQLFragment sql, boolean cache, boolean scrollable) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).getResultSet(cache, scrollable);
-    }
-
-    @NotNull
-    @Deprecated /** Use SqlSelector */
-    public static <K> K[] executeQuery(DbSchema schema, SQLFragment sqlf, Class<K> clss) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sqlf).getArray(clss);
-    }
-
-    @NotNull
-    @Deprecated /** Use SqlSelector */
-    public static <K> K[] executeQuery(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> clss) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getArray(clss);
-    }
-
-    @Deprecated /** Use SqlSelector */
-    public static TableResultSet executeQuery(DbSchema schema, SQLFragment sql) throws SQLException
-    {
-        return new LegacySqlSelector(schema, sql).getResultSet();
-    }
-
-    @Deprecated /** Use SqlSelector */
-    public static TableResultSet executeQuery(DbSchema schema, String sql, Object[] parameters) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getResultSet();
-    }
-
-    /** return a result from a one row one column resultset. does not distinguish between not found, and NULL value */
-    @Deprecated /** Use SqlSelector */
-    public static <K> K executeSingleton(DbSchema schema, String sql, @Nullable Object[] parameters, Class<K> c) throws SQLException
-    {
-        return new LegacySqlSelector(schema, fragment(sql, parameters)).getObject(c);
-    }
-
-    @Deprecated /** Use SqlExecutor */
-    public static int execute(DbSchema schema, String sql, @NotNull Object... parameters) throws SQLException
-    {
-        return new LegacySqlExecutor(schema).execute(sql, parameters);
-    }
-
-    @Deprecated
-    private static SQLFragment fragment(String sql, @Nullable Object[] parameters)
-    {
-        return new SQLFragment(sql, null == parameters ? new Object[0] : parameters);
     }
 
     // ================== These methods have not been converted to Selector/Executor ==================
@@ -1223,39 +984,6 @@ public class Table
     }
 
     
-    /**
-     * perform an in-memory join between the provided collection and a SQL table.
-     * This is designed to work efficiently when the number of unique values of 'key'
-     * is relatively small compared to left.size()
-     *
-     * @param left is the input collection
-     * @param key  is the name of the column to join in the input collection
-     * @param sql  is a string of the form "SELECT key, a, b FROM table where col in (?)"
-     */
-    public static List<Map> join(List<Map> left, String key, DbSchema schema, String sql) // NYI , Map right)
-            throws SQLException
-    {
-        TreeSet<Object> keys = new TreeSet<>();
-        for (Map m : left)
-            keys.add(m.get(key));
-        int size = keys.size();
-        if (size == 0)
-            return Collections.unmodifiableList(left);
-
-        int q = sql.indexOf('?');
-        if (q == -1 || sql.indexOf('?', q + 1) != -1)
-            throw new IllegalArgumentException("malformed SQL for join()");
-        StringBuilder inSQL = new StringBuilder(sql.length() + size * 2);
-        inSQL.append(sql.substring(0, q + 1));
-        for (int i = 1; i < size; i++)
-            inSQL.append(",?");
-        inSQL.append(sql.substring(q + 1));
-
-        Map[] right = new LegacySqlSelector(schema, new SQLFragment(inSQL, keys.toArray())).getMapArray();
-        return Join.join(left, Arrays.asList(right), key);
-    }
-
-
     public static class TestCase extends Assert
     {
         private static final CoreSchema _core = CoreSchema.getInstance();
@@ -1390,28 +1118,6 @@ public class Table
                 PageFlowUtil.toQueryString(m.entrySet());
             }
             assertEquals(idSet.size(), 6);
-        }
-
-
-        @Test
-        public void testSqlJoin() throws SQLException
-        {
-            //UNDONE
-            // SELECT MEMBERS
-            // Join(MEMBERS, "SELECT * FROM Principals where UserId IN (?)"
-
-            CoreSchema core = CoreSchema.getInstance();
-            DbSchema schema = core.getSchema();
-            TableInfo membersTable = core.getTableInfoMembers();
-            TableInfo principalsTable = core.getTableInfoPrincipals();
-
-            Map[] members = new SqlSelector(schema, "SELECT * FROM " + membersTable.getSelectName()).getArray(Map.class);
-            List<Map> users = join(Arrays.asList(members), "UserId", schema,
-                    "SELECT * FROM " + principalsTable.getSelectName() + " WHERE UserId IN (?)");
-            for (Map m : users)
-            {
-                String s = PageFlowUtil.toQueryString(m.entrySet());
-            }
         }
 
 
