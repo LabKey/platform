@@ -870,6 +870,46 @@ public class QueryView extends WebPartView<Object>
         return null;
     }
 
+    public ActionButton createDeleteAllRowsButton()
+    {
+        ActionButton deleteAllRows = new ActionButton("Delete All Rows");
+        deleteAllRows.setActionType(ActionButton.Action.SCRIPT);
+        deleteAllRows.setScript("Ext4.Msg.confirm('Confirm Deletion', 'Are you sure you wish to delete all rows? This action cannot be undone.', function(button){" +
+                        "var waitMask = Ext4.Msg.wait('Deleting Rows...', 'Delete Rows'); " +
+                        "Ext4.Ajax.request({ " +
+                            "url : LABKEY.ActionURL.buildURL('query', 'truncateTable'), " +
+                            "method : 'POST', " +
+                            "success: function(response) " +
+                            "{" +
+                                "waitMask.close(); " +
+                                "var data = Ext4.JSON.decode(response.responseText); " +
+                                "Ext4.Msg.show({ " +
+                                    "title : 'Success', " +
+                                    "buttons : Ext4.MessageBox.OK, " +
+                                    "msg : data.deletedRows + ' rows deleted', " +
+                                    "fn: function(btn) " +
+                                    "{ " +
+                                        "if(btn == 'ok') " +
+                                        "{ " +
+                                            "window.location.reload(); " +
+                                        "} " +
+                                    "} " +
+                                "})" +
+                            "}, " +
+                            "failure : function(response, opts) " +
+                            "{ " +
+                                "waitMask.close(); " +
+                                "Ext4.getBody().unmask(); " +
+                                "LABKEY.Utils.displayAjaxErrorResponse(response, opts); " +
+                            "}, " +
+                            "jsonData : {schemaName : '" + getQueryDef().getSchema().getName() + "', queryName : '" + getQueryDef().getName() + "'}, " +
+                            "scope : this " +
+                        "});" +
+                    "});"
+        );
+        return deleteAllRows;
+    }
+
     public ActionButton createInsertButton()
     {
         ActionURL urlInsert = urlFor(QueryAction.insertQueryRow);
