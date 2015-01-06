@@ -298,7 +298,7 @@ public class DbScope
 
     /**
      * Ensures that there is an active database transaction. If one is already in progress for this DbScope, it is
-     * joined (and a counter is incrememted) such that the outer-most commit() attempt actually performs the commit.
+     * joined (and a counter is incremented) such that the outer-most commit() attempt actually performs the commit.
      *
      * The preferred usage pattern is:
      * <pre>
@@ -322,7 +322,7 @@ public class DbScope
 
     /**
      * Ensures that there is an active database transaction. If one is already in progress for this DbScope, it is
-     * joined (and a counter is incrememted) such that the outer-most commit() attempt actually performs the commit.
+     * joined (and a counter is incremented) such that the outer-most commit() attempt actually performs the commit.
      * The preferred usage pattern is:
      * <pre>
      *     try (DbScope.Transaction transaction = scope.ensureTransaction()) {

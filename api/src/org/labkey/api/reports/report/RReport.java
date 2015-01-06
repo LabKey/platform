@@ -188,7 +188,7 @@ public class RReport extends ExternalScriptEngineReport
 
         //
         // todo:  remove this fallback code when we refactor report execution.  Input parameters should be passed
-        // in so that they are not taken off the URL.  Note that if inputParamters is not null but size 0 do not fallback
+        // in so that they are not taken off the URL.  Note that if inputParameters is not null but size 0 do not fallback
         //
         if (urlParameters != null)
            return (urlParameters.size() > 0);

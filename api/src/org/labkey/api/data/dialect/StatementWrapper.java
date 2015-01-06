@@ -823,7 +823,7 @@ public class StatementWrapper implements Statement, PreparedStatement, CallableS
         ((PreparedStatement)_stmt).addBatch();
     }
 
-    // NOTE: We intentionally do not store potentially large paramters (reader, blob, etc.)
+    // NOTE: We intentionally do not store potentially large parameters (reader, blob, etc.)
 
     public void setCharacterStream(int parameterIndex, Reader reader, int length)
             throws SQLException

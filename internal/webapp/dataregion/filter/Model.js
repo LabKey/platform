@@ -108,7 +108,7 @@ Ext4.define('LABKEY.dataregion.filter.Model', {
             }
         }
 
-        // paramters
+        // parameters
         var parameters = this.get('parameters');
         if (!Ext4.isDefined(parameters)) {
             var dr = this._getDataRegion();
