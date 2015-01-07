@@ -903,7 +903,7 @@ public class QueryView extends WebPartView<Object>
                                     "Ext4.getBody().unmask(); " +
                                     "LABKEY.Utils.displayAjaxErrorResponse(response, opts); " +
                                 "}, " +
-                                "jsonData : {schemaName : '" + getQueryDef().getSchema().getName() + "', queryName : '" + getQueryDef().getName() + "'}, " +
+                                "jsonData : {schemaName : " + PageFlowUtil.jsString(getQueryDef().getSchema().getName()) + ", queryName : " + PageFlowUtil.jsString(getQueryDef().getName()) + "}, " +
                                 "scope : this " +
                             "});" +
                         "}" +
