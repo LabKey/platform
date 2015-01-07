@@ -1239,6 +1239,7 @@ boxPlot.render();
  * @param {String} [config.properties.stdDev] The data property name for the standard deviation of the expected range.
  * @param {String} [config.properties.xTickLabel] The data property name for the x-axis tick label.
  * @param {String} [config.properties.yAxisScale] (Optional) Whether the y-axis should be plotted with linear or log scale. Default linear.
+ * @param {Array} [config.properties.yAxisDomain] (Optional) Y-axis min/max values. Example: [0,20].
  * @param {String} [config.properties.color] (Optional) The data property name for the color to be used for the data point.
  * @param {Array} [config.properties.colorRange] (Optional) The array of color values to use for the data points.
  * @param {Function} [config.properties.hoverTextFn] (Optional) The hover text to display for each data point. The parameter
@@ -1260,7 +1261,7 @@ boxPlot.render();
                 || config.properties.stdDev == null || config.properties.xTickLabel == null)
         {
             throw new Error("Unable to create Levey-Jennings plot, properties object not specified. "
-                    + "Required: value, mean, stdDev, xTickLabel. Optional: color, colorRange, hoverTextFn, yAxisScale.");
+                    + "Required: value, mean, stdDev, xTickLabel. Optional: color, colorRange, hoverTextFn, yAxisScale, yAxisDomain.");
         }
 
         // min x-axis tick length is 10 by default
@@ -1318,12 +1319,13 @@ boxPlot.render();
             },
             yLeft: {
                 scaleType: 'continuous',
+                domain: config.properties.yAxisDomain,
                 trans: config.properties.yAxisScale || 'linear'
             }
         };
         config.margins = {
             top: config.labels && config.labels.main ? 50 : 10,
-            right: config.properties.color ? 140 : 30,
+            right: config.properties.color || config.legendData ? 140 : 30,
             bottom: config.labels && config.labels.x ? 75 : 55,
             left: config.labels && config.labels.y ? 75 : 55
         };
