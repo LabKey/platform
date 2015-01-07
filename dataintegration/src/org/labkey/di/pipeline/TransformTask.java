@@ -361,7 +361,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
     {
         QuerySchema sourceSchema = DefaultSchema.get(_context.getUser(), _context.getContainer(), _meta.getSourceSchema());
         if (null == sourceSchema || null == sourceSchema.getDbSchema())
-            throw new IllegalArgumentException("ERROR: Source schema not found: " + _meta.getSourceSchema());
+            throw new IllegalArgumentException("Source schema not found: " + _meta.getSourceSchema());
 
         TableInfo t = sourceSchema.getTable(_meta.getSourceQuery());
         if (null == t)
@@ -434,7 +434,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
             QuerySchema sourceSchema = DefaultSchema.get(u, c, meta.getSourceSchema());
             if (null == sourceSchema || null == sourceSchema.getDbSchema())
             {
-                log.error("ERROR: Source schema not found: " + meta.getSourceSchema());
+                log.error("Source schema not found: " + meta.getSourceSchema());
                 return false;
             }
             else
@@ -448,19 +448,19 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 QuerySchema targetSchema = DefaultSchema.get(u, c, meta.getTargetSchema());
                 if (null == targetSchema || null == targetSchema.getDbSchema())
                 {
-                    log.error("ERROR: Target schema not found: " + meta.getTargetSchema());
+                    log.error("Target schema not found: " + meta.getTargetSchema());
                     return false;
                 }
                 if (null == targetSchema.getTable(meta.getTargetQuery()))
                 {
-                    log.error("ERROR: Target query not found: " + meta.getTargetQuery());
+                    log.error("Target query not found: " + meta.getTargetQuery());
                     return false;
                 }
                 if (meta.getTransactionSize() > 0 && targetSchema.getDbSchema().getScope().equals(sourceDbScope) && sourceDbScope.getSqlDialect().isPostgreSQL())
                 {
                     // See issue 22213. Postgres doesn't allow committing transactions mid-stream when source and target
                     // are on the same connection.
-                    log.error("ERROR: Specifying transaction size is not supported on Postgres when source and destination are in the same data source.");
+                    log.error("Specifying transaction size is not supported on Postgres when source and destination are in the same data source.");
                     return false;
                 }
             }
@@ -469,7 +469,7 @@ abstract public class TransformTask extends PipelineJob.Task<TransformTaskFactor
                 File outputDir = _txJob.getPipeRoot().resolvePath(meta.getTargetFileProperties().get(CopyConfig.TargetFileProperties.dir));
                 if (!outputDir.exists() && !outputDir.mkdirs())
                 {
-                    log.error("ERROR: Target directory not accessible : " + outputDir.toString());
+                    log.error("Target directory not accessible : " + outputDir.toString());
                     return false;
                 }
             }

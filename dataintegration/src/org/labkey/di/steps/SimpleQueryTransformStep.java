@@ -74,9 +74,9 @@ public class SimpleQueryTransformStep extends TransformTask
                 throw new PipelineJobException("Error running executeCopy");
             recordWork(action);
         }
-        catch (CancelledException x)
+        catch (CancelledException | PipelineJobException x)
         {
-            // Let this through so the job is considered CANCELLED when it's unwound
+            // Let these through as-is
             throw x;
         }
         catch (Exception x)
@@ -93,7 +93,7 @@ public class SimpleQueryTransformStep extends TransformTask
         return sourceScope;
     }
 
-    public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws IOException, SQLException
+    public boolean executeCopy(CopyConfig meta, Container c, User u, Logger log) throws IOException, SQLException, PipelineJobException
     {
         boolean validationResult = validate(meta, c, u, log);
         if (!validationResult)
@@ -152,8 +152,7 @@ public class SimpleQueryTransformStep extends TransformTask
         catch (Exception x)
         {
             // TODO: more verbose logging
-            log.error("Failed to run transform from source.", x);
-            return false;
+            throw new PipelineJobException("Failed to run transform from source.", x);
         }
         if (context.getErrors().hasErrors())
         {
