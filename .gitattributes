@@ -7474,6 +7474,7 @@ internal/webapp/_images/warning-icon.png -text
 internal/webapp/_images/warning-small.png -text
 internal/webapp/_images/zero.png -text
 internal/webapp/app/AbstractViewController.js -text
+internal/webapp/app/Application.js -text
 internal/webapp/app/Filter.js -text
 internal/webapp/app/HttpInterceptor.js -text
 internal/webapp/app/LoadingMask.js -text

@@ -223,8 +223,14 @@ Ext.define('LABKEY.app.controller.View', {
             }
         } else {
             if (!controller || (Ext.isString(controller) && controller.length === 0)) {
-                if (Ext.isDefined(this.application.defaultController)) {
-                    controller = this.application.defaultController;
+                var resolved = this.application.resolveDefaultController();
+                if (Ext.isDefined(resolved)) {
+                    if (Ext.isString(resolved)) {
+                        controller = resolved;
+                    }
+                    else {
+                        console.log('Application.resolveDefaultController is expected to return a string.');
+                    }
                 }
                 else {
                     console.log("Consider specifying a 'defaultController' on your Application.");
