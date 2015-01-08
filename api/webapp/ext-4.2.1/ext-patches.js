@@ -14,6 +14,19 @@ Ext4.Ajax.defaultHeaders['X-LABKEY-CSRF'] = LABKEY.CSRF;
 
 /**
  * @Override
+ * Issue 22272: Fix IE 11 detection in ExtJS 4.2.1
+ * http://stackoverflow.com/questions/21881671/ext-isie-return-false-in-ie-11
+ */
+(function() {
+    var check = function(regex){return regex.test(Ext4.userAgent);},docMode = document.documentMode,isIE = !Ext4.isOpera && (check(/msie/) || check(/trident/));
+    Ext4.apply(Ext4, {
+        isIE: isIE, // any users before this point (e.g. the framework itself) will not recognize this change to isIE
+        isIE11: isIE && ((check(/trident\/7\.0/) && docMode != 7 && docMode != 8 && docMode != 9 && docMode != 10) || docMode == 11)
+    });
+})();
+
+/**
+ * @Override
  * This is an override of the Ext4.2.1 field template, which was performed in order to support a help popup next to the field label (ie. '?')
  * Set the field's helpPopup property to use this.  This should be the default Ext4.2.1 template with 2 lines added.  This is a heavy handed way to
  * inject this.  It would have been nicer to hook into afterLabelTextTpl; however, this template's data is populated through a slightly different
