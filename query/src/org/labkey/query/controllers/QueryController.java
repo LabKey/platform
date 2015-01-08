@@ -249,6 +249,7 @@ public class QueryController extends SpringActionController
                 remoteConnectionForm.setPassword(map1.get("password"));
                 remoteConnectionForm.setContainer(map1.get("container"));
             }
+            getPageConfig().setHelpTopic(new HelpTopic("remoteConnection"));
             return new JspView<>("/org/labkey/query/view/createRemoteConnection.jsp", remoteConnectionForm, errors);
         }
 
@@ -3809,6 +3810,7 @@ public class QueryController extends SpringActionController
             {
                 connectionMap = null; // render the failure page
             }
+            getPageConfig().setHelpTopic(new HelpTopic("remoteConnection"));
             return new JspView<>("/org/labkey/query/view/manageRemoteConnections.jsp", connectionMap, errors);
         }
 

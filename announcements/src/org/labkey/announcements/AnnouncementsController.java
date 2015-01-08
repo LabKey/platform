@@ -1856,7 +1856,7 @@ public class AnnouncementsController extends SpringActionController
             {
                 String expires = StringUtils.trimToNull((String) get("expires"));
                 if (null != expires)
-                    DateUtil.parseDateTime(expires);
+                    DateUtil.parseDateTime(getContainer(), expires);
             }
             catch (ConversionException x)
             {
