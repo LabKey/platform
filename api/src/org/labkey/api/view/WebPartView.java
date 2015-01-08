@@ -200,18 +200,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         return StringUtils.defaultString((String) getViewContext().get("className"), "");
     }
 
-    /* Only used by FrameType.PORTAL */
-    public void setFrameClass(String className)
-    {
-        addObject("frameClass", className);
-    }
-
-    /* Only used by FrameType.PORTAL */
-    public String getFrameClass()
-    {
-        return StringUtils.defaultString((String) getViewContext().get("frameClass"), "");
-    }
-
     public void setTitle(CharSequence title)
     {
         if (title instanceof HString)
@@ -222,11 +210,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
     public String getTitle()
     {
         Object ret = getViewContext().get("title");
-        if (ret != null && !(ret instanceof String))
-        {
-            return ret.toString();
-        }
-        return (String) ret;
+        return ret == null ? null : ret.toString();
     }
 
     /** Use ActionURL version instead */
@@ -499,7 +483,6 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
         }
 
         String className = getBodyClass();
-        String frameClassName = getFrameClass();
 
         switch (frameType)
         {
@@ -543,7 +526,7 @@ public abstract class WebPartView<ModelBean> extends HttpView<ModelBean>
             case PORTAL:
             {
                 out.println("<!--webpart-->");
-                out.println("<table name=\"webpart\" id=\"webpart_" + getWebPartRowId() + "\" class=\"labkey-wp " + frameClassName + "\">");
+                out.println("<table name=\"webpart\" id=\"webpart_" + getWebPartRowId() + "\" class=\"labkey-wp\">");
 
                 Boolean collapsed = false;
 

@@ -26,6 +26,7 @@ import org.labkey.api.data.SimpleFilter;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.TableSelector;
 import org.labkey.api.exp.ExperimentException;
+import org.labkey.api.query.FieldKey;
 import org.labkey.api.query.QueryService;
 import org.labkey.api.query.UserSchema;
 import org.labkey.api.security.User;
@@ -70,7 +71,8 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
     {
         List<String> pkNames = _tableInfo.getPkColumnNames();
         assert pkNames.size() == 1;
-        ColumnInfo col = _tableInfo.getColumn(pkNames.get(0));
+        FieldKey pkFieldKey = FieldKey.fromParts(pkNames.get(0));
+        ColumnInfo col = _tableInfo.getColumn(pkFieldKey);
         Object convertedID;
         try
         {
@@ -81,7 +83,7 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
            throw new ThawListResolverException("Conversion exception converting to " + col.getJavaObjectClass().getSimpleName() + " resolving thaw list entry for specimenId: " + specimenID);
         }
 
-        TableSelector selector = new TableSelector(_tableInfo, new SimpleFilter(pkNames.get(0), convertedID), null);
+        TableSelector selector = new TableSelector(_tableInfo, new SimpleFilter(pkFieldKey, convertedID), null);
         Map<String, Object>[] rows = selector.setForDisplay(true).getMapArray();
 
         assert rows.length <= 1;
@@ -92,47 +94,51 @@ public class ThawListListResolver extends AbstractParticipantVisitResolver
         }
         else
         {
-            String childSpecimenID = rows[0].get("SpecimenID") == null ? null : rows[0].get("SpecimenID").toString();
-            String childParticipantID = rows[0].get("ParticipantID") == null ? null : rows[0].get("ParticipantID").toString();
+            Map<String, Object> dataRow = rows[0];
+            String childSpecimenID = dataRow.get("SpecimenID") == null ? null : dataRow.get("SpecimenID").toString();
+            String childParticipantID = dataRow.get("ParticipantID") == null ? null : dataRow.get("ParticipantID").toString();
 
             Double childVisitID = null;
-            if (rows[0].get("VisitID") instanceof Number)
+            Object childVisitIDObject = dataRow.get("VisitID");
+            if (childVisitIDObject instanceof Number)
             {
-                childVisitID = ((Number)rows[0].get("VisitID")).doubleValue();
+                childVisitID = ((Number) childVisitIDObject).doubleValue();
             }
-            else if (rows[0].get("VisitID") instanceof String)
+            else if (childVisitIDObject instanceof String)
             {
                 try
                 {
-                    childVisitID = Double.parseDouble((String)rows[0].get("VisitID"));
+                    childVisitID = Double.parseDouble((String) childVisitIDObject);
                 }
                 catch (NumberFormatException e)
                 {
-                    throw new ThawListResolverException("Can not convert VisitId value: " + rows[0].get("VisitID") + " to double for specimenId: " + specimenID);
+                    throw new ThawListResolverException("Can not convert VisitId value: " + childVisitIDObject + " to double for specimenId: " + specimenID);
                 }
             }
 
             Date childDate = null;
-            if (rows[0].get("Date") instanceof Date)
+            Object childDateObject = dataRow.get("Date");
+            if (childDateObject instanceof Date)
             {
-                childDate = (Date)rows[0].get("Date");
+                childDate = (Date) childDateObject;
             }
-            else if (rows[0].get("Date") instanceof String)
+            else if (childDateObject instanceof String)
             {
                 try
                 {
-                    DateUtil.parseDateTime((String)rows[0].get("Date"));
+                    DateUtil.parseDateTime(getRunContainer(), (String) childDateObject);
                 }
                 catch (ConversionException e)
                 {
-                    throw new ThawListResolverException("Can not convert Date value: " + rows[0].get("Date") + " to date for specimenId: " + specimenID);
+                    throw new ThawListResolverException("Can not convert Date value: " + childDateObject + " to date for specimenId: " + specimenID);
                 }
             }
 
             Container childTargetStudy = null;
-            if (rows[0].get("TargetStudy") != null)
+            Object childTargetStudyObject = dataRow.get("TargetStudy");
+            if (childTargetStudyObject != null)
             {
-                Set<Study> studies = StudyService.get().findStudy(rows[0].get("TargetStudy"), null);
+                Set<Study> studies = StudyService.get().findStudy(childTargetStudyObject, null);
                 if (!studies.isEmpty())
                 {
                     Study study = studies.iterator().next();

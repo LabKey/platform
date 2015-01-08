@@ -262,7 +262,7 @@ public class PublishResultsQueryView extends ResultsQueryView
         return hidden;
     }
 
-    private static Date convertObjectToDate(Object dateObject)
+    private static Date convertObjectToDate(Container container, Object dateObject)
     {
         Date date = null;
         if (dateObject instanceof Date)
@@ -273,9 +273,9 @@ public class PublishResultsQueryView extends ResultsQueryView
         {
             try
             {
-                date = new Date(DateUtil.parseDateTime((String)dateObject));
+                date = new Date(DateUtil.parseDateTime(container, (String)dateObject));
             }
-            catch (ConversionException e) {}
+            catch (ConversionException ignored) {}
         }
         return date;
     }
@@ -404,7 +404,7 @@ public class PublishResultsQueryView extends ResultsQueryView
             Container targetStudyContainer = targetStudy == null ? null : targetStudy.getContainer();
 
             Double visitId = _visitIdCol != null && timepointType == TimepointType.VISIT ? convertObjectToDouble(_visitIdCol.getValue(ctx)) : null;
-            Date date = _dateCol != null && timepointType == TimepointType.DATE ? convertObjectToDate(_dateCol.getValue(ctx)) : null;
+            Date date = _dateCol != null && timepointType == TimepointType.DATE ? convertObjectToDate(ctx.getContainer(), _dateCol.getValue(ctx)) : null;
 
             String specimenID = _specimenIDCol == null ? null : convertObjectToString(_specimenIDCol.getValue(ctx));
             String participantID = _ptidCol == null ? null : convertObjectToString(_ptidCol.getValue(ctx));
@@ -461,7 +461,7 @@ public class PublishResultsQueryView extends ResultsQueryView
                 Object key = ctx.getRow().get(_objectIdCol.getName());
                 return _reshowDates.get(key);
             }
-            Date result = _dateCol == null ? null : convertObjectToDate(_dateCol.getValue(ctx));
+            Date result = _dateCol == null ? null : convertObjectToDate(ctx.getContainer(), _dateCol.getValue(ctx));
             if (result == null)
             {
                 ParticipantVisit pv = resolve(ctx);
@@ -596,13 +596,13 @@ public class PublishResultsQueryView extends ResultsQueryView
                 }
                 else
                 {
-                    Date userDate = convertObjectToDate(getUserDate(ctx));
+                    Date userDate = convertObjectToDate(ctx.getContainer(), getUserDate(ctx));
                     userInputMatchesASpecimen = isValidPtidDate(targetStudy, userParticipantId, userDate);
                     if (_specimenDateCol != null && _specimenPTIDCol != null && assayAndTargetSpecimenMatch != null)
                     {
                         // Need to grab the study specimen's participant and date
                         String targetSpecimenPTID = convertObjectToString(_specimenPTIDCol.getValue(ctx));
-                        Date targetSpecimenDate = convertObjectToDate(_specimenDateCol.getValue(ctx));
+                        Date targetSpecimenDate = convertObjectToDate(ctx.getContainer(), _specimenDateCol.getValue(ctx));
                         if (userDate == null || targetSpecimenDate == null)
                         {
                             // Do a simple object equality on the dates if one or both of them is null
@@ -888,7 +888,7 @@ public class PublishResultsQueryView extends ResultsQueryView
 
             String participantID = convertObjectToString(participantObject);
             Double visitDouble = convertObjectToDouble(visitObject);
-            Date dateDate = convertObjectToDate(dateObject);
+            Date dateDate = convertObjectToDate(ctx.getContainer(), dateObject);
 
             visit = study == null ? null : study.getVisit(participantID, visitDouble, dateDate, true);
 
