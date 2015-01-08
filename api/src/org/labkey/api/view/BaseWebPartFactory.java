@@ -220,4 +220,10 @@ public abstract class BaseWebPartFactory implements WebPartFactory
     {
         return propertyMap;
     }
+
+    @Override
+    public boolean includeInExport(ImportContext ctx, Portal.WebPart webPart)
+    {
+        return true;
+    }
 }
