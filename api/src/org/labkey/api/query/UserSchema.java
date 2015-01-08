@@ -125,6 +125,22 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
     }
 
 
+    public void checkCanExecuteMDX() throws UnauthorizedException
+    {
+        // by default disallow MDX if there is a getOlapContainerFilter() is not null so user can't
+        // avoid the filter
+        if (null != getOlapContainerFilter() && !getUser().isSiteAdmin())
+            throw new UnauthorizedException("User cannot execute MDX against this schema: " + getName());
+    }
+
+
+    public ContainerFilter getOlapContainerFilter()
+    {
+        return null;
+    }
+
+
+
     @Nullable
     public TableInfo getTable(String name, boolean includeExtraMetadata)
     {
@@ -616,11 +632,6 @@ abstract public class UserSchema extends AbstractSchema implements MemTrackable
         if (_schemaCustomizers != null)
             for (UserSchemaCustomizer customizer : _schemaCustomizers)
                 customizer.afterConstruct(this, table);
-    }
-
-    public ContainerFilter getOlapContainerFilter(User user)
-    {
-        return null;
     }
 
     @Override
