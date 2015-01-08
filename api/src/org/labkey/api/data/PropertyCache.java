@@ -36,8 +36,7 @@ public class PropertyCache
     PropertyCache(String name, CacheLoader<String, Map<String, String>> propertyLoader)
     {
         _loader = propertyLoader;
-        _blockingCache = new DatabaseCache(CoreSchema.getInstance().getSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, name);
-
+        _blockingCache = new DatabaseCache<>(CoreSchema.getInstance().getSchema().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, name);
     }
 
     @Nullable Map<String, String> getProperties(User user, Container container, String category)
