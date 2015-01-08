@@ -68,6 +68,10 @@ public class QubeQuery
     QubeExpr onRows;
     QubeExpr onColumns;
 
+    // for mdx queries
+    QubeExpr sliceFilters;
+
+    // for count distinct queries
     Level countDistinctLevel;       // [Subject].[Subject]
     QubeExpr countFilters;          // subset the members that are counted (e.g. restrict [Subject].[Subject] by [Species].[Homo Sapiens])
 
@@ -76,6 +80,7 @@ public class QubeQuery
 
     Member countDistinctMember;     // [Measures].[ParticipantCount]
     Member countRowsMember;         // [Measures].[RowCount]
+
 
     // CONSIDER using List<QueryParseException>, but BindException is fine for now
     BindException errors = null;
@@ -325,6 +330,12 @@ public class QubeQuery
         if (countFilter instanceof JSONObject)
             countFilter = new JSONArray(Collections.singleton(countFilter));
         countFilters = parseJsonExpr(countFilter, OP.MEMBERS, OP.XINTERSECT);
+
+
+        Object sliceFilter = json.get("sliceFilter");
+        if (sliceFilter instanceof JSONObject)
+            sliceFilter = new JSONArray(Collections.singleton(sliceFilter));
+        sliceFilters = parseJsonExpr(sliceFilter, OP.MEMBERS, OP.XINTERSECT);
 
 
         Object whereFilter = json.get("whereFilter");

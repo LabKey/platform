@@ -231,6 +231,7 @@ public class BitSetQueryImpl
                 h = cube.getHierarchies().get("Patient");
             if (h != null)
             {
+                assert ((CachedCube._NamedList)h.getLevels()).isReadOnly();
                 qq.countDistinctLevel = h.getLevels().get(h.getName());
                 if (null == qq.countDistinctLevel)
                     qq.countDistinctLevel = h.getLevels().get(h.getLevels().size() - 1);

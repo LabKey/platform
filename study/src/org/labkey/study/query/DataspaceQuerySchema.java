@@ -58,7 +58,7 @@ public class DataspaceQuerySchema extends StudyQuerySchema
     }
 
     @Override
-    public ContainerFilter getOlapContainerFilter(User user)
+    public ContainerFilter getOlapContainerFilter()
     {
         return getDefaultContainerFilter();
     }

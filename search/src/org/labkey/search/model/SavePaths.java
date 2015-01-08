@@ -66,6 +66,13 @@ public class SavePaths implements DavCrawler.SavePaths
         return f;
     }
 
+    SQLFragment pathFilter(TableInfo ti, int parentId, String name)
+    {
+        SQLFragment f;
+        f = new SQLFragment(" Parent=? AND Name=?", parentId, name);
+        return f;
+    }
+
 
     //
     // FOLDER/RESOURCES
@@ -99,29 +106,43 @@ public class SavePaths implements DavCrawler.SavePaths
     }
 
 
-    Cache<Path,Integer> idcache = CacheManager.getBlockingCache(1000, TimeUnit.MINUTES.toMillis(5), "SavePaths: path to id cache", new CacheLoader<Path,Integer>()
-    {
-        @Override
-        public Integer load(Path path, @Nullable Object argument)
-        {
-            String pathStr = toPathString(path);
-            SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE ");
-            find.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr));
-            Integer id = new SqlSelector(getSearchSchema(), find).getObject(Integer.class);
-            return null != id ? id : -1;
-        }
-    });
+//    Cache<Path,Integer> idcache = CacheManager.getBlockingCache(1000, TimeUnit.MINUTES.toMillis(5), "SavePaths: path to id cache", new CacheLoader<Path,Integer>()
+//    {
+//        @Override
+//        public Integer load(Path path, @Nullable Object argument)
+//        {
+//            String pathStr = toPathString(path);
+//            SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE ");
+//            find.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), pathStr));
+//            Integer id = new SqlSelector(getSearchSchema(), find).getObject(Integer.class);
+//            return null != id ? id : -1;
+//        }
+//    });
+
+
+    // NOTE: not using a blocking cache since one request can cause multiple entries to be loaded
+    Cache<Path,Integer> idcache = CacheManager.getCache(10_000, TimeUnit.MINUTES.toMillis(5), "SavePaths: path to id cache");
 
 
     // -1 if not exists
-    private int getId(Path path) throws SQLException
+    private synchronized int getId(Path path) throws SQLException
     {
-        return idcache.get(path);
+        Integer id = idcache.get(path);
+        if (null != id)
+            return id;
+        int parentId = _getParentId(path);
+        String name = path.size() == 0 ? "/" : path.getName();
+
+        String pathStr = toPathString(path);
+        SQLFragment find = new SQLFragment("SELECT id FROM search.CrawlCollections WHERE ");
+        find.append(pathFilter(getSearchSchema().getTable("CrawlCollections"), parentId, name));
+        id = new SqlSelector(getSearchSchema(), find).getObject(Integer.class);
+        return null != id ? id : -1;
     }
 
 
     // create if not exists
-    private int _getParentId(Path path) throws SQLException
+    private synchronized int _getParentId(Path path) throws SQLException
     {
         Path parent = path.getParent();
         if (null == parent)
@@ -134,6 +155,10 @@ public class SavePaths implements DavCrawler.SavePaths
         // insert parent
         return _ensure(parent);
     }
+
+
+
+
 
 
     private int _ensure(Path path) throws SQLException

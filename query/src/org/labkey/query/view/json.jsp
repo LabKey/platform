@@ -167,7 +167,7 @@
                 for (var p=0; p < pos.length; p++)
                 {
                     // only showing first member (handle hierarchy)
-                    html.push('<td class="labkey-column-header" title="' + h(cs.axes[1].positions[row][p].uniqueName) +'">' +  h(cs.axes[1].positions[row][p].name) + "</td>");
+                    html.push('<td class="labkey-column-header" title="' + h(cs.axes[1].positions[row][p].uniqueName) +'">' +  h(cs.axes[1].positions[row][p].uniqueName) + "</td>");
                 }
 
                 for (var col=0 ; col<cs.axes[0].positions.length ; col++)

@@ -334,31 +334,58 @@ public class MdxQueryImpl
 
     public String generateMDX() throws BindException
     {
-        String rowset=null, columnset = null, filterset = null;
+        _MDX colmdx = null;
+        String rowset=null, columnset = null, countFilterSet = null, slice=null;
+
+        if (null != qq.joinLevel)
+            errors.rejectValue(SpringActionController.ERROR_MSG, "joinLevel not supported");
+        if (null != qq.whereFilters && 0 != qq.whereFilters.arguments.size())
+            errors.reject(SpringActionController.ERROR_MSG, "whereFilters not supported");
+        if (errors.hasErrors())
+            return null;
+
         if (null != qq.onColumns)
-            columnset = this._toSetString(this._processExpr(qq.onColumns));
+        {
+            colmdx = this._processExpr(qq.onColumns);
+            columnset = this._toSetString(colmdx);
+        }
+
         if (null != qq.onRows)
             rowset = this._toSetString(this._processExpr(qq.onRows));
+
         if (null != qq.countFilters && qq.countFilters.arguments.size() > 0)
-            filterset = this._toSetString(this._processExpr(qq.countFilters));
+            countFilterSet = this._toSetString(this._processExpr(qq.countFilters));
 
-        String countMeasure = "[Measures].DefaultMember";
+        if (null != qq.sliceFilters && qq.sliceFilters.arguments.size() > 0)
+            slice = this._toSetString(this._processExpr(qq.sliceFilters));
+
+
+        String defaultMeasure = "[Measures].DefaultMember";
         String withDefinition = "";
-        if (null != filterset)
+        if (null != qq.countDistinctMember)
+            defaultMeasure = "[Measures]." + qq.countDistinctMember.getName();
+        if (null != countFilterSet)
         {
-            countMeasure = "[Measures]." + qq.countDistinctMember.getName();
-            withDefinition = "WITH SET ptids AS " + filterset + "\n" +
-                    "MEMBER " + countMeasure + " AS " + "COUNT(ptids,EXCLUDEEMPTY)\n";
+            withDefinition = "WITH " +
+                "SET ptids AS " + countFilterSet + "\n" +
+                "MEMBER " + defaultMeasure + " AS " + "COUNT(ptids,EXCLUDEEMPTY)\n";
         }
-        if (null == columnset)
-            columnset = countMeasure;
-        else
-            columnset = "(" + columnset + " , " + countMeasure + ")";
 
-        StringBuilder query = new StringBuilder(withDefinition + "SELECT\n" + "  "  + columnset + " ON COLUMNS");
+        if (null == columnset)
+            columnset = defaultMeasure;
+        else if (null != colmdx.level && !colmdx.level.getName().equals("MeasuresLevel"))
+            columnset = "(" + columnset + " , " + defaultMeasure + ")";
+
+        StringBuilder query = new StringBuilder();
+
+        query.append(withDefinition);
+        query.append("\nSELECT\n");
+        query.append(columnset).append(" ON COLUMNS");
         if (null != rowset)
             query.append(",\n" + (qq.showEmpty ? "" : " NON EMPTY ") + rowset + " ON ROWS\n");
-        query.append("\nFROM [" + qq.getCube().getName() + "]\n");
+        query.append("\nFROM [").append(qq.getCube().getName()).append("]\n");
+        if (null != slice)
+            query.append("\nWHERE ").append(slice);
 
         return query.toString();
     }

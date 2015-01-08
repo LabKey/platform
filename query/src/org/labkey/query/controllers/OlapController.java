@@ -20,6 +20,7 @@ import mondrian.olap.Annotation;
 import mondrian.olap.MondrianException;
 import mondrian.olap.MondrianServer;
 import mondrian.xmla.impl.MondrianXmlaServlet;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -537,7 +538,7 @@ public class OlapController extends SpringActionController
     }
 
 
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(ReadPermission.class)
     @Action(ActionType.SelectData)
     public class ExecuteMdxAction extends ApiAction<ExecuteMdxForm>
     {
@@ -560,6 +561,39 @@ public class OlapController extends SpringActionController
         @Override
         public ApiResponse execute(ExecuteMdxForm form, BindException errors) throws Exception
         {
+            if (errors.hasErrors())
+                return null;
+
+            Cube cube = getCube(form, errors);
+            if (errors.hasErrors())
+                return null;
+
+            OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), form.getConfigId());
+            if (null == sd)
+            {
+                errors.reject(ERROR_MSG, "olap cube config not found: " + form.getConfigId());
+                return null;
+            }
+
+            String schemaName = getAnnotation(cube,"SchemaName");
+            if (null != schemaName)
+            {
+                UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
+                if (null == schema)
+                    throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
+                schema.checkCanReadSchemaOlap();
+                schema.checkCanExecuteMDX();
+            }
+
+            // does not override schema.checkCanExecuteMDX()
+            String allowMDX = getAnnotation(cube, "AllowMDX");
+            if (null != allowMDX && Boolean.FALSE == ConvertUtils.convert(allowMDX,Boolean.class))
+            {
+                errors.reject(ERROR_MSG, "this cube does not allow mdx queries: " + cube.getName());
+                return null;
+            }
+
+
             String sql = StringUtils.trimToNull(form.getQuery());
 
             try
@@ -581,7 +615,7 @@ public class OlapController extends SpringActionController
                 Throwable t = x;
                 while (null != t.getCause() && t != t.getCause())
                     t = t.getCause();
-                errors.reject(SpringActionController.ERROR_MSG,t.getMessage());
+                errors.reject(SpringActionController.ERROR_MSG,StringUtils.defaultString(t.getMessage(),t.toString()));
                 return null;
             }
             catch (Error err)
@@ -639,6 +673,7 @@ public class OlapController extends SpringActionController
     }
 
 
+
     public static class JsonQueryForm extends OlapForm implements CustomApiForm
     {
         JSONObject json;
@@ -669,7 +704,6 @@ public class OlapController extends SpringActionController
      * NOT PART OF OFFICIAL CLIENT API
      * the particulars of the JSON format may change, and is very tied to the dataspace implementation
      */
-    @Deprecated /* use CountDistinctQuery.api */
     @RequiresSiteAdmin
     @Action(ActionType.SelectData)
     public class JsonQueryAction extends ApiAction<JsonQueryForm>
@@ -691,8 +725,29 @@ public class OlapController extends SpringActionController
                 return null;
             }
 
+            OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), form.getConfigId());
+            if (null == sd)
+            {
+                errors.reject(ERROR_MSG, "olap cube config not found: " + form.getConfigId());
+                return null;
+            }
+
+            ContainerFilter cf = null;
+            String schemaName = getAnnotation(cube,"SchemaName");
+            if (null != schemaName)
+            {
+                UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
+                if (null == schema)
+                    throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
+                schema.checkCanReadSchemaOlap();
+                cf = schema.getOlapContainerFilter();
+            }
+
             QubeQuery qquery = new QubeQuery(cube);
             qquery.fromJson(q, errors);
+            // TODO
+            // if (null != cf)
+            //    mdx.setContainerFilter(cf);
             if (errors.hasErrors())
                 return null;
 
@@ -792,7 +847,7 @@ public class OlapController extends SpringActionController
                 if (null == schema)
                     throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
                 schema.checkCanReadSchemaOlap();
-                cf = schema.getOlapContainerFilter(getUser());
+                cf = schema.getOlapContainerFilter();
             }
 
             CellSet cs = null;

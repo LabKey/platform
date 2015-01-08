@@ -836,6 +836,11 @@
         query : function(config)
         {
             var copy = Ext4.apply({}, config);
+
+            // regular mdx filter
+            copy.sliceFilter = copy.sliceFilter ? copy.sliceFilter.slice() : [];
+
+            // for countDistinct api
             copy.whereFilter = copy.whereFilter ? copy.whereFilter.slice() : [];
 
             if (copy.filter && copy.countFilter) {
@@ -979,6 +984,13 @@
                      * (optional)
                      */
                     onColumns: config.onColumns || config.onCols,
+
+
+                    /**
+                     * Regular mdx slice filter (not used by count distinct api)
+                     */
+                    sliceFilter: config.sliceFilter,
+
 
                     /**
                      * Name of the level that contains the members we are counting in the query result
