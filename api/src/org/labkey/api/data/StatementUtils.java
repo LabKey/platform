@@ -340,7 +340,7 @@ public class StatementUtils
         ColumnInfo col = table.getColumn("Container");
         if (null != col)
             keys.put(col.getFieldKey(), col);
-        if (null != keyNames)
+        if (null != keyNames && !keyNames.isEmpty())
         {
             for (String name : keyNames)
             {
