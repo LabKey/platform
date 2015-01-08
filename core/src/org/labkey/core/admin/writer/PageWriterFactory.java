@@ -116,6 +116,16 @@ public class PageWriterFactory implements FolderWriterFactory
         {
             for (WebPart webPart : webpartsInPage)
             {
+                WebPartFactory factory = null;
+                if(webPart.getPropertyMap().size() > 0)
+                {
+                    factory = Portal.getPortalPart(webPart.getName());
+                }
+                if(factory != null && !factory.includeInExport(ctx, webPart))
+                {
+                    return;
+                }
+
                 PagesDocument.Pages.Page.Webpart webpartXml = pageXml.addNewWebpart();
                 webpartXml.setName(webPart.getName());
                 webpartXml.setIndex(webPart.getIndex());
@@ -129,7 +139,6 @@ public class PageWriterFactory implements FolderWriterFactory
 
                 if (webPart.getPropertyMap().size() > 0)
                 {
-                    WebPartFactory factory = Portal.getPortalPart(webPart.getName());
                     if (null != factory)        // old old webpart could have been left behind and have no factory
                     {
                         Map<String, String> props = factory.serializePropertyMap(ctx, webPart.getPropertyMap());
