@@ -67,6 +67,12 @@
  *              <strong>value:</strong> The string value of the label (i.e. "Weight Over Time").
  *          </li>
  *          <li>
+ *              <strong>fontSize:</strong> The font-size in pixels.
+ *          </li>
+ *          <li>
+ *              <strong>position:</strong> The number of pixels from the edge to render the label.
+ *          </li>
+ *          <li>
  *              <strong>lookClickable:</strong> If true it styles the label so that it appears to be clickable. Defaults
  *              to false.
  *          </li>
@@ -1320,12 +1326,15 @@ boxPlot.render();
             yLeft: {
                 scaleType: 'continuous',
                 domain: config.properties.yAxisDomain,
-                trans: config.properties.yAxisScale || 'linear'
+                trans: config.properties.yAxisScale || 'linear',
+                tickFormat: function(val) {
+                    return LABKEY.vis.isValid(val) && (val > 100000 || val < -100000) ? val.toExponential() : val;
+                }
             }
         };
         config.margins = {
-            top: config.labels && config.labels.main ? 50 : 10,
-            right: config.properties.color || config.legendData ? 140 : 30,
+            top: config.labels && config.labels.main ? 30 : 10,
+            right: config.properties.color || config.legendData ? 150 : 40,
             bottom: config.labels && config.labels.x ? 75 : 55,
             left: config.labels && config.labels.y ? 75 : 55
         };

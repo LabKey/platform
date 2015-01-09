@@ -217,21 +217,25 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
     var initLabelElements = function() {
         labelElements = {};
-        var labels, mainLabel = {}, yLeftLabel = {}, yRightLabel = {}, xLabel = {};
+        var labels, fontSize, mainLabel = {}, yLeftLabel = {}, yRightLabel = {}, xLabel = {};
 
         labels = this.canvas.append('g').attr('class', plot.renderTo + '-labels');
 
+        fontSize = plot.labels.main && plot.labels.main.fontSize != undefined ? plot.labels.main.fontSize : 18;
         mainLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .style('font', '18px verdana, arial, helvetica, sans-serif');
+                .style('font', fontSize + 'px verdana, arial, helvetica, sans-serif');
 
+        fontSize = plot.labels.x && plot.labels.x.fontSize != undefined ? plot.labels.x.fontSize : 14;
         xLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .style('font', '14px verdana, arial, helvetica, sans-serif');
+                .style('font', fontSize + 'px verdana, arial, helvetica, sans-serif');
 
+        fontSize = plot.labels.yLeft && plot.labels.yLeft.fontSize != undefined ? plot.labels.yLeft.fontSize : 14;
         yLeftLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .style('font', '14px verdana, arial, helvetica, sans-serif');
+                .style('font', fontSize + 'px verdana, arial, helvetica, sans-serif');
 
+        fontSize = plot.labels.yRight && plot.labels.yRight.fontSize != undefined ? plot.labels.yRight.fontSize : 14;
         yRightLabel.dom = labels.append('text').attr('text-anchor', 'middle')
-                .style('font', '14px verdana, arial, helvetica, sans-serif');
+                .style('font', fontSize + 'px verdana, arial, helvetica, sans-serif');
 
         labelElements.main = mainLabel;
         labelElements.y = yLeftLabel;
@@ -996,7 +1000,7 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             }
             translate = true;
             rotate = 270;
-            x = plot.grid.leftEdge - 55;
+            x = plot.grid.leftEdge - (plot.labels[name] && plot.labels[name].position != undefined ? plot.labels[name].position : 55);
             y = plot.grid.height / 2
         } else if (name == 'yRight') {
             if (!plot.scales.yRight || (plot.scales.yRight && !plot.scales.yRight.scale)) {
@@ -1004,14 +1008,14 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             }
             translate = true;
             rotate = 90;
-            x = plot.grid.rightEdge + 45;
+            x = plot.grid.rightEdge + (plot.labels[name].position != undefined ? plot.labels[name].position : 45);
             y = plot.grid.height / 2;
         } else if (name == 'x') {
             x = plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2;
-            y = plot.grid.height - 10;
+            y = plot.grid.height - (plot.labels[name].position != undefined ? plot.labels[name].position : 10);
         } else if (name == 'main') {
             x = plot.grid.width / 2;
-            y = 30;
+            y = plot.labels[name].position != undefined ? plot.labels[name].position : 30;
         }
 
         if (this.canvas && plot.labels[name] && plot.labels[name].value) {

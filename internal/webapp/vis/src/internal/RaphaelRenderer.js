@@ -285,6 +285,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
         // Only attempt to render if we have a paper object on which we can render and a value.
         if (this.paper && plot.labels[name] && plot.labels[name].value) {
             var x, y, labelEl;
+            var fontSize = plot.labels[name].fontSize;
 
             if (labelElements[name] && labelElements[name].text) {
                 labelElements[name].text.remove();
@@ -296,26 +297,30 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
 
             if (name == 'main') {
                 x = plot.grid.width / 2;
-                y = 30;
+                y = plot.labels[name].position != undefined ? plot.labels[name].position : 30;
+                fontSize = fontSize != undefined ? fontSize : 18;
                 labelEl.text = this.paper.text(x, y, plot.labels[name].value)
-                        .attr({font: "18px verdana, arial, helvetica, sans-serif"});
+                        .attr({font: fontSize + "px verdana, arial, helvetica, sans-serif"});
             } else if (name == 'y' || name == 'yLeft') {
-                x = plot.grid.leftEdge - 55;
+                x = plot.grid.leftEdge - (plot.labels[name].position != undefined ? plot.labels[name].position : 55);
                 y = plot.grid.height / 2;
+                fontSize = fontSize != undefined ? fontSize : 14;
                 labelEl.text = this.paper.text(x, y, plot.labels[name].value)
-                        .attr({font: "14px verdana, arial, helvetica, sans-serif"})
+                        .attr({font: fontSize + "px verdana, arial, helvetica, sans-serif"})
                         .transform("t0,r270");
             } else if (name == 'yRight') {
-                x = plot.grid.rightEdge + 45;
+                x = plot.grid.rightEdge + (plot.labels[name].position != undefined ? plot.labels[name].position : 45);
                 y = plot.grid.height / 2;
+                fontSize = fontSize != undefined ? fontSize : 14;
                 labelEl.text = this.paper.text(x, y, plot.labels[name].value)
-                        .attr({font: "14px verdana, arial, helvetica, sans-serif"})
+                        .attr({font: fontSize + "px verdana, arial, helvetica, sans-serif"})
                         .transform("t0,r90");
             } else if (name = 'x') {
                 x = plot.grid.leftEdge + (plot.grid.rightEdge - plot.grid.leftEdge) / 2;
-                y = plot.grid.height - 10;
+                y = plot.grid.height - (plot.labels[name].position != undefined ? plot.labels[name].position : 10);
+                fontSize = fontSize != undefined ? fontSize : 14;
                 labelEl.text = this.paper.text(x, y, plot.labels[name].value)
-                        .attr({font: "14px verdana, arial, helvetica, sans-serif"})
+                        .attr({font: fontSize + "px verdana, arial, helvetica, sans-serif"})
                         .attr({'text-anchor': 'middle'});
 
                 // Create a rect that goes behind the x label because sometimes the x-axis tick marks get in the way.
