@@ -18,5 +18,7 @@ Ext.define('LABKEY.app.Application', {
 
     resolveDefaultController : function() {
         return this.defaultController;
-    }
+    },
+
+    setDataSource : function(datasource) {}
 });

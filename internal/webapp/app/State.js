@@ -44,13 +44,19 @@ Ext.define('LABKEY.app.controller.State', {
 
     supportColumnServices: false,
 
+    olap: undefined,
+
     init : function() {
 
         if (LABKEY.devMode) {
             STATE = this;
         }
 
-        this.olap = this.application.olap;
+        if (this.application.olap) {
+            this.olap = this.application.olap;
+        }
+
+        this.callbackCache = [];
 
         if (LABKEY.devMode) {
             this.onMDXReady(function(mdx) { MDX = mdx; });
@@ -73,6 +79,23 @@ Ext.define('LABKEY.app.controller.State', {
         this.application.on('route', function() { this.loadState(); }, this, {single: true});
     },
 
+    setDataSource : function(olap) {
+        this.olap = olap;
+        Ext.each(this.callbackCache, function(onReadyObj) {
+            this.olap.onReady(onReadyObj.fn, onReadyObj.scope);
+        }, this);
+        this.callbackCache = [];
+    },
+
+    loadDataSource : function() {
+        if (this.olap) {
+            this.olap.load();
+        }
+        else {
+            console.error('Unable to loadDataSource(). Not defined.');
+        }
+    },
+
     getCurrentState : function() {
         var c = this.state.getCount();
         if (c > 0) {
@@ -90,7 +113,16 @@ Ext.define('LABKEY.app.controller.State', {
 
     onMDXReady : function(callback, scope) {
         var s = scope || this;
-        this.olap.onReady(callback, s);
+        if (this.olap) {
+            this.olap.onReady(callback, s);
+        }
+        else {
+            this.callbackCache.push({fn: callback, scope: s});
+        }
+    },
+
+    isMDXReady : function() {
+        return this.olap && this.olap._isReady === true;
     },
 
     loadState : function(idx) {
