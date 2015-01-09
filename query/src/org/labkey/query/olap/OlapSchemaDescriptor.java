@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 import org.labkey.api.data.Container;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.OlapSchemaInfo;
+import org.labkey.api.query.QuerySettings;
 import org.labkey.api.security.User;
 import org.labkey.query.olap.rolap.RolapCubeDef;
 import org.labkey.query.olap.rolap.RolapReader;
@@ -67,7 +68,7 @@ public abstract class OlapSchemaDescriptor
         _olapSchemaInfo = module.getOlapSchemaInfo();
         _queryTag = (_olapSchemaInfo == null) ? "" : _olapSchemaInfo.getQueryTag();
 
-        if (_name.equalsIgnoreCase("Argos"))
+        if (_name.equalsIgnoreCase("Argos") && !QuerySettings.useRolap)
             _strategy = ImplStrategy.mondrian;
         else
             _strategy = ImplStrategy.rolapYourOwn;
