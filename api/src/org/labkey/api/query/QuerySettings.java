@@ -76,6 +76,9 @@ public class QuerySettings
     private QueryDefinition _queryDef;
     private TableInfo _table;
 
+    // only in use for argos -> rolap development cycle.
+    public static boolean useRolap = false;
+
     protected QuerySettings(String dataRegionName)
     {
         _dataRegionName = dataRegionName;
