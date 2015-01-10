@@ -605,8 +605,8 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             formItems.unshift({
                 xtype: 'box',
                 width: 600,
-                html: '**This study is being republished and has preset values based on the previous '
-                      + (this.mode == 'publish' ? 'published' : this.mode) + ' study\'s values.',
+                html: 'Since you are republishing a study, settings in this wizard are preset to the values selected when the previous '
+                      + (this.mode == 'publish' ? 'published' : this.mode) + ' study was created.',
                 style: 'font: normal 12px tahoma, arial, helvetica, sans-serif; margin-bottom: 15px;'
             });
         }
@@ -1734,16 +1734,16 @@ LABKEY.study.CreateStudyWizard = Ext.extend(Ext.util.Observable, {
             ],
             data : [
                 ['Use Alternate ' + this.subject.nounSingular + ' IDs',
-                 'This will replace each ' + this.subject.nounSingular.toLowerCase() + ' id by an alternate randomly generated id.',
+                 'Replace each ' + this.subject.nounSingular.toLowerCase() + ' id with a randomly generated alternate id',
                  'useAlternateParticipantIds'],
                 ['Shift ' + this.subject.nounSingular + ' Dates',
-                 'This will shift selected date values associated with a ' + this.subject.nounSingular.toLowerCase() + ' by a random, ' + this.subject.nounSingular.toLowerCase() + ' specific, offset (from 1 to 365 days).',
+                 'Shift date values associated with a ' + this.subject.nounSingular.toLowerCase() + ' by a random, ' + this.subject.nounSingular.toLowerCase() + ' specific, offset (from 1 to 365 days)',
                  'shiftDates'],
                 ['Remove Protected Columns',
-                 'Selecting this option will exclude all dataset, list, and specimen columns that have been tagged as protected columns.',
+                 'Exclude all dataset, list, and specimen columns that have been tagged as protected',
                  'removeProtectedColumns'],
                 ['Mask Clinic Names',
-                 'Selecting this option will change the labels for clinics in the published list of locations to a generic label (i.e. Clinic).',
+                 'Replace clinic labels with a generic label ("Clinic")',
                  'maskClinic']
             ]
         });
