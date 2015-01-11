@@ -38,9 +38,9 @@ import java.util.List;
  */
 public abstract class BaseStudyQueryView extends QueryView
 {
-    protected SimpleFilter _filter;
+    protected final SimpleFilter _filter;
+    protected final Sort _sort;
     protected @Nullable CohortFilter _cohortFilter;
-    protected Sort _sort;
     private List<DisplayElement> _buttons;
 
     public BaseStudyQueryView(UserSchema schema, QuerySettings settings, SimpleFilter filter, Sort sort)

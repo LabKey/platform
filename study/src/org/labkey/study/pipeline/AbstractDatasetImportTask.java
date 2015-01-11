@@ -17,7 +17,6 @@
 package org.labkey.study.pipeline;
 
 import org.labkey.api.admin.ImportException;
-import org.labkey.api.admin.PipelineJobLoggerGetter;
 import org.labkey.api.pipeline.CancelledException;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineJobException;
