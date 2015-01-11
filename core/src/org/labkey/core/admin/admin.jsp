@@ -22,14 +22,14 @@
 <%@ page import="org.labkey.api.settings.AdminConsole" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.AdminLink" %>
 <%@ page import="org.labkey.api.settings.AdminConsole.SettingsLinkType" %>
+<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page import="org.labkey.api.util.GUID" %>
+<%@ page import="org.labkey.api.util.Pair" %>
 <%@ page import="org.labkey.api.view.ActionURL" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.core.admin.AdminController" %>
 <%@ page import="java.util.Map" %>
 <%@ page import="java.util.TreeMap" %>
-<%@ page import="org.labkey.api.util.Pair" %>
-<%@ page import="org.labkey.api.util.DateUtil" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%
     HttpView<AdminController.AdminBean> me = (HttpView<AdminController.AdminBean>) HttpView.currentView();
@@ -46,7 +46,7 @@
     <tr><td colspan="2"><b><%=h(type.name())%></b></td></tr><%
         for (AdminLink link : AdminConsole.getLinks(type))
         { %>
-    <tr><td colspan="2"><%=textLink(h(link.getText()), link.getUrl())%></td></tr><%
+    <tr><td colspan="2"><%=textLink(link.getText(), link.getUrl())%></td></tr><%
         } %>
     <tr><td colspan="2">&nbsp;</td></tr><%
     } %>

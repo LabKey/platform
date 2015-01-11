@@ -39,8 +39,8 @@
 <%@ page import="org.labkey.study.controllers.StudyController.ManageVisitsAction" %>
 <%@ page import="org.labkey.study.controllers.StudyDefinitionController" %>
 <%@ page import="org.labkey.study.controllers.StudyDesignController" %>
-<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.controllers.security.SecurityController" %>
+<%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.importer.StudyReload" %>
 <%@ page import="org.labkey.study.model.ParticipantCategoryImpl" %>
 <%@ page import="org.labkey.study.model.ParticipantGroup" %>
@@ -208,12 +208,12 @@
     <tr>
         <th align="left"><%= h(subjectNounSingle) %> Groups</th>
         <td>This study defines <%=groups.size()%> <%= h(subjectNounSingle.toLowerCase()) %> groups</td>
-        <td><%= textLink("Manage " + h(subjectNounSingle) + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, c)) %></td>
+        <td><%= textLink("Manage " + subjectNounSingle + " Groups", new ActionURL(StudyController.ManageParticipantCategoriesAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Alternate <%= h(subjectNounSingle) %> IDs</th>
         <td>Configure how alternate <%= h(subjectNounSingle.toLowerCase()) %> ids and aliases are generated</td>
-        <td><%= textLink("Manage Alternate " + h(subjectNounSingle) + " IDs and Aliases", new ActionURL(StudyController.ManageAlternateIdsAction.class, c)) %></td>
+        <td><%= textLink("Manage Alternate " + subjectNounSingle + " IDs and Aliases", new ActionURL(StudyController.ManageAlternateIdsAction.class, c)) %></td>
     </tr>
     <tr>
         <th align="left">Security</th>
