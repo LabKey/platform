@@ -148,11 +148,14 @@ public interface FolderType
     public List<Portal.WebPart> getPreferredWebParts();
 
     /**
-     * Add any management links to the admin popup menu
+     * Add links to the admin popup menu. Implementors must ensure that user has the required permissions in the container
+     * before adding links. User might not be an administrator in this container (could be a troubleshooter, for example).
+     *
      * @param adminNavTree popup menu
      * @param container current folder
+     * @param user current user
      */
-    public void addManageLinks(NavTree adminNavTree, Container container);
+    public void addManageLinks(NavTree adminNavTree, Container container, User user);
 
     @NotNull
     public AppBar getAppBar(ViewContext context, PageConfig pageConfig);

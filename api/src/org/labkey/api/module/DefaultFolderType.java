@@ -308,7 +308,7 @@ public class DefaultFolderType implements FolderType
 
     public ActionURL getStartURL(Container c, User user)
     {
-        return ModuleLoader.getInstance().getModule("Core").getTabURL(c, user);
+        return ModuleLoader.getInstance().getCoreModule().getTabURL(c, user);
     }
 
     public String getStartPageLabel(ViewContext ctx)
@@ -411,27 +411,9 @@ public class DefaultFolderType implements FolderType
         return m;
     }
 
-    public static void addStandardManageLinks(NavTree adminNavTree, Container container)
+    public void addManageLinks(NavTree adminNavTree, Container container, User user)
     {
-        // make sure the modules are loaded first
-        boolean hasStudyModule = null != ModuleLoader.getInstance().getModule("Study");
-        if (hasStudyModule)
-        {
-            adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
-            if (container.getActiveModules().contains(ModuleLoader.getInstance().getModule("Study")))
-            {
-                adminNavTree.addChild(new NavTree("Manage Study", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(container)));
-            }
-        }
-        if (null != ModuleLoader.getInstance().getModule("List"))
-            adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
-
-        adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
-    }
-
-    public void addManageLinks(NavTree adminNavTree, Container container)
-    {
-        addStandardManageLinks(adminNavTree, container);
+        AdminLinkManager.getInstance().addStandardAdminLinks(adminNavTree, container, user);
     }
 
     @Override

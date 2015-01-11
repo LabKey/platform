@@ -85,9 +85,9 @@ public class CustomFolderType implements FolderType
     }
     public HelpTopic getHelpTopic() { return null; }
 
-    public void addManageLinks(NavTree adminNavTree, Container container)
+    public void addManageLinks(NavTree adminNavTree, Container container, User user)
     {
-        DefaultFolderType.addStandardManageLinks(adminNavTree, container);
+        AdminLinkManager.getInstance().addStandardAdminLinks(adminNavTree, container, user);
     }
 
     @Override

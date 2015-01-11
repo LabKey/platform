@@ -103,7 +103,7 @@ public class PopupAdminView extends PopupMenuView
         if (!c.isRoot())
         {
             navTree.addSeparator();
-            c.getFolderType().addManageLinks(navTree, c);
+            c.getFolderType().addManageLinks(navTree, c, user);
 
             Comparator<Module> moduleComparator = new Comparator<Module>()
             {

@@ -816,6 +816,7 @@ api/src/org/labkey/api/miniprofiler/CustomTiming.java -text
 api/src/org/labkey/api/miniprofiler/MiniProfiler.java -text
 api/src/org/labkey/api/miniprofiler/RequestInfo.java -text
 api/src/org/labkey/api/miniprofiler/Timing.java -text
+api/src/org/labkey/api/module/AdminLinkManager.java -text
 api/src/org/labkey/api/module/AllowedBeforeInitialUserIsSet.java -text
 api/src/org/labkey/api/module/AllowedDuringUpgrade.java -text
 api/src/org/labkey/api/module/CustomFolderType.java -text

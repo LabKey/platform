@@ -122,10 +122,9 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
         List<NavTree> buttons = new ArrayList<>();
         List<NavTree> subContainerTabs = new ArrayList<>();
 
-        for (int i = 0; i < sortedPages.size(); i++)
+        for (Portal.PortalPage portalPage : sortedPages)
         {
-            FolderTab folderTab = folderTabMap.get(sortedPages.get(i).getPageId());
-            Portal.PortalPage portalPage = sortedPages.get(i);
+            FolderTab folderTab = folderTabMap.get(portalPage.getPageId());
 
             // Make sure tab isVisible and if its a container tab, make sure user has permission to see container
             if (folderTab != null && folderTab.isVisible(container, ctx.getUser()) && hasPermission(folderTab, container, ctx.getUser()))
@@ -153,7 +152,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                     // Stop looking for a tab to select if we've already found one
                     if (_activePortalPage == null && !portalPage.isHidden() &&
                             (null == childContainer && (folderTab.isSelectedPage(ctx)) ||
-                            (null != childContainer && childContainer.getName().equalsIgnoreCase(folderTab.getName()))))
+                                    (null != childContainer && childContainer.getName().equalsIgnoreCase(folderTab.getName()))))
                     {
                         nav.setSelected(true);
                         _activePortalPage = folderTab.getName();
@@ -162,7 +161,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
                         if (folderTab.isContainerTab())
                         {
                             Container folderContainer = folderTab.getContainerTab(container, ctx.getUser());
-                            assert(null != folderContainer);        // we checked above here
+                            assert (null != folderContainer);        // we checked above here
                             FolderType folderType = folderContainer.getFolderType();        // get type from container because it may be different from original
                             if (null != folderType)
                             {
@@ -428,7 +427,7 @@ public abstract class MultiPortalFolderType extends DefaultFolderType
 
                 menu.addSeparator();
                 // might need to pass tabContainer into this.
-                tabContainer.getFolderType().addManageLinks(menu, tabContainer);
+                tabContainer.getFolderType().addManageLinks(menu, tabContainer, user);
                 menu.addSeparator();
 
                 NavTree moduleMenu = new NavTree("Go To Module");
