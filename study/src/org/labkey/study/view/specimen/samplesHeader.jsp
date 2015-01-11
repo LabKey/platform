@@ -21,16 +21,15 @@
 <%@ page import="org.labkey.api.view.ActionURL"%>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="org.labkey.study.controllers.StudyController.ManageStudyAction" %>
+<%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController.AutoReportListAction" %>
 <%@ page import="java.util.Iterator" %>
-<%@ page import="org.labkey.study.controllers.specimen.ShowSearchAction" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
 <%!
-
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
@@ -117,7 +116,7 @@
             <tr><td><%= filterString %></td></tr>
         </table>
     </p>
-<%= textLink("Remove " + h(subjectNounSingle) + "/Visit Filter", noFitlerUrl )%><%
+<%= textLink("Remove " + subjectNounSingle + "/Visit Filter", noFitlerUrl )%><%
     }
 %>
 <div id="specimen-request-div" class="x-hidden">
