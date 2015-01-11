@@ -44,6 +44,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringBufferInputStream;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -85,7 +86,7 @@ public class TabLoader extends DataLoader
         @NotNull @Override
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            return new TabLoader(new InputStreamReader(is), hasColumnHeaders, mvIndicatorContainer);
+            return new TabLoader(new InputStreamReader(is, StandardCharsets.UTF_8), hasColumnHeaders, mvIndicatorContainer);
         }
 
         @NotNull @Override
@@ -106,7 +107,7 @@ public class TabLoader extends DataLoader
         // A DataLoader created with this constructor does NOT close the reader
         public DataLoader createLoader(InputStream is, boolean hasColumnHeaders, Container mvIndicatorContainer) throws IOException
         {
-            TabLoader loader = new TabLoader(new InputStreamReader(is), hasColumnHeaders, mvIndicatorContainer);
+            TabLoader loader = new TabLoader(new InputStreamReader(is, StandardCharsets.UTF_8), hasColumnHeaders, mvIndicatorContainer);
             loader.parseAsCSV();
             return loader;
         }

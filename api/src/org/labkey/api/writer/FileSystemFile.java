@@ -24,7 +24,16 @@ import org.labkey.api.util.MinorConfigurationException;
 import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 
 /**
  * User: adam
@@ -58,7 +67,7 @@ public class FileSystemFile extends AbstractVirtualFile
     {
         File file = new File(_root, makeLegalName(filename));
 
-        return new PrintWriter(file);
+        return new UTF8PrintWriter(file);
     }
 
     public OutputStream getOutputStream(String filename) throws IOException

@@ -21,7 +21,6 @@ import org.labkey.api.data.Container;
 import org.labkey.api.resource.Resource;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.util.FileType;
-import org.labkey.api.webdav.WebdavResource;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;

@@ -30,7 +30,9 @@ import java.io.PrintWriter;
  */
 public interface VirtualFile extends AutoCloseable
 {
+    /** PrintWriter that always encodes as UTF-8 */
     public PrintWriter getPrintWriter(String path) throws IOException;
+    /** Meant for binary data... if used with character data you must encode as UTF-8 yourself */
     public OutputStream getOutputStream(String filename) throws IOException;
     public void saveXmlBean(String filename, XmlObject doc) throws IOException;
     /** Recursively exports the contents of the resource to this directory */

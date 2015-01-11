@@ -22,7 +22,15 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.util.XmlValidationException;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -50,13 +58,15 @@ public class ZipFile extends AbstractVirtualFile
 
     public ZipFile(OutputStream out, boolean shouldCloseOutputStream)
     {
-        this(new ZipOutputStream(out), null, "", shouldCloseOutputStream);
+        // UTF-8 character set is used by default, but let's be explicit. Note that this UTF-8 declaration only affects the
+        // file names and comments; character encoding of file contents is controlled by the PrintWriter.
+        this(new ZipOutputStream(out, StandardCharsets.UTF_8), null, "", shouldCloseOutputStream);
     }
 
     private ZipFile(ZipOutputStream out, PrintWriter pw, String path, boolean shouldCloseOutputStream)
     {
         _out = out;
-        _pw = null != pw ? pw : new NonCloseablePrintWriter(out);
+        _pw = null != pw ? pw : new NonCloseableUTF8PrintWriter(out);
         _path = path;
         _shouldCloseOutputStream = shouldCloseOutputStream;
     }
@@ -156,11 +166,11 @@ public class ZipFile extends AbstractVirtualFile
         }
     }
 
-    private static class NonCloseablePrintWriter extends PrintWriter
+    private static class NonCloseableUTF8PrintWriter extends UTF8PrintWriter
     {
         private final ZipOutputStream _out;
 
-        private NonCloseablePrintWriter(ZipOutputStream out)
+        private NonCloseableUTF8PrintWriter(ZipOutputStream out)
         {
             super(out);
             _out = out;

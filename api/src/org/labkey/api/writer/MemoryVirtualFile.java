@@ -36,11 +36,11 @@ import java.util.Map;
 
 public class MemoryVirtualFile extends AbstractVirtualFile
 {
-    private String _root;
-    private Map<String, XmlObject> _docMap = new HashMap<>();
-    private Map<String, StringWriter> _textDocMap = new HashMap<>();
-    private Map<String, ByteArrayOutputStream> _byteDocMap = new HashMap<>();
-    private Map<String, MemoryVirtualFile> _folders = new HashMap<>();
+    private final String _root;
+    private final Map<String, XmlObject> _docMap = new HashMap<>();
+    private final Map<String, StringWriter> _textDocMap = new HashMap<>();
+    private final Map<String, ByteArrayOutputStream> _byteDocMap = new HashMap<>();
+    private final Map<String, MemoryVirtualFile> _folders = new HashMap<>();
 
     public MemoryVirtualFile()
     {
