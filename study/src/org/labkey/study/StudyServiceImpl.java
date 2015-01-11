@@ -93,7 +93,6 @@ import org.labkey.study.security.roles.SpecimenRequesterRole;
 import org.springframework.validation.BindException;
 
 import java.io.File;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -121,7 +120,7 @@ public class StudyServiceImpl implements StudyService.Service
     }
 
     @Override
-    public Study createStudy(Container container, User user, String name, TimepointType timepointType, boolean editableDatasets) throws SQLException
+    public Study createStudy(Container container, User user, String name, TimepointType timepointType, boolean editableDatasets)
     {
         // Needed for study creation from VISC module. We might want to remove this when we don't need the old study design tool.
 

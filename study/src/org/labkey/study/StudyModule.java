@@ -40,6 +40,7 @@ import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.files.FileContentService;
 import org.labkey.api.files.TableUpdaterFileListener;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
+import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.DefaultFolderType;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -54,6 +55,7 @@ import org.labkey.api.reports.Report;
 import org.labkey.api.reports.ReportService;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.SecurityManager;
+import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
@@ -63,11 +65,13 @@ import org.labkey.api.study.SpecimenService;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.study.StudyService;
+import org.labkey.api.study.StudyUrls;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.study.assay.AssayProviderSchema;
 import org.labkey.api.study.assay.AssayPublishService;
 import org.labkey.api.study.assay.AssayRunType;
 import org.labkey.api.study.assay.AssayService;
+import org.labkey.api.study.assay.AssayUrls;
 import org.labkey.api.study.assay.TsvDataHandler;
 import org.labkey.api.study.reports.CrosstabReport;
 import org.labkey.api.study.reports.CrosstabReportDescriptor;
@@ -465,6 +469,22 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
             "Adds a button to the specimen request details page that creates a new child study containing the selected specimens, associated participants, and selected datasets.", false);
 
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new DatasetNotificationInfoProvider());
+
+        AdminLinkManager.getInstance().addListener(new AdminLinkManager.Listener()
+        {
+            @Override
+            public void addAdminLinks(NavTree adminNavTree, Container container, User user)
+            {
+                // Need only read permissions to view manage assays page
+                if (container.hasPermission(user, ReadPermission.class))
+                {
+                    adminNavTree.addChild(new NavTree("Manage Assays", PageFlowUtil.urlProvider(AssayUrls.class).getAssayListURL(container)));
+
+                    if (container.getActiveModules().contains(StudyModule.this) && container.hasPermission(user, ManageStudyPermission.class))
+                        adminNavTree.addChild(new NavTree("Manage Study", PageFlowUtil.urlProvider(StudyUrls.class).getManageStudyURL(container)));
+                }
+            }
+        });
     }
 
     @Override

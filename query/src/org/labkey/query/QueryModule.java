@@ -26,6 +26,7 @@ import org.labkey.api.data.JdbcType;
 import org.labkey.api.data.views.DataViewService;
 import org.labkey.api.exp.property.PropertyService;
 import org.labkey.api.message.digest.ReportAndDatasetChangeDigestProvider;
+import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleContext;
@@ -53,9 +54,11 @@ import org.labkey.api.reports.report.QueryReportDescriptor;
 import org.labkey.api.reports.report.RReport;
 import org.labkey.api.reports.report.RReportDescriptor;
 import org.labkey.api.reports.report.ReportDescriptor;
+import org.labkey.api.reports.report.ReportUrls;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.study.StudySerializationRegistry;
@@ -63,6 +66,7 @@ import org.labkey.api.util.JunitUtil;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.emailTemplate.EmailTemplateService;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.query.audit.QueryAuditProvider;
 import org.labkey.query.audit.QueryAuditViewFactory;
@@ -247,6 +251,16 @@ public class QueryModule extends DefaultModule
         ReportAndDatasetChangeDigestProvider.get().addNotificationInfoProvider(new ReportNotificationInfoProvider());
 
         CacheManager.addListener(new ServerManager.CacheListener());
+
+        AdminLinkManager.getInstance().addListener(new AdminLinkManager.Listener()
+        {
+            @Override
+            public void addAdminLinks(NavTree adminNavTree, Container container, User user)
+            {
+                if (container.hasPermission(user, ReadPermission.class))
+                    adminNavTree.addChild(new NavTree("Manage Views", PageFlowUtil.urlProvider(ReportUrls.class).urlManageViews(container)));
+            }
+        });
     }
 
     @Override

@@ -23,15 +23,18 @@ import org.labkey.api.data.Container;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.exp.list.ListService;
 import org.labkey.api.exp.property.PropertyService;
+import org.labkey.api.module.AdminLinkManager;
 import org.labkey.api.module.DefaultModule;
 import org.labkey.api.module.ModuleContext;
 import org.labkey.api.search.SearchService;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
+import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.study.StudySerializationRegistry;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.view.ActionURL;
+import org.labkey.api.view.NavTree;
 import org.labkey.api.view.WebPartFactory;
 import org.labkey.list.controllers.ListController;
 import org.labkey.list.model.FolderListImporter;
@@ -123,6 +126,17 @@ public class ListModule extends DefaultModule
             ServiceRegistry.get(SearchService.class).addDocumentProvider(ListManager.get());
             ServiceRegistry.get(SearchService.class).addSearchCategory(ListManager.listCategory);
         }
+
+        AdminLinkManager.getInstance().addListener(new AdminLinkManager.Listener()
+        {
+            @Override
+            public void addAdminLinks(NavTree adminNavTree, Container container, User user)
+            {
+                // Only need read permissions to view manage lists page
+                if (container.hasPermission(user, ReadPermission.class))
+                    adminNavTree.addChild(new NavTree("Manage Lists", ListService.get().getManageListsURL(container)));
+            }
+        });
     }
 
     @NotNull
