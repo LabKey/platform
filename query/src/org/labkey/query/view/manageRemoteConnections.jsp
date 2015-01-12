@@ -43,12 +43,12 @@
     {
         for (String field : connectionMap.keySet())
         {
-            %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlEditRemoteConnection(c, connectionMap.get(field))%>" text="edit"/> <%
-            %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlDeleteRemoteConnection(c, connectionMap.get(field))%>" text="delete"/> <%
-            %> <labkey:link href="<%= QueryController.RemoteConnectionUrls.urlTestRemoteConnection(c, connectionMap.get(field))%>" text="test"/> <%
+            %> <labkey:link href="<%= QueryController.RemoteQueryConnectionUrls.urlEditRemoteConnection(c, connectionMap.get(field))%>" text="edit"/> <%
+            %> <labkey:link href="<%= QueryController.RemoteQueryConnectionUrls.urlDeleteRemoteConnection(c, connectionMap.get(field))%>" text="delete"/> <%
+            %> <labkey:link href="<%= QueryController.RemoteQueryConnectionUrls.urlTestRemoteConnection(c, connectionMap.get(field))%>" text="test"/> <%
             %> <%= h(connectionMap.get(field)) %> <br/> <%
         }
 %> <p/>
-<labkey:link href="<%= QueryController.RemoteConnectionUrls.urlCreatetRemoteConnection(c) %>" text="create new connection"/> <%
+<labkey:link href="<%= QueryController.RemoteQueryConnectionUrls.urlCreateRemoteConnection(c) %>" text="create new connection"/> <%
     }
 %>

@@ -21,15 +21,16 @@
 <%@ page import="org.labkey.api.view.JspView" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.data.Container" %>
+<%@ page import="org.labkey.remoteapi.RemoteConnections" %>
 <%
     Container c = getContainer();
-    QueryController.RemoteConnectionForm remoteConnectionForm = ((JspView<QueryController.RemoteConnectionForm>) HttpView.currentView()).getModelBean();
+    RemoteConnections.RemoteConnectionForm remoteConnectionForm = ((JspView<RemoteConnections.RemoteConnectionForm>) HttpView.currentView()).getModelBean();
     String name = remoteConnectionForm.getConnectionName();
 %>
 <p>
     Please confirm that you would like to delete this connection.
 </p>
-<labkey:form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlDeleteRemoteConnection(c, null) %>" method="post">
+<labkey:form name="editConnection" action="<%=QueryController.RemoteQueryConnectionUrls.urlDeleteRemoteConnection(c, null) %>" method="post">
 <table>
     <tr>
         <td>Connection Name: </td>

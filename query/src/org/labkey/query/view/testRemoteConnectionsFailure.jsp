@@ -21,4 +21,4 @@
 <p>
     The connection using the supplied credentials was <a style="color: red; font-size: 200%">not successful</a>.
 </p>
-<labkey:link href="<%= QueryController.RemoteConnectionUrls.urlManageRemoteConnection(getContainer())%>" text="manage remote connections"/>
+<labkey:link href="<%= QueryController.RemoteQueryConnectionUrls.urlManageRemoteConnection(getContainer())%>" text="manage remote connections"/>

@@ -21,17 +21,19 @@
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.apache.commons.lang3.StringUtils" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.remoteapi.RemoteConnections" %>
 <%@ page extends="org.labkey.api.jsp.FormPage" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%
     Container c = getContainer();
 
-    QueryController.RemoteConnectionForm remoteConnectionForm = ((JspView<QueryController.RemoteConnectionForm>) HttpView.currentView()).getModelBean();
+    RemoteConnections.RemoteConnectionForm remoteConnectionForm = ((JspView<RemoteConnections.RemoteConnectionForm>) HttpView.currentView()).getModelBean();
     String name = remoteConnectionForm.getConnectionName();
     String url = remoteConnectionForm.getUrl();
     String user = remoteConnectionForm.getUser();
     String password = remoteConnectionForm.getPassword();
     String container = remoteConnectionForm.getContainer();
+    String connectionKind = remoteConnectionForm.getConnectionKind();
     boolean editConnection = StringUtils.isNotEmpty(name);
     String nameToShow = editConnection ? name : remoteConnectionForm.getNewConnectionName();
 %>
@@ -46,7 +48,7 @@
 
 <br>
 
-<labkey:form name="editConnection" action="<%=QueryController.RemoteConnectionUrls.urlSaveRemoteConnection(c) %>" method="post">
+<labkey:form name="editConnection" action="<%=QueryController.RemoteQueryConnectionUrls.urlSaveRemoteConnection(c) %>" method="post">
 <table>
     <tr>
         <td class="labkey-form-label"><label for="newConnectionName">Connection Name</label></td>
@@ -71,5 +73,6 @@
 </table>
     <%= button("save").submit(true) %>
     <%= button("cancel").href(QueryController.ManageRemoteConnectionsAction.class, getContainer()) %>
-    <input type="hidden" name="connectionName"  value="<%=h(name)%>"><br>
+    <input type="hidden" name="connectionName"  value="<%=h(name)%>">
+    <input type="hidden" name="connectionKind"  value="<%=h(connectionKind)%>"><br>
 </labkey:form>

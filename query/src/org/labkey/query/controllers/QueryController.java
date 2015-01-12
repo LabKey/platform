@@ -58,7 +58,6 @@ import org.labkey.api.security.RequiresNoPermission;
 import org.labkey.api.security.RequiresPermissionClass;
 import org.labkey.api.security.RequiresSiteAdmin;
 import org.labkey.api.security.User;
-import org.labkey.api.security.ValidEmail;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.EditSharedViewPermission;
@@ -142,9 +141,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -187,14 +183,14 @@ public class QueryController extends SpringActionController
         AdminConsole.addLink(AdminConsole.SettingsLinkType.Diagnostics, "data sources", new ActionURL(DataSourceAdminAction.class, ContainerManager.getRoot()));
     }
 
-    public static class RemoteConnectionUrls
+    public static class RemoteQueryConnectionUrls
     {
         public static ActionURL urlManageRemoteConnection(Container c)
         {
             return new ActionURL(ManageRemoteConnectionsAction.class, c);
         }
 
-        public static ActionURL urlCreatetRemoteConnection(Container c)
+        public static ActionURL urlCreateRemoteConnection(Container c)
         {
             return new ActionURL(EditRemoteConnectionAction.class, c);
         }
@@ -228,22 +224,22 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class EditRemoteConnectionAction extends FormViewAction<RemoteConnectionForm>
+    public class EditRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
     {
         @Override
-        public void validateCommand(RemoteConnectionForm target, Errors errors)
+        public void validateCommand(RemoteConnections.RemoteConnectionForm target, Errors errors)
         {
         }
 
         @Override
-        public ModelAndView getView(RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(RemoteConnections.RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
         {
-            Container c = getContainer();
+            remoteConnectionForm.setConnectionKind(RemoteConnections.CONNECTION_KIND_QUERY);
             if (!errors.hasErrors())
             {
                 String name = remoteConnectionForm.getConnectionName();
                 // package the remote-connection properties into the remoteConnectionForm and pass them along
-                Map<String, String> map1 = PropertyManager.getEncryptedStore().getProperties(c, makeRemoteConnectionKey(name));
+                Map<String, String> map1 = RemoteConnections.getRemoteConnection(RemoteConnections.CONNECTION_KIND_QUERY, name, getContainer());
                 remoteConnectionForm.setUrl(map1.get("URL"));
                 remoteConnectionForm.setUser(map1.get("user"));
                 remoteConnectionForm.setPassword(map1.get("password"));
@@ -254,92 +250,15 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
+        public boolean handlePost(RemoteConnections.RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
         {
-            String name = remoteConnectionForm.getConnectionName();
-            String newName = remoteConnectionForm.getNewConnectionName();
-            boolean editing = StringUtils.isNotEmpty(name);
-            boolean changingName = editing && !name.equals(newName);
-            if (!StringUtils.isNotBlank(newName))
-            {
-                errors.addError(new LabkeyError("Connection name may not be blank."));
-                return false;
-            }
-
-            String url = remoteConnectionForm.getUrl();
-            String user = remoteConnectionForm.getUser();
-            String password = remoteConnectionForm.getPassword();
-            String container = remoteConnectionForm.getContainer();
-
-            if (url == null || user == null || password == null || container == null)
-            {
-                errors.addError(new LabkeyError("All fields must be filled in."));
-                return false;
-            }
-
-            // validate the url string and connection
-            try
-            {
-                URL urlObj = new URL(url);
-                URLConnection conn = urlObj.openConnection();
-                conn.connect();
-            }
-            catch (MalformedURLException e)
-            {
-                errors.addError(new LabkeyError("The entered URL is not valid."));
-                return false;
-            }
-            catch (IOException e)
-            {
-                errors.addError(new LabkeyError("A connection to the entered URL could not be established."));
-                return false;
-            }
-
-            // validate the user
-            try
-            {
-                ValidEmail validEmail = new ValidEmail(user);
-            }
-            catch(ValidEmail.InvalidEmailException e)
-            {
-                errors.addError(new LabkeyError("The entered user is not a valid email address."));
-                return false;
-            }
-
-            // save the connection name in connectionMap
-            Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(getContainer(), RemoteConnections.REMOTE_CONNECTIONS_CATEGORY, true);
-            if ((!editing || changingName) && connectionMap.containsKey(makeRemoteConnectionKey(newName)))
-            {
-                errors.addError(new LabkeyError("There is already a remote connection with the name '" + newName + "'."));
-                return false;
-            }
-
-            if (changingName)
-            {
-                String oldNameKey = makeRemoteConnectionKey(name);
-                connectionMap.remove(oldNameKey);        // Remove old name
-                PropertyManager.getEncryptedStore().deletePropertySet(getContainer(), oldNameKey);
-            }
-
-            String newNameKey = makeRemoteConnectionKey(newName);
-            connectionMap.put(newNameKey, newName);
-            PropertyManager.getEncryptedStore().saveProperties(connectionMap);
-
-            // save the properties for the individual connection in the encrypted property store
-            Map <String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getWritableProperties(getContainer(), newNameKey, true);
-            singleConnectionMap.put(RemoteConnections.FIELD_URL, url);
-            singleConnectionMap.put(RemoteConnections.FIELD_USER, user);
-            singleConnectionMap.put(RemoteConnections.FIELD_PASSWORD, password);
-            singleConnectionMap.put(RemoteConnections.FIELD_CONTAINER, container);
-            PropertyManager.getEncryptedStore().saveProperties(singleConnectionMap);
-
-            return true;
+            return RemoteConnections.createOrEditRemoteConnection(remoteConnectionForm, getContainer(), errors);
         }
 
         @Override
-        public URLHelper getSuccessURL(RemoteConnectionForm remoteConnectionForm)
+        public URLHelper getSuccessURL(RemoteConnections.RemoteConnectionForm remoteConnectionForm)
         {
-            return RemoteConnectionUrls.urlManageRemoteConnection(getContainer());
+            return RemoteQueryConnectionUrls.urlManageRemoteConnection(getContainer());
         }
 
         @Override
@@ -352,39 +271,30 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class DeleteRemoteConnectionAction extends FormViewAction<RemoteConnectionForm>
+    public class DeleteRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
     {
         @Override
-        public void validateCommand(RemoteConnectionForm target, Errors errors)
+        public void validateCommand(RemoteConnections.RemoteConnectionForm target, Errors errors)
         {
         }
 
         @Override
-        public ModelAndView getView(RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(RemoteConnections.RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
         {
             return new JspView<>("/org/labkey/query/view/confirmDeleteConnection.jsp", remoteConnectionForm, errors);
         }
 
         @Override
-        public boolean handlePost(RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
+        public boolean handlePost(RemoteConnections.RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
         {
-            String name = remoteConnectionForm.getConnectionName();
-
-            // delete the index
-            Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(getContainer(), RemoteConnections.REMOTE_CONNECTIONS_CATEGORY, false);
-            connectionMap.remove(makeRemoteConnectionKey(name));
-            PropertyManager.getEncryptedStore().saveProperties(connectionMap);
-
-            // delete the underlying property set
-            PropertyManager.getEncryptedStore().deletePropertySet(getContainer(), makeRemoteConnectionKey(name));
-
-            return true;
+            remoteConnectionForm.setConnectionKind(RemoteConnections.CONNECTION_KIND_QUERY);
+            return RemoteConnections.deleteRemoteConnection(remoteConnectionForm, getContainer());
         }
 
         @Override
-        public URLHelper getSuccessURL(RemoteConnectionForm remoteConnectionForm)
+        public URLHelper getSuccessURL(RemoteConnections.RemoteConnectionForm remoteConnectionForm)
         {
-            return RemoteConnectionUrls.urlManageRemoteConnection(getContainer());
+            return RemoteQueryConnectionUrls.urlManageRemoteConnection(getContainer());
         }
 
         @Override
@@ -397,22 +307,22 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresSiteAdmin
-    public class TestRemoteConnectionAction extends FormViewAction<RemoteConnectionForm>
+    public class TestRemoteConnectionAction extends FormViewAction<RemoteConnections.RemoteConnectionForm>
     {
         @Override
-        public void validateCommand(RemoteConnectionForm target, Errors errors)
+        public void validateCommand(RemoteConnections.RemoteConnectionForm target, Errors errors)
         {
         }
 
         @Override
-        public ModelAndView getView(RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
+        public ModelAndView getView(RemoteConnections.RemoteConnectionForm remoteConnectionForm, boolean reshow, BindException errors) throws Exception
         {
             String name = remoteConnectionForm.getConnectionName();
             String schemaName = "core"; // test Schema Name
             String queryName = "Users"; // test Query Name
 
             // Extract the username, password, and container from the secure property store
-            Map<String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getProperties(getContainer(), makeRemoteConnectionKey(name));
+            Map<String, String> singleConnectionMap = RemoteConnections.getRemoteConnection(RemoteConnections.CONNECTION_KIND_QUERY, name, getContainer());
             String url = singleConnectionMap.get(RemoteConnections.FIELD_URL);
             String user = singleConnectionMap.get(RemoteConnections.FIELD_USER);
             String password = singleConnectionMap.get(RemoteConnections.FIELD_PASSWORD);
@@ -437,13 +347,13 @@ public class QueryController extends SpringActionController
         }
 
         @Override
-        public boolean handlePost(RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
+        public boolean handlePost(RemoteConnections.RemoteConnectionForm remoteConnectionForm, BindException errors) throws Exception
         {
             return true;
         }
 
         @Override
-        public URLHelper getSuccessURL(RemoteConnectionForm remoteConnectionForm)
+        public URLHelper getSuccessURL(RemoteConnections.RemoteConnectionForm remoteConnectionForm)
         {
             return null;
         }
@@ -455,85 +365,6 @@ public class QueryController extends SpringActionController
             root.addChild("Manage Remote Connections", new QueryUrlsImpl().urlExternalSchemaAdmin(getContainer()));
             return root;
         }
-    }
-
-    public static class RemoteConnectionForm
-    {
-        private String _connectionName;
-        private String _url;
-        private String _user;
-        private String _password;
-        private String _container;
-        private String _newConnectionName;
-
-        public RemoteConnectionForm()
-        {
-        }
-
-        public String getConnectionName()
-        {
-            return _connectionName;
-        }
-
-        public void setConnectionName(String connectionName)
-        {
-            _connectionName = connectionName;
-        }
-
-        public String getUrl()
-        {
-            return _url;
-        }
-
-        public void setUrl(String url)
-        {
-            _url = url;
-        }
-
-        public String getUser()
-        {
-            return _user;
-        }
-
-        public void setUser(String user)
-        {
-            _user = user;
-        }
-
-        public String getPassword()
-        {
-            return _password;
-        }
-
-        public void setPassword(String password)
-        {
-            _password = password;
-        }
-
-        public String getContainer()
-        {
-            return _container;
-        }
-
-        public void setContainer(String container)
-        {
-            _container = container;
-        }
-
-        public String getNewConnectionName()
-        {
-            return _newConnectionName;
-        }
-
-        public void setNewConnectionName(String newConnectionName)
-        {
-            _newConnectionName = newConnectionName;
-        }
-    }
-
-    private static String makeRemoteConnectionKey(String name)
-    {
-        return RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name;
     }
 
     public static class QueryUrlsImpl implements QueryUrls
@@ -3804,7 +3635,7 @@ public class QueryController extends SpringActionController
             try
             {
                 // if the encrypted property store is configured but no values have yet been set, and empty map is returned
-                connectionMap = PropertyManager.getEncryptedStore().getProperties(getContainer(), RemoteConnections.REMOTE_CONNECTIONS_CATEGORY);
+                connectionMap = PropertyManager.getEncryptedStore().getProperties(getContainer(), RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY);
             }
             catch (Exception e)
             {

@@ -83,15 +83,15 @@ public class RemoteQueryTransformStep extends SimpleQueryTransformStep
         }
 
         // Check that an entry for the remote connection name exists
-        Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_CONNECTIONS_CATEGORY);
-        if (connectionMap.get(RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name) == null)
+        Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY);
+        if (connectionMap.get(RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY + ":" + name) == null)
         {
             log.error("The remote connection " + name + " has not yet been setup in the remote connection manager.  You may configure a new remote connection through the schema browser.");
             return null;
         }
 
         // Extract the username, password, and container from the secure property store
-        Map<String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_CONNECTIONS_CATEGORY + ":" + name);
+        Map<String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getProperties(c, RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY + ":" + name);
         String url = singleConnectionMap.get(RemoteConnections.FIELD_URL);
         String user = singleConnectionMap.get(RemoteConnections.FIELD_USER);
         String password = singleConnectionMap.get(RemoteConnections.FIELD_PASSWORD);
