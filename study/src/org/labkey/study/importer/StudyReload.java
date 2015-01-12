@@ -349,6 +349,7 @@ public class StudyReload
                         if (null == lastReload || studyload.lastModified() > (lastReload.getTime() + 1000))  // Add a second since SQL Server rounds datetimes
                         {
                             options.addMessage("Study reload was initiated by " + source);
+                            options.setSkipQueryValidation(study.isSkipQueryValidation());
 
                             // Check for valid reload user
                             User reloadUser = options.getUser();

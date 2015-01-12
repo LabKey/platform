@@ -26,6 +26,7 @@
 <%
     StudyImpl study = getStudy();
     boolean allowReload = study.isAllowReload();
+    boolean skipQueryValidation = study.isSkipQueryValidation();
     ReloadInterval currentInterval = ReloadInterval.getForSeconds(study.getReloadInterval());
 
     User reloadUser = (allowReload && null != study.getReloadUser() ? UserManager.getUser(study.getReloadUser()) : null);
@@ -70,6 +71,10 @@
             <td><%=allowReload ? (null == reloadUser ? "<div class=\"labkey-error\">Error: Reload user not defined!</div>" : h(reloadUser.getDisplayName(getUser()))) : ""%></td>
         </tr>
         <tr>
+            <th align="left" width=200>Validate Imported Queries</th>
+            <td><input id="queryValidation" type="checkbox" name="queryValidation" <%=checked(!skipQueryValidation)%>></td>
+        </tr>
+        <tr>
             <td width=200>&nbsp;</td>
             <td><%=allowReload ? PageFlowUtil.button("Attempt Reload Now").href(buildURL(StudyController.CheckForReload.class, "ui=1")).attributes("id=\"reloadNow\"") :
                                  PageFlowUtil.button("Attempt Reload Now").href("javascript:void(0);").attributes("id=\"reloadNow\"") %></td>
@@ -83,6 +88,7 @@
     function updateDisplay()
     {
         document.getElementById("interval").disabled = !document.getElementById("allowReload").checked;
+        document.getElementById("queryValidation").disabled = !document.getElementById("allowReload").checked;
     }
 </script>
 <script type="text/javascript" for=window event=onload>

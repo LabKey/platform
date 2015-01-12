@@ -6346,12 +6346,14 @@ public class StudyController extends BaseStudyController
             StudyImpl study = getStudyThrowIfNull();
 
             // If the "allow reload" state, interval, or reload user changes then update the study and initialize the timer
-            if (form.isAllowReload() != study.isAllowReload() || !nullSafeEqual(form.getInterval(), study.getReloadInterval()) || getUser().getUserId() != study.getReloadUser())
+            if (form.isAllowReload() != study.isAllowReload() || !nullSafeEqual(form.getInterval(), study.getReloadInterval())
+                    || getUser().getUserId() != study.getReloadUser() || study.isSkipQueryValidation() == form.isQueryValidation())
             {
                 study = study.createMutable();
                 study.setAllowReload(form.isAllowReload());
                 study.setReloadInterval(0 != form.getInterval() ? form.getInterval() : null);
                 study.setReloadUser(getUser().getUserId());
+                study.setSkipQueryValidation(!form.isQueryValidation());
                 study.setLastReload(new Date());
                 StudyManager.getInstance().updateStudy(getUser(), study);
                 StudyReload.initializeTimer(study);
@@ -6379,7 +6381,7 @@ public class StudyController extends BaseStudyController
         private boolean allowReload = false;
         private int interval = 0;
         private boolean _ui = false;
-        private boolean _skipQueryValidation;
+        private boolean _queryValidation;
 
         public boolean isAllowReload()
         {
@@ -6411,14 +6413,14 @@ public class StudyController extends BaseStudyController
             _ui = ui;
         }
 
-        public boolean isSkipQueryValidation()
+        public boolean isQueryValidation()
         {
-            return _skipQueryValidation;
+            return _queryValidation;
         }
 
-        public void setSkipQueryValidation(boolean skipQueryValidation)
+        public void setQueryValidation(boolean queryValidation)
         {
-            _skipQueryValidation = skipQueryValidation;
+            _queryValidation = queryValidation;
         }
     }
 
@@ -6522,7 +6524,7 @@ public class StudyController extends BaseStudyController
             {
                 User user = getUser();
                 ImportOptions options = new ImportOptions(getContainer().getId(), !user.isGuest() ? user.getUserId() : null);
-                options.setSkipQueryValidation(form.isSkipQueryValidation());
+                //options.setSkipQueryValidation(form.isSkipQueryValidation());
 
                 final String source;
 
