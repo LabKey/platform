@@ -486,7 +486,10 @@ public class CachedCube extends MetadataElementBase implements Cube
             if (null != parentLevel)
             {
                 _parent = parentLevel.members.get(m.getParentMember().getUniqueName());
-                assert null != _parent;
+                if (null == _parent)
+                {
+                    throw new IllegalStateException("Unable to load " + m.getParentMember().getUniqueName() + ". This might be caused by a trailing space or an improperly encoded value.");
+                }
                 ((_Member)_parent).childMembers.add(this);
             }
 
