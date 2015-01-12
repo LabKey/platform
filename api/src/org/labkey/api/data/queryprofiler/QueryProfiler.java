@@ -448,11 +448,11 @@ public class QueryProfiler
         if (QueryService.get().getEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS) == null)
         {
             Map<DatabaseQueryListener, Object> listenerEnvironment = new HashMap<>();
+            QueryService.get().setEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS, listenerEnvironment);
             for (DatabaseQueryListener listener : _listeners)
             {
                 listenerEnvironment.put(listener, listener.getEnvironment());
             }
-            QueryService.get().setEnvironment(QueryService.Environment.LISTENER_ENVIRONMENTS, listenerEnvironment);
         }
     }
 
