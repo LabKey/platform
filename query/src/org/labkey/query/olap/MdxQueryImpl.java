@@ -374,7 +374,9 @@ public class MdxQueryImpl
         if (null == columnset)
             columnset = defaultMeasure;
         else if (null != colmdx.level && !colmdx.level.getName().equals("MeasuresLevel"))
-            columnset = "(" + columnset + " , " + defaultMeasure + ")";
+        {
+            columnset = "CROSSJOIN(" + columnset + " , " + defaultMeasure + ")";
+        }
 
         StringBuilder query = new StringBuilder();
 

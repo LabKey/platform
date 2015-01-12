@@ -68,7 +68,8 @@ public abstract class OlapSchemaDescriptor
         _olapSchemaInfo = module.getOlapSchemaInfo();
         _queryTag = (_olapSchemaInfo == null) ? "" : _olapSchemaInfo.getQueryTag();
 
-        if (_name.equalsIgnoreCase("Argos") && !QuerySettings.useRolap)
+        // TODO this is a horrible hack
+        if (_name.equalsIgnoreCase("Argos") && !QuerySettings.useRolap || _name.equalsIgnoreCase("Metrics"))
             _strategy = ImplStrategy.mondrian;
         else
             _strategy = ImplStrategy.rolapYourOwn;
