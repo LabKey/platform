@@ -1,0 +1,6 @@
+<libraries xmlns="http://labkey.org/clientLibrary/xml/">
+    <library compileInProductionMode="false">
+        <script path="internal/jQuery/jquery-1.11.2.js" mode="dev"/>
+        <script path="internal/jQuery/jquery-1.11.2.min.js" mode="production"/>
+    </library>
+</libraries>

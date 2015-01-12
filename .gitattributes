@@ -8029,6 +8029,9 @@ internal/webapp/internal/FileDrop/FileDrop.js -text
 internal/webapp/internal/MiniProfiler/miniprofiler.css -text
 internal/webapp/internal/MiniProfiler/miniprofiler.js -text
 internal/webapp/internal/MiniProfiler/miniprofiler.tmpl -text
+internal/webapp/internal/jQuery.lib.xml -text
+internal/webapp/internal/jQuery/jquery-1.11.2.js -text
+internal/webapp/internal/jQuery/jquery-1.11.2.min.js -text
 internal/webapp/js_color_picker_v2.css -text
 internal/webapp/js_color_picker_v2.js -text
 internal/webapp/labkey.js -text
