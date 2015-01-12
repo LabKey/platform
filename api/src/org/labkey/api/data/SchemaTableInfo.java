@@ -389,15 +389,11 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
     }
 
 
-    private static final int DEADLOCK_RETRIES = 5;
-
     protected SchemaColumnMetaData getColumnMetaData()
     {
         synchronized (_columnLock)
         {
-            int retry = 0;
-
-            while (null == _columnMetaData)
+            if (null == _columnMetaData)
             {
                 try
                 {
@@ -407,12 +403,10 @@ public class SchemaTableInfo implements TableInfo, UpdateableTableInfo
                 {
                     String message = e.getMessage();
 
-                    // See #14374
+                    // See #14374  TODO: I don't think this will be thrown anymore... will likely be a Spring DAO exception instead
                     if ("com.mysql.jdbc.exceptions.jdbc4.MySQLSyntaxErrorException".equals(e.getClass().getName()) && message.startsWith("SELECT command denied to user"))
                         throw new MinorConfigurationException("The LabKey database user doesn't have permissions to access this table", e);
-
-                    // Retry if we hit a deadlock exception, see #15640
-                    if (null == message || !message.contains("deadlocked") || retry++ >= DEADLOCK_RETRIES)
+                    else
                         throw new RuntimeSQLException(e);
                 }
             }

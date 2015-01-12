@@ -16,6 +16,7 @@
 package org.labkey.api.data;
 
 import org.jetbrains.annotations.Nullable;
+import org.springframework.dao.DeadlockLoserDataAccessException;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -55,17 +56,34 @@ public class JdbcMetaDataSelector extends NonSqlExecutingSelector<JdbcMetaDataSe
         return _factory;
     }
 
+    private static final int DEADLOCK_RETRIES = 5;
+
     @Override
     public TableResultSet getResultSet()
     {
-        return handleResultSet(_factory, new ResultSetHandler<TableResultSet>()
+        // Retry on deadlock, up to five times, see #22148 and #15640.
+        int tries = 1;
+
+        while (true)
         {
-            @Override
-            public TableResultSet handle(ResultSet rs, Connection conn) throws SQLException
+            try
             {
-                return new ResultSetImpl(rs, QueryLogging.emptyQueryLogging());
+                return handleResultSet(_factory, new ResultSetHandler<TableResultSet>()
+                {
+                    @Override
+                    public TableResultSet handle(ResultSet rs, Connection conn) throws SQLException
+                    {
+                        return new ResultSetImpl(rs, QueryLogging.emptyQueryLogging());
+                    }
+                });
             }
-        });
+            catch (DeadlockLoserDataAccessException e)
+            {
+                // Retry on deadlock, up to five times, see #22148 and #15640.
+                if (tries++ >= DEADLOCK_RETRIES)
+                    throw e;
+            }
+        }
     }
 
     @Override
