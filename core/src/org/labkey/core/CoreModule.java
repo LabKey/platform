@@ -182,6 +182,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -860,8 +861,16 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
             (
                 CoreSchema.getInstance().getSchemaName(),       // core
                 PropertySchema.getInstance().getSchemaName(),   // prop
-                TestSchema.getInstance().getSchemaName()        // test
+                TestSchema.getInstance().getSchemaName(),       // test
+                DbSchema.TEMP_SCHEMA_NAME                       // temp
             );
+    }
+
+    @NotNull
+    @Override
+    public Collection<String> getProvisionedSchemaNames()
+    {
+        return Collections.singleton(DbSchema.TEMP_SCHEMA_NAME);
     }
 
     @NotNull
