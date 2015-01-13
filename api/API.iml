@@ -282,6 +282,15 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
+          <root url="jar://$MODULE_DIR$/../../external/lib/server/jtidy-r918.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" exported="">
+      <library>
+        <CLASSES>
           <root url="jar://$MODULE_DIR$/../../external/lib/server/junit-4.11.jar!/" />
         </CLASSES>
         <JAVADOC />
@@ -644,14 +653,6 @@
       </library>
     </orderEntry>
     <orderEntry type="module" module-name="remoteapi" exported="" />
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../external/lib/server/jtidy-r938.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
   </component>
 </module>
+
