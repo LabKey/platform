@@ -16,10 +16,14 @@
 package org.labkey.api.data;
 
 import org.labkey.api.cache.CacheManager;
+import org.labkey.api.exp.api.ProvisionedDbSchema;
+import org.labkey.api.module.ModuleLoader;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.Map;
 
 /**
 * User: adam
@@ -29,31 +33,71 @@ import java.util.LinkedList;
 public enum DbSchemaType
 {
     // TODO: Create Uncached type?  Might make sense for non-external schema usages of Bare
-    Module("module", CacheManager.YEAR, true, true),
-    Provisioned("provisioned", CacheManager.YEAR, false, false),
-    Bare("bare", CacheManager.HOUR, false, true),
-    All("", 0, false, false)
+    Module("module", CacheManager.YEAR, true)
+    {
+        @Override
+        DbSchema createDbSchema(DbScope scope, String metaDataName) throws SQLException
+        {
+            Map<String, String> metaDataTableNames = DbSchema.loadTableNames(scope, metaDataName);
+            org.labkey.api.module.Module module = ModuleLoader.getInstance().getModuleForSchemaName(metaDataName);
+
+            // TODO: Eliminate this special case... register "labkey" with core module and handle it there
+            if ("labkey".equals(metaDataName))
+                return new DbSchema.LabKeyDbSchema(scope, metaDataTableNames);
+            else
+                return module.createModuleDbSchema(scope, metaDataName, metaDataTableNames);
+        }
+    },
+    Provisioned("provisioned", CacheManager.YEAR, false)
+    {
+        @Override
+        DbSchema createDbSchema(DbScope scope, String metaDataName)
+        {
+            return new ProvisionedDbSchema(metaDataName, scope);
+        }
+    },
+    Bare("bare", CacheManager.HOUR, false)
+    {
+        @Override
+        DbSchema createDbSchema(DbScope scope, String metaDataName) throws SQLException
+        {
+            Map<String, String> metaDataTableNames = DbSchema.loadTableNames(scope, metaDataName);
+            return new DbSchema(metaDataName, Bare, scope, metaDataTableNames);
+        }
+    },
+    All("", 0, false)
     {
         @Override
         protected long getCacheTimeToLive()
         {
             throw new IllegalStateException("Should not be caching a schema of this type");
         }
+
+        @Override
+        DbSchema createDbSchema(DbScope scope, String metaDataName)
+        {
+            throw new IllegalStateException("Should not be creating a schema of type " + All);
+        }
     },
     // This is a marker type that tells DbScope to infer the actual DbSchemaType, for the (very rare) case when the caller doesn't know
-    Unknown("", 0, false, false)
+    Unknown("", 0, false)
     {
         @Override
         protected long getCacheTimeToLive()
         {
             throw new IllegalStateException("Should not be caching a schema of this type");
+        }
+
+        @Override
+        DbSchema createDbSchema(DbScope scope, String metaDataName)
+        {
+            throw new IllegalStateException("Should not be creating a schema of type " + Unknown);
         }
     };
 
     private final String _cacheKeyPostFix;  // Postfix makes it easy for All type to remove all versions of a schema from the cache
     private final long _cacheTimeToLive;
     private final boolean _applyXmlMetaData;
-    private final boolean _loadTables;
 
     private static final Collection<DbSchemaType> XML_META_DATA_TYPES;
 
@@ -71,12 +115,11 @@ public enum DbSchemaType
         XML_META_DATA_TYPES = Collections.unmodifiableCollection(metaDataTypes);
     }
 
-    DbSchemaType(String cacheKeyPostFix, long cacheTimeToLive, boolean applyXmlMetaData, boolean loadTables)
+    DbSchemaType(String cacheKeyPostFix, long cacheTimeToLive, boolean applyXmlMetaData)
     {
         _cacheKeyPostFix = cacheKeyPostFix;
         _cacheTimeToLive = cacheTimeToLive;
         _applyXmlMetaData = applyXmlMetaData;
-        _loadTables = loadTables;
     }
 
     String getCacheKey(String schemaName)
@@ -99,8 +142,5 @@ public enum DbSchemaType
         return XML_META_DATA_TYPES;
     }
 
-    public boolean shouldLoadTables()
-    {
-        return _loadTables;
-    }
+    abstract DbSchema createDbSchema(DbScope scope, String metaDataName) throws SQLException;
 }

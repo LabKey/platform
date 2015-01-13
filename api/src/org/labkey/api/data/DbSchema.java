@@ -25,7 +25,6 @@ import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.data.JdbcMetaDataSelector.JdbcMetaDataResultSetFactory;
 import org.labkey.api.data.Selector.ForEachBlock;
 import org.labkey.api.data.dialect.SqlDialect;
-import org.labkey.api.exp.api.ProvisionedDbSchema;
 import org.labkey.api.module.Module;
 import org.labkey.api.module.ModuleLoader;
 import org.labkey.api.ms2.MS2Service;
@@ -72,7 +71,7 @@ public class DbSchema
     private final Map<String, String> _metaDataTableNames;  // Union of all table names from database and schema.xml
     private final Map<String, TableType> _tableXmlMap = new CaseInsensitiveHashMap<>();
 
-    protected DbSchema(String name, DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames)
+    public DbSchema(String name, DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames)
     {
         _name = name;
         _type = type;
@@ -181,14 +180,7 @@ public class DbSchema
         if (null == metaDataName)
             return new DbSchema(requestedSchemaName, type, scope, new HashMap<String, String>());
 
-        Map<String, String> metaDataTableNames = type.shouldLoadTables() ? loadTableNames(scope, metaDataName) : null;
-
-        if ("labkey".equals(metaDataName))
-            return new LabKeyDbSchema(type, scope, metaDataTableNames);
-        else if (type == DbSchemaType.Provisioned)
-            return new ProvisionedDbSchema(metaDataName, type, scope);
-        else
-            return new DbSchema(metaDataName, type, scope, metaDataTableNames);
+        return type.createDbSchema(scope, metaDataName);
     }
 
 
@@ -198,9 +190,9 @@ public class DbSchema
     // 2. Override getSchemaResource() to resolve labkey.xml
     public static class LabKeyDbSchema extends DbSchema
     {
-        public LabKeyDbSchema(DbSchemaType type, DbScope scope, Map<String, String> metaDataTableNames)
+        public LabKeyDbSchema(DbScope scope, Map<String, String> metaDataTableNames)
         {
-            super("labkey", type, scope, metaDataTableNames);
+            super("labkey", DbSchemaType.Module, scope, metaDataTableNames);
         }
 
         @Override

@@ -26,9 +26,9 @@ import java.util.Collection;
  */
 public class ProvisionedDbSchema extends DbSchema
 {
-    public ProvisionedDbSchema(String name, DbSchemaType type, DbScope scope)
+    public ProvisionedDbSchema(String name, DbScope scope)
     {
-        super(name, type, scope, null);
+        super(name, DbSchemaType.Provisioned, scope, null);
     }
 
     @Override

@@ -1341,4 +1341,10 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
     {
         return null;
     }
+
+    @Override
+    public DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, String> metaDataTableNames)
+    {
+        return new DbSchema(metaDataName, DbSchemaType.Module, scope, metaDataTableNames);
+    }
 }

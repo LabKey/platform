@@ -20,6 +20,7 @@ import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.DbSchema;
+import org.labkey.api.data.DbScope;
 import org.labkey.api.data.UpgradeCode;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.query.OlapSchemaInfo;
@@ -429,6 +430,12 @@ public class MockModule implements Module
 
     @Override
     public OlapSchemaInfo getOlapSchemaInfo()
+    {
+        return null;
+    }
+
+    @Override
+    public DbSchema createModuleDbSchema(DbScope scope, String metaDataName, Map<String, String> metaDataTableNames)
     {
         return null;
     }

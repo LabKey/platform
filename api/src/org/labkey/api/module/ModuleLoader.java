@@ -1287,6 +1287,7 @@ public class ModuleLoader implements Filter
         // Finally, fire the startup complete event
         ContextListener.moduleStartupComplete(_servletContext);
 
+        _schemaNameToSchemaDetails.clear();
         setStartupState(StartupState.StartupComplete);
         setStartingUpMessage("Module startup complete");
     }
