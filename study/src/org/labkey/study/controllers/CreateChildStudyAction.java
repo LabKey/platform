@@ -37,16 +37,15 @@ import org.labkey.study.SpecimenManager;
 import org.labkey.study.StudyFolderType;
 import org.labkey.study.importer.CreateChildStudyPipelineJob;
 import org.labkey.study.model.ChildStudyDefinition;
-import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.SecurityType;
-import org.labkey.study.model.Vial;
+import org.labkey.study.model.SpecimenRequest;
 import org.labkey.study.model.StudyImpl;
 import org.labkey.study.model.StudyManager;
+import org.labkey.study.model.Vial;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.validation.ObjectError;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -188,7 +187,7 @@ public class CreateChildStudyAction extends MutatingApiAction<ChildStudyDefiniti
         }
     }
 
-    private StudyImpl createNewStudy(ChildStudyDefinition form) throws SQLException
+    private StudyImpl createNewStudy(ChildStudyDefinition form)
     {
         StudyImpl study = new StudyImpl(_dstContainer, form.getName());
 

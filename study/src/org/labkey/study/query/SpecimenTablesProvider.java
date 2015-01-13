@@ -63,7 +63,6 @@ public class SpecimenTablesProvider
 
         // it's possible that another thread is attempting to create the table, so we can (rarely) get a constraint violation
         // so try again if that happens
-        boolean success = true;
         final int MAX_TRYS = 3;
         for (int tryCount = 0; tryCount < MAX_TRYS; tryCount += 1)
         {
