@@ -2620,11 +2620,8 @@ public class SpecimenImporter
             ComputedColumn idCol, boolean hasContainerColumn)
             throws SQLException, ValidationException
     {
-        boolean a=true;
-        if (a)
-            return mergeTableOneAtATime(schema, tableName, target, potentialColumns, loader, idCol, hasContainerColumn);
-        else
-            return mergeTableNewHotness(schema, tableName, target, potentialColumns, loader, idCol, hasContainerColumn);
+//        return mergeTableOneAtATime(schema, tableName, target, potentialColumns, loader, idCol, hasContainerColumn);
+        return mergeTableNewHotness(schema, tableName, target, potentialColumns, loader, idCol, hasContainerColumn);
     }
 
 
@@ -2982,11 +2979,8 @@ public class SpecimenImporter
             ComputedColumn... computedColumns)
             throws IOException, SQLException, ValidationException
     {
-        boolean a=false;
-        if (a)
-            return replaceTableOneAtATime(schema, file, tableName, generateGlobaluniqueIds, hasContainerColumn, drawDate, drawTime, computedColumns);
-        else
-            return replaceTableImSoFancy(schema, file, tableName, target, generateGlobaluniqueIds, hasContainerColumn, drawDate, drawTime, computedColumns);
+//        return replaceTableOneAtATime(schema, file, tableName, generateGlobaluniqueIds, hasContainerColumn, drawDate, drawTime, computedColumns);
+        return replaceTableImSoFancy(schema, file, tableName, target, generateGlobaluniqueIds, hasContainerColumn, drawDate, drawTime, computedColumns);
     }
 
 
@@ -4024,6 +4018,7 @@ public class SpecimenImporter
             return map;
         }
 
+
         @Test
         public void mergeTest() throws Exception
         {
@@ -4138,7 +4133,9 @@ public class SpecimenImporter
                 jimmyID = Integer.valueOf((String) row3.get("id"));
                 assertTrue(4 <= jimmyID);
                 jimmyGUID = (String)row3.get("entityid");
-//                assertNotNull(jimmyGUID);
+
+                // HMM, the original mergeTable() fails this check (non DataIteratyor)
+                assertNotNull(jimmyGUID);
             }
 
 
@@ -4175,6 +4172,7 @@ public class SpecimenImporter
                 assertEquals(jimmyGUID, row3.get("entityid"));
             }
         }
+
 
         @Test
         public void tempTableConsistencyTest() throws Exception
