@@ -866,6 +866,8 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
             // 19918: GROUP BY columns in custom query no longer retain ForeignKey configuration
             if (_dsd.isShared())
                 addJoin(new FieldKey(null,"Folder"),"Container",false);
+            // Perf improvement - stash the table name so it can be accessed without needing to create the whole TableInfo
+            _tableName = StudyService.get().getSubjectTableName(_userSchema.getContainer());
         }
 
         @Override

@@ -78,6 +78,7 @@ import org.springframework.validation.BindException;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -137,6 +138,7 @@ public class StudyQuerySchema extends UserSchema
     private Map<Integer, List<Double>> _datasetSequenceMap;
     public static final String STUDY_DATA_TABLE_NAME = "StudyData";
     public static final String QCSTATE_TABLE_NAME = "QCState";
+    private Set<String> _tableNames;
 
     public StudyQuerySchema(StudyImpl study, User user, boolean mustCheckPermissions)
     {
@@ -240,94 +242,99 @@ public class StudyQuerySchema extends UserSchema
 
     private Set<String> getTableNames(boolean visible)
     {
-        Set<String> ret = new LinkedHashSet<>();
-
-        // Always add StudyProperties and study designer lookup tables, even if we have no study
-        ret.add(PROPERTIES_TABLE_NAME);
-        ret.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
-        ret.add(STUDY_DESIGN_GENES_TABLE_NAME);
-        ret.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
-        ret.add(STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
-        ret.add(STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
-        ret.add(STUDY_DESIGN_UNITS_TABLE_NAME);
-        ret.add(STUDY_DESIGN_ASSAYS_TABLE_NAME);
-        ret.add(STUDY_DESIGN_LABS_TABLE_NAME);
-
-        if (_study != null)
+        if (_tableNames == null)
         {
-            // All these require studies defined
-            ret.add(STUDY_DATA_TABLE_NAME);
-            ret.add(StudyService.get().getSubjectTableName(getContainer()));
-            ret.add("Location");
-            if (_study.getTimepointType() != TimepointType.CONTINUOUS)
-                ret.add("Visit");
+            Set<String> names = new LinkedHashSet<>();
 
-            if (_study.getTimepointType() != TimepointType.CONTINUOUS)
-                ret.add(StudyService.get().getSubjectVisitTableName(getContainer()));
+            // Always add StudyProperties and study designer lookup tables, even if we have no study
+            names.add(PROPERTIES_TABLE_NAME);
+            names.add(STUDY_DESIGN_IMMUNOGEN_TYPES_TABLE_NAME);
+            names.add(STUDY_DESIGN_GENES_TABLE_NAME);
+            names.add(STUDY_DESIGN_ROUTES_TABLE_NAME);
+            names.add(STUDY_DESIGN_SUB_TYPES_TABLE_NAME);
+            names.add(STUDY_DESIGN_SAMPLE_TYPES_TABLE_NAME);
+            names.add(STUDY_DESIGN_UNITS_TABLE_NAME);
+            names.add(STUDY_DESIGN_ASSAYS_TABLE_NAME);
+            names.add(STUDY_DESIGN_LABS_TABLE_NAME);
 
-            ret.add(SPECIMEN_EVENT_TABLE_NAME);
-            ret.add(SPECIMEN_DETAIL_TABLE_NAME);
-            ret.add(SPECIMEN_SUMMARY_TABLE_NAME);
-            ret.add("SpecimenVialCount");
-            ret.add(SIMPLE_SPECIMEN_TABLE_NAME);
-            ret.add("SpecimenRequest");
-            ret.add("SpecimenRequestStatus");
-            ret.add("VialRequest");
-            ret.add("SpecimenAdditive");
-            ret.add("SpecimenDerivative");
-            ret.add("SpecimenPrimaryType");
-            ret.add("SpecimenComment");
-
-            ret.add("DataSets");
-            ret.add(DataSetColumnsTable.NAME);
-
-            // Only show cohorts if the user has permission
-            if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
-                ret.add("Cohort");
-
-            ret.add("QCState");
-
-            // Subject category/group tables:
-            ret.add(StudyService.get().getSubjectCategoryTableName(getContainer()));
-            ret.add(StudyService.get().getSubjectGroupTableName(getContainer()));
-            ret.add(StudyService.get().getSubjectGroupMapTableName(getContainer()));
-            ret.add(PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME);
-
-            // specimen report pivots
-            ret.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
-            ret.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
-            ret.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
-
-            ret.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
-
-            // assay schedule tables
-            ret.add(ASSAY_SPECIMEN_TABLE_NAME);
-            ret.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
-
-            // Add only datasets that the user can read
-            User user = getUser();
-            for (DataSetDefinition dsd : _study.getDatasets())
+            if (_study != null)
             {
-                boolean canRead = dsd.canRead(user);
-                if (dsd.getName() == null || !canRead)
-                    continue;
-                ret.add(dsd.getName());
+                // All these require studies defined
+                names.add(STUDY_DATA_TABLE_NAME);
+                names.add(StudyService.get().getSubjectTableName(getContainer()));
+                names.add("Location");
+                if (_study.getTimepointType() != TimepointType.CONTINUOUS)
+                    names.add("Visit");
+
+                if (_study.getTimepointType() != TimepointType.CONTINUOUS)
+                    names.add(StudyService.get().getSubjectVisitTableName(getContainer()));
+
+                names.add(SPECIMEN_EVENT_TABLE_NAME);
+                names.add(SPECIMEN_DETAIL_TABLE_NAME);
+                names.add(SPECIMEN_SUMMARY_TABLE_NAME);
+                names.add("SpecimenVialCount");
+                names.add(SIMPLE_SPECIMEN_TABLE_NAME);
+                names.add("SpecimenRequest");
+                names.add("SpecimenRequestStatus");
+                names.add("VialRequest");
+                names.add("SpecimenAdditive");
+                names.add("SpecimenDerivative");
+                names.add("SpecimenPrimaryType");
+                names.add("SpecimenComment");
+
+                names.add("DataSets");
+                names.add(DataSetColumnsTable.NAME);
+
+                // Only show cohorts if the user has permission
+                if (StudyManager.getInstance().showCohorts(getContainer(), getUser()))
+                    names.add("Cohort");
+
+                names.add("QCState");
+
+                // Subject category/group tables:
+                names.add(StudyService.get().getSubjectCategoryTableName(getContainer()));
+                names.add(StudyService.get().getSubjectGroupTableName(getContainer()));
+                names.add(StudyService.get().getSubjectGroupMapTableName(getContainer()));
+                names.add(PARTICIPANT_GROUP_COHORT_UNION_TABLE_NAME);
+
+                // specimen report pivots
+                names.add(SpecimenPivotByPrimaryType.PIVOT_BY_PRIMARY_TYPE);
+                names.add(SpecimenPivotByDerivativeType.PIVOT_BY_DERIVATIVE_TYPE);
+                names.add(SpecimenPivotByRequestingLocation.PIVOT_BY_REQUESTING_LOCATION);
+
+                names.add(LOCATION_SPECIMEN_LIST_TABLE_NAME);
+
+                // assay schedule tables
+                names.add(ASSAY_SPECIMEN_TABLE_NAME);
+                names.add(ASSAY_SPECIMEN_VISIT_TABLE_NAME);
+
+                // Add only datasets that the user can read
+                User user = getUser();
+                for (DataSetDefinition dsd : _study.getDatasets())
+                {
+                    boolean canRead = dsd.canRead(user);
+                    if (dsd.getName() == null || !canRead)
+                        continue;
+                    names.add(dsd.getName());
+                }
+
+                // study designs
+                names.add(PRODUCT_TABLE_NAME);
+                names.add(PRODUCT_ANTIGEN_TABLE_NAME);
+                names.add(TREATMENT_PRODUCT_MAP_TABLE_NAME);
+                names.add(TREATMENT_TABLE_NAME);
+                names.add(TREATMENT_VISIT_MAP_TABLE_NAME);
+
+                names.add(OBJECTIVE_TABLE_NAME);
+                names.add(PERSONNEL_TABLE_NAME);
+                names.add(VISIT_TAG_TABLE_NAME);
+                names.add(VISIT_TAG_MAP_TABLE_NAME);
+                names.add(STUDY_SNAPSHOT_TABLE_NAME);
             }
-
-            // study designs
-            ret.add(PRODUCT_TABLE_NAME);
-            ret.add(PRODUCT_ANTIGEN_TABLE_NAME);
-            ret.add(TREATMENT_PRODUCT_MAP_TABLE_NAME);
-            ret.add(TREATMENT_TABLE_NAME);
-            ret.add(TREATMENT_VISIT_MAP_TABLE_NAME);
-
-            ret.add(OBJECTIVE_TABLE_NAME);
-            ret.add(PERSONNEL_TABLE_NAME);
-            ret.add(VISIT_TAG_TABLE_NAME);
-            ret.add(VISIT_TAG_MAP_TABLE_NAME);
-            ret.add(STUDY_SNAPSHOT_TABLE_NAME);
+            _tableNames = Collections.unmodifiableSet(names);
         }
-        return ret;
+
+        return _tableNames;
     }
 
     public Map<String, DataSetDefinition> getDatasetDefinitions()

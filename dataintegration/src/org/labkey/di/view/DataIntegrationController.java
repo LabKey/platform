@@ -72,7 +72,7 @@ public class DataIntegrationController extends SpringActionController
         @Override
         public NavTree appendNavTrail(NavTree root)
         {
-            root.addChild("Scheduler");
+            root.addChild("ETL Scheduler");
             return root;
         }
     }
