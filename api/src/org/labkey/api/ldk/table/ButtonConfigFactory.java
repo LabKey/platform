@@ -15,9 +15,7 @@
  */
 package org.labkey.api.ldk.table;
 
-import org.labkey.api.data.ButtonConfig;
 import org.labkey.api.data.Container;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UserDefinedButtonConfig;
 import org.labkey.api.security.User;
@@ -37,7 +35,18 @@ public interface ButtonConfigFactory
 
     public NavTree create(TableInfo ti);
 
+    /**
+     * @return true if the button is eligible to be added to the table's button bar. As this is invoked frequently,
+     * it should be quick to return. If a detailed check is needed, use isVisible() which is invoked only at display
+     * time
+     */
     public boolean isAvailable(TableInfo ti);
+
+    /**
+     * @return true if the button should be visible in the table's button bar. This will be invoked only when
+     * actually constructing
+     */
+    public boolean isVisible(TableInfo ti);
 
     public Set<ClientDependency> getClientDependencies(Container c, User u);
 }

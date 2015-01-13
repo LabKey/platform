@@ -16,16 +16,19 @@
 package org.labkey.api.ldk.table;
 
 import org.labkey.api.data.Container;
+import org.labkey.api.data.RenderContext;
 import org.labkey.api.data.TableInfo;
 import org.labkey.api.data.UserDefinedButtonConfig;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.DetailsURL;
 import org.labkey.api.security.User;
+import org.labkey.api.view.DisplayElement;
 import org.labkey.api.view.NavTree;
 import org.labkey.api.view.template.ClientDependency;
 
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -64,10 +67,19 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
         _clientDependencies = clientDependencies;
     }
 
-    public UserDefinedButtonConfig createBtn(TableInfo ti)
+    public UserDefinedButtonConfig createBtn(final TableInfo ti)
     {
         Container c = ti.getUserSchema().getContainer();
-        UserDefinedButtonConfig btn = new UserDefinedButtonConfig();
+        UserDefinedButtonConfig btn = new UserDefinedButtonConfig()
+        {
+            @Override
+            public DisplayElement createButton(RenderContext ctx, List<DisplayElement> originalButtons)
+            {
+                DisplayElement result = super.createButton(ctx, originalButtons);
+                result.setVisible(isVisible(ti));
+                return result;
+            }
+        };
         btn.setText(_text);
         if (_url != null)
             btn.setUrl(_url.copy(c).getActionURL().toString());
@@ -106,6 +118,12 @@ public class SimpleButtonConfigFactory implements ButtonConfigFactory
     public boolean isAvailable(TableInfo ti)
     {
         return _owner == null || ti.getUserSchema().getContainer().getActiveModules().contains(_owner);
+    }
+
+    @Override
+    public boolean isVisible(TableInfo ti)
+    {
+        return true;
     }
 
     public Set<ClientDependency> getClientDependencies(Container c, User u)
