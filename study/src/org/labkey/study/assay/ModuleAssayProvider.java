@@ -24,7 +24,6 @@ import org.fhcrc.cpas.exp.xml.DomainDescriptorType;
 import org.fhcrc.cpas.exp.xml.PropertyDescriptorType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.json.JSONObject;
 import org.labkey.api.data.Container;
 import org.labkey.api.exp.api.ExpData;
 import org.labkey.api.exp.api.ExpDataRunInput;
@@ -668,8 +667,20 @@ public class ModuleAssayProvider extends TsvAssayProvider
                     if (r instanceof FileResource)
                     {
                         String ext = r.getPath().extension();
+                        FileResource fileResource = (FileResource) r;
                         if (manager.getEngineByExtension(ext) != null)
-                            moduleScriptFiles.add(((FileResource)r).getFile());
+                        {
+                            moduleScriptFiles.add(fileResource.getFile());
+                        }
+                        else
+                        {
+                            String fileName = fileResource.getFile().getName();
+                            // Prevent a later warning about the script file not existing
+                            if (_missingScriptWarnings.add(fileName))
+                            {
+                                LOG.warn("Unable to use script file '" + fileName + "' specified in metadata for assay type '" + getName() + "' because the required script engine is not configured.");
+                            }
+                        }
                     }
                 }
 
