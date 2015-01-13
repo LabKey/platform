@@ -571,7 +571,7 @@ public abstract class DefaultModule implements Module, ApplicationContextAware
         return Collections.emptySet();
     }
 
-    protected static final Set<SupportedDatabase> ALL_DATABASES = Collections.unmodifiableSet(new HashSet<SupportedDatabase>(Arrays.asList(SupportedDatabase.mssql, SupportedDatabase.pgsql)));
+    protected static final Set<SupportedDatabase> ALL_DATABASES = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(SupportedDatabase.mssql, SupportedDatabase.pgsql)));
 
     private Set<SupportedDatabase> _supportedDatabases = ALL_DATABASES;
 
