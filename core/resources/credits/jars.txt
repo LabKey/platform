@@ -60,7 +60,7 @@ spring-mock-2.5.5.jar|Spring Framework|2.5.5|{link:Spring|http://www.springframe
 spring-webmvc-2.5.5.jar|Spring Web MVC Framework|2.5.5|{link:Spring|http://www.springframework.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|mbellew|Basis of web framework
 sqlite-jdbc-3.7.2.jar|SQLite JDBC Driver|3.7.2|{link:bitbucket.org|https://bitbucket.org/xerial/sqlite-jdbc/wiki/Home}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|vsharma|SQLite JDBC Driver
 tika-app-1.5.jar|Tika|1.5|{link:Apache|http://lucene.apache.org/tika/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|adam|Document parsers for full-text search and POI for Excel import/export
-jtidy-r918.jar|Java Tidy|r918|{link:SourceForge|http://jtidy.sourceforge.net/}|{link:Custom|http://www.labkey.org/download/jtidy-LICENSE.txt}|mbellew|Validating HTML content
+jtidy-r938.jar|Java Tidy|r938|{link:SourceForge|http://jtidy.sourceforge.net/}|{link:Custom|http://www.labkey.org/download/jtidy-LICENSE.txt}|mbellew|Validating HTML content
 validation-api-1.0.0.GA.jar|Bean Validation API (JSR 303)|1.0|{link:JCP|http://jcp.org/en/jsr/detail?id=303}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|jeckels|Validation of objects, requirement of GWT
 xbean.jar|XMLBeans|2.5.0|{link:Apache|http://xmlbeans.apache.org/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|peter|Reading/writing XML
 xercesImpl.jar|Xerces|2.6.2|{link:Apache|http://xerces.apache.org/xerces2-j/}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|dependents: flow module, batik library
