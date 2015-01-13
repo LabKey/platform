@@ -24,10 +24,8 @@ import org.w3c.dom.NodeList;
 import org.w3c.tidy.Tidy;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.Collection;
@@ -99,13 +97,14 @@ public class TidyUtil
         return tidy;
     }
 
-    private static void tidyParse(final Tidy tidy, final InputStream is, final OutputStream os, final Collection<String> errors)
+    private static String tidyParse(final Tidy tidy, final String content, final Collection<String> errors)
     {
         StringWriter err = new StringWriter();
-
         tidy.setErrout(new PrintWriter(err));
-        try {
-            tidy.parse(is, os);
+        StringWriter out = new StringWriter();
+        try
+        {
+            tidy.parse(new StringReader(content), out);
         }
         catch (NullPointerException e)
         {
@@ -114,22 +113,8 @@ public class TidyUtil
         tidy.getErrout().close();
 
         collectErrors(err, errors);
-    }
 
-    private static String tidyParse(final Tidy tidy, final String content, final Collection<String> errors)
-    {
-        try
-        {
-            // parse wants to use streams
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            tidyParse(tidy, new ByteArrayInputStream(content.getBytes("UTF-8")), out, errors);
-
-            return new String(out.toByteArray(), "UTF-8");
-        }
-        catch (UnsupportedEncodingException x)
-        {
-            throw new RuntimeException(x);
-        }
+        return out.getBuffer().toString();
     }
 
     private static Document tidyParseDOM(final Tidy tidy, final String content, final Collection<String> errors)
