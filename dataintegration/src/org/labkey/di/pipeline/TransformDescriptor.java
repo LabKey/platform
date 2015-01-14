@@ -442,7 +442,14 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             if ((meta instanceof ExternalPipelineTaskMeta))
             {
                 progressionSpec.add(((ExternalPipelineTaskMeta) meta).getExternalTaskId());
-                hasExternalPipelineTask = true;
+                // Register the task to generate an experiment run to track this transform.
+                // Need XarGeneratorId for proper loading of input/output files and handoff to ExperimentDataHandlers
+                // Needed here instead of at end in case later etl steps should not be run if DataHandler fails
+                // The Xar and ExpGenerator factories should have already been registered by the Experiment module
+                // TODO: Would be nice to reunify Xar and ExpGenerators. Can't without proper handling of a XarSource with null root in XarGeneratorId
+
+                if (_loadReferencedFiles)
+                    progressionSpec.add(new TaskId(XarGeneratorId.class));
             }
             else
             {
@@ -469,13 +476,7 @@ public class TransformDescriptor implements ScheduledPipelineJobDescriptor<Sched
             }
         }
 
-        // Register the task to generate an experiment run to track this transform as the last step.
-        // The Xar and ExpGenerator factories should have already been registered by the Experiment module
-        // TODO: Would be nice to reunify Xar and ExpGenerators. Can't without proper handling of a XarSource with null root in XarGeneratorId
-        // Need XarGeneratorId for proper loading of input/output files and handoff to ExperimentDataHandlers
-        if (hasExternalPipelineTask && _loadReferencedFiles)
-            progressionSpec.add(new TaskId(XarGeneratorId.class));
-        else progressionSpec.add(new TaskId(ExpGeneratorId.class));
+        progressionSpec.add(new TaskId(ExpGeneratorId.class));
 
         // add the pipeline
         settings.setTaskProgressionSpec(progressionSpec.toArray());
