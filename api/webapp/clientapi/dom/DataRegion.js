@@ -1,5 +1,45 @@
 (function($) {
 
+    //
+    // CONSTANTS
+    //
+    var ALL_FILTERS_SKIP_PREFIX = '.~';
+    var PARAM_PREFIX = '.param.';
+    var OFFSET_PREFIX = '.offset';
+
+    var _buildQueryString = function(region, pairs) {
+        if (!$.isArray(pairs)) {
+            return '';
+        }
+
+        var queryParts = [], key, value;
+
+        $.each(pairs, function(i, pair) {
+            key = pair[0];
+            value = pair.length > 1 ? pair[1] : undefined;
+
+            queryParts.push(encodeURIComponent(key));
+            if (LABKEY.Utils.isDefined(value)) {
+
+                if (LABKEY.Utils.isDate(value)) {
+                    value = $.format.date(value, 'yyyy-MM-dd');
+                    if (LABKEY.Utils.endsWith(value, 'Z')) {
+                        value = value.substring(0, value.length - 1);
+                    }
+                }
+                queryParts.push('=');
+                queryParts.push(encodeURIComponent(value));
+            }
+            queryParts.push('&');
+        });
+
+        if (queryParts.length > 0) {
+            queryParts.pop();
+        }
+
+        return queryParts.join("");
+    };
+
     var _getAllRowSelectors = function(region) {
         var nameSel = '#' + region.name;
         var baseSel = 'form' + nameSel;
@@ -12,13 +52,116 @@
         return $(baseSel + ' .labkey-selectors input[type="checkbox"][name=".select"]');
     };
 
+    var _getParametersSearch = function(region, qString, skipPrefixSet /* optional */) {
+        if (!qString) {
+            qString = region.getSearchString.call(region);
+        }
+        return _getParameters(region, qString, skipPrefixSet);
+    };
+
+    // Formerly, LABKEY.DataRegion.getParamValPairsFromString
+    var _getParameters = function(region, qString, skipPrefixSet /* optional */) {
+
+        var params = [];
+
+        if (LABKEY.Utils.isString(qString) && qString.length > 0) {
+
+            var qmIdx = qString.indexOf('?');
+            if (qmIdx > -1) {
+                qString = qString.substring(qmIdx + 1);
+            }
+
+            var pairs = qString.split('&'), p, key,
+                LAST = '.lastFilter', lastIdx, skip = $.isArray(skipPrefixSet);
+
+            $.each(pairs, function(i, pair) {
+                p = pair.split('=', 2);
+                key = p[0] = decodeURIComponent(p[0]);
+                lastIdx = key.indexOf(LAST);
+
+                if (lastIdx > -1 && lastIdx == (key.length - LAST.length)) {
+                    return;
+                }
+
+                var stop = false;
+                if (skip) {
+                    $.each(skipPrefixSet, function(j, skipPrefix) {
+                        if (LABKEY.Utils.isString(skipPrefix)) {
+
+                            // Special prefix that should remove all filters, but no other parameters
+                            if (skipPrefix.indexOf(ALL_FILTERS_SKIP_PREFIX) == (skipPrefix.length - 2)) {
+                                if (key.indexOf('~') > 0) {
+                                    stop = true;
+                                    return false;
+                                }
+                            }
+                            else if (key.indexOf(skipPrefix) == 0) {
+                                // only skip filters, parameters, and sorts
+                                if (key == skipPrefix ||
+                                    key.indexOf("~") > 0 ||
+                                    key.indexOf(PARAM_PREFIX) > 0 ||
+                                    key == (skipPrefix + "sort")) {
+                                    stop = true;
+                                    return false;
+                                }
+                            }
+                        }
+                    });
+                }
+
+                if (!stop) {
+                    if (p.length > 1) {
+                        p[1] = decodeURIComponent(p[1]);
+                    }
+                    params.push(p);
+                }
+            });
+        }
+
+        return params;
+    };
+
+    var _removeParameters = function(region, skipPrefixes /* optional */) {
+        return _setParameters(region, null, skipPrefixes);
+    };
+
+    var _setParameter = function(region, param, value, skipPrefixes /* optional */) {
+        _setParameters(region, [param, value], skipPrefixes);
+    };
+
+    var _setParameters = function(region, newParamValPairs, skipPrefixes /* optional */) {
+
+        if ($.isArray(skipPrefixes)) {
+            $.each(skipPrefixes, function(i, skip) {
+                skipPrefixes[i] = region.name + skip;
+            });
+        }
+
+        var param, value,
+            params = _getParametersSearch(region, region.requestURL, skipPrefixes);
+
+        if ($.isArray(newParamValPairs)) {
+            $.each(newParamValPairs, function(i, newPair) {
+                param = newPair[0];
+                value = newPair[1];
+
+                // Allow value to be null/undefined to support no-value filter types (Is Blank, etc)
+                if (LABKEY.Utils.isString(param)) {
+                    if (param.indexOf(region.name) !== 0) {
+                        param = region.name + param;
+                    }
+
+                    params.push([param, value]);
+                }
+            });
+        }
+
+        region.setSearchString.call(region, region.name, _buildQueryString(region, params));
+    };
+
     var _onSelectionChange = function(region) {
         $(region).trigger('selectchange', [region, region.selectedCount]);
         _updateRequiresSelectionButtons(region, region.selectedCount);
-    };
-
-    var _removeParams = function(region, skipPrefixes) {
-        console.log('_removeParams() NYI.');
     };
 
     var _showSelectMessage = function(region, msg) {
@@ -136,6 +279,8 @@
              */
             maxRows: 0,
 
+            requestURL: undefined,
+
             selectedCount: 0,
 
             showRecordSelectors: false,
@@ -222,7 +367,7 @@
 
         $(this).trigger(event);
 
-        if (event.isDefaultPrevented()) { // IntelliJ might mark this has deprecated, but this is the jQuery version, which is not deprecated
+        if (event.isDefaultPrevented()) {
             return;
         }
 
@@ -289,7 +434,7 @@
         }
 
         if (this.showRows == 'selected') {
-            _removeParams(this, ['.showRows']);
+            _removeParameters(this, ['.showRows']);
         }
         else if (this.showRows == 'unselected') {
             // keep ".showRows=unselected" parameter
@@ -528,6 +673,127 @@
     };
 
     //
+    // Parameters
+    //
+
+    /**
+     * Removes all parameters from the DataRegion
+     */
+    Proto.clearAllParameters = function() {
+        var event = $.Event("beforeclearallparameters");
+
+        $(this).trigger(event, this);
+
+        if (event.isDefaultPrevented()) {
+            return;
+        }
+
+        _removeParameters(this, [PARAM_PREFIX, OFFSET_PREFIX]);
+    };
+
+    Proto.getParameter = function(paramName) {
+        var pairs = _getParameters(this, this.getSearchString()), param = null;
+        $.each(pairs, function(i, pair) {
+            if (pair.length > 0 && pair[0] == paramName) {
+                if (pair.length > 1) {
+                    param = pair[1];
+                }
+                else {
+                    param = '';
+                }
+                return false;
+            }
+        });
+        return param;
+    };
+
+    /**
+     * Get the parameterized query values for this query.  These parameters
+     * are named by the query itself.
+     * @param {boolean} toLowercase If true, all parameter names will be converted to lowercase
+     * returns params An Object of key/val pairs.
+     */
+    Proto.getParameters = function(toLowercase) {
+
+        var results = {};
+
+        if (this.qwp) {
+            results = this.qwp.getParameters();
+        }
+        else {
+            var params = _getParameters(this, this.getSearchString()),
+                re = new RegExp('^' + LABKEY.Utils.escapeRe(this.name) + PARAM_PREFIX.replace(/\./g, '\\.'), 'i'),
+                name;
+
+            $.each(params, function(i, pair) {
+                if (pair.length > 0 && pair[0].match(re)) {
+                    name = pair[0].replace(re, '');
+                    if (toLowercase) {
+                        name = name.toLowerCase();
+                    }
+                    results[name] = pair[1];
+                }
+            });
+        }
+
+        return results;
+    };
+
+    /**
+     * Set the parameterized query values for this query.  These parameters
+     * are named by the query itself.
+     * @param {Mixed} params An Object or Array of Array key/val pairs.
+     */
+    Proto.setParameters = function(params) {
+        var event = $.Event("beforesetparameters");
+
+        $(this).trigger(event);
+
+        if (event.isDefaultPrevented()) {
+            return;
+        }
+
+        var me = this, _params;
+
+        // convert Object into Array of Array pairs and prefix the parameter name if necessary.
+        if (LABKEY.Utils.isObject(params)) {
+            _params = [];
+            $.each(params, function(key, value) {
+                if (key.indexOf(me.name + PARAM_PREFIX) !== 0) {
+                    key = me.name + PARAM_PREFIX + key;
+                }
+                _params.push([key, value]);
+            });
+        }
+        else {
+            _params = params;
+        }
+
+        //console.log(_params);
+        _setParameters(this, _params, [PARAM_PREFIX, OFFSET_PREFIX]);
+    };
+
+    /**
+     * @Deprecated
+     */
+    Proto.getSearchString = function() {
+        if (!LABKEY.Utils.isString(this.savedSearchString)) {
+            this.savedSearchString = document.location.search.substring(1) /* strip the ? */ || "";
+        }
+        return this.savedSearchString;
+    };
+
+    /**
+     * @Deprecated
+     */
+    Proto.setSearchString = function(regionName, search) {
+        this.savedSearchString = search || "";
+        // If the search string doesn't change and there is a hash on the url, the page won't reload.
+        // Remove the hash by setting the full path plus search string.
+        window.location.assign(window.location.pathname + "?" + this.savedSearchString);
+    };
+
+    //
     // Messaging
     //
 
@@ -575,9 +841,43 @@
         }
     };
 
+    Proto.showMessageArea = function() {
+        if (this.msgbox) {
+            this.msgbox.render();
+        }
+    };
+
     //
     // Misc
     //
+
+    /**
+     * Looks for a column based on fieldKey, name, or caption (in that order)
+     * @param columnIdentifier
+     * @returns {*}
+     */
+    Proto.getColumn = function(columnIdentifier) {
+
+        var column = null, // backwards compat
+            isString = LABKEY.Utils.isString,
+            cols = this.columns;
+
+        if (isString(columnIdentifier) && $.isArray(cols)) {
+            $.each(['fieldKey', 'name', 'caption'], function(i, key) {
+                $.each(cols, function(c, col) {
+                    if (isString(col[key]) && col[key] == columnIdentifier) {
+                        column = col;
+                        return false;
+                    }
+                });
+                if (column) {
+                    return false;
+                }
+            });
+        }
+
+        return column;
+    };
 
     Proto.on = function() {
         $(this).on.apply($, arguments);
