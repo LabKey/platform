@@ -18,7 +18,6 @@ package org.labkey.search.model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.cache.Cache;
-import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.ColumnInfo;
 import org.labkey.api.data.DbSchema;
@@ -328,7 +327,7 @@ public class SavePaths implements DavCrawler.SavePaths
 
         SqlDialect dialect = getSearchSchema().getSqlDialect();
         SQLFragment f = new SQLFragment(
-                "SELECT Path, LastCrawled, NextCrawl\n" +
+                "SELECT Parent, Name, Path, LastCrawled, NextCrawl\n" +
                 "FROM search.CrawlCollections\n");
         f.append("WHERE NextCrawl < ? AND (LastCrawled IS NULL OR LastCrawled < ?) " +
                 "ORDER BY NextCrawl");
@@ -340,16 +339,26 @@ public class SavePaths implements DavCrawler.SavePaths
         {
             Map<Path,Pair<Date,Date>> map = new LinkedHashMap<>();
             ArrayList<String> paths = new ArrayList<>(limit);
+            String or = " WHERE ";
+            SQLFragment updWHERE = new SQLFragment();
 
             try (ResultSet rs = new SqlSelector(getSearchSchema(), sel).getResultSet())
             {
                 while (rs.next())
                 {
-                    String path = rs.getString(1);
-                    java.sql.Timestamp lastCrawl = rs.getTimestamp(2);
-                    java.sql.Timestamp nextCrawl = rs.getTimestamp(3);
+                    int parent = rs.getInt(1);
+                    String name = rs.getString(2);
+                    String path = rs.getString(3);
+
+                    java.sql.Timestamp lastCrawl = rs.getTimestamp(4);
+                    java.sql.Timestamp nextCrawl = rs.getTimestamp(5);
                     map.put(Path.parse(path), new Pair<Date, Date>(lastCrawl, nextCrawl));
                     paths.add(path);
+
+                    updWHERE.append(or).append(" (Parent=? AND Name=?)");
+                    updWHERE.add(parent);
+                    updWHERE.add(name);
+                    or = " OR ";
                 }
             }
 
@@ -358,16 +367,8 @@ public class SavePaths implements DavCrawler.SavePaths
             {
                 SQLFragment upd = new SQLFragment(
                         "UPDATE search.CrawlCollections " + (getSearchSchema().getSqlDialect().isSqlServer() ? " WITH (UPDLOCK)" : "") + "\n" +
-                        "SET LastCrawled=? WHERE Path IN ",
-                        now);
-                String comma = "(";
-                for (String path : paths)
-                {
-                    upd.append(comma).append('?');
-                    upd.add(path);
-                    comma = ",";
-                }
-                upd.append(")");
+                        "SET LastCrawled=?", now);
+                upd.append(updWHERE);
                 new SqlExecutor(getSearchSchema()).execute(upd);
             }
             return map;
