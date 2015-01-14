@@ -15,7 +15,5 @@
  */
 
 -- Add new skip query validation column to study.study
-ALTER TABLE study.study ADD COLUMN skipqueryvalidation boolean;
-UPDATE study.study SET skipqueryvalidation = false;
-ALTER TABLE study.study ALTER COLUMN skipqueryvalidation SET NOT NULL;
-ALTER TABLE study.study ALTER COLUMN skipqueryvalidation SET DEFAULT false;
+ALTER TABLE study.Study ADD COLUMN ValidateQueriesAfterImport BOOLEAN NOT NULL DEFAULT FALSE;
+UPDATE study.Study SET ValidateQueriesAfterImport = TRUE;

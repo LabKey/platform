@@ -114,7 +114,7 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
     private boolean _blankQCStatePublic = false;
     private boolean _isAllowReload;
     private Integer _reloadInterval;
-    private boolean _skipQueryValidation;
+    private boolean _validateQueriesAfterImport;
     private Date _lastReload;
     private Integer _reloadUser;
     private boolean _advancedCohorts;
@@ -583,14 +583,14 @@ public class StudyImpl extends ExtensibleStudyEntity<StudyImpl> implements Study
         return _reloadUser;
     }
 
-    public void setSkipQueryValidation(boolean skipQueryValidation)
+    public void setValidateQueriesAfterImport(boolean validateQueriesAfterImport)
     {
-        _skipQueryValidation = skipQueryValidation;
+        _validateQueriesAfterImport = validateQueriesAfterImport;
     }
 
-    public boolean isSkipQueryValidation()
+    public boolean isValidateQueriesAfterImport()
     {
-        return _skipQueryValidation;
+        return _validateQueriesAfterImport;
     }
 
     public void setReloadUser(Integer reloadUser)

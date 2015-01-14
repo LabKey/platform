@@ -26,7 +26,7 @@
 <%
     StudyImpl study = getStudy();
     boolean allowReload = study.isAllowReload();
-    boolean skipQueryValidation = study.isSkipQueryValidation();
+    boolean queryValidation = study.isValidateQueriesAfterImport();
     ReloadInterval currentInterval = ReloadInterval.getForSeconds(study.getReloadInterval());
 
     User reloadUser = (allowReload && null != study.getReloadUser() ? UserManager.getUser(study.getReloadUser()) : null);
@@ -71,8 +71,8 @@
             <td><%=allowReload ? (null == reloadUser ? "<div class=\"labkey-error\">Error: Reload user not defined!</div>" : h(reloadUser.getDisplayName(getUser()))) : ""%></td>
         </tr>
         <tr>
-            <th align="left" width=200>Validate Imported Queries</th>
-            <td><input id="queryValidation" type="checkbox" name="queryValidation" <%=checked(!skipQueryValidation)%>></td>
+            <th align="left" width=200>Validate All Queries After Import</th>
+            <td><input id="queryValidation" type="checkbox" name="queryValidation" <%=checked(queryValidation)%>></td>
         </tr>
         <tr>
             <td width=200>&nbsp;</td>
