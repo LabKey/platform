@@ -11,7 +11,7 @@ if (!LABKEY.vis.internal) {
 LABKEY.vis.internal.Axis = function() {
     // This emulates a lot of the d3.svg.axis() functionality, but adds in the ability for us to have tickHovers,
     // different colored tick & gridlines, etc.
-    var scale, orientation, tickFormat = function(v) {return v}, tickHover, ticks, axisSel, tickSel, textSel,
+    var scale, orientation, tickFormat = function(v) {return v}, tickHover, tickCls, ticks, axisSel, tickSel, textSel,
             gridLineSel, borderSel, grid;
     var tickColor = '#000000', tickTextColor = '#000000', gridLineColor = '#DDDDDD', borderColor = '#000000';
     var tickPadding = 0, tickLength = 8, tickWidth = 1, tickOverlapRotation = 15, gridLineWidth = 1, borderWidth = 1;
@@ -103,6 +103,7 @@ LABKEY.vis.internal.Axis = function() {
         textAnchors.enter().append('a').append('text');
         textEls = textAnchors.select('text');
         textEls.text(tickFormat)
+                .attr('class', tickCls)
                 .attr('x', textXFn)
                 .attr('y', textYFn)
                 .attr('text-anchor', textAnchor)
@@ -146,6 +147,7 @@ LABKEY.vis.internal.Axis = function() {
     axis.ticks = function(t) {ticks = t; return axis;};
     axis.tickFormat = function(f) {tickFormat = f; return axis;};
     axis.tickHover = function(h) {tickHover = h; return axis;};
+    axis.tickCls = function(c) {tickCls = c; return axis;};
 
     axis.tickPadding = function(p) {
         if (p !== null && p !== undefined) {
@@ -330,6 +332,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
             xAxis.tickHover(plot.scales.x.tickHoverText);
         }
 
+        if (plot.scales.x.tickCls) {
+            xAxis.tickCls(plot.scales.x.tickCls);
+        }
+
         this.canvas.call(xAxis);
     };
 
@@ -350,6 +356,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
                 leftAxis.tickHover(plot.scales.yLeft.tickHoverText);
             }
 
+            if (plot.scales.yLeft.tickCls) {
+                leftAxis.tickCls(plot.scales.yLeft.tickCls);
+            }
+
             this.canvas.call(leftAxis);
         }
     };
@@ -368,6 +378,10 @@ LABKEY.vis.internal.D3Renderer = function(plot) {
 
             if (plot.scales.yRight.tickHoverText) {
                 rightAxis.tickHover(plot.scales.yRight.tickHoverText);
+            }
+
+            if (plot.scales.yRight.tickCls) {
+                rightAxis.tickCls(plot.scales.yRight.tickCls);
             }
 
             this.canvas.call(rightAxis);

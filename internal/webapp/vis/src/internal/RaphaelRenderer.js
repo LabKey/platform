@@ -40,7 +40,7 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
     }
 
     var renderGrid = function() {
-        var i, x1, y1, x2, y2, tick, tickText, tickHoverText, text, gridLine;
+        var i, x1, y1, x2, y2, tick, tickText, tickHoverText, tickCls, text, gridLine;
         if (this.bgColor) {
             this.paper.rect(0, 0, plot.grid.width, plot.grid.height).attr('fill', plot.bgColor).attr('stroke', 'none');
         }
@@ -71,10 +71,13 @@ LABKEY.vis.internal.RaphaelRenderer = function(plot) {
             tickText = plot.scales.x.tickFormat ? plot.scales.x.tickFormat(xTicks[i]) : xTicks[i];
             // add hover for x-axis tick mark descriptions
             tickHoverText = plot.scales.x.tickHoverText ? plot.scales.x.tickHoverText(xTicks[i]) : null;
+            tickCls = plot.scales.x.tickCls ? plot.scales.x.tickCls(xTicks[i]) : null;
             text = this.paper.text(plot.scales.x.scale(xTicks[i])+.5, plot.grid.bottomEdge + 15, tickText);
             text.attr('fill', plot.tickTextColor || '#000000');
             if (tickHoverText)
                 text.attr("title", tickHoverText);
+            if (tickCls)
+                text.node.setAttribute("class", tickCls);
 
             xTicksSet.push(text);
 
