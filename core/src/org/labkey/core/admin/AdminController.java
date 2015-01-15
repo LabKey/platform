@@ -5413,7 +5413,7 @@ public class AdminController extends SpringActionController
     public static class LogForm
     {
         private String _message;
-        String _level;
+        private String _level;
 
         public String getMessage()
         {
@@ -5550,12 +5550,15 @@ public class AdminController extends SpringActionController
                 }
             }
 
-            HttpView known = new ModulesView(knownModules, "Known", PageFlowUtil.filter("Each of these modules is installed and has a valid module file. ") + link, null, ignoreSet);
+            String deleteInstructions = "<br><br>" + PageFlowUtil.filter("The delete links below will remove all record of this module from the database, " +
+                "but to remove a module completely you ${verb} need to delete its .module file and exploded module directory from your LabKey Server deployment. " +
+                "Modules are typically deployed in <labkey_deployment_root>/modules and <labkey_deployment_root>/externalModules.");
+            HttpView known = new ModulesView(knownModules, "Known", PageFlowUtil.filter("Each of these modules is installed and has a valid module file. ") + link + deleteInstructions.replace("${verb}", "will"), null, ignoreSet);
             HttpView unknown = new ModulesView(unknownModules, "Unknown",
                 PageFlowUtil.filter((1 == unknownModules.size() ? "This module" : "Each of these modules") + " has been installed on this server " +
                 "in the past but the corresponding module file is currently missing or invalid. Possible explanations: the " +
                 "module is no longer being distributed, the module has been renamed, the server location where the module " +
-                "is stored is not accessible, or the module file is corrupted."), PageFlowUtil.filter("A module is considered \"unknown\" if it was installed on this server " +
+                "is stored is not accessible, or the module file is corrupted.") + deleteInstructions.replace("${verb}", "may still"), PageFlowUtil.filter("A module is considered \"unknown\" if it was installed on this server " +
                 "in the past but the corresponding module file is currently missing or invalid. This server has no unknown modules."), Collections.<Double>emptySet());
 
             return new VBox(known, unknown);
@@ -5598,8 +5601,8 @@ public class AdminController extends SpringActionController
                 else
                 {
                     out.println("\n<table>");
-                    out.println("<tr><td colspan=\"5\">" + _descriptionHtml + "</td></tr>");
-                    out.println("<tr><td colspan=\"5\">&nbsp;</td></tr>");
+                    out.println("<tr><td colspan=\"6\">" + _descriptionHtml + "</td></tr>");
+                    out.println("<tr><td colspan=\"6\">&nbsp;</td></tr>");
                     out.println("<tr><th>Name</th><th>Version</th><th>Class</th><th>Source</th><th>Schemas</th><th></th></tr>");
 
                     for (ModuleContext moduleContext : _contexts)
