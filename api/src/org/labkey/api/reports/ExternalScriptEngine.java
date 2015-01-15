@@ -22,6 +22,7 @@ import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.reports.report.r.ParamReplacementSvc;
+import org.labkey.api.util.URIUtil;
 
 import javax.script.*;
 import java.io.*;
@@ -181,6 +182,25 @@ public class ExternalScriptEngine extends AbstractScriptEngine
         params.add(exe);
 
         String scriptFilePath = scriptFile.getAbsolutePath();
+
+        // Issue 19545: R pipeline scripts don't support spaces in directory names
+        // The bash shell script wrappers around the R executable don't correctly handle spaces
+        // within arguments and will drop quotes around arguments when using "CMD BATCH".
+        // To avoid issues with executing scripts from within directories that contain spaces,
+        // try to get the file name relative to the working directory if possible.
+        // This doesn't fix executing scripts that contains a space in the file name, but is better than failing completely.
+        File workingDir = getWorkingDir(context);
+        if (workingDir != null && URIUtil.isDescendant(workingDir.toURI(), scriptFile.toURI()))
+        {
+            try
+            {
+                scriptFilePath = FileUtil.relativize(workingDir, scriptFile, false);
+            }
+            catch (IOException e)
+            {
+                throw new ScriptException(e);
+            }
+        }
 
         try {
             // see if the command contains parameter substitutions
