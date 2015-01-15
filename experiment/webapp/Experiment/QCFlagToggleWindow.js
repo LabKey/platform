@@ -43,7 +43,7 @@ LABKEY.QCFlagToggleWindow = Ext.extend(Ext.Window, {
             throw "You must specify a schemaName, queryName, and runId!";
 
         Ext.apply(config, {
-            cls: 'extContainer',
+            cls: 'extContainer qcflagtoggle',
             title: 'Run QC Flags',
             layout: 'fit',
             width: 700,

@@ -1,7 +1,8 @@
-.x-grid3-row td {
+.qcflagtoggle .x-grid3-row td {
     line-height: 20px;
 }
 
-.x-grid3-cell-inner, .x-grid3-hd-inner {
+.qcflagtoggle .x-grid3-cell-inner,
+.qcflagtoggle .x-grid3-hd-inner {
     white-space:normal !important;
 }
