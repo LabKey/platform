@@ -15,8 +15,7 @@
  */
 package org.labkey.query.olap.metadata;
 
-import com.drew.lang.annotations.NotNull;
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Test;
