@@ -416,7 +416,10 @@ public class CoreQuerySchema extends UserSchema
 
     private FilteredTable _getUserTable()
     {
-        return new UsersTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME)).init();
+        UsersTable table = new UsersTable(this, CoreSchema.getInstance().getSchema().getTable(USERS_TABLE_NAME));
+        table.init();
+        table.setMustCheckPermissions(_mustCheckPermissions);
+        return table;
     }
 
     protected TableInfo getUsersAndGroupsTable()
