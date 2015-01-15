@@ -26,6 +26,7 @@ import org.labkey.api.qc.TsvDataExchangeHandler;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.study.assay.AssayFileWriter;
 import org.labkey.api.study.assay.AssayRunUploadContext;
+import org.labkey.api.study.assay.TsvDataHandler;
 
 import java.io.File;
 import java.io.PrintWriter;
@@ -60,7 +61,7 @@ public class ModuleDataExchangeHandler extends TsvDataExchangeHandler
 
             DataType dataType = context.getProvider().getDataType();
             if (dataType == null)
-                dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+                dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
 
             List<Map<String, Object>> data = context.getRawData();
             if (data.size() > 0)
