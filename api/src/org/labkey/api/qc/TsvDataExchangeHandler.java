@@ -177,7 +177,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         DataType dataType = context.getProvider().getDataType();
         if (dataType == null)
-            dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+            dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
 
         for (File data : dataFiles)
         {
@@ -547,7 +547,7 @@ public class TsvDataExchangeHandler implements DataExchangeHandler
 
         DataType dataType = context.getProvider().getDataType();
         if (dataType == null)
-            dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+            dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
 
         // Wire up the script's inputs
         for (File dataFile : inputDataFiles)

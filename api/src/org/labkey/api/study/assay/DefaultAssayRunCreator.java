@@ -416,7 +416,8 @@ public class DefaultAssayRunCreator<ProviderType extends AbstractAssayProvider> 
         {
             DataType dataType = context.getProvider().getDataType();
             if (dataType == null)
-                dataType = AbstractAssayProvider.RELATED_FILE_DATA_TYPE;
+                // we know that we are importing transformed data at this point
+                dataType = TsvDataHandler.RELATED_TRANSFORM_FILE_DATA_TYPE;
 
             ExpData data = ExperimentService.get().createData(context.getContainer(), dataType);
             ExperimentDataHandler handler = data.findDataHandler();

@@ -39,6 +39,7 @@ import java.util.Map;
  */
 public class TsvDataHandler extends AbstractAssayTsvDataHandler implements TransformDataHandler
 {
+    public static final DataType RELATED_TRANSFORM_FILE_DATA_TYPE = new DataType("RelatedTransformFile");
     public static final String NAMESPACE = "AssayRunTSVData";
     private static final AssayDataType DATA_TYPE;
 
@@ -60,7 +61,7 @@ public class TsvDataHandler extends AbstractAssayTsvDataHandler implements Trans
     public Priority getPriority(ExpData data)
     {
         Lsid lsid = new Lsid(data.getLSID());
-        if (DATA_TYPE.matches(lsid) || AbstractAssayProvider.RELATED_FILE_DATA_TYPE.matches(lsid))
+        if (DATA_TYPE.matches(lsid) || RELATED_TRANSFORM_FILE_DATA_TYPE.matches(lsid))
         {
             return Priority.HIGH;
         }
