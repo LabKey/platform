@@ -16,6 +16,7 @@
 package org.labkey.di.pipeline;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.json.JSONObject;
 import org.labkey.api.data.ParameterDescription;
@@ -31,6 +32,7 @@ import org.labkey.api.pipeline.TaskPipeline;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 import org.labkey.api.util.FileType;
 import org.labkey.api.util.FileUtil;
+import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.URLHelper;
 import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.di.VariableMap;
@@ -376,6 +378,37 @@ public class TransformPipelineJob extends PipelineJob implements TransformJobSup
     public File findOutputFile(String name)
     {
         return new File(getAnalysisDirectory(), name);
+    }
+
+    @Override
+    public File findOutputFile(@NotNull String outputDir, @NotNull String fileName)
+    {
+        File dir;
+        if (outputDir.startsWith("/"))
+        {
+            dir = getPipeRoot().resolvePath(outputDir);
+            if (dir == null)
+                throw new RuntimeException("Output directory not under pipeline root: " + outputDir);
+
+            if (!NetworkDrive.exists(dir))
+            {
+                getLogger().info("Creating output directory under pipeline root: " + dir);
+                if (!dir.mkdirs())
+                    throw new RuntimeException("Failed to create output directory under pipeline root: " + outputDir);
+            }
+        }
+        else
+        {
+            dir = new File(getAnalysisDirectory(), outputDir);
+            if (!NetworkDrive.exists(dir))
+            {
+                getLogger().info("Creating output directory under pipeline analysis dir: " + dir);
+                if (!dir.mkdirs())
+                    throw new RuntimeException("Failed to create output directory under analysis dir: " + outputDir);
+            }
+        }
+
+        return new File(dir, fileName);
     }
 
     @Override

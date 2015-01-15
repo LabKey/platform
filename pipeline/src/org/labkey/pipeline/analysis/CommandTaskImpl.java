@@ -213,16 +213,28 @@ public class CommandTaskImpl extends WorkDirectoryTask<CommandTaskImpl.Factory> 
                 }
 
                 File result;
-                // Check if the output is specifically flagged to go into the analysis directory so we check in the right
+                // Check if the output is specifically flagged to go into a special location so we check in the right
                 // place when deciding if the task has already been performed
-                if (tp.isForceToAnalysisDir())
+                switch (tp.getOutputLocation())
                 {
-                    result = new File(support.getAnalysisDirectory(), fileName);
+                    case ANALYSIS_DIR:
+                        result = new File(support.getAnalysisDirectory(), fileName);
+                        break;
+
+                    case DATA_DIR:
+                        result = new File(support.getDataDirectory(), fileName);
+                        break;
+
+                    case PATH:
+                        result = support.findOutputFile(tp.getOutputDir(), fileName);
+                        break;
+
+                    case DEFAULT:
+                    default:
+                        result = support.findOutputFile(fileName);
+                        break;
                 }
-                else
-                {
-                    result = support.findOutputFile(fileName);
-                }
+
                 if (tp.isOptional())
                 {
                     hasOptional = true;

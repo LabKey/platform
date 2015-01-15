@@ -216,16 +216,27 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
         {
             File fileOutput;
 
-            // TODO: Issue 20792: pipeline: Custom output directory for task outputs
-            // Check if the output is specifically flagged to go into the analysis directory
-            if (tp.isForceToAnalysisDir())
+            // Check if the output is specifically flagged to go into a special location
+            switch (tp.getOutputLocation())
             {
-                fileOutput = new File(_support.getAnalysisDirectory(), fileWork.getName());
+                case ANALYSIS_DIR:
+                    fileOutput = new File(_support.getAnalysisDirectory(), fileWork.getName());
+                    break;
+
+                case DATA_DIR:
+                    fileOutput = new File(_support.getDataDirectory(), fileWork.getName());
+                    break;
+
+                case PATH:
+                    fileOutput = _support.findOutputFile(tp.getOutputDir(), fileWork.getName());
+                    break;
+
+                case DEFAULT:
+                default:
+                    fileOutput = _support.findOutputFile(fileWork.getName());
+                    break;
             }
-            else
-            {
-                fileOutput = _support.findOutputFile(fileWork.getName());
-            }
+
             if (fileOutput != null)
             {
                 // If the output file is optional, or in a shared directory outside
@@ -302,8 +313,8 @@ public abstract class AbstractWorkDirectory implements WorkDirectory
     {
         if (Function.output.equals(f))
         {
-            // TODO: Issue 20792: pipeline: Custom output directory for task outputs
-            // All output goes to the root work directory for now.
+            // All new output goes to the root work directory for now.
+            // Output files will be moved into a final location in .outputFile().
             return _dir;
         }
         else

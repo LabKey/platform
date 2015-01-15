@@ -33,6 +33,7 @@ import org.labkey.api.pipeline.WorkDirectory;
 import org.labkey.api.pipeline.cmd.JobParamToCommandArgs;
 import org.labkey.api.pipeline.cmd.PathInLine;
 import org.labkey.api.pipeline.cmd.TaskPath;
+import org.labkey.api.pipeline.cmd.TaskPath.OutputLocation;
 import org.labkey.api.pipeline.cmd.ValueInLine;
 import org.labkey.api.pipeline.cmd.ValueToCommandArgs;
 import org.labkey.api.pipeline.cmd.ValueWithSwitch;
@@ -46,6 +47,7 @@ import org.labkey.pipeline.xml.FileInputType;
 import org.labkey.pipeline.xml.FileOutputType;
 import org.labkey.pipeline.xml.InputsType;
 import org.labkey.pipeline.xml.IntInputType;
+import org.labkey.pipeline.xml.OutputLocationType;
 import org.labkey.pipeline.xml.OutputsType;
 import org.labkey.pipeline.xml.PropertyInputType;
 import org.labkey.pipeline.xml.SimpleInputType;
@@ -154,8 +156,32 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
                 throw new IllegalArgumentException("Output file '" + name + "' is a reserved name");
 
             TaskPath taskPath = createTaskPath(xfileOutput);
-            if (xfileOutput.isSetForceToAnalysisDir())
-                taskPath.setForceToAnalysisDir(xfileOutput.getForceToAnalysisDir());
+
+            // custom output location
+            if (xfileOutput.isSetOutputDir())
+            {
+                taskPath.setOutputDir(xfileOutput.getOutputDir());
+            }
+            else if (xfileOutput.isSetOutputLocation())
+            {
+                OutputLocationType xoutputLoc = xfileOutput.xgetOutputLocation();
+                switch (xoutputLoc.enumValue().intValue())
+                {
+                    case OutputLocationType.INT_ANALYSIS:
+                        taskPath.setOutputLocation(OutputLocation.ANALYSIS_DIR);
+                        break;
+
+                    case OutputLocationType.INT_DATA:
+                        taskPath.setOutputLocation(OutputLocation.DATA_DIR);
+                        break;
+
+                    case OutputLocationType.INT_DEFAULT:
+                    default:
+                        taskPath.setOutputLocation(OutputLocation.DEFAULT);
+                        break;
+                }
+            }
+
             ret.put(name, taskPath);
         }
 
