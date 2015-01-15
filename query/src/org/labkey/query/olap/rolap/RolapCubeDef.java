@@ -75,7 +75,7 @@ public class RolapCubeDef
     // use LOJ for dimensions joins
     // using inner joins can cause problems when <join> specifications may filter where we do not want them to
     // however, depending on NULL semantics we may sometimes want JOIN semantics (see memberFilterUsersJoinKey)
-    final boolean useOuterJoin = true;
+    boolean useOuterJoin = true;
 
 
     // filter on PK IS NOT NULL if there is a member filter
@@ -203,7 +203,6 @@ public class RolapCubeDef
 
         LinkedList<Join> list = new LinkedList(joinsIn);
 
-        // CONSIDER should we use LOJ for some joins??? when?
         Set<String> includedTables = new CaseInsensitiveTreeSet();
         includedTables.add(innerMost.tableName);
 

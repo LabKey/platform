@@ -15,6 +15,7 @@
  */
 package org.labkey.query.olap.rolap;
 
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -165,6 +166,11 @@ public class RolapReader
             }
         }
 
+        if (null != _currentCube.getAnnotations().get("experimentalUseInnerJoins"))
+        {
+            if (Boolean.TRUE == ConvertUtils.convert(_currentCube.getAnnotations().get("experimentalUseInnerJoins"), Boolean.class))
+                _currentCube.useOuterJoin = false;
+        }
 
         _currentCube.validate();
 
