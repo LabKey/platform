@@ -15,7 +15,10 @@
  */
 package org.labkey.api.pipeline.cmd;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.labkey.api.util.FileType;
+import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 
 /**
  * <code>TaskPath</code> is an abstract specifier of how an input/output file
@@ -28,7 +31,8 @@ public class TaskPath
     private boolean _splitFiles;
     private boolean _copyInput;
     private boolean _optional;
-    private boolean _forceToAnalysisDir = false;
+    private OutputLocation _outputLocation = OutputLocation.DEFAULT;
+    private String _outputDir;
     private boolean _useProtocolNameAsOutputBaseName;
 
     /**
@@ -193,15 +197,70 @@ public class TaskPath
     /**
      * Indicates that the output file should always be copied directly to the analysis directory, instead of relying
      * on the normal job behavior for where to put it.
+     * @deprecated Use .getOutputLocation() instead.
      */
+    @Deprecated
     public boolean isForceToAnalysisDir()
     {
-        return _forceToAnalysisDir;
+        return _outputLocation == OutputLocation.ANALYSIS_DIR;
     }
 
+    /** @deprecated Use .setOutputLocation(ANALYSIS_DIR) instead. */
+    @Deprecated
     public void setForceToAnalysisDir(boolean forceToAnalysisDir)
     {
-        _forceToAnalysisDir = forceToAnalysisDir;
+        if (forceToAnalysisDir)
+        {
+            _outputLocation = OutputLocation.ANALYSIS_DIR;
+            _outputDir = null;
+        }
+        else
+        {
+            _outputLocation = OutputLocation.DEFAULT;
+            _outputDir = null;
+        }
+    }
+
+    /**
+     * Set the {@link OutputLocation} for this TaskPath.
+     * The location to place this output file after the task is successfully completed.
+     */
+    public void setOutputLocation(@NotNull OutputLocation loc)
+    {
+        _outputLocation = loc;
+    }
+
+    /**
+     * Get the {@link OutputLocation} for this TaskPath.
+     * The location to place this output file after the task is successfully completed.
+     */
+    @NotNull
+    public OutputLocation getOutputLocation()
+    {
+        return _outputLocation;
+    }
+
+    /**
+     * Set the output directory for this TaskPath.
+     * The output dir is a directory path relative to the analysis directory,
+     * or, if the path starts with "/", relative to the pipeline root.
+     */
+    public void setOutputDir(@NotNull String dir)
+    {
+        _outputLocation = OutputLocation.PATH;
+        _outputDir = dir;
+    }
+
+    /**
+     * Get the output directory for this TaskPath.
+     */
+    @Nullable
+    public String getOutputDir()
+    {
+        if (_outputLocation == OutputLocation.PATH)
+            return _outputDir;
+        else
+            return null;
     }
 
     /**
@@ -219,5 +278,28 @@ public class TaskPath
     public void setUseProtocolNameAsOutputBaseName(boolean useProtocolNameAsOutputBaseName)
     {
         _useProtocolNameAsOutputBaseName = useProtocolNameAsOutputBaseName;
+    }
+
+    public enum OutputLocation
+    {
+        /** The default output location as retured by {@link FileAnalysisJobSupport#findOutputFile(String)}. */
+        DEFAULT,
+
+        /**
+         * The current job's analysis directory where the final analysis usually ends up.
+         * @see FileAnalysisJobSupport#getAnalysisDirectory()
+         */
+        ANALYSIS_DIR,
+
+        /**
+         * The current job's data directory where the original input files reside.
+         * @see FileAnalysisJobSupport#getDataDirectory()
+         */
+        DATA_DIR,
+
+        /**
+         * Use the output directory named by {@link #getOutputDir()}.
+         */
+        PATH
     }
 }

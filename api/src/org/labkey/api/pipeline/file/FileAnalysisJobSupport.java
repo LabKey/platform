@@ -15,6 +15,7 @@
  */
 package org.labkey.api.pipeline.file;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.labkey.api.pipeline.ParamParser;
 import org.labkey.api.util.FileType;
@@ -75,6 +76,13 @@ public interface FileAnalysisJobSupport
      * and the pipeline definition to specify where those files should end up.
      */
     File findOutputFile(String name);
+
+    /**
+     * Returns a file for the output dir and file name.
+     * The output dir is a directory path relative to the analysis directory,
+     * or, if the path starts with "/", relative to the pipeline root.
+     */
+    File findOutputFile(@NotNull String outputDir, @NotNull String fileName);
 
     /**
      * @return a parameter parser object for writing parameters to a file.
