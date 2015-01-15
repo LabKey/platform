@@ -36,6 +36,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.AdminPermission;
 import org.labkey.api.security.permissions.DeletePermission;
 import org.labkey.api.security.permissions.InsertPermission;
+import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.security.permissions.ReadPermission;
 import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.util.CSRFUtil;
@@ -1594,9 +1595,23 @@ public class DataRegion extends AbstractDataRegion
         return null;
     }
 
+    protected boolean hasPermission(RenderContext ctx, Class<? extends Permission> perm)
+    {
+        ViewContext viewContext = ctx.getViewContext();
+        User user = viewContext.getUser();
+        HasPermission p = getTable();
+        // TODO : tables need to accurately represent their own permissions
+        // TODO : or maybe we need DataRegion.setPermissionToCheck(HasPermissions)
+        // TODO : and perhaps consolidate with permission check in DisplayElement.shouldRender() ?
+        if (null == p || p instanceof SchemaTableInfo)
+            p = viewContext;
+
+        return p.hasPermission(user, perm);
+    }
+
     private void renderDetails(RenderContext ctx, Writer out) throws SQLException, IOException
     {
-        if (!ctx.getViewContext().hasPermission(ReadPermission.class))
+        if (!hasPermission(ctx, ReadPermission.class))
         {
             out.write("You do not have permission to read this data");
             return;
@@ -1794,7 +1809,7 @@ public class DataRegion extends AbstractDataRegion
         Set<String> renderedColumns = new HashSet<>();
 
         //if user doesn't have read permissions, don't render anything
-        if ((action == MODE_INSERT && !ctx.getViewContext().hasPermission(InsertPermission.class)) || (action == MODE_UPDATE && !ctx.getViewContext().hasPermission(UpdatePermission.class)))
+        if ((action == MODE_INSERT && !hasPermission(ctx, InsertPermission.class)) || (action == MODE_UPDATE && !hasPermission(ctx, (UpdatePermission.class))))
         {
             out.write("You do not have permission to " +
                     (action == MODE_INSERT ? "Insert" : "Update") +
@@ -2046,16 +2061,9 @@ public class DataRegion extends AbstractDataRegion
 
         List<DisplayColumn> renderers = getDisplayColumns();
         Set<String> renderedColumns = Sets.newCaseInsensitiveHashSet();
-        ViewContext viewContext = ctx.getViewContext();
 
         //if user doesn't have read permissions, don't render anything
-        User user = viewContext.getUser();
-        HasPermission p = viewForm.getTable();
-        // TODO : tables need to accurately represent their own permissions
-        // TODO : or maybe we need DataRegion.setPermissionToCheck(HasPermissions)
-        if (null == p || p instanceof SchemaTableInfo)
-            p = viewContext;
-        if ((action == MODE_INSERT && !p.hasPermission(user, InsertPermission.class)) || (action == MODE_UPDATE && !p.hasPermission(user, UpdatePermission.class)))
+        if ((action == MODE_INSERT && !hasPermission(ctx, InsertPermission.class)) || (action == MODE_UPDATE && !hasPermission(ctx, UpdatePermission.class)))
         {
             out.write("You do not have permission to " +
                     (action == MODE_INSERT ? "Insert" : "Update") +
