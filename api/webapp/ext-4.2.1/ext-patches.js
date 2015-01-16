@@ -122,8 +122,78 @@ Ext4.override(Ext4.form.FieldContainer, {
  * Version: 4.2.1
  */
 Ext4.override(Ext4.view.Table, {
+
+    /**
+     * @Override
+     * Sencha Issue: http://www.sencha.com/forum/showthread.php?269116-Ext-4.2.1.883-Sandbox-getRowStyleTableEl
+     * Version: 4.2.1
+     */
     getRowStyleTableEl : function(item) {
         return this.el.down('table.' + Ext4.baseCSSPrefix  + 'grid-table');
+    },
+
+    /**
+     * @Override
+     * The call to isRowSelected in 4.2.1 could cause an exception when using a buffered store. This exception
+     * is swallowed and the row would not prooperly render. This is most easily repro'd by having a 'pageSize' set
+     * to the same as the number of records in the store.
+     * Issue 22231 - Problems with long lists in file management tool
+     * Sencha Issue: Not exactly the one (couldn't find it) but close: http://www.sencha.com/forum/showthread.php?266708
+     * Version: 4.2.1
+     */
+    renderRow: function(record, rowIdx, out) {
+        var me = this,
+                isMetadataRecord = rowIdx === -1,
+                selModel = me.selModel,
+                rowValues = me.rowValues,
+                itemClasses = rowValues.itemClasses,
+                rowClasses = rowValues.rowClasses,
+                cls,
+                rowTpl = me.rowTpl;
+
+        rowValues.record = record;
+        rowValues.recordId = record.internalId;
+        rowValues.recordIndex = rowIdx;
+        rowValues.rowId = me.getRowId(record);
+        rowValues.itemCls = rowValues.rowCls = '';
+        if (!rowValues.columns) {
+            rowValues.columns = me.ownerCt.columnManager.getColumns();
+        }
+
+        itemClasses.length = rowClasses.length = 0;
+
+        if (!isMetadataRecord) {
+            itemClasses[0] = Ext4.baseCSSPrefix + "grid-row";
+            if (!me.ownerCt.disableSelection && selModel.isRowSelected) {
+                // Selection class goes on the outermost row, so it goes into itemClasses
+                if (selModel.isRowSelected(record)) {
+                    itemClasses.push(me.selectedItemCls);
+                }
+
+                // Ensure selection class is added to selected records, and to the record *before* any selected record
+                // When looking ahead to see if the next record is selected, ensure we do not look past the end!
+                if (me.rowValues.recordIndex < me.store.getTotalCount() - 1 && selModel.isRowSelected(me.rowValues.recordIndex + 1) && !me.isRowStyleFirst(rowIdx + 1)) {
+                    rowClasses.push(me.beforeSelectedItemCls);
+                }
+            }
+
+            if (me.stripeRows && rowIdx % 2 !== 0) {
+                rowClasses.push(me.altRowCls);
+            }
+
+            if (me.getRowClass) {
+                cls = me.getRowClass(record, rowIdx, null, me.dataSource);
+                if (cls) {
+                    rowClasses.push(cls);
+                }
+            }
+        }
+
+        if (out) {
+            rowTpl.applyOut(rowValues, out);
+        } else {
+            return rowTpl.apply(rowValues);
+        }
     }
 });
 
@@ -289,5 +359,65 @@ Ext4.override(Ext4.view.View, {
 
             node.focus();
         }
+    }
+});
+
+/**
+ * This is a change to the iteration of records when using a buffered store. The NodeCache assumed that recCount
+ * would be safe in using to iterate across newNodes, however, it is not. This resulted bad behavior in the grid where
+ * many rows might not appear at all. Sencha did not announce a solution so the fix is based on a community suggestion.
+ * A better solution may exist.
+ * Issue 22231 - Problems with long lists in file management tool
+ * Sencha issue: http://www.sencha.com/forum/showthread.php?265323-Problem-when-scrolling-at-the-bottom-of-a-grid-with-buffered-store
+ * Version: 4.2.1
+ */
+Ext4.override(Ext4.view.NodeCache, {
+    scroll: function(newRecords, direction, removeCount) {
+        var me = this,
+                elements = me.elements,
+                recCount = newRecords.length,
+                i, el, removeEnd,
+                newNodes,
+                nodeContainer = me.view.getNodeContainer(),
+                frag = document.createDocumentFragment();
+
+
+        if (direction == -1) {
+            for (i = (me.endIndex - removeCount) + 1; i <= me.endIndex; i++) {
+                el = elements[i];
+                delete elements[i];
+                el.parentNode.removeChild(el);
+            }
+            me.endIndex -= removeCount;
+
+
+            newNodes = me.view.bufferRender(newRecords, me.startIndex -= recCount);
+            for (i = 0; i < recCount; i++) {
+                elements[me.startIndex + i] = newNodes[i];
+                frag.appendChild(newNodes[i]);
+            }
+            nodeContainer.insertBefore(frag, nodeContainer.firstChild);
+        }
+
+
+        else {
+            removeEnd = me.startIndex + removeCount;
+            for (i = me.startIndex; i < removeEnd; i++) {
+                el = elements[i];
+                delete elements[i];
+                el.parentNode.removeChild(el);
+            }
+            me.startIndex = i;
+
+
+            newNodes = me.view.bufferRender(newRecords, me.endIndex + 1);
+            for (i = 0; i < newNodes.length; i++) { // was (i = 0; i < recCount; i++)
+                elements[me.endIndex += 1] = newNodes[i];
+                frag.appendChild(newNodes[i]);
+            }
+            nodeContainer.appendChild(frag);
+        }
+
+        me.count = me.endIndex - me.startIndex + 1;
     }
 });
