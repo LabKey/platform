@@ -165,9 +165,6 @@
       </ns:column>
       <ns:column columnName="ShareDatasetDefinitions">
       </ns:column>
-      <ns:column columnName="ValidateQueriesAfterImport">
-        <ns:description>Validate queries after study reload.</ns:description>
-      </ns:column>
     </ns:columns>
   </ns:table>
   <ns:table tableName="Site" tableDbType="TABLE">
