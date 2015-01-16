@@ -1858,24 +1858,11 @@ Ext4.define('File.panel.Browser', {
                         // Don't show the custom context menu for columns containing a link (by marking the column
                         // with 'showContextMenu = false') and let the browser show it's right-click menu instead.
                         var showContext = true;
-
-                        // Find the column for the <td> cellIndex skipping any hidden columns
-                        if (cellIndex > 0) {
-                            var index = 0;
-                            var columns = this.getColumns();
-                            for (var i = 0, len = columns.length; i < len; i++) {
-                                var current = columns[i];
-                                if (current.hidden)
-                                    continue;
-
-                                index++;
-                                if (cellIndex == index) {
-                                    // Found the column matching the cellIndex
-                                    if (current.showContextMenu === false)
-                                        showContext = false;
-                                    break;
-                                }
-                            }
+                        var columns = grid.getGridColumns();
+                        if (cellIndex > 0 && cellIndex < columns.length) {
+                            var column = columns[cellIndex];
+                            if (column.initialConfig && column.initialConfig.showContextMenu === false)
+                                showContext = false;
                         }
 
                         if (showContext)
