@@ -18,11 +18,17 @@ package org.labkey.api.action;
 
 import org.labkey.api.miniprofiler.MiniProfiler;
 import org.labkey.api.miniprofiler.Timing;
+import org.labkey.api.view.BadRequestException;
+import org.labkey.api.view.ViewServlet;
 import org.labkey.api.view.WebPartView;
+import org.springframework.beans.PropertyValue;
 import org.springframework.beans.PropertyValues;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * User: matthewb
@@ -48,7 +54,13 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
             if (null == getCommandClass())
                 errors = new NullSafeBindException(new Object(), "command");
             else
-                errors = bindParameters(getPropertyValues());
+            {
+                // GET parameters have already been validated in ViewServlet
+                PropertyValues pvs = getPropertyValues();
+                if (!"GET".equalsIgnoreCase(getViewContext().getRequest().getMethod()))
+                    validateUnicodePropertyValues(pvs);
+                errors = bindParameters(pvs);
+            }
         }
 
         FORM form;
@@ -70,6 +82,38 @@ public abstract class SimpleViewAction<FORM> extends BaseViewAction<FORM> implem
 
         return v;
     }
+
+
+    public static void validateUnicodePropertyValues(PropertyValues pvs) throws ServletException
+    {
+        for (PropertyValue pv : pvs.getPropertyValues())
+        {
+            String key = pv.getName();
+            Object value = pv.getValue();
+            if (!ViewServlet.validChars(key))
+                throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Unrecognized unicode character in request", null);
+            if (null == value)
+            {
+                continue;
+            }
+            else if (value instanceof CharSequence)
+            {
+                if (!ViewServlet.validChars((CharSequence) value))
+                    throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Unrecognized unicode character in request", null);
+            }
+            else if (value.getClass().isArray())
+            {
+                Object[] array = (Object[]) value;
+                for (Object item : array)
+                {
+                    if (item instanceof CharSequence)
+                        if (!ViewServlet.validChars((CharSequence)item))
+                            throw new BadRequestException(HttpServletResponse.SC_BAD_REQUEST, "Unrecognized unicode character in request", null);
+                }
+            }
+        }
+    }
+
 
     protected String getCommandClassMethodName()
     {
