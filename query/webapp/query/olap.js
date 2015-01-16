@@ -91,10 +91,11 @@
                 return;
             }
 
+            var action = config.originalConfig.useJsonQuery ? "jsonQuery.api" : "countDistinctQuery.api";
+
             return Ext4.Ajax.request(
                     {
-//            url : LABKEY.ActionURL.buildURL("olap", "jsonQuery.api", config.containerPath),
-                        url : LABKEY.ActionURL.buildURL("olap", "countDistinctQuery.api", config.containerPath),
+                        url : LABKEY.ActionURL.buildURL("olap", action, config.containerPath),
                         method : 'POST',
                         success: function(r){postProcessExecuteMdx(r,config);},
                         failure: LABKEY.Utils.getCallbackWrapper(LABKEY.Utils.getOnFailure(config), config.scope, true),
@@ -831,6 +832,18 @@
         resetNamedFilters : function()
         {
             this._filter = {};
+        },
+
+        queryAsJson : function(config)
+        {
+            config.useJsonQuery = true;
+            this.query(config);
+        },
+
+        queryAsCountDistinct : function(config)
+        {
+            config.useJsonQuery = false;
+            this.query(config);
         },
 
         query : function(config)
