@@ -194,7 +194,7 @@ public abstract class BaseStudyTable extends FilteredTable<StudyQuerySchema>
             if (!"ParticipantId".equalsIgnoreCase(alt))
                 return getColumn(alt);
         }
-        return null;
+        return super.resolveColumn(name);
     }
 
 

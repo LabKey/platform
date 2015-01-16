@@ -1,4 +1,3 @@
-
 /* Report Filter Panel */
 .normalwrap-gridcell {
     white-space: normal !important;
@@ -100,3 +99,8 @@
 {
     background-position: 0 -13px;
 }
+
+/* Paging toolbar */
+.rpf .paging-toolbar {
+    background: transparent;
+ }

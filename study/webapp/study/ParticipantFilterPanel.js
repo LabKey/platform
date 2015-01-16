@@ -346,6 +346,7 @@ Ext4.define('LABKEY.study.ParticipantFilterPanel', {
                 schemaName: 'study',
                 sql: 'select "' + this.subjectNoun.columnName + '" as id, "' + this.subjectNoun.columnName + '" as label, \'participant\' as type FROM study."' + this.subjectNoun.singular + '"',
                 queryName: this.subjectNoun.singular,
+                pageSize: 1000,
                 autoLoad: true
             });
 

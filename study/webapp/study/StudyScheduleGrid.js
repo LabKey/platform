@@ -9,6 +9,8 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
 
     constructor : function(config) {
 
+        LABKEY.ext4.DataViewUtil.defineModels();
+
         Ext4.QuickTips.init();
 
         Ext4.applyIf(config, {
@@ -16,21 +18,6 @@ Ext4.define('LABKEY.ext4.StudyScheduleGrid', {
             frame  : false,
             border : false,
             maxHeight : 850
-        });
-
-        Ext4.define('Dataset.Browser.Category', {
-            extend : 'Ext.data.Model',
-            fields : [
-                {name : 'created',      type : 'date'},
-                {name : 'createdBy'                  },
-                {name : 'displayOrder', type : 'int' },
-                {name : 'label'                      },
-                {name : 'modfied',      type : 'date'},
-                {name : 'modifiedBy'                 },
-                {name : 'rowid',        type : 'int' },
-                {name : 'subCategories' },
-                {name : 'parent',       type : 'int' }
-            ]
         });
 
         this.callParent([config]);

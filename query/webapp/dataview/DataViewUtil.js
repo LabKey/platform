@@ -8,18 +8,109 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
     singleton : true,
     alternateClassName : ['LABKEY.study.DataViewUtil'],
 
-    getUsersStore : function() {
+    MODELS_DEFINED : false,
 
-        // define data models
+    defineModels : function() {
+
+        if (this.MODELS_DEFINED) {
+            return;
+        }
+
+        if (!Ext4.ModelManager.isRegistered('Dataset.Browser.View')) {
+            Ext4.define('Dataset.Browser.View', {
+                extend: 'Ext.data.Model',
+                idProperty: 'fakeid', // do not use the 'id' property, rather just make something up which Ext will then generate
+                fields: [
+                    {name : 'id'},
+                    {name : 'category'},
+                    {name : 'categorylabel',
+                        convert : function(v, record) {
+                            if (record.raw && record.raw.category)
+                                return record.raw.category.label;
+                            return 0;
+                        }
+                    },
+                    {name : 'created', type: 'date'},
+                    {name : 'createdBy'},
+                    {name : 'createdByUserId', type: 'int'},
+                    {name : 'authorUserId',
+                        convert : function(v, record) {
+                            if (record.raw && record.raw.author)
+                                return record.raw.author.userId;
+                            return 0;
+                        }
+                    },
+                    {name : 'authorDisplayName',
+                        convert : function(v, record) {
+                            if (record.raw && record.raw.author)
+                                return record.raw.author.displayName;
+                            return '';
+                        }
+                    },
+                    {name : 'container'},
+                    {name : 'dataType'},
+                    {name : 'editable', type: 'boolean'},
+                    {name : 'editUrl'},
+                    {name : 'type'},
+                    {name : 'description'},
+                    {name : 'displayOrder', type: 'int'},
+                    {name : 'shared', type: 'boolean'},
+                    {name : 'visible', type: 'boolean'},
+                    {name : 'readOnly', type: 'boolean'},
+                    {name : 'icon'},
+                    {name : 'modified', type: 'date'},
+                    {name : 'modifiedBy'},
+                    {name : 'contentModified', type: 'date'},
+                    {name : 'refreshDate',  type: 'date'},
+                    {name : 'name'},
+                    {name : 'access', mapping: 'access.label'},
+                    {name : 'accessUrl', mapping: 'access.url'},
+                    {name : 'runUrl'},
+                    {name : 'hrefTarget', defaultValue: undefined, mapping: 'runTarget'},
+                    {name : 'detailsUrl'},
+                    {name : 'thumbnail'},
+                    {name : 'thumbnailType'},
+                    {name : 'href', mapping: 'runUrl'},
+                    {name : 'allowCustomThumbnail'},
+                    {name : 'status'},
+                    {name : 'reportId'}
+                ]
+            });
+        }
+
+        if (!Ext4.ModelManager.isRegistered('Dataset.Browser.Category')) {
+            Ext4.define('Dataset.Browser.Category', {
+                extend : 'Ext.data.Model',
+                fields : [
+                    {name : 'created'},
+                    {name : 'createdBy'},
+                    {name : 'displayOrder', type: 'int'},
+                    {name : 'label'},
+                    {name : 'modified'},
+                    {name : 'modifiedBy'},
+                    {name : 'rowid'},
+                    {name : 'subCategories'},
+                    {name : 'parent'}
+                ]
+            });
+        }
+
         if (!Ext4.ModelManager.isRegistered('LABKEY.data.User')) {
             Ext4.define('LABKEY.data.User', {
                 extend : 'Ext.data.Model',
                 fields : [
-                    {name : 'userId', type : 'int'},
+                    {name : 'userId', type: 'int'},
                     {name : 'displayName'}
                 ]
             });
         }
+
+        this.MODELS_DEFINED = true;
+    },
+
+    getUsersStore : function() {
+
+        this.defineModels();
 
         var config = {
             model   : 'LABKEY.data.User',
@@ -57,23 +148,7 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
             options.index = 1;
         }
 
-        // define data models
-        if (!Ext4.ModelManager.isRegistered('Dataset.Browser.Category')) {
-            Ext4.define('Dataset.Browser.Category', {
-                extend : 'Ext.data.Model',
-                fields : [
-                    {name : 'created',      type : 'string'},
-                    {name : 'createdBy'                  },
-                    {name : 'displayOrder', type : 'int' },
-                    {name : 'label'                      },
-                    {name : 'modfied',      type : 'string'},
-                    {name : 'modifiedBy'                 },
-                    {name : 'rowid',        type : 'int' },
-                    {name : 'subCategories' },
-                    {name : 'parent',       type : 'int' }
-                ]
-            });
-        }
+        this.defineModels();
 
         var config = {
             pageSize: 100,
@@ -155,6 +230,8 @@ Ext4.define('LABKEY.ext4.DataViewUtil', {
     },
 
     getManageCategoriesDialog : function() {
+
+        this.defineModels();
 
         var cellEditing = Ext4.create('Ext.grid.plugin.CellEditing', {
             pluginId : 'categorycell',

@@ -92,6 +92,37 @@ Ext4.define('LABKEY.ext4.filter.SelectList', {
             multiSelect : true,
             columns     : this.getColumnCfg(isHeader),
             features    : this.getFeaturesCfg(),
+            dockedItems: [{
+                xtype: 'pagingtoolbar',
+                cls: 'paging-toolbar',
+                store: this.store,
+                dock: 'bottom',
+                hidden: true,
+                border: false,
+                beforePageText: '',
+                listeners: {
+                    afterrender: function() {
+                        // hide the refresh button and last separator
+                        this.items.items[9].hide();
+                        this.items.items[10].hide();
+
+                        // we check and show the paging toolbar if the store count matches the page size
+                        var checkStoreSize = function(store, pager) {
+                            if (store.pageSize == store.getCount()) {
+                                pager.show();
+                            }
+                        };
+                        if (this.store.getCount() > 0) {
+                            checkStoreSize(this.store, this);
+                        }
+                        else {
+                            this.store.on('load', function(){
+                                checkStoreSize(this.store, this);
+                            }, this);
+                        }
+                    }
+                }
+            }],
             viewConfig : {
                 stripeRows : false,
                 listeners  : {

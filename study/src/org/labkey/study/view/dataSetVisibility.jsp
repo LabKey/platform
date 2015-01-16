@@ -40,8 +40,6 @@
   }
 %>
 <%
-    addClientDependency("Ext4");
-
     List<CohortImpl> cohorts = StudyManager.getInstance().getCohorts(getStudy().getContainer(), getUser());
     JspView<Map<Integer,StudyController.DatasetVisibilityData>> me = (JspView<Map<Integer,StudyController.DatasetVisibilityData>>) HttpView.currentView();
     Map<Integer,StudyController.DatasetVisibilityData> bean = me.getModelBean();
