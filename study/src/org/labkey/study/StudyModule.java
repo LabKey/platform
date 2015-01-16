@@ -249,7 +249,7 @@ public class StudyModule extends SpringModule implements SearchService.DocumentP
 
     public double getVersion()
     {
-        return 14.31;
+        return 14.32;
     }
 
     protected void init()

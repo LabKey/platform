@@ -16,4 +16,4 @@
 
 -- Add new skip query validation column to study.study
 ALTER TABLE study.Study ADD COLUMN ValidateQueriesAfterImport BOOLEAN NOT NULL DEFAULT FALSE;
-UPDATE study.Study SET ValidateQueriesAfterImport = TRUE;
+UPDATE study.Study SET ValidateQueriesAfterImport = TRUE WHERE AllowReload = TRUE;
