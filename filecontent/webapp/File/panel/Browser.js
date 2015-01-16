@@ -845,8 +845,8 @@ Ext4.define('File.panel.Browser', {
         {header: "Size",           flex: 1, dataIndex: 'size',         sortable: true,  hidden: false, height : 20, renderer: this.gridSizeRenderer, align : 'right'},
         {header: "Created By",     flex: 1, dataIndex: 'createdby',    sortable: true,  hidden: false, height : 20},
         {header: "Description",    flex: 1, dataIndex: 'description',  sortable: true,  hidden: false, height : 20, renderer:Ext4.util.Format.htmlEncode},
-        {header: "Usages",         flex: 1, dataIndex: 'actions',      sortable: !this.bufferFiles,  hidden: false, height : 20, renderer: this.usageRenderer},
-        {header: "Download Link",  flex: 1, dataIndex: 'fileLink',     sortable: !this.bufferFiles,  hidden: true, height : 20},
+        {header: "Usages",         flex: 1, dataIndex: 'actions',      sortable: !this.bufferFiles,  hidden: false, height : 20, renderer: this.usageRenderer, showContextMenu: false},
+        {header: "Download Link",  flex: 1, dataIndex: 'fileLink',     sortable: !this.bufferFiles,  hidden: true, height : 20, showContextMenu: false},
         {header: "File Extension", flex: 1, dataIndex: 'fileExt',      sortable: !this.bufferFiles,  hidden: true, height : 20, renderer:Ext4.util.Format.htmlEncode}
         ];
         this.setDefaultColumns(columns);
@@ -1850,11 +1850,39 @@ Ext4.define('File.panel.Browser', {
                         }
                     }
                 },
-                itemcontextmenu : function (grid, record, item, index, e, eOpts) {
+
+                cellcontextmenu : function (grid, td, cellIndex, record, tr, rowIndex, e, eOpts) {
                     if (record && record.data) {
-                        this.showContextMenu(record, e);
+
+                        // Issue 21404: Can no longer copy download link from files in file browser
+                        // Don't show the custom context menu for columns containing a link (by marking the column
+                        // with 'showContextMenu = false') and let the browser show it's right-click menu instead.
+                        var showContext = true;
+
+                        // Find the column for the <td> cellIndex skipping any hidden columns
+                        if (cellIndex > 0) {
+                            var index = 0;
+                            var columns = this.getColumns();
+                            for (var i = 0, len = columns.length; i < len; i++) {
+                                var current = columns[i];
+                                if (current.hidden)
+                                    continue;
+
+                                index++;
+                                if (cellIndex == index) {
+                                    // Found the column matching the cellIndex
+                                    if (current.showContextMenu === false)
+                                        showContext = false;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (showContext)
+                            this.showContextMenu(record, e);
                     }
                 },
+
                 containercontextmenu : function (grid, e, eOpts) {
                     this.showContextMenu(null, e);
                 },
