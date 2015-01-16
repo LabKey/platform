@@ -387,7 +387,7 @@ public class CBCAssayController extends SpringActionController
                 }
 
                 // Get the oldValues directly instead of using the quf.getOldValues().
-                // r13966 changed .oldValues to not include any FieldKey lookups.
+                // r13966 changed DataRegion.OLD_VALUES_NAME to not include any FieldKey lookups.
                 Map<String, Object>[] maps = new TableSelector(quf.getTable(), columns.values(), new PkFilter(quf.getTable(), quf.getPkVals()), null).getMapArray();
                 if (maps == null || maps.length != 1)
                     throw new RuntimeException("Didn't find existing row for '" + form.getDataRowId() + "'");

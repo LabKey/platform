@@ -16,6 +16,7 @@
 package org.labkey.study.controllers;
 
 import org.apache.commons.lang3.StringUtils;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.study.Study;
 import org.labkey.api.study.TimepointType;
 import org.labkey.api.util.PageFlowUtil;
@@ -61,12 +62,13 @@ public class VisitForm extends ViewForm
         }
 
         HttpServletRequest request = getRequest();
+        String oldValues = request.getParameter(DataRegion.OLD_VALUES_NAME);
 
-        if (null != StringUtils.trimToNull(request.getParameter(".oldValues")))
+        if (null != StringUtils.trimToNull(oldValues))
         {
             try
             {
-                _visit = (VisitImpl) PageFlowUtil.decodeObject(request.getParameter(".oldValues"));
+                _visit = (VisitImpl) PageFlowUtil.decodeObject(oldValues);
             }
             catch (IOException x)
             {

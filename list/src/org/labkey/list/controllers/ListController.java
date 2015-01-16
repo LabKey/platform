@@ -522,7 +522,7 @@ public class ListController extends SpringActionController
                     inputs.add(Pair.of(value.getName(), value.getValue().toString()));
             }
 
-            // support for .oldValues
+            // support for old values
             try
             {
                 // convert to map
@@ -531,11 +531,11 @@ public class ListController extends SpringActionController
                 {
                     oldValues.put(entry.getKey().replace(FORM_PREFIX, ""), entry.getValue());
                 }
-                inputs.add(Pair.of(".oldValues", PageFlowUtil.encodeObject(oldValues)));
+                inputs.add(Pair.of(DataRegion.OLD_VALUES_NAME, PageFlowUtil.encodeObject(oldValues)));
             }
             catch (IOException e)
             {
-                throw new RuntimeException("Bad .oldValues on List.UpdateAction");
+                throw new RuntimeException("Bad " + DataRegion.OLD_VALUES_NAME + " on List.UpdateAction");
             }
 
 

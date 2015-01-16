@@ -753,6 +753,10 @@ public abstract class QueryDefinitionImpl implements QueryDefinition
                     case updateQueryRow:
                         expr = table.getUpdateURL(null, container);
                         break;
+
+                    case updateQueryRows:
+                        expr = table.getUpdateURL(null, container);
+                        break;
                 }
 
                 if (expr == AbstractTableInfo.LINK_DISABLER)

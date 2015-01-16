@@ -2396,6 +2396,38 @@ public class QueryController extends SpringActionController
         }
     }
 
+    @RequiresPermissionClass(UpdatePermission.class)
+    public static class UpdateQueryRowsAction extends UpdateQueryRowAction
+    {
+        @Override
+        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
+        {
+            return super.getView(tableForm, reshow, errors);
+        }
+
+        @Override
+        public ModelAndView handleRequest(QueryUpdateForm tableForm, BindException errors) throws Exception
+        {
+            tableForm.setBulkUpdate(true);
+            return super.handleRequest(tableForm, errors);
+        }
+
+        @Override
+        public boolean handlePost(QueryUpdateForm tableForm, BindException errors) throws Exception
+        {
+            if (tableForm.isDataSubmit())
+                return super.handlePost(tableForm, errors);
+
+            return false;
+        }
+
+        public NavTree appendNavTrail(NavTree root)
+        {
+            root.addChild("Edit Multiple " + _table.getName());
+            return root;
+        }
+    }
+
     // alias
     public class DeleteAction extends DeleteQueryRowsAction
     {
