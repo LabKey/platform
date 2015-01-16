@@ -74,7 +74,12 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
     protected TableInfo _tinfo = null;
     protected String[] _selectedRows = null;
     protected boolean _isDataLoaded;
+    protected boolean _isBulkUpdate;
+    public boolean _isDataSubmit = false;
     private boolean _validateRequired = true;
+
+    public static final String DATA_SUBMIT_NAME = ".dataSubmit";
+    public static final String BULK_UPDATE_NAME = ".bulkUpdate";
 
     /**
      * Creates a TableViewForm with no underlying dynaclass.
@@ -247,6 +252,21 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
             setTypedValues(maps[0], false);
             setOldValues(new CaseInsensitiveHashMap<>(getTypedValues()));
         }
+    }
+
+    public boolean isDataSubmit()
+    {
+        return _isDataSubmit;
+    }
+
+    public boolean isBulkUpdate()
+    {
+        return _isBulkUpdate;
+    }
+
+    public void setBulkUpdate(boolean isBulkUpdate)
+    {
+        _isBulkUpdate = isBulkUpdate;
     }
 
     public boolean isDataLoaded()
@@ -706,7 +726,18 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         HttpServletRequest request = getRequest();
 
-        _selectedRows = request.getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
+        _isBulkUpdate = request.getParameter(BULK_UPDATE_NAME) != null;
+        _isDataSubmit = request.getParameter(DATA_SUBMIT_NAME) != null;
+
+        if (_isBulkUpdate)
+        {
+            Set<String> selected = DataRegionSelection.getSelected(context, null, true, false);
+            _selectedRows = selected.toArray(new String[selected.size()]);
+        }
+        else
+        {
+            _selectedRows = request.getParameterValues(DataRegion.SELECT_CHECKBOX_NAME);
+        }
 
         String pkString = request.getParameter("pk");
         if (null != StringUtils.trimToNull(pkString) && null != _tinfo)
@@ -714,7 +745,7 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         try
         {
-            String oldVals = request.getParameter(".oldValues");
+            String oldVals = request.getParameter(DataRegion.OLD_VALUES_NAME);
             if (null != StringUtils.trimToNull(oldVals))
             {
                 _oldValues = PageFlowUtil.decodeObject(oldVals);

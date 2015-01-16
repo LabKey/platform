@@ -19,6 +19,7 @@ import org.labkey.api.action.FormViewAction;
 import org.labkey.api.action.NullSafeBindException;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.attachments.SpringAttachmentFile;
+import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
@@ -71,6 +72,8 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         }
         _table.overlayMetadata(_table.getName(), _schema, new ArrayList<QueryException>());
         QueryUpdateForm command = new QueryUpdateForm(_table, getViewContext(), null);
+        if (command.isBulkUpdate())
+            command.setValidateRequired(false);
         BindException errors = new NullSafeBindException(new BeanUtilsPropertyBindingResult(command, "form"));
         command.validateBind(errors);
         return errors;
@@ -187,6 +190,45 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
         if (qus == null)
             throw new IllegalArgumentException("The query '" + _table.getName() + "' in the schema '" + _schema.getName() + "' is not updatable.");
 
+
+        List<Map<String, Object>> rows;
+        if (form.isBulkUpdate())
+        {
+            rows = new ArrayList<>();
+
+            // Merge the bulk edits back into the selected rows + validate
+            String[] pkValues = form.getSelectedRows();
+
+            if (pkValues == null || pkValues.length == 0)
+                errors.reject(SpringActionController.ERROR_MSG, "Unable to update multiple rows. Please reselect the rows to update.");
+            else if (table.getPkColumnNames().size() > 1)
+            {
+                errors.reject(SpringActionController.ERROR_MSG, "Unable to update multiple rows. Does not support update for multi-keyed tables.");
+            }
+            else
+            {
+                Map<String, Object> row;
+                String pkName = table.getPkColumnNames().get(0);
+                for (String pkValue : pkValues)
+                {
+                    row = new CaseInsensitiveHashMap<>();
+                    for (Map.Entry<String, Object> entry : values.entrySet())
+                    {
+                        // If a value is left as null it is considered untouched for a given row
+                        if (entry.getValue() != null)
+                            row.put(entry.getKey(), entry.getValue());
+                    }
+
+                    row.put(pkName, pkValue);
+                    rows.add(row);
+                }
+            }
+        }
+        else
+        {
+            rows = Collections.singletonList(values);
+        }
+
         DbSchema dbschema = table.getSchema();
         try
         {
@@ -195,23 +237,31 @@ public abstract class UserSchemaAction extends FormViewAction<QueryUpdateForm>
                 if (insert)
                 {
                     BatchValidationException batchErrors = new BatchValidationException();
-                    qus.insertRows(form.getUser(), form.getContainer(), Collections.singletonList(values), batchErrors, null, null);
+                    qus.insertRows(form.getUser(), form.getContainer(), rows, batchErrors, null, null);
                     if (batchErrors.hasErrors())
                         throw batchErrors;
                 }
                 else
                 {
-                    Map<String, Object> oldValues = null;
-                    if (form.getOldValues() instanceof Map)
+                    // Currently, bulkUpdate doesn't support oldValues due to the need to re-query...
+                    if (form.isBulkUpdate())
                     {
-                        oldValues = (Map<String, Object>)form.getOldValues();
-                        if (!(oldValues instanceof CaseInsensitiveMapWrapper))
-                            oldValues = new CaseInsensitiveMapWrapper<>(oldValues);
+                        qus.updateRows(form.getUser(), form.getContainer(), rows, null, null, null);
                     }
+                    else
+                    {
+                        Map<String, Object> oldValues = null;
+                        if (form.getOldValues() instanceof Map)
+                        {
+                            oldValues = (Map<String, Object>) form.getOldValues();
+                            if (!(oldValues instanceof CaseInsensitiveMapWrapper))
+                                oldValues = new CaseInsensitiveMapWrapper<>(oldValues);
+                        }
 
-                    // 18292 - updateRows expects a null list in the case of an "empty" or null map.
-                    List<Map<String, Object>> oldKeys = (oldValues == null || oldValues.isEmpty()) ? null : Collections.singletonList(oldValues);
-                    qus.updateRows(form.getUser(), form.getContainer(), Collections.singletonList(values), oldKeys, null, null);
+                        // 18292 - updateRows expects a null list in the case of an "empty" or null map.
+                        List<Map<String, Object>> oldKeys = (oldValues == null || oldValues.isEmpty()) ? null : Collections.singletonList(oldValues);
+                        qus.updateRows(form.getUser(), form.getContainer(), rows, oldKeys, null, null);
+                    }
                 }
 
                 transaction.commit();

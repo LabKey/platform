@@ -48,7 +48,7 @@ public class UpdateView extends DataView
     {
         if (null != getRenderContext().getForm())
         {
-            ctx.setMode(DataRegion.MODE_UPDATE);
+            ctx.setMode(getRenderContext().getForm().isBulkUpdate() ? DataRegion.MODE_UPDATE_MULTIPLE : DataRegion.MODE_UPDATE);
             getDataRegion().render(ctx, out);
         }
         else

@@ -410,8 +410,7 @@ public class QueryView extends WebPartView<Object>
 
     public MenuButton createQueryPickerButton(String label)
     {
-        NavTreeMenuButton button = new QueryNavTreeMenuButton(label);
-        return button;
+        return new QueryNavTreeMenuButton(label);
     }
 
 
@@ -449,6 +448,7 @@ public class QueryView extends WebPartView<Object>
             case insertQueryRow:
             case importData:
             case updateQueryRow:
+            case updateQueryRows:
             case deleteQueryRows:
             {
                 // ICK
@@ -498,10 +498,9 @@ public class QueryView extends WebPartView<Object>
 
         // Applying the base sort/filter to the url is lossy in that anyone consuming the url can't
         // determine if the sort/filter originated from QuerySettings or from a user applied sort/filter.
-        if (getSettings().getBaseFilter() != null)
-            (getSettings().getBaseFilter()).applyToURL(ret, DATAREGIONNAME_DEFAULT);
+        getSettings().getBaseFilter().applyToURL(ret, DATAREGIONNAME_DEFAULT);
 
-        if (getSettings().getBaseSort() != null && getSettings().getBaseSort().getSortList().size() > 0)
+        if (getSettings().getBaseSort().getSortList().size() > 0)
             getSettings().getBaseSort().applyToURL(ret, DATAREGIONNAME_DEFAULT, true);
 
         switch (action)
@@ -513,6 +512,7 @@ public class QueryView extends WebPartView<Object>
             case insertQueryRow:
             case importData:
             case updateQueryRow:
+            case updateQueryRows:
             case deleteQueryRows:
                 ret.addReturnURL(getReturnURL());
                 break;
@@ -831,16 +831,18 @@ public class QueryView extends WebPartView<Object>
                 bar.add(importButton);
         }
 
-        if (showDeleteButton())
+//        if (/* showUpdateButton() && */canUpdate())
+//        {
+//            ActionButton editMultipleButton = createEditMultipleButton();
+//            if (editMultipleButton != null)
+//                bar.add(editMultipleButton);
+//        }
+
+        if (showDeleteButton() && canDelete())
         {
-            if (canDelete())
-            {
-                ActionButton deleteButton = createDeleteButton();
-                if (deleteButton != null)
-                {
-                    bar.add(deleteButton);
-                }
-            }
+            ActionButton deleteButton = createDeleteButton();
+            if (deleteButton != null)
+                bar.add(deleteButton);
         }
 
         if (_showExportButtons)
@@ -854,6 +856,22 @@ public class QueryView extends WebPartView<Object>
         {
             addButton(bar, createPageSizeMenuButton());
         }
+    }
+
+    @Nullable
+    public ActionButton createEditMultipleButton()
+    {
+        ActionButton btn = null;
+        ActionURL editMultipleURL = urlFor(QueryAction.updateQueryRows);
+        editMultipleURL.addParameter(DataRegionSelection.DATA_REGION_SELECTION_KEY, _settings.getSelectionKey());
+        if (editMultipleURL != null)
+        {
+            btn = new ActionButton(editMultipleURL, "Edit Multiple");
+            btn.setActionType(ActionButton.Action.POST);
+            btn.setDisplayPermission(UpdatePermission.class);
+            btn.setRequiresSelection(true, 2, null);
+        }
+        return btn;
     }
 
     public ActionButton createDeleteButton()

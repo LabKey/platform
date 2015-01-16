@@ -67,19 +67,10 @@ public class QueryUpdateForm extends TableViewForm
             return null;
 
         return getTable().getColumn(name.substring(PREFIX.length()));
-//        ColumnInfo col = getTable().getColumn(name);
-//        if (col == null && name.length() > PREFIX.length())
-//            col = getTable().getColumn(name.substring(PREFIX.length()));
-//        return col;
     }
 
     public String getFormFieldName(@NotNull ColumnInfo column)
     {
-        // 6962 : ExternalSchema update problems on PostgreSQL 8.3
-        // Some controllers depend on this form's TableViewForm.getPkNamesList() matching the
-        // primary key column names.
-//        if (column.isKeyField())
-//            return column.getName();
         return PREFIX + column.getName();
     }
 

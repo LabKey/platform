@@ -27,6 +27,7 @@ import org.labkey.api.attachments.AttachmentFile;
 import org.labkey.api.attachments.SpringAttachmentFile;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ConvertHelper;
+import org.labkey.api.data.DataRegion;
 import org.labkey.api.security.*;
 import org.labkey.api.security.permissions.*;
 import org.labkey.api.security.roles.Role;
@@ -315,11 +316,11 @@ public abstract class BaseViewAction<FORM> extends BaseCommandController impleme
         }
         
         /* 'regular' commandName handling */
-        if (null != params && null != params.getPropertyValue(".oldValues"))
+        if (null != params && null != params.getPropertyValue(DataRegion.OLD_VALUES_NAME))
         {
             try
             {
-                Object oldObject = PageFlowUtil.decodeObject((String)params.getPropertyValue(".oldValues").getValue());
+                Object oldObject = PageFlowUtil.decodeObject((String)params.getPropertyValue(DataRegion.OLD_VALUES_NAME).getValue());
                 PropertyUtils.copyProperties(form, oldObject);
             }
             catch (Exception x)

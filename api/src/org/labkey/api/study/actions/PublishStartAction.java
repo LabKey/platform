@@ -240,7 +240,7 @@ public class PublishStartAction extends BaseAssayAction<PublishStartAction.Publi
             inputs.add(Pair.of(QueryParam.containerFilterName.name(), publishForm.getContainerFilterName()));
             if (publishForm.getReturnUrl() != null)
                 inputs.add(Pair.of(ActionURL.Param.returnUrl.name(), publishForm.getReturnUrl().toString()));
-            inputs.add(Pair.of("dataRegionSelectionKey", publishForm.getDataRegionSelectionKey()));
+            inputs.add(Pair.of(DataRegionSelection.DATA_REGION_SELECTION_KEY, publishForm.getDataRegionSelectionKey()));
             for (Integer id : ids)
                 inputs.add(Pair.of(DataRegion.SELECT_CHECKBOX_NAME, id.toString()));
 

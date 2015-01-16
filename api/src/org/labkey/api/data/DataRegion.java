@@ -21,8 +21,6 @@ import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.labkey.api.action.ApiJsonWriter;
-import org.labkey.api.action.ApiQueryResponse;
 import org.labkey.api.collections.BoundMap;
 import org.labkey.api.collections.ResultSetRowMapFactory;
 import org.labkey.api.collections.RowMap;
@@ -109,8 +107,6 @@ public class DataRegion extends AbstractDataRegion
 
     private boolean _horizontalGroups = true;
 
-    private boolean _facetable = false;
-
     private Long _totalRows = null; // total rows in the query or null if unknown
     private Integer _rowCount = null; // number of rows in the result set or null if unknown
     private boolean _complete = false; // true if all rows are in the ResultSet
@@ -121,10 +117,12 @@ public class DataRegion extends AbstractDataRegion
     public static final int MODE_UPDATE = 2;
     public static final int MODE_GRID = 4;
     public static final int MODE_DETAILS = 8;
-    public static final int MODE_ALL = MODE_INSERT + MODE_UPDATE + MODE_GRID + MODE_DETAILS;
+    public static final int MODE_UPDATE_MULTIPLE = 16;
+    public static final int MODE_ALL = MODE_INSERT + MODE_UPDATE + MODE_UPDATE_MULTIPLE + MODE_GRID + MODE_DETAILS;
 
     public static final String LAST_FILTER_PARAM = ".lastFilter";
     public static final String SELECT_CHECKBOX_NAME = ".select";
+    public static final String OLD_VALUES_NAME = ".oldValues";
     protected static final String TOGGLE_CHECKBOX_NAME = ".toggle";
 
     private class GroupTable
@@ -431,6 +429,8 @@ public class DataRegion extends AbstractDataRegion
             case MODE_INSERT:
                 return _insertButtonBar;
             case MODE_UPDATE:
+                return _updateButtonBar;
+            case MODE_UPDATE_MULTIPLE:
                 return _updateButtonBar;
             case MODE_GRID:
                 return _gridButtonBar;
@@ -1492,6 +1492,11 @@ public class DataRegion extends AbstractDataRegion
                 out.write("<input type=\"hidden\" name=\"" + PageFlowUtil.filter(field.first) + "\" value=\"" + PageFlowUtil.filter((String) field.second) + "\">");
         }
 
+        if (mode == MODE_UPDATE_MULTIPLE)
+        {
+            out.write("<input type=\"hidden\" name=\"" + TableViewForm.DATA_SUBMIT_NAME + "\" value=\"true\">");
+            out.write("<input type=\"hidden\" name=\"" + TableViewForm.BULK_UPDATE_NAME + "\" value=\"true\">");
+        }
     }
 
     public void setRecordSelectorValueColumns(String... columns)
@@ -1506,16 +1511,16 @@ public class DataRegion extends AbstractDataRegion
 
     protected void renderRecordSelector(RenderContext ctx, Writer out) throws IOException
     {
-        out.write("<td class='labkey-selectors' nowrap>");
-        out.write("<input type=checkbox title='Select/unselect row' name='");
+        out.write("<td class=\"labkey-selectors\" nowrap>");
+        out.write("<input type=\"checkbox\" title=\"Select/unselect row\" name=\"");
         out.write(getRecordSelectorName(ctx));
-        out.write("' ");
+        out.write("\" ");
         String id = getRecordSelectorId(ctx);
         if (id != null)
         {
-            out.write("id='");
+            out.write("id=\"");
             out.write(id);
-            out.write("' ");
+            out.write("\" ");
         }
         out.write("value=\"");
         String checkboxValue = getRecordSelectorValue(ctx);
@@ -1696,7 +1701,7 @@ public class DataRegion extends AbstractDataRegion
             for (ColumnInfo pkCol : pkCols)
             {
                 assert null != rowMap.get(pkCol.getAlias());
-                out.write("<input type=hidden name=\"");
+                out.write("<input type=\"hidden\" name=\"");
                 out.write(pkCol.getName());
                 out.write("\" value=\"");
                 out.write(PageFlowUtil.filter(rowMap.get(pkCol.getAlias()).toString()));
@@ -1745,6 +1750,71 @@ public class DataRegion extends AbstractDataRegion
             }
             ctx.setRow(valueMap);
         }
+
+        renderForm(ctx, out);
+    }
+
+    private void renderMultipleUpdateForm(RenderContext ctx, Writer out) throws IOException
+    {
+        TableViewForm viewForm = ctx.getForm();
+        LinkedHashMap<FieldKey, ColumnInfo> selectKeyMap = getSelectColumns();
+        Map<String, Object> rowMap = new HashMap<>();
+        QueryService service = QueryService.get();
+        QueryLogging queryLogging = new QueryLogging();
+        TableInfo table = getTable();
+        SqlSelector selector;
+
+        ctx.setResults(new ResultsImpl(null, selectKeyMap));
+
+        SimpleFilter.InClause clause = new SimpleFilter.InClause(FieldKey.fromParts(viewForm.getPkName()), Arrays.asList(viewForm.getSelectedRows()), true);
+        SimpleFilter pkFilter = new SimpleFilter(clause);
+
+        for (Map.Entry<FieldKey, ColumnInfo> entry : selectKeyMap.entrySet())
+        {
+            ColumnInfo col = entry.getValue();
+            SQLFragment selectSql = service.getSelectSQL(table, Collections.singletonList(col), pkFilter, null, Table.ALL_ROWS, Table.NO_OFFSET, false, queryLogging);
+
+            String safeColumnName = table.getSqlDialect().getColumnSelectName(col.getAlias());
+            SQLFragment sql = new SQLFragment("SELECT DISTINCT " + safeColumnName + " AS value FROM (");
+            sql.append(selectSql);
+            sql.append(") AS D");
+
+            sql = table.getSqlDialect().limitRows(sql, 2);
+
+            selector = new SqlSelector(table.getSchema().getScope(), sql, queryLogging);
+
+            int count = 0;
+            Object commonValue = null;
+            boolean commonValueSet = false;
+            try (ResultSet rs = selector.getResultSet())
+            {
+                while (rs.next())
+                {
+                    if (count == 0)
+                    {
+                        commonValue = rs.getObject(1);
+                        commonValueSet = true;
+                    }
+                    count++;
+                }
+            }
+            catch (SQLException x)
+            {
+                throw new RuntimeSQLException(x);
+            }
+
+            if (count == 1 && commonValueSet)
+            {
+                if (commonValue != null)
+                    rowMap.put(entry.getKey().toString(), commonValue);
+            }
+            else
+            {
+                rowMap.put(entry.getKey().toString(), null);
+            }
+        }
+
+        ctx.setRow(rowMap);
 
         renderForm(ctx, out);
     }
@@ -1799,262 +1869,9 @@ public class DataRegion extends AbstractDataRegion
         }
     }
 
-    private boolean renderExtForm(RenderContext ctx, Writer out) throws IOException
-    {
-        int action = ctx.getMode();
-        Map valueMap = ctx.getRow();
-        TableViewForm viewForm = ctx.getForm();
-
-        List<DisplayColumn> renderers = getDisplayColumns();
-        Set<String> renderedColumns = new HashSet<>();
-
-        //if user doesn't have read permissions, don't render anything
-        if ((action == MODE_INSERT && !hasPermission(ctx, InsertPermission.class)) || (action == MODE_UPDATE && !hasPermission(ctx, (UpdatePermission.class))))
-        {
-            out.write("You do not have permission to " +
-                    (action == MODE_INSERT ? "Insert" : "Update") +
-                    " data in this container.");
-            return true;
-        }
-
-        TableInfo t = viewForm.getTable();
-        ApiQueryResponse json = new ApiQueryResponse();
-        ApiJsonWriter jsonOut = new ApiJsonWriter(out);
-        prepareDisplayColumns(ctx.getContainer());
-        json.initialize(ctx, this, t, _displayColumns);
-
-        out.write("<script type='text/javascript'>\n");
-        out.write("Ext.namespace('DataRegionForm');\n");
-        out.write("(function(){\n");
-        out.write("var dr = DataRegionForm[" + PageFlowUtil.jsString(getName()) + "] = {config:{}};\n");
-        out.write("dr.config.selectRowsReponse = ");
-        jsonOut.writeResponse(json);
-        out.write(";\n");
-
-        out.write(")})();\n");
-        out.write("</script>\n");
-
-        if (1 == 1)
-            return false;
-
-        ButtonBar buttonBar;
-
-        if (action == MODE_INSERT)
-            buttonBar = _insertButtonBar;
-        else
-            buttonBar = _updateButtonBar;
-
-        renderFormHeader(ctx, out, action);
-        renderMainErrors(ctx, out);
-
-        out.write("<table>");
-
-        for (DisplayColumn renderer : renderers)
-        {
-            if (shouldRender(renderer, ctx) && null != renderer.getColumnInfo() && !renderer.getColumnInfo().isNullable())
-            {
-                out.write("<tr><td colspan=3>Fields marked with an asterisk * are required.</td></tr>");
-                break;
-            }
-        }
-
-        int span = (_groupTables.isEmpty() || _groupTables.get(0).getGroups().isEmpty()) ?
-                1 :
-                (_horizontalGroups ?
-                        _groupTables.get(0).getGroups().get(0).getColumns().size() + 1 :
-                        _groupTables.get(0).getGroups().size()); // One extra one for the column to reuse the same value
-
-        for (DisplayColumn renderer : renderers)
-        {
-            if (!shouldRender(renderer, ctx))
-                continue;
-            renderFormField(ctx, out, renderer, span);
-            if (null != renderer.getColumnInfo())
-                renderedColumns.add(renderer.getColumnInfo().getPropertyName());
-        }
-
-        if (!_groupTables.isEmpty())
-        {
-            for (GroupTable groupTable : _groupTables)
-            {
-                List<DisplayColumnGroup> groups = groupTable.getGroups();
-                List<String> groupHeadings = groupTable.getGroupHeadings();
-//                assert _groupHeadings != null : "Must set group headings before rendering";
-                out.write("<tr><td/>");
-                boolean hasCopyable = false;
-
-                for (DisplayColumnGroup group : groups)
-                {
-                    if (group.isCopyable() && group.getColumns().size() > 1)
-                    {
-                        hasCopyable = true;
-                        break;
-                    }
-                }
-
-                if (_horizontalGroups)
-                {
-                    if (hasCopyable)
-                    {
-                        writeSameHeader(ctx, out, groups);
-                    }
-                    else
-                    {
-                        out.write("<td/>");
-                    }
-                    for (String heading : groupHeadings)
-                    {
-                        out.write("<td valign='bottom' class='labkey-form-label'>");
-                        out.write(PageFlowUtil.filter(heading));
-                        out.write("</td>");
-                    }
-                }
-                else
-                {
-                    for (DisplayColumnGroup group : groups)
-                    {
-                        group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
-                    }
-                    out.write("</tr>\n<tr>");
-                    if (hasCopyable)
-                    {
-                        writeSameHeader(ctx, out, groups);
-                        for (DisplayColumnGroup group : groups)
-                        {
-                            if (group.isCopyable() && hasCopyable)
-                            {
-                                group.writeSameCheckboxCell(ctx, out);
-                            }
-                            else
-                            {
-                                out.write("<td/>");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        out.write("<td/>");
-                    }
-                }
-                out.write("</tr>");
-
-                if (_horizontalGroups)
-                {
-                    for (DisplayColumnGroup group : groups)
-                    {
-                        renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
-                        out.write("<tr>");
-                        group.getColumns().get(0).renderDetailsCaptionCell(ctx, out);
-                        if (group.isCopyable() && hasCopyable)
-                        {
-                            group.writeSameCheckboxCell(ctx, out);
-                        }
-                        else
-                        {
-                            out.write("<td/>");
-                        }
-                        for (DisplayColumn col : group.getColumns())
-                        {
-                            if (!shouldRender(col, ctx))
-                                continue;
-                            col.renderInputCell(ctx, out, 1);
-                        }
-                        out.write("\t</tr>");
-                    }
-                }
-                else
-                {
-                    for (DisplayColumnGroup group : groups)
-                    {
-                        renderInputError(ctx, out, span, group.getColumns().toArray(new DisplayColumn[group.getColumns().size()]));
-                    }
-
-                    for (int i = 0; i < groupHeadings.size(); i++)
-                    {
-                        out.write("<tr>");
-                        out.write("<td valign='bottom' class='labkey-form-label'>");
-                        out.write(PageFlowUtil.filter(groupHeadings.get(i)));
-                        out.write("</td>");
-                        for (DisplayColumnGroup group : groups)
-                        {
-                            DisplayColumn col = group.getColumns().get(i);
-                            if (!shouldRender(col, ctx))
-                                continue;
-                            col.renderInputCell(ctx, out, 1);
-                        }
-                        out.write("\t</tr>");
-                    }
-                }
-
-                out.write("<script language='javascript'>");
-                for (DisplayColumnGroup group : groups)
-                {
-                    group.writeCopyableExtJavaScript(ctx, out);
-                }
-                out.write("</script>");
-            }
-        }
-
-        out.write("<tr><td colspan=" + (span + 1) + " align=left>");
-
-        if (action == MODE_UPDATE && valueMap != null)
-        {
-            if (valueMap instanceof BoundMap)
-                renderOldValues(out, ((BoundMap) valueMap).getBean());
-            else
-                renderOldValues(out, valueMap, ctx.getFieldMap());
-        }
-
-        //Make sure all pks are included
-        if (action == MODE_UPDATE)
-        {
-            List<ColumnInfo> pkCols = getTable().getPkColumns();
-            for (ColumnInfo pkCol : pkCols)
-            {
-                String pkColName = pkCol.getName();
-                if (!renderedColumns.contains(pkColName))
-                {
-                    Object pkVal = null;
-                    //UNDONE: Should we require a viewForm whenever someone
-                    //posts? I tend to think so.
-                    if (null != viewForm)
-                        pkVal = viewForm.getPkVal();        //TODO: Support multiple PKs?
-
-                    if (pkVal == null && valueMap != null)
-                        pkVal = valueMap.get(pkColName);
-
-                    if (null != pkVal)
-                    {
-                        out.write("<input type='hidden' name='");
-                        if (viewForm != null)
-                            out.write(viewForm.getFormFieldName(pkCol));
-                        else
-                            out.write(pkColName);
-                        out.write("' value=\"");
-                        out.write(PageFlowUtil.filter(pkVal.toString()));
-                        out.write("\">");
-                    }
-                    renderedColumns.add(pkColName);
-                }
-            }
-        }
-
-        buttonBar.render(ctx, out);
-        out.write("</td></tr>");
-        out.write("</table>");
-        renderFormEnd(ctx, out);
-        return true;
-    }
-
 
     private void renderForm(RenderContext ctx, Writer out) throws IOException
     {
-        if (false)
-        {
-            if (renderExtForm(ctx, out))
-                return;
-        }
-
         int action = ctx.getMode();
         Map valueMap = ctx.getRow();
         TableViewForm viewForm = ctx.getForm();
@@ -2063,7 +1880,8 @@ public class DataRegion extends AbstractDataRegion
         Set<String> renderedColumns = Sets.newCaseInsensitiveHashSet();
 
         //if user doesn't have read permissions, don't render anything
-        if ((action == MODE_INSERT && !hasPermission(ctx, InsertPermission.class)) || (action == MODE_UPDATE && !hasPermission(ctx, UpdatePermission.class)))
+        if ((action == MODE_INSERT && !hasPermission(ctx, InsertPermission.class)) ||
+           ((action == MODE_UPDATE || action == MODE_UPDATE_MULTIPLE) && !hasPermission(ctx, UpdatePermission.class)))
         {
             out.write("You do not have permission to " +
                     (action == MODE_INSERT ? "Insert" : "Update") +
@@ -2089,6 +1907,11 @@ public class DataRegion extends AbstractDataRegion
         renderMainErrors(ctx, out);
 
         out.write("<table>");
+
+        if (action == MODE_UPDATE_MULTIPLE)
+        {
+            out.write("<tr><td colspan=\"3\">This will edit " + ctx.getForm().getSelectedRows().length + " rows.</td></tr>");
+        }
 
         for (DisplayColumn renderer : renderers)
         {
@@ -2162,7 +1985,7 @@ public class DataRegion extends AbstractDataRegion
                         writeSameHeader(ctx, out, groups);
                         for (DisplayColumnGroup group : groups)
                         {
-                            if (group.isCopyable() && hasCopyable)
+                            if (group.isCopyable())
                             {
                                 group.writeSameCheckboxCell(ctx, out);
                             }
@@ -2306,7 +2129,7 @@ public class DataRegion extends AbstractDataRegion
 
     protected boolean shouldRender(DisplayColumn renderer, RenderContext ctx)
     {
-        return (renderer.isVisible(ctx) && (renderer.getDisplayModes() & (MODE_UPDATE | MODE_INSERT)) != 0);
+        return (renderer.isVisible(ctx) && (renderer.getDisplayModes() & (MODE_UPDATE | MODE_UPDATE_MULTIPLE | MODE_INSERT)) != 0);
     }
 
     private Boolean _isFileUploadForm = null;
@@ -2335,7 +2158,7 @@ public class DataRegion extends AbstractDataRegion
 
     private void renderOldValues(Writer out, Object values) throws IOException
     {
-        out.write("<input name='.oldValues' type=hidden value=\"");
+        out.write("<input name=\"" + OLD_VALUES_NAME + "\" type=\"hidden\" value=\"");
         out.write(PageFlowUtil.encodeObject(values));
         out.write("\">");
     }
@@ -2412,6 +2235,9 @@ public class DataRegion extends AbstractDataRegion
                     return;
                 case MODE_UPDATE:
                     renderUpdateForm(ctx, out);
+                    return;
+                case MODE_UPDATE_MULTIPLE:
+                    renderMultipleUpdateForm(ctx, out);
                     return;
                 case MODE_DETAILS:
                     renderDetails(ctx, out);
