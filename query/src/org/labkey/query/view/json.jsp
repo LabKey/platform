@@ -36,8 +36,14 @@
     }
 %>
 <labkey:form action="#">
+    <div style="padding-bottom: 10px;">type:
+        <select id="type" name="type">
+            <option value="countdistinct">Count Distinct</option>
+            <option value="json">JSON</option>
+        </select>
+    </div>
     query: <textarea cols=80 rows=25 id=query name=query style='font-size:10pt; font-family: Andale Monaco, monospace;'><%=h(request.getParameter("query"))%></textarea><br>
-    <input type=button onclick="executeQuery(Ext4.get('query').getValue())" value=submit>
+    <input type=button onclick="executeQuery()" value=submit>
 </labkey:form>
 <p>&nbsp;</p>
 <div id=cellset></div>
@@ -75,8 +81,11 @@
 
     var startTime;
 
-    function executeQuery(query)
+    function executeQuery()
     {
+        var type = Ext4.get('type').getValue();
+        var query = Ext4.get('query').getValue();
+
         // first verify that the JSON looks like JSON
         var jsonQuery = null;
         try
@@ -109,8 +118,8 @@
         {
             config = Ext4.apply({}, jsonQuery, configDefaults);
         }
+        config.useJsonQuery = type == "json";
 
-//        Ext4.getBody().mask();
         startTime = new Date().getTime();
         mdx.query(config);
         return false;
