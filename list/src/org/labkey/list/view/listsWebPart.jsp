@@ -22,7 +22,6 @@
 <%@ page import="org.labkey.api.exp.list.ListService" %>
 <%@ page import="org.labkey.api.lists.permissions.DesignListPermission" %>
 <%@ page import="org.labkey.api.security.User" %>
-<%@ page import="org.labkey.api.security.permissions.AdminPermission" %>
 <%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
@@ -37,18 +36,12 @@
 <%
     JspView<ViewContext> view = (JspView<ViewContext>) HttpView.currentView();
     ViewContext me = view.getModelBean();
+    assert null != me;
     Container c = getContainer();
     User user = getUser();
-//    Map<Integer, String> nameMap = new HashMap<Integer, String>();
     Map<String, ListDefinition> lists = ListService.get().getLists(c);
     NavTree links;
     PopupMenuView pmw;
-    boolean isBegin = true;
-
-    if (me != null)
-    {
-        isBegin = false;
-    }
 %>
 <table id="lists">
     <%
@@ -77,7 +70,7 @@
                     links.addChild("Delete List", list.urlFor(ListController.DeleteListDefinitionAction.class));
                 }
                 %><tr><%
-                if (!isBegin && links.getChildren().length > 1)
+                if (links.getChildren().length > 1)
                 {
                     pmw = new PopupMenuView(links);
                     pmw.setButtonStyle(PopupMenu.ButtonStyle.TEXT);
@@ -86,20 +79,7 @@
                     %></td><%
                 }
                 %><td><a href="<%=h(list.urlShowData(c))%>"><%=h(list.getName())%></a></td><%
-                if (isBegin)
-                {
-                    for (NavTree link : links.getChildren())
-                    {
-                        // the toLowerCase() is just for the ListTest, fix the test
-                        %><td><labkey:link href="<%=text(link.getHref())%>" text="<%=text(link.getText().toLowerCase())%>" /></td><%
-                    }
-                    if(c.hasPermission(user, AdminPermission.class))
-                    {
-                        String onClick = "truncateTable("+list.getListId()+", "+hq(list.getName())+")";
-                        %><td><%=textLink("Delete All Rows", "#", onClick, "")%></td><%
-                    }
-                }
-                %></tr><%
+%></tr><%
             }
         }
     %>
@@ -107,78 +87,8 @@
 <%
     if (c.hasPermission(user, DesignListPermission.class))
     {
-        if (isBegin)
-        {
-%>
-        <br/>
-        <labkey:button text="Create New List" href="<%=h(urlFor(ListController.EditListDefinitionAction.class))%>"/>
-        <labkey:button text="Import List Archive" href="<%=h(urlFor(ListController.ImportListArchiveAction.class))%>"/>
-<%
-            if (!lists.isEmpty())
-            {
-%>
-                <labkey:button text="Export List Archive" href="<%=h(urlFor(ListController.ExportListArchiveAction.class))%>"/>
-<%
-            }
-        }
-        else
-        {
 %>
     <%=PageFlowUtil.textLink("manage lists", ListController.getBeginURL(c))%>
 <%
-        }
     }
 %>
-
-<script type="text/javascript">
-    LABKEY.requiresExt4Sandbox(true);
-</script>
-
-<script type="text/javascript">
-    function truncateTable(listId, listName)
-    {
-        var listMap = [];
-        <%
-            for(ListDefinition list : lists.values())
-            {
-        %>
-                listMap[<%=list.getListId()%>] = '<%=h(list.getName())%>';
-        <%
-            }
-        %>
-
-        console.log(listMap[listId]);
-        Ext4.Msg.confirm("Confirm Deletion",
-                "Are you sure you wish to delete all rows for the list "+listMap[listId]+"?  This action cannot be undone.",
-                function(button){
-                    if (button === 'yes') {
-                        truncate();
-                    }
-                }
-        );
-
-        function truncate()
-        {
-            var waitMask = Ext4.Msg.wait('Deleting Rows...', 'Delete Rows');
-            Ext4.Ajax.request({
-                url     : LABKEY.ActionURL.buildURL('query', 'truncateTable'),
-                method  : 'POST',
-                success: function(response){
-                    waitMask.close();
-                    var data = Ext4.JSON.decode(response.responseText);
-                    Ext4.Msg.alert("Success", data.deletedRows + " rows deleted");
-                },
-                failure : function(response, opts)
-                {
-                    waitMask.close();
-                    Ext4.getBody().unmask();
-                    LABKEY.Utils.displayAjaxErrorResponse(response, opts);
-                },
-                jsonData : {schemaName : 'lists', queryName : listName},
-                headers : {'Content-Type' : 'application/json'},
-                scope : this
-            });
-        }
-
-    }
-</script>

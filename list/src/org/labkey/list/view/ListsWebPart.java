@@ -38,14 +38,14 @@ import java.io.PrintWriter;
 import java.util.Map;
 import java.util.TreeSet;
 
-public class ListWebPart extends WebPartView<ViewContext>
+public class ListsWebPart extends WebPartView<ViewContext>
 {
     public static final BaseWebPartFactory FACTORY = new BaseWebPartFactory("Lists")
     {
         public WebPartView getWebPartView(@NotNull ViewContext portalCtx, @NotNull Portal.WebPart webPart)
         {
             boolean narrow = webPart.getLocation().equals(WebPartFactory.LOCATION_RIGHT);
-            return new ListWebPart(narrow, portalCtx);
+            return new ListsWebPart(narrow, portalCtx);
         }
 
         @Override
@@ -57,7 +57,7 @@ public class ListWebPart extends WebPartView<ViewContext>
 
     private final boolean _narrow;
 
-    public ListWebPart(boolean narrow, ViewContext portalCtx)
+    public ListsWebPart(boolean narrow, ViewContext portalCtx)
     {
         super(new ViewContext(portalCtx));
         _narrow = narrow;
@@ -83,7 +83,7 @@ public class ListWebPart extends WebPartView<ViewContext>
         if (_narrow)
             renderNarrowView(model, out);
         else
-            include(new JspView<Object>(this.getClass(), "begin.jsp", model));
+            include(new JspView<Object>(this.getClass(), "listsWebPart.jsp", model));
     }
 
     private void renderNarrowView(ViewContext model, PrintWriter out)

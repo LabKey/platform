@@ -1113,21 +1113,6 @@ public class ListController extends SpringActionController
     }
 
 
-    @Deprecated // TODO: Delete me... this is just for manage lists migration purposes. See issues #22078 & #22080
-    @RequiresPermissionClass(ReadPermission.class)
-    public class OldBeginAction extends SimpleViewAction
-    {
-        public ModelAndView getView(Object form, BindException errors) throws Exception
-        {
-            return new JspView<>("/org/labkey/list/view/begin.jsp", null, errors);
-        }
-
-        public NavTree appendNavTrail(NavTree root)
-        {
-            return root.addChild("Available Lists");
-        }
-    }
-
     @RequiresPermissionClass(DesignListPermission.class)
     public class ImportListArchiveAction extends FormViewAction<ListDefinitionForm>
     {

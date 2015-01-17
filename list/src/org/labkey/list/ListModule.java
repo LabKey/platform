@@ -50,7 +50,7 @@ import org.labkey.list.model.ListQuerySchema;
 import org.labkey.list.model.ListSchema;
 import org.labkey.list.model.ListServiceImpl;
 import org.labkey.list.model.VarcharListDomainKind;
-import org.labkey.list.view.ListWebPart;
+import org.labkey.list.view.ListsWebPart;
 import org.labkey.list.view.SingleListWebPartFactory;
 
 import java.util.ArrayList;
@@ -83,7 +83,7 @@ public class ListModule extends DefaultModule
     protected Collection<WebPartFactory> createWebPartFactories()
     {
         List<WebPartFactory> result = new ArrayList<>();
-        result.add(ListWebPart.FACTORY);
+        result.add(ListsWebPart.FACTORY);
         result.add(new SingleListWebPartFactory());
         return result;
     }

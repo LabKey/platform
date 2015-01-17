@@ -1738,13 +1738,13 @@ list/src/org/labkey/list/view/ListImportServiceImpl.java -text
 list/src/org/labkey/list/view/ListItemAttachmentParent.java -text
 list/src/org/labkey/list/view/ListQueryForm.java -text
 list/src/org/labkey/list/view/ListQueryView.java -text
-list/src/org/labkey/list/view/ListWebPart.java -text
+list/src/org/labkey/list/view/ListsWebPart.java -text
 list/src/org/labkey/list/view/SingleListWebPartFactory.java -text
 list/src/org/labkey/list/view/UploadListItemsForm.java -text
-list/src/org/labkey/list/view/begin.jsp -text
 list/src/org/labkey/list/view/customizeSingleListWebPart.jsp -text
 list/src/org/labkey/list/view/deleteListDefinition.jsp -text
 list/src/org/labkey/list/view/importLists.jsp -text
+list/src/org/labkey/list/view/listsWebPart.jsp -text
 list/src/org/labkey/list/view/uploadListItems.jsp -text
 mothership/module.properties -text
 mothership/resources/schemas/dbscripts/postgresql/mothership-0.00-12.10.sql -text
