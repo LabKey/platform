@@ -100,11 +100,7 @@ public class CaseInsensitiveMapTest extends Assert
                         {
                             barrier.await();
                         }
-                        catch (InterruptedException e)
-                        {
-                            Thread.currentThread().interrupt();
-                        }
-                        catch (BrokenBarrierException e)
+                        catch (InterruptedException | BrokenBarrierException e)
                         {
                             Thread.currentThread().interrupt();
                         }
