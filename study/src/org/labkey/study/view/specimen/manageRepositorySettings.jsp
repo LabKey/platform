@@ -19,11 +19,18 @@
 <%@ page import="org.labkey.study.controllers.specimen.SpecimenController" %>
 <%@ page import="org.labkey.api.study.StudyService" %>
 <%@ page import="org.labkey.api.study.Study" %>
+<%@ page import="org.labkey.api.view.ActionURL" %>
+<%@ page import="org.labkey.api.query.QueryUrls" %>
+<%@ page import="org.labkey.api.util.PageFlowUtil" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.study.view.BaseStudyPage" %>
 <%
     RepositorySettings settings = (RepositorySettings) getModelBean();
     Study study = StudyService.get().getStudy(settings.getContainer());
+    ActionURL specimenDetailURL = new ActionURL();
+    specimenDetailURL.setContainer(getContainer());
+    specimenDetailURL.addParameter("schemaName", "study");
+    specimenDetailURL.addParameter("query.queryName", "SpecimenDetail");
 %>
 <labkey:errors/>
 
@@ -60,7 +67,8 @@
                 </div>
                 <div>
                     <input type="radio" name="specimenDataEditable" value="true"<%=checked(settings.isSpecimenDataEditable())%>><em>Editable</em>:
-                    Specimen data is editable.
+                    Specimen data is editable. Note: Vials may be deleted only from the query view:
+                    <%=textLink("Specimen Detail", PageFlowUtil.urlProvider(QueryUrls.class).urlExecuteQuery(specimenDetailURL))%>
                 </div>
             </td></tr>
             <tr><td class="labkey-announcement-title" align="left"><span>Specimen Requests</span></td></tr>
