@@ -17,9 +17,12 @@ package org.labkey.api.collections;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.util.JunitUtil;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * User: arauch
@@ -68,9 +71,59 @@ public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> impl
         public void testDupes()
         {
             Map<String, Integer> map = new CaseInsensitiveHashMap<>();
-            map.put("a", new Integer(2));
+            map.put("a", 2);
             assertEquals(new Integer(2), map.put("A", 3));
             assertEquals(1, map.size());
+        }
+
+        @Test
+        // Our original CaseInsensitiveHashMap had a get() method that mutated state, which lead to thread safety issues in
+        // multi-threaded usages. This test was developed to demonstrate and fix the problem.
+        public void multiThreadStressTest() throws InterruptedException, ExecutionException
+        {
+            final String key = "ThisIsATestOfTheCaseInsensitiveMap";
+            final Object value = new Object();
+            final Map<String, Object> map = new CaseInsensitiveHashMap<>();
+            final Set<String> keys = new LinkedHashSet<>();
+
+            int count = 1000;
+            int threads = 5;
+            map.put(key, value);
+
+            Random random = new Random();
+
+            // Create an ordered set containing <count> unique random casings of <key>
+            while (keys.size() < count)
+            {
+                StringBuilder candidate = new StringBuilder(key.length());
+
+                for (int i = 0; i < key.length(); i++)
+                {
+                    if (random.nextBoolean())
+                        candidate.append(Character.toLowerCase(key.charAt(i)));
+                    else
+                        candidate.append(Character.toUpperCase(key.charAt(i)));
+                }
+
+                String s = candidate.toString();
+
+                if (!keys.contains(s))
+                    keys.add(s);
+            }
+
+            for (final String s : keys)
+            {
+                JunitUtil.createRace(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        Object test = map.get(s);
+
+                        Assert.assertEquals(value, test);
+                    }
+                }, threads, threads).awaitTermination(5, TimeUnit.SECONDS);
+            }
         }
     }
 }

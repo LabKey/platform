@@ -87,7 +87,7 @@ public class JunitUtil
      */
     public static Path getTestContainerPath()
     {
-        return ContainerManager.getSharedContainer().getParsedPath().append("_junit",true);
+        return ContainerManager.getSharedContainer().getParsedPath().append("_junit", true);
     }
 
     public static Container getTestContainer()
@@ -104,13 +104,22 @@ public class JunitUtil
             ContainerManager.deleteAll(junit, TestContext.get().getUser());
     }
 
-    // Simulate a race condition by starting the specified number of threads and invoking the runnable the specified
-    // number of times, using a CountDownLatch to synchronize task execution. This method does not wait for termination
-    // of the executed tasks; use the returned ExecutorService if awaiting termination is needed.
-    public static ExecutorService createRace(final Runnable runnable, int threads, int invocations)
+    /**
+     * Simulate a single race condition by starting the specified number of threads and invoking the runnable the specified
+     * number of times, using a CountDownLatch to synchronize the start of execution across all tasks. This method does not
+     * wait for termination of the executed tasks; use the returned ExecutorService to wait for termination.
+     *
+     * To simulate multiple races, just call this method inside of a loop.
+     *
+     * @param runnable Task to run
+     * @param threads Number of threads to use
+     * @param simultaneousInvocations Number of tasks to invoke in parallel
+     * @return The ExecutorService used to run the tasks. Useful if caller needs to await termination.
+     */
+    public static ExecutorService createRace(final Runnable runnable, int threads, int simultaneousInvocations)
     {
-        assert threads <= invocations : "I expected number of invocations to be >= number of threads";
-        final CountDownLatch latch = new CountDownLatch(invocations);
+        assert threads <= simultaneousInvocations : "I expected number of invocations to be >= number of threads";
+        final CountDownLatch latch = new CountDownLatch(simultaneousInvocations);
 
         Runnable runnableWrapper = new Runnable()
         {
@@ -132,7 +141,7 @@ public class JunitUtil
 
         ExecutorService pool = Executors.newFixedThreadPool(threads);
 
-        for (int i = 0; i < invocations; i++)
+        for (int i = 0; i < simultaneousInvocations; i++)
             pool.execute(runnableWrapper);
 
         pool.shutdown();
