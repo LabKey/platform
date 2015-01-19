@@ -1150,10 +1150,19 @@ public class PageFlowUtil
 
 
 	// UNDONE: Move to FileUtil
-    /** Fetch the contents of an InputStream and return in a String. Closes the reader after consuming it */
+    /** Fetch the contents of an InputStream using the default charset and return in a String. Closes the reader after consuming it */
+    @Deprecated  // Bad method, uses default encoding, which is a crap shoot. Use getStreamContentsAsString(InputStream, Charset) instead.
     public static String getStreamContentsAsString(InputStream is)
     {
 		return getReaderContentsAsString(new BufferedReader(new InputStreamReader(is)));
+    }
+
+
+	// UNDONE: Move to FileUtil
+    /** Fetch the contents of an InputStream using the specified charset and return in a String. Closes the reader after consuming it */
+    public static String getStreamContentsAsString(InputStream is, Charset charset)
+    {
+		return getReaderContentsAsString(new BufferedReader(new InputStreamReader(is, charset)));
     }
 
 
