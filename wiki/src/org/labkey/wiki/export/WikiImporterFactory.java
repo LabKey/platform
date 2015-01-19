@@ -42,6 +42,7 @@ import org.labkey.wiki.model.WikiVersion;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -182,7 +183,7 @@ public class WikiImporterFactory extends AbstractFolderImportFactory
             InputStream contentSteam = contentSteamPair.second;
 
             WikiVersion wikiversion = new WikiVersion(wiki.getName());
-            wikiversion.setBody(PageFlowUtil.getStreamContentsAsString(contentSteam));
+            wikiversion.setBody(PageFlowUtil.getStreamContentsAsString(contentSteam, StandardCharsets.UTF_8));
             wikiversion.setRendererTypeEnum(WikiRendererType.getType(contentFileName));
 
             List<AttachmentFile> attachments = new ArrayList<>();
