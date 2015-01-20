@@ -1411,10 +1411,9 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
 
         public NamedObjectList getSelectList(RenderContext ctx)
         {
-            NamedObjectList ret = new NamedObjectList();
             TableInfo lookupTable = getLookupTableInfo();
             if (lookupTable == null)
-                return ret;
+                return new NamedObjectList();
 
             return lookupTable.getSelectList(getLookupColumnName());
         }

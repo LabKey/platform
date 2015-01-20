@@ -31,6 +31,7 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -38,6 +39,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -53,6 +56,10 @@ public class PropertyManager
     private static final PropertySchema prop = PropertySchema.getInstance();
     private static final NormalPropertyStore STORE = new NormalPropertyStore();
     private static final EncryptedPropertyStore ENCRYPTED_STORE = new EncryptedPropertyStore();
+
+    private static final PropertySchema SCHEMA = PropertySchema.getInstance();
+
+    private static final LockManager<PropertyMap> PROPERTY_MAP_LOCK_MANAGER = new LockManager<>();
 
     private PropertyManager()
     {
@@ -261,23 +268,27 @@ public class PropertyManager
 
     public static class PropertyMap extends HashMap<String, String>
     {
-        private final int _set;
-        private final int _userId;
+        private int _set;
+        @NotNull
+        private final User _user;
+        @NotNull
         private final String _objectId;
+        @NotNull
         private final String _category;
         private final PropertyEncryption _propertyEncryption;
+        private final AbstractPropertyStore _store;
 
         private boolean _modified = false;
         Set<Object> removedKeys = null;
 
-
-        PropertyMap(int set, int userId, String objectId, String category, PropertyEncryption propertyEncryption)
+        PropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store)
         {
             _set = set;
-            _userId = userId;
+            _user = user;
             _objectId = objectId;
             _category = category;
             _propertyEncryption = propertyEncryption;
+            _store = store;
         }
 
 
@@ -316,6 +327,11 @@ public class PropertyManager
             return super.put(key, value);
         }
 
+        @Override
+        public String toString()
+        {
+            return "PropertyMap: " + _objectId + ", " + _category + ", " + _user.getDisplayName(null) + ": " + super.toString();
+        }
 
         @Override
         public void putAll(Map<? extends String, ? extends String> m)
@@ -357,24 +373,17 @@ public class PropertyManager
             return Collections.unmodifiableSet(super.entrySet());
         }
 
-        public Object[] getCacheParams()
-        {
-            return new Object[]{_objectId, _userId, _category};
-        }
-
         @Override
         public boolean equals(Object o)
         {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            if (!super.equals(o)) return false;
 
             PropertyMap that = (PropertyMap) o;
 
-            if (_set != that._set) return false;
-            if (_userId != that._userId) return false;
-            if (_category != null ? !_category.equals(that._category) : that._category != null) return false;
-            if (_objectId != null ? !_objectId.equals(that._objectId) : that._objectId != null) return false;
+            if (!_user.equals(that._user)) return false;
+            if (!_category.equals(that._category)) return false;
+            if (!_objectId.equals(that._objectId)) return false;
 
             return true;
         }
@@ -382,17 +391,150 @@ public class PropertyManager
         @Override
         public int hashCode()
         {
-            int result = super.hashCode();
-            result = 31 * result + _set;
-            result = 31 * result + _userId;
-            result = 31 * result + (_objectId != null ? _objectId.hashCode() : 0);
-            result = 31 * result + (_category != null ? _category.hashCode() : 0);
+            int result = _user.hashCode();
+            result = 31 * result + _objectId.hashCode();
+            result = 31 * result + _category.hashCode();
             return result;
         }
 
         public boolean isModified()
         {
             return _modified;
+        }
+
+        private static String toNullString(Object o)
+        {
+            return null == o ? null : String.valueOf(o);
+        }
+
+        private void saveValue(String name, String value)
+        {
+            if (null == name)
+                return;
+
+            String sql = SCHEMA.getSqlDialect().execute(SCHEMA.getSchema(), "property_setValue", "?, ?, ?");
+
+            new SqlExecutor(SCHEMA.getSchema()).execute(sql, getSet(), name, _store.getSaveValue(this, value));
+        }
+
+        public void save()
+        {
+            _store.validatePropertyMap(this);
+
+            if (!isModified())
+            {
+                // No changes, so it's safe to bail out immediately
+                return;
+            }
+
+            // Lock on code that changes the underlying database storage, to avoid constraint violations if we have multiple
+            // threads manipulating at the same time
+            try (DbScope.Transaction transaction = SCHEMA.getSchema().getScope().ensureTransaction(DbScope.FINAL_COMMIT_UNLOCK_TRANSACTION_KIND, PROPERTY_MAP_LOCK_MANAGER.getLock(this)))
+            {
+                if (_set == -1)
+                {
+                    Container container = ContainerManager.getForId(_objectId);
+                    if (container == null)
+                    {
+                        throw new IllegalStateException("No container found with EntityId: " + _objectId);
+                    }
+                    PropertyMap existingMap = _store.getWritableProperties(_user, container, _category, false);
+                    if (existingMap == null)
+                    {
+                        Map<String, Object> insertMap = new HashMap<>();
+                        insertMap.put("UserId", _user);
+                        insertMap.put("ObjectId", _objectId);
+                        insertMap.put("Category", _category);
+                        insertMap.put("Encryption", _propertyEncryption.getSerializedName());
+                        insertMap = Table.insert(_user, SCHEMA.getTableInfoPropertySets(), insertMap);
+                        _set = (Integer) insertMap.get("Set");
+                    }
+                    else
+                    {
+                        _set = existingMap.getSet();
+                    }
+                }
+
+                // delete removed properties
+                if (null != removedKeys)
+                {
+                    for (Object removedKey : removedKeys)
+                    {
+                        String name = toNullString(removedKey);
+                        saveValue(name, null);
+                    }
+                }
+
+                // set properties
+                // we're not tracking modified or not, so set them all
+                for (Object entry : entrySet())
+                {
+                    Map.Entry e = (Map.Entry) entry;
+                    String name = toNullString(e.getKey());
+                    String value = toNullString(e.getValue());
+                    saveValue(name, value);
+                }
+                _store.clearCache(this);
+                transaction.commit();
+            }
+        }
+
+        public void delete()
+        {
+            // Lock on code that changes the underlying database storage, to avoid constraint violations if we have multiple
+            // threads manipulating at the same time
+            try (DbScope.Transaction transaction = SCHEMA.getSchema().getScope().ensureTransaction(DbScope.FINAL_COMMIT_UNLOCK_TRANSACTION_KIND, PROPERTY_MAP_LOCK_MANAGER.getLock(this)))
+            {
+                String setSelectName = SCHEMA.getTableInfoProperties().getColumn("Set").getSelectName();   // Keyword in some dialects
+
+                SQLFragment deleteProps = new SQLFragment();
+                deleteProps.append("DELETE FROM ").append(SCHEMA.getTableInfoProperties().getSelectName());
+                deleteProps.append(" WHERE ").append(setSelectName).append(" IN ");
+                deleteProps.append("(SELECT ").append(setSelectName).append(" FROM ").append(SCHEMA.getTableInfoPropertySets(), "ps");
+                deleteProps.append(" WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
+                deleteProps.add(_user);
+                deleteProps.add(_objectId);
+                deleteProps.add(_category);
+
+                _store.appendWhereFilter(deleteProps);
+
+                deleteProps.append(")");
+
+                SqlExecutor sqlx = new SqlExecutor(SCHEMA.getSchema());
+                sqlx.execute(deleteProps);
+
+                SQLFragment deleteSets = new SQLFragment("DELETE FROM " + SCHEMA.getTableInfoPropertySets() + " WHERE UserId = ? AND ObjectId = ? AND Category = ? AND ");
+                deleteSets.add(_user);
+                deleteSets.add(_objectId);
+                deleteSets.add(_category);
+
+                _store.appendWhereFilter(deleteSets);
+
+                new SqlExecutor(SCHEMA.getSchema()).execute(deleteSets);
+
+                _store.clearCache(this);
+
+                transaction.commit();
+            }
+        }
+
+        @NotNull
+        public String getObjectId()
+        {
+            return _objectId;
+        }
+
+
+        @NotNull
+        public User getUser()
+        {
+            return _user;
+        }
+
+        @NotNull
+        public String getCategory()
+        {
+            return _category;
         }
     }
 
@@ -604,28 +746,71 @@ public class PropertyManager
             assertFalse(map.containsKey("this"));
             assertFalse(map.containsKey("zoo"));
 
-            if (null != badStore)
-            {
-                try
-                {
-                    badStore.saveProperties(m);
-                    fail("Expected IllegalStateException");
-                }
-                catch (IllegalStateException e)
-                {
-                }
-
-                try
-                {
-                    badStore.getProperties(user, test, category);
-                    fail("Expected IllegalStateException");
-                }
-                catch (IllegalStateException e)
-                {
-                }
-            }
+//            if (null != badStore)
+//            {
+//                try
+//                {
+//                    badStore.saveProperties(m);
+//                    fail("Expected IllegalStateException");
+//                }
+//                catch (IllegalStateException e)
+//                {
+//                }
+//
+//                try
+//                {
+//                    badStore.getProperties(user, test, category);
+//                    fail("Expected IllegalStateException");
+//                }
+//                catch (IllegalStateException e)
+//                {
+//                }
+//            }
         }
 
+        @Test
+        public void testSynchronization() throws InterruptedException
+        {
+            final Container c = JunitUtil.getTestContainer();
+            final String category = "TestPropertySetName";
+            final PropertyStore store = PropertyManager.getNormalStore();
+            final DbScope scope = PropertySchema.getInstance().getSchema().getScope();
+
+            List<ExecutorService> executors = new ArrayList<>();
+
+            for (int i = 0; i < 100; i++)
+            {
+                executors.add(JunitUtil.createRace(new Runnable()
+                {
+                    @Override
+                    public void run()
+                    {
+                        try (DbScope.Transaction transaction = scope.ensureTransaction())
+                        {
+                            PropertyMap map = store.getWritableProperties(c, category, true);
+                            map.put("foo", "abc");
+                            map.put("bar", "xyz");
+                            store.saveProperties(map);
+                            Map<String, String> newMap = store.getProperties(c, category);
+                            map = store.getWritableProperties(c, category, true);
+                            map.put("flam", "mno");
+                            store.deletePropertySet(c, category);
+
+                            transaction.commit();
+                        }
+                    }
+                }, 5, 5));
+            }
+
+            // Remember when we started waiting
+            long startTime = System.currentTimeMillis();
+            for (ExecutorService executor : executors)
+            {
+                // Wait up to a minute total for all executors to be done
+                long timeLeftToWait = Math.max(0, 60 * 1000 - (System.currentTimeMillis() - startTime));
+                assertTrue("Worker threads have not finished in expected timeframe", executor.awaitTermination(timeLeftToWait, TimeUnit.MILLISECONDS));
+            }
+        }
 
         @Test  // Note: Fairly worthless test... there's now an FK constraint in place
         public void testOrphanedPropertySets()

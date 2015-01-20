@@ -17,6 +17,7 @@ package org.labkey.api.util;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.LockManager;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -29,16 +30,13 @@ import java.util.concurrent.Callable;
  */
 public class SessionHelper
 {
-    private static final Object[] _locks = new Object[23];
-    static
-    {
-        for (int i=0 ; i<_locks.length ; i++)
-            _locks[i] = new Object();
-    }
+    private static final LockManager<HttpSession> LOCK_MANAGER = new LockManager<>();
 
     public static Object getSessionLock(HttpSession s)
     {
-        return _locks[(0x7fff&s.hashCode())%_locks.length];
+        // We're intentionally using LockManager to do the striping for us, but just plain synchronization around the
+        // object that's returned instead of using the java.util.concurrent.Lock behavior
+        return LOCK_MANAGER.getLock(s);
     }
 
 

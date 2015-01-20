@@ -129,16 +129,43 @@ public class DbScope
         /** A short description of what this transactions usage scenario is */
         @NotNull
         String getKind();
+
+        /**
+         * If true, any Locks acquired as part of initializing the DbScope.Transaction will not be released until the
+         * outer-most layer of the transaction has completed (either by committing or closing the connection).
+         */
+        boolean isReleaseLocksOnFinalCommit();
     }
 
-    public class NormalTransactionKind implements TransactionKind
+    public static final TransactionKind NORMAL_TRANSACTION_KIND = new TransactionKind()
     {
         @NotNull
         public String getKind()
         {
             return "NORMAL";
         }
-    }
+
+        @Override
+        public boolean isReleaseLocksOnFinalCommit()
+        {
+            return false;
+        }
+    };
+
+    public static final TransactionKind FINAL_COMMIT_UNLOCK_TRANSACTION_KIND = new TransactionKind()
+    {
+        @NotNull
+        public String getKind()
+        {
+            return "NORMAL";
+        }
+
+        @Override
+        public boolean isReleaseLocksOnFinalCommit()
+        {
+            return true;
+        }
+    };
 
     // Used only for testing
     protected DbScope()
@@ -317,7 +344,7 @@ public class DbScope
      */
     public Transaction ensureTransaction(Lock... locks)
     {
-        return ensureTransaction(new NormalTransactionKind(), locks);
+        return ensureTransaction(NORMAL_TRANSACTION_KIND, locks);
     }
 
     /**
@@ -353,7 +380,7 @@ public class DbScope
             assert null != transaction;
             if (transactionKind.getKind().equals(transaction.getTransactionKind().getKind()))
             {
-                transaction.increment(locks);
+                transaction.increment(transactionKind.isReleaseLocksOnFinalCommit(), locks);
                 return transaction;
             }
         }
@@ -380,7 +407,7 @@ public class DbScope
      */
     public Transaction beginTransaction(Lock... locks)
     {
-        return beginTransaction(new NormalTransactionKind(), locks);
+        return beginTransaction(NORMAL_TRANSACTION_KIND, locks);
     }
 
     /**
@@ -1358,7 +1385,7 @@ public class DbScope
         {
             _conn = conn;
             _transactionKind = transactionKind;
-            increment(extraLocks);
+            increment(transactionKind.isReleaseLocksOnFinalCommit(), extraLocks);
         }
 
         <ValueType> StringKeyCache<ValueType> getCache(DatabaseCache<ValueType> cache)
@@ -1560,13 +1587,25 @@ public class DbScope
             clearCommitTasks();
         }
 
-        public void increment(Lock... extraLocks)
+        public void increment(boolean releaseOnFinalCommit, Lock... extraLocks)
         {
             for (Lock extraLock : extraLocks)
             {
                 extraLock.lock();
             }
-            _locks.add(Arrays.asList(extraLocks));
+
+            // Check if we're inside a nested transaction, and we want to hold the lock until the outermost layer is complete
+            if (!_locks.isEmpty() && releaseOnFinalCommit)
+            {
+                // Add the new locks to the outermost set of locks
+                _locks.get(0).addAll(Arrays.asList(extraLocks));
+                // Add an empty list to this layer of the transaction
+                _locks.add(new ArrayList<Lock>());
+            }
+            else
+            {
+                _locks.add(new ArrayList<>(Arrays.asList(extraLocks)));
+            }
         }
 
         public TransactionKind getTransactionKind()
@@ -1934,6 +1973,12 @@ public class DbScope
                         public String getKind()
                         {
                             return "PIPELINESTATUS";  // We can't really see PipelineStatus here, but just need something non-normal to test
+                        }
+
+                        @Override
+                        public boolean isReleaseLocksOnFinalCommit()
+                        {
+                            return false;
                         }
                     }))
                     {

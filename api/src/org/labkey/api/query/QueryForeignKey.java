@@ -233,10 +233,9 @@ public class QueryForeignKey implements ForeignKey
     @Override
     public NamedObjectList getSelectList(RenderContext ctx)
     {
-        NamedObjectList ret = new NamedObjectList();
         TableInfo lookupTable = getLookupTableInfo();
         if (lookupTable == null)
-            return ret;
+            return new NamedObjectList();
 
         return lookupTable.getSelectList(getLookupColumnName());
     }

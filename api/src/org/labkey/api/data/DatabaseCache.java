@@ -375,7 +375,7 @@ public class DatabaseCache<ValueType> implements StringKeyCache<ValueType>
                 }
                 else
                 {
-                    overrideTransaction = new TransactionImpl(null, new DbScope.NormalTransactionKind());
+                    overrideTransaction = new TransactionImpl(null, DbScope.NORMAL_TRANSACTION_KIND);
                 }
             }
         }

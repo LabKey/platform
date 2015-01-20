@@ -48,19 +48,12 @@ public class PropertyCache
 
     void remove(PropertyMap map)
     {
-        Object[] params = map.getCacheParams();
-
-        _blockingCache.remove(getCacheKey((String) params[0], (Integer) params[1], (String) params[2]));
+        _blockingCache.remove(getCacheKey(map.getObjectId(), map.getUser().getUserId(), map.getCategory()));
     }
 
     void removeAll(Container c)
     {
         _blockingCache.removeUsingPrefix(c.getId());
-    }
-
-    void remove(Container container, User user, String category)
-    {
-        _blockingCache.remove(getCacheKey(container.getId(), user.getUserId(), category));
     }
 
     private static String getCacheKey(Container c, User user, String category)
