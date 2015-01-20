@@ -42,6 +42,7 @@ import org.labkey.api.iterator.CloseableIterator;
 import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -70,7 +71,9 @@ import java.util.Map;
  */
 public class ExcelLoader extends DataLoader
 {
-    public static FileType FILE_TYPE = new FileType(Arrays.asList(".xlsx", ".xls"), ".xlsx");
+    public static FileType FILE_TYPE = new FileType(Arrays.asList(".xlsx", ".xls"), ".xlsx",
+           Arrays.asList("application/" + ExcelFactory.SUB_TYPE_BIFF8, "application/" + ExcelFactory.SUB_TYPE_XSSF));
+
     static {
         FILE_TYPE.setExtensionsMutuallyExclusive(false);
     }
@@ -92,6 +95,19 @@ public class ExcelLoader extends DataLoader
         @NotNull @Override
         public FileType getFileType() { return FILE_TYPE; }
     }
+
+    public static boolean isExcel(final File dataFile)
+    {
+        try
+        {
+            return ExcelLoader.FILE_TYPE.isType(dataFile, null, FileUtil.readHeader(dataFile, 8 * 1024));
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
 
     private InputStream _is = null;
     private Workbook _workbook = null;
@@ -518,17 +534,45 @@ public class ExcelLoader extends DataLoader
 
     public static class ExcelLoaderTestCase extends Assert
     {
+        private final File _projectRoot;
+
+        public ExcelLoaderTestCase()
+        {
+            String projectRootPath =  AppProps.getInstance().getProjectRoot();
+            if (projectRootPath == null)
+                projectRootPath = System.getProperty("user.dir") + "/..";
+            _projectRoot = new File(projectRootPath);
+        }
+
+        @Test
+        public void detect() throws Exception
+        {
+            File excelSamplesRoot = new File(_projectRoot, "sampledata/dataLoading/excel");
+
+            assertTrue(isExcel(new File(excelSamplesRoot, "ExcelLoaderTest.xls")));
+            assertTrue(isExcel(new File(excelSamplesRoot, "SimpleExcelFile.xls")));
+            assertTrue(isExcel(new File(excelSamplesRoot, "SimpleExcelFile.xlsx")));
+            assertTrue(isExcel(new File(excelSamplesRoot, "fruits.xls")));
+
+            // Issue 22153: detect xls file without extension
+            assertTrue(isExcel(new File(_projectRoot, "sampledata/Nab/seaman/MS010407")));
+
+            // NOTE: DataLoaderService only available when running junit tests with running server
+            DataLoaderService.I svc = DataLoaderService.get();
+            if (svc != null)
+            {
+                DataLoaderFactory factory = svc.findFactory(new File(_projectRoot, "sampledata/Nab/seaman/MS010407"), null);
+                assertTrue(factory instanceof ExcelLoader.Factory);
+            }
+
+            assertFalse(isExcel(new File(excelSamplesRoot, "notreallyexcel.xls")));
+            assertFalse(isExcel(new File(excelSamplesRoot, "fruits.tsv")));
+        }
+
         @Test
         public void testColumnTypes() throws Exception
         {
-            AppProps.Interface props = AppProps.getInstance();
-            if (!props.isDevMode()) // We can only run the excel tests if we're in dev mode and have access to our samples
-                return;
-
-            String projectRootPath =  props.getProjectRoot();
-            File projectRoot = new File(projectRootPath);
-
-            File excelSamplesRoot = new File(projectRoot, "sampledata/dataLoading/excel");
+            File excelSamplesRoot = new File(_projectRoot, "sampledata/dataLoading/excel");
 
             if (!excelSamplesRoot.exists() || !excelSamplesRoot.canRead())
                 throw new IOException("Could not read excel samples in: " + excelSamplesRoot);

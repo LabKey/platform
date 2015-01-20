@@ -16,6 +16,12 @@
 package org.labkey.api.util;
 
 import org.apache.commons.io.IOCase;
+import org.apache.tika.detect.DefaultDetector;
+import org.apache.tika.detect.Detector;
+import org.apache.tika.io.TikaInputStream;
+import org.apache.tika.metadata.Metadata;
+import org.apache.tika.mime.MediaType;
+import org.apache.tika.mime.MimeTypes;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
@@ -23,6 +29,7 @@ import org.junit.Test;
 import org.labkey.api.pipeline.file.FileAnalysisJobSupport;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,6 +44,8 @@ import java.util.Vector;
  */
 public class FileType implements Serializable
 {
+    private static final Detector DETECTOR = new DefaultDetector(MimeTypes.getDefaultMimeTypes());
+
     public File findInputFile(FileAnalysisJobSupport support, String baseName)
     {
         if (_suffixes.size() > 1)
@@ -71,7 +80,7 @@ public class FileType implements Serializable
     private String _defaultSuffix;
 
     /** Mime content type. */
-    private String _contentType;
+    private List<String> _contentTypes;
     
     private Boolean _dir;
     /** If _preferGZ is true, assume suffix.gz for new files to support TPP's transparent .xml.gz useage.
@@ -144,10 +153,11 @@ public class FileType implements Serializable
      *          uniquely identify a file type), in priority order. The first suffix that matches a file will be used
      *          and files that match the rest of the suffixes will be ignored
      * @param defaultSuffix the canonical suffix, will be used when creating new files from scratch
+     * @param contentTypes Content types for this file type.  If null, a content type will be guessed based on the extension.
      */
-    public FileType(List<String> suffixes, String defaultSuffix, String contentType)
+    public FileType(List<String> suffixes, String defaultSuffix, List<String> contentTypes)
     {
-        this(suffixes, defaultSuffix, false, gzSupportLevel.NO_GZ, contentType);
+        this(suffixes, defaultSuffix, false, gzSupportLevel.NO_GZ, contentTypes);
     }
 
     /**
@@ -194,9 +204,9 @@ public class FileType implements Serializable
      *          and files that match the rest of the suffixes will be ignored
      * @param defaultSuffix the canonical suffix, will be used when creating new files from scratch
      * @param doSupportGZ for handling TPP's transparent use of .xml.gz
-     * @param contentType Content type for this file type.  If null, a content type will be guessed based on the extension.
+     * @param contentTypes Content types for this file type.  If null, a content type will be guessed based on the extension.
      */
-    public FileType(List<String> suffixes, String defaultSuffix, boolean dir, gzSupportLevel doSupportGZ, String contentType)
+    public FileType(List<String> suffixes, String defaultSuffix, boolean dir, gzSupportLevel doSupportGZ, List<String> contentTypes)
     {
         _suffixes = suffixes;
         supportGZ(doSupportGZ);
@@ -208,12 +218,19 @@ public class FileType implements Serializable
             throw new IllegalArgumentException("List of suffixes " + _suffixes + " does not contain the preferred suffix:" + _defaultSuffix);
         }
 
-        if (contentType == null)
+        if (contentTypes == null)
         {
             MimeMap mm = new MimeMap();
-            contentType = mm.getContentType(defaultSuffix);
+            String contentType = mm.getContentType(defaultSuffix);
+            if (contentType != null)
+                _contentTypes = Collections.singletonList(contentType);
+            else
+                _contentTypes = Collections.emptyList();
         }
-        _contentType = contentType;
+        else
+        {
+            _contentTypes = Collections.unmodifiableList(new ArrayList<>(contentTypes));
+        }
     }
 
     /** helper for supporting TPP's use of .xml.gz */
@@ -454,12 +471,19 @@ public class FileType implements Serializable
             return false;
         }
 
-        // Attempt to match content type.
-        if (contentType != null && _contentType != null)
+        // Attempt to match by content type.
+        if (_contentTypes != null)
         {
-            contentType = contentType.toLowerCase().trim();
-            if (contentType.equals(_contentType))
-                return true;
+            // Use Tika to determine the content type
+            if (contentType == null && header != null)
+                contentType = detectContentType(filePath, header);
+
+            if (contentType != null)
+            {
+                contentType = contentType.toLowerCase().trim();
+                if (_contentTypes.contains(contentType))
+                    return true;
+            }
         }
 
         // Attempt to match by suffix and header.
@@ -488,6 +512,41 @@ public class FileType implements Serializable
             return true;
 
         return false;
+    }
+
+    protected static String detectContentType(String fileName, byte[] header)
+    {
+        final Metadata metadata = new Metadata();
+        metadata.set("resourceName", fileName);
+        try (TikaInputStream is = TikaInputStream.get(header, metadata))
+        {
+            MediaType mediaType = DETECTOR.detect(is, metadata);
+            if (mediaType != null)
+                return mediaType.toString();
+
+            return null;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected static String xxxdetectContentType(File f)
+    {
+        final Metadata metadata = new Metadata();
+        try (TikaInputStream is = TikaInputStream.get(f))
+        {
+            MediaType mediaType = DETECTOR.detect(is, metadata);
+            if (mediaType != null)
+                return mediaType.toString();
+
+            return null;
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
     }
 
     public boolean isMatch(String name, String basename)
@@ -639,14 +698,9 @@ public class FileType implements Serializable
         _caseSensitiveOnCaseSensitiveFileSystems = caseSensitiveOnCaseSensitiveFileSystems;
     }
 
-    public void setContentType(String contentType)
+    public List<String> getContentTypes()
     {
-        _contentType = contentType;
-    }
-
-    public String getContentType()
-    {
-        return _contentType;
+        return _contentTypes;
     }
 
     public static class TestCase extends Assert

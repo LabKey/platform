@@ -79,7 +79,7 @@ import java.util.concurrent.TimeoutException;
 
 abstract public class PipelineJob extends Job implements Serializable
 {
-    public static final FileType FT_LOG = new FileType(Arrays.asList(".log"), ".log", "text/plain");
+    public static final FileType FT_LOG = new FileType(Arrays.asList(".log"), ".log", Arrays.asList("text/plain"));
 
     public static final String PIPELINE_EMAIL_ADDRESS_PARAM = "pipeline, email address";
     public static final String PIPELINE_USERNAME_PARAM = "pipeline, username";

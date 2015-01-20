@@ -25,6 +25,7 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -60,7 +61,11 @@ public abstract class AbstractDataLoaderFactory extends AbstractDocumentParser i
     @Override
     public String getMediaType()
     {
-        return getFileType().getContentType();
+        List<String> contentType = getFileType().getContentTypes();
+        if (!contentType.isEmpty())
+            return contentType.get(0);
+
+        return null;
     }
 
     @Override

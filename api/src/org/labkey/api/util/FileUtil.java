@@ -24,6 +24,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.labkey.api.security.Crypt;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataOutput;
 import java.io.File;
@@ -545,6 +546,14 @@ quickScan:
         return md5sum(new ByteArrayInputStream(bytes));
     }
 
+
+    public static byte[] readHeader(@NotNull File f, int len) throws IOException
+    {
+        try (InputStream is = new BufferedInputStream(new FileInputStream(f)))
+        {
+            return FileUtil.readHeader(is, len);
+        }
+    }
 
     public static byte[] readHeader(@NotNull InputStream is, int len) throws IOException
     {

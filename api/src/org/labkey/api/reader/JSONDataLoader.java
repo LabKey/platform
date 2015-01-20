@@ -97,7 +97,7 @@ import static org.labkey.api.util.JsonUtil.skipValue;
  */
 public class JSONDataLoader extends DataLoader
 {
-    public static final FileType FILE_TYPE = new FileType(Arrays.asList(".json"), ".json", ApiJsonWriter.CONTENT_TYPE_JSON)
+    public static final FileType FILE_TYPE = new FileType(Arrays.asList(".json"), ".json", Arrays.asList(ApiJsonWriter.CONTENT_TYPE_JSON))
     {
         /**
          * Looks one of the following at the top-level of the json object to consider it a match:
