@@ -645,6 +645,7 @@ abstract public class PipelineJob extends Job implements Serializable
      *
      * @return a task pipeline to run for this job
      */
+    @Nullable
     public TaskPipeline getTaskPipeline()
     {
         return null;
