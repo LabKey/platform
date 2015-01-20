@@ -80,7 +80,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
         _factories.add(factory);
     }
 
-    private byte[] getHeader(File f, InputStream in)
+    private static byte[] getHeader(File f, InputStream in)
     {
         // Can't read header if underlying stream can't be buffered
         if (in != null && !in.markSupported())
@@ -94,7 +94,7 @@ public class DataLoaderServiceImpl implements DataLoaderService.I
                 is = new BufferedInputStream(new FileInputStream(f));
 
             is.skip(Long.MIN_VALUE);
-            return FileUtil.readHeader(is, 4*1024);
+            return FileUtil.readHeader(is, 8*1024);
         }
         catch (IOException e)
         {

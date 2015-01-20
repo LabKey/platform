@@ -55,6 +55,7 @@ import org.labkey.pipeline.xml.TaskType;
 import org.labkey.pipeline.xml.TextInputType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -310,16 +311,16 @@ public abstract class SimpleTaskFactory extends CommandTaskImpl.Factory
 
         String contentType = xfile.isSetContentType() ? xfile.getContentType() : null;
 
-        return createFileType(suffixes, dir, contentType);
+        return createFileType(suffixes, dir, Arrays.asList(contentType));
     }
 
-    private static FileType createFileType(List<String> suffixes, boolean dir, String contentType)
+    private static FileType createFileType(List<String> suffixes, boolean dir, List<String> contentTypes)
     {
         String defaultSuffix = null;
         if (suffixes.size() > 0)
             defaultSuffix = suffixes.get(0);
 
-        FileType ft = new FileType(suffixes, defaultSuffix, dir, FileType.gzSupportLevel.NO_GZ, contentType);
+        FileType ft = new FileType(suffixes, defaultSuffix, dir, FileType.gzSupportLevel.NO_GZ, contentTypes);
         return ft;
     }
 
