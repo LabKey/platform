@@ -326,12 +326,12 @@ public class PipelineModule extends SpringModule implements ContainerManager.Con
                 {
                     PipelineJobServiceImpl.get().getJobStore().retry(sf);
                 }
-                catch (IOException | NoSuchJobException e)
+                catch (CancelledException ignored) { /* Job has already seen set to CANCELLED */ }
+                catch (IOException | NoSuchJobException | RuntimeException e)
                 {
                     _log.error("Unable to restart job", e);
                     moveJobToError(sf);
                 }
-                catch (CancelledException ignored) { /* Job has already seen set to CANCELLED */ }
             }
         }
 
