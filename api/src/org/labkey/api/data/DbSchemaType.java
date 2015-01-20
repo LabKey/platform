@@ -39,13 +39,19 @@ public enum DbSchemaType
         DbSchema createDbSchema(DbScope scope, String metaDataName) throws SQLException
         {
             Map<String, String> metaDataTableNames = DbSchema.loadTableNames(scope, metaDataName);
-            org.labkey.api.module.Module module = ModuleLoader.getInstance().getModuleForSchemaName(metaDataName);
 
             // TODO: Eliminate this special case... register "labkey" with core module and handle it there
             if ("labkey".equals(metaDataName))
                 return new DbSchema.LabKeyDbSchema(scope, metaDataTableNames);
-            else
-                return module.createModuleDbSchema(scope, metaDataName, metaDataTableNames);
+
+            org.labkey.api.module.Module module = ModuleLoader.getInstance().getModuleForSchemaName(metaDataName);
+
+            // For now, throw if no module claims this schema. We could relax this to an assert (and fall back to core)
+            // to provide backward compatibility for external modules that don't register their schemas.
+            if (null == module)
+                throw new IllegalStateException("Schema \"" + metaDataName + "\" is not claimed by any module. ");
+
+            return module.createModuleDbSchema(scope, metaDataName, metaDataTableNames);
         }
     },
     Provisioned("provisioned", CacheManager.YEAR, false)
