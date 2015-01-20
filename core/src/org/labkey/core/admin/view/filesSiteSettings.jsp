@@ -56,7 +56,7 @@
             </td></tr>
         <% } else { %>
         <tr><td colspan="2">When a site-level file root is set, each folder for every project has a corresponding subdirectory in the file system.
-            A default root is provided or one can be specified.</td></tr>
+            If the root is changed, all files will be automatically moved to the new location.</td></tr>
         <% } %>
         <tr><td>&nbsp;</td></tr>
         
