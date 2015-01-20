@@ -16,8 +16,9 @@
 package org.labkey.query.olap;
 
 import org.labkey.api.action.SpringActionController;
+import org.olap4j.OlapException;
 import org.olap4j.metadata.Level;
-import org.olap4j.metadata.Member;
+import org.olap4j.metadata.Measure;
 import org.olap4j.metadata.MetadataElement;
 import org.springframework.validation.BindException;
 
@@ -83,7 +84,7 @@ public class MdxQueryImpl
     {
         this.fn = fn;
         this.level = level;
-        this.arguments = new ArrayList(Arrays.asList(arguments));
+        this.arguments = new ArrayList<>(Arrays.asList(arguments));
     }
 
     FN  fn;
@@ -93,7 +94,7 @@ public class MdxQueryImpl
 
 
 
-    _MDX _toFilterExistsExpr(_MDX levelExpr, _MDX membersExpr, String andor, Member measure)
+    _MDX _toFilterExistsExpr(_MDX levelExpr, _MDX membersExpr, String andor)
     {
         String op = " " + andor + " ";
         String opConnector = "";
@@ -137,9 +138,10 @@ public class MdxQueryImpl
             if (null == membersDef.membersQuery)
                 return levelExpr;
             _MDX membersExpr = this._processExpr(membersDef.membersQuery);
-            return this._toFilterExistsExpr(levelExpr, membersExpr, "OR", qq.countRowsMember);
+            return this._toFilterExistsExpr(levelExpr, membersExpr, "OR");
         }
     }
+
 
     _MDX _toIntersectExpr(QubeExpr expr) throws BindException
     {
@@ -150,13 +152,15 @@ public class MdxQueryImpl
             sets.add(set);
         }
         if (sets.size() == 1)
-            return (_MDX)sets.get(0);
+        {
+            return (_MDX) sets.get(0);
+        }
         else
         {
             Level level = ((_MDX)sets.get(0)).level;
-            for (int s=0 ; s<sets.size() ; s++)
+            for (Object set : sets)
             {
-                Level next = ((_MDX)sets.get(s)).level;
+                Level next = ((_MDX) set).level;
                 if (null == level || null == next || !level.getUniqueName().equals(next.getUniqueName()))
                     level = null;
             }
@@ -332,10 +336,45 @@ public class MdxQueryImpl
     }
 
 
-    public String generateMDX() throws BindException
+/*
+    class WithExpression
+    {
+        String measureUniqueName;
+        String summaryMemberUniqueName;
+        String summaryExpression;
+    }
+
+    Map<String,WithExpression> withExpressions = new HashMap<>();
+    CaseInsensitiveHashMap<Measure> mapOfMeasures = new CaseInsensitiveHashMap<>();
+
+    private String createSummaryMeasureExpression(Measure m)
+    {
+        String summaryName = "Summary" + m.getName();
+        Measure summaryMeasure = mapOfMeasures.get(summaryName);
+        if (null != summaryMeasure)
+            return summaryName;
+
+        if (withExpressions.containsKey(m.getUniqueName()))
+            return withExpressions.get(m.getUniqueName()).summaryMemberUniqueName;
+
+        String minSummaryValue = ((CachedCube._Measure)m).getAnnotationMap().get("MinSummaryValue");
+        if (StringUtils.isEmpty(minSummaryValue))
+            return m.getUniqueName();
+
+        WithExpression with = new WithExpression();
+        with.measureUniqueName = m.getUniqueName();
+        with.summaryMemberUniqueName = "[Measures].[Summary" + m.getName() + "]";
+        with.summaryExpression = "IIF([Measures].Population<" + minSummaryValue + ",'<" + minSummaryValue + "',CAST([Measures].Population AS STRING))";
+        withExpressions.put(m.getUniqueName(),with);
+        return with.summaryMemberUniqueName;
+    }
+*/
+
+
+    public String generateMDX() throws BindException, OlapException
     {
         _MDX colmdx = null;
-        String rowset=null, columnset = null, countFilterSet = null, slice=null;
+        String rowset = null, columnset = null, countFilterSet = null, slice = null;
 
         if (null != qq.joinLevel)
             errors.rejectValue(SpringActionController.ERROR_MSG, "joinLevel not supported");
@@ -359,23 +398,40 @@ public class MdxQueryImpl
         if (null != qq.sliceFilters && qq.sliceFilters.arguments.size() > 0)
             slice = this._toSetString(this._processExpr(qq.sliceFilters));
 
+        Measure defaultMeasure = (Measure) qq.cube.getHierarchies().get("Measures").getDefaultMember();
+        if (null == defaultMeasure || defaultMeasure.getName().startsWith("_"))
+        {
+            for (Measure m : qq.cube.getMeasures())
+            {
+                if (!m.getName().startsWith("_"))
+                {
+                    defaultMeasure = m;
+                    break;
+                }
+            }
+        }
 
-        String defaultMeasure = "[Measures].DefaultMember";
-        String withDefinition = "";
+        StringBuilder withDefinition = new StringBuilder();
+
         if (null != qq.countDistinctMember)
-            defaultMeasure = "[Measures]." + qq.countDistinctMember.getName();
+        {
+            defaultMeasure = (Measure) qq.countDistinctMember;
+        }
+
         if (null != countFilterSet)
         {
-            withDefinition = "WITH " +
-                "SET ptids AS " + countFilterSet + "\n" +
-                "MEMBER " + defaultMeasure + " AS " + "COUNT(ptids,EXCLUDEEMPTY)\n";
+            withDefinition.append(
+                    "WITH SET ptids AS ").append(countFilterSet).append("\n").append(
+                    "MEMBER ").append(defaultMeasure).append(" AS COUNT(ptids,EXCLUDEEMPTY)\n");
         }
 
         if (null == columnset)
-            columnset = defaultMeasure;
+        {
+            columnset = defaultMeasure.getUniqueName();
+        }
         else if (null != colmdx.level && !colmdx.level.getName().equals("MeasuresLevel"))
         {
-            columnset = "CROSSJOIN(" + columnset + " , " + defaultMeasure + ")";
+            columnset = "CROSSJOIN(" + columnset + " , " + defaultMeasure.getUniqueName() + ")";
         }
 
         StringBuilder query = new StringBuilder();
@@ -384,7 +440,7 @@ public class MdxQueryImpl
         query.append("\nSELECT\n");
         query.append(columnset).append(" ON COLUMNS");
         if (null != rowset)
-            query.append(",\n" + (qq.showEmpty ? "" : " NON EMPTY ") + rowset + " ON ROWS\n");
+            query.append(",\n").append((qq.showEmpty ? "" : " NON EMPTY ")).append(rowset).append(" ON ROWS\n");
         query.append("\nFROM [").append(qq.getCube().getName()).append("]\n");
         if (null != slice)
             query.append("\nWHERE ").append(slice);

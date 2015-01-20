@@ -119,6 +119,8 @@ public class RolapCachedCubeFactory
         hMeasures.levels.seal();
         for (MeasureDef measureDef : rolap.getMeasures())
         {
+            if (measureDef.getName().startsWith("_"))
+                continue;
             CachedCube._Measure m = new CachedCube._Measure(cube, lMeasures, measureDef.getName());
             lMeasures.members.add(m);
         }

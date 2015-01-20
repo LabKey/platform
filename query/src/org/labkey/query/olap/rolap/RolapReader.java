@@ -187,6 +187,7 @@ public class RolapReader
         m.name = getStringAttribute(measureNode,"name");
         m.columnExpression = getStringAttribute(measureNode, "column");
         m.aggregator = getStringAttribute(measureNode, "aggregator");
+        parseAnnotations(measureNode, m.annotations);
         _currentCube.measures.add(m);
     }
 
@@ -195,6 +196,8 @@ public class RolapReader
     {
         for (Node a : it(node.getChildNodes()))
         {
+            if ("Annotations".equals(a.getNodeName()))
+                parseAnnotations(a, map);
             if (!"Annotation".equals(a.getNodeName()))
                 continue;
             String key = getStringAttribute(a,"name");

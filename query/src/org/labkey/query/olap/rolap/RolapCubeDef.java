@@ -1113,7 +1113,11 @@ public class RolapCubeDef
         String name;
         String columnExpression;
         String aggregator = "count";
+        Map<String,String> annotations = new TreeMap<>();
 
+        public MeasureDef()
+        {
+        }
         public String getName()
         {
             return name;

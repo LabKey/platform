@@ -60,7 +60,6 @@ public class CachedCube extends MetadataElementBase implements Cube
 {
     Long hash = null;
     final _NamedList<_Dimension,Dimension> dimensions = new _NamedList<>();
-    Map<String, String> annotations;
 
     /* TODO redo compute hash code */
     CachedCube(Cube c) throws SQLException
@@ -187,11 +186,6 @@ public class CachedCube extends MetadataElementBase implements Cube
     public boolean isDrillThroughEnabled()
     {
         return false;
-    }
-
-    public Map<String, String> getAnnotationMap()
-    {
-        return annotations;
     }
 
 

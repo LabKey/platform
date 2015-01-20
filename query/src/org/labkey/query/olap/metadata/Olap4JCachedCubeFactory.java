@@ -36,6 +36,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 import static org.labkey.query.olap.metadata.CachedCube._Dimension;
 import static org.labkey.query.olap.metadata.CachedCube._Hierarchy;
@@ -79,9 +80,30 @@ public class Olap4JCachedCubeFactory
         cube.dimensions.seal();
 
         Map<String,String> map = new HashMap<>();
-        if (c instanceof OlapWrapper)
+        readAnnotations(c,map);
+        cube.annotations = Collections.unmodifiableMap(map);
+    }
+
+
+    void readAnnotations(Object olap4j, Map<String,String> map)
+    {
+        Annotated annotated = null;
+        if (olap4j instanceof Annotated)
+            annotated = (Annotated)olap4j;
+        else if (olap4j instanceof OlapWrapper)
         {
-            Annotated annotated = ((OlapWrapper)c).unwrap(Annotated.class);
+            try
+            {
+                annotated = ((OlapWrapper) olap4j).unwrap(Annotated.class);
+            }
+            catch (SQLException x)
+            {
+                /* */
+            }
+        }
+
+        if (null != annotated)
+        {
             Map<String, Annotation> annotations = annotated.getAnnotationMap();
             for (Map.Entry<String,Annotation> e : annotations.entrySet())
             {
@@ -93,7 +115,6 @@ public class Olap4JCachedCubeFactory
                 }
             }
         }
-        cube.annotations = Collections.unmodifiableMap(map);
     }
 
 
@@ -189,7 +210,10 @@ public class Olap4JCachedCubeFactory
         {
             for (Member m : l.getMembers())
             {
-                ret.members.add(new _Measure(cube, ret, parentLevel, (Measure) m));
+                _Measure cachedM = new _Measure(cube, ret, parentLevel, (Measure) m);
+                cachedM.annotations = new TreeMap<>();
+                readAnnotations(m, cachedM.annotations);
+                ret.members.add(cachedM);
             }
         }
         else

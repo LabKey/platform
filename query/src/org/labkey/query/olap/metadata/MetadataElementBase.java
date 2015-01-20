@@ -23,14 +23,18 @@ import org.labkey.api.query.FieldKey;
 import org.olap4j.impl.Named;
 import org.olap4j.metadata.MetadataElement;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
 * Created by matthew on 9/4/14.
 */
 public abstract class MetadataElementBase implements MetadataElement, Named
 {
-    //  NOTE storing String uniqueName can take a lot of memory, using FieldKey might be more efficient
     final UniqueName uniqueName;
-    String name;                  // name is _usually_, but not always == uniqueName.getName()
+    final String name;                        // name is _usually_, but not always == uniqueName.getName()
+    Map<String, String> annotations = null;
+
 
     MetadataElementBase(@Nullable CachedCube cc, MetadataElement mde, MetadataElementBase parent)
     {
@@ -53,6 +57,7 @@ public abstract class MetadataElementBase implements MetadataElement, Named
             this.uniqueName = new UniqueName(null, name);
         else
             this.uniqueName = new UniqueName(parent.uniqueName,name);
+        this.name = uniqueName.getName();
     }
 
 
@@ -90,6 +95,12 @@ public abstract class MetadataElementBase implements MetadataElement, Named
     public String toString()
     {
         return getClass().getSimpleName() + " " + getUniqueName();
+    }
+
+
+    public Map<String, String> getAnnotationMap()
+    {
+        return null==annotations ? (Map<String,String>)(Map)Collections.emptyMap() : annotations;
     }
 
 
