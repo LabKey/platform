@@ -32,7 +32,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.URI;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.security.DigestInputStream;
@@ -628,30 +627,6 @@ quickScan:
             os.write(buf,0,r);
     }
 
-    public static File canonicalFile(URI uri)
-    {
-        return canonicalFile(new File(uri));
-    }
-
-
-    public static File canonicalFile(String path)
-    {
-        return canonicalFile(new File(path));
-    }
-
-
-    public static File canonicalFile(File f)
-    {
-        try
-        {
-            return f.getCanonicalFile();
-        }
-        catch (IOException x)
-        {
-            return f;
-        }
-    }
-
     private static char[] illegalChars = {'/','\\',':','?','<','>','*','|','"','^'};
 
     public static boolean isLegalName(String name)
@@ -703,7 +678,9 @@ quickScan:
         {
             try
             {
+                @SuppressWarnings("SSBasedInspection")
                 File canonicalFile = file.getCanonicalFile();
+
                 if (canonicalFile.getAbsolutePath().equalsIgnoreCase(file.getAbsolutePath()))
                 {
                     return canonicalFile;

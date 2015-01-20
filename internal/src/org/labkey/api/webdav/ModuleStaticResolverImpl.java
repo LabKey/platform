@@ -187,7 +187,7 @@ public class ModuleStaticResolverImpl implements WebdavResolver
                 {
                     if (!d.isDirectory())
                         continue;
-                    d = FileUtil.canonicalFile(d);
+                    d = FileUtil.getAbsoluteCaseSensitiveFile(d);
                     if (seen.add(d.getPath()))
                         roots.add(d);
                 }

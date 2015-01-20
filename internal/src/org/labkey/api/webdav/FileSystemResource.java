@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull;
 import org.labkey.api.attachments.Attachment;
 import org.labkey.api.attachments.AttachmentDirectory;
 import org.labkey.api.attachments.AttachmentService;
-import org.labkey.api.audit.AuditLogEvent;
 import org.labkey.api.audit.AuditLogService;
 import org.labkey.api.audit.AuditTypeEvent;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
@@ -146,7 +145,7 @@ public class FileSystemResource extends AbstractWebdavResource
         _folder = folder;
         _name = name;
         setPolicy(policy);
-        _files = Collections.singletonList(new FileInfo(FileUtil.canonicalFile(file)));
+        _files = Collections.singletonList(new FileInfo(FileUtil.getAbsoluteCaseSensitiveFile(file)));
         _mergeFromParent = mergeFromParent;
     }
 
