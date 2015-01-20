@@ -44,10 +44,10 @@ public class RemoteConnections
     public static String CONNECTION_KIND_QUERY = "query";
     public static String CONNECTION_KIND_FILE = "file";
 
-    public static Map<String, String> getRemoteConnection(String connectionKind, String name, Container container)
+    public static Map<String, String> getRemoteConnection(String connectionCategory, String name, Container container)
     {
         return PropertyManager.getEncryptedStore().getProperties(container,
-                RemoteConnections.makeRemoteConnectionKey(connectionKind, name));
+                RemoteConnections.makeRemoteConnectionKey(connectionCategory, name));
     }
 
     public static boolean createOrEditRemoteConnection(RemoteConnectionForm remoteConnectionForm, Container container, BindException errors)
@@ -106,7 +106,7 @@ public class RemoteConnections
         // save the connection name in connectionMap
         String connectionsCategory = CONNECTION_KIND_QUERY.equals(connectionKind) ? REMOTE_QUERY_CONNECTIONS_CATEGORY : REMOTE_FILE_CONNECTIONS_CATEGORY;
         PropertyManager.PropertyMap connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, connectionsCategory, true);
-        if ((!editing || changingName) && connectionMap.containsKey(makeRemoteConnectionKey(connectionKind, newName)))
+        if ((!editing || changingName) && connectionMap.containsKey(makeRemoteConnectionKey(connectionsCategory, newName)))
         {
             errors.addError(new LabkeyError("There is already a remote connection with the name '" + newName + "'."));
             return false;
@@ -114,12 +114,12 @@ public class RemoteConnections
 
         if (changingName)
         {
-            String oldNameKey = makeRemoteConnectionKey(connectionKind, name);
+            String oldNameKey = makeRemoteConnectionKey(connectionsCategory, name);
             connectionMap.remove(oldNameKey);        // Remove old name
             PropertyManager.getEncryptedStore().deletePropertySet(container, oldNameKey);
         }
 
-        String newNameKey = makeRemoteConnectionKey(connectionKind, newName);
+        String newNameKey = makeRemoteConnectionKey(connectionsCategory, newName);
         connectionMap.put(newNameKey, newName);
         connectionMap.save();
 
@@ -141,11 +141,11 @@ public class RemoteConnections
         // delete the index
         String connectionsCategory = CONNECTION_KIND_QUERY.equals(remoteConnectionForm.getConnectionKind()) ? REMOTE_QUERY_CONNECTIONS_CATEGORY : REMOTE_FILE_CONNECTIONS_CATEGORY;
         PropertyManager.PropertyMap connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, connectionsCategory, false);
-        connectionMap.remove(makeRemoteConnectionKey(remoteConnectionForm.getConnectionKind(), name));
+        connectionMap.remove(makeRemoteConnectionKey(connectionsCategory, name));
         connectionMap.save();
 
         // delete the underlying property set
-        PropertyManager.getEncryptedStore().deletePropertySet(container, makeRemoteConnectionKey(remoteConnectionForm.getConnectionKind(), name));
+        PropertyManager.getEncryptedStore().deletePropertySet(container, makeRemoteConnectionKey(connectionsCategory, name));
 
         return true;
     }
@@ -235,8 +235,8 @@ public class RemoteConnections
         }
     }
 
-    private static String makeRemoteConnectionKey(String connectionKind, String name)
+    private static String makeRemoteConnectionKey(String connectionCategory, String name)
     {
-        return connectionKind + ":" + name;
+        return connectionCategory + ":" + name;
     }
 }
