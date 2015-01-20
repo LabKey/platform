@@ -42,6 +42,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +58,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     private String _analyzeURL;
     private boolean _initialFileTypesFromTask;
     private List<FileType> _initialFileTypes;
-    private Map<FileType, FileType[]> _typeHierarchy;
+    private Map<FileType, List<FileType>> _typeHierarchy;
     /** If set, the default location for the action in the UI */
     private PipelineActionConfig.displayState _defaultDisplayState;
     private boolean _splittable = true;
@@ -118,15 +119,14 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
 
         // Add the initial types to the hierarchy
         for (FileType ft : _initialFileTypes)
-            _typeHierarchy.put(ft, new FileType[0]);
+            _typeHierarchy.put(ft, Collections.<FileType>emptyList());
 
         if (extHierarchy != null)
         {
             for (Map.Entry<FileType, List<FileType>> entry  : extHierarchy.entrySet())
             {
                 List<FileType> inputExtList = entry.getValue();
-                FileType[] hierarchy = inputExtList.toArray(new FileType[inputExtList.size()]);
-                _typeHierarchy.put(entry.getKey(), hierarchy);
+                _typeHierarchy.put(entry.getKey(), Collections.unmodifiableList(inputExtList));
             }
         }
 
@@ -192,7 +192,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
     }
 
     @NotNull
-    public Map<FileType, FileType[]> getTypeHierarchy()
+    public Map<FileType, List<FileType>> getTypeHierarchy()
     {
         return _typeHierarchy;
     }
@@ -362,7 +362,7 @@ public class FileAnalysisTaskPipelineImpl extends TaskPipelineImpl<FileAnalysisT
         // Add the initial types to the hierarchy
         pipeline._typeHierarchy = new HashMap<>();
         for (FileType ft : pipeline._initialFileTypes)
-            pipeline._typeHierarchy.put(ft, new FileType[0]);
+            pipeline._typeHierarchy.put(ft, Collections.<FileType>emptyList());
 
 //        // UNDONE: Default display state
 //        if (xpipeline.isSetDefaultDisplay())
