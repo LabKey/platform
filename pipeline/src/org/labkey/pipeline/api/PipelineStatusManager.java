@@ -76,6 +76,12 @@ public class PipelineStatusManager
         {
             return "PIPELINESTATUS";
         }
+
+        @Override
+        public boolean isReleaseLocksOnFinalCommit()
+        {
+            return false;
+        }
     }
 
     private static PipelineSchema _schema = PipelineSchema.getInstance();
