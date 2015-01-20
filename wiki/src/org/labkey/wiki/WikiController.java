@@ -2352,7 +2352,7 @@ public class WikiController extends SpringActionController
                     getUser(), getContainer(),
                     SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_DEFAULT_FORMAT, wikiversion.getRendererTypeEnum().name());
-            PropertyManager.saveProperties(properties);
+            properties.save();
 
             //return an API response containing the current wiki and version data
             ApiSimpleResponse resp = new ApiSimpleResponse("success", true);
@@ -2761,7 +2761,7 @@ public class WikiController extends SpringActionController
                     getUser(), getContainer(),
                     CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_USE_VISUAL_EDITOR, String.valueOf(form.isUseVisual()));
-            PropertyManager.saveProperties(properties);
+            properties.save();
 
             return new ApiSimpleResponse("success", true);
         }
@@ -2795,7 +2795,7 @@ public class WikiController extends SpringActionController
                     getUser(), getContainer(),
                     SetEditorPreferenceAction.CAT_EDITOR_PREFERENCE, true);
             properties.put(PROP_TOC_DISPLAYED, String.valueOf(form.isDisplayed()));
-            PropertyManager.saveProperties(properties);
+            properties.save();
 
             return new ApiSimpleResponse("success", true);
         }

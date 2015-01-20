@@ -736,7 +736,7 @@ public class IssueManager
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(container, CAT_ENTRY_TYPE_NAMES, true);
         props.put(PROP_ENTRY_TYPE_NAME_SINGULAR, names.singularName.getSource());
         props.put(PROP_ENTRY_TYPE_NAME_PLURAL, names.pluralName.getSource());
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
 
@@ -756,7 +756,7 @@ public class IssueManager
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_ASSIGNED_TO_LIST, true);
         props.put(PROP_ASSIGNED_TO_GROUP, null != group ? String.valueOf(group.getUserId()) : "0");
-        PropertyManager.saveProperties(props);
+        props.save();
         uncache(c);  // uncache the assigned to list
     }
 
@@ -778,7 +778,7 @@ public class IssueManager
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_ASSIGNED_TO_LIST, true);
         props.put(PROP_DEFAULT_ASSIGNED_TO_USER, null != user ? String.valueOf(user.getUserId()) : null);
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     public static List<Container> getMoveDestinationContainers(Container c)
@@ -807,7 +807,7 @@ public class IssueManager
 
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_MOVE_TO_LIST, true);
         props.put(PROP_DEFAULT_MOVE_TO_CONTAINER, propsValue);
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     public static void saveRelatedIssuesList(Container c, @Nullable String relatedIssuesList)
@@ -820,7 +820,7 @@ public class IssueManager
 
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_DEFAULT_RELATED_ISSUES_LIST, true);
         props.put(PROP_DEFAULT_RELATED_ISSUES_LIST, propsValue);
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     public static @Nullable Container getRelatedIssuesList(Container c)
@@ -851,7 +851,7 @@ public class IssueManager
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, CAT_COMMENT_SORT, true);
         props.put(CAT_COMMENT_SORT, direction.toString());
-        PropertyManager.saveProperties(props);
+        props.save();
         uncache(c);  // uncache the assigned to list
     }
 
@@ -978,12 +978,12 @@ public class IssueManager
 
     public static void setRequiredIssueFields(Container container, String requiredFields)
     {
-        Map<String, String> map = PropertyManager.getWritableProperties(container, ISSUES_PREF_MAP, true);
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(container, ISSUES_PREF_MAP, true);
 
         if (!StringUtils.isEmpty(requiredFields))
             requiredFields = requiredFields.toLowerCase();
         map.put(ISSUES_REQUIRED_FIELDS, requiredFields);
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
     public static void setRequiredIssueFields(Container container, HString[] requiredFields)

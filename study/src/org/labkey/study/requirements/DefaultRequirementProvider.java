@@ -77,7 +77,7 @@ public abstract class DefaultRequirementProvider<R extends Requirement<R>, A ext
         {
             ownerEntityId = GUID.makeGUID();
             props.put(type.name(), ownerEntityId);
-            PropertyManager.saveProperties(props);
+            props.save();
         }
         return ownerEntityId;
     }

@@ -5537,11 +5537,11 @@ public class StudyController extends BaseStudyController
 
     private void setDefaultView(int datasetId, String view)
     {
-        Map<String, String> viewMap = PropertyManager.getWritableProperties(getUser(),
+        PropertyManager.PropertyMap viewMap = PropertyManager.getWritableProperties(getUser(),
                 getContainer(), DEFAULT_DATASET_VIEW, true);
 
         viewMap.put(Integer.toString(datasetId), view);
-        PropertyManager.saveProperties(viewMap);
+        viewMap.save();
     }
 
     private String getVisitLabel()

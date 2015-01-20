@@ -207,7 +207,7 @@ public class PipelineManager
             props.remove(name);
         else
             props.put(name, value);
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     static String getPipelineProperty(Container container, String name)

@@ -342,7 +342,7 @@ public class PipelineServiceImpl extends PipelineService
             return;
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user, container, PipelineServiceImpl.KEY_PREFERENCES, true);
         map.put(getLastProtocolKey(factory), protocolName);
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
 
@@ -373,7 +373,7 @@ public class PipelineServiceImpl extends PipelineService
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(user, container,
                 PipelineServiceImpl.KEY_PREFERENCES, true);
         map.put(PipelineServiceImpl.PREF_LASTSEQUENCEDB + "-" + factory.getName(), fullPath);
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
     public List<String> getLastSequenceDbPathsSetting(PipelineProtocolFactory factory, Container container, User user)
@@ -409,7 +409,7 @@ public class PipelineServiceImpl extends PipelineService
         {
             map.put(PipelineServiceImpl.PREF_LASTSEQUENCEDBPATHS + "-" + factory.getName(), sequenceDbPathsString);
         }
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
 

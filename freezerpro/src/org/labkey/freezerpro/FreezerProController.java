@@ -23,7 +23,6 @@ import org.labkey.api.action.ApiSimpleResponse;
 import org.labkey.api.action.SimpleViewAction;
 import org.labkey.api.action.SpringActionController;
 import org.labkey.api.data.PropertyManager;
-import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.PipelineJob;
 import org.labkey.api.pipeline.PipelineService;
 import org.labkey.api.pipeline.PipelineUrls;
@@ -40,10 +39,8 @@ import org.labkey.api.util.XmlBeansUtil;
 import org.labkey.api.view.HtmlView;
 import org.labkey.api.view.JspView;
 import org.labkey.api.view.NavTree;
-import org.labkey.api.view.ViewBackgroundInfo;
 import org.labkey.freezerpro.export.FreezerProExport;
 import org.labkey.study.xml.freezerProExport.FreezerProConfigDocument;
-import org.labkey.study.xml.redcapExport.RedcapConfigDocument;
 import org.springframework.validation.BindException;
 import org.springframework.validation.Errors;
 import org.springframework.web.servlet.ModelAndView;
@@ -140,7 +137,7 @@ public class FreezerProController extends SpringActionController
             if (form.getReloadDate() != null)
                 map.put(FreezerProConfig.Options.reloadDate.name(), form.getReloadDate());
 
-            PropertyManager.getEncryptedStore().saveProperties(map);
+            map.save();
 
             if (form.isEnableReload())
                 FreezerProUploadTask.addFreezerProContainer(getContainer().getId());

@@ -304,7 +304,7 @@ public class PipelineEmailPreferences
 
     private synchronized void addNotifyTask(Container c, int intervalInHours, boolean isSuccessNotification, Date nextTime)
     {
-        Map<String, String> taskMap = PropertyManager.getWritableProperties(PIPELINE_NOTIFICATION_TASKS, true);
+        PropertyManager.PropertyMap taskMap = PropertyManager.getWritableProperties(PIPELINE_NOTIFICATION_TASKS, true);
         final String key = getKey(c, isSuccessNotification);
 
         taskMap.put(key, c.getId());
@@ -320,7 +320,7 @@ public class PipelineEmailPreferences
         task = new EmailNotifyTask(c, intervalInHours, isSuccessNotification);
         _timerTasks.put(key, task);
         _timer.scheduleAtFixedRate(task, nextTime, intervalInHours * 60 * 60 * 1000);
-        PropertyManager.saveProperties(taskMap);
+        taskMap.save();
     }
 
     private String getKey(Container c, boolean isSuccessNotification)
@@ -335,13 +335,13 @@ public class PipelineEmailPreferences
     
     private synchronized void removeNotifyTask(Container c, boolean isSuccessNotification)
     {
-        Map<String, String> taskMap = PropertyManager.getWritableProperties(PIPELINE_NOTIFICATION_TASKS, true);
+        PropertyManager.PropertyMap taskMap = PropertyManager.getWritableProperties(PIPELINE_NOTIFICATION_TASKS, true);
         final String key = getKey(c, isSuccessNotification);
 
         if (taskMap.containsKey(key))
         {
             taskMap.remove(key);
-            PropertyManager.saveProperties(taskMap);
+            taskMap.save();
         }
         TimerTask task = _timerTasks.get(key);
         if (task != null)

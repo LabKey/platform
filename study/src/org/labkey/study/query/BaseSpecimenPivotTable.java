@@ -152,7 +152,7 @@ public abstract class BaseSpecimenPivotTable extends FilteredTable<StudyQuerySch
         public void save()
         {
             if (null != _typeNameIdMapWritable)
-                PropertyManager.saveProperties(_typeNameIdMapWritable);
+                _typeNameIdMapWritable.save();
         }
         public int size()
         {

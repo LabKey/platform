@@ -65,7 +65,7 @@ public class DbLoginManager
         map.clear();
         map.put(Key.Strength.toString(), config.getStrength());
         map.put(Key.Expiration.toString(), config.getExpiration());
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
     private static @NotNull Map<String, String> getProperties()

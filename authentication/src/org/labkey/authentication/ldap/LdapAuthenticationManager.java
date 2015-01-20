@@ -341,7 +341,7 @@ public class LdapAuthenticationManager
         map.put(Key.Domain.toString(), config.getDomain());
         map.put(Key.PrincipalTemplate.toString(), config.getPrincipalTemplate());
         map.put(Key.SASL.toString(), config.getSASL() ? "TRUE" : "FALSE");
-        PropertyManager.saveProperties(map);
+        map.save();
         activate();
     }
 

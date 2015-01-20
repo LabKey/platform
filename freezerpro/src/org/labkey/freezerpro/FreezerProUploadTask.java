@@ -167,7 +167,7 @@ public class FreezerProUploadTask implements SystemMaintenance.MaintenanceTask
         _freezerProContainerIds.add(containerId);
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FREEZER_PRO_STATIC_TASK_PROPERTIES, true);
         map.put(containerId, "true");
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
     public static void removeFreezerProContainer(String containerId)
@@ -175,7 +175,7 @@ public class FreezerProUploadTask implements SystemMaintenance.MaintenanceTask
         _freezerProContainerIds.remove(containerId);
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FREEZER_PRO_STATIC_TASK_PROPERTIES, true);
         map.remove(containerId);
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
     private Logger _log = Logger.getLogger(FreezerProUploadTask.class);

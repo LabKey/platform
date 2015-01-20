@@ -596,9 +596,9 @@ public class AnnouncementManager
 
     public static void saveDefaultEmailOption(Container c, int emailOption)
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(c, "defaultEmailSettings", true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, "defaultEmailSettings", true);
         props.put("defaultEmailOption", Integer.toString(emailOption));
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     public static int getDefaultEmailOption(Container c)
@@ -640,7 +640,7 @@ public class AnnouncementManager
 
     public static void saveMessageBoardSettings(Container c, DiscussionService.Settings settings) throws IllegalAccessException, InvocationTargetException
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(c, MESSAGE_BOARD_SETTINGS, true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, MESSAGE_BOARD_SETTINGS, true);
         props.clear();  // Get rid of old props (e.g., userList, see #13882)
         props.put("boardName", settings.getBoardName());
         props.put("conversationName", settings.getConversationName());
@@ -654,7 +654,7 @@ public class AnnouncementManager
         props.put("defaultAssignedTo", null == settings.getDefaultAssignedTo() ? null : settings.getDefaultAssignedTo().toString());
         props.put("titleEditable", String.valueOf(settings.isTitleEditable()));
         props.put("includeGroups", String.valueOf(settings.includeGroups()));
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     public static DiscussionService.Settings getMessageBoardSettings(Container c) throws SQLException, IllegalAccessException, InvocationTargetException

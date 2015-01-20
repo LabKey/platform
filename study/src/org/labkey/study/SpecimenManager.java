@@ -1003,10 +1003,10 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public void saveRepositorySettings(Container container, RepositorySettings settings)
     {
-        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
+        PropertyManager.PropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRepositorySettings", true);
         settings.populateMap(settingsMap);
-        PropertyManager.saveProperties(settingsMap);
+        settingsMap.save();
         clearGroupedValuesForColumn(container);     // May have changed groupings
     }
 
@@ -1027,10 +1027,10 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public void saveRequestNotificationSettings(Container container, RequestNotificationSettings settings)
     {
-        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
+        PropertyManager.PropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestNotifications", true);
         settings.populateMap(settingsMap);
-        PropertyManager.saveProperties(settingsMap);
+        settingsMap.save();
     }
 
 
@@ -1050,10 +1050,10 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public void saveDisplaySettings(Container container, DisplaySettings settings)
     {
-        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
+        PropertyManager.PropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestDisplay", true);
         settings.populateMap(settingsMap);
-        PropertyManager.saveProperties(settingsMap);
+        settingsMap.save();
     }
 
     public StatusSettings getStatusSettings(Container container)
@@ -1072,10 +1072,10 @@ public class SpecimenManager implements ContainerManager.ContainerListener
 
     public void saveStatusSettings(Container container, StatusSettings settings)
     {
-        Map<String, String> settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
+        PropertyManager.PropertyMap settingsMap = PropertyManager.getWritableProperties(UserManager.getGuestUser(),
                 container, "SpecimenRequestStatus", true);
         settings.populateMap(settingsMap);
-        PropertyManager.saveProperties(settingsMap);
+        settingsMap.save();
     }
 
     public boolean isSpecimenShoppingCartEnabled(Container container)

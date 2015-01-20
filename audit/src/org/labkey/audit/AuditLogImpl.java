@@ -685,7 +685,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
     {
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUDIT_MIGRATE_PROPSET, true);
         props.put(AUDIT_MIGRATE_COMPLETE, completed ? "true" : "false");
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     public void migrateProviders()
@@ -861,7 +861,7 @@ public class AuditLogImpl implements AuditLogService.I, StartupListener
         _log.info(String.format("Marking provider %s as migrated.", provider.getEventName()));
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUDIT_MIGRATE_PROPSET, true);
         props.put(provider.getEventName(), "true");
-        PropertyManager.saveProperties(props);
+        props.save();
         _log.info(String.format("Marked provider %s as migrated.", provider.getEventName()));
     }
 

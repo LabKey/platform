@@ -70,7 +70,7 @@ public class AnalyticsServiceImpl implements AnalyticsService.Interface
         properties.put(AnalyticsProperty.trackingStatus.toString(), trackingStatus.toString());
         properties.put(AnalyticsProperty.accountId.toString(), StringUtils.trimToNull(accountId));
         properties.put(AnalyticsProperty.trackingScript.toString(), StringUtils.trimToNull(script));
-        PropertyManager.saveProperties(properties);
+        properties.save();
     }
 
     public TrackingStatus getTrackingStatus()

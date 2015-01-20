@@ -136,7 +136,7 @@ public class EmailServiceImpl implements EmailService.I
         PropertyMap props = PropertyManager.getWritableProperties(user, container, EmailService.EMAIL_PREF_CATEGORY, true);
         props.put(pref.getId(), value);
 
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     @Override
@@ -187,7 +187,7 @@ public class EmailServiceImpl implements EmailService.I
         PropertyMap props = PropertyManager.getWritableProperties(container, EmailService.EMAIL_PREF_CATEGORY, true);
         props.put(pref.getId(), value);
 
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     @Override

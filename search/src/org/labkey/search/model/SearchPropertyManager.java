@@ -77,7 +77,7 @@ public class SearchPropertyManager
         map.put(EXTERNAL_PATH, props.getExternalIndexPath());
         map.put(EXTERNAL_ANALYZER, props.getExternalIndexAnalyzer());
         map.put(EXTERNAL_DESCRIPTION, props.getExternalIndexDescription());
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
     public static void clearExternalIndexProperties()
@@ -86,7 +86,7 @@ public class SearchPropertyManager
         map.remove(EXTERNAL_PATH);
         map.remove(EXTERNAL_ANALYZER);
         map.remove(EXTERNAL_DESCRIPTION);
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
     public static boolean getCrawlerRunningState()
@@ -125,8 +125,8 @@ public class SearchPropertyManager
 
     private static void setProperty(String key, String value)
     {
-        Map<String, String> m = PropertyManager.getWritableProperties(SearchModule.class.getName(), true);
+        PropertyManager.PropertyMap m = PropertyManager.getWritableProperties(SearchModule.class.getName(), true);
         m.put(key, value);
-        PropertyManager.saveProperties(m);
+        m.save();
     }
 }

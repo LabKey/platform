@@ -116,7 +116,7 @@ public class OpenSSOManager
         PropertyMap map = PropertyManager.getWritableProperties(OPENSSO_PROPERTIES_KEY, true);
         map.clear();
         map.putAll(newSettings);
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
 
@@ -139,7 +139,7 @@ public class OpenSSOManager
     {
         PropertyMap map = PropertyManager.getWritableProperties(OPENSSO_SETTINGS, true);
         map.put(REFERRER_PREFIX, prefix);
-        PropertyManager.saveProperties(map);
+        map.save();
         loadReferrerPrefix();
     }
 

@@ -417,7 +417,7 @@ public class MothershipManager
     {
         PropertyManager.PropertyMap props = getWritableProperties(c);
         props.put(name, value);
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     public void setCurrentRevision(Container c, int revision)

@@ -1243,11 +1243,11 @@ public class OlapController extends SpringActionController
         if (values != null)
             map.put(APP_CONTEXT_VALUES, values.toString(APP_CONTEXT_JSON_INDENT));
 
-        PropertyManager.saveProperties(map);
+        map.save();
 
         PropertyManager.PropertyMap allContexts = PropertyManager.getWritableProperties(c, APP_CONTEXT_CATEGORY, true);
         allContexts.put(contextName, contextName);
-        PropertyManager.saveProperties(allContexts);
+        allContexts.save();
     }
 
     @NotNull
@@ -1490,7 +1490,7 @@ public class OlapController extends SpringActionController
             activeAppConfig.put("name", form.getName());
             activeAppConfig.put("schemaName", form.getSchemaName());
             activeAppConfig.put("contextName", form.getContextName());
-            PropertyManager.saveProperties(activeAppConfig);
+            activeAppConfig.save();
 
             ApiSimpleResponse response = new ApiSimpleResponse();
             response.put("config", getActiveAppConfig(getContainer()));
