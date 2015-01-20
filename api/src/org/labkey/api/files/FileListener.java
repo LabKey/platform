@@ -35,7 +35,7 @@ public interface FileListener
     public String getSourceName();
     
     /**
-     * Called AFTER the file has already been created on disk
+     * Called AFTER the file (or directory) has already been created on disk
      * @param created newly created resource
      * @param user if available, the user who initiated the create
      * @param container if available, the container in which the create was initiated
@@ -43,9 +43,9 @@ public interface FileListener
     public void fileCreated(@NotNull File created, @Nullable User user, @Nullable Container container);
 
     /**
-     * Called AFTER the file has already been moved on disk
-     * @param src
-     * @param dest
+     * Called AFTER the file (or directory) has already been moved on disk
+     * @param src the original file path
+     * @param dest the new file path
      * @param user if available, the user who initiated the move
      * @param container if available, the container in which the move was initiated
      */
@@ -54,7 +54,6 @@ public interface FileListener
     /**
      * List file paths in the database this FileListener is aware of.
      * @param container If not null, list files in the given container, otherwise from all containers.
-     * @return
      */
     public Collection<File> listFiles(@Nullable Container container);
 
@@ -71,8 +70,6 @@ public interface FileListener
      *     <li>SourceKey</li>
      *     <li>SourceName</li>
      * </ul>
-     *
-     * @return
      */
     public SQLFragment listFilesQuery();
 }

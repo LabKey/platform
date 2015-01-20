@@ -149,10 +149,29 @@ public interface FileContentService
 
     public void moveFileRoot(File prev, File dest, @Nullable User user, @Nullable Container container);
 
+    /** Notifies all registered FileListeners that a file or directory has been created */
     public void fireFileCreateEvent(@NotNull File created, @Nullable User user, @Nullable Container container);
+    /** Notifies all registered FileListeners that a file or directory has moved */
     public void fireFileMoveEvent(@NotNull File src, @NotNull File dest, @Nullable User user, @Nullable Container container);
+    /** Add a listener that will be notified when files are created or are moved */
     public void addFileListener(FileListener listener);
 
     public Map<String, Collection<File>> listFiles(@NotNull Container container);
+
+    /**
+     * Returns a SQLFragment for file paths that this FileListener is aware of when the user is a site admin, or empty
+     * results otherwise.
+     * The expected columns are:
+     * <ul>
+     *     <li>Container</li>
+     *     <li>Created</li>
+     *     <li>CreatedBy</li>
+     *     <li>Modified</li>
+     *     <li>ModifiedBy</li>
+     *     <li>FilePath</li>
+     *     <li>SourceKey</li>
+     *     <li>SourceName</li>
+     * </ul>
+     */
     public SQLFragment listFilesQuery(@NotNull User currentUser);
 }

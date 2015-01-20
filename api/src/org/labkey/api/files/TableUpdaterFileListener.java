@@ -39,7 +39,8 @@ import java.util.Date;
 import java.util.Set;
 
 /**
- *
+ * FileListener implementation that can update tables that store file paths in various flavors (URI, standard OS
+ * paths, etc).
  * User: jeckels
  * Date: 11/7/12
  */
