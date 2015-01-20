@@ -21,8 +21,6 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.User;
 
-import java.util.Map;
-
 /**
  * User: adam
  * Date: 11/30/12
@@ -30,16 +28,16 @@ import java.util.Map;
  */
 public class PropertyCache
 {
-    private final DatabaseCache<Map<String, String>> _blockingCache;
-    private final CacheLoader<String, Map<String, String>> _loader;
+    private final DatabaseCache<PropertyManager.PropertyMap> _blockingCache;
+    private final CacheLoader<String, PropertyManager.PropertyMap> _loader;
 
-    PropertyCache(String name, CacheLoader<String, Map<String, String>> propertyLoader)
+    PropertyCache(String name, CacheLoader<String, PropertyManager.PropertyMap> propertyLoader)
     {
         _loader = propertyLoader;
         _blockingCache = new DatabaseCache<>(CoreSchema.getInstance().getScope(), CacheManager.UNLIMITED, CacheManager.DAY, name);
     }
 
-    @Nullable Map<String, String> getProperties(User user, Container container, String category)
+    @Nullable PropertyManager.PropertyMap getProperties(User user, Container container, String category)
     {
         String key = getCacheKey(container, user, category);
 

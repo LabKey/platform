@@ -209,7 +209,7 @@ public class SystemMaintenance extends TimerTask implements ShutdownListener, St
         writableProps.put(TIME_PROPERTY_NAME, time);
         writableProps.put(DISABLED_TASKS_PROPERTY_NAME, StringUtils.join(disabled, ","));
 
-        PropertyManager.saveProperties(writableProps);
+        writableProps.save();
         setTimer();
     }
 

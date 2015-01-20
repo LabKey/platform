@@ -106,7 +106,7 @@ public class Encryption
         PropertyMap map = store.getWritableProperties(CATEGORY, true);
         byte[] bytes = generateRandomBytes(16);
         map.put(SALT_KEY, Base64.encodeBase64String(bytes));
-        store.saveProperties(map);
+        map.save();
 
         return bytes;
     }

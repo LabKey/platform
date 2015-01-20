@@ -220,9 +220,9 @@ public class AuthenticationManager
             sep = PROP_SEPARATOR;
         }
 
-        Map<String, String> props = PropertyManager.getWritableProperties(AUTHENTICATION_SET, true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTHENTICATION_SET, true);
         props.put(PROVIDERS_KEY, sb.toString());
-        PropertyManager.saveProperties(props);
+        props.save();
         loadProperties();
     }
 
@@ -231,9 +231,9 @@ public class AuthenticationManager
 
     private static void saveAuthLogoURL(String name, String url)
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(AUTH_LOGO_URL_SET, true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(AUTH_LOGO_URL_SET, true);
         props.put(name, url);
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
 

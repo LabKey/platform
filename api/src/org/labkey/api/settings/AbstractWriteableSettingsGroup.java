@@ -66,7 +66,7 @@ public abstract class AbstractWriteableSettingsGroup extends AbstractSettingsGro
 
     protected void save()
     {
-        PropertyManager.saveProperties(_properties);
+        _properties.save();
     }
 
     protected void storeBooleanValue(String name, boolean value)

@@ -104,10 +104,10 @@ public class PreferenceService
 
     public void setProperty(String name, String value, Container container)
     {
-        Map<String, String> prefs = getPreferences(container, true);
+        PropertyManager.PropertyMap prefs = getPreferences(container, true);
         prefs.put(name, value);
 
-        PropertyManager.saveProperties(prefs);
+        prefs.save();
         _nullPreferenceMap.remove(container.getId());
     }
 
@@ -121,18 +121,18 @@ public class PreferenceService
         }
         else
         {
-            Map<String, String> prefs = getPreferences(user, true);
+            PropertyManager.PropertyMap prefs = getPreferences(user, true);
             prefs.put(name, value);
-            PropertyManager.saveProperties(prefs);
+            prefs.save();
         }
     }
 
     public void deleteProperty(String name, Container container)
     {
-        Map<String, String> prefs = getPreferences(container, true);
+        PropertyManager.PropertyMap prefs = getPreferences(container, true);
         prefs.remove(name);
 
-        PropertyManager.saveProperties(prefs);
+        prefs.save();
         _nullPreferenceMap.remove(container.getId());
     }
 
@@ -145,9 +145,9 @@ public class PreferenceService
         }
         else
         {
-            Map<String, String> prefs = getPreferences(user, true);
+            PropertyManager.PropertyMap prefs = getPreferences(user, true);
             prefs.remove(name);
-            PropertyManager.saveProperties(prefs);
+            prefs.save();
         }
     }
 
@@ -188,12 +188,12 @@ public class PreferenceService
         return prefs;
     }
 
-    private Map<String, String> getPreferences(User user)
+    private PropertyManager.PropertyMap getPreferences(User user)
     {
         return PropertyManager.getProperties(user, ContainerManager.getRoot(), PREFERENCE_SERVICE_MAP_KEY);
     }
 
-    private Map<String, String> getPreferences(Container container, boolean writable)
+    private PropertyManager.PropertyMap getPreferences(Container container, boolean writable)
     {
         if (writable)
             return PropertyManager.getWritableProperties(container, PREFERENCE_SERVICE_MAP_KEY, true);
@@ -201,7 +201,7 @@ public class PreferenceService
             return getReadOnlyPreferences(container);
     }
 
-    private Map<String, String> getPreferences(User user, boolean writable)
+    private PropertyManager.PropertyMap getPreferences(User user, boolean writable)
     {
         if (writable)
             return PropertyManager.getWritableProperties(user, ContainerManager.getRoot(), PREFERENCE_SERVICE_MAP_KEY, true);
@@ -209,12 +209,12 @@ public class PreferenceService
             return getPreferences(user);
     }
 
-    private Map<String, String> getReadOnlyPreferences(Container container)
+    private PropertyManager.PropertyMap getReadOnlyPreferences(Container container)
     {
         String containerId = container.getId();
         if (_nullPreferenceMap.containsKey(containerId))
             return null;
-        Map<String, String> prefs = PropertyManager.getProperties(container, PREFERENCE_SERVICE_MAP_KEY);
+        PropertyManager.PropertyMap prefs = PropertyManager.getProperties(container, PREFERENCE_SERVICE_MAP_KEY);
         if (prefs.isEmpty())
         {
             _nullPreferenceMap.put(containerId, null);

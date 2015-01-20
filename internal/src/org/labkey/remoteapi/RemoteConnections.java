@@ -105,7 +105,7 @@ public class RemoteConnections
 
         // save the connection name in connectionMap
         String connectionsCategory = CONNECTION_KIND_QUERY.equals(connectionKind) ? REMOTE_QUERY_CONNECTIONS_CATEGORY : REMOTE_FILE_CONNECTIONS_CATEGORY;
-        Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, connectionsCategory, true);
+        PropertyManager.PropertyMap connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, connectionsCategory, true);
         if ((!editing || changingName) && connectionMap.containsKey(makeRemoteConnectionKey(connectionKind, newName)))
         {
             errors.addError(new LabkeyError("There is already a remote connection with the name '" + newName + "'."));
@@ -121,16 +121,16 @@ public class RemoteConnections
 
         String newNameKey = makeRemoteConnectionKey(connectionKind, newName);
         connectionMap.put(newNameKey, newName);
-        PropertyManager.getEncryptedStore().saveProperties(connectionMap);
+        connectionMap.save();
 
         // save the properties for the individual connection in the encrypted property store
-        Map <String, String> singleConnectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, newNameKey, true);
+        PropertyManager.PropertyMap singleConnectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, newNameKey, true);
         singleConnectionMap.put(RemoteConnections.FIELD_URL, url);
         singleConnectionMap.put(RemoteConnections.FIELD_USER, user);
         singleConnectionMap.put(RemoteConnections.FIELD_PASSWORD, password);
         if (CONNECTION_KIND_QUERY.equals(connectionKind))
             singleConnectionMap.put(RemoteConnections.FIELD_CONTAINER, folderPath);
-        PropertyManager.getEncryptedStore().saveProperties(singleConnectionMap);
+        singleConnectionMap.save();
         return true;
     }
 
@@ -140,9 +140,9 @@ public class RemoteConnections
 
         // delete the index
         String connectionsCategory = CONNECTION_KIND_QUERY.equals(remoteConnectionForm.getConnectionKind()) ? REMOTE_QUERY_CONNECTIONS_CATEGORY : REMOTE_FILE_CONNECTIONS_CATEGORY;
-        Map<String, String> connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, connectionsCategory, false);
+        PropertyManager.PropertyMap connectionMap = PropertyManager.getEncryptedStore().getWritableProperties(container, connectionsCategory, false);
         connectionMap.remove(makeRemoteConnectionKey(remoteConnectionForm.getConnectionKind(), name));
-        PropertyManager.getEncryptedStore().saveProperties(connectionMap);
+        connectionMap.save();
 
         // delete the underlying property set
         PropertyManager.getEncryptedStore().deletePropertySet(container, makeRemoteConnectionKey(remoteConnectionForm.getConnectionKind(), name));

@@ -68,7 +68,7 @@ public class MiniProfiler
     {
         PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(CATEGORY, true);
         SETTINGS_FACTORY.toStringMap(settings, map);
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
     public static void resetSettings()

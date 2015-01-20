@@ -189,7 +189,7 @@ public class ModuleProperty
         else
             props.remove(getName());
 
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     /**

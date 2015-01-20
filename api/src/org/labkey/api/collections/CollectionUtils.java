@@ -18,6 +18,7 @@ package org.labkey.api.collections;
 import org.jetbrains.annotations.Nullable;
 import org.junit.Assert;
 import org.junit.Test;
+import org.labkey.api.data.PropertyManager;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -67,7 +68,12 @@ public class CollectionUtils
         if (null == value)
             return null;
 
-        if (value instanceof Collection)
+        if (value instanceof PropertyManager.PropertyMap)
+        {
+            if (!((PropertyManager.PropertyMap)value).isLocked())
+                return "a modifiable PropertyMap";
+        }
+        else if (value instanceof Collection)
         {
             if (!UNMODIFIABLE_COLLECTION_CLASS.isInstance(value))
             {

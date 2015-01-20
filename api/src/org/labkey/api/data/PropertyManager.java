@@ -31,7 +31,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.TestContext;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -82,7 +81,7 @@ public class PropertyManager
      * For global system properties that are attached to the root container
      * Returns an empty map if property set hasn't been created
      */
-    public static @NotNull Map<String, String> getProperties(String category)
+    public static @NotNull PropertyManager.PropertyMap getProperties(String category)
     {
         return STORE.getProperties(category);
     }
@@ -91,7 +90,7 @@ public class PropertyManager
      * For shared properties that are attached to a specific container
      * Returns an empty map if property set hasn't been created
      */
-    public static @NotNull Map<String, String> getProperties(Container container, String category)
+    public static @NotNull PropertyManager.PropertyMap getProperties(Container container, String category)
     {
         return STORE.getProperties(container, category);
     }
@@ -100,7 +99,7 @@ public class PropertyManager
      * For shared properties that are attached to a specific container and user
      * Returns an empty map if property set hasn't been created
      */
-    public static @NotNull Map<String, String> getProperties(User user, Container container, String category)
+    public static @NotNull PropertyManager.PropertyMap getProperties(User user, Container container, String category)
     {
         return STORE.getProperties(user, container, category);
     }
@@ -122,12 +121,6 @@ public class PropertyManager
     public static PropertyMap getWritableProperties(User user, Container container, String category, boolean create)
     {
         return STORE.getWritableProperties(user, container, category, create);
-    }
-
-
-    public static void saveProperties(Map<String, String> map)
-    {
-        STORE.saveProperties(map);
     }
 
 
@@ -280,6 +273,7 @@ public class PropertyManager
 
         private boolean _modified = false;
         Set<Object> removedKeys = null;
+        private boolean _locked = false;
 
         PropertyMap(int set, @NotNull User user, @NotNull String objectId, @NotNull String category, PropertyEncryption propertyEncryption, AbstractPropertyStore store)
         {
@@ -306,6 +300,7 @@ public class PropertyManager
         @Override
         public String remove(Object key)
         {
+            checkLocked();
             if (null == removedKeys)
                 removedKeys = new HashSet<>();
             if (containsKey(key))
@@ -316,10 +311,19 @@ public class PropertyManager
             return super.remove(key);
         }
 
+        private void checkLocked()
+        {
+            if (_locked)
+            {
+                throw new IllegalStateException("Cannot modify a locked PropertyMap - use getWritableProperties() for a mutable copy");
+            }
+        }
+
 
         @Override
         public String put(String key, @Nullable String value)
         {
+            checkLocked();
             if (null != removedKeys)
                 removedKeys.remove(key);
             if (!StringUtils.equals(value, get(value)))
@@ -336,6 +340,7 @@ public class PropertyManager
         @Override
         public void putAll(Map<? extends String, ? extends String> m)
         {
+            checkLocked();
             _modified = true;   // putAll() calls put(), but just to be safe
             super.putAll(m);
         }
@@ -344,6 +349,7 @@ public class PropertyManager
         @Override
         public void clear()
         {
+            checkLocked();
             if (null == removedKeys)
                 removedKeys = new HashSet<>();
             removedKeys.addAll(keySet());
@@ -419,6 +425,7 @@ public class PropertyManager
 
         public void save()
         {
+            _store.validateStore();
             _store.validatePropertyMap(this);
 
             if (!isModified())
@@ -535,6 +542,16 @@ public class PropertyManager
         public String getCategory()
         {
             return _category;
+        }
+
+        public void lock()
+        {
+            _locked = true;
+        }
+
+        public boolean isLocked()
+        {
+            return _locked;
         }
     }
 
@@ -725,13 +742,13 @@ public class PropertyManager
             PropertyMap m = store.getWritableProperties(user, test, category, true);
             assertNotNull(m);
             m.clear();
-            store.saveProperties(m);
+            m.save();
 
             m = store.getWritableProperties(user, test, category, false);
             m.put("foo", "bar");
             m.put("this", "that");
             m.put("zoo", null);
-            store.saveProperties(m);
+            m.save();
 
             m = store.getWritableProperties(user, test, category, false);
             assertEquals(m.get("foo"), "bar");
@@ -739,33 +756,12 @@ public class PropertyManager
             assertFalse(m.containsKey("zoo"));
 
             m.remove("this");
-            store.saveProperties(m);
+            m.save();
 
             Map<String, String> map = store.getProperties(user, test, category);
             assertEquals(map.get("foo"), "bar");
             assertFalse(map.containsKey("this"));
             assertFalse(map.containsKey("zoo"));
-
-//            if (null != badStore)
-//            {
-//                try
-//                {
-//                    badStore.saveProperties(m);
-//                    fail("Expected IllegalStateException");
-//                }
-//                catch (IllegalStateException e)
-//                {
-//                }
-//
-//                try
-//                {
-//                    badStore.getProperties(user, test, category);
-//                    fail("Expected IllegalStateException");
-//                }
-//                catch (IllegalStateException e)
-//                {
-//                }
-//            }
         }
 
         @Test
@@ -776,11 +772,9 @@ public class PropertyManager
             final PropertyStore store = PropertyManager.getNormalStore();
             final DbScope scope = PropertySchema.getInstance().getSchema().getScope();
 
-            List<ExecutorService> executors = new ArrayList<>();
-
-            for (int i = 0; i < 100; i++)
+            for (int i = 0; i < 10; i++)
             {
-                executors.add(JunitUtil.createRace(new Runnable()
+                ExecutorService service = JunitUtil.createRace(new Runnable()
                 {
                     @Override
                     public void run()
@@ -790,25 +784,17 @@ public class PropertyManager
                             PropertyMap map = store.getWritableProperties(c, category, true);
                             map.put("foo", "abc");
                             map.put("bar", "xyz");
-                            store.saveProperties(map);
+                            map.save();
                             Map<String, String> newMap = store.getProperties(c, category);
                             map = store.getWritableProperties(c, category, true);
                             map.put("flam", "mno");
-                            store.deletePropertySet(c, category);
+                            map.delete();
 
                             transaction.commit();
                         }
                     }
-                }, 5, 5));
-            }
-
-            // Remember when we started waiting
-            long startTime = System.currentTimeMillis();
-            for (ExecutorService executor : executors)
-            {
-                // Wait up to a minute total for all executors to be done
-                long timeLeftToWait = Math.max(0, 60 * 1000 - (System.currentTimeMillis() - startTime));
-                assertTrue("Worker threads have not finished in expected timeframe", executor.awaitTermination(timeLeftToWait, TimeUnit.MILLISECONDS));
+                }, 20, 20);
+                assertTrue("Worker threads have not finished in expected timeframe", service.awaitTermination(30, TimeUnit.SECONDS));
             }
         }
 

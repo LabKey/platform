@@ -228,7 +228,7 @@ public class WebThemeManager
                 properties.put(key.toString(), def.toString());
             }
 
-            PropertyManager.saveProperties(properties);
+            properties.save();
         }
     }
 }

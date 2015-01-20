@@ -366,7 +366,7 @@ public class ContainerManager
                     containerTabTypeOverridden = true;
                 props.put(FOLDER_TYPE_PROPERTY_TABTYPE_OVERRIDDEN, containerTabTypeOverridden.toString());
             }
-            PropertyManager.saveProperties(props);
+            props.save();
 
             folderType.configureContainer(c, user);         // Configure new only after folder type has been changed
 
@@ -510,7 +510,7 @@ public class ContainerManager
         // Add prop in this category <tabName, folderTypeName>
         PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(c, TABFOLDER_CHILDREN_DELETED, true);
         props.put(getDeletedTabKey(tabName, folderTypeName), "true");
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     public static void clearContainerTabDeleted(Container c, String tabName, String folderTypeName)
@@ -520,7 +520,7 @@ public class ContainerManager
         if (props.containsKey(key))
         {
             props.remove(key);
-            PropertyManager.saveProperties(props);
+            props.save();
         }
     }
 

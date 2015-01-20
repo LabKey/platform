@@ -795,7 +795,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
         PropertyMap props = PropertyManager.getWritableProperties(this, "defaultModules", true);
         props.put("name", module.getName());
 
-        PropertyManager.saveProperties(props);
+        props.save();
         ContainerManager.notifyContainerChange(getId());
         _defaultModule = null;
     }
@@ -828,7 +828,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                 props.put(module.getName(), Boolean.TRUE.toString());
         }
 
-        PropertyManager.saveProperties(props);
+        props.save();
         ContainerManager.notifyContainerChange(getId());
     }
 
@@ -981,7 +981,7 @@ public class Container implements Serializable, Comparable<Container>, Securable
                     }
                 }
             }
-            PropertyManager.saveProperties(propsWritable);
+            propsWritable.save();
         }
 
         Set<Module> modules = new HashSet<>();

@@ -238,17 +238,17 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
     {
         if (key != null)
         {
-            Map<String, String> engines = PropertyManager.getWritableProperties(SCRIPT_ENGINE_MAP, false);
+            PropertyManager.PropertyMap engines = PropertyManager.getWritableProperties(SCRIPT_ENGINE_MAP, false);
             if (engines != null && engines.containsKey(key))
             {
                 engines.remove(key);
-                PropertyManager.saveProperties(engines);
+                engines.save();
 
-                Map<String, String> definition = PropertyManager.getWritableProperties(key, false);
+                PropertyManager.PropertyMap definition = PropertyManager.getWritableProperties(key, false);
                 if (definition != null)
                 {
                     definition.clear();
-                    PropertyManager.saveProperties(definition);
+                    definition.save();
                 }
             }
         }
@@ -406,10 +406,10 @@ public class LabkeyScriptEngineManager extends ScriptEngineManager
 
     private static void setProp(String prop, String value, String mapName)
     {
-        Map<String, String> map = PropertyManager.getWritableProperties(mapName, true);
+        PropertyManager.PropertyMap map = PropertyManager.getWritableProperties(mapName, true);
 
         map.put(prop, value);
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
     public static class EngineDefinition implements ExternalScriptEngineDefinition, CustomApiForm

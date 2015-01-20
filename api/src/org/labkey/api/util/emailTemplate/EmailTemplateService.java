@@ -114,7 +114,7 @@ public class EmailTemplateService
         return templates;
     }
 
-    private Map<String, String> getProperties(Container c, boolean writable)
+    private PropertyManager.PropertyMap getProperties(Container c, boolean writable)
     {
         if (writable)
             return PropertyManager.getWritableProperties(c, EMAIL_TEMPLATE_PROPERTIES_MAP_NAME, true);
@@ -221,23 +221,23 @@ public class EmailTemplateService
         {
             throw new NotFoundException("Cannot save template " + c + " in " + c);
         }
-        Map<String, String> map = getProperties(c, true);
+        PropertyManager.PropertyMap map = getProperties(c, true);
 
         final String className = template.getClass().getName();
         map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART,
                 template.getSubject());
         map.put(className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART,
                 template.getBody());
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 
     public void deleteEmailTemplate(EmailTemplate template, Container c)
     {
-        Map<String, String> map = getProperties(c, true);
+        PropertyManager.PropertyMap map = getProperties(c, true);
 
         final String className = template.getClass().getName();
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_SUBJECT_PART);
         map.remove(className + EMAIL_TEMPLATE_DELIM + MESSAGE_BODY_PART);
-        PropertyManager.saveProperties(map);
+        map.save();
     }
 }

@@ -1849,14 +1849,14 @@ public class ModuleLoader implements Filter
      */
     public void setEnabledFolderTypes(Collection<FolderType> enabledFolderTypes)
     {
-        Map<String, String> enabledStates = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE, true);
+        PropertyManager.PropertyMap enabledStates = PropertyManager.getWritableProperties(ContainerManager.getRoot(), FOLDER_TYPE_ENABLED_STATE, true);
         // Reset completely based on the supplied config
         enabledStates.clear();
         for (FolderType folderType : getAllFolderTypes())
         {
             enabledStates.put(folderType.getName(), Boolean.toString(enabledFolderTypes.contains(folderType)));
         }
-        PropertyManager.saveProperties(enabledStates);
+        enabledStates.save();
     }
 
     public void registerResourceLoader(ModuleResourceLoader loader)

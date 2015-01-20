@@ -21,7 +21,6 @@ import org.labkey.api.cache.CacheLoader;
 import org.labkey.api.data.PropertyManager.PropertyMap;
 import org.labkey.api.security.User;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -50,25 +49,25 @@ public abstract class AbstractPropertyStore implements PropertyStore
 
     @NotNull
     @Override
-    public Map<String, String> getProperties(User user, Container container, String category)
+    public PropertyManager.PropertyMap getProperties(User user, Container container, String category)
     {
         validateStore();
 
-        Map<String, String> map = _cache.getProperties(user, container, category);
+        PropertyManager.PropertyMap map = _cache.getProperties(user, container, category);
 
         return null != map ? map : NULL_MAP;
     }
 
     @NotNull
     @Override
-    public Map<String, String> getProperties(Container container, String category)
+    public PropertyManager.PropertyMap getProperties(Container container, String category)
     {
         return getProperties(PropertyManager.SHARED_USER, container, category);
     }
 
     @NotNull
     @Override
-    public Map<String, String> getProperties(String category)
+    public PropertyManager.PropertyMap getProperties(String category)
     {
         return getProperties(PropertyManager.SHARED_USER, ContainerManager.getRoot(), category);
     }
@@ -142,18 +141,6 @@ public abstract class AbstractPropertyStore implements PropertyStore
     public PropertyMap getWritableProperties(String category, boolean create)
     {
         return getWritableProperties(PropertyManager.SHARED_USER, ContainerManager.getRoot(), category, create);
-    }
-
-    @Override
-    public void saveProperties(Map<String, String> map)
-    {
-        validateStore();
-
-        if (!(map instanceof PropertyMap))
-            throw new IllegalStateException("map must be created by getProperties()");
-
-        PropertyMap props = (PropertyMap)map;
-        props.save();
     }
 
     // Delete properties associated with this store
@@ -240,15 +227,18 @@ public abstract class AbstractPropertyStore implements PropertyStore
         _cache.remove(propertyMap);
     }
 
-    protected class PropertyLoader implements CacheLoader<String, Map<String, String>>
+    protected class PropertyLoader implements CacheLoader<String, PropertyManager.PropertyMap>
     {
         @Override
-        public Map<String, String> load(String key, Object argument)
+        public PropertyManager.PropertyMap load(String key, Object argument)
         {
             Object[] params = (Object[])argument;
             PropertyMap map = getWritableProperties((User)params[1], (Container)params[0], (String)params[2], false);
-
-            return null != map ? Collections.unmodifiableMap(map) : null;
+            if (map != null)
+            {
+                map.lock();
+            }
+            return map;
         }
     }
 }

@@ -116,9 +116,9 @@ public abstract class MessageDigest
 
     protected void setLastSuccessful(Date last)
     {
-        Map<String, String> props = PropertyManager.getWritableProperties(getName(), true);
+        PropertyManager.PropertyMap props = PropertyManager.getWritableProperties(getName(), true);
         props.put(LAST_KEY, String.valueOf(last.getTime()));
-        PropertyManager.saveProperties(props);
+        props.save();
     }
 
     public void initializeTimer()
