@@ -518,7 +518,7 @@ public class XarReader extends AbstractXarImporter
 
             // Clear out any existing runs with the same LSID
             ExpRun existingRun = ExperimentService.get().getExpRun(runLSID);
-            if (existingRun != null && (deleteExistingRuns || !Objects.equals(existingRun.getFilePathRoot() == null ? null : FileUtil.canonicalFile(existingRun.getFilePathRoot()), _xarSource.getRoot() == null ? null : FileUtil.canonicalFile(_xarSource.getRoot()))))
+            if (existingRun != null && (deleteExistingRuns || !Objects.equals(existingRun.getFilePathRoot() == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(existingRun.getFilePathRoot()), _xarSource.getRoot() == null ? null : FileUtil.getAbsoluteCaseSensitiveFile(_xarSource.getRoot()))))
             {
                 getLog().debug("Deleting existing experiment run with LSID'" + runLSID + "' so that the run specified in the file can be uploaded");
                 existingRun.delete(getUser());

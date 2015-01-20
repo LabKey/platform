@@ -81,6 +81,7 @@ import org.labkey.api.security.roles.RoleManager;
 import org.labkey.api.services.ServiceRegistry;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.util.DateUtil;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
 import org.labkey.api.util.NetworkDrive;
 import org.labkey.api.util.PageFlowUtil;
@@ -227,19 +228,11 @@ public class PipelineController extends SpringActionController
             return null;
         }
         File fileRoot = new File(path);
-        try
-        {
-            // Try to make sure the path is the right case. getCanonicalPath() resolves symbolic
-            // links on Unix so don't replace the path if it's pointing at a different location.
-            if (fileRoot.getCanonicalPath().equalsIgnoreCase(fileRoot.getAbsolutePath()))
-            {
-                fileRoot = fileRoot.getCanonicalFile();
-            }
-        }
-        catch (IOException e)
-        {
-            // OK, just use the path the user entered
-        }
+
+        // Try to make sure the path is the right case. getCanonicalPath() resolves symbolic
+        // links on Unix so don't replace the path if it's pointing at a different location.
+        fileRoot = FileUtil.getAbsoluteCaseSensitiveFile(fileRoot);
+
         if (!NetworkDrive.exists(fileRoot))
         {
             errors.reject(ERROR_MSG, "The directory '" + fileRoot + "' does not exist.");
