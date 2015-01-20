@@ -239,7 +239,7 @@ public class QueryController extends SpringActionController
             {
                 String name = remoteConnectionForm.getConnectionName();
                 // package the remote-connection properties into the remoteConnectionForm and pass them along
-                Map<String, String> map1 = RemoteConnections.getRemoteConnection(RemoteConnections.CONNECTION_KIND_QUERY, name, getContainer());
+                Map<String, String> map1 = RemoteConnections.getRemoteConnection(RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY, name, getContainer());
                 remoteConnectionForm.setUrl(map1.get("URL"));
                 remoteConnectionForm.setUser(map1.get("user"));
                 remoteConnectionForm.setPassword(map1.get("password"));
@@ -322,7 +322,7 @@ public class QueryController extends SpringActionController
             String queryName = "Users"; // test Query Name
 
             // Extract the username, password, and container from the secure property store
-            Map<String, String> singleConnectionMap = RemoteConnections.getRemoteConnection(RemoteConnections.CONNECTION_KIND_QUERY, name, getContainer());
+            Map<String, String> singleConnectionMap = RemoteConnections.getRemoteConnection(RemoteConnections.REMOTE_QUERY_CONNECTIONS_CATEGORY, name, getContainer());
             String url = singleConnectionMap.get(RemoteConnections.FIELD_URL);
             String user = singleConnectionMap.get(RemoteConnections.FIELD_USER);
             String password = singleConnectionMap.get(RemoteConnections.FIELD_PASSWORD);
