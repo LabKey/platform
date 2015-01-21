@@ -532,23 +532,6 @@ public class FileType implements Serializable
         }
     }
 
-    protected static String xxxdetectContentType(File f)
-    {
-        final Metadata metadata = new Metadata();
-        try (TikaInputStream is = TikaInputStream.get(f))
-        {
-            MediaType mediaType = DETECTOR.detect(is, metadata);
-            if (mediaType != null)
-                return mediaType.toString();
-
-            return null;
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
     public boolean isMatch(String name, String basename)
     {
         for (String suffix : _suffixes)

@@ -17,10 +17,12 @@ package org.labkey.api.reader;
 
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Assert;
 import org.labkey.api.util.FileType;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * User: kevink
@@ -28,6 +30,9 @@ import java.util.List;
  */
 class TabFileType extends FileType
 {
+    // Graphic char followed by graphic or space chacaters
+    private static final Pattern HEADER = Pattern.compile("^\\p{Graph}[\\p{Graph} ]*", Pattern.UNICODE_CHARACTER_CLASS);
+
     private final String delim;
 
     public TabFileType(List<String> suffixes, String defaultSuffix)
@@ -48,7 +53,7 @@ class TabFileType extends FileType
         String s;
         try
         {
-            s = new String(header, "UTF-8");
+            s = new String(header, "UTF-8"); // TODO: Detect encoding
         }
         catch (UnsupportedEncodingException e)
         {
@@ -80,12 +85,13 @@ class TabFileType extends FileType
 
             if (fieldLen == -1)
             {
+                // TODO: Support files without headers
                 // Assuming the first non-comment line is a header,
-                // reject if we find an empty header or a non-alphanumeric string.
+                // reject if we find an empty header or a non-graphical character.
                 for (String columnHeader : fields)
                 {
                     columnHeader = columnHeader.trim();
-                    if (columnHeader.length() == 0 || !StringUtils.isAsciiPrintable(columnHeader))
+                    if (!isHeader(columnHeader))
                         return false;
                 }
                 fieldLen = fields.length;
@@ -97,10 +103,20 @@ class TabFileType extends FileType
             }
         }
 
+        // TODO: Allow single column tsv files
         // Reject if no lines using the delimiter were found.
         if (fieldLen == -1)
             return false;
 
         return true;
     }
+
+    /*package*/ boolean isHeader(@NotNull String cs)
+    {
+        if (cs.length() == 0)
+            return false;
+
+        return HEADER.matcher(cs).matches();
+    }
+
 }

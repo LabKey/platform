@@ -30,7 +30,9 @@ import org.labkey.api.data.Container;
 import org.labkey.api.iterator.BeanIterator;
 import org.labkey.api.iterator.CloseableFilteredIterator;
 import org.labkey.api.iterator.CloseableIterator;
+import org.labkey.api.settings.AppProps;
 import org.labkey.api.util.FileType;
+import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.Filter;
 
 import java.io.BufferedReader;
@@ -1068,6 +1070,52 @@ public class TabLoader extends DataLoader
         public void testTransform()
         {
             // UNDONE
+        }
+    }
+
+    public static class HeaderMatchTest extends Assert
+    {
+        private final File _projectRoot;
+
+        public HeaderMatchTest()
+        {
+            String projectRootPath =  AppProps.getInstance().getProjectRoot();
+            if (projectRootPath == null)
+                projectRootPath = System.getProperty("user.dir") + "/..";
+            _projectRoot = new File(projectRootPath);
+        }
+
+        @Test
+        public void testHeader()
+        {
+            TabFileType f = (TabFileType)TabLoader.TSV_FILE_TYPE;
+
+            // Issue 22171: TabFileType can't match with non-ASCII characters in header row
+            assertTrue(f.isHeader("Volume (\u00b5l)"));
+        }
+
+        // Test sniffing using only the file header and not the file extension
+        private boolean isType(FileType ft, File f) throws IOException
+        {
+            byte[] header = FileUtil.readHeader(f, 8 * 1024);
+            return ft.isType((String)null, null, header);
+        }
+
+        @Test
+        public void testSniff() throws IOException
+        {
+            // File has comment headers
+            assertTrue(isType(TabLoader.TSV_FILE_TYPE, new File(_projectRoot, "sampledata/ms1/bvt/inspect/Find Features/msi-sample.peptides.tsv")));
+
+            assertFalse(isType(TabLoader.TSV_FILE_TYPE, new File(_projectRoot, "sampledata/Nab/384well_highthroughput.csv")));
+            assertTrue(isType(TabLoader.CSV_FILE_TYPE, new File(_projectRoot, "sampledata/Nab/384well_highthroughput.csv")));
+
+            // TODO: Support files without headers
+            //assertTrue(isType(TabLoader.CSV_FILE_TYPE, new File(_projectRoot, "sampledata/viability/small.VIA.csv")));
+
+            // binary files
+            assertFalse(isType(TabLoader.TSV_FILE_TYPE, new File(_projectRoot, "sampledata/flow/8color/L02-060120-QUV-JS/91745.fcs")));
+            assertFalse(isType(TabLoader.TSV_FILE_TYPE, new File(_projectRoot, "sampledata/FolderExport/Sample.folder.zip")));
         }
     }
 }
