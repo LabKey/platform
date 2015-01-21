@@ -15,6 +15,7 @@
  */
 package org.labkey.pipeline.analysis;
 
+import org.apache.log4j.Logger;
 import org.labkey.api.pipeline.PipeRoot;
 import org.labkey.api.pipeline.TaskId;
 import org.labkey.api.pipeline.TaskPipeline;
@@ -35,6 +36,8 @@ import java.util.Map;
 public class FileAnalysisJob extends AbstractFileAnalysisJob
 {
     private TaskId _taskPipelineId;
+
+    private static final Logger LOG = Logger.getLogger(FileAnalysisJob.class);
 
     public FileAnalysisJob(FileAnalysisProtocol protocol,
                            String providerName,
@@ -72,7 +75,10 @@ public class FileAnalysisJob extends AbstractFileAnalysisJob
     public FileAnalysisTaskPipeline getTaskPipeline()
     {
         TaskPipeline tp = super.getTaskPipeline();
-        _logger.warn("Task pipeline " + _taskPipelineId + " not found.");
+        if (tp == null)
+        {
+            LOG.warn("Task pipeline " + _taskPipelineId + " not found.");
+        }
         return (FileAnalysisTaskPipeline) tp; 
     }
 
