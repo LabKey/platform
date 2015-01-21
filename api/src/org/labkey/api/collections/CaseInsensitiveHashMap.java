@@ -20,9 +20,13 @@ import org.junit.Test;
 import org.labkey.api.util.JunitUtil;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * User: arauch
@@ -78,52 +82,52 @@ public class CaseInsensitiveHashMap<V> extends CaseInsensitiveMapWrapper<V> impl
 
         @Test
         // Our original CaseInsensitiveHashMap had a get() method that mutated state, which lead to thread safety issues in
-        // multi-threaded usages. This test was developed to demonstrate and fix the problem.
+        // multi-threaded usages. This test was developed to demonstrate and fix that problem.
         public void multiThreadStressTest() throws InterruptedException, ExecutionException
         {
+            final int races = 1000;
+            final int threads = 5;
+
             final String key = "ThisIsATestOfTheCaseInsensitiveMap";
             final Object value = new Object();
             final Map<String, Object> map = new CaseInsensitiveHashMap<>();
-            final Set<String> keys = new LinkedHashSet<>();
+            final List<String> keys = new LinkedList<>();
 
-            int count = 1000;
-            int threads = 5;
             map.put(key, value);
 
             Random random = new Random();
 
-            // Create an ordered set containing <count> unique random casings of <key>
-            while (keys.size() < count)
+            // Create a list containing <races> random casings of <key>, each repeated <threads> times
+            for (int i = 0; i < races; i++)
             {
                 StringBuilder candidate = new StringBuilder(key.length());
 
-                for (int i = 0; i < key.length(); i++)
+                for (int j = 0; j < key.length(); j++)
                 {
                     if (random.nextBoolean())
-                        candidate.append(Character.toLowerCase(key.charAt(i)));
+                        candidate.append(Character.toLowerCase(key.charAt(j)));
                     else
-                        candidate.append(Character.toUpperCase(key.charAt(i)));
+                        candidate.append(Character.toUpperCase(key.charAt(j)));
                 }
 
                 String s = candidate.toString();
 
-                if (!keys.contains(s))
+                for (int j = 0; j < threads; j++)
                     keys.add(s);
             }
 
-            for (final String s : keys)
-            {
-                JunitUtil.createRace(new Runnable()
-                {
-                    @Override
-                    public void run()
-                    {
-                        Object test = map.get(s);
+            final Iterator<String> iter = keys.iterator();
 
-                        Assert.assertEquals(value, test);
-                    }
-                }, threads, threads).awaitTermination(5, TimeUnit.SECONDS);
-            }
+            JunitUtil.createRaces(new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    Object test = map.get(iter.next());
+
+                    Assert.assertEquals(value, test);
+                }
+            }, threads, races, 5);
         }
     }
 }

@@ -32,7 +32,6 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * User: adam
@@ -228,7 +227,7 @@ public class NestedGroupsTest extends Assert
         // Attempt multiple simultaneous adds of the same member to the same group, see #14795. One of the five threads
         // should succeed and the others should fail, with either an InvalidGroupMemberShipException (which would
         // normally be displayed to the user) or a constraint violation (which is ignored).
-        JunitUtil.createRace(new Runnable()
+        JunitUtil.createRaces(new Runnable()
         {
             @Override
             public void run()
@@ -242,7 +241,7 @@ public class NestedGroupsTest extends Assert
                     // This is expected
                 }
             }
-        }, 5, 5).awaitTermination(1, TimeUnit.MINUTES);
+        }, 5, 1, 60);
         expected(divB, user);
         SecurityManager.deleteMember(divB, user);
 

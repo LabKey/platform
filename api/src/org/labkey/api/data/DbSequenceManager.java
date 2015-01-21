@@ -34,7 +34,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 /**
  * User: adam
@@ -419,18 +418,16 @@ public class DbSequenceManager
             final Set<Integer> duplicateValues = new ConcurrentHashSet<>();
             final long start = System.currentTimeMillis();
 
-            JunitUtil.createRace(new Runnable(){
+            JunitUtil.createRaces(new Runnable()
+            {
                 @Override
                 public void run()
                 {
-                    for (int i = 0; i < n; i++)
-                    {
-                        int next = _sequence.next();
-                        if (!values.add(next))
-                            duplicateValues.add(next);
-                    }
+                    int next = _sequence.next();
+                    if (!values.add(next))
+                        duplicateValues.add(next);
                 }
-            }, threads, threads).awaitTermination(1, TimeUnit.MINUTES);
+            }, threads, n, 60);
 
             final long elapsed = System.currentTimeMillis() - start;
             final double perSecond = totalCount / (elapsed / 1000.0);
@@ -462,7 +459,8 @@ public class DbSequenceManager
             final int threads = 5;
             final String name = "org.labkey.api.data.DbSequence.Test/" + GUID.makeGUID();
 
-            JunitUtil.createRace(new Runnable(){
+            JunitUtil.createRaces(new Runnable()
+            {
                 @Override
                 public void run()
                 {
@@ -475,7 +473,7 @@ public class DbSequenceManager
                         failures.add(t);
                     }
                 }
-            }, threads, threads).awaitTermination(1, TimeUnit.MINUTES);
+            }, threads, 1, 60);
 
             if (!failures.isEmpty())
                 throw failures.iterator().next();

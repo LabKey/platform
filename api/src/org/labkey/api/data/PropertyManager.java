@@ -38,8 +38,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -772,30 +770,26 @@ public class PropertyManager
             final PropertyStore store = PropertyManager.getNormalStore();
             final DbScope scope = PropertySchema.getInstance().getSchema().getScope();
 
-            for (int i = 0; i < 10; i++)
+            JunitUtil.createRaces(new Runnable()
             {
-                ExecutorService service = JunitUtil.createRace(new Runnable()
+                @Override
+                public void run()
                 {
-                    @Override
-                    public void run()
+                    try (DbScope.Transaction transaction = scope.ensureTransaction())
                     {
-                        try (DbScope.Transaction transaction = scope.ensureTransaction())
-                        {
-                            PropertyMap map = store.getWritableProperties(c, category, true);
-                            map.put("foo", "abc");
-                            map.put("bar", "xyz");
-                            map.save();
-                            Map<String, String> newMap = store.getProperties(c, category);
-                            map = store.getWritableProperties(c, category, true);
-                            map.put("flam", "mno");
-                            map.delete();
+                        PropertyMap map = store.getWritableProperties(c, category, true);
+                        map.put("foo", "abc");
+                        map.put("bar", "xyz");
+                        map.save();
+                        Map<String, String> newMap = store.getProperties(c, category);
+                        map = store.getWritableProperties(c, category, true);
+                        map.put("flam", "mno");
+                        map.delete();
 
-                            transaction.commit();
-                        }
+                        transaction.commit();
                     }
-                }, 20, 20);
-                assertTrue("Worker threads have not finished in expected timeframe", service.awaitTermination(30, TimeUnit.SECONDS));
-            }
+                }
+            }, 20, 10, 30);
         }
 
         @Test  // Note: Fairly worthless test... there's now an FK constraint in place

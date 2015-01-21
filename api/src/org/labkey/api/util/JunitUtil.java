@@ -31,9 +31,12 @@ import javax.xml.xpath.XPathFactory;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class JunitUtil
@@ -105,48 +108,53 @@ public class JunitUtil
     }
 
     /**
-     * Simulate a single race condition by starting the specified number of threads and invoking the runnable the specified
-     * number of times, using a CountDownLatch to synchronize the start of execution across all tasks. This method does not
-     * wait for termination of the executed tasks; use the returned ExecutorService to wait for termination.
-     *
-     * To simulate multiple races, just call this method inside of a loop.
+     * Simulate race conditions by invoking a runnable in parallel on the specified number of threads (using a CyclicBarrier
+     * to synchronize the start of execution) and waiting until all runnables complete, and then repeating that process for
+     * the specified number of races. When all races are complete, shutdown the thread pool and wait for termination.
      *
      * @param runnable Task to run
-     * @param threads Number of threads to use
-     * @param simultaneousInvocations Number of tasks to invoke in parallel
-     * @return The ExecutorService used to run the tasks. Useful if caller needs to await termination.
+     * @param threads Number of threads to use in parallel during each race
+     * @param races Number of successive races to invoke
+     * @param timeoutSeconds Maximum allowed timeout while awaiting termination
      */
-    public static ExecutorService createRace(final Runnable runnable, int threads, int simultaneousInvocations)
+    public static void createRaces(final Runnable runnable, final int threads, final int races, final int timeoutSeconds) throws InterruptedException
     {
-        assert threads <= simultaneousInvocations : "I expected number of invocations to be >= number of threads";
-        final CountDownLatch latch = new CountDownLatch(simultaneousInvocations);
+        final CyclicBarrier barrier = new CyclicBarrier(threads);
+        final AtomicInteger iterations = new AtomicInteger(0);
 
         Runnable runnableWrapper = new Runnable()
         {
             @Override
             public void run()
             {
-                latch.countDown();
-                try
+                for (int i = 0; i < races; i++)
                 {
-                    latch.await();
+                    try
+                    {
+                        barrier.await();
+                    }
+                    catch (InterruptedException | BrokenBarrierException e)
+                    {
+                        return;
+                    }
+                    runnable.run();
+                    iterations.incrementAndGet();
                 }
-                catch (InterruptedException e)
-                {
-                    return;
-                }
-                runnable.run();
             }
         };
 
         ExecutorService pool = Executors.newFixedThreadPool(threads);
 
-        for (int i = 0; i < simultaneousInvocations; i++)
+        for (int i = 0; i < threads; i++)
             pool.execute(runnableWrapper);
 
         pool.shutdown();
+        pool.awaitTermination(timeoutSeconds, TimeUnit.SECONDS);
 
-        return pool;
+        final int expected = threads * races;
+
+        if (iterations.intValue() != expected)
+            throw new IllegalStateException("Did not execute runnable the expected number of times: " + iterations + " vs. " + expected);
     }
 
     public static void main(String[] args) throws Exception
