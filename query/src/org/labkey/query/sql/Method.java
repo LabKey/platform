@@ -52,8 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 
-public abstract class
-        Method
+public abstract class Method
 {
     private final static HashMap<String, Method> labkeyMethod = new HashMap<>();
 
@@ -1277,6 +1276,7 @@ public abstract class
         mssqlMethods.put("chr", chr);   // postgres and oracle use 'chr' (see 15473)
         mssqlMethods.put("charindex",new PassthroughMethod("charindex",JdbcType.INTEGER,2,3));
         mssqlMethods.put("difference",new PassthroughMethod("difference",JdbcType.INTEGER,2,2));
+        mssqlMethods.put("isnumeric",new PassthroughMethod("isnumeric",JdbcType.BOOLEAN,1,1));
         mssqlMethods.put("len",new PassthroughMethod("len",JdbcType.INTEGER,1,1));
         mssqlMethods.put("patindex",new PassthroughMethod("patindex",JdbcType.INTEGER,2,2));
         mssqlMethods.put("quotename",new PassthroughMethod("quotename",JdbcType.VARCHAR,1,2));
