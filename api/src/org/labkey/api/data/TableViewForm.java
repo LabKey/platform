@@ -726,8 +726,8 @@ public class TableViewForm extends ViewForm implements DynaBean, HasBindParamete
 
         HttpServletRequest request = getRequest();
 
-        _isBulkUpdate = request.getParameter(BULK_UPDATE_NAME) != null;
-        _isDataSubmit = request.getParameter(DATA_SUBMIT_NAME) != null;
+        _isBulkUpdate = Boolean.parseBoolean(request.getParameter(BULK_UPDATE_NAME));
+        _isDataSubmit = Boolean.parseBoolean(request.getParameter(DATA_SUBMIT_NAME));
 
         if (_isBulkUpdate)
         {

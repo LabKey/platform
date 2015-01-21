@@ -1754,6 +1754,16 @@ public class DataRegion extends AbstractDataRegion
         renderForm(ctx, out);
     }
 
+    /**
+     * This method wraps renderForm and fulfills the values to be exposed in the form to a user during a "bulk edit".
+     * In the normal update case the user is shown the current values for a given row, however, when doing a bulk update
+     * of multiple rows these values need to be aggregated. Therefore, if all rows share a common value for a field then
+     * that value will be passed through, otherwise, the field is resolved as empty and it is left to the UI to convey
+     * that there were multiple values available for that field.
+     * @param ctx
+     * @param out
+     * @throws IOException
+     */
     private void renderMultipleUpdateForm(RenderContext ctx, Writer out) throws IOException
     {
         TableViewForm viewForm = ctx.getForm();
