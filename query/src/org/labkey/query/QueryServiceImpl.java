@@ -420,12 +420,15 @@ public class QueryServiceImpl extends QueryService
     protected Map<String, CustomView> getCustomViewMap(@NotNull User user, Container container, @Nullable User owner, QueryDefinition qd,
            boolean inheritable, boolean sharedOnly, boolean alwaysUseTitlesForLoadingCustomViews)
     {
-        Map<String, CustomView> views = new HashMap<>();
+        Map<String, CustomView> views = new CaseInsensitiveHashMap<>();
 
         // module query views have lower precedence, so add them first
         for (CustomView view : qd.getSchema().getModuleCustomViews(container, qd, alwaysUseTitlesForLoadingCustomViews))
         {
-            views.put(view.getName(), view);
+            // there could be more than one view of the same name from different modules
+            // reorderModules() orders higher precedence modules first
+            if (!views.containsKey(view.getName()))
+                views.put(view.getName(), view);
         }
 
         // custom views in the database get highest precedence, so let them overwrite the module-defined views in the map
