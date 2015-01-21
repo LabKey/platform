@@ -1,15 +1,9 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<project name="Build Core" default="build" basedir="../../">
+<project name="Build Core" basedir="../../">
     <dirname property="moduleDir" file="${ant.file}"/>
 
-    <target name="init">
-    </target>
-
-    <target name="build" depends="init, build_module" />
-
-    <!-- Called by the main build.xml with inheritall = true; other callers (e.g., top-level build target)
-         must define all the properties used below. -->
+    <!-- Called by the main build.xml with inheritall = true -->
     <target name="build_module" depends="core-scripts"
             description="Builds core module and deploys it into LabKey installation.">
         <ant antfile="${basedir}/build.xml"

@@ -1,38 +1,32 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<project name="Build Query" default="build" basedir="../../">
+<project name="Build Query" basedir="../../">
     <dirname property="moduleDir" file="${ant.file}"/>
 
-    <target name="init">
-        <property name="build.dir" value="${basedir}${file.separator}..${file.separator}build" />
-        <property name="gensrc.dir" value="${build.dir}/gensrc" />
-    </target>
-
-    <target name="build" depends="init">
-        <antcall target="build_module" inheritall="true" />
-    </target>
-
-    <!-- Called by the main build.xml with inheritall = true; other callers (e.g., top-level build target)
-         must define all the properties used below. -->
-    <target name="build_module" depends="sql"
-            description="Invokes antlr, builds query module and deploys into LabKey installation.">
-        <ant antfile="${basedir}/build.xml"
-             target="sub_build_module"
-             inheritall="true">
-        </ant>
-    </target>
-
-    <target name="sql" depends="query_init">
-        <java classname="org.antlr.Tool">
-            <classpath path="${moduleDir}/lib/antlr-3.5.2.jar"/>
-            <arg value="-o"/>
-            <arg value="${moduleAdditionalSrcPath}/org/labkey/query/sql/antlr"/>
-            <arg value="${moduleDir}/src/org/labkey/query/sql/SqlBase.g" />
-        </java>
-    </target>
-
-    <target name="query_init">
+    <!-- Called by the main build.xml with inheritall = true, so lib.dir and gensrc.dir should be defined. -->
+    <target name="build_module" depends="antlr" description="Invokes antlr, builds query module and deploys into LabKey installation.">
         <property name="moduleAdditionalSrcPath" value="${gensrc.dir}/antlr" />
-        <mkdir dir="${moduleAdditionalSrcPath}/org/labkey/query/sql/antlr"/>
+        <ant antfile="${basedir}/build.xml" target="sub_build_module" inheritall="true" />
+    </target>
+
+    <target name="antlr">
+        <property name="antlr.output.dir" value="${gensrc.dir}/antlr/org/labkey/query/sql/antlr" />
+        <property name="antlr.source" value="${moduleDir}/src/org/labkey/query/sql/SqlBase.g" />
+
+        <!-- Invoke antlr only if SqlBase.g is more recent than (generated) SqlBaseParser.java -->
+        <if>
+            <not>
+                <uptodate srcfile="${antlr.source}" targetfile="${antlr.output.dir}/SqlBaseParser.java" />
+            </not>
+            <then>
+                <mkdir dir="${antlr.gen}"/>
+                <java classname="org.antlr.Tool">
+                    <classpath path="${moduleDir}/lib/antlr-3.5.2.jar" />
+                    <arg value="-o" />
+                    <arg value="${antlr.output.dir}" />
+                    <arg value="${antlr.source}" />
+                </java>
+            </then>
+        </if>
     </target>
 </project>
