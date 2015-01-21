@@ -1325,11 +1325,12 @@ boxPlot.render();
                     }
                 },
                 tickCls: function(index) {
+                    var baseTag = 'ticklabel';
                     var tagIndex = config.properties.xTickTagIndex;
                     if (tagIndex != undefined && tagIndex == index) {
-                        return 'xticktag';
+                        return baseTag+' xticktag';
                     }
-                    return null;
+                    return baseTag;
                 }
             },
             yLeft: {
