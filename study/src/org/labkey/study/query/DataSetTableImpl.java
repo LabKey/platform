@@ -106,6 +106,9 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
     public DataSetTableImpl(@NotNull final StudyQuerySchema schema, @NotNull DataSetDefinition dsd)
     {
         super(schema, dsd.getTableInfo(schema.getUser(), schema.getMustCheckPermissions(), true));
+
+        TimepointType timepointType = dsd.getStudy().getTimepointType();
+
         String nameLabel = dsd.getName();
         if (!dsd.getLabel().equalsIgnoreCase(dsd.getName()))
             nameLabel += " (" + dsd.getLabel() + ")";
@@ -208,12 +211,20 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
                 c.setShownInInsertView(false);
                 c.setShownInUpdateView(false);
             }
-            else if (name.equalsIgnoreCase("SequenceNum") && _userSchema.getStudy().getTimepointType() != TimepointType.VISIT)
+            else if (name.equalsIgnoreCase("SequenceNum"))
             {
-                // wrap the sequencenum column and set a format to prevent scientific notation, since the sequencenum values
+                ColumnInfo c = addWrapColumn(baseColumn);
+                // set a format to prevent scientific notation, since the sequencenum values
                 // for date-based studies can be quite large (e.g., 20091014).
-                addWrapColumn(baseColumn).setFormat("#");
-                //Don't add to visible cols...
+                c.setFormat("#");
+                if (!timepointType.isVisitBased())
+                {
+                    c.setHidden(true);
+                    c.setShownInInsertView(false);
+                    c.setShownInDetailsView(false);
+                    c.setShownInUpdateView(false);
+                }
+                //Don't add to default visible cols...
             }
             else if (name.equalsIgnoreCase("VisitRowId")||name.equalsIgnoreCase("Dataset"))
             {
@@ -251,6 +262,8 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
                 pvColumn.setShownInUpdateView(false);
                 pvColumn.setDimension(false);
                 addColumn(pvColumn);
+                if (timepointType.isVisitBased())
+                    defaultVisibleCols.add(new FieldKey(pvColumn.getFieldKey(), "Visit"));
             }
             else
             {
@@ -307,7 +320,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
             }
         }
 
-
+        // TODO move "LSID" column handling to the loop above for consistency? (MAB)
         ColumnInfo lsidColumn = getColumn("LSID");
         lsidColumn.setHidden(true);
         lsidColumn.setKeyField(true);
@@ -355,19 +368,10 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
 
         setDefaultVisibleColumns(defaultVisibleCols);
 
-        // Don't show sequence num for date-based studies
-        if (!dsd.getStudy().getTimepointType().isVisitBased())
-        {
-            getColumn("SequenceNum").setHidden(true);
-            getColumn("SequenceNum").setShownInInsertView(false);
-            getColumn("SequenceNum").setShownInDetailsView(false);
-            getColumn("SequenceNum").setShownInUpdateView(false);
-        }
-
         // columns from the ParticipantVisit table
 
         TableInfo participantVisit = StudySchema.getInstance().getTableInfoParticipantVisit();
-        if (_userSchema.getStudy().getTimepointType() == TimepointType.DATE)
+        if (timepointType == TimepointType.DATE)
         {
             ColumnInfo dayColumn = new AliasedColumn(this, "Day", participantVisit.getColumn("Day"));
             dayColumn.setUserEditable(false);
@@ -376,6 +380,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
             addColumn(dayColumn);
         }
 
+        // TODO move "VisitRowId" to resolveColumn()?  Do we need to expose this? (MAB)
         ColumnInfo visitRowId = new AliasedColumn(this, "VisitRowId", participantVisit.getColumn("VisitRowId"));
         visitRowId.setName("VisitRowId");
         visitRowId.setHidden(true);
@@ -740,7 +745,7 @@ public class DataSetTableImpl extends BaseStudyTable implements DataSetTable
         }
     }
 
-    private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("Container", "VisitRowId", "Created", "CreatedBy", "ModifiedBy", "Modified", "lsid", "SourceLsid");
+    private static final Set<String> defaultHiddenCols = new CaseInsensitiveHashSet("Container", "VisitRowId", "SequenceNum", "Created", "CreatedBy", "ModifiedBy", "Modified", "lsid", "SourceLsid");
     private boolean isVisibleByDefault(ColumnInfo col)
     {
         // If this is a server-managed key, or an assay-backed dataset, don't include the key column in the default
