@@ -505,9 +505,10 @@ Ext4.define('LABKEY.ext4.data.Store', {
             //after it has been added to the store. This might break in future versions of Ext
             if (record.internalId != row.values[idCol])
             {
-                record.setId(row.values[idCol]);
-                record.internalId = row.values[idCol];
+                //ISSUE 22289: we need to find the original index before changing the internalId, or the record will not get found
                 index = this.data.indexOf(record);
+                record.internalId = row.values[idCol];
+                record.setId(row.values[idCol]);
                 if (index > -1) {
                     this.data.removeAt(index);
                     this.data.insert(index, record);

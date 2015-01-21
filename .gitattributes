@@ -1315,11 +1315,14 @@ api/src/org/labkey/api/security/roles/SiteAdminRole.java -text
 api/src/org/labkey/api/security/roles/SubmitterRole.java -text
 api/src/org/labkey/api/security/roles/TroubleshooterRole.java -text
 api/src/org/labkey/api/sequence/IlluminaReadHeader.java -text
+api/src/org/labkey/api/sequenceanalysis/AbstractSequenceDataProvider.java -text
 api/src/org/labkey/api/sequenceanalysis/GenomeTrigger.java -text
 api/src/org/labkey/api/sequenceanalysis/RefNtSequenceModel.java -text
 api/src/org/labkey/api/sequenceanalysis/ReferenceLibraryHelper.java -text
 api/src/org/labkey/api/sequenceanalysis/SequenceAnalysisService.java -text
-api/src/org/labkey/api/sequenceanalysis/SequenceFileHandler.java -text
+api/src/org/labkey/api/sequenceanalysis/SequenceDataProvider.java -text
+api/src/org/labkey/api/sequenceanalysis/SequenceOutputFile.java -text
+api/src/org/labkey/api/sequenceanalysis/SequenceOutputHandler.java -text
 api/src/org/labkey/api/services/ServiceRegistry.java -text
 api/src/org/labkey/api/settings/AbstractSettingsGroup.java -text
 api/src/org/labkey/api/settings/AbstractWriteableSettingsGroup.java -text

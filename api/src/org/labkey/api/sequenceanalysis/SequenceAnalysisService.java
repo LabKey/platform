@@ -18,9 +18,13 @@ package org.labkey.api.sequenceanalysis;
 
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.Container;
+import org.labkey.api.ldk.NavItem;
 import org.labkey.api.pipeline.PipelineJobException;
+import org.labkey.api.security.User;
 
 import java.io.File;
+import java.util.List;
 
 /**
  * User: bimber
@@ -45,7 +49,11 @@ abstract public class SequenceAnalysisService
 
     abstract public void registerGenomeTrigger(GenomeTrigger trigger);
 
-    abstract public void registerFileHandler(SequenceFileHandler handler);
+    abstract public void registerFileHandler(SequenceOutputHandler handler);
 
     abstract public File createTabixIndex(File input, @Nullable Logger log) throws PipelineJobException;
+
+    abstract public void registerDataProvider(SequenceDataProvider p);
+
+    abstract public List<NavItem> getNavItems(Container c, User u, SequenceDataProvider.SequenceNavItemCategory category);
 }
