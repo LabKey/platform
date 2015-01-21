@@ -16,6 +16,9 @@
 
 package org.labkey.api.collections;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,7 +59,14 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
     {
         if (!(key instanceof String))
             return null;
-        return _correctCaseMap.get(((String) key).toLowerCase());
+        String s = (String)key;
+        String result = _correctCaseMap.get(s.toLowerCase());
+        if (result == null)
+        {
+            // We don't already have a canonical casing, so just use the original string
+            result = s;
+        }
+        return result;
     }
 
     public V put(String key, V value)
@@ -94,6 +104,25 @@ public class CaseInsensitiveMapWrapper<V> extends MapWrapper<String, V> implemen
         for (Map.Entry<? extends String, ? extends V> entry : t.entrySet())
         {
             put(entry.getKey(), entry.getValue());
+        }
+    }
+
+    public static class TestCase
+    {
+        @Test
+        public void testKeys()
+        {
+            Map<String, String> m = new CaseInsensitiveHashMap<>();
+            Assert.assertFalse("Map should not contain key", m.containsKey("noKey"));
+            Assert.assertFalse("Map should not contain null key", m.containsKey(null));
+            m.put(null, "nullValue");
+            Assert.assertFalse("Map should not contain key", m.containsKey("noKey"));
+            Assert.assertTrue("Map should contain null key", m.containsKey(null));
+            m.put("realKey", "realValue");
+            Assert.assertTrue("Map should contain key", m.containsKey("realKey"));
+            Assert.assertTrue("Map should contain key", m.containsKey("REALKEY"));
+            Assert.assertTrue("Map should contain key", m.containsKey("realkey"));
+            Assert.assertTrue("Map should contain null key", m.containsKey(null));
         }
     }
 }
