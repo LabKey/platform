@@ -2400,12 +2400,6 @@ public class QueryController extends SpringActionController
     public static class UpdateQueryRowsAction extends UpdateQueryRowAction
     {
         @Override
-        public ModelAndView getView(QueryUpdateForm tableForm, boolean reshow, BindException errors) throws Exception
-        {
-            return super.getView(tableForm, reshow, errors);
-        }
-
-        @Override
         public ModelAndView handleRequest(QueryUpdateForm tableForm, BindException errors) throws Exception
         {
             tableForm.setBulkUpdate(true);
