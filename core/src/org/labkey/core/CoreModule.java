@@ -810,6 +810,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 BooleanFormat.TestCase.class,
                 FileUtil.TestCase.class,
                 FileType.TestCase.class,
+                TabLoader.HeaderMatchTest.class,
                 MemTracker.TestCase.class,
                 StringExpressionFactory.TestCase.class,
                 Path.TestCase.class,
