@@ -427,8 +427,8 @@ public class QueryServiceImpl extends QueryService
         {
             // there could be more than one view of the same name from different modules
             // reorderModules() orders higher precedence modules first
-//            if (!views.containsKey(view.getName()))
-            views.put(view.getName(), view);
+            if (!views.containsKey(view.getName()))
+                views.put(view.getName(), view);
         }
 
         // custom views in the database get highest precedence, so let them overwrite the module-defined views in the map

@@ -27,7 +27,6 @@ import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.util.XmlBeansUtil;
-import org.labkey.api.util.XmlValidationException;
 import org.labkey.data.xml.queryCustomView.AggregateType;
 import org.labkey.data.xml.queryCustomView.AggregatesType;
 import org.labkey.data.xml.queryCustomView.ColumnType;
@@ -80,7 +79,7 @@ public class CustomViewXmlReader
     private String _label;
 
 
-    public CustomViewXmlReader() throws XmlValidationException
+    private CustomViewXmlReader()
     {
     }
 
@@ -183,7 +182,7 @@ public class CustomViewXmlReader
             {
                 ret.append(sep);
                 ret.append(CustomViewInfo.FILTER_PARAM_PREFIX).append(".").append(CustomViewInfo.AGGREGATE_PARAM_PREFIX).append(".");
-                ret.append(PageFlowUtil.encode(aggregate.getColumnName()));
+                ret.append(PageFlowUtil.encode(aggregate.getFieldKey().toString()));
                 ret.append("=");
                 ret.append(PageFlowUtil.encode(aggregate.getValueForUrl()));
                 sep = "&";
@@ -245,7 +244,7 @@ public class CustomViewXmlReader
         try
         {
             CustomViewDocument doc = CustomViewDocument.Factory.parse(is, XmlBeansUtil.getDefaultParseOptions());
-            XmlBeansUtil.validateXmlDocument(doc);
+            XmlBeansUtil.validateXmlDocument(doc, path);
             CustomViewType viewElement = doc.getCustomView();
 
             CustomViewXmlReader reader = new CustomViewXmlReader();
@@ -363,7 +362,7 @@ public class CustomViewXmlReader
             if (column == null || type == null)
                 continue;
 
-            Aggregate map = new Aggregate(column, Aggregate.Type.valueOf(type));
+            Aggregate map = new Aggregate(FieldKey.fromString(column), Aggregate.Type.valueOf(type));
             if(aggregate.getLabel() != null)
                 map.setLabel(aggregate.getLabel());
 

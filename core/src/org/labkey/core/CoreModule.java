@@ -32,6 +32,7 @@ import org.labkey.api.cache.CacheManager;
 import org.labkey.api.collections.ArrayListMap;
 import org.labkey.api.collections.CaseInsensitiveHashMap;
 import org.labkey.api.collections.CaseInsensitiveHashSet;
+import org.labkey.api.collections.CaseInsensitiveMapWrapper;
 import org.labkey.api.collections.CollectionUtils;
 import org.labkey.api.collections.Sampler;
 import org.labkey.api.collections.SwapQueue;
@@ -842,6 +843,7 @@ public class CoreModule extends SpringModule implements SearchService.DocumentPr
                 EmailTemplate.TestCase.class,
                 HelpTopic.TestCase.class,
                 CaseInsensitiveHashMap.TestCase.class,
+                CaseInsensitiveMapWrapper.TestCase.class,
                 StatsServiceImpl.TestCase.class,
                 NumberUtilsLabKey.TestCase.class,
                 SimpleFilter.FilterTestCase.class,
