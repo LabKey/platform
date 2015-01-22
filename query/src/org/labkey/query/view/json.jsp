@@ -21,35 +21,44 @@
 <%@ page import="java.util.LinkedHashSet" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%
-    OlapController.OlapForm form = (OlapController.OlapForm)HttpView.currentModel();
-%>
-
-<labkey:errors/>
 <%!
 
     public LinkedHashSet<ClientDependency> getClientDependencies()
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("query/olap.js"));
         return resources;
     }
 %>
+<%
+    OlapController.OlapForm form = (OlapController.OlapForm)HttpView.currentModel();
+%>
+<labkey:errors/>
 <labkey:form action="#">
-    <div style="padding-bottom: 10px;">type:
-        <select id="type" name="type">
-            <option value="countdistinct">Count Distinct</option>
-            <option value="json">JSON</option>
-        </select>
-    </div>
-    query: <textarea cols=80 rows=25 id=query name=query style='font-size:10pt; font-family: Andale Monaco, monospace;'><%=h(request.getParameter("query"))%></textarea><br>
-    <input type=button onclick="executeQuery()" value=submit>
+    <table>
+        <tr>
+            <td><label for="type">Type:</label></td>
+            <td>
+                <select id="type" name="type">
+                    <option value="countdistinct">Count Distinct</option>
+                    <option value="json">JSON</option>
+                </select>
+            </td>
+        </tr>
+        <tr>
+            <td style="vertical-align: top;"><label for="query">Query:</label></td>
+            <td>
+                <textarea cols="80" rows="25" id="query" name="query" style="font-size:10pt; font-family: Andale Monaco, monospace;"><%=h(request.getParameter("query"))%></textarea>
+            </td>
+        </tr>
+        <tr><td><input type="button" onclick="executeQuery()" value="submit"></td></tr>
+    </table>
 </labkey:form>
 <p>&nbsp;</p>
 <div id=cellset></div>
-<script src="<%=h(request.getContextPath())%>/query/olap.js"></script>
 <script type="text/javascript">
-    var resizer = new (Ext4||Ext).Resizable("query", {
+    var resizer = new Ext4.Resizable("query", {
         handles: 'se',
         minWidth: 200,
         minHeight: 100,
@@ -58,15 +67,12 @@
         pinned: true
     });
 
-
-
     var connection = null;
     var cube = null;
     var mdx = null;
 
     Ext4.onReady(function()
     {
-        //connection = new LABKEY.query.olap.OlapConnection({});
         cube = LABKEY.query.olap.CubeManager.getCube(
         {
             name:<%=q(form.getCubeName())%>,
@@ -92,7 +98,6 @@
         {
             if (query)
             {
-                //jsonQUery = (Ext4||Ext).JSON.decode(query);
                 jsonQuery = JSON.parse(query);
             }
         }
@@ -109,7 +114,7 @@
             success: function(cs){renderCellSet(cs,'cellset');},
             failure: failed
         };
-        var config, q;
+        var config;
         if ('query' in jsonQuery)
         {
             config = Ext4.apply({}, jsonQuery.query, configDefaults);
