@@ -322,33 +322,31 @@ Ext4.define('LABKEY.ext4.BaseSurveyPanel', {
     // Anything shared between actual questions and subSections
     doSharedQuestion : function(question, config) {
         // add a component id for retrieval
-        if (config.name && !config.itemId)
+        if (config.name && !config.itemId) {
             config.itemId = this.makeItemId(config.name);
+        }
 
         // register any configured listeners
         // Note: we allow for an array of listeners OR an array of question names to apply a single listener to
-        var listeners = question.listeners || {};
-        if (listeners.change)
-        {
-            if (!(listeners.change instanceof Array))
+        var listeners = question.listeners || {}, changeListen, names, i, n, handlers;
+        if (listeners.change) {
+            if (!Ext4.isArray(listeners.change)) {
                 listeners.change = [listeners.change];
+            }
 
-            for (var listenerIndex = 0; listenerIndex < listeners.change.length; listenerIndex++)
-            {
-                var listenerFn = listeners.change[listenerIndex].fn;
-                var listenerNames;
-                if (listeners.change[listenerIndex].question instanceof Array)
-                    listenerNames = listeners.change[listenerIndex].question;
-                else
-                    listenerNames = [listeners.change[listenerIndex].question];
+            for (i = 0; i < listeners.change.length; i++) {
+                changeListen = listeners.change[i];
+                if (Ext4.isArray(changeListen.question)) {
+                    names = changeListen.question;
+                }
+                else {
+                    names = [changeListen.question];
+                }
 
-                for (var qnameIndex = 0; qnameIndex < listenerNames.length; qnameIndex++)
-                {
-                    var handlers = this.changeHandlers[listenerNames[qnameIndex]] || [];
-                    var changeFn = new Function('', "return " + listenerFn);
-
-                    handlers.push({name : config.name, fn : changeFn});
-                    this.changeHandlers[listenerNames[qnameIndex]] = handlers;
+                for (n = 0; n < names.length; n++) {
+                    handlers = this.changeHandlers[names[n]] || [];
+                    handlers.push({name: config.name, fn: new Function('', "return " + changeListen.fn)});
+                    this.changeHandlers[names[n]] = handlers;
                 }
             }
         }
