@@ -31,4 +31,6 @@ public interface GenomeTrigger
     public void onRecreate(Container c, User u, Logger log, int genomeId);
 
     public void onDelete(Container c, User u, Logger log, int genomeId);
+
+    public boolean isAvailable(Container c);
 }
