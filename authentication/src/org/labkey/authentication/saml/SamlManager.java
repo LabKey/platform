@@ -42,6 +42,8 @@ import java.nio.charset.StandardCharsets;
  */
 public class SamlManager
 {
+    public static final String SAML_RESPONSE_PARAMETER = "SAMLResponse";
+
     private static final Logger LOG = Logger.getLogger(SamlManager.class);
 
     static boolean sendSamlRequest(HttpServletRequest request, HttpServletResponse response)
@@ -114,7 +116,8 @@ public class SamlManager
         try
         {
             Response samlResponse = new Response(accountSettings);
-            samlResponse.loadXmlFromBase64(request.getParameter("SAMLResponse"));
+
+            samlResponse.loadXmlFromBase64(request.getParameter(SAML_RESPONSE_PARAMETER));
             samlResponse.setDestinationUrl(request.getRequestURL().toString());
 
             if (samlResponse.isValid(false)) // allowing arbitrary destination URL

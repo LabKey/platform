@@ -39,7 +39,7 @@ public class SamlProvider implements AuthenticationProvider.RequestAuthenticatio
         if (!AppProps.getInstance().isExperimentalFeatureEnabled(AuthenticationModule.EXPERIMENTAL_SAML_SERVICE_PROVIDER))
             return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable);
 
-        if (StringUtils.isBlank(request.getParameter("SAMLResponse"))) // First time through this method
+        if (StringUtils.isBlank(request.getParameter(SamlManager.SAML_RESPONSE_PARAMETER))) // First time through this method
         {
             if (SamlManager.sendSamlRequest(request, response))
                 return AuthenticationResponse.createFailureResponse(FailureReason.notApplicable); // TODO: What's the correct return here?
