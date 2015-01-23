@@ -3,4 +3,5 @@ Library|Version|Source|License|LabKey Dev|Purpose
 JSON||{link:JSON.org|http://www.json.org/java/index.html}|Freeware|daves|JSON serialization
 JSR-223 ScriptEngine for Rhino|Aug. 8th, 2008|{link:Scripting Project|https://scripting.dev.java.net/}|{link:BSD|http://www.opensource.org/licenses/bsd-license.php}|kevink|JSR-223 ScriptEngine APIs for Rhino
 RingoJS|0.4.0|{link:RingoJS|http://ringojs.org}|{link:Apache 2.0|http://www.apache.org/licenses/LICENSE-2.0}|kevink|ScriptableMap and ScriptableList wrapper classes
+OneLogin SAML Toolkit for Java|3195ae5852|{link:java-saml|https://github.com/onelogin/java-saml}|Open Source|tgaluhn|SAML Service Provider functionality
 {table}
