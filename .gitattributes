@@ -513,9 +513,12 @@ api/src/org/labkey/api/ehr/demographics/AbstractListDemographicsProvider.java -t
 api/src/org/labkey/api/ehr/demographics/AnimalRecord.java -text
 api/src/org/labkey/api/ehr/demographics/DemographicsProvider.java -text
 api/src/org/labkey/api/ehr/history/AbstractDataSource.java -text
+api/src/org/labkey/api/ehr/history/DefaultLabworkType.java -text
 api/src/org/labkey/api/ehr/history/HistoryDataSource.java -text
 api/src/org/labkey/api/ehr/history/HistoryRow.java -text
 api/src/org/labkey/api/ehr/history/HistoryRowImpl.java -text
+api/src/org/labkey/api/ehr/history/LabworkType.java -text
+api/src/org/labkey/api/ehr/history/SortingLabworkType.java -text
 api/src/org/labkey/api/ehr/security/AbstractEHRPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRAbnormalAdminPermission.java -text
 api/src/org/labkey/api/ehr/security/EHRAbnormalDeletePermission.java -text
