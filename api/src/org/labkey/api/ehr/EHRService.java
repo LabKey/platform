@@ -26,6 +26,7 @@ import org.labkey.api.ehr.dataentry.DataEntryFormFactory;
 import org.labkey.api.ehr.dataentry.SingleQueryFormProvider;
 import org.labkey.api.ehr.demographics.DemographicsProvider;
 import org.labkey.api.ehr.history.HistoryDataSource;
+import org.labkey.api.ehr.history.LabworkType;
 import org.labkey.api.ldk.table.ButtonConfigFactory;
 import org.labkey.api.module.Module;
 import org.labkey.api.query.BatchValidationException;
@@ -65,6 +66,8 @@ abstract public class EHRService
     abstract public void registerModule(Module module);
 
     abstract public Set<Module> getRegisteredModules();
+
+    abstract public void registerLabworkType(LabworkType type);
 
     abstract public void registerTriggerScript(Module owner, Resource script);
 
