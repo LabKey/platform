@@ -68,6 +68,7 @@ import org.labkey.api.security.permissions.UpdatePermission;
 import org.labkey.api.settings.AdminConsole;
 import org.labkey.api.settings.LookAndFeelProperties;
 import org.labkey.api.study.DataSetTable;
+import org.labkey.api.util.CSRFUtil;
 import org.labkey.api.util.ExceptionUtil;
 import org.labkey.api.util.FileUtil;
 import org.labkey.api.util.HelpTopic;
@@ -5940,14 +5941,18 @@ public class QueryController extends SpringActionController
 
             for (PropertyValue value : values.getPropertyValues())
             {
-                String[] queries = ((String)value.getValue()).split(";");
-
-                if(queries == null || queries.length == 0)
+                // ignore the CSRF token
+                if (!CSRFUtil.csrfName.equals(value.getName()))
                 {
-                    errors.reject(ERROR_MSG, "At least one query must be specified for each schema.");
-                }
+                    String[] queries = ((String)value.getValue()).split(";");
 
-                _schemas.put(value.getName(), new ArrayList<>(Arrays.asList(queries)));
+                    if(queries == null || queries.length == 0)
+                    {
+                        errors.reject(ERROR_MSG, "At least one query must be specified for each schema.");
+                    }
+
+                    _schemas.put(value.getName(), new ArrayList<>(Arrays.asList(queries)));
+                }
             }
 
             return errors;

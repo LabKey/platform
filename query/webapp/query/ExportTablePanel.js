@@ -34,6 +34,10 @@ Ext4.define('HIPC.tree.ExportTablePanel', {
 
     addParams: function(formPanel){
         var schemas = [];
+
+        // add the CSRF token
+        formPanel.add({xtype: 'hidden', name: 'X-LABKEY-CSRF', value: LABKEY.CSRF });
+
         this.getRootNode().eachChild(function(node){
             var schemaName = node.get('text');
             var queryNames = [];
