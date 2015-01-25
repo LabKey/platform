@@ -114,7 +114,7 @@
 
     Ext4.onReady(function()
     {
-        form = new LABKEY.Form('groupMembersForm');
+        form = new LABKEY.Form({ formElement: 'groupMembersForm' });
 
         Ext4.tip.QuickTipManager.init();
         Ext4.apply(Ext4.tip.QuickTipManager.getQuickTip(), {

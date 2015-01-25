@@ -16,28 +16,16 @@
  */
 %>
 <%@ page import="org.labkey.api.data.Container"%>
-<%@ page import="org.labkey.api.util.PageFlowUtil" %>
+<%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
 <%@ page import="org.labkey.api.view.HttpView" %>
 <%@ page import="org.labkey.api.view.JspView" %>
+<%@ page import="org.labkey.core.CoreController" %>
 <%@ page import="org.labkey.core.admin.AdminController.DeleteCustomStylesheetAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetFaviconAction" %>
 <%@ page import="org.labkey.core.admin.AdminController.ResetLogoAction" %>
 <%@ page import="org.labkey.core.admin.ProjectSettingsAction" %>
-<%@ page import="org.labkey.core.CoreController" %>
-<%@ page import="org.labkey.api.settings.TemplateResourceHandler" %>
-<%@ page import="java.util.LinkedHashSet" %>
-<%@ page import="org.labkey.api.view.template.ClientDependency" %>
 <%@ taglib prefix="labkey" uri="http://www.labkey.org/taglib" %>
 <%@ page extends="org.labkey.api.jsp.JspBase" %>
-<%!
-
-    public LinkedHashSet<ClientDependency> getClientDependencies()
-    {
-        LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
-        resources.add(ClientDependency.fromPath("clientapi/ext3"));
-        return resources;
-    }
-%>
 <%
     ProjectSettingsAction.LookAndFeelResourcesBean bean = ((JspView<ProjectSettingsAction.LookAndFeelResourcesBean>)HttpView.currentView()).getModelBean();
     Container c = getContainer();
@@ -110,7 +98,5 @@
 </table>
 </labkey:form>
 <script type="text/javascript">
-    var _form = new LABKEY.Form({
-        formElement: 'form-preferences'
-    });
+    var _form = new LABKEY.Form({ formElement: 'form-preferences' });
 </script>

@@ -90,15 +90,11 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
                             url : this.getViewURL(),
                             method: 'POST',
                             success: function(resp){
-
-                                var el = Ext4.get(panelId);
-                                if (el) {
-                                    // Update the view div with the returned HTML, and make sure scripts are run
-                                    LABKEY.Utils.loadAjaxContent(resp, el, function() {
-                                        cmp.doLayout();
-                                        cmp.getEl().unmask();
-                                    });
-                                }
+                                // Update the view div with the returned HTML, and make sure scripts are run
+                                LABKEY.Utils.loadAjaxContent(resp, panelId, function() {
+                                    cmp.doLayout();
+                                    cmp.getEl().unmask();
+                                });
                             },
                             failure : function(resp) {this.viewFailure(cmp);},
                             jsonData: config.parameters,
