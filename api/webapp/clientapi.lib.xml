@@ -2,18 +2,18 @@
     <library compileInProductionMode="true">
         <script path="clientapi/dom/Utils.js"/>
         <script path="clientapi/dom/Tour.js"/>
-        <script path="clientapi/dom/Chart.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.DomHelper.append and Ext.decode, moved to dom -->
-        <script path="clientapi/dom/Form.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.get, Ext.EventManager, Ext.isIE, Ext.isGecko, moved to dom -->
+        <script path="clientapi/dom/Chart.js"/>
+        <script path="clientapi/dom/Form.js"/>
         <script path="clientapi/dom/NavTrail.js"/>
 
-        <script path="clientapi/dom/Portal.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.Msg, Ext4.form.field.Text, and Ext4.window.Window -->
-        <script path="clientapi/dom/Query.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.DomHelper -->
-        <script path="clientapi/dom/GetData.js"/> <!-- TODO: REQUIRES FIX: Depends on LABKEY.WebPart, moved to dom -->
-        <script path="clientapi/dom/WebPart.js"/> <!-- TODO: REQUIRES FIX: Depends on Ext.Msg && Ext.get -->
+        <script path="clientapi/dom/Portal.js"/>
+        <script path="clientapi/dom/Query.js"/>
+        <script path="clientapi/dom/GetData.js"/> <!-- TODO: REQUIRES FIX: Depends on LABKEY.QueryWebPart -->
+        <script path="clientapi/dom/WebPart.js"/>
     </library>
     <dependencies>
-        <dependency path="clientapi_core" />
-        <dependency path="Ext4" />  <!-- TODO: Remove this dependency once all core APIs are Ext independent -->
+        <dependency path="clientapi_core"/>
+        <dependency path="internal/jQuery"/>
     </dependencies>
 </libraries>
 

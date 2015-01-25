@@ -594,14 +594,23 @@ LABKEY.QueryWebPart = Ext.extend(Ext.util.Observable,
                     clearTimeout(timerId);
                 }
 
-                var targetElem = Ext.get(this.renderTo);
-                if (targetElem)
+                var target;
+                if (LABKEY.Utils.isString(this.renderTo)) {
+                    target = this.renderTo;
+                }
+                else {
+                    target = this.renderTo.id;
+                }
+
+                var targetElem = jQuery('#' + target); // TODO: Make whole class jQuery dependent
+                if (targetElem.length > 0)
                 {
                     this.unmask();
                     if (dr)
                         dr.destroy();
 
-                    LABKEY.Utils.loadAjaxContent(response, targetElem, function(){
+                    LABKEY.Utils.loadAjaxContent(response, targetElem, function()
+                    {
                         //get the data region and subscribe to events
                         var dr = LABKEY.DataRegions[this.dataRegionName];
                         if (dr)

@@ -35,7 +35,7 @@
  *           </p>
  */
 
-LABKEY.Query = new function(impl) {
+LABKEY.Query = new function(impl, $) {
 
     /**
      * Execute arbitrary LabKey SQL and export the results to Excel or TSV. After this method is
@@ -58,19 +58,21 @@ LABKEY.Query = new function(impl) {
 
         // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
         // will make the browser pop up a dialog
-        var html = '<form method="POST" action="' + LABKEY.ActionURL.buildURL("query", "exportSql", config.containerPath) + '">';
+        var formId = LABKEY.Utils.generateUUID();
+        var html = '<form method="POST" id="' + formId + '"action="' + LABKEY.ActionURL.buildURL("query", "exportSql", config.containerPath) + '">';
         if (undefined != config.sql)
-            html += '<input type="hidden" name="sql" value="' + Ext4.htmlEncode(config.sql) + '" />';
+            html += '<input type="hidden" name="sql" value="' + LABKEY.Utils.encodeHtml(config.sql) + '" />';
         if (undefined != config.schemaName)
-            html += '<input type="hidden" name="schemaName" value="' + Ext4.htmlEncode(config.schemaName) + '" />';
+            html += '<input type="hidden" name="schemaName" value="' + LABKEY.Utils.encodeHtml(config.schemaName) + '" />';
         if (undefined != config.format)
-            html += '<input type="hidden" name="format" value="' + Ext4.htmlEncode(config.format) + '" />';
+            html += '<input type="hidden" name="format" value="' + LABKEY.Utils.encodeHtml(config.format) + '" />';
         if (undefined != config.containerFilter)
-            html += '<input type="hidden" name="containerFilter" value="' + Ext4.htmlEncode(config.containerFilter) + '" />';
+            html += '<input type="hidden" name="containerFilter" value="' + LABKEY.Utils.encodeHtml(config.containerFilter) + '" />';
         html += "</form>";
-        var newForm = Ext4.DomHelper.append(document.getElementsByTagName('body')[0], html);
-        newForm.submit();
+        $('body').append(html);
+        $('form#' + formId).submit();
     };
+
     return impl;
 
-}(LABKEY.Query);
+}(LABKEY.Query, jQuery);

@@ -87,6 +87,7 @@
                 {
                     String menuCaption = part.getName();
                     String menuName = part.getName() + part.getIndex();
+                    menuName = menuName.replaceAll("\\s+","");
                     try
                     {
                         WebPartFactory factory = Portal.getPortalPart(part.getName());
@@ -103,7 +104,7 @@
                         //Use the part name...
                     }
         %>
-        <li id="<%=h(menuName)%>$Header" class="labkey-main-menu-item">
+        <li id="<%=h(menuName)%>-Header" class="labkey-main-menu-item">
             <a class="labkey-main-menu-link" href="#">
                 <%=h(menuCaption)%>
             </a>
@@ -300,8 +301,9 @@
             continue;
 
         String menuName = part.getName() + part.getIndex();
+        menuName = menuName.replaceAll("\\s+","");
 %>
-        HoverNavigation.Parts["_<%=text(menuName)%>"] = new HoverNavigation({hoverElem:"<%=text(menuName)%>$Header", webPartName: "<%=text(part.getName())%>",
+        HoverNavigation.Parts["_<%=text(menuName)%>"] = new HoverNavigation({hoverElem:"<%=text(menuName)%>-Header", webPartName: "<%=text(part.getName())%>",
             partConfig: { <%
                     String sep = "";
                     for (Map.Entry<String,String> entry : part.getPropertyMap().entrySet())

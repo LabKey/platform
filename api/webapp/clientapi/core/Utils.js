@@ -73,13 +73,16 @@ LABKEY.Utils = new function()
     {
         for (var key in from)
         {
-            if (isObject(to[key]) && isObject(from[key]))
+            if (from.hasOwnProperty(key))
             {
-               _merge(to[key], from[key], overwrite, depth-1);
-            }
-            else if (undefined === to[key] || overwrite)
-            {
-                to[key] = _copy(from[key], depth-1);
+                if (isObject(to[key]) && isObject(from[key]))
+                {
+                    _merge(to[key], from[key], overwrite, depth-1);
+                }
+                else if (undefined === to[key] || overwrite)
+                {
+                    to[key] = _copy(from[key], depth-1);
+                }
             }
         }
     }
@@ -162,36 +165,22 @@ LABKEY.Utils = new function()
 		*/
         encodeHtml : function(html)
         {
-            var div = document.createElement('div');
-            var text = document.createTextNode(html);
-            div.appendChild(text);
-            return div.innerHTML;
-
             // http://stackoverflow.com/questions/1219860/html-encoding-in-javascript-jquery
-            // http://jsperf.com/htmlencoderegex/25
-//            return String(value)
-//                    .replace(/&/g, '&amp;')
-//                    .replace(/"/g, '&quot;')
-//                    .replace(/'/g, '&#39;')
-//                    .replace(/</g, '&lt;')
-//                    .replace(/>/g, '&gt;');
+            return String(html)
+                    .replace(/&/g, '&amp;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;');
         },
-
-//        decodeHtml : function(value)
-//        {
-//            // http://stackoverflow.com/questions/1219860/html-encoding-in-javascript-jquery
-//            // http://jsperf.com/htmlencoderegex/25
-//            return String(value)
-//                    .replace(/&quot;/g, '"')
-//                    .replace(/&#39;/g, "'")
-//                    .replace(/&lt;/g, '<')
-//                    .replace(/&gt;/g, '>')
-//                    .replace(/&amp;/g, '&');
-//        },
 
         isArray: function(value) {
             // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/isArray
             return Object.prototype.toString.call(value) === "[object Array]";
+        },
+
+        isDate: function(value) {
+            return Object.prototype.toString.call(value) === '[object Date]';
         },
 
         isDefined: function(value) {
@@ -203,6 +192,8 @@ LABKEY.Utils = new function()
             var getType = {};
             return value && getType.toString.call(value) === '[object Function]';
         },
+
+        isObject: isObject,
 
         /**
          * Returns date formats for use in an Ext.form.DateField. Useful when using a DateField in an Ext object,
@@ -307,7 +298,7 @@ LABKEY.Utils = new function()
 
                 if(!json && isErrorCallback)
                 {
-                    json = new Object();
+                    json = {};
                 }
 
                 if (json && !json.exception && isErrorCallback)
@@ -841,45 +832,12 @@ LABKEY.Utils = new function()
          */
         alert : function(title, msg) {
             console.warn('alert: This is just a stub implementation, request the dom version of the client API : clientapi_dom.lib.xml to get the concrete implemntation');
+            console.warn(title + ":", msg);
         },
 
-        //private
-        loadAjaxContent: function(response, targetElem, success, scope){
-            var json = LABKEY.Utils.decode(response.responseText);
-            if (!json)
-                return;
 
-            if(json.moduleContext)
-                LABKEY.applyModuleContext(json.moduleContext);
-
-            if (json.requiredCssScripts)
-                LABKEY.requiresCss(json.requiredCssScripts);
-
-            if (json.implicitCssIncludes){
-                for (var i=0;i<json.implicitCssIncludes.length;i++)
-                    LABKEY.requestedCssFiles(json.implicitCssIncludes[i]);
-            }
-
-            if (json.requiredJsScripts && json.requiredJsScripts.length){
-                LABKEY.requiresScript(json.requiredJsScripts, true, onLoaded, this, true);
-            }
-            else {
-                onLoaded();
-            }
-
-            function onLoaded() {
-                if (json.html) {
-                    //execute scripts
-                    targetElem.update(json.html, true, function() {
-                        if (success) {
-                            success.call(scope || window);
-                        }
-                    }); //execute scripts
-
-                    if (json.implicitJsIncludes)
-                        LABKEY.loadedScripts(json.implicitJsIncludes);
-                }
-            }
+        escapeRe : function(s) {
+            return s.replace(/([-.*+?\^${}()|\[\]\/\\])/g, "\\$1");
         },
 
         // private

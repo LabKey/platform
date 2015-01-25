@@ -283,7 +283,12 @@ LABKEY.Query = new function()
             if (config.parameters)
             {
                 for (var n in config.parameters)
-                    qsParams["query.param." + n] = config.parameters[n];
+                {
+                    if (config.parameters.hasOwnProperty(n))
+                    {
+                        qsParams["query.param." + n] = config.parameters[n];
+                    }
+                }
             }
 
             var requestConfig = {
@@ -295,7 +300,7 @@ LABKEY.Query = new function()
                 headers : {
                     'Content-Type' : 'application/json'
                 }
-            }
+            };
 
             if (LABKEY.Utils.isDefined(config.timeout))
                 requestConfig.timeout = config.timeout;

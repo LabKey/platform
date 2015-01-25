@@ -17,7 +17,19 @@
  * <p/>
  */
 
-LABKEY.Utils = new function(impl) {
+LABKEY.Utils = new function(impl, $) {
+
+    // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response will
+    // make the browser pop up a dialog
+    var formSubmit = function(url, value)
+    {
+        var formId = LABKEY.Utils.generateUUID();
+        var formHTML = '<form method="POST" id="' + formId + '" action="' + url + '">' +
+                '<input type="hidden" name="json" value="' + LABKEY.Utils.encodeHtml(LABKEY.Utils.encode(value)) + '" />' +
+                '</form>';
+        $('body').append(formHTML);
+        $('#'+formId).submit();
+    };
 
     /**
      * Shows an error dialog box to the user in response to an error from an AJAX request, including
@@ -26,8 +38,7 @@ LABKEY.Utils = new function(impl) {
      * @param {Error} [exceptionObj] A JavaScript Error object caught by the calling code.
      * @param {boolean} [showExceptionClass] Flag to display the java class of the exception.
      * @param {String} [msgPrefix] Prefix to the error message (defaults to: 'An error occurred trying to load:')
-     * The error dialog will display the Error's name and message, if available. Ext.data.DataReader implementations
-     * may throw this type of error object.
+     * The error dialog will display the Error's name and message, if available.
      */
     impl.displayAjaxErrorResponse = function(responseObj, exceptionObj, showExceptionClass, msgPrefix)
     {
@@ -36,14 +47,13 @@ LABKEY.Utils = new function(impl) {
             // Don't show an error dialog if the user cancelled the request in the browser, like navigating
             // to another page
             return;
-
         }
 
         var error = LABKEY.Utils.getMsgFromError(responseObj, exceptionObj, {
             msgPrefix: msgPrefix,
             showExceptionClass: showExceptionClass
         });
-        Ext4.Msg.alert("Error", Ext4.htmlEncode(error));
+        LABKEY.Utils.alert("Error", LABKEY.Utils.encodeHtml(error));
     };
 
     /**
@@ -94,13 +104,7 @@ LABKEY.Utils = new function(impl) {
      &lt;/script&gt;
      */
     impl.convertToExcel = function(spreadsheet) {
-        // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
-        // will make the browser pop up a dialog
-        var newForm = Ext4.DomHelper.append(document.getElementsByTagName('body')[0],
-                        '<form method="POST" action="' + LABKEY.ActionURL.buildURL("experiment", "convertArraysToExcel") + '">' +
-                        '<input type="hidden" name="json" value="' + Ext4.htmlEncode(LABKEY.Utils.encode(spreadsheet)) + '" />' +
-                        '</form>');
-        newForm.submit();
+        formSubmit(LABKEY.ActionURL.buildURL("experiment", "convertArraysToExcel"), spreadsheet);
     };
 
     /**
@@ -125,13 +129,7 @@ LABKEY.Utils = new function(impl) {
      &lt;/script&gt;
      */
     impl.convertToTable = function(config) {
-        // Insert a hidden <form> into to page, put the JSON into it, and submit it - the server's response
-        // will make the browser pop up a dialog
-        var newForm = Ext4.DomHelper.append(document.getElementsByTagName('body')[0],
-                        '<form method="POST" action="' + LABKEY.ActionURL.buildURL("experiment", "convertArraysToTable") + '">' +
-                        '<input type="hidden" name="json" value="' + Ext4.htmlEncode(Ext4.encode(config)) + '" />' +
-                        '</form>');
-        newForm.submit();
+        formSubmit(LABKEY.ActionURL.buildURL("experiment", "convertArraysToTable"), config);
     };
 
     /**
@@ -140,12 +138,16 @@ LABKEY.Utils = new function(impl) {
      * @param msg
      */
     impl.alert = function(title, msg) {
-
-        Ext4.Msg.alert(title, msg);
+        if (LABKEY.Utils.isFunction(sweetAlert)) {
+            sweetAlert(title, msg, 'error');
+        }
+        else {
+            console.error(title + ":", msg);
+        }
     };
 
     /**
-     * Provides a generic error callback.  This helper will call Ext.Msg.hide(), log the error to the console
+     * Provides a generic error callback.  This helper show a modal dialog, log the error to the console
      * and will log the error to the audit log table. The user must have insert permissions on the selected container for
      * this to work.  By default, it will insert the error into the Shared project.  A containerPath param can be passed to
      * use a different container.  The intent of this helper is to provide site admins with a mechanism to identify errors associated
@@ -177,17 +179,16 @@ LABKEY.Utils = new function(impl) {
         });
      &lt;/script&gt;
      */
-    impl.onError = function(error){
-        if (Ext4.Msg.isVisible())
-            Ext4.Msg.hide();
+    impl.onError = function(error) {
 
-        if(!error)
+        if (!error)
             return;
 
         console.log('ERROR: ' + error.exception);
         console.log(error);
 
-        if(!error.noAuditLog){
+        if (!error.noAuditLog)
+        {
             LABKEY.Query.insertRows({
                 //it would be nice to store them in the current folder, but we cant guarantee the user has write access..
                 containerPath: error.containerPath || '/shared',
@@ -202,9 +203,7 @@ LABKEY.Utils = new function(impl) {
                     Comment: (error.exception || error.statusText || error.message),
                     Date: new Date()
                 }],
-                success: function(){
-                    console.log('Error successfully logged');
-                },
+                success: function() {},
                 failure: function(error){
                     console.log('Problem logging error');
                     console.log(error);
@@ -220,11 +219,7 @@ LABKEY.Utils = new function(impl) {
      */
     impl.setWebpartTitle = function(title, webPartId)
     {
-        var titleEl = Ext4.query('table#webpart_'+webPartId+' span[class=labkey-wp-title-text]');//, 'webpart_' + webPartId);
-        if (titleEl && (titleEl.length >= 1))
-        {
-            titleEl[0].innerHTML = LABKEY.Utils.encodeHtml(title);
-        }
+        $('table#webpart_' + webPartId + ' span[class=labkey-wp-title-text]').html(LABKEY.Utils.encodeHtml(title));
     };
 
     /**
@@ -256,12 +251,13 @@ LABKEY.Utils = new function(impl) {
         var callback;
         var scripts;
 
-        if (LABKEY.Utils.isFunction(config)){
+        if (LABKEY.Utils.isFunction(config))
+        {
             scope = this;
             callback = config;
             scripts = null;
         }
-        else if (Ext4.isObject(config) && LABKEY.Utils.isFunction(config.callback))
+        else if (LABKEY.Utils.isObject(config) && LABKEY.Utils.isFunction(config.callback))
         {
             scope = config.scope || this;
             callback = config.callback;
@@ -269,7 +265,7 @@ LABKEY.Utils = new function(impl) {
         }
         else
         {
-            alert("Improper configuration for LABKEY.onReady()");
+            LABKEY.Utils.alert("Configuration Error", "Improper configuration for LABKEY.onReady()");
             return;
         }
 
@@ -279,7 +275,7 @@ LABKEY.Utils = new function(impl) {
         }
         else
         {
-            Ext4.onReady(callback, scope);
+            $(function() { callback.call(scope); });
         }
     };
 
@@ -321,6 +317,55 @@ LABKEY.Utils = new function(impl) {
         LABKEY.Utils.addClass(element, addCls);
     };
 
+    //private
+    impl.loadAjaxContent = function(response, targetEl, success, scope){
+        var json = LABKEY.Utils.decode(response.responseText);
+        if (!json)
+            return;
+
+        if (json.moduleContext)
+            LABKEY.applyModuleContext(json.moduleContext);
+
+        if (json.requiredCssScripts)
+            LABKEY.requiresCss(json.requiredCssScripts);
+
+        if (json.implicitCssIncludes)
+        {
+            for (var i=0;i<json.implicitCssIncludes.length;i++)
+            {
+                LABKEY.requestedCssFiles(json.implicitCssIncludes[i]);
+            }
+        }
+
+        if (json.requiredJsScripts && json.requiredJsScripts.length)
+        {
+            LABKEY.requiresScript(json.requiredJsScripts, true, onLoaded, this, true);
+        }
+        else
+        {
+            onLoaded();
+        }
+
+        function onLoaded()
+        {
+            if (json.html)
+            {
+                if (LABKEY.Utils.isString(targetEl)) {
+                    targetEl = $('#'+targetEl);
+                }
+
+                targetEl.html(json.html); // execute scripts...so bad
+
+                if (LABKEY.Utils.isFunction(success)) {
+                    success.call(scope || window);
+                }
+
+                if (json.implicitJsIncludes)
+                    LABKEY.loadedScripts(json.implicitJsIncludes);
+            }
+        }
+    };
+
     return impl;
 
-}(LABKEY.Utils);
+}(LABKEY.Utils, jQuery);
