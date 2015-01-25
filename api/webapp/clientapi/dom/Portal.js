@@ -706,7 +706,7 @@
                                     errorMsg = jsonResp.errors[0].message;
                                 else
                                     errorMsg = 'An unknown error occured. Please contact your administrator.';
-                                alert(errorMsg);
+                                LABKEY.Utils.alert('Oops', errorMsg);
                             }
                         });
                     };
