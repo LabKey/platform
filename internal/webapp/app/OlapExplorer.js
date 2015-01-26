@@ -66,7 +66,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
              * @param b
              * @returns {number}
              */
-            alphaNum : function(a,b) {
+            alphaNum : function(a, b) {
                 a = a.toLowerCase(); b = b.toLowerCase();
                 if (LABKEY.olapStore.sorters.SORT_EMPTY_FIRST && (a == 'null' || b == 'null')) {
                     var aEmpty = a == 'null'; var bEmpty = b == 'null';
@@ -83,6 +83,32 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                     return aN === bN ? 0 : aN > bN ? 1 : -1;
                 }
                 return aA > bA ? 1 : -1;
+            },
+            natural : function (as, bs) {
+                // http://stackoverflow.com/questions/19247495/alphanumeric-sorting-an-array-in-javascript
+                var a, b, a1, b1, i= 0, n, L,
+                        rx=/(\.\d+)|(\d+(\.\d+)?)|([^\d.]+)|(\.\D+)|(\.$)/g;
+                if (as === bs) return 0;
+                a = as.toLowerCase().match(rx);
+                b = bs.toLowerCase().match(rx);
+                if (LABKEY.olapStore.sorters.SORT_EMPTY_FIRST && (a == 'null' || b == 'null')) {
+                    var aEmpty = a == 'null'; var bEmpty = b == 'null';
+                    if (aEmpty && bEmpty) {
+                        return 0;
+                    }
+                    return aEmpty ? -1 : 1;
+                }
+                L = a.length;
+                while (i < L) {
+                    if (!b[i]) return 1;
+                    a1 = a[i]; b1 = b[i++];
+                    if (a1 !== b1) {
+                        n = a1 - b1;
+                        if (!isNaN(n)) return n;
+                        return a1 > b1 ? 1 : -1;
+                    }
+                }
+                return b[i] ? -1 : 0;
             },
             /**
              * A valid Array.sort() function that sorts an array of LABKEY.app.model.OlapExplorer instances
@@ -105,6 +131,16 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
              */
             sortAlphaNumRange : function(recA, recB) {
                 return LABKEY.olapStore.sorters.alphaNum(recA.get('label').split('-')[0], recB.get('label').split('-')[0]);
+            },
+            /**
+             * A valid Array.sort() function that sorts an array of LABKEY.app.model.OlapExplorer instances
+             * using natural sort according to the instance's 'label' field.
+             * @param recA
+             * @param recB
+             * @returns {number}
+             */
+            sortNatural : function(recA, recB) {
+                return LABKEY.olapStore.sorters.natural(recA.get('label'), recB.get('label'));
             }
         }
     },
@@ -467,9 +503,11 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
     _resolveSortFunction : function(strategy) {
         switch (strategy) {
             case 'ALPHANUM':
-                return LABKEY.app.store.OlapExplorer.sorters.sortAlphaNum;
+                return LABKEY.olapStore.sorters.sortAlphaNum;
             case 'ALPHANUM-RANGE':
-                return LABKEY.app.store.OlapExplorer.sorters.sortAlphaNumRange;
+                return LABKEY.olapStore.sorters.sortAlphaNumRange;
+            case 'NATURAL':
+                return LABKEY.olapStore.sorters.sortNatural;
             case 'AUTO':
             default:
                 return false;
