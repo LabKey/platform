@@ -309,6 +309,7 @@ core/resources/schemas/dbscripts/postgresql/core-14.21-14.22.sql -text
 core/resources/schemas/dbscripts/postgresql/core-14.22-14.23.sql -text
 core/resources/schemas/dbscripts/postgresql/core-14.23-14.24.sql -text
 core/resources/schemas/dbscripts/postgresql/core-14.30-14.31.sql -text
+core/resources/schemas/dbscripts/postgresql/core-14.31-14.32.sql -text
 core/resources/schemas/dbscripts/postgresql/core-create.sql -text
 core/resources/schemas/dbscripts/postgresql/core-drop.sql -text
 core/resources/schemas/dbscripts/postgresql/labkey-0.00-13.30.sql -text
@@ -484,6 +485,7 @@ core/resources/schemas/dbscripts/sqlserver/core-14.20-14.30.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-14.21-14.22.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-14.22-14.23.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-14.30-14.31.sql -text
+core/resources/schemas/dbscripts/sqlserver/core-14.31-14.32.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-create.sql -text
 core/resources/schemas/dbscripts/sqlserver/core-drop.sql -text
 core/resources/schemas/dbscripts/sqlserver/group_concat_install.sql -text
