@@ -296,11 +296,9 @@ public class ServerManager
             {
                 try
                 {
-                    long start = System.currentTimeMillis();
-                    Cube c = (new Olap4JCachedCubeFactory()).createCachedCube((Cube)src);
-                    long end = System.currentTimeMillis();
-                    return c;
-                } catch (SQLException x)
+                    return (new Olap4JCachedCubeFactory()).createCachedCube((Cube)src);
+                }
+                catch (SQLException x)
                 {
                     ex[0] = x;
                     return null;
@@ -331,14 +329,10 @@ public class ServerManager
             {
                 try
                 {
-                    long start = System.currentTimeMillis();
-
-                    QuerySchema startSchema = null!=schema ? schema : DefaultSchema.get(user, c).getSchema("core");
-                    CachedCube cachedCube = new RolapCachedCubeFactory((RolapCubeDef) src, startSchema).createCachedCube();
-
-                    long end = System.currentTimeMillis();
-                    return cachedCube;
-                } catch (SQLException x)
+                    QuerySchema startSchema = null != schema ? schema : DefaultSchema.get(user, c).getSchema("core");
+                    return new RolapCachedCubeFactory((RolapCubeDef) src, startSchema).createCachedCube();
+                }
+                catch (SQLException x)
                 {
                     ex[0] = x;
                     return null;
@@ -381,7 +375,6 @@ public class ServerManager
                         "<DataSourceInfo>" +
                         RolapConnectionProperties.Provider.name() + "=Mondrian;" +
                         RolapConnectionProperties.Jdbc.name() + "=" + getDatabaseConnectionString(c, user) +
-//                        ";" + RolapConnectionProperties.DataSourceChangeListener.name() + "=" + _DataSourceChangeListener.class.getName() +
                         "</DataSourceInfo>\n" +
                         "<ProviderName>Mondrian</ProviderName>\n" +
                         "<ProviderType>MDP</ProviderType>\n" +
@@ -405,7 +398,6 @@ public class ServerManager
                 RepositoryContentFinder rcf = new StringRepositoryContentFinder(sb.toString());
                 s = MondrianServer.createWithRepository(rcf, new _CatalogLocator(c));
                 LOG.debug("Create new Mondrian server: " + c.getPath() + " " + s.toString());
-//                MemTracker.getInstance().put(s);
                 ref = new ServerReferenceCount(s, c);
                 SERVERS.put(getServerCacheKey(c), ref);
             }
@@ -484,8 +476,6 @@ public class ServerManager
                         map.put("hierarchy", h.getUniqueName());
                         map.put("members", "members");
                         jsonOnRows.put(0, map);
-//                        ((JSONObject)jsonQuery.get("onRows")).put("level", l.getUniqueName());
-//                        ((JSONObject)jsonQuery.get("onRows")).put("members", "members");
 
                         // TODO: what is the countDistinctLevel???
                         boolean isCountDistinctLevel = l.getUniqueName().equals("[Patient].[Patient]");
@@ -564,7 +554,6 @@ public class ServerManager
 
         MondrianServer server = ref.get();
         OlapConnection olap = server.getConnection(DATA_SOURCE_NAME, catalog, null);
-//        MemTracker.getInstance().put(olap);
         OlapConnection wrap = OlapConnectionProxy.wrap(olap, ref);
         MemTracker.getInstance().put(wrap);
         return wrap;
