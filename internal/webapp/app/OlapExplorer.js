@@ -30,6 +30,8 @@ Ext.define('LABKEY.app.model.OlapExplorer', {
 Ext.define('LABKEY.app.store.OlapExplorer', {
     extend: 'Ext.data.Store',
 
+    alternateClassName: 'LABKEY.olapStore',
+
     model: 'LABKEY.app.model.OlapExplorer',
 
     enableSelection: true,
@@ -54,24 +56,55 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
 
     statics: {
         sorters: {
+            SORT_EMPTY_FIRST: false,
             _reA: /[^a-zA-Z]/g,
             _reN: /[^0-9]/g,
+            /**
+             * A valid Array.sort() function that sorts an Array of strings alphanumerically. This sort is case-insensitive
+             * and only permits valid instances of string (not undefined, null, etc).
+             * @param a
+             * @param b
+             * @returns {number}
+             */
             alphaNum : function(a,b) {
                 a = a.toLowerCase(); b = b.toLowerCase();
-                var aA = a.replace(LABKEY.app.store.OlapExplorer.sorters._reA, "");
-                var bA = b.replace(LABKEY.app.store.OlapExplorer.sorters._reA, "");
+                if (LABKEY.olapStore.sorters.SORT_EMPTY_FIRST && (a == 'null' || b == 'null')) {
+                    var aEmpty = a == 'null'; var bEmpty = b == 'null';
+                    if (aEmpty && bEmpty) {
+                        return 0;
+                    }
+                    return aEmpty ? -1 : 1;
+                }
+                var aA = a.replace(LABKEY.olapStore.sorters._reA, "");
+                var bA = b.replace(LABKEY.olapStore.sorters._reA, "");
                 if (aA === bA) {
-                    var aN = parseInt(a.replace(LABKEY.app.store.OlapExplorer.sorters._reN, ""), 10);
-                    var bN = parseInt(b.replace(LABKEY.app.store.OlapExplorer.sorters._reN, ""), 10);
+                    var aN = parseInt(a.replace(LABKEY.olapStore.sorters._reN, ""), 10);
+                    var bN = parseInt(b.replace(LABKEY.olapStore.sorters._reN, ""), 10);
                     return aN === bN ? 0 : aN > bN ? 1 : -1;
                 }
                 return aA > bA ? 1 : -1;
             },
+            /**
+             * A valid Array.sort() function that sorts an array of LABKEY.app.model.OlapExplorer instances
+             * alphanumerically according to the 'label' field.
+             * @param recA
+             * @param recB
+             * @returns {number}
+             */
             sortAlphaNum : function(recA, recB) {
-                return LABKEY.app.store.OlapExplorer.sorters.alphaNum(recA.get('label'), recB.get('label'));
+                return LABKEY.olapStore.sorters.alphaNum(recA.get('label'), recB.get('label'));
             },
+            /**
+             * An valid Array.sort() function that sorts an array of LABKEY.app.model.OlapExplorer instances
+             * alphanumerically according to the 'label' field. The 'Range' feature is meant to split on values that
+             * are indicative of a range (e.g. 10-20, 32.1-98.2). In these cases, the sort will only occur on the value
+             * before the '-' character.
+             * @param recA
+             * @param recB
+             * @returns {number}
+             */
             sortAlphaNumRange : function(recA, recB) {
-                return LABKEY.app.store.OlapExplorer.sorters.alphaNum(recA.get('label').split('-')[0], recB.get('label').split('-')[0]);
+                return LABKEY.olapStore.sorters.alphaNum(recA.get('label').split('-')[0], recB.get('label').split('-')[0]);
             }
         }
     },
@@ -281,6 +314,10 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         var subPosition;
         var customGroups = {}, groupRecords = [], childRecords = [];
 
+        //
+        // Support for 'sortStrategy' being declared on the MDX.Level. See this app's cube metadata documentation
+        // to see if this app supports the 'sortStrategy' be declared.
+        //
         var sortStrategy = 'AUTO';
         var sortLevelUniqueName;
         if (hasGrpLevel) {
@@ -419,6 +456,14 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         return sorted;
     },
 
+    /**
+     * Resolve the sorting function to use based on the given 'strategy' parameter. Currently, supports
+     * 'AUTO', 'ALPHANUM', and 'ALPHANUM-RANGE'. This function can return the boolean 'false' in the case of no-op
+     * strategy or if the strategy is not found.
+     * @param strategy
+     * @returns {*}
+     * @private
+     */
     _resolveSortFunction : function(strategy) {
         switch (strategy) {
             case 'ALPHANUM':
