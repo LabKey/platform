@@ -693,8 +693,9 @@ public class ViewServlet extends HttpServlet
 
     public static boolean validChar(int ch)
     {
+        boolean allowRepacementChar = true;
         // 0xFFFD is sometimes used as a substitute for an illegal sequence
-        return ch < 256 ? legal[ch] : ch != 0xFFFD && Character.isDefined(ch) && (Character.isWhitespace(ch) || !Character.isISOControl(ch));
+        return ch < 256 ? legal[ch] : (ch != 0xFFFD || allowRepacementChar) && Character.isDefined(ch) && (Character.isWhitespace(ch) || !Character.isISOControl(ch));
     }
 
     public static boolean validChars(CharSequence s)
