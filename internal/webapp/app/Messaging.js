@@ -8,6 +8,7 @@ Ext.define('LABKEY.app.model.Message', {
     extend: 'Ext.data.Model',
 
     fields: [
+        {name: 'key'},
         {name: 'message'}, // This is the text of the message
         {name: 'type'}     // Info, Warning, Error
     ],
@@ -53,15 +54,15 @@ Ext.define('LABKEY.app.controller.Messaging', {
         this.callParent();
     },
 
-    popMessages : function(type) {
+    popMessages : function(key) {
 
         var msgs = [];
 
-        if (!Ext.isEmpty(type)) {
-            var msgSet = this.msgStore.getRange(), filter = this.getType(type), requireSync = false;
+        if (!Ext.isEmpty(key)) {
+            var msgSet = this.msgStore.getRange(), filter = key, requireSync = false;
 
             Ext.each(msgSet, function(msg) {
-                if (msg.data.type === filter) {
+                if (msg.data.key === filter) {
                     msgs.push(msg);
                     this.msgStore.remove(msg);
                     requireSync = true;
@@ -92,9 +93,10 @@ Ext.define('LABKEY.app.controller.Messaging', {
 
     },
 
-    pushMessage : function(message, type) {
-        if (!Ext.isEmpty(message)) {
+    pushMessage : function(key, message, type) {
+        if (!Ext.isEmpty(key) && !Ext.isEmpty(message)) {
             this._sync([{
+                key: key,
                 message: message,
                 type: this.getType(type)
             }]);
