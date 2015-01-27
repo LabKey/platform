@@ -1,13 +1,8 @@
 <script type="text/javascript">
-    LABKEY.requiresExt4ClientAPI();
-    LABKEY.requiresScript("ModulePropertiesAdminPanel.js")
-</script>
-<script type="text/javascript">
     Ext4.onReady(function(){
         var webpart = <%=webpartContext%>;
         Ext4.create('LABKEY.ext.ModulePropertiesAdminPanel', {
             modules: LABKEY.ActionURL.getParameterArray('moduleName')
         }).render(webpart.wrapperDivId);
     });
-
 </script>

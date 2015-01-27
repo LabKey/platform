@@ -5,23 +5,25 @@
  */
 Ext4.define('LABKEY.ext.ModulePropertiesAdminPanel', {
     extend: 'Ext.form.Panel',
-    config: {
-        modules: null
-    },
+
     initComponent: function(){
         Ext4.QuickTips.init();
+
+        Ext4.applyIf(this, {
+            modules: []
+        });
 
         Ext4.apply(this, {
             bodyStyle: 'padding: 5px;',
             border: false,
             width: 800,
             items:  [{
-                html: 'Loading...',
+                html: this.modules.length > 0 ? 'Loading...' : 'No modules provided',
                 border: false
             }],
-            //buttonAlign: 'left',
             buttons: [{
                 text: 'Save Changes',
+                hidden: this.modules.length == 0,
                 handler: this.onSubmit,
                 scope: this
             }]
