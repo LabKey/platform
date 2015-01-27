@@ -66,9 +66,9 @@ public class FolderXarImporterFactory extends AbstractFolderImportFactory
 
             VirtualFile xarDir = ctx.getDir(FolderXarWriterFactory.XAR_DIRECTORY);
 
-            if(xarDir == null)
+            if (xarDir == null)
             {
-                ctx.getLogger().info("xar directory not found in folder " + ctx.getContainer());
+                ctx.getLogger().info("xar directory not found in folder " + ctx.getContainer().getPath());
                 return;
             }
 
