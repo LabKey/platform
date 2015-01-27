@@ -54,6 +54,7 @@ import org.labkey.api.security.User;
 import org.labkey.api.study.assay.AbstractAssayProvider;
 import org.labkey.api.util.DateUtil;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.StringExpression;
 import org.labkey.api.util.StringExpressionFactory;
 
@@ -191,6 +192,7 @@ public class DomainUtil
     {
         GWTDomain<GWTPropertyDescriptor> gwtDomain = new GWTDomain<>();
 
+        gwtDomain.set_Ts(JdbcUtil.rowVersionToString(dd.get_Ts()));
         gwtDomain.setDomainId(dd.getTypeId());
         gwtDomain.setDomainURI(dd.getTypeURI());
         gwtDomain.setName(dd.getName());
@@ -282,6 +284,16 @@ public class DomainUtil
         if (!d.getDomainKind().canEditDefinition(user, d))
         {
             errors.add("Unauthorized");
+            return errors;
+        }
+
+        // NOTE that DomainImpl.save() does an optimistic concurrency check, but we still need to check here.
+        // This code is diff'ing two GWTDomains and applying those changes to Domain d.  We need to make sure we're
+        // applying the diff's the matching Domain version.
+        String currentTs = JdbcUtil.rowVersionToString(d.get_Ts());
+        if (!StringUtils.equalsIgnoreCase(currentTs,orig.get_Ts()))
+        {
+            errors.add("The domain has been edited by another user, you may need to refresh and try again.");
             return errors;
         }
 

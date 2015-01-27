@@ -525,6 +525,7 @@ public class Table
         StringBuilder valueSQL = new StringBuilder();
         ArrayList<Object> parameters = new ArrayList<>();
         ColumnInfo autoIncColumn = null;
+        ColumnInfo versionColumn = null;
         String comma = "";
 
         //noinspection unchecked
@@ -539,7 +540,10 @@ public class Table
 
         for (ColumnInfo column : columns)
         {
-            if (column.isAutoIncrement())
+            // note  if(version) is not an no-op, it protects the isautoinc test from version columns implemented using sequences
+            if (column.isVersionColumn())
+                versionColumn = column;
+            else if (column.isAutoIncrement())
                 autoIncColumn = column;
 
             if (!fields.containsKey(column.getName()))
@@ -586,6 +590,7 @@ public class Table
         insertSQL.append(valueSQL);
         insertSQL.append(')');
 
+        // CONSIDER reselect version column
         if (null != autoIncColumn)
             table.getSqlDialect().appendSelectAutoIncrement(insertSQL, autoIncColumn);
 
@@ -715,9 +720,24 @@ public class Table
         _updateSpecialFields(user, table, fields, date);
 
         List<ColumnInfo> columns = table.getColumns();
+        ColumnInfo colModified = table.getColumn("Modified");
 
         for (ColumnInfo column : columns)
         {
+            if (column.isVersionColumn() && column != colModified)
+            {
+                SQLFragment expr = column.getVersionUpdateExpression();
+                if (null != expr)
+                {
+                    setSQL.append(comma);
+                    setSQL.append(column.getSelectName());
+                    setSQL.append("=");
+                    setSQL.append(expr);
+                    comma = ", ";
+                    continue;
+                }
+            }
+
             if (!fields.containsKey(column.getName()))
                 continue;
 

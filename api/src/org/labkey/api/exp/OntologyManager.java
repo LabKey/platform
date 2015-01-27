@@ -1543,7 +1543,10 @@ public class OntologyManager
             try
             {
                 dd = Table.insert(null, getTinfoDomainDescriptor(), ddIn);
-                domainDescByURICache.put(getURICacheKey(dd), dd);
+                // TODO: NOTE Table.insert() does not currently reselect rowversion, so don't add this dd to cache
+//                domainDescByURICache.put(getURICacheKey(dd), dd);
+//                return dd;
+                dd = getDomainDescriptor(ddIn.getDomainURI(), ddIn.getContainer());
                 return dd;
             }
             catch (RuntimeSQLException x)

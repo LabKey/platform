@@ -15,11 +15,16 @@
  */
 package org.labkey.api.exp;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.labkey.api.data.BeanObjectFactory;
+import org.labkey.api.data.ObjectFactory;
 import org.labkey.api.util.PageFlowUtil;
 import org.labkey.api.util.MemTracker;
 import org.labkey.api.util.UnexpectedException;
 import org.labkey.api.data.Container;
+
+import java.util.Map;
 
 
 /**
@@ -29,6 +34,7 @@ import org.labkey.api.data.Container;
  */
 public class DomainDescriptor implements Cloneable 
 {
+    private Object _ts;     // for optimistic concurrency
     private int domainId;
     private String name;
     private String domainURI;
@@ -51,6 +57,16 @@ public class DomainDescriptor implements Cloneable
         this();
         setDomainURI(domainURI);
         setContainer(c);
+    }
+
+    public Object get_Ts()
+    {
+        return _ts;
+    }
+
+    public void set_Ts(Object ts)
+    {
+        _ts = ts;
     }
 
     public int getDomainId()

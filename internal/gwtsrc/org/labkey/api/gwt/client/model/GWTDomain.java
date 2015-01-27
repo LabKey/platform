@@ -32,6 +32,7 @@ import java.util.Set;
  */
 public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSerializable
 {
+    private String _ts;
     private int domainId;
     private String name;
     private String domainURI;
@@ -58,6 +59,7 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
     // deep clone constructor
     public GWTDomain(GWTDomain<FieldType> src)
     {
+        this._ts = src._ts;
         this.domainId = src.domainId;    
         this.name = src.name;
         this.domainURI = src.domainURI;
@@ -91,6 +93,15 @@ public class GWTDomain<FieldType extends GWTPropertyDescriptor> implements IsSer
         }
     }
 
+    //  String representation of database _ts (rowversion) column
+    public void set_Ts(String ts)
+    {
+        _ts = ts;
+    }
+    public String get_Ts()
+    {
+        return _ts;
+    }
 
     public int getDomainId()
     {

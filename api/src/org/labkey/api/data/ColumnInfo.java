@@ -773,6 +773,21 @@ public class ColumnInfo extends ColumnRenderProperties implements SqlColumn
     }
 
 
+    public SQLFragment getVersionUpdateExpression()
+    {
+        if (JdbcType.TIMESTAMP == getJdbcType())
+        {
+            return new SQLFragment("{fn now()}");
+        }
+        else if ("_ts".equalsIgnoreCase(getName()) && !getSqlDialect().isSqlServer() && JdbcType.BIGINT == getJdbcType())
+        {
+            TableInfo t = getParentTable();
+            return new SQLFragment("nextval('" + t.getSelectName() + "_ts')");
+        }
+        return null;
+    }
+
+
     public String getInputType()
     {
         if (null == inputType)

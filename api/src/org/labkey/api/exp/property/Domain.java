@@ -36,6 +36,7 @@ import java.util.Set;
 
 public interface Domain extends IPropertyType
 {
+    Object get_Ts();
     Container getContainer();
     DomainKind getDomainKind();
     String getName();

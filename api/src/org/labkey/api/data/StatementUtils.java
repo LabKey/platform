@@ -486,11 +486,15 @@ public class StatementUtils
             done.add("Modified");
         }
         ColumnInfo colVersion = table.getVersionColumn();
-        if (autoFillDefaultColumns && null != colVersion && !done.contains(colVersion.getName()) && colVersion.getJdbcType() == JdbcType.TIMESTAMP)
+        if (autoFillDefaultColumns && null != colVersion && !done.contains(colVersion.getName()))
         {
-            cols.add(new SQLFragment(colVersion.getSelectName()));
-            values.add(new SQLFragment("{fn now()}"));
-            done.add(colVersion.getName());
+            SQLFragment expr = colVersion.getVersionUpdateExpression();
+            if (null != expr)
+            {
+                cols.add(new SQLFragment(colVersion.getSelectName()));
+                values.add(expr);
+                done.add(colVersion.getName());
+            }
         }
 
         String objectIdColumnName = StringUtils.trimToNull(updatable.getObjectIdColumnName());

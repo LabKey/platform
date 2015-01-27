@@ -16,10 +16,13 @@
 
 package org.labkey.api.util;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.SQLFragment;
 import org.labkey.api.data.dialect.DialectStringHandler;
 import org.labkey.api.data.dialect.SqlDialect;
 import org.labkey.api.data.dialect.StandardDialectStringHandler;
+
+import java.util.Date;
 
 /**
  * User: kevink
@@ -46,5 +49,46 @@ public final class JdbcUtil
     private static String format(SQLFragment fragment, DialectStringHandler handler)
     {
         return handler.substituteParameters(fragment);
+    }
+
+
+    // handle equality check for various row version types, LONG, ROWVERSION, TIMESTAMP (date time)
+    public static boolean rowVersionEqual(@NotNull Object a, @NotNull Object b)
+    {
+        if (a == null || b == null)
+            return false;
+        if (a.getClass() != b.getClass())
+            throw new IllegalStateException();
+        if (a instanceof Number)
+            return ((Number)a).longValue() == ((Number)b).longValue();
+        if (a instanceof Date)
+            return ((Date)a).getTime() == ((Date)b).getTime();
+        if (a.getClass().isArray())
+        {
+            byte[] array = (byte[])a, brray = (byte[])b;
+            for (int i=0 ; i<8 ; i++)
+                if (array[i] != brray[i]) return false;
+            return true;
+        }
+        throw new IllegalStateException();
+    }
+
+    public static String rowVersionToString(Object a)
+    {
+        if (null == a)
+            return null;
+        if (a instanceof Number)
+            return String.valueOf(((Number)a).longValue());
+        if (a instanceof Date)
+            return String.valueOf(((Date)a).getTime());
+        if (a.getClass().isArray())
+        {
+            StringBuilder sb = new StringBuilder(16);
+            byte[] array = (byte[])a;
+            for (int i=0 ; i<8 ; i++)
+                sb.append(String.format("%02x", array[i]));
+            return sb.toString();
+        }
+        throw new IllegalStateException();
     }
 }
