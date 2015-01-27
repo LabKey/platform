@@ -354,7 +354,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
         // Support for 'sortStrategy' being declared on the MDX.Level. See this app's cube metadata documentation
         // to see if this app supports the 'sortStrategy' be declared.
         //
-        var sortStrategy = 'AUTO';
+        var sortStrategy = 'SERVER';
         var sortLevelUniqueName;
         if (hasGrpLevel) {
             Ext.each(targetLevels, function(level) {
@@ -494,7 +494,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
 
     /**
      * Resolve the sorting function to use based on the given 'strategy' parameter. Currently, supports
-     * 'AUTO', 'ALPHANUM', and 'ALPHANUM-RANGE'. This function can return the boolean 'false' in the case of no-op
+     * 'ALPHANUM', 'ALPHANUM-RANGE', 'NATURAL', and 'SERVER'. This function can return the boolean 'false' in the case of no-op
      * strategy or if the strategy is not found.
      * @param strategy
      * @returns {*}
@@ -508,7 +508,7 @@ Ext.define('LABKEY.app.store.OlapExplorer', {
                 return LABKEY.olapStore.sorters.sortAlphaNumRange;
             case 'NATURAL':
                 return LABKEY.olapStore.sorters.sortNatural;
-            case 'AUTO':
+            case 'SERVER':
             default:
                 return false;
         }
