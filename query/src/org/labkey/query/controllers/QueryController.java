@@ -1070,6 +1070,7 @@ public class QueryController extends SpringActionController
 
 
     @RequiresPermissionClass(DeletePermission.class)
+    @Action(ActionType.Configure)
     public class DeleteQueryAction extends ConfirmAction<SourceForm>
     {
         public SourceForm _form;
@@ -2011,6 +2012,7 @@ public class QueryController extends SpringActionController
     }
 
     @RequiresPermissionClass(ReadPermission.class)
+    @Action(ActionType.Configure)
     public class PropertiesQueryAction extends FormViewAction<PropertiesForm>
     {
         PropertiesForm _form = null;
