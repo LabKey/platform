@@ -975,6 +975,7 @@ public class StudyController extends BaseStudyController
             HtmlView header = new HtmlView(sb.toString());
 
             LinkedHashSet<ClientDependency> dependencies = new LinkedHashSet<>();
+            dependencies.add(ClientDependency.fromPath("clientapi/ext4"));
             dependencies.add(ClientDependency.fromPath("study/ParticipantGroup.js"));
 
             header.addClientDependencies(dependencies);

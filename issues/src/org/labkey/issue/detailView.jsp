@@ -142,7 +142,7 @@
 
     if (bean.getHasAdminPermissions() && bean.hasMoveDestinations())
     {
-        %><td><%= textLink("move", "javascript:void(0)", "createMoveIssueWindow([" + issueId + "])", "")%></td><%
+        %><td><%= textLink("move", "javascript:void(0)", "Issues.window.MoveIssue.create([" + issueId + "])", "")%></td><%
     }
     %><td><%= textLink("print", context.cloneActionURL().replaceParameter("_print", "1"))%></td>
     <td><%= textLink("email prefs", IssuesController.issueURL(c, EmailPrefsAction.class).addParameter("issueId", issueId))%></td>

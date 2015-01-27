@@ -3,8 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-LABKEY.requiresExt4ClientAPI(true);
-
 Ext4.define('Study.window.ParticipantGroup', {
     extend : 'Ext.window.Window',
 
@@ -34,7 +32,7 @@ Ext4.define('Study.window.ParticipantGroup', {
         });
 
         Ext4.apply(config, {
-            title : (config.canEdit ? 'Define ' : 'View ') + Ext4.util.Format.htmlEncode(config.subject.nounSingular) + ' Group',
+            title : (config.canEdit ? 'Define ' : 'View ') + Ext4.htmlEncode(config.subject.nounSingular) + ' Group',
             layout : 'fit',
             autoScroll : true,
             modal : true,
@@ -55,7 +53,7 @@ Ext4.define('Study.window.ParticipantGroup', {
 
     initComponent : function(){
 
-        var demoStore = Ext4.create('LABKEY.ext4.Store', {
+        var demoStore = Ext4.create('LABKEY.ext4.data.Store', {
             name : 'demoStore',
             schemaName : 'study',
             queryName : 'DataSets',
@@ -81,7 +79,7 @@ Ext4.define('Study.window.ParticipantGroup', {
             store: demoStore,
             valueField: 'Label',
             displayField: 'Label',
-            fieldLabel: 'Select ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' from',
+            fieldLabel: 'Select ' + Ext4.htmlEncode(this.panelConfig.subject.nounSingular) + ' from',
             grow: true,
             labelStyle: 'width: 150px;',
             labelSeparator : '',
@@ -153,8 +151,8 @@ Ext4.define('Study.window.ParticipantGroup', {
             anchor : '100%',
             minChars : 1,
             autoSelect : false,
-            emptyText : Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Category',
-            fieldLabel: Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Category',
+            emptyText : Ext4.htmlEncode(this.panelConfig.subject.nounSingular) + ' Category',
+            fieldLabel: Ext4.htmlEncode(this.panelConfig.subject.nounSingular) + ' Category',
             labelAlign : 'top',
             grow : true,
             readOnly : !this.canEdit,
@@ -192,8 +190,8 @@ Ext4.define('Study.window.ParticipantGroup', {
                     name : 'groupLabel',
                     id : 'groupLabel',
                     readOnly : !this.canEdit,
-                    emptyText : Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Group Label',
-                    fieldLabel: Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Group Label',
+                    emptyText : Ext4.htmlEncode(this.panelConfig.subject.nounSingular) + ' Group Label',
+                    fieldLabel: Ext4.htmlEncode(this.panelConfig.subject.nounSingular) + ' Group Label',
                     labelAlign : 'top',
                     width: defaultWidth
                 },
@@ -202,8 +200,8 @@ Ext4.define('Study.window.ParticipantGroup', {
                     name : 'participantIdentifiers',
                     id : 'participantIdentifiers',
                     readOnly : !this.canEdit,
-                    emptyText : 'Enter ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Identifiers Separated by Commas',
-                    fieldLabel: Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) + ' Identifiers',
+                    emptyText : 'Enter ' + Ext4.htmlEncode(this.panelConfig.subject.nounSingular) + ' Identifiers Separated by Commas',
+                    fieldLabel: Ext4.htmlEncode(this.panelConfig.subject.nounSingular) + ' Identifiers',
                     labelAlign : 'top',
                     width: defaultWidth
                 },
@@ -221,7 +219,7 @@ Ext4.define('Study.window.ParticipantGroup', {
                             Ext4.create('Ext.tip.ToolTip', {
                                 trackMouse : true,
                                 target : checkboxField.getEl(),
-                                html : 'Share this ' + Ext4.util.Format.htmlEncode(this.panelConfig.subject.nounSingular) +' category with all users'
+                                html : 'Share this ' + Ext4.htmlEncode(this.panelConfig.subject.nounSingular) +' category with all users'
                             });
                            this.addClass('share-group-rendered'); // Test marker class
                         }

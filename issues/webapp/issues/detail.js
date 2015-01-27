@@ -3,15 +3,6 @@
  *
  * Licensed under the Apache License, Version 2.0: http://www.apache.org/licenses/LICENSE-2.0
  */
-
-function createMoveIssueWindow(issueIds) {
-    Ext4.onReady(function()
-    {
-        var cmp = Ext4.create('Issues.window.MoveIssue', {issueIds: issueIds});
-        cmp.show();
-    });
-}
-
 Ext4.define('Issues.window.MoveIssue', {
     extend: 'Ext.window.Window',
     modal: true,
@@ -21,6 +12,14 @@ Ext4.define('Issues.window.MoveIssue', {
     closeAction: 'destroy',
     title: 'Move Issue', // TODO: use entity noun here
 
+    statics: {
+        create : function(issueIds) {
+            Ext4.onReady(function() {
+                Ext4.create('Issues.window.MoveIssue', {issueIds: issueIds}).show();
+            });
+        }
+    },
+
     initComponent : function() {
         this.buttons = ['->', {
             text: 'Move',
@@ -29,7 +28,7 @@ Ext4.define('Issues.window.MoveIssue', {
         },{
             text: 'Cancel',
             scope: this,
-            handler: this.handleCancel
+            handler: this.close
         }];
 
         this.items = [this.getPanel()];
@@ -40,11 +39,7 @@ Ext4.define('Issues.window.MoveIssue', {
         }, this)
     },
 
-    getPanel: function(){
-        var divContainer = Ext4.create('Ext.container.Container', {
-            html: "<div>Select a container from the list below and click the 'Move' button</div>",
-            margin: '0 0 15 0'
-        });
+    getPanel : function() {
 
         this.moveCombo = Ext4.create('Ext.form.field.ComboBox', {
             store: this.getUserStore(),
@@ -56,20 +51,20 @@ Ext4.define('Issues.window.MoveIssue', {
             labelWidth: 65,
             queryMode: 'local',
             typeAhead: true,
-            msgTarget: "under",
+            msgTarget: 'under',
             forceSelection: false,
             validateOnChange: false,
             validateOnBlur: false,
             allowBlank: true,
-            validator: function(val)
-            {
+            validator: function(val) {
                 var index = this.getStore().findExact(this.displayField, val);
                 return (index != -1) ? true : 'Invalid selection';
             },
             tpl: Ext4.create('Ext.XTemplate',
-                    '<tpl for=".">',
+                '<tpl for=".">',
                     '<div class="x4-boundlist-item">{containerPath:htmlEncode}</div>',
-                    '</tpl>')
+                '</tpl>'
+            )
         });
 
         return {
@@ -77,7 +72,11 @@ Ext4.define('Issues.window.MoveIssue', {
             padding: 10,
             border: false,
             layout: 'form',
-            items: [divContainer, this.moveCombo]
+            items: [{
+                xtype: 'container',
+                html: "<div>Select a container from the list below and click the 'Move' button</div>",
+                margin: '0 0 15 0'
+            }, this.moveCombo]
         };
     },
 
@@ -111,18 +110,17 @@ Ext4.define('Issues.window.MoveIssue', {
         if (!this.moveCombo.validate())
             return;
 
-        var containerId = this.moveCombo.getValue();
         Ext4.Ajax.request({
             url: LABKEY.ActionURL.buildURL('issues', 'move'),
             method: 'POST',
             params: {
                 issueIds: this.issueIds,
-                containerId: containerId,
+                containerId: this.moveCombo.getValue(),
                 returnUrl: window.location
             },
             scope: this,
-            success: function(response){
-                location = location;
+            success: function(response) {
+                window.location.reload();
             },
             failure: function(response){
                 var jsonResp = LABKEY.Utils.decode(response.responseText);
@@ -133,9 +131,5 @@ Ext4.define('Issues.window.MoveIssue', {
                 }
             }
         });
-    },
-
-    handleCancel: function(){
-        this.close();
     }
 });

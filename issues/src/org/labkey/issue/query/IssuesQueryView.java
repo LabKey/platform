@@ -16,10 +16,10 @@
 
 package org.labkey.issue.query;
 
+import org.jetbrains.annotations.NotNull;
 import org.labkey.api.data.ActionButton;
 import org.labkey.api.data.ButtonBar;
 import org.labkey.api.data.DataRegion;
-import org.labkey.api.data.RenderContext;
 import org.labkey.api.query.QueryAction;
 import org.labkey.api.query.QuerySettings;
 import org.labkey.api.query.QueryView;
@@ -30,13 +30,14 @@ import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.view.DataView;
 import org.labkey.api.view.ViewContext;
+import org.labkey.api.view.template.ClientDependency;
 import org.labkey.issue.IssuesController;
 import org.springframework.validation.BindException;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedHashSet;
 
 public class IssuesQueryView extends QueryView
 {
@@ -66,12 +67,17 @@ public class IssuesQueryView extends QueryView
             view.getDataRegion().setButtonBarPosition(DataRegion.ButtonBarPosition.TOP);
         view.getDataRegion().setRecordSelectorValueColumns("IssueId");
 
-//        DisplayColumn issueid = view.getDataRegion().getDisplayColumn("IssueId");
-//        if (null != issueid)
-//            issueid.setURL(new ActionURL("issues", "details", getContainer()).toString() + "issueId=${IssueId}");
-
-        //ensureDefaultCustomViews();
         return view;
+    }
+
+    @NotNull
+    @Override
+    public LinkedHashSet<ClientDependency> getClientDependencies()
+    {
+        LinkedHashSet<ClientDependency> resources = super.getClientDependencies();
+        resources.add(ClientDependency.fromPath("Ext4"));
+        resources.add(ClientDependency.fromPath("issues/detail.js"));
+        return resources;
     }
 
     protected void populateButtonBar(DataView view, ButtonBar bar)
@@ -88,19 +94,10 @@ public class IssuesQueryView extends QueryView
             listDetailsButton.setNoFollow(true);
             bar.add(listDetailsButton);
 
-            ActionButton moveButton = new ActionButton("Move"){
-                public void render(RenderContext ctx, Writer out) throws IOException
-                {
-                    out.write("<script type=\"text/javascript\">\n");
-                    out.write("LABKEY.requiresExt4ClientAPI()\n");
-                    out.write("LABKEY.requiresScript('issues/detail.js')\n");
-                    out.write("</script>\n");
-                    super.render(ctx, out);
-                }
-            };
+            ActionButton moveButton = new ActionButton("Move");
             moveButton.setRequiresSelection(true);
             moveButton.setDisplayPermission(AdminPermission.class);
-            moveButton.setScript("createMoveIssueWindow(LABKEY.DataRegions['" + view.getDataRegion().getName() + "'].getChecked());");
+            moveButton.setScript("Issues.window.MoveIssue.create(LABKEY.DataRegions['" + view.getDataRegion().getName() + "'].getChecked());");
             bar.add(moveButton);
 
             ActionButton adminButton = new ActionButton(IssuesController.AdminAction.class, "Admin", DataRegion.MODE_GRID, ActionButton.Action.LINK);

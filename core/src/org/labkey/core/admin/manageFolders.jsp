@@ -28,7 +28,7 @@
     {
         LinkedHashSet<ClientDependency> resources = new LinkedHashSet<>();
         resources.add(ClientDependency.fromPath("clientapi/ext4"));
-        resources.add(ClientDependency.fromPath("/admin/FolderManagementPanel.js"));
+        resources.add(ClientDependency.fromPath("admin/FolderManagementPanel.js"));
         return resources;
     }
 %>
