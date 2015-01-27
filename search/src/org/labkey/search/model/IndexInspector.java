@@ -29,14 +29,13 @@ import org.labkey.api.collections.CsvSet;
 import org.labkey.api.data.Container;
 import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.ExcelWriter;
-import org.labkey.api.data.TSVMapWriter;
+import org.labkey.api.data.TSVWriter;
 import org.labkey.api.data.TextWriter;
+import org.labkey.api.util.PageFlowUtil;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * User: adam
@@ -84,19 +83,17 @@ public class IndexInspector
         return SearchPropertyManager.getPrimaryIndexDirectory();
     }
 
-    // TODO: Refactor TSVMapWriter to make this cleaner... e.g., don't require an iterator
-    private static class TSVIndexWriter extends TSVMapWriter
+    private static class TSVIndexWriter extends TSVWriter
     {
-        public TSVIndexWriter()
+        @Override
+        protected void writeColumnHeaders()
         {
-            super(new CsvSet("Title,Type,Folder,URL,UniqueId,Body Terms"), null);
+            writeLine(new CsvSet("Title,Type,Folder,URL,UniqueId,Body Terms"));
         }
 
         @Override
         protected void writeBody()
         {
-            Map<String, Object> map = new HashMap<>();
-
             try (Directory directory = FSDirectory.open(getIndexDirectory()); IndexReader reader = DirectoryReader.open(directory))
             {
                 // Lucene provides no way to query a document for its size in the index, so we enumerate the terms and increment
@@ -144,14 +141,7 @@ public class IndexInspector
                     Container c = ContainerManager.getForId(containerIds[0]);
                     String path = null != c ? c.getPath() : "UNKNOWN: " + containerIds[0];
 
-                    map.put("Title", titles[0]);
-                    map.put("Type", type);
-                    map.put("Folder", path);
-                    map.put("URL",  urls[0]);
-                    map.put("UniqueId", uniqueIds[0]);
-                    map.put("Body Terms", termCountPerDoc[i]);
-
-                    writeRow(map);
+                    writeLine(PageFlowUtil.set(titles[0], type, path, urls[0], uniqueIds[0], String.valueOf(termCountPerDoc[i])));
                 }
             }
             catch (IOException e)
