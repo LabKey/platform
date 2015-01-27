@@ -35,6 +35,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
+import java.nio.file.Files;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -94,13 +95,18 @@ public class FileUtil
      * delete all the contents and the directory */
     public static boolean deleteDir(File dir)
     {
-        boolean success = deleteDirectoryContents(dir);
-        if (!success)
+        // Issue 22336: See note in FileUtils.isSymLink() about windows-specific bugs for symlinks:
+        // http://commons.apache.org/proper/commons-io/apidocs/org/apache/commons/io/FileUtils.html
+        if (!Files.isSymbolicLink(dir.toPath()))
         {
-            return false;
+            boolean success = deleteDirectoryContents(dir);
+            if (!success)
+            {
+                return false;
+            }
         }
 
-        // The directory is now empty so delete it
+        // The directory is now either a sym-link or empty, so delete it
         return dir.delete();
     }
 
