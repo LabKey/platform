@@ -438,6 +438,9 @@
       <ns:column columnName="Project"/>
       <ns:column columnName="StorageTableName"/>
       <ns:column columnName="StorageSchemaName"/>
+      <ns:column columnName="Modified"/>
+      <ns:column columnName="ModifiedBy"/>
+      <ns:column columnName="_ts"/>
     </ns:columns>
   </ns:table>
   <ns:table tableName="PropertyDomain" tableDbType="TABLE">

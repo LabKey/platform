@@ -27,6 +27,7 @@ import org.labkey.api.data.ContainerManager;
 import org.labkey.api.data.DbSchema;
 import org.labkey.api.data.DbScope;
 import org.labkey.api.data.ImportAliasable;
+import org.labkey.api.data.LockManager;
 import org.labkey.api.data.MVDisplayColumnFactory;
 import org.labkey.api.data.PropertyStorageSpec;
 import org.labkey.api.data.SQLFragment;
@@ -56,6 +57,7 @@ import org.labkey.api.query.QueryUpdateServiceException;
 import org.labkey.api.security.User;
 import org.labkey.api.security.permissions.Permission;
 import org.labkey.api.util.GUID;
+import org.labkey.api.util.JdbcUtil;
 import org.labkey.api.util.Pair;
 import org.labkey.api.view.ActionURL;
 import org.labkey.api.writer.ContainerUser;
@@ -68,6 +70,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
 
 public class DomainImpl implements Domain
 {
@@ -113,6 +116,11 @@ public class DomainImpl implements Domain
         _dd.setDomainURI(uri);
         _dd.setName(name);
         _properties = new ArrayList<>();
+    }
+
+    public Object get_Ts()
+    {
+        return _dd.get_Ts();
     }
 
     public Container getContainer()
@@ -295,22 +303,40 @@ public class DomainImpl implements Domain
         save(user, false);
     }
 
+
+    private static final LockManager<String> _domainSaveLockManager = new LockManager<>();
+
+
     // TODO: throws SQLException instead of RuntimeSQLException (e.g., constraint violation due to duplicate domain name) 
     public void save(User user, boolean allowAddBaseProperty) throws ChangePropertyDescriptorException
     {
-        try (DbScope.Transaction transaction = ExperimentService.get().ensureTransaction())
+        ExperimentService.Interface exp = ExperimentService.get();
+
+        // NOTE: the synchronization here does not remove the need to add better synchronization in StorageProvisioner, but it helps
+
+        Lock domainLock = _domainSaveLockManager.getLock(_dd.getDomainURI().toLowerCase());
+
+        try (DbScope.Transaction transaction = exp.getSchema().getScope().ensureTransaction(domainLock))
         {
             List<DomainProperty> checkRequiredStatus = new ArrayList<>();
             if (isNew())
             {
+                // consider: optimistic concurrency check here?
                 _dd = Table.insert(user, OntologyManager.getTinfoDomainDescriptor(), _dd);
                 // CONSIDER put back if we want automatic provisioning for serveral DomainKinds
                 // StorageProvisioner.create(this);
                 addAuditEvent(user, String.format("The domain %s was created", _dd.getName()));
             }
-            else if (_ddOld != null)
+            else
             {
-                _dd = Table.update(user, OntologyManager.getTinfoDomainDescriptor(), _dd, _dd.getDomainId());
+                DomainDescriptor ddCheck = OntologyManager.getDomainDescriptor(_dd.getDomainId());
+                if (!JdbcUtil.rowVersionEqual(ddCheck.get_Ts(), _dd.get_Ts()))
+
+                    throw new Table.OptimisticConflictException("Domain has been updated by another user or process.", Table.SQLSTATE_TRANSACTION_STATE, 0);
+
+                // call OntololgyManager.updateDomainDescriptor() to invalidate proper caches
+                DomainDescriptor dbgOld=_dd;
+                _dd = OntologyManager.updateDomainDescriptor(_dd);
                 addAuditEvent(user, String.format("The descriptor of domain %s was updated", _dd.getName()));
             }
             boolean propChanged = false;

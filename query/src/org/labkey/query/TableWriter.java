@@ -87,9 +87,10 @@ public class TableWriter
             for (String schemaName : schemaMap.keySet())
             {
                 UserSchema schema = queryService.getUserSchema(user, c, schemaName);
+                if (null == schema)
+                    continue;
                 Map<String, QueryDefinition> schemaQueries = schema.getQueryDefs();
                 ArrayList<String> queryNames = schemaMap.get(schemaName);
-
                 for (String queryName : queryNames)
                 {
                     QueryDefinition queryDef = schemaQueries.get(queryName);    // user defined queries

@@ -604,6 +604,7 @@ public class PropertyController extends SpringActionController
         GWTDomain domain = new GWTDomain();
         JSONObject jsonDomain = obj.getJSONObject("domainDesign");
 
+        domain.set_Ts(jsonDomain.optString("ts"));
         domain.setDomainId(jsonDomain.optInt("domainId", -1));
 
         domain.setName(jsonDomain.getString("name"));

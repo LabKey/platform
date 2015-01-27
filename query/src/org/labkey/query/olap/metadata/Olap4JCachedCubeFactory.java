@@ -311,7 +311,7 @@ public class Olap4JCachedCubeFactory
                 _Member p1 = (_Member)m1.getParentMember();
                 _Member p2 = (_Member)m2.getParentMember();
                 assert (null==p1) == (null==p2);
-                if (null != p1 && null != p2)
+                if (p1 != p2)
                 {
                     int p = _compare(p1,p2);
                     if (0 != p)
