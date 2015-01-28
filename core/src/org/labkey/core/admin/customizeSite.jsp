@@ -125,7 +125,7 @@ Click the Save button at any time to accept the current settings and continue.</
     <td><input type="text" id="defaultDomain" name="defaultDomain" size="50" value="<%= h(appProps.getDefaultDomain()) %>"></td>
 </tr>
 <tr>
-    <td class="labkey-form-label">Base server url (used to create links in emails sent by the system)</td>
+    <td class="labkey-form-label">Base server URL (used to create links in emails sent by the system)</td>
     <td><input type="text" name="baseServerUrl" size="50" value="<%= h(appProps.getBaseServerUrl()) %>"></td>
 </tr>
 <tr>
