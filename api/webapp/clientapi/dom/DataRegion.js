@@ -10,8 +10,35 @@
     //
     var ALL_FILTERS_SKIP_PREFIX = '.~';
     var PARAM_PREFIX = '.param.';
+    var SORT_PREFIX = '.sort', SORT_ASC = '+', SORT_DESC = '-';
     var OFFSET_PREFIX = '.offset';
     var CONTAINER_FILTER_NAME = '.containerFilterName';
+
+    var _alterSortString = function(region, current, fieldKey, direction /* optional */) {
+        fieldKey = _resolveFieldKey(region, fieldKey);
+
+        var columnName = fieldKey.toString(),
+            newSorts = [];
+
+        if (current != null) {
+            var sorts = current.split(",");
+            $.each(sorts, function(i, sort) {
+                if ((sort != columnName) && (sort != SORT_ASC + columnName) && (sort != SORT_DESC + columnName)) {
+                    newSorts.push(sort);
+                }
+            });
+        }
+
+        if (direction == SORT_ASC) { // Easier to read without the encoded + on the URL...
+            direction = '';
+        }
+
+        if (LABKEY.Utils.isString(direction)) {
+            newSorts = [direction + columnName].concat(newSorts);
+        }
+
+        return newSorts.join(',');
+    };
 
     var _buildQueryString = function(region, pairs) {
         if (!$.isArray(pairs)) {
@@ -44,6 +71,28 @@
         }
 
         return queryParts.join("");
+    };
+
+    var _changeFilter = function(region, newParamValPairs, newQueryString) {
+
+        var event = $.Event("beforefilterchange");
+
+        var filterPairs = [], name, val;
+        $.each(newParamValPairs, function(i, pair) {
+            name = pair[0];
+            val = pair[1];
+            if (name.indexOf(region.name + '.') == 0 && name.indexOf('~') > -1) {
+                filterPairs.push([name, val]);
+            }
+        });
+
+        $(region).trigger("beforefilterchange", region, filterPairs);
+        if (event.isDefaultPrevented()) {
+            return;
+        }
+
+        var params = _getParameters(region, newQueryString, [region.name + '.offset']);
+        region.setSearchString.call(region, region.name, _buildQueryString(region, params));
     };
 
     var _getAllRowSelectors = function(region) {
@@ -128,12 +177,25 @@
         return params;
     };
 
+    var _onSelectionChange = function(region) {
+        $(region).trigger('selectchange', [region, region.selectedCount]);
+        _updateRequiresSelectionButtons(region, region.selectedCount);
+    };
+
     var _removeParameters = function(region, skipPrefixes /* optional */) {
         return _setParameters(region, null, skipPrefixes);
     };
 
+    var _resolveFieldKey = function(region, fieldKey) {
+        var fk = fieldKey;
+        if (!(fk instanceof LABKEY.FieldKey)) {
+            fk = LABKEY.FieldKey.fromString('' + fk);
+        }
+        return fk;
+    };
+
     var _setParameter = function(region, param, value, skipPrefixes /* optional */) {
-        _setParameters(region, [param, value], skipPrefixes);
+        _setParameters(region, [[param, value]], skipPrefixes);
     };
 
     var _setParameters = function(region, newParamValPairs, skipPrefixes /* optional */) {
@@ -149,6 +211,10 @@
 
         if ($.isArray(newParamValPairs)) {
             $.each(newParamValPairs, function(i, newPair) {
+                if (!$.isArray(newPair)) {
+                    throw new Error("DataRegion: _setParameters newParamValPairs improperly initialized. It is an array of arrays. You most likely passed in an array of strings.");
+                    return false;
+                }
                 param = newPair[0];
                 value = newPair[1];
 
@@ -164,11 +230,6 @@
         }
 
         region.setSearchString.call(region, region.name, _buildQueryString(region, params));
-    };
-
-    var _onSelectionChange = function(region) {
-        $(region).trigger('selectchange', [region, region.selectedCount]);
-        _updateRequiresSelectionButtons(region, region.selectedCount);
     };
 
     var _showSelectMessage = function(region, msg) {
@@ -199,6 +260,14 @@
         });
 
         return ids;
+    };
+
+    var _updateFilter = function(region, filter, skipPrefixes) {
+        var params = _getParameters(region, region.requestURL, skipPrefixes);
+        if (filter) {
+            params.push([filter.getURLParameterName(region.name), filter.getURLParameterValue()]);
+        }
+        _changeFilter(region, params, _buildQueryString(region, params));
     };
 
     var _updateRequiresSelectionButtons = function(region, selectedCount) {
@@ -239,36 +308,6 @@
                 el.addClass('labkey-disabled-button').removeClass('labkey-button');
             }
         });
-    };
-
-    var _changeFilter = function(region, newParamValPairs, newQueryString) {
-
-        var event = $.Event("beforefilterchange");
-
-        var filterPairs = [], name, val;
-        $.each(newParamValPairs, function(i, pair) {
-            name = pair[0];
-            val = pair[1];
-            if (name.indexOf(region.name + '.') == 0 && name.indexOf('~') > -1) {
-                filterPairs.push([name, val]);
-            }
-        });
-
-        $(region).trigger("beforefilterchange", region, filterPairs);
-        if (event.isDefaultPrevented()) {
-            return;
-        }
-
-        var params = _getParameters(region, newQueryString, [region.name + '.offset']);
-        region.setSearchString.call(region, region.name, _buildQueryString(region, params));
-    };
-
-    var _updateFilter = function(region, filter, skipPrefixes) {
-        var params = _getParameters(region, region.requestURL, skipPrefixes);
-        if (filter) {
-            params.push([filter.getURLParameterName(region.name), filter.getURLParameterValue()]);
-        }
-        _changeFilter(region, params, _buildQueryString(region, params));
     };
 
     LABKEY.DataRegion2 = function(config) {
@@ -444,14 +483,9 @@
      * @param {string or FieldKey} fieldKey the name of the field from which all filters should be removed
      */
     Proto.clearFilter = function(fieldKey) {
-        var isString = LABKEY.Utils.isString(fieldKey) && fieldKey.length > 0,
-            isFK = (fieldKey instanceof LABKEY.FieldKey);
+        fieldKey = _resolveFieldKey(this, fieldKey);
 
-        if (isString || isFK) {
-            if (isString) {
-                fieldKey = LABKEY.FieldKey.fromString("" + fieldKey);
-            }
-
+        if (fieldKey) {
             var columnName = fieldKey.toString();
 
             var event = $.Event("beforeclearfilter");
@@ -1047,6 +1081,94 @@
         if (this.msgbox) {
             this.msgbox.render();
         }
+    };
+
+    //
+    // Sorting
+    //
+
+    /**
+     * Replaces the sort on the given column, if present, or sets a brand new sort
+     * @param {string or LABKEY.FieldKey} fieldKey name of the column to be sorted
+     * @param sortDirection either "+' for ascending or '-' for descending
+     */
+    Proto.changeSort = function(fieldKey, sortDir) {
+        if (!fieldKey)
+            return;
+
+        fieldKey = _resolveFieldKey(this, fieldKey);
+
+        var columnName = fieldKey.toString();
+
+        var event = $.Event("beforesortchange");
+
+        $(this).trigger(event, this, columnName, sortDir);
+
+        if (event.isDefaultPrevented()) {
+            return;
+        }
+
+        var sortString = _alterSortString(this, this.getParameter(this.name + SORT_PREFIX), fieldKey, sortDir);
+        _setParameter(this, SORT_PREFIX, sortString, [SORT_PREFIX, OFFSET_PREFIX]);
+    };
+
+    /**
+     * Removes the sort on a specified column
+     * @param {string or LABKEY.FieldKey} fieldKey name of the column
+     */
+    Proto.clearSort = function(fieldKey) {
+        if (!fieldKey)
+            return;
+
+        fieldKey = _resolveFieldKey(this, fieldKey);
+
+        var columnName = fieldKey.toString();
+
+        var event = $.Event("beforeclearsort");
+
+        $(this).trigger(event, this, columnName);
+
+        if (event.isDefaultPrevented()) {
+            return;
+        }
+
+        var sortString = _alterSortString(this, this.getParameter(this.name + SORT_PREFIX), fieldKey);
+        if (sortString.length > 0) {
+            _setParameter(this, SORT_PREFIX, sortString, [SORT_PREFIX, OFFSET_PREFIX]);
+        }
+        else {
+            _removeParameters(this, [SORT_PREFIX, OFFSET_PREFIX]);
+        }
+    };
+
+    /**
+     * Returns the user sort from the URL. The sort is represented as an Array of objects of the form:
+     * <ul>
+     *   <li><b>fieldKey</b>: {String} The field key of the sort.
+     *   <li><b>dir</b>: {String} The sort direction, either "+" or "-".
+     * </ul>
+     * @returns {Object} Object representing the user sort.
+     */
+    Proto.getUserSort = function() {
+        var userSort = [];
+        var sortParam = this.getParameter(this.name + SORT_PREFIX);
+        if (sortParam) {
+            var sorts = sortParam.split(','), fieldKey, dir;
+            $.each(sorts, function(i, sort) {
+                fieldKey = sort;
+                dir = SORT_ASC;
+                if (sort.charAt(0) == SORT_DESC) {
+                    fieldKey = fieldKey.substring(1);
+                    dir = SORT_DESC;
+                }
+                else if (sort.charAt(0) == SORT_ASC) {
+                    fieldKey = fieldKey.substring(1);
+                }
+                userSort.push({fieldKey: fieldKey, dir: dir});
+            });
+        }
+
+        return userSort;
     };
 
     //
