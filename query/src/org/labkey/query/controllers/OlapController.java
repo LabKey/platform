@@ -706,7 +706,7 @@ public class OlapController extends SpringActionController
      * NOT PART OF OFFICIAL CLIENT API
      * the particulars of the JSON format may change, and is very tied to the dataspace implementation
      */
-    @RequiresSiteAdmin
+    @RequiresPermissionClass(ReadPermission.class)
     @Action(ActionType.SelectData)
     public class JsonQueryAction extends ApiAction<JsonQueryForm>
     {
