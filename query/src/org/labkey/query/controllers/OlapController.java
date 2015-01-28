@@ -20,6 +20,7 @@ import mondrian.olap.Annotation;
 import mondrian.olap.MondrianException;
 import mondrian.olap.MondrianServer;
 import mondrian.xmla.impl.MondrianXmlaServlet;
+import org.apache.commons.beanutils.ConvertUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -537,6 +538,11 @@ public class OlapController extends SpringActionController
     }
 
 
+
+    /*
+    // TODO Can't enable this action for non-site admins until we can check
+    // AllowMDX correctly, also note we can't support cubes that require container based filters to enforce permissions
+    */
     @RequiresSiteAdmin
     @Action(ActionType.SelectData)
     public class ExecuteMdxAction extends ApiAction<ExecuteMdxForm>
@@ -563,38 +569,12 @@ public class OlapController extends SpringActionController
             if (errors.hasErrors())
                 return null;
 
-//            Cube cube = getCube(form, errors);
-//            if (errors.hasErrors())
-//                return null;
-
             OlapSchemaDescriptor sd = ServerManager.getDescriptor(getContainer(), form.getConfigId());
             if (null == sd)
             {
                 errors.reject(ERROR_MSG, "olap cube config not found: " + form.getConfigId());
                 return null;
             }
-
-//            String schemaName = getAnnotation(cube,"SchemaName");
-//            if (null != schemaName)
-//            {
-//                UserSchema schema = (UserSchema)DefaultSchema.get(getUser(), getContainer()).getSchema(schemaName);
-//                if (null == schema)
-//                    throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
-//                schema.checkCanReadSchemaOlap();
-//                schema.checkCanExecuteMDX();
-//            }
-
-//            TODO: the AllowMDX annotation needs to be on the olap schema, not the cube
-//            TODO: the cubeName parameter does not need to match the cube that is actuall in the MDX FROM clause
-
-//            // does not override schema.checkCanExecuteMDX()
-//            String allowMDX = getAnnotation(cube, "AllowMDX");
-//            if (null != allowMDX && Boolean.FALSE == ConvertUtils.convert(allowMDX,Boolean.class))
-//            {
-//                errors.reject(ERROR_MSG, "this cube does not allow mdx queries: " + cube.getName());
-//                return null;
-//            }
-
 
             String sql = StringUtils.trimToNull(form.getQuery());
 
@@ -742,7 +722,16 @@ public class OlapController extends SpringActionController
                 if (null == schema)
                     throw new ConfigurationException("Schema from olap configuration file not found : " + schemaName);
                 schema.checkCanReadSchemaOlap();
+                schema.checkCanExecuteMDX();
                 cf = schema.getOlapContainerFilter();
+            }
+
+            // does not override schema.checkCanExecuteMDX()
+            String allowMDX = getAnnotation(cube, "AllowMDX");
+            if (null != allowMDX && Boolean.FALSE == ConvertUtils.convert(allowMDX, Boolean.class))
+            {
+                errors.reject(ERROR_MSG, "this cube does not allow mdx queries: " + cube.getName());
+                return null;
             }
 
             QubeQuery qquery = new QubeQuery(cube);
