@@ -302,7 +302,7 @@ LABKEY.FilterDialog = Ext.extend(Ext.Window, {
                 else if (this.column.fieldKey && ff.getColumnName() == this.column.fieldKey) {
                     filters.push(ff);
                 }
-            });
+            }, this);
         }
         else if (this.queryString) { // deprecated
             filters = LABKEY.Filter.getFiltersFromUrl(this.queryString, this.dataRegionName);
