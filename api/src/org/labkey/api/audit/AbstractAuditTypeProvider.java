@@ -110,6 +110,8 @@ public abstract class AbstractAuditTypeProvider implements AuditTypeProvider
                 String domainURI = domainKind.generateDomainURI(QUERY_SCHEMA_NAME, getEventName(), getDomainContainer(), null);
                 domain = PropertyService.get().createDomain(getDomainContainer(), domainURI, domainKind.getKindName());
                 domain.save(user);
+                // don't keep using domain after domain.save()
+                domain = getDomain();
             }
             catch (ChangePropertyDescriptorException e)
             {
