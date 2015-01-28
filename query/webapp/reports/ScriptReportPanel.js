@@ -161,7 +161,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
             xtype       : 'box',
             title       : 'Data',
             autoScroll  : true,
-            cls         : 'iScroll',
+            cls         : 'iScroll reportData',
             bodyPadding : 10,
             listeners   : {
                 render : {fn : function(cmp){this.renderDataGrid(cmp);}, scope : this}
@@ -504,6 +504,7 @@ Ext4.define('LABKEY.ext4.ScriptReportPanel', {
 
         this.formPanel = Ext4.create('Ext.form.Panel', {
             title   : 'Source',
+            cls     : 'reportSource',
             frame   : false,
             bodyPadding : 10,
             fieldDefaults  : {
