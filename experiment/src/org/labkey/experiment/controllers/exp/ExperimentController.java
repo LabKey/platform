@@ -4291,6 +4291,14 @@ public class ExperimentController extends SpringActionController
                 {
                     errors.reject(ERROR_MSG, "You must specify a name for the experiment");
                 }
+                else
+                {
+                    int maxNameLength = ExperimentService.get().getTinfoExperimentRun().getColumn("Name").getScale();
+                    if(exp.getName().length() > maxNameLength)
+                    {
+                        errors.reject(ERROR_MSG, "Name of the experiment must be " + maxNameLength + " characters or less.");
+                    }
+                }
 
                 String lsid;
                 int suffix = 1;
