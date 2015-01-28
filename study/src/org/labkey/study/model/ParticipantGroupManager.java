@@ -272,7 +272,6 @@ public class ParticipantGroupManager
                     }
                 }
 
-                //button.addMenuItem(((MenuButton)cohortButton).getPopupMenu().getNavTree());
                 NavTree cohort = new NavTree("Cohorts");
                 CohortManager.getInstance().addCohortNavTree(context.getContainer(), context.getUser(), baseURL, cohortFilter, dataRegionName, cohort);
                 button.addMenuItem(cohort);
@@ -1212,20 +1211,12 @@ public class ParticipantGroupManager
 
     public static class ParticipantGroupTestCase extends Assert
     {
-
         @Test
         public void test()
         {
             ParticipantGroupManager p = new ParticipantGroupManager();
-
-            User u = new User();
-//            ParticipantGroup g = new ParticipantGroup();
-//            g.setContainer("14944030-c56c-102e-8297-ca47709443a1");
-//            g.setLabel("pie2");
-
             ParticipantCategoryImpl def = new ParticipantCategoryImpl();
             p.getParticipantGroups(null, null, def);
         }
-
     }
 }
